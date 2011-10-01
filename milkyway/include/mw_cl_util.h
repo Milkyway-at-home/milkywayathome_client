@@ -47,6 +47,7 @@ cl_int mwFinishEvent(cl_event ev);
 #define mwCLWarn(msg, err, ...) fprintf(stderr, msg ": %s\n", ##__VA_ARGS__, showCLInt(err))
 
 cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size);
+cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf);
 
 #ifdef __cplusplus
 }

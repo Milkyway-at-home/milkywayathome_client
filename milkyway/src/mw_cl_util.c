@@ -190,3 +190,57 @@ fail:
 }
 
 
+cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
+{
+    cl_mem bufCopy;
+    size_t size;
+    cl_mem_flags flags;
+    cl_int err;
+    cl_event ev;
+
+    err = clGetMemObjectInfo(buf, CL_MEM_FLAGS, sizeof(flags), &flags, NULL);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to get memory flags for buffer duplication", err);
+        return NULL;
+    }
+
+    err = clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(size), &size, NULL);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to get memory size for buffer duplication", err);
+        return NULL;
+    }
+
+    /* We may have initialized that one from a host pointer, but not this one */
+    flags ^= CL_MEM_COPY_HOST_PTR;
+
+    /* Create a copy of the same size */
+    bufCopy = clCreateBuffer(ci->clctx, flags, size, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to create copy buffer of size "ZU, err, size);
+        return NULL;
+    }
+
+    err = clEnqueueCopyBuffer(ci->queue, buf, bufCopy, 0, 0, size, 0, NULL, &ev);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to enqueue copy of buffer", err);
+        clReleaseMemObject(bufCopy);
+        return NULL;
+    }
+
+    err = mwWaitReleaseEvent(&ev);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to wait for buffer copy", err);
+        clReleaseMemObject(bufCopy);
+        return NULL;
+    }
+
+    return bufCopy;
+}
+
+
+

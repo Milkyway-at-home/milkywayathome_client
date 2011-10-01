@@ -76,6 +76,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 
 
+#if NBODY_OPENCL
+  #include "milkyway_cl.h"
+#endif
+
+
+
 /* There are bodies and cells. Cells are 0, bodies are nonzero. Bodies
    will be set to 1 or -1 if the body is to be ignored in the final
    likelihood calculation (i.e. a dark matter body)
@@ -199,6 +205,58 @@ typedef struct NBODY_ALIGN
 #endif /* _WIN32 */
 
 
+#if NBODY_OPENCL
+
+typedef struct
+{
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
+    cl_mem max[3];
+    cl_mem min[3];
+    cl_mem masses;
+    cl_mem treeStatus;
+
+    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
+    cl_mem count;
+    cl_mem child;
+    cl_mem sort;
+
+    cl_mem critRadii; /* Used by the alternative cell opening criterion.
+                         Unnecessary for BH86.
+                         BH86 will be the fastest option since it won't need to load from this
+                       */
+
+    cl_mem debug;
+} NBodyBuffers;
+
+typedef struct
+{
+    cl_kernel boundingBox;
+    cl_kernel buildTree;
+    cl_kernel summarization;
+    cl_kernel sort;
+    cl_kernel forceCalculation;
+    cl_kernel integration;
+} NBodyKernels;
+
+#endif /* NBODY_OPENCL */
+
+
+typedef struct
+{
+    size_t factors[6];
+    size_t threads[6];
+    double timings[6];        /* In a single iteration */
+    double chunkTimings[6];   /* Average time per chunk */
+    double kernelTimings[6];  /* Running totals */
+
+    size_t global[6];
+    size_t local[6];
+} NBodyWorkSizes;
+
+
+
 /* Mutable state used during an evaluation */
 typedef struct NBODY_ALIGN
 {
@@ -219,11 +277,25 @@ typedef struct NBODY_ALIGN
     int shmId;          /* shmid, key when using shmem */
 
     mwbool ignoreResponsive;
+    mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
+    mwbool usesCL;
+    mwbool reportProgress;
+
+  #if NBODY_OPENCL
+    CLInfo* ci;
+    NBodyKernels* kernels;
+    NBodyBuffers* nbb;
+  #else
+    void* kernels;
+    void* ci;
+    void* nbb;
+  #endif /* NBODY_OPENCL */
+    NBodyWorkSizes* workSizes;
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
@@ -290,7 +362,10 @@ typedef enum
     NBODY_TREE_STRUCTURE_ERROR = 1 << 1,
     NBODY_TREE_INCEST_FATAL    = 1 << 2,
     NBODY_IO_ERROR             = 1 << 3,
-    NBODY_CHECKPOINT_ERROR     = 1 << 4
+    NBODY_CHECKPOINT_ERROR     = 1 << 4,
+    NBODY_CL_ERROR             = 1 << 5,
+    NBODY_CAPABILITY_ERROR     = 1 << 6,
+    NBODY_CONSISTENCY_ERROR    = 1 << 7
 } NBodyStatus;
 
 #define nbodyStatusIsFatal(x) ((x) > 0)
@@ -312,6 +387,10 @@ typedef enum
 
 
 
+#if NBODY_OPENCL
+NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
+#endif
+
 int destroyNBodyState(NBodyState* st);
 int detachSharedScene(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
@@ -328,6 +407,7 @@ int equalPotential(const Potential* p1, const Potential* p2);
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2);
 
 int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2);
+
 
 #endif /* _NBODY_TYPES_H_ */
 

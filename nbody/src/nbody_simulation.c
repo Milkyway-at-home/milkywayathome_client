@@ -31,7 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_curses.h"
 #include "nbody_defaults.h"
 
-
 #if NBODY_OPENCL
   #include "nbody_cl.h"
 #endif
@@ -192,6 +191,16 @@ static void nbodySetStateFromFlags(NBodyState* st, const NBodyFlags* nbf)
     st->ignoreResponsive = nbf->ignoreResponsive;
 }
 
+static void nbodySetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
+{
+    clr->platform = nbf->platform;
+    clr->devNum = nbf->devNum;
+    clr->verbose = TRUE;
+    clr->reportProgress = nbf->reportProgress;
+    clr->enableCheckpointing = FALSE;
+    clr->enableProfiling = TRUE;
+}
+
 int verifyFile(const NBodyFlags* nbf)
 {
     int rc;
@@ -223,6 +232,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
+    CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
     real chisq;
@@ -236,6 +246,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     nbodySetStateFromFlags(st, nbf);
+    nbodySetCLRequestFromFlags(&clr, nbf);
 
     if (createSharedScene(st, ctx))
     {
@@ -255,9 +266,12 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
     else
     {
-        rc = runSystemCL(ctx, st, nbf);
+        rc = initCLNBodyState(st, ctx, &clr);
+        if (!nbodyStatusIsFatal(rc))
+        {
+            rc = runSystemCL(ctx, st, nbf);
+        }
     }
-
   #else
     rc = runSystem(ctx, st, nbf);
   #endif /* NBODY_OPENCL */
@@ -268,20 +282,25 @@ int runNBodySimulation(const NBodyFlags* nbf)
         cleanupCursesOutput();
     }
 
-    if (nbodyStatusIsFatal(rc))
-    {
-        mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
-        return rc;
-    }
-    else if (nbodyStatusIsWarning(rc))
-    {
-        mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
-    }
-
     if (nbf->printTiming)
     {
         printf("<run_time> %f </run_time>\n", te - ts);
     }
+
+
+    if (nbodyStatusIsFatal(rc))
+    {
+        mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
+        destroyNBodyState(st);
+        return rc;
+    }
+
+    if (nbodyStatusIsWarning(rc))
+    {
+        mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
+    }
+
+
 
     /* Get the likelihood */
     chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
@@ -290,8 +309,8 @@ int runNBodySimulation(const NBodyFlags* nbf)
         mw_printf("Failed to calculate chisq\n");
         rc = NBODY_ERROR;
     }
-
     finalOutput(ctx, st, nbf, chisq);
+
     destroyNBodyState(st);
 
     return rc;

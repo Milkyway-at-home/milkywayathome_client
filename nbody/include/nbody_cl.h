@@ -33,45 +33,23 @@ extern "C" {
 
 #define NBODY_MAXDEPTH 26
 
-typedef struct
-{
-    cl_mem pos[3];
-    cl_mem vel[3];
-    cl_mem acc[3];
-    cl_mem max[3];
-    cl_mem min[3];
-    cl_mem masses;
-    cl_mem treeStatus;
 
-    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
-    cl_mem count;
-    cl_mem child;
-    cl_mem sort;
+cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
+cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di);
+cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st);
+cl_int nbodyCreateKernels(NBodyState* st);
+cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st);
 
-    cl_mem critRadii; /* Used by the alternative cell opening criterion.
-                         Unnecessary for BH86.
-                         BH86 will be the fastest option since it won't need to load from this
-                       */
+cl_int nbodySetInitialTreeStatus(NBodyState* st);
+cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st);
+cl_int nbodyReleaseBuffers(NBodyState* st);
+cl_int nbodyReleaseKernels(NBodyState* st);
 
-    cl_mem debug;
-} NBodyBuffers;
-
-
-typedef struct
-{
-    size_t factors[6];
-    size_t threads[6];
-    double timings[6];        /* In a single iteration */
-    double chunkTimings[6];   /* Average time per chunk */
-    double kernelTimings[6];  /* Running totals */
-
-    size_t global[6];
-    size_t local[6];
-} NBodyWorkSizes;
-
-
+cl_int nbodySetAllKernelArguments(NBodyState* st);
 
 NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+
+cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn);
 
 
 #ifdef __cplusplus

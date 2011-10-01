@@ -121,6 +121,12 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_IO_ERROR";
         case NBODY_CHECKPOINT_ERROR:
             return "NBODY_CHECKPOINT_ERROR";
+        case NBODY_CL_ERROR:
+            return "NBODY_CL_ERROR";
+        case NBODY_CAPABILITY_ERROR:
+            return "NBODY_CAPABILITY_ERROR";
+        case NBODY_CONSISTENCY_ERROR:
+            return "NBODY_CONSISTENCY_ERROR";
         default:
             return "Unknown NBodyStatus";
     }

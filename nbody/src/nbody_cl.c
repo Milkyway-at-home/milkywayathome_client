@@ -42,9 +42,6 @@ typedef struct
 } Debug;
 
 
-static NBodyWorkSizes _workSizes;
-static cl_bool reportProgress = CL_FALSE;
-
 static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
 {
     mw_printf("\n"
@@ -65,7 +62,7 @@ static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
         );
 }
 
-static cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 {
     cl_uint blocks = di->maxCompUnits;
 
@@ -91,7 +88,7 @@ static cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 }
 
 /* Return CL_TRUE if some error */
-static cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
+cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
 {
     ws->factors[0] = 1;
     ws->factors[1] = 2;
@@ -179,21 +176,10 @@ static void printTreeStatus(const TreeStatus* ts)
               ts->blkCnt);
 }
 
-
-static struct
-{
-    cl_kernel boundingBox;
-    cl_kernel buildTree;
-    cl_kernel summarization;
-    cl_kernel sort;
-    cl_kernel forceCalculation;
-    cl_kernel integration;
-} kernels;
-
 #define NKERNELS 6
 
 /* Set arguments (idx, idx + 1, idx + 2) to the buffers in mem[3] */
-static cl_int setMemArrayArgs(CLInfo* ci, cl_kernel kern, cl_mem mem[3], cl_uint idx)
+static cl_int setMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
@@ -207,16 +193,16 @@ static cl_int setMemArrayArgs(CLInfo* ci, cl_kernel kern, cl_mem mem[3], cl_uint
 }
 
 
-static cl_int setKernelArguments(cl_kernel kern, CLInfo* ci, NBodyBuffers* nbb)
+static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb)
 {
     cl_int err = CL_SUCCESS;
     cl_int step = 0;
 
-    err |= setMemArrayArgs(ci, kern, nbb->pos, 0);
-    err |= setMemArrayArgs(ci, kern, nbb->vel, 3);
-    err |= setMemArrayArgs(ci, kern, nbb->acc, 6);
-    err |= setMemArrayArgs(ci, kern, nbb->max, 9);
-    err |= setMemArrayArgs(ci, kern, nbb->min, 12);
+    err |= setMemArrayArgs(kern, nbb->pos, 0);
+    err |= setMemArrayArgs(kern, nbb->vel, 3);
+    err |= setMemArrayArgs(kern, nbb->acc, 6);
+    err |= setMemArrayArgs(kern, nbb->max, 9);
+    err |= setMemArrayArgs(kern, nbb->min, 12);
 
     err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->masses);
 
@@ -250,30 +236,32 @@ static cl_int setKernelArguments(cl_kernel kern, CLInfo* ci, NBodyBuffers* nbb)
     return err;
 }
 
-static cl_int setAllKernelArguments(CLInfo* ci, NBodyBuffers* nbb)
+cl_int nbodySetAllKernelArguments(NBodyState* st)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
-    cl_kernel* kerns = (cl_kernel*) &kernels;
+    cl_kernel* kerns = (cl_kernel*) st->kernels;
 
     for (i = 0; i < NKERNELS; ++i)
     {
-        err |= setKernelArguments(kerns[i], ci, nbb);
+        err |= nbodySetKernelArguments(kerns[i], st->nbb);
     }
 
     return err;
 }
 
-static cl_int createKernels(CLInfo* ci)
+cl_int nbodyCreateKernels(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
+    NBodyKernels* kernels = st->kernels;
+    CLInfo* ci = st->ci;
 
-    err |= mwCreateKernel(&kernels.boundingBox, ci, "boundingBox");
-    err |= mwCreateKernel(&kernels.buildTree, ci, "buildTree");
-    err |= mwCreateKernel(&kernels.summarization, ci, "summarization");
-    err |= mwCreateKernel(&kernels.sort, ci, "sort");
-    err |= mwCreateKernel(&kernels.forceCalculation, ci, "forceCalculation");
-    err |= mwCreateKernel(&kernels.integration, ci, "integration");
+    err |= mwCreateKernel(&kernels->boundingBox, ci, "boundingBox");
+    err |= mwCreateKernel(&kernels->buildTree, ci, "buildTree");
+    err |= mwCreateKernel(&kernels->summarization, ci, "summarization");
+    err |= mwCreateKernel(&kernels->sort, ci, "sort");
+    err |= mwCreateKernel(&kernels->forceCalculation, ci, "forceCalculation");
+    err |= mwCreateKernel(&kernels->integration, ci, "integration");
 
     return err;
 }
@@ -286,16 +274,17 @@ static cl_int clReleaseKernel_quiet(cl_kernel kern)
     return clReleaseKernel(kern);
 }
 
-static cl_int releaseKernels()
+cl_int nbodyReleaseKernels(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
+    NBodyKernels* kernels = st->kernels;
 
-    err |= clReleaseKernel_quiet(kernels.boundingBox);
-    err |= clReleaseKernel_quiet(kernels.buildTree);
-    err |= clReleaseKernel_quiet(kernels.summarization);
-    err |= clReleaseKernel_quiet(kernels.sort);
-    err |= clReleaseKernel_quiet(kernels.forceCalculation);
-    err |= clReleaseKernel_quiet(kernels.integration);
+    err |= clReleaseKernel_quiet(kernels->boundingBox);
+    err |= clReleaseKernel_quiet(kernels->buildTree);
+    err |= clReleaseKernel_quiet(kernels->summarization);
+    err |= clReleaseKernel_quiet(kernels->sort);
+    err |= clReleaseKernel_quiet(kernels->forceCalculation);
+    err |= clReleaseKernel_quiet(kernels->integration);
 
     if (err != CL_SUCCESS)
         mwCLWarn("Error releasing kernels", err);
@@ -318,7 +307,7 @@ static cl_uint findNNode(const DevInfo* di, cl_int nbody)
 static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
 {
     char* buf;
-    static NBodyWorkSizes* ws = &_workSizes;
+    const NBodyWorkSizes* ws = st->workSizes;
     const Potential* p = &ctx->pot;
 
     /* Put a space between the -D. if the thing begins with D, there's
@@ -450,8 +439,9 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
     return buf;
 }
 
-static cl_int loadKernels(CLInfo* ci, const NBodyCtx* ctx, const NBodyState* st)
+cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 {
+    CLInfo* ci = st->ci;
     cl_int err = CL_SUCCESS;
     char* src = NULL;
     char* compileFlags = NULL;
@@ -475,8 +465,11 @@ static cl_int loadKernels(CLInfo* ci, const NBodyCtx* ctx, const NBodyState* st)
 }
 
 /* Return CL_FALSE if device isn't capable of running this */
-static cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st)
+cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st)
 {
+    (void) di;
+    (void) ctx;
+    (void) st;
     return CL_TRUE;
 }
 
@@ -623,7 +616,7 @@ static cl_bool reevaluateWorkSizes(NBodyWorkSizes* ws)
     return CL_FALSE;
 }
 
-static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
+static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     cl_uint i;
@@ -631,15 +624,17 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     size_t offset[1];
     size_t chunk, nChunk;
     cl_event boxEv, sumEv, sortEv, integrateEv;
-    NBodyWorkSizes* ws = &_workSizes;
+    CLInfo* ci = st->ci;
+    NBodyWorkSizes* ws = st->workSizes;
+    NBodyKernels* kernels = st->kernels;
 
     memset(ws->timings, 0, sizeof(ws->timings));
 
-    err = clSetKernelArg(kernels.forceCalculation, 21, sizeof(int), &st->step);
+    err = clSetKernelArg(kernels->forceCalculation, 21, sizeof(int), &st->step);
     if (err != CL_SUCCESS)
         return err;
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
                                  0, NULL, &boxEv);
     if (err != CL_SUCCESS)
@@ -657,11 +652,11 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
         if (upperBound > st->nbody)
             upperBound = st->nbody;
 
-        err = clSetKernelArg(kernels.buildTree, 22, sizeof(int), &upperBound);
+        err = clSetKernelArg(kernels->buildTree, 22, sizeof(int), &upperBound);
         if (err != CL_SUCCESS)
             return err;
 
-        err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTree, 1,
                                      offset, &ws->global[1], &ws->local[1],
                                      0, NULL, &ev);
         if (err != CL_SUCCESS)
@@ -674,7 +669,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     }
     ws->chunkTimings[1] = ws->timings[1] / (double) nChunk;
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
                                  NULL, &ws->global[2], &ws->local[2],
                                  0, NULL, &sumEv);
     if (err != CL_SUCCESS)
@@ -686,7 +681,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
      * launched at once. This may be bad when we need
      * responsiveness. This also means it will always hang with
      * CPUs */
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->sort, 1,
                                  NULL, &ws->global[3], &ws->local[3],
                                  0, NULL, &sortEv);
     if (err != CL_SUCCESS)
@@ -705,10 +700,10 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
         if (upperBound > st->nbody)
             upperBound = st->nbody;
 
-        err = clSetKernelArg(kernels.forceCalculation, 22, sizeof(int), &upperBound);
+        err = clSetKernelArg(kernels->forceCalculation, 22, sizeof(int), &upperBound);
         if (err != CL_SUCCESS)
             return err;
-        err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->forceCalculation, 1,
                                      offset, &ws->global[4], &ws->local[4],
                                      0, NULL, &ev);
         if (err != CL_SUCCESS)
@@ -722,7 +717,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     }
     ws->chunkTimings[4] = ws->timings[4] / (double) nChunk;
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
                                  NULL, &ws->global[5], &ws->local[5],
                                  0, NULL, &integrateEv);
     if (err != CL_SUCCESS)
@@ -734,7 +729,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    if (reportProgress)
+    if (st->reportProgress)
     {
         mw_mvprintw(0, 0,
                     "Step %d (%f%%):\n"
@@ -764,7 +759,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     return err;
 }
 
-static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBodyBuffers* nbb)
+static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
@@ -773,13 +768,14 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
     st->step = 0;
     while (err == CL_SUCCESS && st->tnow < tstop)
     {
-        if (checkKernelErrorCode(ci, nbb))
+        st->dirty = TRUE;
+        if (checkKernelErrorCode(st->ci, st->nbb))
         {
             err = MW_CL_ERROR;
             break;
         }
 
-        err = stepSystemCL(ci, ctx, st);
+        err = stepSystemCL(ctx, st);
         st->tnow += ctx->timestep;
         st->step++;
     }
@@ -796,10 +792,11 @@ static cl_int clReleaseMemObject_quiet(cl_mem mem)
     return clReleaseMemObject(mem);
 }
 
-static cl_int releaseBuffers(NBodyBuffers* nbb)
+cl_int nbodyReleaseBuffers(NBodyState* st)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
+    NBodyBuffers* nbb = st->nbb;
 
     for (i = 0; i < 3; ++i)
     {
@@ -823,9 +820,12 @@ static cl_int releaseBuffers(NBodyBuffers* nbb)
     return err;
 }
 
-static cl_int setInitialTreeStatus(CLInfo* ci, NBodyBuffers* nbb)
+
+cl_int nbodySetInitialTreeStatus(NBodyState* st)
 {
     TreeStatus iniTreeStatus;
+    CLInfo* ci = st->ci;
+    NBodyBuffers* nbb = st->nbb;
 
     memset(&iniTreeStatus, 0, sizeof(iniTreeStatus));
 
@@ -847,11 +847,12 @@ static cl_uint findInc(cl_uint warpSize, cl_uint nbody)
     return (nbody + warpSize - 1) & (-warpSize);
 }
 
-static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBodyBuffers* nbb)
+cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_uint i;
+    CLInfo* ci = st->ci;
+    NBodyBuffers* nbb = st->nbb;
     cl_uint nNode = findNNode(&ci->di, st->nbody);
-    cl_uint inc = findInc(ci->di.warpSize, st->nbody);
 
     for (i = 0; i < 3; ++i)
     {
@@ -931,7 +932,7 @@ static cl_int unmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers* 
 }
 
 /* If last parameter is true, copy to the buffers. if false, copy from the buffers */
-static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bool marshalIn)
+cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn)
 {
     cl_int i;
     cl_int err = CL_SUCCESS;
@@ -939,6 +940,8 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     real* pos[3] = { NULL, NULL, NULL };
     real* vel[3] = { NULL, NULL, NULL };
     real* mass = NULL;
+    CLInfo* ci = st->ci;
+    NBodyBuffers* nbb = st->nbb;
     cl_map_flags flags = marshalIn ? CL_MAP_WRITE : CL_MAP_READ;
 
     err = mapBodies(pos, vel, &mass, nbb, ci, flags, st);
@@ -962,6 +965,8 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
 
             mass[i] = Mass(b);
         }
+
+        st->dirty = FALSE;
     }
     else
     {
@@ -982,13 +987,12 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     return unmapBodies(pos, vel, mass, nbb, ci);
 }
 
-static void printKernelTimings(const DevInfo* di, const NBodyState* st)
+void nbodyPrintKernelTimings(const NBodyState* st)
 {
-
     double totalTime = 0.0;
     cl_uint i;
     double nStep = (double) st->step;
-    const double* kernelTimings = _workSizes.kernelTimings;
+    const double* kernelTimings = st->workSizes->kernelTimings;
 
     for (i = 0; i < 6; ++i)
     {
@@ -1017,98 +1021,21 @@ static void printKernelTimings(const DevInfo* di, const NBodyState* st)
         );
 }
 
-static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
-{
-    clr->platform = nbf->platform;
-    clr->devNum = nbf->devNum;
-    clr->verbose = TRUE;
-    clr->reportProgress = nbf->reportProgress;
-    clr->enableCheckpointing = FALSE;
-
-    reportProgress = clr->reportProgress;
-}
-
-/* Setup kernels and buffers */
-static cl_int setupExec(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBodyBuffers* nbb)
-{
-    cl_int err;
-
-    err = loadKernels(ci, ctx, st);
-    if (err != CL_SUCCESS)
-        return err;
-
-    err = createKernels(ci);
-    if (err != CL_SUCCESS)
-        return err;
-
-    err = createBuffers(ctx, st, ci, nbb);
-    if (err != CL_SUCCESS)
-        return err;
-
-    err = setInitialTreeStatus(ci, nbb);
-    if (err != CL_SUCCESS)
-        return err;
-
-    err = setAllKernelArguments(ci, nbb);
-    if (err != CL_SUCCESS)
-        return err;
-
-    return CL_SUCCESS;
-}
 
 NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     cl_int err = CL_SUCCESS;
-    CLInfo ci;
-    CLRequest clr;
-    NBodyBuffers nbb;
 
-    memset(&ci, 0, sizeof(ci));
-    memset(&clr, 0, sizeof(clr));
-    memset(&nbb, 0, sizeof(nbb));
+    (void) nbf;
 
-    setCLRequestFromFlags(&clr, nbf);
-    clr.enableProfiling = TRUE;
-
-    err = mwSetupCL(&ci, &clr);
+    err = nbodyMainLoop(ctx, st);
     if (err != CL_SUCCESS)
-        return NBODY_ERROR;
+        return NBODY_CL_ERROR;
 
-    if (!nbodyCheckDevCapabilities(&ci.di, ctx, st))
-        return NBODY_ERROR;
-
-    if (setThreadCounts(&_workSizes, &ci.di) || setWorkSizes(&_workSizes, &ci.di))
-        return NBODY_ERROR;
-
-    printNBodyWorkSizes(&_workSizes);
-
-    err = setupExec(&ci, ctx, st, &nbb);
+    err = nbodyMarshalBodies(st, CL_FALSE);
     if (err != CL_SUCCESS)
-        goto fail;
+        return NBODY_CL_ERROR;
 
-    err = marshalBodies(&nbb, &ci, st, CL_TRUE);
-    if (err != CL_SUCCESS)
-        goto fail;
-
-    err = nbodyMainLoop(&ci, ctx, st, &nbb);
-    if (err != CL_SUCCESS)
-        goto fail;
-
-    err = marshalBodies(&nbb, &ci, st, CL_FALSE);
-    if (err != CL_SUCCESS)
-        goto fail;
-
-    //printBodies(st->bodytab, st->nbody);
-
-    printKernelTimings(&ci.di, st);
-
-fail:
-    debug(&ci, &nbb);
-
-    mwDestroyCLInfo(&ci);
-    releaseKernels();
-    releaseBuffers(&nbb);
-
-    return (err == CL_SUCCESS) ? NBODY_SUCCESS : NBODY_ERROR;
+    return NBODY_SUCCESS;
 }
 
