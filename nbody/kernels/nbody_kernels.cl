@@ -35,7 +35,7 @@
 
 
 
-/* Reserve positive numbers for reporting depth > MAXDEPTH */
+/* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
 typedef enum
 {
     NBODY_KERNEL_OK                   = 0,
@@ -755,7 +755,6 @@ __kernel void NBODY_KERNEL(summarization)
 }
 
 #if NOSORT
-#warning "CORRECT KERNL"
 /* Debugging */
 __attribute__ ((reqd_work_group_size(THREADS4, 1, 1)))
 __kernel void NBODY_KERNEL(sort)
@@ -1133,5 +1132,10 @@ __kernel void NBODY_KERNEL(integration)
         _velY[i] = vhy + dvy;
         _velZ[i] = vhz + dvz;
     }
+}
+
+
+__kernel void NBODY_KERNEL(forceCalculation_Exact)
+{
 }
 

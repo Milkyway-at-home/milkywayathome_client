@@ -91,6 +91,9 @@ static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
 {
     int i = (st->tnow / ctx->timeEvolve) * N_ORBIT_TRACE_POINTS;
 
+    if (st->usesExact) /* FIXME?. We don't get the CM without the tree */
+        return;
+
     if (i >= N_ORBIT_TRACE_POINTS) /* Just in case */
         return;
 

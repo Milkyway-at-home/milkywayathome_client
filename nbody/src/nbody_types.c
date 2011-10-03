@@ -47,7 +47,9 @@ static void freeNBodyTree(NBodyTree* t)
             p = tmp;
         }
         else                        /* skip over bodies */
+        {
             p = Next(p);
+        }
     }
 
     t->root = NULL;
@@ -151,6 +153,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 
     st->tree = emptyTree;
     st->freecell = NULL;
+    st->usesExact = (ctx->criterion == Exact);
 
     st->tree.rsize = ctx->treeRSize;
     st->tnow = 0.0;
@@ -183,6 +186,21 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (!st->bodytab)
         return NBODY_CONSISTENCY_ERROR;
 
+    if (ctx->useQuad)
+    {
+        mw_printf("Quadrupole moments not yet implemented with OpenCL\n");
+        return NBODY_UNIMPLEMENTED;
+    }
+
+    if (ctx->criterion == Exact)
+    {
+        mw_printf("Exact OpenCL N-body unimplemented\n");
+        return NBODY_UNIMPLEMENTED;
+    }
+
+    st->usesExact = (ctx->criterion == Exact);
+    st->reportProgress = clr->reportProgress;
+
     st->ci = mwCalloc(1, sizeof(CLInfo));
     st->nbb = mwCalloc(1, sizeof(NBodyBuffers));
     st->workSizes = mwCalloc(1, sizeof(NBodyWorkSizes));
@@ -210,9 +228,12 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbodySetInitialTreeStatus(st);
-    if (err != CL_SUCCESS)
-        return NBODY_CL_ERROR;
+    if (!st->usesExact)
+    {
+        err = nbodySetInitialTreeStatus(st);
+        if (err != CL_SUCCESS)
+            return NBODY_CL_ERROR;
+    }
 
     err = nbodySetAllKernelArguments(st);
     if (err != CL_SUCCESS)

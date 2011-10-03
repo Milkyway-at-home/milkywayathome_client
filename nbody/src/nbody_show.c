@@ -127,8 +127,34 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_CAPABILITY_ERROR";
         case NBODY_CONSISTENCY_ERROR:
             return "NBODY_CONSISTENCY_ERROR";
+        case NBODY_UNIMPLEMENTED:
+            return "NBODY_UNIMPLEMENTED";
         default:
             return "Unknown NBodyStatus";
+    }
+}
+
+const char* showNBodyKernelError(NBodyKernelError x)
+{
+    if ((int) x < 0)
+    {
+        return "Exceeded maximum depth";
+    }
+
+    switch (x)
+    {
+        case NBODY_KERNEL_OK:
+            return "NBODY_KERNEL_OK";
+        case NBODY_KERNEL_CELL_LEQ_NBODY:
+            return "NBODY_KERNEL_CELL_LEQ_NBODY";
+        case NBODY_KERNEL_TREE_INCEST:
+            return "NBODY_KERNEL_CELL_TREE_INCEST";
+        case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
+            return "NBODY_KERNEL_TREE_STRUCTURE_ERROR";
+        case NBODY_KERNEL_ERROR_OTHER:
+            return "NBODY_KERNEL_ERROR_OTHER";
+        default:
+            return "Unknown NBodyKernelError";
     }
 }
 

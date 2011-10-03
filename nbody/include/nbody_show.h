@@ -31,6 +31,7 @@ const char* showSphericalT(spherical_t);
 const char* showDiskT(disk_t);
 const char* showHaloT(halo_t);
 const char* showNBodyStatus(NBodyStatus);
+const char* showNBodyKernelError(NBodyKernelError);
 
 char* showSpherical(const Spherical*);
 char* showHalo(const Halo*);

@@ -176,8 +176,6 @@ static void printTreeStatus(const TreeStatus* ts)
               ts->blkCnt);
 }
 
-#define NKERNELS 6
-
 /* Set arguments (idx, idx + 1, idx + 2) to the buffers in mem[3] */
 static cl_int setMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
 {
@@ -192,8 +190,7 @@ static cl_int setMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
     return err;
 }
 
-
-static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb)
+static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact)
 {
     cl_int err = CL_SUCCESS;
     cl_int step = 0;
@@ -201,16 +198,45 @@ static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb)
     err |= setMemArrayArgs(kern, nbb->pos, 0);
     err |= setMemArrayArgs(kern, nbb->vel, 3);
     err |= setMemArrayArgs(kern, nbb->acc, 6);
-    err |= setMemArrayArgs(kern, nbb->max, 9);
-    err |= setMemArrayArgs(kern, nbb->min, 12);
 
-    err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->masses);
+    if (!exact)
+    {
+        err |= setMemArrayArgs(kern, nbb->max, 9);
+        err |= setMemArrayArgs(kern, nbb->min, 12);
 
-    err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->start);
-    err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->count);
-    err |= clSetKernelArg(kern, 18, sizeof(cl_mem), &nbb->child);
-    err |= clSetKernelArg(kern, 19, sizeof(cl_mem), &nbb->sort);
-    err |= clSetKernelArg(kern, 20, sizeof(cl_mem), &nbb->treeStatus);
+        err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->masses);
+
+        err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->start);
+        err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->count);
+        err |= clSetKernelArg(kern, 18, sizeof(cl_mem), &nbb->child);
+        err |= clSetKernelArg(kern, 19, sizeof(cl_mem), &nbb->sort);
+        err |= clSetKernelArg(kern, 20, sizeof(cl_mem), &nbb->treeStatus);
+
+
+        if (nbb->critRadii)
+        {
+            err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->critRadii);
+        }
+        else
+        {
+            /* Just be anything. Won't be used, it just needs to be not null to not error */
+            err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->treeStatus);
+        }
+    }
+    else
+    {
+        /* For exact kernel just set whatever. These won't actually be used */
+        err |= setMemArrayArgs(kern, nbb->pos, 9);
+        err |= setMemArrayArgs(kern, nbb->pos, 12);
+        err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->pos[0]);
+        err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->pos[0]);
+        err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->pos[0]);
+        err |= clSetKernelArg(kern, 18, sizeof(cl_mem), &nbb->pos[0]);
+        err |= clSetKernelArg(kern, 19, sizeof(cl_mem), &nbb->pos[0]);
+        err |= clSetKernelArg(kern, 20, sizeof(cl_mem), &nbb->pos[0]);
+
+        err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->pos[0]);
+    }
 
 
     /* Set the step to be 0 here. Only the force calculation kernel
@@ -221,16 +247,6 @@ static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb)
     err |= clSetKernelArg(kern, 22, sizeof(cl_int), &step);
 
 
-    if (nbb->critRadii)
-    {
-        err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->critRadii);
-    }
-    else
-    {
-        /* Just be anything. Won't be used, it just needs to be not null to not error */
-        err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->treeStatus);
-    }
-
     err |= clSetKernelArg(kern, 24, sizeof(cl_mem), &nbb->debug);
 
     return err;
@@ -238,13 +254,29 @@ static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb)
 
 cl_int nbodySetAllKernelArguments(NBodyState* st)
 {
-    cl_uint i;
     cl_int err = CL_SUCCESS;
-    cl_kernel* kerns = (cl_kernel*) st->kernels;
+    NBodyKernels* k = st->kernels;
+    cl_bool exact = st->usesExact;
 
-    for (i = 0; i < NKERNELS; ++i)
+    if (!exact)
     {
-        err |= nbodySetKernelArguments(kerns[i], st->nbb);
+        err |= nbodySetKernelArguments(k->boundingBox, st->nbb, exact);
+        err |= nbodySetKernelArguments(k->buildTree, st->nbb, exact);
+        err |= nbodySetKernelArguments(k->summarization, st->nbb, exact);
+        err |= nbodySetKernelArguments(k->sort, st->nbb, exact);
+        err |= nbodySetKernelArguments(k->forceCalculation, st->nbb, exact);
+    }
+    else
+    {
+        err |= nbodySetKernelArguments(k->forceCalculation_Exact, st->nbb, exact);
+    }
+
+
+    err |= nbodySetKernelArguments(k->integration, st->nbb, exact);
+
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error setting kernel arguments", err);
     }
 
     return err;
@@ -262,6 +294,13 @@ cl_int nbodyCreateKernels(NBodyState* st)
     err |= mwCreateKernel(&kernels->sort, ci, "sort");
     err |= mwCreateKernel(&kernels->forceCalculation, ci, "forceCalculation");
     err |= mwCreateKernel(&kernels->integration, ci, "integration");
+
+    err |= mwCreateKernel(&kernels->forceCalculation_Exact, ci, "forceCalculation_Exact");
+
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error creating kernels", err);
+    }
 
     return err;
 }
@@ -448,7 +487,10 @@ cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 
     src = mwReadFile("kernels/nbody_kernels.cl");
     if (!src)
+    {
+        mw_printf("Failed to read N-body kernel source\n");
         return MW_CL_ERROR;
+    }
 
     compileFlags = getCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);
@@ -570,7 +612,7 @@ static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 
     if (ts.errorCode != 0)
     {
-        mw_printf("Kernel reported error: %d\n", ts.errorCode);
+        mw_printf("Kernel reported error: %d (%s)\n", ts.errorCode, showNBodyKernelError(ts.errorCode));
         return CL_TRUE;
     }
 
@@ -616,23 +658,42 @@ static cl_bool reevaluateWorkSizes(NBodyWorkSizes* ws)
     return CL_FALSE;
 }
 
-static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
+static void reportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
+{
+    NBodyWorkSizes* ws = st->workSizes;
+
+    mw_mvprintw(0, 0,
+                "Step %d (%f%%):\n"
+                "  boundingBox:      %15f ms\n"
+                "  buildTree:        %15f ms%15f ms\n"
+                "  summarization:    %15f ms\n"
+                "  sort:             %15f ms\n"
+                "  forceCalculation: %15f ms%15f ms\n"
+                "  integration:      %15f ms\n"
+                "\n",
+                st->step,
+                100.0 * st->tnow / ctx->timeEvolve,
+                ws->timings[0],
+                ws->timings[1], ws->chunkTimings[1],
+                ws->timings[2],
+                ws->timings[3],
+                ws->timings[4], ws->chunkTimings[4],
+                ws->timings[5]);
+    mw_refresh();
+}
+
+/* Run kernels used only by tree versions. */
+static cl_int executeTreeConstruction(NBodyState* st)
 {
     cl_int err;
-    cl_uint i;
+    size_t chunk;
+    size_t nChunk;
     int upperBound;
     size_t offset[1];
-    size_t chunk, nChunk;
-    cl_event boxEv, sumEv, sortEv, integrateEv;
     CLInfo* ci = st->ci;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-
-    memset(ws->timings, 0, sizeof(ws->timings));
-
-    err = clSetKernelArg(kernels->forceCalculation, 21, sizeof(int), &st->step);
-    if (err != CL_SUCCESS)
-        return err;
+    cl_event boxEv, sumEv, sortEv;
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
@@ -689,9 +750,24 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     ws->timings[3] += waitReleaseEventWithTime(sortEv);
 
-    nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[4]);
-    upperBound = st->ignoreResponsive ? st->nbody : (int) ws->global[4];
-    offset[0] = 0;
+    return CL_SUCCESS;
+}
+
+/* Run force calculation and integration kernels */
+static cl_int executeForceKernels(NBodyState* st)
+{
+    cl_int err;
+    size_t chunk = 0;
+    CLInfo* ci = st->ci;
+    NBodyWorkSizes* ws = st->workSizes;
+    NBodyKernels* kernels = st->kernels;
+    size_t nChunk = st->ignoreResponsive ?          1 : mwDivRoundup((size_t) st->nbody, ws->global[4]);
+    cl_int upperBound = st->ignoreResponsive ? st->nbody : (cl_int) ws->global[4];
+    size_t offset[1] = { 0 };
+    cl_event integrateEv;
+    cl_kernel forceKern = st->usesExact ? kernels->forceCalculation_Exact : kernels->forceCalculation;
+
+
     for (chunk = 0; chunk < nChunk; ++chunk)
     {
         cl_event ev;
@@ -700,22 +776,25 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
         if (upperBound > st->nbody)
             upperBound = st->nbody;
 
-        err = clSetKernelArg(kernels->forceCalculation, 22, sizeof(int), &upperBound);
+        err = clSetKernelArg(forceKern, 22, sizeof(cl_int), &upperBound);
         if (err != CL_SUCCESS)
             return err;
-        err = clEnqueueNDRangeKernel(ci->queue, kernels->forceCalculation, 1,
+
+        err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
                                      offset, &ws->global[4], &ws->local[4],
                                      0, NULL, &ev);
+
         if (err != CL_SUCCESS)
             return err;
 
         t = waitReleaseEventWithTime(ev);
 
         ws->timings[4] += t;
-        upperBound += (int) ws->global[4];
+        upperBound += (cl_int) ws->global[4];
         offset[0] += ws->global[4];
     }
     ws->chunkTimings[4] = ws->timings[4] / (double) nChunk;
+
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
                                  NULL, &ws->global[5], &ws->local[5],
@@ -725,30 +804,49 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     ws->timings[5] += waitReleaseEventWithTime(integrateEv);
 
+
+    return CL_SUCCESS;
+}
+
+static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
+{
+    cl_int err;
+    cl_uint i;
+    CLInfo* ci = st->ci;
+    NBodyWorkSizes* ws = st->workSizes;
+    NBodyKernels* kernels = st->kernels;
+    cl_int step = st->step;
+
+    memset(ws->timings, 0, sizeof(ws->timings));
+
+    if (!st->usesExact)
+    {
+        err = clSetKernelArg(kernels->forceCalculation, 21, sizeof(cl_int), &step);
+        if (err != CL_SUCCESS)
+            return err;
+
+        err = executeTreeConstruction(st);
+        if (err != CL_SUCCESS)
+            return err;
+    }
+    else
+    {
+        err = clSetKernelArg(kernels->forceCalculation_Exact, 21, sizeof(cl_int), &step);
+        if (err != CL_SUCCESS)
+            return err;
+    }
+
+    err = executeForceKernels(st);
+    if (err != CL_SUCCESS)
+        return err;
+
     err = clFinish(ci->queue);
     if (err != CL_SUCCESS)
         return err;
 
     if (st->reportProgress)
     {
-        mw_mvprintw(0, 0,
-                    "Step %d (%f%%):\n"
-                    "  boundingBox:      %15f ms\n"
-                    "  buildTree:        %15f ms%15f ms\n"
-                    "  summarization:    %15f ms\n"
-                    "  sort:             %15f ms\n"
-                    "  forceCalculation: %15f ms%15f ms\n"
-                    "  integration:      %15f ms\n"
-                    "\n",
-                    st->step,
-                    100.0 * st->tnow / ctx->timeEvolve,
-                    ws->timings[0],
-                    ws->timings[1], ws->chunkTimings[1],
-                    ws->timings[2],
-                    ws->timings[3],
-                    ws->timings[4], ws->chunkTimings[4],
-                    ws->timings[5]);
-        mw_refresh();
+        reportProgressWithTimings(ctx, st);
     }
 
     for (i = 0; i < 6; ++i) /* Add timings to running totals */
@@ -769,13 +867,14 @@ static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
     while (err == CL_SUCCESS && st->tnow < tstop)
     {
         st->dirty = TRUE;
-        if (checkKernelErrorCode(st->ci, st->nbb))
+        if (!st->usesExact && checkKernelErrorCode(st->ci, st->nbb))
         {
             err = MW_CL_ERROR;
             break;
         }
 
         err = stepSystemCL(ctx, st);
+
         st->tnow += ctx->timestep;
         st->step++;
     }
@@ -823,6 +922,7 @@ cl_int nbodyReleaseBuffers(NBodyState* st)
 
 cl_int nbodySetInitialTreeStatus(NBodyState* st)
 {
+    cl_int err;
     TreeStatus iniTreeStatus;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
@@ -835,11 +935,18 @@ cl_int nbodySetInitialTreeStatus(NBodyState* st)
     iniTreeStatus.errorCode = 0;
     iniTreeStatus.blkCnt = 0;
 
-    return clEnqueueWriteBuffer(ci->queue,
-                                nbb->treeStatus,
-                                CL_TRUE,
-                                0, sizeof(TreeStatus), &iniTreeStatus,
-                                0, NULL, NULL);
+    err = clEnqueueWriteBuffer(ci->queue,
+                               nbb->treeStatus,
+                               CL_TRUE,
+                               0, sizeof(TreeStatus), &iniTreeStatus,
+                               0, NULL, NULL);
+
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error writing initial tree status", err);
+    }
+
+    return err;
 }
 
 static cl_uint findInc(cl_uint warpSize, cl_uint nbody)
@@ -852,6 +959,7 @@ cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     cl_uint i;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
+    size_t massSize;
     cl_uint nNode = findNNode(&ci->di, st->nbody);
 
     for (i = 0; i < 3; ++i)
@@ -859,34 +967,55 @@ cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
         nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
         nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
         nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
-        nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
-        nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
 
-        if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i] || !nbb->min[i] || !nbb->max[i])
+        if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
         {
             return MW_CL_ERROR;
         }
+
+        if (ctx->criterion != Exact)
+        {
+            nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
+            nbb->max[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
+            if (!nbb->min[i] || !nbb->max[i])
+            {
+                return MW_CL_ERROR;
+            }
+        }
     }
 
-    nbb->masses = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-    nbb->treeStatus = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
-
-    nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
-    nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
-    nbb->sort = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(cl_int));
-    nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(cl_int));
-
     nbb->debug = mwCreateZeroReadWriteBuffer(ci, sizeof(Debug));
-
-    if (!nbb->masses || !nbb->treeStatus || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
-        return MW_CL_ERROR;
-
-    if (ctx->criterion == SW93 || ctx->criterion == NewCriterion)
+    if (!nbb->debug)
     {
-        /* This only is for cells, so we could subtract nbody if we wanted */
-        nbb->critRadii = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-        if (!nbb->critRadii)
+        return MW_CL_ERROR;
+    }
+
+    massSize = st->usesExact ? st->nbody * sizeof(real) : (nNode + 1) * sizeof(real);
+    nbb->masses = mwCreateZeroReadWriteBuffer(ci, massSize);
+    if (!nbb->masses)
+    {
+        return MW_CL_ERROR;
+    }
+
+    /* If we are doing an exact Nbody, we don't need the rest */
+    if (ctx->criterion != Exact)
+    {
+        nbb->treeStatus = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
+        nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
+        nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
+        nbb->sort = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(cl_int));
+        nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(cl_int));
+
+        if (!nbb->treeStatus || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
             return MW_CL_ERROR;
+
+        if (ctx->criterion == SW93 || ctx->criterion == NewCriterion)
+        {
+            /* This only is for cells, so we could subtract nbody if we wanted */
+            nbb->critRadii = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            if (!nbb->critRadii)
+                return MW_CL_ERROR;
+        }
     }
 
     return CL_SUCCESS;

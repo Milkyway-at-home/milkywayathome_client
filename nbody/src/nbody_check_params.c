@@ -151,7 +151,7 @@ mwbool checkPotentialConstants(Potential* p)
 
 static int hasAcceptableTheta(const NBodyCtx* ctx)
 {
-    if (ctx->theta < 0.0 || ctx->theta > 1.0)
+    if ((ctx->theta < 0.0 || ctx->theta > 1.0) && (ctx->criterion != Exact))
     {
         mw_printf("Opening angle must be 0.0 <= theta <= 1.0 (theta = %f)\n", ctx->theta);
         return TRUE;

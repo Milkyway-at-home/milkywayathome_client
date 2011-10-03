@@ -24,7 +24,7 @@ const NBodyCtx defaultNBodyCtx =
 {
     /* Grr lack of C99 named struct initializers in MSVC */
     /* .eps2            */  0.0,
-    /* .theta           */  0.0,
+    /* .theta           */  -1.0,  /* Invalid */
 
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,

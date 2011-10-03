@@ -174,6 +174,68 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 mw_fail("Bad external potential type: %d\n", ctx->potentialType);
         }
     }
+}
+
+static inline mwvector nbodyGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body* p)
+{
+    int i;
+    const int nbody = st->nbody;
+    mwvector a = ZERO_VECTOR;
+    const real eps2 = ctx->eps2;
+
+    for (i = 0; i < nbody; ++i)
+    {
+        const Body* b = &st->bodytab[i];
+
+        if (mw_likely(b != p))
+        {
+            mwvector dr = mw_subv(Pos(b), Pos(p));
+            real drsq = mw_sqrv(dr) + eps2;
+
+            real drab = mw_sqrt(drsq);
+            real phii = Mass(b) / drab;
+            real mor3 = phii / drsq;
+
+            mw_incaddv(a, mw_mulvs(dr, mor3));
+        }
+    }
+
+    return a;
+}
+
+static inline void mapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
+{
+    int i;
+    const int nbody = st->nbody;  /* Prevent reload on each loop */
+    mwvector a, externAcc;
+    const Body* b;
+
+  #ifdef _OPENMP
+    #pragma omp parallel for private(i, b, a, externAcc) schedule(dynamic)
+  #endif
+    for (i = 0; i < nbody; ++i)      /* get force on each body */
+    {
+        switch (ctx->potentialType)
+        {
+            case EXTERNAL_POTENTIAL_DEFAULT:
+                b = &st->bodytab[i];
+                a = nbodyGravity_Exact(ctx, st, b);
+
+                externAcc = acceleration(&ctx->pot, Pos(b));
+                st->acctab[i] = mw_addv(a, externAcc);
+                break;
+
+            case EXTERNAL_POTENTIAL_NONE:
+                st->acctab[i] = nbodyGravity_Exact(ctx, st, &st->bodytab[i]);
+                break;
+
+            case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+                mw_panic("Implement me!\n");
+
+            default:
+                mw_fail("Bad external potential type: %d\n", ctx->potentialType);
+        }
+    }
 
 }
 
@@ -189,11 +251,18 @@ NBodyStatus gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc;
 
-    rc = makeTree(ctx, st);
-    if (nbodyStatusIsFatal(rc))
-        return rc;
+    if (mw_likely(ctx->criterion != Exact))
+    {
+        rc = makeTree(ctx, st);
+        if (nbodyStatusIsFatal(rc))
+            return rc;
 
-    mapForceBody(ctx, st);
+        mapForceBody(ctx, st);
+    }
+    else
+    {
+        mapForceBody_Exact(ctx, st);
+    }
 
     return incestStatusCheck(ctx, st); /* Check if incest occured during step */
 }

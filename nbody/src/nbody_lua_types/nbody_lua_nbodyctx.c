@@ -87,7 +87,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "timestep",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep    },
             { "timeEvolve",  LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve  },
             { "freqOut",     LUA_TNUMBER,  NULL, FALSE, &freqOutf        },
-            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &ctx.theta       },
+            { "theta",       LUA_TNUMBER,  NULL, FALSE, &ctx.theta       },
             { "eps2",        LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2        },
             { "treeRSize",   LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize   },
             { "sunGCDist",   LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist   },
@@ -112,7 +112,20 @@ static int createNBodyCtx(lua_State* luaSt)
     /* FIXME: Hacky handling of enum. Will result in not good error
      * messages as well as not fitting in. */
     if (criterionName) /* Not required */
+    {
         ctx.criterion = readCriterion(luaSt, criterionName);
+    }
+
+    if ((ctx.criterion != Exact) && (ctx.theta < 0.0))
+    {
+        return luaL_argerror(luaSt, 1, "Theta argument required for ");
+    }
+    else if (ctx.criterion == Exact)
+    {
+        /* These don't mean anything here */
+        ctx.theta = 0.0;
+        ctx.useQuad = FALSE;
+    }
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;

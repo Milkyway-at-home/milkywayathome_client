@@ -236,7 +236,7 @@ if(ENABLE_CURSES)
   list(APPEND nbody_link_libs ${CURSES_LIBRARIES})
 endif()
 
-if(NOT BOINC_APPLICATION AND NOT WIN32)
+if(NOT BOINC_APPLICATION AND UNIX AND NOT APPLE)
   list(APPEND nbody_link_libs rt)
 endif()
 
@@ -303,7 +303,7 @@ if(NBODY_GL)
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
-  if(NOT BOINC_APPLICATION AND NOT WIN32)
+  if(NOT BOINC_APPLICATION AND UNIX AND NOT APPLE)
     list(APPEND vis_link_libs rt)
   endif()
 

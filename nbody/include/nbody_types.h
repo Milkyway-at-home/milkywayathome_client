@@ -230,6 +230,11 @@ typedef struct
     cl_mem debug;
 } NBodyBuffers;
 
+
+/* 6 used by tree, 2 used by exact. 1 shared. */
+#define NKERNELS 7
+
+
 typedef struct
 {
     cl_kernel boundingBox;
@@ -238,6 +243,9 @@ typedef struct
     cl_kernel sort;
     cl_kernel forceCalculation;
     cl_kernel integration;
+
+    /* Used by exact one only */
+    cl_kernel forceCalculation_Exact;
 } NBodyKernels;
 
 #endif /* NBODY_OPENCL */
@@ -277,6 +285,7 @@ typedef struct NBODY_ALIGN
     int shmId;          /* shmid, key when using shmem */
 
     mwbool ignoreResponsive;
+    mwbool usesExact;
     mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
     mwbool usesCL;
     mwbool reportProgress;
@@ -295,7 +304,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
@@ -365,12 +374,23 @@ typedef enum
     NBODY_CHECKPOINT_ERROR     = 1 << 4,
     NBODY_CL_ERROR             = 1 << 5,
     NBODY_CAPABILITY_ERROR     = 1 << 6,
-    NBODY_CONSISTENCY_ERROR    = 1 << 7
+    NBODY_CONSISTENCY_ERROR    = 1 << 7,
+    NBODY_UNIMPLEMENTED        = 1 << 8
 } NBodyStatus;
 
 #define nbodyStatusIsFatal(x) ((x) > 0)
 #define nbodyStatusIsOK(x) ((x) <= 0)
 #define nbodyStatusIsWarning(x) ((x) < 0)
+
+/* Reserve positive numbers for reporting depth > MAXDEPTH. Should match in kernel  */
+typedef enum
+{
+    NBODY_KERNEL_OK                   = 0,
+    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
+    NBODY_KERNEL_TREE_INCEST          = -2,
+    NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
+    NBODY_KERNEL_ERROR_OTHER          = -4
+} NBodyKernelError;
 
 
 /* Note: 'type' should first field for all types. */
