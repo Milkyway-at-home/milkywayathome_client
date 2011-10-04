@@ -271,7 +271,7 @@ inline real4 externalAcceleration(real x, real y, real z)
     IVPtr _child, IVPtr _sort,                          \
     __global volatile TreeStatus* restrict _treeStatus, \
                                                         \
-    int step,                                           \
+    int updateVel,                                      \
     int maxNBody,                                       \
     RVPtr _critRadii,                                   \
     __global volatile Debug* _debug                     \
@@ -1082,7 +1082,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 az += acc.z;
             }
 
-            if (step > 0)
+            if (updateVel)
             {
                 _velX[i] += (ax - _accX[i]) * (0.5 * TIMESTEP);
                 _velY[i] += (ay - _accY[i]) * (0.5 * TIMESTEP);

@@ -814,24 +814,12 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
     cl_uint i;
     CLInfo* ci = st->ci;
     NBodyWorkSizes* ws = st->workSizes;
-    NBodyKernels* kernels = st->kernels;
-    cl_int step = st->step;
 
     memset(ws->timings, 0, sizeof(ws->timings));
 
     if (!st->usesExact)
     {
-        err = clSetKernelArg(kernels->forceCalculation, 21, sizeof(cl_int), &step);
-        if (err != CL_SUCCESS)
-            return err;
-
         err = executeTreeConstruction(st);
-        if (err != CL_SUCCESS)
-            return err;
-    }
-    else
-    {
-        err = clSetKernelArg(kernels->forceCalculation_Exact, 21, sizeof(cl_int), &step);
         if (err != CL_SUCCESS)
             return err;
     }
@@ -857,12 +845,51 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
     return err;
 }
 
+/* We need to run a fake step to get the initial accelerations without
+ * touching the positons/velocities */
+static cl_int runPreStep(NBodyState* st)
+{
+    static const cl_int trueVal = TRUE;    /* Need an lvalue */
+    static const cl_int falseVal = FALSE;
+    cl_int err;
+
+    /* Only calculate accelerations*/
+    err = clSetKernelArg(st->kernels->forceCalculation, 21, sizeof(cl_int), &falseVal);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = executeTreeConstruction(st);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = executeForceKernels(st);
+    if (err != CL_SUCCESS)
+        return err;
+
+    /* All later steps will be real timesteps */
+    err = clSetKernelArg(st->kernels->forceCalculation, 21, sizeof(cl_int), &trueVal);
+    if (err != CL_SUCCESS)
+        return err;
+
+    return CL_SUCCESS;
+}
+
 static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
-    st->tnow = 0;
+    if (!st->usesExact)
+    {
+        err = runPreStep(st);
+        if (err != CL_SUCCESS)
+        {
+            mwCLWarn("Error running pre step", err);
+            return err;
+        }
+    }
+
+    st->tnow = 0.0;
     st->step = 0;
     while (err == CL_SUCCESS && st->tnow < tstop)
     {

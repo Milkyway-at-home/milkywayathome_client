@@ -136,7 +136,7 @@ const char* showNBodyStatus(NBodyStatus x)
 
 const char* showNBodyKernelError(NBodyKernelError x)
 {
-    if ((int) x < 0)
+    if ((int) x > 0)
     {
         return "Exceeded maximum depth";
     }
