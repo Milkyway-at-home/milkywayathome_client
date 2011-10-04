@@ -22,13 +22,11 @@
 #include "milkyway_extra.h"
 #include "milkyway_cpp_util.h"
 #include "milkyway_cl.h"
-#include "mw_cl.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_binaries.h"
 #include "cl_compile_flags.h"
 #include "replace_amd_il.h"
-#include "il_kernels.h"
 
 #include <assert.h>
 
@@ -451,89 +449,11 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
     return 1000.0 * devFactor * flopsPerIter / flops;
 }
 
-static char* replaceUAVIds(const char* ilSrc, size_t* lenOut, ...)
-{
-    char* buf;
-    va_list argPtr;
-    size_t len;
-    int rc;
-
-    len = strlen(ilSrc);
-    buf = (char*) mwMalloc(len + 1);
-    buf[len] = '\0';
-
-    va_start(argPtr, lenOut);
-    rc = vsprintf(buf, ilSrc, argPtr);
-    va_end(argPtr);
-
-    /* Should be == len when uavid = 2 digits, slighly less when uavid = 1 digit */
-    if ((size_t) rc > len)
-    {
-        free(buf);
-        return NULL;
-    }
-
-    if (lenOut)
-    {
-        *lenOut = len;
-    }
-
-    return buf;
-}
-
-/* Different UAV IDs are used for different GPUs, and it must match */
-static char* getILSrc(int nStream, MWCALtargetEnum target, size_t* len)
-{
-    char* ilSrc = NULL;
-    cl_uint u = uavIdFromMWCALtargetEnum(target);
-
-    /* Should we be checking which UAV is used from the binary? */
-    if (u > 99)
-    {
-        /* We rely on the size of a 2 digit UAV id being the same as the '%d' format,
-           but there are only a few UAVs anyway
-         */
-        mw_printf("UAV id %u is absurd\n", u);
-        return NULL;
-    }
-
-    /* This is pretty special */
-    switch (nStream)
-    {
-        case 1:   /* 9 */
-            ilSrc = replaceUAVIds(ilKernelSrc1, len, u, u, u, u, u, u, u, u, u);
-            break;
-
-        case 2:  /* 11 */
-            ilSrc = replaceUAVIds(ilKernelSrc2, len, u, u, u, u, u, u, u, u, u, u, u);
-            break;
-
-        case 3:  /* 13 */
-            ilSrc = replaceUAVIds(ilKernelSrc3, len, u, u, u, u, u, u, u, u, u, u, u, u, u);
-            break;
-
-        case 4:  /* 15 */
-            ilSrc = replaceUAVIds(ilKernelSrc4, len, u, u, u, u, u, u, u, u, u, u, u, u, u, u, u);
-            break;
-
-        default:
-            mw_unreachable();
-    }
-
-    if (!ilSrc)
-    {
-        mw_printf("Error getting processed IL kernel source\n");
-    }
-
-    return ilSrc;
-}
 
 static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
 {
     unsigned char* bin;
     unsigned char* modBin;
-    char* ilSrc;
-    size_t ilLen = 0;
     size_t binSize = 0;
     size_t modBinSize = 0;
     cl_int err;
@@ -551,10 +471,8 @@ static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, 
         return err;
     }
 
-    ilSrc = getILSrc(ap->number_streams, ci->di.calTarget, &ilLen);
-    modBin = getModifiedAMDBinary(bin, binSize, ilSrc, ilLen, &modBinSize);
+    modBin = getModifiedAMDBinary(bin, binSize, ap->number_streams, ci->di.calTarget, &modBinSize);
     free(bin);
-    free(ilSrc);
 
     if (!modBin)
     {

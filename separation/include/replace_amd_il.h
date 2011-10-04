@@ -22,12 +22,17 @@
 #define _REPLACE_AMD_IL_H_
 
 #include <stddef.h>
+#include "milkyway_cl.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const char* ilSrc, size_t ilLen, size_t* newBinLenOut);
+unsigned char* getModifiedAMDBinary(unsigned char* bin,
+                                    size_t binSize,
+                                    int nStream,
+                                    MWCALtargetEnum target,
+                                    size_t* newBinLenOut);
 
 #ifdef __cplusplus
 }

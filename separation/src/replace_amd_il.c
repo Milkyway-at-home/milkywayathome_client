@@ -24,9 +24,123 @@
 
 #include "replace_amd_il.h"
 #include "milkyway_util.h"
+#include "milkyway_cl.h"
+#include "il_kernels.h"
 
 
-static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
+static char* replaceUAVIds(const char* ilSrc, size_t* lenOut, ...)
+{
+    char* buf;
+    va_list argPtr;
+    size_t len;
+    int rc;
+
+    len = strlen(ilSrc);
+    buf = (char*) mwMalloc(len + 1);
+    buf[len] = '\0';
+
+    va_start(argPtr, lenOut);
+    rc = vsprintf(buf, ilSrc, argPtr);
+    va_end(argPtr);
+
+    /* Should be == len when uavid = 2 digits, slighly less when uavid = 1 digit */
+    if ((size_t) rc > len)
+    {
+        free(buf);
+        return NULL;
+    }
+
+    if (lenOut)
+    {
+        *lenOut = len;
+    }
+
+    return buf;
+}
+
+/* Different UAV IDs are used for different GPUs, and it must match */
+static char* getILSrc(int nStream, MWCALtargetEnum target, cl_int uavGuess, size_t* len)
+{
+    char* ilSrc = NULL;
+    cl_int u = (uavGuess >= 0) ? uavGuess : uavIdFromMWCALtargetEnum(target);
+
+    /* Should we be checking which UAV is used from the binary? */
+    if (u > 99)
+    {
+        /* We rely on the size of a 2 digit UAV id being the same as the '%d' format,
+           but there are only a few UAVs anyway
+         */
+        mw_printf("UAV id %u is absurd\n", u);
+        return NULL;
+    }
+
+    /* This is pretty special */
+    switch (nStream)
+    {
+        case 1:   /* 9 */
+            ilSrc = replaceUAVIds(ilKernelSrc1, len, u, u, u, u, u, u, u, u, u);
+            break;
+
+        case 2:  /* 11 */
+            ilSrc = replaceUAVIds(ilKernelSrc2, len, u, u, u, u, u, u, u, u, u, u, u);
+            break;
+
+        case 3:  /* 13 */
+            ilSrc = replaceUAVIds(ilKernelSrc3, len, u, u, u, u, u, u, u, u, u, u, u, u, u);
+            break;
+
+        case 4:  /* 15 */
+            ilSrc = replaceUAVIds(ilKernelSrc4, len, u, u, u, u, u, u, u, u, u, u, u, u, u, u, u);
+            break;
+
+        default:
+            mw_unreachable();
+    }
+
+    if (!ilSrc)
+    {
+        mw_printf("Error getting processed IL kernel source\n");
+    }
+    else
+    {
+        if (target < MW_CAL_TARGET_CYPRESS)
+        {
+            char* dclPos;
+
+            /* Stupid hack.
+
+               The OpenCL compiler generates a dcl_arena_uav_id(8) on Evergreen and later,
+               but it's then unused. This isn't supported on R700, and the build
+               fails if it's there. On Evergreen, if we remove the declaration the build is OK,
+               but then when it silently fails / runs instantly.
+               There is probably a better way of dealing with this.
+
+               Remove this declaration by finding the line and overwriting with spaces.
+            */
+            dclPos = strstr(ilSrc, "dcl_arena_uav_id(8)\n");
+            assert(dclPos != NULL);
+
+            while (*dclPos != '\n')
+            {
+                *dclPos++ = ' ';
+            }
+        }
+    }
+
+    return ilSrc;
+}
+
+static char* ilSrc = NULL;
+static size_t ilSrcLen = 0;
+
+static void freeILSrc()
+{
+    free(ilSrc);
+    ilSrc = NULL;
+    ilSrcLen = 0;
+}
+
+static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
 {
     Elf_Scn* scn = NULL;
     size_t shstrndx = 0;
@@ -64,22 +178,40 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
 
         if (strstr(name, ".amdil") != NULL)
         {
-            Elf_Data* data = elf_getdata(scn, NULL);
+            int uavId;
+            const char* uavComment;
+            Elf_Data* data;
 
+            data = elf_getdata(scn, NULL);
             if (!data)
             {
-                mw_printf("Failed to get data for section: %s\n", elf_errmsg(-1));
+                mw_printf("Failed to get data for .amdil section: %s\n", elf_errmsg(-1));
                 return 1;
             }
 
             if (verbose)
             {
-                mw_printf("Replacing section data of type %d, off %d align %zu\n", data->d_type, (int) data->d_off, data->d_align);
+                mw_printf("Replacing section data of type %d, off %d align "ZU"\n", data->d_type, (int) data->d_off, data->d_align);
             }
 
-            //memset(data->d_buf, 0, data->d_size);
-            data->d_buf = (void*) ilBuf;
-            data->d_size = ilLen;
+
+            /* Before we overwrite it, there is information we would like to extract */
+            uavComment = strstr((const char*) data->d_buf, ";uavid:");
+            if (!uavComment || (sscanf(uavComment, ";uavid:%d\n", &uavId) != 1))
+            {
+                mw_printf("Error reading uavid from IL comment");
+                uavId = -1;
+            }
+
+            ilSrc = getILSrc(nStream, target, uavId, &ilSrcLen);
+            if (!ilSrc || (ilSrcLen == 0))
+            {
+                mw_printf("Failed to get IL source\n");
+                return 1;
+            }
+
+            data->d_buf = (void*) ilSrc;
+            data->d_size = ilSrcLen;
 
             if (!elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY))
             {
@@ -188,8 +320,9 @@ static const char* showElfKind(Elf_Kind ek)
     }
 }
 
-static int processElf(int fd, const char* ilBuf, size_t ilLen)
+static int processElf(int fd, int nStream, MWCALtargetEnum target)
 {
+    int rc;
     Elf* e;
     Elf_Kind ek = ELF_K_NONE;
 
@@ -213,7 +346,9 @@ static int processElf(int fd, const char* ilBuf, size_t ilLen)
         return 1;
     }
 
-    if (replaceAMDILSection(e, ilBuf, ilLen) < 0)
+    rc = replaceAMDILSection(e, nStream, target);
+    freeILSrc();
+    if (rc < 0)
     {
         mw_printf("Failed to replace .amdil section\n");
         return 1;
@@ -232,27 +367,29 @@ static int getTmpBinaryName(char* buf, size_t size)
 
 #ifdef _WIN32
 static const int openPermMode = _S_IREAD | _S_IWRITE;
+static const int openMode = _O_RDWR | _O_TRUNC | _O_CREAT | _O_BINARY | _O_SHORT_LIVED;
 #else
 static const int openPermMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+static const int openMode = O_RDWR | O_TRUNC | O_CREAT;
 #endif /* _WIN32 */
 
 /* Take a program binary from clGetPropramInfo() and a replacement IL source as a string.
    Replace the .amdil section in the ELF image and return a new copy of the binary.
  */
-unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const char* ilSrc, size_t ilLen, size_t* newBinSizeOut)
+unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, int nStream, MWCALtargetEnum target, size_t* newBinSizeOut)
 {
     int fd = -1;
     int rc = 0;
     char tmpBinFile[128];
     unsigned char* newBin = NULL;
 
-    if (!bin || !ilSrc)
+    if (!bin)
         return NULL;
 
     getTmpBinaryName(tmpBinFile, sizeof(tmpBinFile));
 
     /* Write binary to a temporary file since we need a file descriptor for libelf */
-    fd = open(tmpBinFile, O_RDWR | O_TRUNC | O_CREAT, openPermMode);
+    fd = open(tmpBinFile, openMode, openPermMode);
     if (fd < 0)
     {
         perror("Failed to open AMD binary file");
@@ -265,7 +402,7 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const ch
         return NULL;
     }
 
-    rc = processElf(fd, ilSrc, ilLen);
+    rc = processElf(fd, nStream, target);
     if (rc == 0)
     {
         if (lseek(fd, 0, SEEK_SET) != 0)
