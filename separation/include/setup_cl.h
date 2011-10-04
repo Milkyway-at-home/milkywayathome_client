@@ -81,8 +81,6 @@ typedef struct
 
 #define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
-cl_bool haveInlinedKernel();
-
 cl_int setupSeparationCL(CLInfo* ci,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,

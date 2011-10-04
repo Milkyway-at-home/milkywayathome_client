@@ -37,7 +37,6 @@
 #cmakedefine01 NVIDIA_OPENCL
 #cmakedefine01 AMD_OPENCL
 
-#cmakedefine01 SEPARATION_INLINE_KERNEL
 #cmakedefine01 SEPARATION_GRAPHICS
 
 #cmakedefine01 HAVE_SSE2

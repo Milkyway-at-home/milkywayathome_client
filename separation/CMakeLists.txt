@@ -24,7 +24,6 @@ project(milkyway_separation)
 enable_testing()
 
 include(MWLink)
-include(CLKernelInline)
 include(SpecialLibs)
 include(BOINCBinNames)
 include(PrintInfo)
@@ -55,10 +54,7 @@ endif()
 option(SEPARATION_STATIC "Build separation as fully static binary" OFF)
 mark_as_advanced(SEPARATION_STATIC)
 
-#FIXME: Still need to make it re-inline if kernel changed
-cmake_dependent_option(SEPARATION_INLINE_KERNEL "Inline the CL kernel" ON
-                         "SEPARATION_OPENCL" OFF)
-mark_as_advanced(SEPARATION_INLINE_KERNEL)
+
 
 option(SEPARATION_GRAPHICS
        "Use Separation Graphics" OFF)
@@ -203,28 +199,16 @@ if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND lib_source_file_list ${cl_source_list})
   list(APPEND separation_headers ${separation_cl_headers})
-
-  if(SEPARATION_INLINE_KERNEL)
-    # Can figure out many of the header dependencies of kernel with C
-    # preprocessor with -MM flag.  However, some of the files only purpose
-    # is to include some other files in the kernel, so we have to exclude
-    # those ones.
-    set(all_cl_files ${SEPARATION_KERNEL_DIR}/integrals.cl)
-
-
-    set(SEPARATION_INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")
-    set(SEPARATION_INLINE_SCRIPT "${CMAKE_MODULE_PATH}/InlineSeparation.cmake")
-    set(SEPARATION_OUT_STR_NAME "inlinedIntegralKernelSrc")
-    add_custom_command(
-      OUTPUT "${SEPARATION_INLINE_KERNEL_FILE}"
-      COMMAND ${CMAKE_COMMAND} "-DOUTFILE=${SEPARATION_INLINE_KERNEL_FILE}"
-                               "-DSOURCEFILES=\"${all_cl_files}\""
-                               "-DSTRNAME=${SEPARATION_OUT_STR_NAME}"
-                               "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
-                               -P ${SEPARATION_INLINE_SCRIPT})
-    add_library(all_in_one_library STATIC "${SEPARATION_INLINE_KERNEL_FILE}")
-    list(APPEND separation_link_libs all_in_one_library)
-  endif()
+  set(separation_inline_src "${LIBRARY_OUTPUT_PATH}/separation_kernels_inline.c")
+  add_custom_command(
+    OUTPUT "${separation_inline_src}"
+    COMMAND $<TARGET_FILE:xxd> -i "probabilities_kernel.cl" ${separation_inline_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
+    COMMENT "Inlining separation kernel source")
+  add_library(separation_kernels STATIC ${separation_inline_src})
+  list(APPEND separation_link_libs separation_kernels)
 endif()
 
 list(APPEND separation_link_libs milkyway milkyway_lua)
