@@ -371,9 +371,10 @@ __kernel void NBODY_KERNEL(boundingBox)
 
             _treeStatus->radius = radius;
 
-          #if NEWCRITERION || SW93
-            _critRadii[NNODE] = radius;
-          #endif
+            if (NEWCRITERION || SW93)
+            {
+                _critRadii[NNODE] = radius;
+            }
 
 
             /* Create root node */
@@ -510,10 +511,10 @@ __kernel void NBODY_KERNEL(buildTree)
                         _mass[cell] = -1.0;
                         _start[cell] = -1;
 
-                      #if SW93 || NEWCRITERION
-                        _critRadii[cell] = r;  /* Save cell size */
-                      #endif /* SW93 || NEWCRITERION */
-
+                        if (SW93 || NEWCRITERION)
+                        {
+                            _critRadii[cell] = r;  /* Save cell size */
+                        }
 
                         real nx = _posX[n];
                         real ny = _posY[n];
@@ -603,9 +604,11 @@ __kernel void NBODY_KERNEL(summarization)
 {
     __local int bottom;
     __local volatile int child[NSUB * THREADS3];
+    __local real rootSize;
 
     if (get_local_id(0) == 0)
     {
+        rootSize = _treeStatus->radius;
         bottom = _treeStatus->bottom;
     }
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
@@ -699,9 +702,12 @@ __kernel void NBODY_KERNEL(summarization)
             real cy = _posY[k];
             real cz = _posZ[k];
 
-          #if SW93 || NEWCRITERION
-            real psize = _critRadii[k]; /* Get saved size (half cell = radius) */
-          #endif
+            real psize;
+
+            if (SW93 || NEWCRITERION)
+            {
+                psize = _critRadii[k]; /* Get saved size (half cell = radius) */
+            }
 
             m = 1.0 / cm;
             px *= m; /* Scale up to position */
@@ -709,41 +715,52 @@ __kernel void NBODY_KERNEL(summarization)
             pz *= m;
 
             /* Calculate opening criterion if necessary */
-          #if SW93
-            real bmax2 = bmax2Inc(px, cx, psize);
-            bmax2 += bmax2Inc(py, cy, psize);
-            bmax2 += bmax2Inc(pz, cz, psize);
-            real rc2 = bmax2 / (THETA * THETA);
-          #elif NEWCRITERION
-            real dx = px - cx;  /* Find distance from center of mass to geometric center */
-            real dy = py - cy;
-            real dz = pz - cz;
-            real dr = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+            real rc2;
 
-            real rc = (psize / THETA) + dr;
-
-            real rc2 = rc * rc;
-          #endif /* SW93 */
-
-          #if SW93 || NEWCRITERION
-            /* We don't have the size of the cell for the others, but really still should check */
-            bool xTest = checkTreeDim(px, cx, psize);
-            bool yTest = checkTreeDim(py, cy, psize);
-            bool zTest = checkTreeDim(pz, cz, psize);
-            bool structureCheck = xTest || yTest || zTest;
-            if (structureCheck)
+            if (THETA == 0.0)
             {
-                _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
+                rc2 = sqr(2.0 * rootSize);
             }
-          #endif /* SW93 || NEWCRITERION */
+            else if (SW93)
+            {
+                real bmax2 = bmax2Inc(px, cx, psize);
+                bmax2 += bmax2Inc(py, cy, psize);
+                bmax2 += bmax2Inc(pz, cz, psize);
+                rc2 = bmax2 / (THETA * THETA);
+            }
+            else if (NEWCRITERION)
+            {
+                real dx = px - cx;  /* Find distance from center of mass to geometric center */
+                real dy = py - cy;
+                real dz = pz - cz;
+                real dr = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+
+                real rc = (psize / THETA) + dr;
+
+                rc2 = rc * rc;
+            }
+
+            if (SW93 || NEWCRITERION)
+            {
+                /* We don't have the size of the cell for BH86, but really still should check */
+                bool xTest = checkTreeDim(px, cx, psize);
+                bool yTest = checkTreeDim(py, cy, psize);
+                bool zTest = checkTreeDim(pz, cz, psize);
+                bool structureCheck = xTest || yTest || zTest;
+                if (structureCheck)
+                {
+                    _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
+                }
+            }
 
             _posX[k] = px;
             _posY[k] = py;
             _posZ[k] = pz;
 
-          #if SW93 || NEWCRITERION
-            _critRadii[k] = rc2;
-          #endif
+            if (SW93 || NEWCRITERION)
+            {
+                _critRadii[k] = rc2;
+            }
 
             write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting mass */
             _mass[k] = cm;
@@ -901,7 +918,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
     __local volatile real nm[THREADS5 / WARPSIZE];
 
-    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE]; /* Used by BH86 and Exact */
+    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE];
 
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
@@ -923,28 +940,30 @@ __kernel void NBODY_KERNEL(forceCalculation)
         maxDepth = _treeStatus->maxDepth;
         real rootSize = _treeStatus->radius;
 
-      #if SW93 || NEWCRITERION
-        rootCritRadius = _critRadii[NNODE];
-      #endif
-
-
-      #if BH86
-        real rc = rootSize / THETA;
-        /* Precompute values that depend only on tree level */
-        dq[0] = rc * rc;
-        for (int i = 1; i < maxDepth; ++i)
+        if (SW93 || NEWCRITERION)
         {
-            dq[i] = 0.25 * dq[i - 1];
+            rootCritRadius = _critRadii[NNODE];
         }
-      #elif EXACT
-        real rc = 2.0 * rootSize;
-        /* Just fill dq to simplify things. This shouldn't really ever be used anyway */
-        for (int i = 0; i < maxDepth; ++i)
+        else if (BH86)
         {
-            dq[i] = rc * rc;
-        }
-      #endif /* BH86 */
+            real rc;
 
+            if (THETA == 0.0)
+            {
+                rc = 2.0 * rootSize;
+            }
+            else
+            {
+                rc = rootSize / THETA;
+            }
+
+            /* Precompute values that depend only on tree level */
+            dq[0] = rc * rc;
+            for (int i = 1; i < maxDepth; ++i)
+            {
+                dq[i] = 0.25 * dq[i - 1];
+            }
+        }
 
         if (maxDepth > MAXDEPTH)
         {
@@ -961,14 +980,15 @@ __kernel void NBODY_KERNEL(forceCalculation)
         int j = base * MAXDEPTH;
         int diff = get_local_id(0) - sbase; /* Index in warp */
 
-      #if BH86 || EXACT
-        /* Make multiple copies to avoid index calculations later */
-        if (diff < MAXDEPTH)
+        if (BH86 || EXACT)
         {
-            dq[diff + j] = dq[diff];
+            /* Make multiple copies to avoid index calculations later */
+            if (diff < MAXDEPTH)
+            {
+                dq[diff + j] = dq[diff];
+            }
+            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         }
-        barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-      #endif /* BH86 || EXACT */
 
         /* iterate over all bodies assigned to thread */
         for (int k = get_global_id(0); k < maxNBody; k += get_local_size(0) * get_num_groups(0))
@@ -991,9 +1011,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 node[j] = NNODE;
                 pos[j] = 0;
 
-              #if SW93 || NEWCRITERION
-                dq[j] = rootCritRadius;
-              #endif
+                if (SW93 || NEWCRITERION)
+                {
+                    dq[j] = rootCritRadius;
+                }
             }
             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
@@ -1001,7 +1022,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             while (depth >= j)
             {
                 /* Stack is not empty */
-                while (pos[depth] < 8)
+                while (pos[depth] < NSUB)
                 {
                     int n;
                     /* Node on top of stack has more children to process */
@@ -1057,9 +1078,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                 node[depth] = n;
                                 pos[depth] = 0;
 
-                              #if SW93 || NEWCRITERION
-                                dq[depth] = _critRadii[n];
-                              #endif
+                                if (SW93 || NEWCRITERION)
+                                {
+                                    dq[depth] = _critRadii[n];
+                                }
                             }
                             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
                         }

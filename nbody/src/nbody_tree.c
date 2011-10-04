@@ -283,6 +283,13 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
 {
     real rc, bmax2;
 
+    if (mw_unlikely(ctx->theta == 0.0))
+    {
+        /* Do an exact force calculation by always opening cells */
+        rc = 2.0 * treeRSize;
+        return sqr(rc);
+    }
+
     /* return square of radius */
     switch (ctx->criterion)
     {
@@ -298,10 +305,6 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
 
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */
-            return sqr(rc);
-
-        case Exact:                       /* exact force calculation? */
-            rc = 2.0 * treeRSize;         /* always open cells */
             return sqr(rc);
 
         case InvalidCriterion:
