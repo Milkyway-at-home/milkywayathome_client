@@ -27,7 +27,7 @@
 
 
 extern const unsigned char nbody_kernels_cl[];
-extern const unsigned int nbody_kernels_cl_len;
+extern const size_t nbody_kernels_cl_len;
 
 /* CHECKME: Padding between these fields might be a good idea */
 typedef struct NBODY_ALIGN
@@ -488,7 +488,7 @@ cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
     cl_int err = CL_SUCCESS;
     char* compileFlags = NULL;
     const char* src = (const char*) nbody_kernels_cl;
-    size_t srcLen = (size_t) nbody_kernels_cl_len;
+    size_t srcLen = nbody_kernels_cl_len;
 
     compileFlags = getCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);

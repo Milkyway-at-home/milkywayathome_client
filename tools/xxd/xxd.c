@@ -615,6 +615,7 @@ char *argv[];
     {
       if (fp != stdin)
 	{
+	  fprintf(fpo, "\n#include <stddef.h>\n\n");
 	  fprintf(fpo, "unsigned char %s", isdigit(argv[1][0]) ? "__" : "");
 	  for (e = 0; (c = argv[1][e]) != 0; e++)
 	    putc(isalnum(c) ? c : '_', fpo);
@@ -634,7 +635,7 @@ char *argv[];
 
       if (fp != stdin)
 	{
-	  fprintf(fpo, "unsigned int %s", isdigit(argv[1][0]) ? "__" : "");
+	  fprintf(fpo, "size_t %s", isdigit(argv[1][0]) ? "__" : "");
 	  for (e = 0; (c = argv[1][e]) != 0; e++)
 	    putc(isalnum(c) ? c : '_', fpo);
 	  fprintf(fpo, "_len = %d;\n", p);

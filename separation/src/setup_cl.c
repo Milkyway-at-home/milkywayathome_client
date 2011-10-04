@@ -38,7 +38,7 @@
 
 
 extern const unsigned char probabilities_kernel_cl[];
-extern const unsigned int probabilities_kernel_cl_len;
+extern const size_t probabilities_kernel_cl_len;
 
 cl_kernel _separationKernel = NULL;
 
@@ -564,7 +564,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     cl_bool useILKernel;
     cl_int err;
     const char* kernSrc = (const char*) probabilities_kernel_cl;
-    size_t kernSrcLen = (size_t) probabilities_kernel_cl_len;
+    size_t kernSrcLen = probabilities_kernel_cl_len;
 
     err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)

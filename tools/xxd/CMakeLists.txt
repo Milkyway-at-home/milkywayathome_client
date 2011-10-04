@@ -18,9 +18,13 @@
 #
 
 cmake_minimum_required(VERSION 2.8)
+
+include(IgnoreWarningFlags)
+
 project(xxd)
 
 add_executable(xxd xxd.c)
+set_target_properties(xxd PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 
 
 
