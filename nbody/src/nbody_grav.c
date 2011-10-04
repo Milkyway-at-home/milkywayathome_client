@@ -187,17 +187,14 @@ static inline mwvector nbodyGravity_Exact(const NBodyCtx* ctx, NBodyState* st, c
     {
         const Body* b = &st->bodytab[i];
 
-        if (mw_likely(b != p))
-        {
-            mwvector dr = mw_subv(Pos(b), Pos(p));
-            real drsq = mw_sqrv(dr) + eps2;
+        mwvector dr = mw_subv(Pos(b), Pos(p));
+        real drsq = mw_sqrv(dr) + eps2;
 
-            real drab = mw_sqrt(drsq);
-            real phii = Mass(b) / drab;
-            real mor3 = phii / drsq;
+        real drab = mw_sqrt(drsq);
+        real phii = Mass(b) / drab;
+        real mor3 = phii / drsq;
 
-            mw_incaddv(a, mw_mulvs(dr, mor3));
-        }
+        mw_incaddv(a, mw_mulvs(dr, mor3));
     }
 
     return a;

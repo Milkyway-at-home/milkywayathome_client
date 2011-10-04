@@ -1034,16 +1034,16 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         /* Check if all threads agree that cell is far enough away (or is a body) */
                         if (isBody(n) || forceAllPredicate(allBlock, base, rSq >= dq[depth]))
                         {
-                            if (n != i) /* Skip self interaction */
-                            {
-                                real r = sqrt(rSq + EPS2); /* Compute distance with softening */
-                                real ai = nm[base] / (r * r * r);
-                                ax += ai * dx;
-                                ay += ai * dy;
-                                az += ai * dz;
-                            }
+                            real r = sqrt(rSq + EPS2); /* Compute distance with softening */
+                            real ai = nm[base] / (r * r * r);
+                            ax += ai * dx;
+                            ay += ai * dy;
+                            az += ai * dz;
 
-                            if (isBody(n) && n == i) /* Watch for tree incest */
+                            /* Watch for self interaction. It's OK to
+                             * not skip because dx, dy, dz will be
+                             * 0.0 */
+                            if (n == i)
                             {
                                 skipSelf = true;
                             }
