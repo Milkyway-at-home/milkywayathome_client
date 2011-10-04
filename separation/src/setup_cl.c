@@ -34,12 +34,9 @@
   #include <direct.h>
 #endif /* _WIN32 */
 
+extern const unsigned char probabilities_kernel_cl[];
+extern const size_t probabilities_kernel_cl_len;
 
-#if SEPARATION_INLINE_KERNEL
-extern char* inlinedIntegralKernelSrc;
-#else
-static char* inlinedIntegralKernelSrc = NULL;
-#endif /* SEPARATION_INLINE_KERNEL */
 
 cl_kernel _separationKernel = NULL;
 
@@ -64,11 +61,6 @@ cl_int releaseSeparationKernel()
         err = clReleaseKernel(_separationKernel);
 
     return err;
-}
-
-cl_bool haveInlinedKernel()
-{
-    return (inlinedIntegralKernelSrc != NULL);
 }
 
 static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool verbose)
@@ -312,41 +304,6 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     return CL_SUCCESS;
 }
 
-/* Reading from the file is more convenient for actually working on
- * it. Inlining is more useful for releasing when we don't want to
- * deal with the hassle of distributing more files. */
-char* findKernelSrc()
-{
-    char* kernelSrc = NULL;
-
-    /* Try different alternatives */
-
-    if (inlinedIntegralKernelSrc)
-        return inlinedIntegralKernelSrc;
-
-    kernelSrc = mwReadFileResolved("AllInOneFile.cl");
-    if (kernelSrc)
-        return kernelSrc;
-
-    kernelSrc = mwReadFileResolved("integrals.cl");
-    if (kernelSrc)
-        return kernelSrc;
-
-    kernelSrc = mwReadFile("../kernels/integrals.cl");
-    if (kernelSrc)
-        return kernelSrc;
-
-    mw_printf("Failed to read kernel file\n");
-
-    return kernelSrc;
-}
-
-void freeKernelSrc(char* src)
-{
-    if (src != inlinedIntegralKernelSrc)
-        free(src);
-}
-
 #define NUM_CONST_BUF_ARGS 5
 
 /* Check that the device has the necessary resources */
@@ -526,6 +483,8 @@ cl_int setupSeparationCL(CLInfo* ci,
     char* kernelSrc;
     cl_bool useILKernel;
     cl_int err;
+    const char* kernSrc = (const char*) probabilities_kernel_cl;
+    size_t kernSrcLen = probabilities_kernel_cl_len;
 
     err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)
@@ -541,18 +500,16 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     useILKernel = usingILKernelIsAcceptable(ci, ap, clr);
-    kernelSrc = findKernelSrc();
     compileFlags = getCompilerFlags(ci, ap, useILKernel);
-
-    if (!compileFlags || !kernelSrc)
+    if (!compileFlags)
     {
-        mw_printf("Failed to get kernel source or compiler flags\n");
+        mw_printf("Failed to get CL compiler flags\n");
         err = MW_CL_ERROR;
         goto setup_exit;
     }
 
     mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
-    err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
+    err = mwSetProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating program from source", err);
@@ -567,7 +524,7 @@ cl_int setupSeparationCL(CLInfo* ci,
         {
             /* Recompiles again but I don't really care. */
             mw_printf("Failed to create IL kernel. Falling back to source kernel\n");
-            err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
+            err = mwSetProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
             if (err != CL_SUCCESS)
             {
                 mwCLWarn("Error creating program from source", err);
@@ -581,7 +538,6 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
 setup_exit:
-    freeKernelSrc(kernelSrc);
     free(compileFlags);
 
     return err;
