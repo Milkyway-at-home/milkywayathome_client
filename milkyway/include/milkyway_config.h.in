@@ -36,13 +36,6 @@
 #cmakedefine01 HAVE__ALIGNED_MALLOC
 #cmakedefine01 HAVE___MINGW_ALIGNED_MALLOC
 
-#if ENABLE_FDLIBM
-/* These actually aren't in crlibm. FIXME: Check function exists in specific math library */
-  #undef HAVE_EXP10
-  #undef HAVE_SINCOS
-  #undef HAVE_TGMATH_H
-#endif
-
 /* C99 Restrict.
 
    For MSVC, just defining restrict to __restrict doesn't work because

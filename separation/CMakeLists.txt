@@ -63,18 +63,9 @@ cmake_dependent_option(SEPARATION_CRLIBM "Use crlibm for separation maths" OFF
                        "DOUBLEPREC" OFF)
 mark_as_advanced(SEPARATION_CRLIBM)
 
-cmake_dependent_option(SEPARATION_FDLIBM "Use fdlibm for separation maths" OFF
-                       "DOUBLEPREC" OFF)
-mark_as_advanced(SEPARATION_FDLIBM)
-
 if(NOT DOUBLEPREC AND SEPARATION_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(SEPARTION_CRLIBM OFF)
-endif()
-
-if(NOT DOUBLEPREC AND SEPARATION_FDLIBM)
-  message(WARNING "Attempting to use single precision with fdlibm. Disabling use of fdlibm")
-  set(SEPARTION_FDLIBM OFF)
 endif()
 
 if(NOT BOINC_APPLICATION AND SEPARATION_GRAPHICS)
@@ -101,19 +92,8 @@ endif()
 maybe_static(${SEPARATION_STATIC})
 
 
-if(NOT FDLIBM_FOUND AND SEPARATION_FDLIBM)
-  message(WARNING "Separation Fdlibm was requested, but Fdlibm found. Disabling Fdlibm.")
-  set(SEPARATION_FDLIBM OFF)
-endif()
-
-if(NOT SEPARATION_FDLIBM)
-  if(NOT WIN32)
-    set(SEPARATION_LIBM_LIBRARY m)
-  endif()
-else()
-  # Replace standard libm with Fdlibm
-  include_directories(${FDLIBM_INCLUDE_DIR})
-  set(SEPARATION_LIBM_LIBRARY ${FDLIBM_LIBRARY})
+if(NOT WIN32)
+  set(SEPARATION_LIBM_LIBRARY m)
 endif()
 
 
