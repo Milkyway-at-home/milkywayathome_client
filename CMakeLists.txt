@@ -342,6 +342,7 @@ find_package(OpenGL)
 find_package(GLUT)
 find_package(Curses)
 
+add_subdirectory(tools)
 add_subdirectory(popt)
 add_subdirectory(lua)
 
@@ -422,5 +423,4 @@ add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/tools/app_info.xml"
 add_custom_target(app_info DEPENDS "${PROJECT_BINARY_DIR}/tools/app_info.xml")
 
 install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
-
 

@@ -36,7 +36,6 @@ include(CheckSSE2)
 include(BOINCPaths)
 include(CMakeDependentOption)
 
-
 cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
                                        "NOT BOINC_APPLICATION;CURSES_FOUND" OFF)
 
@@ -83,8 +82,6 @@ if(NBODY_OPENCL AND NOT OPENCL_FOUND)
   message(FATAL "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
 endif()
 
-# Handle downloading, extracting and building dSFMT
-
 print_separator()
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
@@ -93,6 +90,18 @@ message("   Enable crlibm:     ${NBODY_CRLIBM}")
 message("  ----")
 print_libs()
 print_separator()
+
+if(NBODY_OPENCL)
+  set(nbody_inline_src "${LIBRARY_OUTPUT_PATH}/nbody_kernels_inline.c")
+  add_custom_command(
+    OUTPUT "${nbody_inline_src}"
+    COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+    COMMENT "Inlining N-body kernel source")
+  add_library(nbody_kernels STATIC ${nbody_inline_src})
+endif()
 
 if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
   message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
@@ -229,7 +238,7 @@ set(nbody_link_libs )
 
 if(NBODY_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
-  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
+  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES} nbody_kernels)
 endif()
 
 if(ENABLE_CURSES)

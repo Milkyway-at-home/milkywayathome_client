@@ -633,7 +633,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
-    err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
+    err = mwSetProgramFromSrc(ci, 1, (const char**) &kernelSrc, NULL, compileFlags);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating program from source", err);
@@ -648,7 +648,7 @@ cl_int setupSeparationCL(CLInfo* ci,
         {
             /* Recompiles again but I don't really care. */
             mw_printf("Failed to create IL kernel. Falling back to source kernel\n");
-            err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
+            err = mwSetProgramFromSrc(ci, 1, (const char**) &kernelSrc, NULL, compileFlags);
             if (err != CL_SUCCESS)
             {
                 mwCLWarn("Error creating program from source", err);

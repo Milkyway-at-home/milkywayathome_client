@@ -25,6 +25,10 @@
 #include "nbody_util.h"
 #include "nbody_curses.h"
 
+
+extern const unsigned char nbody_kernels_cl[];
+extern const unsigned int nbody_kernels_cl_len;
+
 /* CHECKME: Padding between these fields might be a good idea */
 typedef struct NBODY_ALIGN
 {
@@ -482,25 +486,18 @@ cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 {
     CLInfo* ci = st->ci;
     cl_int err = CL_SUCCESS;
-    char* src = NULL;
     char* compileFlags = NULL;
-
-    src = mwReadFile("kernels/nbody_kernels.cl");
-    if (!src)
-    {
-        mw_printf("Failed to read N-body kernel source\n");
-        return MW_CL_ERROR;
-    }
+    const char* src = (const char*) nbody_kernels_cl;
+    size_t srcLen = (size_t) nbody_kernels_cl_len;
 
     compileFlags = getCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);
-    err = mwSetProgramFromSrc(ci, (const char**) &src, 1, compileFlags);
+    err = mwSetProgramFromSrc(ci, 1, &src, &srcLen, compileFlags);
     if (err != CL_SUCCESS)
     {
         mw_printf("Failed build flags: %s\n", compileFlags);
     }
 
-    free(src);
     free(compileFlags);
 
     return err;
