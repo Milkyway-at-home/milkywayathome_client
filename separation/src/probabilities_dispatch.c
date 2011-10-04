@@ -31,19 +31,19 @@ ProbabilityFunc probabilityFunc = NULL;
 
 
 /* MSVC can't do weak imports. Using dlsym()/GetProcAddress() etc. would be better */
-#if !HAVE_AVX
+#if !HAVE_AVX || !DOUBLEPREC
   #define initProbabilities_AVX NULL
 #endif
 
-#if !HAVE_SSE41
+#if !HAVE_SSE41 || !DOUBLEPREC
 #define initProbabilities_SSE41 NULL
 #endif
 
-#if !HAVE_SSE3
+#if !HAVE_SSE3 || !DOUBLEPREC
 #define initProbabilities_SSE3 NULL
 #endif
 
-#if !HAVE_SSE2
+#if !HAVE_SSE2 || !DOUBLEPREC
 #define initProbabilities_SSE2 NULL
 #endif
 
@@ -56,6 +56,11 @@ static ProbInitFunc initSSE2 = initProbabilities_SSE2;
 
 static int usingIntrinsicsIsAcceptable(const AstronomyParameters* ap, int forceNoIntrinsics)
 {
+    if (!DOUBLEPREC)
+    {
+        return FALSE;
+    }
+
     if (forceNoIntrinsics)
     {
         mw_printf("Forced to not use intrinsics functions\n");
