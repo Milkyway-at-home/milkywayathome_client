@@ -121,8 +121,55 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_IO_ERROR";
         case NBODY_CHECKPOINT_ERROR:
             return "NBODY_CHECKPOINT_ERROR";
+        case NBODY_CL_ERROR:
+            return "NBODY_CL_ERROR";
+        case NBODY_CAPABILITY_ERROR:
+            return "NBODY_CAPABILITY_ERROR";
+        case NBODY_CONSISTENCY_ERROR:
+            return "NBODY_CONSISTENCY_ERROR";
+        case NBODY_UNIMPLEMENTED:
+            return "NBODY_UNIMPLEMENTED";
         default:
             return "Unknown NBodyStatus";
+    }
+}
+
+const char* showNBodyKernelError(NBodyKernelError x)
+{
+    if ((int) x > 0)
+    {
+        return "Exceeded maximum depth";
+    }
+
+    switch (x)
+    {
+        case NBODY_KERNEL_OK:
+            return "NBODY_KERNEL_OK";
+        case NBODY_KERNEL_CELL_LEQ_NBODY:
+            return "NBODY_KERNEL_CELL_LEQ_NBODY";
+        case NBODY_KERNEL_TREE_INCEST:
+            return "NBODY_KERNEL_CELL_TREE_INCEST";
+        case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
+            return "NBODY_KERNEL_TREE_STRUCTURE_ERROR";
+        case NBODY_KERNEL_ERROR_OTHER:
+            return "NBODY_KERNEL_ERROR_OTHER";
+        default:
+            return "Unknown NBodyKernelError";
+    }
+}
+
+const char* showExternalPotentialType(ExternalPotentialType x)
+{
+    switch (x)
+    {
+        case EXTERNAL_POTENTIAL_DEFAULT:
+            return "Milkyway@Home N-body potential";
+        case EXTERNAL_POTENTIAL_NONE:
+            return "None";
+        case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+            return "Lua";
+        default:
+            return "Unknown ExternalPotentialType";
     }
 }
 
@@ -456,7 +503,6 @@ char* showNBodyState(const NBodyState* st)
                      "  bodytab        = %p\n"
                      "  acctab         = %p\n"
                      "  treeIncest     = %s\n"
-                     "  outFile        = %p\n"
                      "};\n",
                      st,
                      treeBuf,
@@ -466,8 +512,8 @@ char* showNBodyState(const NBodyState* st)
                      st->nbody,
                      st->bodytab,
                      st->acctab,
-                     showBool(st->treeIncest),
-                     st->outFile))
+                     showBool(st->treeIncest)
+            ))
     {
         mw_fail("asprintf() failed\n");
     }

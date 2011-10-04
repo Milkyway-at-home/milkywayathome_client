@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_lua.h"
 #include "nbody_shmem.h"
+#include "nbody_curses.h"
 #include "nbody_defaults.h"
 
 #if NBODY_OPENCL
@@ -37,10 +38,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-  #if BOINC_APPLICATION
-    return boinc_time_to_checkpoint();
-  #else
     time_t now;
+
+    if (BOINC_APPLICATION)
+    {
+        return mw_time_to_checkpoint();
+    }
 
     if (ctx->checkpointT < 0)
         return FALSE;
@@ -53,7 +56,6 @@ static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
     }
 
     return FALSE;
-  #endif /* BOINC_APPLICATION */
 }
 
 static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
@@ -63,14 +65,25 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
         if (writeCheckpoint(ctx, st))
             mw_fail("Failed to write checkpoint\n");
 
-      #if BOINC_APPLICATION
-        boinc_checkpoint_completed();
-      #endif /* BOINC_APPLICATION */
+        mw_checkpoint_completed();
     }
+}
 
-  #if BOINC_APPLICATION
-    boinc_fraction_done(st->tnow / ctx->timeEvolve);
-  #endif /* BOINC_APPLICATION */
+static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
+{
+    mw_fraction_done(st->tnow / ctx->timeEvolve);
+
+    if (reportProgress)
+    {
+        mw_mvprintw(0, 0,
+                    "Running: %f / %f (%f%%)\n",
+                    st->tnow,
+                    ctx->timeEvolve,
+                    100.0 * st->tnow / ctx->timeEvolve
+            );
+
+        mw_refresh();
+    }
 }
 
 /* If enough time has passed, record the next center of mass position */
@@ -78,10 +91,13 @@ static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
 {
     int i = (st->tnow / ctx->timeEvolve) * N_ORBIT_TRACE_POINTS;
 
+    if (st->usesExact) /* FIXME?. We don't get the CM without the tree */
+        return;
+
     if (i >= N_ORBIT_TRACE_POINTS) /* Just in case */
         return;
 
-    if (X(st->orbitTrace[i]) < DBL_MAX)
+    if (X(st->orbitTrace[i]) < REAL_MAX)
         return;
 
     st->orbitTrace[i] = Pos(st->tree.root);
@@ -110,6 +126,7 @@ static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             return rc;
 
         nbodyCheckpoint(ctx, st);
+        nbodyReportProgress(ctx, st, nbf->reportProgress);
     }
 
     if (BOINC_APPLICATION || ctx->checkpointT >= 0)
@@ -147,7 +164,9 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
 
         if (nbf->inputFile && !BOINC_APPLICATION)
+        {
             mw_printf("Warning: input file '%s' unused\n", nbf->inputFile);
+        }
 
         if (readCheckpoint(ctx, st))
         {
@@ -165,9 +184,24 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
 }
 
 /* Set context fields read from command line flags */
-static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
+static void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
     ctx->checkpointT = nbf->checkpointPeriod;
+}
+
+static void nbodySetStateFromFlags(NBodyState* st, const NBodyFlags* nbf)
+{
+    st->ignoreResponsive = nbf->ignoreResponsive;
+}
+
+static void nbodySetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
+{
+    clr->platform = nbf->platform;
+    clr->devNum = nbf->devNum;
+    clr->verbose = TRUE;
+    clr->reportProgress = nbf->reportProgress;
+    clr->enableCheckpointing = FALSE;
+    clr->enableProfiling = TRUE;
 }
 
 int verifyFile(const NBodyFlags* nbf)
@@ -178,7 +212,9 @@ int verifyFile(const NBodyFlags* nbf)
 
     rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
+    {
         mw_printf("File failed\n");
+    }
     else
     {
         mw_printf("File is OK\n");
@@ -195,11 +231,11 @@ int verifyFile(const NBodyFlags* nbf)
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
 
-
 int runNBodySimulation(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
+    CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
     real chisq;
@@ -212,13 +248,20 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
 
     nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
+    nbodySetStateFromFlags(st, nbf);
+    nbodySetCLRequestFromFlags(&clr, nbf);
+
     if (createSharedScene(st, ctx))
     {
         mw_printf("Failed to create shared scene\n");
     }
 
-    ts = mwGetTime();
+    if (nbf->reportProgress)
+    {
+        setupCursesOutput();
+    }
 
+    ts = mwGetTime();
   #if NBODY_OPENCL
     if (nbf->noCL)
     {
@@ -226,28 +269,41 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
     else
     {
-        rc = runSystemCL(ctx, st, nbf);
+        rc = initCLNBodyState(st, ctx, &clr);
+        if (!nbodyStatusIsFatal(rc))
+        {
+            rc = runSystemCL(ctx, st, nbf);
+        }
     }
-
   #else
     rc = runSystem(ctx, st, nbf);
   #endif /* NBODY_OPENCL */
-
-    if (nbodyStatusIsFatal(rc))
-    {
-        mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
-        return rc;
-    }
-    else if (nbodyStatusIsWarning(rc))
-    {
-        mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
-    }
     te = mwGetTime();
+
+    if (nbf->reportProgress)
+    {
+        cleanupCursesOutput();
+    }
 
     if (nbf->printTiming)
     {
         printf("<run_time> %f </run_time>\n", te - ts);
     }
+
+
+    if (nbodyStatusIsFatal(rc))
+    {
+        mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
+        destroyNBodyState(st);
+        return rc;
+    }
+
+    if (nbodyStatusIsWarning(rc))
+    {
+        mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
+    }
+
+
 
     /* Get the likelihood */
     chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
@@ -256,8 +312,8 @@ int runNBodySimulation(const NBodyFlags* nbf)
         mw_printf("Failed to calculate chisq\n");
         rc = NBODY_ERROR;
     }
-
     finalOutput(ctx, st, nbf, chisq);
+
     destroyNBodyState(st);
 
     return rc;

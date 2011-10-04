@@ -127,8 +127,12 @@ extern "C" {
 
 #if DOUBLEPREC
   #define REAL_EPSILON DBL_EPSILON
+  #define REAL_MAX DBL_MAX
+  #define REAL_MIN DBL_MIN
 #else
   #define REAL_EPSILON FLT_EPSILON
+  #define REAL_MAX FLT_MAX
+  #define REAL_MIN FLT_MIN
 #endif
 
 #if !defined(NAN) && defined(_MSC_VER) && DOUBLEPREC

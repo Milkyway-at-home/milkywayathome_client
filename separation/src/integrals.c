@@ -77,23 +77,7 @@ static real progress(const EvaluationState* es, const IntegralArea* ia, real tot
 }
 
 
-#if BOINC_APPLICATION
-
-static inline void doBoincCheckpoint(const EvaluationState* es,
-                                     const IntegralArea* ia,
-                                     real total_calc_probs)
-{
-    if (boinc_time_to_checkpoint())
-    {
-        if (writeCheckpoint(es))
-            mw_fail("Write checkpoint failed\n");
-        boinc_checkpoint_completed();
-    }
-
-    boinc_fraction_done(progress(es, ia, total_calc_probs));
-}
-
-#elif MILKYWAY_IPHONE_APP
+#if MILKYWAY_IPHONE_APP
 
 static inline void doBoincCheckpoint(const EvaluationState* es,
                                      const IntegralArea* ia,
@@ -115,7 +99,22 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 
 #else /* Plain */
 
-#define doBoincCheckpoint(es, ia, total_calc_probs)
+static inline void doBoincCheckpoint(const EvaluationState* es,
+                                     const IntegralArea* ia,
+                                     real total_calc_probs)
+{
+    if (mw_time_to_checkpoint())
+    {
+        if (writeCheckpoint(es))
+        {
+            mw_fail("Write checkpoint failed\n");
+        }
+
+        mw_checkpoint_completed();
+    }
+
+    mw_fraction_done(progress(es, ia, total_calc_probs));
+}
 
 #endif /* BOINC_APPLICATION */
 

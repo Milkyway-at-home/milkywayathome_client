@@ -24,7 +24,37 @@
 #include "nbody.h"
 #include "mw_cl.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
+#define NBODY_MAXDEPTH 26
+
+
+cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
+cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di);
+cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st);
+cl_int nbodyCreateKernels(NBodyState* st);
+cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st);
+
+cl_int nbodySetInitialTreeStatus(NBodyState* st);
+cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st);
+cl_int nbodyReleaseBuffers(NBodyState* st);
+cl_int nbodyReleaseKernels(NBodyState* st);
+
+cl_int nbodySetAllKernelArguments(NBodyState* st);
+
 NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+
+cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_CL_H_ */
 

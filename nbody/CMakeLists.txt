@@ -36,6 +36,10 @@ include(CheckSSE2)
 include(BOINCPaths)
 include(CMakeDependentOption)
 
+cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
+                                       "NOT BOINC_APPLICATION;CURSES_FOUND" OFF)
+
+
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
                                       "NOT NBODY_OPENCL" OFF)
 mark_as_advanced(NBODY_STATIC)
@@ -48,6 +52,10 @@ endif()
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 include_directories(${DSFMT_INCLUDE_DIR})
+
+if(ENABLE_CURSES)
+  include_directories(${CURSES_INCLUDE_DIR})
+endif()
 
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
@@ -74,8 +82,6 @@ if(NBODY_OPENCL AND NOT OPENCL_FOUND)
   message(FATAL "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
 endif()
 
-# Handle downloading, extracting and building dSFMT
-
 print_separator()
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
@@ -84,6 +90,18 @@ message("   Enable crlibm:     ${NBODY_CRLIBM}")
 message("  ----")
 print_libs()
 print_separator()
+
+if(NBODY_OPENCL)
+  set(nbody_inline_src "${LIBRARY_OUTPUT_PATH}/nbody_kernels_inline.c")
+  add_custom_command(
+    OUTPUT "${nbody_inline_src}"
+    COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+    COMMENT "Inlining N-body kernel source")
+  add_library(nbody_kernels STATIC ${nbody_inline_src})
+endif()
 
 if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
   message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
@@ -103,6 +121,7 @@ set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/")
 set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_grav.c
                   ${NBODY_SRC_DIR}/nbody_io.c
+                  ${NBODY_SRC_DIR}/nbody_curses.c
                   ${NBODY_SRC_DIR}/nbody_types.c
                   ${NBODY_SRC_DIR}/nbody_tree.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
@@ -122,6 +141,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
                       ${NBODY_INCLUDE_DIR}/nbody_config.h.in
                       ${NBODY_INCLUDE_DIR}/nbody_io.h
+                      ${NBODY_INCLUDE_DIR}/nbody_curses.h
                       ${NBODY_INCLUDE_DIR}/nbody_tree.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
@@ -218,13 +238,23 @@ set(nbody_link_libs )
 
 if(NBODY_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
-  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
+  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES} nbody_kernels)
 endif()
+
+if(ENABLE_CURSES)
+  list(APPEND nbody_link_libs ${CURSES_LIBRARIES})
+endif()
+
+if(NOT BOINC_APPLICATION AND UNIX AND NOT APPLE)
+  list(APPEND nbody_link_libs rt)
+endif()
+
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 if(SYSTEM_IS_X86)
   enable_sse2(nbody_simulation)
 endif()
+
 
 
 set(nbody_exe_link_libs nbody_simulation
@@ -282,6 +312,10 @@ if(NBODY_GL)
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
+  if(NOT BOINC_APPLICATION AND UNIX AND NOT APPLE)
+    list(APPEND vis_link_libs rt)
+  endif()
+
   list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 
   add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})

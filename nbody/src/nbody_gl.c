@@ -961,12 +961,12 @@ void nbodyGLCleanup()
 
 int checkConnectedVersion()
 {
-    if (   scene->nbodyMajorVersion != MILKYWAY_NBODY_VERSION_MAJOR
-        || scene->nbodyMinorVersion != MILKYWAY_NBODY_VERSION_MINOR)
+    if (   scene->nbodyMajorVersion != NBODY_VERSION_MAJOR
+        || scene->nbodyMinorVersion != NBODY_VERSION_MINOR)
     {
         mw_printf("Graphics version (%d.%d) does not match application version (%d.%d)\n",
-                  MILKYWAY_NBODY_VERSION_MAJOR,
-                  MILKYWAY_NBODY_VERSION_MINOR,
+                  NBODY_VERSION_MAJOR,
+                  NBODY_VERSION_MINOR,
                   scene->nbodyMajorVersion,
                   scene->nbodyMinorVersion);
         return 1;

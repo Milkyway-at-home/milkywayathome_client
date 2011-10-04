@@ -310,11 +310,19 @@ const char** mwGetForwardedArguments(const char** args, unsigned int* nForwarded
     return forwardedArgs;
 }
 
-void _mw_time_prefix(char* buf, size_t bufSize)
+void mwLocalTime(char* buf, size_t bufSize)
 {
     time_t x = time(NULL);
     struct tm* tm = localtime(&x);
     if (!strftime(buf, bufSize - 1, "%H:%M:%S", tm))
+        buf[0] = '\0';
+}
+
+void mwLocalTimeFull(char* buf, size_t bufSize)
+{
+    time_t x = time(NULL);
+    struct tm* tm = localtime(&x);
+    if (!strftime(buf, bufSize - 1, "%c", tm))
         buf[0] = '\0';
 }
 

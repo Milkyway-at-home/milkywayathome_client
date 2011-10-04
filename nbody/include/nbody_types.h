@@ -76,6 +76,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 
 
+#if NBODY_OPENCL
+  #include "milkyway_cl.h"
+#endif
+
+
+
 /* There are bodies and cells. Cells are 0, bodies are nonzero. Bodies
    will be set to 1 or -1 if the body is to be ignored in the final
    likelihood calculation (i.e. a dark matter body)
@@ -93,13 +99,13 @@ typedef short body_t;
 /* node: data common to BODY and CELL structures. */
 typedef struct NBODY_ALIGN _NBodyNode
 {
-    body_t type;              /* code for node type */
-    real mass;                /* total mass of node */
     mwvector pos;             /* position of node */
     struct _NBodyNode* next;  /* link to next force-calc */
+    real mass;                /* total mass of node */
+    body_t type;              /* code for node type */
 } NBodyNode;
 
-#define EMPTY_NODE { 0, 0.0, ZERO_VECTOR, NULL }
+#define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0  }
 
 #define Type(x) (((NBodyNode*) (x))->type)
 #define Mass(x) (((NBodyNode*) (x))->mass)
@@ -199,30 +205,106 @@ typedef struct NBODY_ALIGN
 #endif /* _WIN32 */
 
 
+#if NBODY_OPENCL
+
+typedef struct
+{
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
+    cl_mem max[3];
+    cl_mem min[3];
+    cl_mem masses;
+    cl_mem treeStatus;
+
+    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
+    cl_mem count;
+    cl_mem child;
+    cl_mem sort;
+
+    cl_mem critRadii; /* Used by the alternative cell opening criterion.
+                         Unnecessary for BH86.
+                         BH86 will be the fastest option since it won't need to load from this
+                       */
+
+    cl_mem debug;
+} NBodyBuffers;
+
+
+/* 6 used by tree, 2 used by exact. 1 shared. */
+#define NKERNELS 7
+
+
+typedef struct
+{
+    cl_kernel boundingBox;
+    cl_kernel buildTree;
+    cl_kernel summarization;
+    cl_kernel sort;
+    cl_kernel forceCalculation;
+    cl_kernel integration;
+
+    /* Used by exact one only */
+    cl_kernel forceCalculation_Exact;
+} NBodyKernels;
+
+#endif /* NBODY_OPENCL */
+
+
+typedef struct
+{
+    size_t factors[6];
+    size_t threads[6];
+    double timings[6];        /* In a single iteration */
+    double chunkTimings[6];   /* Average time per chunk */
+    double kernelTimings[6];  /* Running totals */
+
+    size_t global[6];
+    size_t local[6];
+} NBodyWorkSizes;
+
+
+
 /* Mutable state used during an evaluation */
 typedef struct NBODY_ALIGN
 {
     NBodyTree tree;
-    NBodyNode* freecell;   /* list of free cells */
+    NBodyNode* freecell;      /* list of free cells */
+    char* checkpointResolved;
+    Body* bodytab;            /* points to array of bodies */
+    mwvector* acctab;         /* Corresponding accelerations of bodies */
+    mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
+    scene_t* scene;
     time_t lastCheckpoint;
+
     real tnow;
     int step;
     int nbody;
-    Body* bodytab;      /* points to array of bodies */
-    mwvector* acctab;   /* Corresponding accelerations of bodies */
     int treeIncest;     /* Tree incest has occured */
 
-    FILE* outFile;            /* file for snapshot output */
-    char* checkpointResolved;
+    int shmId;          /* shmid, key when using shmem */
 
-    mwvector* orbitTrace;  /* Trail of center of masses for display purposes */
-    scene_t* scene;
-    int shmId; /* shmid, key when using shmem */
+    mwbool ignoreResponsive;
+    mwbool usesExact;
+    mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
+    mwbool usesCL;
+    mwbool reportProgress;
+
+  #if NBODY_OPENCL
+    CLInfo* ci;
+    NBodyKernels* kernels;
+    NBodyBuffers* nbb;
+  #else
+    void* kernels;
+    void* ci;
+    void* nbb;
+  #endif /* NBODY_OPENCL */
+    NBodyWorkSizes* workSizes;
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, NULL, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
@@ -255,18 +337,15 @@ typedef struct
  */
 typedef struct NBODY_ALIGN
 {
-    Potential pot;
-    ExternalPotentialType potentialType;
-
+    real eps2;                /* (potential softening parameter)^2 */
+    real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
-
-    real theta;               /* accuracy parameter: 0.0 */
-    real eps2;                /* (potential softening parameter)^2 */
     real treeRSize;
-
     real sunGCDist;
+
     criterion_t criterion;
+    ExternalPotentialType potentialType;
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
@@ -274,6 +353,8 @@ typedef struct NBODY_ALIGN
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
+
+    Potential pot;
     HistogramParams histogramParams;
 } NBodyCtx;
 
@@ -290,12 +371,26 @@ typedef enum
     NBODY_TREE_STRUCTURE_ERROR = 1 << 1,
     NBODY_TREE_INCEST_FATAL    = 1 << 2,
     NBODY_IO_ERROR             = 1 << 3,
-    NBODY_CHECKPOINT_ERROR     = 1 << 4
+    NBODY_CHECKPOINT_ERROR     = 1 << 4,
+    NBODY_CL_ERROR             = 1 << 5,
+    NBODY_CAPABILITY_ERROR     = 1 << 6,
+    NBODY_CONSISTENCY_ERROR    = 1 << 7,
+    NBODY_UNIMPLEMENTED        = 1 << 8
 } NBodyStatus;
 
 #define nbodyStatusIsFatal(x) ((x) > 0)
 #define nbodyStatusIsOK(x) ((x) <= 0)
 #define nbodyStatusIsWarning(x) ((x) < 0)
+
+/* Reserve positive numbers for reporting depth > MAXDEPTH. Should match in kernel  */
+typedef enum
+{
+    NBODY_KERNEL_OK                   = 0,
+    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
+    NBODY_KERNEL_TREE_INCEST          = -2,
+    NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
+    NBODY_KERNEL_ERROR_OTHER          = -4
+} NBodyKernelError;
 
 
 /* Note: 'type' should first field for all types. */
@@ -304,11 +399,17 @@ typedef enum
 
 
 #define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, EXTERNAL_POTENTIAL_DEFAULT, 0.0, \
-                         0.0, 0.0, 0.0, 0.0,                               \
-                         0.0, InvalidCriterion,                            \
-                         FALSE, FALSE, FALSE,                              \
-                         0, 0, EMPTY_HISTOGRAM_PARAMS }
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
+                         FALSE, FALSE, FALSE,                           \
+                         0, 0,                                          \
+                         EMPTY_POTENTIAL, EMPTY_HISTOGRAM_PARAMS }
+
+
+
+#if NBODY_OPENCL
+NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
+#endif
 
 int destroyNBodyState(NBodyState* st);
 int detachSharedScene(NBodyState* st);
@@ -326,6 +427,7 @@ int equalPotential(const Potential* p1, const Potential* p2);
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2);
 
 int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2);
+
 
 #endif /* _NBODY_TYPES_H_ */
 

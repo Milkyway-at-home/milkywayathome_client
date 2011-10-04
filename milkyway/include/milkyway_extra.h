@@ -25,8 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <inttypes.h>
 #endif
 
-/* FIXME: OpenCL bool size */
-typedef short int mwbool;
+typedef char mwbool;
 
 #ifndef TRUE
   #define TRUE  1

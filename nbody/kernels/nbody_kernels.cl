@@ -29,7 +29,13 @@
   #error Opening criterion not set
 #endif
 
-/* Reserve positive numbers for reporting depth > MAXDEPTH */
+#if USE_EXTERNAL_POTENTIAL && ((!MIYAMOTO_NAGAI_DISK && !EXPONENTIAL_DISK) || (!LOG_HALO && !NFW_HALO && !TRIAXIAL_HALO))
+  #error Potential defines misspecified
+#endif
+
+
+
+/* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
 typedef enum
 {
     NBODY_KERNEL_OK                   = 0,
@@ -40,10 +46,10 @@ typedef enum
 } NBodyKernelError;
 
 #if DOUBLEPREC
-  #if cl_amd_fp64
-    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #elif cl_khr_fp64
+  #if cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #elif cl_amd_fp64
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
   #else
     #error Missing double precision extension
   #endif
@@ -75,9 +81,17 @@ typedef enum
 
 #if DOUBLEPREC
 typedef double real;
+typedef double2 real2;
+typedef double4 real4;
 #else
 typedef float real;
+typedef float2 real2;
+typedef float4 real4;
 #endif /* DOUBLEPREC */
+
+
+#define sqr(x) ((x) * (x))
+#define cube(x) ((x) * (x) * (x))
 
 
 /* FIXME: This needs to be the same as on the host */
@@ -109,6 +123,140 @@ typedef __global volatile int* restrict IVPtr;
 //typedef __global int* restrict IVPtr;
 
 
+
+
+inline real4 sphericalAccel(real4 pos, real r)
+{
+    const real tmp = SPHERICAL_SCALE + r;
+
+    return (-SPHERICAL_MASS / (r * sqr(tmp))) * pos;
+}
+
+/* gets negative of the acceleration vector of this disk component */
+inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
+{
+    real4 acc;
+    const real a   = DISK_SCALE_LENGTH;
+    const real b   = DISK_SCALE_HEIGHT;
+    const real zp  = sqrt(sqr(pos.z) + sqr(b));
+    const real azp = a + zp;
+
+    const real rp  = sqr(pos.x) + sqr(pos.y) + sqr(azp);
+    const real rth = sqrt(cube(rp));  /* rp ^ (3/2) */
+
+    acc.x = -DISK_MASS * pos.x / rth;
+    acc.y = -DISK_MASS * pos.y / rth;
+    acc.z = -DISK_MASS * pos.z * azp / (zp * rth);
+    acc.w = 0.0;
+
+    return acc;
+}
+
+inline real4 exponentialDiskAccel(real4 pos, real r)
+{
+    const real b = DISK_SCALE_LENGTH;
+
+    const real expPiece = exp(-r / b) * (r + b) / b;
+    const real factor   = DISK_MASS * (expPiece - 1.0) / cube(r);
+
+    return factor * pos;
+}
+
+inline real4 logHaloAccel(real4 pos, real r)
+{
+    real4 acc;
+
+    const real tvsqr = -2.0 * sqr(HALO_VHALO);
+    const real qsqr  = sqr(HALO_FLATTEN_Z);
+    const real d     = HALO_SCALE_LENGTH;
+    const real zsqr  = sqr(pos.z);
+
+    const real arst  = sqr(d) + sqr(pos.x) + sqr(pos.y);
+    const real denom = (zsqr / qsqr) +  arst;
+
+    acc.x = tvsqr * pos.x / denom;
+    acc.y = tvsqr * pos.y / denom;
+    acc.z = tvsqr * pos.z / ((qsqr * arst) + zsqr);
+
+    return acc;
+}
+
+inline real4 nfwHaloAccel(real4 pos, real r)
+{
+    const real a  = HALO_SCALE_LENGTH;
+    const real ar = a + r;
+    const real c  = a * sqr(HALO_VHALO) * ((-ar * log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
+
+    return c * pos;
+}
+
+inline real4 triaxialHaloAccel(real4 pos, real r)
+{
+    real4 acc;
+
+    const real qzs      = sqr(HALO_FLATTEN_Z);
+    const real rhalosqr = sqr(HALO_SCALE_LENGTH);
+    const real mvsqr    = -sqr(HALO_VHALO);
+
+    const real xsqr = sqr(pos.x);
+    const real ysqr = sqr(pos.y);
+    const real zsqr = sqr(pos.z);
+
+    const real c1 = HALO_C1;
+    const real c2 = HALO_C2;
+    const real c3 = HALO_C3;
+
+    const real arst  = rhalosqr + (c1 * xsqr) + (c3 * pos.x * pos.y) + (c2 * ysqr);
+    const real arst2 = (zsqr / qzs) + arst;
+
+    acc.x = mvsqr * (((2.0 * c1) * pos.x) + (c3 * pos.y) ) / arst2;
+
+    acc.y = mvsqr * (((2.0 * c2) * pos.y) + (c3 * pos.x) ) / arst2;
+
+    acc.z = (2.0 * mvsqr * pos.z) / ((qzs * arst) + zsqr);
+
+    acc.w = 0.0;
+
+    return acc;
+}
+
+inline real4 externalAcceleration(real x, real y, real z)
+{
+    real4 pos = { x, y, z, 0.0 };
+    real r = sqrt(sqr(x) + sqr(y) + sqr(z));
+    //real r = length(pos); // crashes AMD compiler
+    real4 acc;
+
+    if (MIYAMOTO_NAGAI_DISK)
+    {
+        acc = miyamotoNagaiDiskAccel(pos, r);
+    }
+    else if (EXPONENTIAL_DISK)
+    {
+        acc = exponentialDiskAccel(pos, r);
+    }
+
+    if (LOG_HALO)
+    {
+        acc += logHaloAccel(pos, r);
+    }
+    else if (NFW_HALO)
+    {
+        acc += nfwHaloAccel(pos, r);
+    }
+    else if (TRIAXIAL_HALO)
+    {
+        acc += triaxialHaloAccel(pos, r);
+    }
+
+    acc += sphericalAccel(pos, r);
+
+    return acc;
+}
+
+
+
+
 /* All kernels will use the same parameters for now */
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
@@ -123,7 +271,7 @@ typedef __global volatile int* restrict IVPtr;
     IVPtr _child, IVPtr _sort,                          \
     __global volatile TreeStatus* restrict _treeStatus, \
                                                         \
-    int step,                                           \
+    int updateVel,                                      \
     int maxNBody,                                       \
     RVPtr _critRadii,                                   \
     __global volatile Debug* _debug                     \
@@ -151,7 +299,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     minZ[i] = maxZ[i] = minZ[0];
 
     int inc = get_local_size(0) * get_num_groups(0);
-    int j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0);
+    int j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0) (- get_global_offset(0))
     while (j < NBODY) /* Scan bodies */
     {
         real tmp = _posX[j];
@@ -223,9 +371,10 @@ __kernel void NBODY_KERNEL(boundingBox)
 
             _treeStatus->radius = radius;
 
-          #if NEWCRITERION || SW93
-            _critRadii[NNODE] = radius;
-          #endif
+            if (NEWCRITERION || SW93)
+            {
+                _critRadii[NNODE] = radius;
+            }
 
 
             /* Create root node */
@@ -362,10 +511,10 @@ __kernel void NBODY_KERNEL(buildTree)
                         _mass[cell] = -1.0;
                         _start[cell] = -1;
 
-                      #if SW93 || NEWCRITERION
-                        _critRadii[cell] = r;  /* Save cell size */
-                      #endif /* SW93 || NEWCRITERION */
-
+                        if (SW93 || NEWCRITERION)
+                        {
+                            _critRadii[cell] = r;  /* Save cell size */
+                        }
 
                         real nx = _posX[n];
                         real ny = _posY[n];
@@ -455,9 +604,11 @@ __kernel void NBODY_KERNEL(summarization)
 {
     __local int bottom;
     __local volatile int child[NSUB * THREADS3];
+    __local real rootSize;
 
     if (get_local_id(0) == 0)
     {
+        rootSize = _treeStatus->radius;
         bottom = _treeStatus->bottom;
     }
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
@@ -551,9 +702,12 @@ __kernel void NBODY_KERNEL(summarization)
             real cy = _posY[k];
             real cz = _posZ[k];
 
-          #if SW93 || NEWCRITERION
-            real psize = _critRadii[k]; /* Get saved size (half cell = radius) */
-          #endif
+            real psize;
+
+            if (SW93 || NEWCRITERION)
+            {
+                psize = _critRadii[k]; /* Get saved size (half cell = radius) */
+            }
 
             m = 1.0 / cm;
             px *= m; /* Scale up to position */
@@ -561,41 +715,52 @@ __kernel void NBODY_KERNEL(summarization)
             pz *= m;
 
             /* Calculate opening criterion if necessary */
-          #if SW93
-            real bmax2 = bmax2Inc(px, cx, psize);
-            bmax2 += bmax2Inc(py, cy, psize);
-            bmax2 += bmax2Inc(pz, cz, psize);
-            real rc2 = bmax2 / (THETA * THETA);
-          #elif NEWCRITERION
-            real dx = px - cx;  /* Find distance from center of mass to geometric center */
-            real dy = py - cy;
-            real dz = pz - cz;
-            real dr = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+            real rc2;
 
-            real rc = (psize / THETA) + dr;
-
-            real rc2 = rc * rc;
-          #endif /* SW93 */
-
-          #if SW93 || NEWCRITERION
-            /* We don't have the size of the cell for the others, but really still should check */
-            bool xTest = checkTreeDim(px, cx, psize);
-            bool yTest = checkTreeDim(py, cy, psize);
-            bool zTest = checkTreeDim(pz, cz, psize);
-            bool structureCheck = xTest || yTest || zTest;
-            if (structureCheck)
+            if (THETA == 0.0)
             {
-                _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
+                rc2 = sqr(2.0 * rootSize);
             }
-          #endif /* SW93 || NEWCRITERION */
+            else if (SW93)
+            {
+                real bmax2 = bmax2Inc(px, cx, psize);
+                bmax2 += bmax2Inc(py, cy, psize);
+                bmax2 += bmax2Inc(pz, cz, psize);
+                rc2 = bmax2 / (THETA * THETA);
+            }
+            else if (NEWCRITERION)
+            {
+                real dx = px - cx;  /* Find distance from center of mass to geometric center */
+                real dy = py - cy;
+                real dz = pz - cz;
+                real dr = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+
+                real rc = (psize / THETA) + dr;
+
+                rc2 = rc * rc;
+            }
+
+            if (SW93 || NEWCRITERION)
+            {
+                /* We don't have the size of the cell for BH86, but really still should check */
+                bool xTest = checkTreeDim(px, cx, psize);
+                bool yTest = checkTreeDim(py, cy, psize);
+                bool zTest = checkTreeDim(pz, cz, psize);
+                bool structureCheck = xTest || yTest || zTest;
+                if (structureCheck)
+                {
+                    _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
+                }
+            }
 
             _posX[k] = px;
             _posY[k] = py;
             _posZ[k] = pz;
 
-          #if SW93 || NEWCRITERION
-            _critRadii[k] = rc2;
-          #endif
+            if (SW93 || NEWCRITERION)
+            {
+                _critRadii[k] = rc2;
+            }
 
             write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting mass */
             _mass[k] = cm;
@@ -607,7 +772,6 @@ __kernel void NBODY_KERNEL(summarization)
 }
 
 #if NOSORT
-#warning "CORRECT KERNL"
 /* Debugging */
 __attribute__ ((reqd_work_group_size(THREADS4, 1, 1)))
 __kernel void NBODY_KERNEL(sort)
@@ -754,7 +918,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
     __local volatile real nm[THREADS5 / WARPSIZE];
 
-    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE]; /* Used by BH86 and Exact */
+    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE];
 
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
@@ -776,28 +940,30 @@ __kernel void NBODY_KERNEL(forceCalculation)
         maxDepth = _treeStatus->maxDepth;
         real rootSize = _treeStatus->radius;
 
-      #if SW93 || NEWCRITERION
-        rootCritRadius = _critRadii[NNODE];
-      #endif
-
-
-      #if BH86
-        real rc = rootSize / THETA;
-        /* Precompute values that depend only on tree level */
-        dq[0] = rc * rc;
-        for (int i = 1; i < maxDepth; ++i)
+        if (SW93 || NEWCRITERION)
         {
-            dq[i] = 0.25 * dq[i - 1];
+            rootCritRadius = _critRadii[NNODE];
         }
-      #elif EXACT
-        real rc = 2.0 * rootSize;
-        /* Just fill dq to simplify things. This shouldn't really ever be used anyway */
-        for (int i = 0; i < maxDepth; ++i)
+        else if (BH86)
         {
-            dq[i] = rc * rc;
-        }
-      #endif /* BH86 */
+            real rc;
 
+            if (THETA == 0.0)
+            {
+                rc = 2.0 * rootSize;
+            }
+            else
+            {
+                rc = rootSize / THETA;
+            }
+
+            /* Precompute values that depend only on tree level */
+            dq[0] = rc * rc;
+            for (int i = 1; i < maxDepth; ++i)
+            {
+                dq[i] = 0.25 * dq[i - 1];
+            }
+        }
 
         if (maxDepth > MAXDEPTH)
         {
@@ -814,14 +980,15 @@ __kernel void NBODY_KERNEL(forceCalculation)
         int j = base * MAXDEPTH;
         int diff = get_local_id(0) - sbase; /* Index in warp */
 
-      #if BH86 || EXACT
-        /* Make multiple copies to avoid index calculations later */
-        if (diff < MAXDEPTH)
+        if (BH86 || EXACT)
         {
-            dq[diff + j] = dq[diff];
+            /* Make multiple copies to avoid index calculations later */
+            if (diff < MAXDEPTH)
+            {
+                dq[diff + j] = dq[diff];
+            }
+            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         }
-        barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-      #endif /* BH86 || EXACT */
 
         /* iterate over all bodies assigned to thread */
         for (int k = get_global_id(0); k < maxNBody; k += get_local_size(0) * get_num_groups(0))
@@ -844,9 +1011,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 node[j] = NNODE;
                 pos[j] = 0;
 
-              #if SW93 || NEWCRITERION
-                dq[j] = rootCritRadius;
-              #endif
+                if (SW93 || NEWCRITERION)
+                {
+                    dq[j] = rootCritRadius;
+                }
             }
             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
@@ -854,7 +1022,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             while (depth >= j)
             {
                 /* Stack is not empty */
-                while (pos[depth] < 8)
+                while (pos[depth] < NSUB)
                 {
                     int n;
                     /* Node on top of stack has more children to process */
@@ -887,16 +1055,16 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         /* Check if all threads agree that cell is far enough away (or is a body) */
                         if (isBody(n) || forceAllPredicate(allBlock, base, rSq >= dq[depth]))
                         {
-                            if (n != i) /* Skip self interaction */
-                            {
-                                real r = sqrt(rSq + EPS2); /* Compute distance with softening */
-                                real ai = nm[base] / (r * r * r);
-                                ax += ai * dx;
-                                ay += ai * dy;
-                                az += ai * dz;
-                            }
+                            real r = sqrt(rSq + EPS2); /* Compute distance with softening */
+                            real ai = nm[base] / (r * r * r);
+                            ax += ai * dx;
+                            ay += ai * dy;
+                            az += ai * dz;
 
-                            if (isBody(n) && n == i) /* Watch for tree incest */
+                            /* Watch for self interaction. It's OK to
+                             * not skip because dx, dy, dz will be
+                             * 0.0 */
+                            if (n == i)
                             {
                                 skipSelf = true;
                             }
@@ -910,9 +1078,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                 node[depth] = n;
                                 pos[depth] = 0;
 
-                              #if SW93 || NEWCRITERION
-                                dq[depth] = _critRadii[n];
-                              #endif
+                                if (SW93 || NEWCRITERION)
+                                {
+                                    dq[depth] = _critRadii[n];
+                                }
                             }
                             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
                         }
@@ -926,7 +1095,16 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 --depth;  /* Done with this level */
             }
 
-            if (step > 0)
+            if (USE_EXTERNAL_POTENTIAL)
+            {
+                real4 acc = externalAcceleration(px, py, pz);
+
+                ax += acc.x;
+                ay += acc.y;
+                az += acc.z;
+            }
+
+            if (updateVel)
             {
                 _velX[i] += (ax - _accX[i]) * (0.5 * TIMESTEP);
                 _velY[i] += (ay - _accY[i]) * (0.5 * TIMESTEP);
@@ -976,5 +1154,10 @@ __kernel void NBODY_KERNEL(integration)
         _velY[i] = vhy + dvy;
         _velZ[i] = vhz + dvz;
     }
+}
+
+
+__kernel void NBODY_KERNEL(forceCalculation_Exact)
+{
 }
 

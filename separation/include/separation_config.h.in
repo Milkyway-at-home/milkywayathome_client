@@ -37,7 +37,6 @@
 #cmakedefine01 NVIDIA_OPENCL
 #cmakedefine01 AMD_OPENCL
 
-#cmakedefine01 SEPARATION_INLINE_KERNEL
 #cmakedefine01 SEPARATION_GRAPHICS
 
 #cmakedefine01 HAVE_SSE2
@@ -71,7 +70,6 @@
   #define SEPARATION_SPECIAL_LIBM_STR ""
 #endif /* SEPARATION_CRLIBM */
 
-#define SEPARATION_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}"
 #define SEPARATION_APP_NAME "${CMAKE_PROJECT_NAME} separation"
 
 

@@ -206,8 +206,9 @@ cl_int mwSetProgramFromBin(CLInfo* ci,const unsigned char* bin, size_t binSize)
 }
 
 cl_int mwSetProgramFromSrc(CLInfo* ci,
+                           cl_uint srcCount,
                            const char** src,
-                           const cl_uint srcCount,
+                           const size_t* lengths,
                            const char* compileDefs)
 {
     cl_int err;

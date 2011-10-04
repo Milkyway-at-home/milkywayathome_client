@@ -81,6 +81,7 @@ typedef struct
     int forceAVX;
     int verbose;
     int enableProfiling;
+    int reportProgress;
 } CLRequest;
 
 #if MW_ENABLE_DEBUG
@@ -178,11 +179,13 @@ long mwGetTimeMicro();
 
 #define mus_to_s(mus) ((double) (mus) / 1.0e6)
 
-void _mw_time_prefix(char* buf, size_t bufSize);
-#define mw_report(msg, ...)                             \
-    {                                                   \
-        char _buf[256];                                 \
-        _mw_time_prefix(_buf, sizeof(_buf));            \
+void mwLocalTime(char* buf, size_t bufSize);
+void mwLocalTimeFull(char* buf, size_t bufSize);
+
+#define mw_report(msg, ...)                                 \
+    {                                                       \
+        char _buf[256];                                     \
+        mwLocalTime(_buf, sizeof(_buf));                    \
         fprintf(stdout, "%s: " msg, _buf, ##__VA_ARGS__);   \
     }
 

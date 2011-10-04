@@ -24,6 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_defaults.h"
 
+#if NBODY_OPENCL
+  #include "nbody_cl.h"
+#endif /* NBODY_OPENCL */
+
 #if USE_SHMEM
   #include <sys/mman.h>
 #endif
@@ -43,7 +47,9 @@ static void freeNBodyTree(NBodyTree* t)
             p = tmp;
         }
         else                        /* skip over bodies */
+        {
             p = Next(p);
+        }
     }
 
     t->root = NULL;
@@ -84,6 +90,8 @@ int detachSharedScene(NBodyState* st)
     return 0;
 }
 
+
+
 int destroyNBodyState(NBodyState* st)
 {
     int failed = FALSE;
@@ -96,14 +104,41 @@ int destroyNBodyState(NBodyState* st)
 
     free(st->checkpointResolved);
 
-    if (st->outFile && st->outFile != DEFAULT_OUTPUT_FILE)
+  #if NBODY_OPENCL
+
+    if (st->ci)
     {
-        if (fclose(st->outFile))
-        {
-            perror("closing output\n");
-            failed = TRUE;
-        }
+        mwDestroyCLInfo(st->ci);
+        free(st->ci);
+        st->ci = NULL;
     }
+
+    if (st->kernels)
+    {
+        cl_int err;
+
+        err = nbodyReleaseKernels(st);
+        free(st->kernels);
+        failed |= (err != CL_SUCCESS);
+    }
+
+    if (st->workSizes)
+    {
+        free(st->workSizes);
+    }
+
+    if (st->nbb)
+    {
+        cl_int err;
+
+        err = nbodyReleaseBuffers(st);
+        free(st->nbb);
+        st->nbb = NULL;
+        failed |= (err != CL_SUCCESS);
+    }
+
+  #endif /* NBODY_OPENCL */
+
 
     failed |= detachSharedScene(st);
 
@@ -113,11 +148,12 @@ int destroyNBodyState(NBodyState* st)
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
-    static const mwvector maxV = mw_vec(DBL_MAX, DBL_MAX, DBL_MAX);
+    static const mwvector maxV = mw_vec(REAL_MAX, REAL_MAX, REAL_MAX);
     int i;
 
     st->tree = emptyTree;
     st->freecell = NULL;
+    st->usesExact = (ctx->criterion == Exact);
 
     st->tree.rsize = ctx->treeRSize;
     st->tnow = 0.0;
@@ -139,6 +175,78 @@ NBodyState* newNBodyState()
 {
     return mwCallocA(1, sizeof(NBodyState));
 }
+
+#if NBODY_OPENCL
+
+NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+{
+    cl_int err;
+
+    /* Bodies must be set before trying to use this */
+    if (!st->bodytab)
+        return NBODY_CONSISTENCY_ERROR;
+
+    if (ctx->useQuad)
+    {
+        mw_printf("Quadrupole moments not yet implemented with OpenCL\n");
+        return NBODY_UNIMPLEMENTED;
+    }
+
+    if (ctx->criterion == Exact)
+    {
+        mw_printf("Exact OpenCL N-body unimplemented\n");
+        return NBODY_UNIMPLEMENTED;
+    }
+
+    st->usesExact = (ctx->criterion == Exact);
+    st->reportProgress = clr->reportProgress;
+
+    st->ci = mwCalloc(1, sizeof(CLInfo));
+    st->nbb = mwCalloc(1, sizeof(NBodyBuffers));
+    st->workSizes = mwCalloc(1, sizeof(NBodyWorkSizes));
+    st->kernels = mwCalloc(1, sizeof(NBodyKernels));
+
+    err = mwSetupCL(st->ci, clr);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
+
+    if (!nbodyCheckDevCapabilities(&st->ci->di, ctx, st))
+        return NBODY_CAPABILITY_ERROR;
+
+    if (setThreadCounts(st->workSizes, &st->ci->di) || setWorkSizes(st->workSizes, &st->ci->di))
+        return NBODY_ERROR;
+
+    err = nbodyLoadKernels(ctx, st);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
+
+    err = nbodyCreateKernels(st);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
+
+    err = nbodyCreateBuffers(ctx, st);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
+
+    if (!st->usesExact)
+    {
+        err = nbodySetInitialTreeStatus(st);
+        if (err != CL_SUCCESS)
+            return NBODY_CL_ERROR;
+    }
+
+    err = nbodySetAllKernelArguments(st);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
+
+    err = nbodyMarshalBodies(st, CL_TRUE);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
+
+    return NBODY_SUCCESS;
+}
+
+#endif /* NBODY_OPENCL */
 
 static int equalMaybeArray(const void* a, const void* b, size_t n)
 {
@@ -176,7 +284,7 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
     return equalMaybeArray(st1->acctab, st2->acctab, st1->nbody * sizeof(mwvector));
 }
 
-/* TODO: Doesn't clone tree */
+/* TODO: Doesn't clone tree or CL stuffs */
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
@@ -202,6 +310,27 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 
     st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
     memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
+
+
+    if (st->ci)
+    {
+        mw_panic("OpenCL NBodyState cloning not implemented\n");
+
+        /*
+        st->ci = (CLInfo*) mwCalloc(1, sizeof(CLInfo));
+        st->nbb = (NBodyBuffers*) mwCalloc(1, sizeof(NBodyBuffers));
+
+        memcpy(st->ci, oldSt->ci, sizeof(CLInfo));
+
+        clRetainContext(oldSt->ci->clctx);
+        clRetainProgram(oldSt->ci->prog);
+        clRetainCommandQueue(oldSt->ci->queue);
+
+        // copy buffers
+        mwDuplicateBuffer(st->ci, oldSt->nbb.blah)
+        */
+    }
+
 }
 
 

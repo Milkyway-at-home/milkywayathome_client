@@ -45,7 +45,16 @@ typedef struct
     const char** forwardedArgs;
     unsigned int numForwardedArgs;
 
-    uint32_t setSeed;
+    int setSeed;  /* If the seed was specified or not */
+    uint32_t seed;   /* Seed value */
+
+    int numThreads;
+
+    time_t checkpointPeriod;
+    unsigned int platform;
+    unsigned int devNum;
+
+    /* These all must be int since that's the type popt expects them to be */
     int visualizer;
     int debugBOINC;
     int outputCartesian;
@@ -55,16 +64,14 @@ typedef struct
     int printHistogram;
     int cleanCheckpoint;
     int ignoreCheckpoint;
-    int numThreads;
+
     int debugLuaLibs;   /* Open IO libraries etc. */
     int noCL;
-    time_t checkpointPeriod;
-
-    unsigned int platform;
-    unsigned int devNum;
+    int reportProgress;
+    int ignoreResponsive;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);

@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
+#include "nbody_curses.h"
 
 /* Low-level input and output operations. */
 
@@ -65,7 +66,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
 
 int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq)
 {
-    FILE* f;
+    FILE* f = DEFAULT_OUTPUT_FILE;
     int rc = 0;
 
     if (nbf->outFileName)

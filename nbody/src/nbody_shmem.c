@@ -46,8 +46,8 @@ static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
 
 static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 {
-    st->scene->nbodyMajorVersion = MILKYWAY_NBODY_VERSION_MAJOR;
-    st->scene->nbodyMinorVersion = MILKYWAY_NBODY_VERSION_MINOR;
+    st->scene->nbodyMajorVersion = NBODY_VERSION_MAJOR;
+    st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
     st->scene->nbody = st->nbody;
     st->scene->info.timeEvolve = (float) ctx->timeEvolve;
     st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
@@ -280,33 +280,38 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 void updateDisplayedBodies(NBodyState* st)
 {
     const Body* b;
-    FloatPos* r;
     int i = 0;
     const int nbody = st->nbody;
     scene_t* scene = st->scene;
-    mwvector cmPos = Pos(st->tree.root);
+    FloatPos* r;
+    mwvector cmPos;
 
     if (!scene)
         return;
 
     r = scene->rTrace;
-    scene->usleepcount += scene->usleepdt;
-    scene->info.currentTime = (float) st->tnow;
-    scene->rootCenterOfMass[0] = (float) X(cmPos);
-    scene->rootCenterOfMass[1] = (float) Y(cmPos);
-    scene->rootCenterOfMass[2] = (float) Z(cmPos);
-
-    /* Tell the graphics about the orbit's history */
-    i = scene->currentTracePoint;
-    if (i < N_ORBIT_TRACE_POINTS && i < MAX_DRAW_TRACE_POINTS)
+    if (!st->usesExact)
     {
-        if (X(st->orbitTrace[i]) < DBL_MAX)
-        {
-            scene->orbitTrace[i].x = (float) X(st->orbitTrace[i]);
-            scene->orbitTrace[i].y = (float) Y(st->orbitTrace[i]);
-            scene->orbitTrace[i].z = (float) Z(st->orbitTrace[i]);
+        cmPos = Pos(st->tree.root);
 
-            scene->currentTracePoint++;
+        scene->usleepcount += scene->usleepdt;
+        scene->info.currentTime = (float) st->tnow;
+        scene->rootCenterOfMass[0] = (float) X(cmPos);
+        scene->rootCenterOfMass[1] = (float) Y(cmPos);
+        scene->rootCenterOfMass[2] = (float) Z(cmPos);
+
+        /* Tell the graphics about the orbit's history */
+        i = scene->currentTracePoint;
+        if (i < N_ORBIT_TRACE_POINTS && i < MAX_DRAW_TRACE_POINTS)
+        {
+            if (X(st->orbitTrace[i]) < REAL_MAX)
+            {
+                scene->orbitTrace[i].x = (float) X(st->orbitTrace[i]);
+                scene->orbitTrace[i].y = (float) Y(st->orbitTrace[i]);
+                scene->orbitTrace[i].z = (float) Z(st->orbitTrace[i]);
+
+                scene->currentTracePoint++;
+            }
         }
     }
 

@@ -71,16 +71,171 @@ static inline void printHistogram(FILE* f,
     mw_boinc_print(f, "</histogram>\n");
 }
 
-static void writeHistogram(NBodyState* st,
+static void printHistogramHeader(FILE* f,
+                                 const NBodyCtx* ctx,
+                                 const HistogramParams* hp,
+                                 int nbody,
+                                 uint32_t seed,
+                                 real chisq)
+{
+    char tBuf[256];
+    const Potential* p = &ctx->pot;
+
+    mwLocalTimeFull(tBuf, sizeof(tBuf));
+
+    fprintf(f,
+            "#\n"
+            "# Generated %s\n"
+            "#\n"
+            "# Likelihood = %.15f\n"
+            "#\n"
+            "# (phi,   theta,  psi) = (%f, %f, %f)\n"
+            "# (start, center, end) = (%f, %f, %f)\n"
+            "# Bin size = %f\n"
+            "#\n"
+            "#\n",
+            tBuf,
+            chisq,
+            hp->phi, hp->theta, hp->psi,
+            hp->startRaw, hp->center, hp->endRaw,
+            hp->binSize);
+
+
+    fprintf(f,
+            "# Nbody = %d\n"
+            "# Evolve time = %f\n"
+            "# Timestep = %f\n"
+            "# Sun GC Dist = %f\n"
+            "# Criterion = %s\n"
+            "# Theta = %f\n"
+            "# Quadrupole Moments = %s\n"
+            "# Eps = %f\n"
+            "# Seed = %u\n"
+            "#\n",
+            nbody,
+            ctx->timeEvolve,
+            ctx->timestep,
+            ctx->sunGCDist,
+            showCriterionT(ctx->criterion),
+            ctx->theta,
+            showBool(ctx->useQuad),
+            mw_sqrt(ctx->eps2),
+            seed
+        );
+
+
+    fprintf(f,
+            "#\n"
+            "# Potential: (%s)\n"
+            "#\n",
+            showExternalPotentialType(ctx->potentialType)
+        );
+
+    if (ctx->potentialType != EXTERNAL_POTENTIAL_DEFAULT)
+    {
+        return;
+    }
+
+
+    switch (p->disk.type)
+    {
+        case MiyamotoNagaiDisk:
+
+            fprintf(f,
+                    "# Disk: MiaymotoNagai\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#   b = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case ExponentialDisk:
+            fprintf(f,
+                    "# Disk: Exponential\n"
+                    "#   mass = %f\n"
+                    "#   b = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength);
+            break;
+
+        case InvalidDisk:
+        default:
+            fprintf(f,
+                    "# Disk: ???\n"
+                    "#\n");
+    }
+
+
+    switch (p->halo.type)
+    {
+        case LogarithmicHalo:
+            fprintf(f,
+                    "# Halo: Logarithmic\n"
+                    "#   vhalo = %f\n"
+                    "#   d = %f\n"
+                    "#\n",
+                    p->halo.vhalo,
+                    p->halo.scaleLength);
+            break;
+
+        case NFWHalo:
+            fprintf(f,
+                    "# Halo: NFW\n"
+                    "#   vhalo = %f\n"
+                    "#   q = %f\n"
+                    "#\n",
+                    p->halo.vhalo,
+                    p->halo.scaleLength);
+            break;
+
+        case TriaxialHalo:
+            fprintf(f,
+                    "# Halo: Triaxial\n"
+                    "#   vhalo = %f\n"
+                    "#   rhalo = %f\n"
+                    "#   qz = %f\n"
+                    "#   q1 = %f\n"
+                    "#   q2 = %f\n"
+                    "#   phi = %f\n"
+                    "#\n",
+                    p->halo.vhalo,
+                    p->halo.scaleLength,
+                    p->halo.flattenZ,
+                    p->halo.flattenX,
+                    p->halo.flattenY,
+                    p->halo.triaxAngle);
+            break;
+
+        case InvalidHalo:
+        default:
+            fprintf(f,
+                    "# Halo: ???\n"
+                    "#\n");
+    }
+
+    fprintf(f,
+            "#\n"
+            "# Ignore  Lambda  Probability  Error\n"
+            "#\n"
+            "\n");
+}
+
+static void writeHistogram(const NBodyCtx* ctx,
+                           NBodyState* st,
                            const NBodyFlags* nbf,
                            const HistogramParams* hp,
                            const HistData* histData,      /* Read histogram data */
                            const unsigned int* histogram, /* Binned simulation data */
-                           const unsigned int maxIdx,     /* number of bins */
-                           const real start,              /* Calculated low point of bin range */
-                           const real totalNum)           /* Total number in range */
+                           unsigned int maxIdx,           /* number of bins */
+                           real start,                    /* Calculated low point of bin range */
+                           real chisq,
+                           real totalNum)                 /* Total number in range */
 {
-    FILE* f = st->outFile;
+    FILE* f = DEFAULT_OUTPUT_FILE;
 
     if (nbf->histoutFileName && strcmp(nbf->histoutFileName, ""))  /* If file specified, try to open it */
     {
@@ -88,13 +243,14 @@ static void writeHistogram(NBodyState* st,
         if (f == NULL)
         {
             perror("Writing histout. Using output file instead");
-            f = st->outFile;
+            f = DEFAULT_OUTPUT_FILE;
         }
     }
 
+    printHistogramHeader(f, ctx, hp, st->nbody, nbf->seed, chisq);
     printHistogram(f, hp, histData, histogram, maxIdx, start, totalNum);
 
-    if (f != st->outFile)
+    if (f != DEFAULT_OUTPUT_FILE)
         fclose(f);
 }
 
@@ -176,6 +332,35 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     return histogram;
 }
 
+static size_t countLinesInFile(FILE* f)
+{
+    int c;
+    size_t lineCount = 0;
+
+    while ((c = fgetc(f)) != EOF)
+    {
+        if (c == '\n')
+        {
+            ++lineCount;
+        }
+    }
+
+    if (!feof(f))
+    {
+        perror("Error counting histogram lines");
+        return 0;
+    }
+
+    if (fseek(f, 0L, SEEK_SET) < 0)
+    {
+        perror("Error seeking histogram");
+        return 0;
+    }
+
+    return lineCount;
+}
+
+
 /* The chisq is calculated by reading a histogram file of normalized data.
    Returns null on failure.
  */
@@ -186,44 +371,85 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     size_t fsize;
     HistData* histData;
     unsigned int fileCount = 0;
+    unsigned int lineNum = 0;
+    mwbool error = FALSE;
+    mwbool readParams = FALSE;
+    char lineBuf[1024];
 
     f = mwOpenResolved(histogram, "r");
     if (f == NULL)
     {
-        perror("Opening histogram");
+        mw_printf("Opening histogram file '%s'\n", histogram);
         return NULL;
     }
 
-    fseek(f, 0L, SEEK_END);
-    /* Make sure it's big enough, avoid fun with integer division */
-    fsize = (size_t) ceil((real) (ftell(f) + 1) / 3);
-    fseek(f, 0L, SEEK_SET);
+    fsize = countLinesInFile(f);
+    if (fsize == 0)
+    {
+        mw_printf("Histogram line count = 0\n");
+        return NULL;
+    }
 
     histData = (HistData*) mwCalloc(sizeof(HistData), fsize);
 
-    while ( (rc = fscanf(f,
-                       #if DOUBLEPREC
-                         "%d %lf %lf %lf\n",
-                       #else
-                         "%d %f %f %f\n",
-                       #endif
-                         &histData[fileCount].useBin,
-                         &histData[fileCount].lambda,
-                         &histData[fileCount].count,
-                         &histData[fileCount].err))
-            && rc != EOF)
+    while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
+        ++lineNum;
+
+        if (strlen(lineBuf) + 1 >= sizeof(lineBuf))
+        {
+            mw_printf("Error reading histogram line %d (Line buffer too small): %s", lineNum, lineBuf);
+            error = TRUE;
+            break;
+        }
+
+        /* Skip comments and blank lines */
+        if (lineBuf[0] == '#' || lineBuf[0] == '\n')
+            continue;
+
+        if (!readParams)  /* One line is allowed for information on the histogram */
+        {
+            real phi, theta, psi;
+
+            rc = sscanf(lineBuf,
+                        DOUBLEPREC ? " phi = %lf , theta = %lf , psi = %lf \n" : " phi = %f , theta = %f , psi = %f \n",
+                        &phi, &theta, &psi);
+            if (rc == 3)
+            {
+                readParams = TRUE;
+                continue;
+            }
+        }
+
+        rc = sscanf(lineBuf,
+                    DOUBLEPREC ? "%d %lf %lf %lf \n" : "%d %f %f %f \n",
+                    &histData[fileCount].useBin,
+                    &histData[fileCount].lambda,
+                    &histData[fileCount].count,
+                    &histData[fileCount].err);
+        if (rc != 4)
+        {
+            mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
+            error = TRUE;
+            break;
+        }
+
         ++fileCount;
     }
 
     fclose(f);
 
-    if (fileCount != maxIdx)
+    if (!error && (fileCount != maxIdx))
     {
+        error = TRUE;
         mw_printf("Number of bins does not match those in histogram file. "
                   "Expected %u, got %u\n",
                   maxIdx,
                   fileCount);
+    }
+
+    if (error)
+    {
         free(histData);
         return NULL;
     }
@@ -261,13 +487,20 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
         return NAN;
     }
 
-    if (nbf->printHistogram)
-        writeHistogram(st, nbf, hp, histData, histogram, maxIdx, start, (real) totalNum);
-
     if (totalNum != 0)
+    {
         chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);
+    }
     else
+    {
         chisqval = -INFINITY;
+    }
+
+    if (nbf->printHistogram)
+    {
+        writeHistogram(ctx, st, nbf, hp, histData, histogram, maxIdx, start, chisqval, (real) totalNum);
+    }
+
 
     free(histData);
     free(histogram);

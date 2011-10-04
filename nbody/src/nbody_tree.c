@@ -134,8 +134,9 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 {
     real xyzmax;
     const Body* p;
-
     const NBodyCell* root = t->root;
+
+    assert(t->rsize > 0.0);
 
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
@@ -146,7 +147,9 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
     }
 
     while (t->rsize < 2.0 * xyzmax)
+    {
         t->rsize *= 2.0;
+    }
 }
 
 /* makecell: return pointer to free cell. */
@@ -280,6 +283,13 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
 {
     real rc, bmax2;
 
+    if (mw_unlikely(ctx->theta == 0.0))
+    {
+        /* Do an exact force calculation by always opening cells */
+        rc = 2.0 * treeRSize;
+        return sqr(rc);
+    }
+
     /* return square of radius */
     switch (ctx->criterion)
     {
@@ -295,10 +305,6 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
 
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */
-            return sqr(rc);
-
-        case Exact:                       /* exact force calculation? */
-            rc = 2.0 * treeRSize;         /* always open cells */
             return sqr(rc);
 
         case InvalidCriterion:
