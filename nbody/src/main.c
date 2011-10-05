@@ -251,12 +251,6 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
-            "clean-checkpoint", '\0',
-            POPT_ARG_NONE, &nbf.cleanCheckpoint,
-            0, "Cleanup checkpoint after finishing run", NULL
-        },
-
-        {
             "checkpoint-interval", 'w',
             POPT_ARG_INT, &nbf.checkpointPeriod,
             0, "Period (in seconds) to checkpoint. -1 to disable", NULL
@@ -517,11 +511,8 @@ int main(int argc, const char* argv[])
     else
     {
         rc = runNBodySimulation(&nbf);
-        if (nbf.cleanCheckpoint)
-        {
-            mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
-            mw_remove(nbf.checkpointFileName);
-        }
+        mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
+        mw_remove(nbf.checkpointFileName);
     }
 
     freeNBodyFlags(&nbf);
