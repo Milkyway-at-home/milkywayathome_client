@@ -98,6 +98,12 @@ typedef struct
 /* BOINC likes things on stderr */
 #define mw_printf(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 
+void mwPerror(const char* fmt, ...);
+
+#ifdef _WIN32
+void mwPerrorW32(const char* fmt, ...);
+#endif
+
 /* Controlled, but lazy failure */
 #define mw_fail(msg, ...)                           \
     {                                               \

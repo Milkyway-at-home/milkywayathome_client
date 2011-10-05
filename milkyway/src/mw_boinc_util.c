@@ -34,6 +34,129 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 
 
+
+#ifdef _WIN32
+
+static int transactionFuncsInit = FALSE;
+static int transactionFuncsOK = FALSE;
+
+static HANDLE (WINAPI *__CreateTransaction) (__in_opt  LPSECURITY_ATTRIBUTES,
+                                             __in_opt  LPGUID,
+                                             __in_opt  DWORD,
+                                             __in_opt  DWORD,
+                                             __in_opt  DWORD,
+                                             __in_opt  DWORD,
+                                             __in_opt  LPWSTR) = NULL;
+
+static BOOL (WINAPI *__MoveFileTransacted) (__in      LPCTSTR,
+                                            __in_opt  LPCTSTR,
+                                            __in_opt  LPPROGRESS_ROUTINE,
+                                            __in_opt  LPVOID,
+                                            __in      DWORD,
+                                            __in      HANDLE) = NULL;
+
+static BOOL (WINAPI *__CommitTransaction) (__in  HANDLE TransactionHandle) = NULL;
+
+
+
+/* The transactional stuff is only available on Vista and later */
+static void initW32TransactionalFunctions()
+{
+    HMODULE ktm32Lib;
+    HMODULE kernel32Lib;
+
+    transactionFuncsInit = TRUE;
+
+    kernel32Lib = LoadLibrary("Kernel32.dll");
+    if (!kernel32Lib)
+    {
+        mwPerrorW32("Could not load Kernel32.dll");
+        return;
+    }
+
+    ktm32Lib = LoadLibrary("KtmW32.dll");
+    if (!ktm32Lib)
+    {
+        mwPerrorW32("Could not load Ktm32.dll");
+        return;
+    }
+
+    __CreateTransaction = GetProcAddress(ktm32Lib, "CreateTransaction");
+    __CommitTransaction = GetProcAddress(ktm32Lib, "CommitTransaction");
+    __MoveFileTransacted = GetProcAddress(kernel32Lib, "MoveFileTransactedA");
+
+    transactionFuncsOK = (__CreateTransaction && __MoveFileTransacted && __CommitTransaction);
+
+    if (!transactionFuncsOK)
+    {
+        mw_printf("Failed to get transaction functions\n");
+    }
+}
+
+static int mw_rename_w32_fallback(const char* oldf, const char* newf)
+{
+    if (MoveFileExA(oldf, newf, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+        return 0;
+    return GetLastError();
+}
+
+static int mw_rename_w32_atomic(const char* oldf, const char* newf)
+{
+    HANDLE tx;
+    int rc;
+
+    tx = __CreateTransaction(NULL, NULL, 0, 0, 0, 0, L"AtomicFileRenameTransaction");
+    if (!tx)
+    {
+        mwPerrorW32("Failed to create transaction for renaming '%s' to '%s'", oldf, newf);
+        return 1;
+    }
+
+    if (!__MoveFileTransacted(oldf, newf, NULL, NULL, MOVEFILE_REPLACE_EXISTING, tx))
+    {
+        mwPerrorW32("Failed to move file '%s' to '%s'", oldf, newf);
+        return 1;
+    }
+
+    if (!__CommitTransaction(tx))
+    {
+        mwPerrorW32("Failed to commit move of '%s' to '%s'", oldf, newf);
+        return 1;
+    }
+
+    if (!CloseHandle(tx))
+    {
+        mwPerrorW32("Failed to close transaction handle for move of '%s' to '%s'", oldf, newf);
+        return 1;
+    }
+
+    return 0;
+}
+
+static int mw_rename_w32(const char* oldf, const char* newf)
+{
+    /* It turns out that rename() does exist although it doesn't behave
+    properly and errors if the destination file already exists which is
+    wrong. This isn't quite atomic like it's supposed to be. */
+
+    if (!transactionFuncsInit)
+    {
+        initW32TransactionalFunctions();
+    }
+
+    if (transactionFuncsOK)
+    {
+        return mw_rename_w32_atomic(oldf, newf);
+    }
+    else
+    {
+        return mw_rename_w32_fallback(oldf, newf);
+    }
+}
+#endif /* _WIN32 */
+
+
+
 #if BOINC_APPLICATION
 
 static const int debugOptions = BOINC_DIAG_DUMPCALLSTACKENABLED
@@ -117,9 +240,43 @@ int mw_file_exists(const char* file)
     return boinc_file_exists(file);
 }
 
+
+/* Temporary stuff until patch BOINC */
+static int mw_boinc_rename_aux(const char* oldf, const char* newf)
+{
+#ifdef _WIN32
+    return mw_rename_w32(oldf, newf);
+#else
+    return rename(oldf, newf);
+#endif
+}
+
+/* Pretty much boinc_rename() mangled a bit to fit here temporarily */
+static int mw_boinc_rename(const char* old, const char* newf)
+{
+    int i;
+    int retval;
+    const double fileRetryInterval = 5;
+
+    retval = mw_boinc_rename_aux(old, newf);
+    if (retval)
+    {
+        double start = mwGetTime();
+        do
+        {
+            mw_boinc_sleep(2.0 * (double) rand() / (double) RAND_MAX);
+            retval = mw_boinc_rename_aux(old, newf);
+            if (!retval)
+                break;
+        } while (mwGetTime() < start + fileRetryInterval);
+    }
+
+    return retval;
+}
+
 int mw_rename(const char* oldf, const char* newf)
 {
-    return boinc_rename(oldf, newf);
+    return mw_boinc_rename(oldf, newf);
 }
 
 #else /* !BOINC_APPLICATION */
@@ -154,26 +311,14 @@ int mw_file_exists(const char* file)
     return !stat(file, &statBuf);
 }
 
-#ifndef _WIN32
-
 int mw_rename(const char* oldf, const char* newf)
 {
+  #ifndef _WIN32
     return rename(oldf, newf);
+  #else
+    return mw_rename_w32(oldf, newf);
+  #endif /* _WIN32 */
 }
-
-#else
-
-/* It turns out that rename() does exist although it doesn't behave
-properly and errors if the destination file already exists which is
-wrong. This isn't quite atomic like it's supposed to be. */
-
-int mw_rename(const char* oldf, const char* newf)
-{
-    if (MoveFileExA(oldf, newf, MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))
-        return 0;
-    return GetLastError();
-}
-#endif /* _WIN32 */
 
 #endif /* BOINC_APPLICATION */
 

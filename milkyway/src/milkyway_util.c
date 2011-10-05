@@ -596,3 +596,55 @@ unsigned long long mwFixFPUPrecision()
 #endif /* MW_IS_X86 */
 }
 
+
+
+/* Print a format string followed by an error code with a string description of the error.
+   Somewhere between standard perror() and warn(). Includes user stuff but without the noise of process name 
+*/
+void mwPerror(const char* fmt, ...)
+{
+    va_list argPtr;
+
+    va_start(argPtr, fmt);
+    vfprintf(stderr, fmt, argPtr);
+    va_end(argPtr);
+
+    fprintf(stderr, " (%d): %s", errno, strerror(errno));
+}
+
+#ifdef _WIN32
+
+#if 1
+#define ERROR_MSG_LANG MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US)
+#else
+/* Default language */
+#define ERROR_MSG_LANG MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
+#endif
+
+/* Like mwPerror, but for Win32 API functions which use GetLastError() */
+void mwPerrorW32(const char* fmt, ...)
+{
+    va_list argPtr;
+    LPVOID msgBuf;
+    DWORD rc;
+
+    static const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER
+                             | FORMAT_MESSAGE_FROM_SYSTEM
+                             | FORMAT_MESSAGE_IGNORE_INSERTS;
+
+    rc = FormatMessage(flags,
+                       NULL,
+                       GetLastError(),
+                       ERROR_MSG_LANG,
+                       (LPTSTR) &msgBuf,
+                       0,
+                       NULL);
+
+    va_start(argPtr, fmt);
+    vfprintf(stderr, fmt, argPtr);
+    va_end(argPtr);
+
+    fprintf(stderr, " (%ld): %s", GetLastError(), msgBuf);
+    LocalFree(msgBuf);
+}
+#endif /* _WIN32 */

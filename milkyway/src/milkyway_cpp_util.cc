@@ -26,6 +26,7 @@
 
 #if BOINC_APPLICATION
   #include <graphics2.h>
+  #include <util.h>
 #endif
 
 /* Work around areas broken in the BOINC libraries which make you use
@@ -38,6 +39,11 @@ void freeMWAppInitData(MWAppInitData* mwaid)
 }
 
 #if BOINC_APPLICATION
+
+void mw_boinc_sleep(double seconds)
+{
+    boinc_sleep(seconds);
+}
 
 int mwGetMWAppInitData(MWAppInitData* mwaid)
 {
