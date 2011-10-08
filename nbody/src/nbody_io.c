@@ -24,14 +24,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_coordinates.h"
 #include "nbody_curses.h"
 
-/* Low-level input and output operations. */
-
-static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
+static void out_2vectors(FILE* f, mwvector v1, mwvector v2)
 {
-    fprintf(str,
-            " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n",
-            X(vec1), Y(vec1), Z(vec1),
-            X(vec2), Y(vec2), Z(vec2));
+    fprintf(f,
+            " %21.15f %21.15f %21.15f %21.15f %21.15f %21.15f\n",
+            X(v1), Y(v1), Z(v1),
+            X(v2), Y(v2), Z(v2));
+}
+
+static void printHeader(FILE* f, int cartesian)
+{
+    fprintf(f, "# ignore %21s %21s %21s %21s %21s %21s\n",
+            cartesian ? "x" : "l",
+            cartesian ? "y" : "b",
+            cartesian ? "z" : "r",
+            "v_x",
+            "v_y",
+            "v_z"
+        );
 }
 
 /* output: Print bodies */
@@ -41,10 +51,12 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
     mwvector lbR;
     const Body* endp = st->bodytab + st->nbody;
 
+    printHeader(f, nbf->outputCartesian);
+
     for (p = st->bodytab; p < endp; p++)
     {
-        fprintf(f, "%d ", ignoreBody(p));  /* Print if model it belongs to is ignored */
-        if (nbf->outputCartesian)     /* Probably useful for making movies and such */
+        fprintf(f, "%8d", ignoreBody(p));  /* Print if model it belongs to is ignored */
+        if (nbf->outputCartesian)
         {
             out_2vectors(f, Pos(p), Vel(p));
         }
