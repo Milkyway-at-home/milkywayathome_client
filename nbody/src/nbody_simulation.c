@@ -312,7 +312,10 @@ int runNBodySimulation(const NBodyFlags* nbf)
         mw_printf("Failed to calculate chisq\n");
         rc = NBODY_ERROR;
     }
-    finalOutput(ctx, st, nbf, chisq);
+
+    nbWriteBodies(ctx, st, nbf);
+    mw_printf("<search_likelihood>%.15f</search_likelihood>\n", chisq);
+
 
     destroyNBodyState(st);
 

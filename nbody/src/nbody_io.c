@@ -71,8 +71,6 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
                     X(Vel(p)), Y(Vel(p)), Z(Vel(p)),
                     lambda);
         }
-
-
     }
 
     if (fflush(f))
@@ -84,7 +82,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
     return FALSE;
 }
 
-int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq)
+int nbWriteBodies(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
     int rc = 0;
@@ -107,11 +105,12 @@ int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real
         mw_boinc_print(f, "</bodies>\n");
     }
 
-    fprintf(f, "<search_likelihood>%.15f</search_likelihood>\n", chisq);
-
-    if (fclose(f) < 0)
+    if (f != DEFAULT_OUTPUT_FILE)
     {
-        perror("Error closing output file");
+        if (fclose(f) < 0)
+        {
+            perror("Error closing output file");
+        }
     }
 
     return rc;
