@@ -70,4 +70,53 @@ mwvector lbrToCartesian(mwvector lbr, real sunGCDist)
     return _lbrToCartesian(d2r(L(lbr)), d2r(B(lbr)), R(lbr), sunGCDist);
 }
 
+void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp)
+{
+    real rphi = d2r(hp->phi);
+    real rpsi = d2r(hp->psi);
+    real rth  = d2r(hp->theta);
+
+    ht->cosphi = mw_cos(rphi);
+    ht->sinphi = mw_sin(rphi);
+    ht->sinpsi = mw_sin(rpsi);
+    ht->cospsi = mw_cos(rpsi);
+    ht->costh  = mw_cos(rth);
+    ht->sinth  = mw_sin(rth);
+}
+
+real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
+{
+    real bcos, bsin, lsin, lcos;
+    real lambda;
+    mwvector lbr;
+
+    real cosphi = ht->cosphi;
+    real sinphi = ht->sinphi;
+    real sinpsi = ht->sinpsi;
+    real cospsi = ht->cospsi;
+    real costh = ht->costh;
+    real sinth = ht->sinth;
+
+    /* Convert to (l,b) (involves convert x to Sun-centered)
+       Leave in radians to make rotation easier */
+    lbr = cartesianToLbr_rad(xyz, sunGCDist);
+
+    /* Convert to (lambda, beta) (involves a rotation using the
+       Newberg et al (2009) rotation matrices) */
+    bcos = mw_cos(B(lbr));
+    bsin = mw_sin(B(lbr));
+    lsin = mw_sin(L(lbr));
+    lcos = mw_cos(L(lbr));
+
+    lambda = r2d(mw_atan2(
+                     - (sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
+                     + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
+                     + cospsi * sinth * bsin,
+
+                     (cospsi * cosphi - costh * sinphi * sinpsi) * bcos * lcos
+                     + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
+                     + sinpsi * sinth * bsin ));
+
+    return lambda;
+}
 

@@ -273,25 +273,15 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
                                      unsigned int* totalNumOut) /* Out: Number of particles in range */
 {
     real lambda;
-    real bcos, bsin, lsin, lcos;
-    mwvector lbr;
     unsigned int idx;
     unsigned int totalNum = 0;
     Body* p;
     unsigned int* histogram;
-
-    real rphi = d2r(hp->phi);
-    real rpsi = d2r(hp->psi);
-    real rth  = d2r(hp->theta);
-
-    const real cosphi = mw_cos(rphi);
-    const real sinphi = mw_sin(rphi);
-    const real sinpsi = mw_sin(rpsi);
-    const real cospsi = mw_cos(rpsi);
-    const real costh  = mw_cos(rth);
-    const real sinth  = mw_sin(rth);
-
+    NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
+
+    nbGetHistTrig(&histTrig, hp);
+
     histogram = (unsigned int*) mwCalloc(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)
@@ -300,26 +290,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
         if (ignoreBody(p))
             continue;
 
-        // Convert to (l,b) (involves convert x to Sun-centered)
-        // Leave in radians to make rotation easier
-        lbr = cartesianToLbr_rad(Pos(p), ctx->sunGCDist);
-
-        // Convert to (lambda, beta) (involves a rotation using the
-        // Newberg et al (2009) rotation matrices)
-        bcos = mw_cos(B(lbr));
-        bsin = mw_sin(B(lbr));
-        lsin = mw_sin(L(lbr));
-        lcos = mw_cos(L(lbr));
-
-        lambda = r2d(mw_atan2(
-                         - (sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
-                         + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
-                         + cospsi * sinth * bsin,
-
-                           (cospsi * cosphi - costh * sinphi * sinpsi) * bcos * lcos
-                         + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
-                         + sinpsi * sinth * bsin ));
-
+        lambda = nbXYZToLambda(&histTrig, Pos(p), ctx->sunGCDist);
         idx = (unsigned int) mw_floor((lambda - start) / hp->binSize);
         if (idx < maxIdx && histData[idx].useBin)
         {
