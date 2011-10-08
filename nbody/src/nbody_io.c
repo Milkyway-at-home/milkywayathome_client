@@ -24,23 +24,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_coordinates.h"
 #include "nbody_curses.h"
 
-static void out_2vectors(FILE* f, mwvector v1, mwvector v2)
-{
-    fprintf(f,
-            " %21.15f %21.15f %21.15f %21.15f %21.15f %21.15f\n",
-            X(v1), Y(v1), Z(v1),
-            X(v2), Y(v2), Z(v2));
-}
-
 static void printHeader(FILE* f, int cartesian)
 {
-    fprintf(f, "# ignore %21s %21s %21s %21s %21s %21s\n",
+    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
             cartesian ? "x" : "l",
             cartesian ? "y" : "b",
             cartesian ? "z" : "r",
             "v_x",
             "v_y",
-            "v_z"
+            "v_z",
+            "lambda"
         );
 }
 
@@ -48,23 +41,38 @@ static void printHeader(FILE* f, int cartesian)
 static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
     Body* p;
-    mwvector lbR;
+    mwvector lbr;
     const Body* endp = st->bodytab + st->nbody;
+    NBHistTrig ht;
+    real lambda;
 
+    nbGetHistTrig(&ht, &ctx->histogramParams);
     printHeader(f, nbf->outputCartesian);
 
     for (p = st->bodytab; p < endp; p++)
     {
-        fprintf(f, "%8d", ignoreBody(p));  /* Print if model it belongs to is ignored */
+        lambda = nbXYZToLambda(&ht, Pos(p), ctx->sunGCDist);
+
+        fprintf(f, "%8d,", ignoreBody(p));  /* Print if model it belongs to is ignored */
         if (nbf->outputCartesian)
         {
-            out_2vectors(f, Pos(p), Vel(p));
+            fprintf(f,
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)),
+                    lambda);
         }
         else
         {
-            lbR = cartesianToLbr(Pos(p), ctx->sunGCDist);
-            out_2vectors(f, lbR, Vel(p));
+            lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
+            fprintf(f,
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    L(lbr), B(lbr), R(lbr),
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)),
+                    lambda);
         }
+
+
     }
 
     if (fflush(f))
