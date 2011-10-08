@@ -161,8 +161,6 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
     }
     else
     {
-        mw_report("Checkpoint exists. Attempting to resume from it.\n");
-
         if (nbf->inputFile && !BOINC_APPLICATION)
         {
             mw_printf("Warning: input file '%s' unused\n", nbf->inputFile);
@@ -176,7 +174,7 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         }
         else
         {
-            mw_report("Successfully read checkpoint\n");
+            mw_report("Resumed from checkpoint '%s'\n", nbf->checkpointFileName);
         }
     }
 
