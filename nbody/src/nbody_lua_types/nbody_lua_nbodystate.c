@@ -117,14 +117,19 @@ static int luaWriteCheckpoint(lua_State* luaSt)
     NBodyState* st;
     const NBodyCtx* ctx;
     const char* tmpFile;
+    char tmpPath[256];
+    int pid;
 
     st = checkNBodyState(luaSt, 1);
     ctx = checkNBodyCtx(luaSt, 2);
 
     assert(st->checkpointResolved == NULL);
 
+    pid = (int) getpid();
+    snprintf(tmpPath, sizeof(tmpPath), "nbody_checkpoint_tmp_%d", pid);
+
     st->checkpointResolved = strdup(luaL_optstring(luaSt, 3, DEFAULT_CHECKPOINT_FILE));
-    tmpFile = luaL_optstring(luaSt, 4, CHECKPOINT_TMP_FILE);
+    tmpFile = luaL_optstring(luaSt, 4, tmpPath);
 
     if (writeCheckpointWithTmpFile(ctx, st, tmpFile))
         luaL_error(luaSt, "Error writing checkpoint");

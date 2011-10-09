@@ -513,6 +513,10 @@ int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const 
 
 int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
-    return writeCheckpointWithTmpFile(ctx, st, CHECKPOINT_TMP_FILE);
+    char path[256];
+
+    snprintf(path, sizeof(path), "nbody_checkpoint_tmp_%d", (int) getpid());
+
+    return writeCheckpointWithTmpFile(ctx, st, path);
 }
 

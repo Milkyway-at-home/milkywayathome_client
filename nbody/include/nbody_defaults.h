@@ -27,7 +27,6 @@ extern "C" {
 #endif
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
-#define CHECKPOINT_TMP_FILE     "nbody_checkpoint_tmp"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 
 
