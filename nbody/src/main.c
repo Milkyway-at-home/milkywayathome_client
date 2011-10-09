@@ -355,6 +355,12 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
+            "no-clean-checkpoint", 'k',
+            POPT_ARG_NONE, &nbf.noCleanCheckpoint,
+            0, "Do not delete checkpoint on finish", NULL
+        },
+
+        {
             "version", 'v',
             POPT_ARG_NONE, &version,
             0, "Print version information", NULL
@@ -511,8 +517,12 @@ int main(int argc, const char* argv[])
     else
     {
         rc = runNBodySimulation(&nbf);
-        mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
-        mw_remove(nbf.checkpointFileName);
+
+        if (!nbf.noCleanCheckpoint)
+        {
+            mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
+            mw_remove(nbf.checkpointFileName);
+        }
     }
 
     freeNBodyFlags(&nbf);
