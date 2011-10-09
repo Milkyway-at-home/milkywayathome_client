@@ -302,7 +302,6 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
 
 
-
     /* Get the likelihood */
     chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
     if (isnan(chisq))
