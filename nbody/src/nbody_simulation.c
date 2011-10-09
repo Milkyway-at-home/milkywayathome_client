@@ -225,6 +225,19 @@ int verifyFile(const NBodyFlags* nbf)
     return rc;
 }
 
+
+static int nbOutputIsUseful(const NBodyFlags* nbf)
+{
+    if (!nbf->outFileName && !nbf->histogramFileName && !nbf->histoutFileName)
+    {
+        mw_printf("Don't you want some kind of result?\n");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
 /* FIXME */
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
@@ -238,6 +251,11 @@ int runNBodySimulation(const NBodyFlags* nbf)
     NBodyStatus rc = NBODY_SUCCESS;
     real chisq;
     double ts = 0.0, te = 0.0;
+
+    if (!nbOutputIsUseful(nbf))
+    {
+        return NBODY_ERROR;
+    }
 
     if (setupRun(ctx, st, &ctx->histogramParams, nbf))
     {

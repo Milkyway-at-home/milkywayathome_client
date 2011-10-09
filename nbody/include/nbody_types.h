@@ -375,7 +375,8 @@ typedef enum
     NBODY_CL_ERROR             = 1 << 5,
     NBODY_CAPABILITY_ERROR     = 1 << 6,
     NBODY_CONSISTENCY_ERROR    = 1 << 7,
-    NBODY_UNIMPLEMENTED        = 1 << 8
+    NBODY_UNIMPLEMENTED        = 1 << 8,
+    NBODY_USER_ERROR           = 1 << 9
 } NBodyStatus;
 
 #define nbodyStatusIsFatal(x) ((x) > 0)
