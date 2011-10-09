@@ -139,6 +139,8 @@ char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut);
 
 int mwWriteFile(const char* filename, const char* str);
 
+size_t mwCountLinesInFile(FILE* f);
+
 double mwGetTime();
 double mwGetTimeMilli();
 

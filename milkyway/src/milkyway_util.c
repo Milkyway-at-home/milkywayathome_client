@@ -153,6 +153,33 @@ int mwWriteFile(const char* filename, const char* str)
     return rc;
 }
 
+size_t mwCountLinesInFile(FILE* f)
+{
+    int c;
+    size_t lineCount = 0;
+
+    while ((c = fgetc(f)) != EOF)
+    {
+        if (c == '\n')
+        {
+            ++lineCount;
+        }
+    }
+
+    if (!feof(f))
+    {
+        mwPerror("Error counting file lines");
+        return 0;
+    }
+
+    if (fseek(f, 0L, SEEK_SET) < 0)
+    {
+        mwPerror("Error seeking file for counting");
+        return 0;
+    }
+
+    return lineCount;
+}
 
 #ifdef _WIN32
 
@@ -599,7 +626,7 @@ unsigned long long mwFixFPUPrecision()
 
 
 /* Print a format string followed by an error code with a string description of the error.
-   Somewhere between standard perror() and warn(). Includes user stuff but without the noise of process name 
+   Somewhere between standard perror() and warn(). Includes user stuff but without the noise of process name
 */
 void mwPerror(const char* fmt, ...)
 {

@@ -86,6 +86,7 @@ static int width = 0, height = 0;
 
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
+static GLboolean ownScene = GL_FALSE;  /* Is this scene owned by the graphics or shared memory? */
 static dsfmt_t rndState;
 
 /* Max/min time in seconds between changing directions when randomly moving */
@@ -122,6 +123,92 @@ static const char* helpBindings =
     "  DRAG                        : rotate\n"
     "  [SHIFT] DRAG (up/down)      : zoom (in/out)\n"
     "  [RIGHTCLICK] DRAG (up/down) : zoom (in/out)\n";
+
+int nbglLoadStaticSceneFromFile(const char* filename)
+{
+    FILE* f;
+    size_t lnCount; /* ~= nbody */
+    size_t line = 0;
+    int nbody = 0;
+    char lnBuf[4096];
+    int rc = 0;
+    int ignore;
+    double x, y, z;
+    double vx, vy, vz;
+    double lambda;
+    FloatPos* r;
+
+    f = fopen(filename, "r");
+    if (!f)
+    {
+        mwPerror("Failed to open file '%s'", filename);
+        return 1;
+    }
+
+    lnCount = mwCountLinesInFile(f);
+    if (lnCount == 0)
+    {
+        mw_printf("Error counting lines from file '%s'\n", filename);
+        fclose(f);
+        return 1;
+    }
+
+    scene = mwCalloc(sizeof(scene_t) + lnCount * sizeof(FloatPos), sizeof(char));
+    r = scene->rTrace;
+
+    /* Skip the 1st line with the # comment */
+    fgets(lnBuf, sizeof(lnBuf), f);
+
+    while (rc != EOF)
+    {
+        ++line;
+        rc = fscanf(f,
+                    "%d , %lf , %lf , %lf , %lf , %lf , %lf ",
+                    &ignore,
+                    &x, &y, &z,
+                    &vx, &vy, &vz);
+        if (rc == 7)
+        {
+            ++nbody;
+            /* May or may not be there */
+            rc = fscanf(f, " , %lf \n", &lambda);
+            if (rc != 1)
+            {
+                rc = fscanf(f, " \n");
+            }
+            else
+            {
+                assert(line < lnCount);
+
+                r[line].x = (float) x;
+                r[line].y = (float) y;
+                r[line].z = (float) z;
+            }
+        }
+        else if (rc != EOF)
+        {
+            mw_printf("Error reading '%s' at line "ZU"\n", filename, line);
+        }
+    }
+
+    if (rc != EOF)
+    {
+        fclose(f);
+        free(scene);
+        scene = NULL;
+        return 1;
+    }
+
+    scene->nbody = nbody;
+
+    if (fclose(f))
+    {
+        mwPerror("Failed to close file '%s'", filename);
+    }
+
+    return 0;
+}
+
 
 
 /* A general OpenGL initialization function.  Sets all of the initial parameters. */
@@ -957,6 +1044,13 @@ void nbodyGLCleanup()
 {
     mwFreeA(color);
     color = NULL;
+
+    if (ownScene)
+    {
+        free(scene);
+        scene = NULL;
+        ownScene = GL_FALSE;
+    }
 }
 
 int checkConnectedVersion()

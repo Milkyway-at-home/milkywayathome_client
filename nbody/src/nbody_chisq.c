@@ -303,34 +303,6 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     return histogram;
 }
 
-static size_t countLinesInFile(FILE* f)
-{
-    int c;
-    size_t lineCount = 0;
-
-    while ((c = fgetc(f)) != EOF)
-    {
-        if (c == '\n')
-        {
-            ++lineCount;
-        }
-    }
-
-    if (!feof(f))
-    {
-        perror("Error counting histogram lines");
-        return 0;
-    }
-
-    if (fseek(f, 0L, SEEK_SET) < 0)
-    {
-        perror("Error seeking histogram");
-        return 0;
-    }
-
-    return lineCount;
-}
-
 
 /* The chisq is calculated by reading a histogram file of normalized data.
    Returns null on failure.
@@ -354,7 +326,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
         return NULL;
     }
 
-    fsize = countLinesInFile(f);
+    fsize = mwCountLinesInFile(f);
     if (fsize == 0)
     {
         mw_printf("Histogram line count = 0\n");

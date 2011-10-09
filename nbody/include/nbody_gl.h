@@ -52,6 +52,7 @@ typedef struct
 
 #define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
+int nbglLoadStaticSceneFromFile(const char* filename);
 
 int connectSharedScene(int instanceId);
 int checkConnectedVersion();

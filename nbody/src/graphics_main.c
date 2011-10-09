@@ -108,6 +108,12 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
             0, "Instance id of main process to attach", NULL
         },
 
+        {
+            "static-input", 's',
+            POPT_ARG_STRING, &visArgs.file,
+            0, "Load from an output file (in Cartesian coordinates) and statically display", NULL
+        },
+
         POPT_AUTOHELP
         POPT_TABLEEND
     };
@@ -164,11 +170,28 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (connectSharedScene(flags.instanceId))
-        return 1;
+    if (!flags.file)
+    {
+        if (connectSharedScene(flags.instanceId))
+        {
+            freeVisArgs(&flags);
+            return 1;
+        }
 
-    if (checkConnectedVersion())
-        return 1;
+        if (checkConnectedVersion())
+        {
+            freeVisArgs(&flags);
+            return 1;
+        }
+    }
+    else
+    {
+        if (nbglLoadStaticSceneFromFile(flags.file))
+        {
+            freeVisArgs(&flags);
+            return 1;
+        }
+    }
 
     rc = nbodyGLSetup(&flags);
     if (rc)
