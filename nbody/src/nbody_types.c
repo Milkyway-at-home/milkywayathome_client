@@ -311,6 +311,8 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
     memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
 
+    st->orbitTrace = (mwvector*) mwMallocA(sizeof(mwvector) * N_ORBIT_TRACE_POINTS);
+    memcpy(st->orbitTrace, oldSt->orbitTrace, sizeof(mwvector) * N_ORBIT_TRACE_POINTS);
 
     if (st->ci)
     {
