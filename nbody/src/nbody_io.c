@@ -97,13 +97,9 @@ int nbWriteBodies(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         }
     }
 
-    /* Printing out the bodies will food the server. */
-    if (nbf->printBodies)
-    {
-        mw_boinc_print(f, "<bodies>\n");
-        rc = outputBodies(f, ctx, st, nbf);
-        mw_boinc_print(f, "</bodies>\n");
-    }
+    mw_boinc_print(f, "<bodies>\n");
+    rc = outputBodies(f, ctx, st, nbf);
+    mw_boinc_print(f, "</bodies>\n");
 
     if (f != DEFAULT_OUTPUT_FILE)
     {

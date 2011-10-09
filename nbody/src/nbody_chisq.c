@@ -450,33 +450,35 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
         return NAN;
     }
 
-    histData = readHistData(nbf->histogramFileName, &dataMaxIdx);
-    if (!histData)
+    if (nbf->histogramFileName) /* If we have an input histogram to match */
     {
-        mw_printf("Failed to read histogram\n");
-    }
-    else
-    {
-        if (dataMaxIdx != maxIdx)
+        histData = readHistData(nbf->histogramFileName, &dataMaxIdx);
+        if (!histData)
         {
-            mw_printf("Number of bins does not match those in histogram file. "
-                      "Expected %u, got %u\n",
-                      maxIdx,
-                      dataMaxIdx);
-            chisqval = NAN;
+            mw_printf("Failed to read histogram\n");
         }
         else
         {
-            real effTotalNum;
-
-            if (totalNum != 0)
+            if (dataMaxIdx != maxIdx)
             {
-                effTotalNum = (real) correctTotalNumberInHistogram(histogram, maxIdx, totalNum, histData);
-                chisqval = calcChisq(histData, histogram, maxIdx, effTotalNum);
+                mw_printf("Number of bins does not match those in histogram file. "
+                          "Expected %u, got %u\n",
+                          maxIdx,
+                          dataMaxIdx);
             }
             else
             {
-                chisqval = -INFINITY;
+                real effTotalNum;
+
+                if (totalNum != 0)
+                {
+                    effTotalNum = (real) correctTotalNumberInHistogram(histogram, maxIdx, totalNum, histData);
+                    chisqval = calcChisq(histData, histogram, maxIdx, effTotalNum);
+                }
+                else
+                {
+                    chisqval = -INFINITY;
+                }
             }
         }
     }

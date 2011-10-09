@@ -302,17 +302,27 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
 
 
-    /* Get the likelihood */
-    chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
-    if (isnan(chisq))
+    if (nbf->histogramFileName || nbf->histoutFileName)  /* We want to match or produce a histogram */
     {
-        mw_printf("Failed to calculate chisq\n");
-        rc = NBODY_ERROR;
+        /* Get the likelihood */
+        chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
     }
 
-    nbWriteBodies(ctx, st, nbf);
-    mw_printf("<search_likelihood>%.15f</search_likelihood>\n", chisq);
+    if (nbf->histogramFileName) /* The likelihood only means something when matching a histogram */
+    {
+        if (isnan(chisq))
+        {
+            mw_printf("Failed to calculate chisq\n");
+            rc = NBODY_ERROR;
+        }
 
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", chisq);
+    }
+
+    if (nbf->printBodies)
+    {
+        nbWriteBodies(ctx, st, nbf);
+    }
 
     destroyNBodyState(st);
 

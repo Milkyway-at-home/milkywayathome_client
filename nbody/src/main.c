@@ -439,7 +439,6 @@ static void setDefaultFlags(NBodyFlags* nbf)
 {
     /* Use default if checkpoint file not specified */
     stringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
-    stringDefault(nbf->histogramFileName,  DEFAULT_HISTOGRAM_FILE);
 
     /* Use a specified seed or time seeding */
     nbf->seed = nbf->setSeed ? nbf->seed : (uint32_t) time(NULL);
