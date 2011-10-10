@@ -45,6 +45,9 @@
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
 
+const char* separationCommitID = MILKYWAY_GIT_COMMIT_ID;
+const char* separationCommitDescribe = MILKYWAY_GIT_DESCRIBE;
+
 static void printCopyright()
 {
     mw_printf(

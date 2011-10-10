@@ -26,6 +26,10 @@ include(CheckFunctionExists)
 include(CheckIncludeFiles)
 include(MWLink)
 include(CheckSSE2)
+include(GetGitRevisionDescription)
+
+get_git_head_revision(GIT_REFSPEC MILKYWAY_GIT_COMMIT_ID)
+git_describe(MILKYWAY_GIT_DESCRIBE)
 
 check_function_exists(asprintf HAVE_ASPRINTF)
 check_include_files(err.h HAVE_ER_H)

@@ -37,6 +37,10 @@
 #define SEED_ARGUMENT (1 << 1)
 
 
+const char* nbCommitID = MILKYWAY_GIT_COMMIT_ID;
+const char* nbCommitDescribe = MILKYWAY_GIT_DESCRIBE;
+
+
 static void nbPrintCopyright(void)
 {
     mw_printf(
