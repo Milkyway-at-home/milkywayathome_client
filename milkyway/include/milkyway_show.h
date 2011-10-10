@@ -22,8 +22,16 @@
 
 #include "milkyway_math.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 char* showVector(mwvector v);
 void printVector(mwvector v);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MILKYWAY_SHOW_H_ */
 

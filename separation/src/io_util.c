@@ -294,7 +294,7 @@ SeparationResults* readReferenceResults(const char* refFile, unsigned int nStrea
     f = fopen(refFile, "r");
     if (!f)
     {
-        perror("Opening reference results");
+        mwPerror("Opening reference results '%s'", refFile);
         return NULL;
     }
 

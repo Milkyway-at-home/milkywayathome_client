@@ -28,7 +28,6 @@
   #include <windows.h>
 #endif /* _WIN32 */
 
-#include <string.h>
 #include "nbody_types.h"
 #include "nbody_checkpoint.h"
 #include "milkyway_util.h"
@@ -152,19 +151,19 @@ static int openCheckpointHandle(const NBodyState* st,
     cp->fd = open(filename, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
     if (cp->fd == -1)
     {
-        perror("open checkpoint tmp");
+        mwPerror("Error opening checkpoint '%s'", filename);
         return TRUE;
     }
 
     if (fstat(cp->fd, &sb) == -1)
     {
-        perror("checkpoint fstat");
+        mwPerror("Error on fstat() of checkpoint '%s'", filename);
         return TRUE;
     }
 
     if (!S_ISREG(sb.st_mode))
     {
-        mw_printf("checkpoint file is not a file\n");
+        mw_printf("Checkpoint '%s' is not a file\n", filename);
         return TRUE;
     }
 
@@ -174,7 +173,7 @@ static int openCheckpointHandle(const NBodyState* st,
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
-            perror("ftruncate checkpoint");
+            mwPerror("Error ftruncate() on checkpoint '%s'", filename);
             return TRUE;
         }
     }
@@ -183,7 +182,7 @@ static int openCheckpointHandle(const NBodyState* st,
         cp->cpFileSize = sb.st_size;
         if (cp->cpFileSize == 0)
         {
-            mw_printf("checkpoint file is empty\n");
+            mw_printf("Checkpoint '%s' is empty\n", filename);
             return 1;
         }
     }
@@ -191,7 +190,7 @@ static int openCheckpointHandle(const NBodyState* st,
     cp->mptr = mmap(NULL, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
     if (cp->mptr == MAP_FAILED)
     {
-        perror("mmap: Failed to open checkpoint file for writing");
+        mwPerror("Error mmap()ing checkpoint '%s'", filename);
         return TRUE;
     }
 
@@ -207,19 +206,19 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
     {
         if (fstat(cp->fd, &sb) == -1)
         {
-            perror("fstat on closing checkpoint");
+            mwPerror("Error on fstat() closing checkpoint");
             return TRUE;
         }
 
         if (close(cp->fd) == -1)
         {
-            perror("closing checkpoint file");
+            mwPerror("closing checkpoint file");
             return TRUE;
         }
 
         if (cp->mptr && cp->mptr != MAP_FAILED && munmap(cp->mptr, sb.st_size) == -1)
         {
-            perror("munmap checkpoint");
+            mwPerror("munmap() checkpoint");
             return TRUE;
         }
     }
@@ -267,7 +266,7 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
 
     if (cp->file == INVALID_HANDLE_VALUE)
     {
-        mw_printf("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
+        mwPerrorW32("Failed to open checkpoint file '%s'\n", filename);
         return TRUE;
     }
 
@@ -281,8 +280,8 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
         cp->cpFileSize = GetFileSize(cp->file, NULL);
         if (cp->cpFileSize == INVALID_FILE_SIZE || cp->cpFileSize == 0)
         {
-            mw_printf("Invalid checkpoint file size (%ld) or empty checkpoint file '%s': %ld\n",
-                      cp->cpFileSize, filename, GetLastError());
+            mwPerrorW32("Invalid checkpoint file size (%ld) or empty checkpoint file '%s'",
+                        cp->cpFileSize, filename);
             CloseHandle(cp->file);
             return TRUE;
         }
@@ -302,8 +301,7 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
                                     NULL);
     if (cp->mapFile == NULL)
     {
-        mw_printf("Failed to create mapping for checkpoint file '%s': %ld\n",
-                  filename, GetLastError());
+        mwPerrorW32("Failed to create mapping for checkpoint file '%s'", filename);
         return TRUE;
     }
 
@@ -314,8 +312,7 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
                                      mapViewSize);
     if (cp->mptr == NULL)
     {
-        mw_printf("Failed to open checkpoint file view for file '%s': %ld\n",
-                  filename, GetLastError());
+        mwPerrorW32("Failed to open checkpoint file view for file '%s'", filename);
         return TRUE;
     }
 
@@ -328,19 +325,19 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
     {
         if (cp->mptr && !UnmapViewOfFile((LPVOID) cp->mptr))
         {
-            mw_printf("Error %ld occurred unmapping the checkpoint view object!\n", GetLastError());
+            mwPerrorW32("Error unmapping the checkpoint view object");
             return TRUE;
         }
 
         if (cp->mapFile && !CloseHandle(cp->mapFile))
         {
-            mw_printf("Error %ld occurred closing the checkpoint mapping!\n", GetLastError());
+            mwPerrorW32("Error closing the checkpoint mapping");
             return TRUE;
         }
 
         if (cp->file && !CloseHandle(cp->file))
         {
-            mw_printf("Error %ld occurred closing checkpoint file\n", GetLastError());
+            mwPerrorW32("Error closing checkpoint file");
             return TRUE;
         }
     }
@@ -456,14 +453,10 @@ int nbReadCheckpoint(NBodyCtx* ctx, NBodyState* st)
         return TRUE;
     }
 
-    if (thawState(ctx, st, &cp))
+    if (thawState(ctx, st, &cp) || closeCheckpointHandle(&cp))
     {
-        mw_printf("Thawing state failed\n");
         return TRUE;
     }
-
-    if (closeCheckpointHandle(&cp))
-        mw_printf("Failed to close checkpoint properly\n");
 
     /* Make sure state is ready to use */
     st->acctab = (mwvector*) mwCallocA(st->nbody, sizeof(mwvector));
@@ -501,12 +494,14 @@ int nbWriteCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, cons
     /* Don't update if the file was not closed properly; it can't be trusted. */
     if (!failed && mw_rename(tmpFile, st->checkpointResolved))
     {
-        mw_win_perror("Failed to update checkpoint with temporary");
+        mwPerror("Failed to update checkpoint '%s' with temporary", st->checkpointResolved);
         failed = TRUE;
     }
 
     if (failed)
+    {
         mw_printf("Failed to write checkpoint\n");
+    }
 
     return failed;
 }

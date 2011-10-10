@@ -370,10 +370,10 @@ int likelihood(SeparationResults* results,
 
     if (do_separation)
     {
-        f = mw_fopen(separation_outfile, "w");
+        f = mw_fopen(separation_outfile, "w+");
         if (!f)
         {
-            perror("Opening separation output file");
+            mwPerror("Opening separation output file '%s", separation_outfile);
             return 1;
         }
 
@@ -405,7 +405,7 @@ int likelihood(SeparationResults* results,
     freeEvaluationState(es);
 
     if (f && fclose(f))
-        perror("Closing separation output file");
+        mwPerror("Closing separation output file '%s'", separation_outfile);
 
     return rc;
 }

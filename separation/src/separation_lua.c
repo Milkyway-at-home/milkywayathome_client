@@ -119,7 +119,7 @@ static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
     script = mwReadFileResolved(sf->ap_file);
     if (!script)
     {
-        perror("Opening Lua script");
+        mwPerror("Opening Lua script '%s'", sf->ap_file);
         lua_close(luaSt);
         return NULL;
     }

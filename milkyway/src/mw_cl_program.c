@@ -40,7 +40,7 @@ static char* mwGetBuildLog(CLInfo* ci)
                                 &logSize);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to get build log size", err);
+        mwPerrorCL("Failed to get build log size", err);
         return NULL;
     }
 
@@ -54,7 +54,7 @@ static char* mwGetBuildLog(CLInfo* ci)
                                 &readSize);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to read program build log", err);
+        mwPerrorCL("Failed to read program build log", err);
         free(buildLog);
         return NULL;
     }
@@ -89,7 +89,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
                                     &stat,
                                     NULL);
     if (infoErr != CL_SUCCESS)
-        mwCLWarn("Get build status failed", infoErr);
+        mwPerrorCL("Get build status failed", infoErr);
     else
         mw_printf("Build status: %s\n", showCLBuildStatus(stat));
 
@@ -106,7 +106,7 @@ cl_int mwBuildProgram(CLInfo* ci, const char* options)
 
     err = clBuildProgram(ci->prog, 1, &ci->dev, options, milkywayBuildCB, ci);
     if (err != CL_SUCCESS)
-        mwCLWarn("clBuildProgram: Build failure", err);
+        mwPerrorCL("clBuildProgram: Build failure", err);
 
     return err;
 }
@@ -120,7 +120,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to get program binary size", err);
+        mwPerrorCL("Failed to get program binary size", err);
         return NULL;
     }
 
@@ -134,7 +134,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, sizeof(bin), &bin, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error getting program binary", err);
+        mwPerrorCL("Error getting program binary", err);
         free(bin);
         bin = NULL;
         binSize = 0;
@@ -153,22 +153,22 @@ int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
     int rc = 0;
 
     bin = mwGetProgramBinary(ci, &binSize);
-    f = fopen(filename, "wb");
+    f = mw_fopen(filename, "wb");
     if (!f)
     {
-        perror("Opening CL binary output");
+        mwPerror("Error opening CL binary output '%s'", filename);
         return errno;
     }
 
     if (fwrite(bin, binSize, 1, f) != 1)
     {
-        mw_printf("Error writing program binary to file '%s'\n", filename);
+        mwPerror("Error writing program binary to file '%s'\n", filename);
         rc = errno;
     }
 
     if (fclose(f) < 0)
     {
-        mw_printf("Error closing program binary to file '%s'", filename);
+        mwPerror("Error closing program binary file '%s'", filename);
         rc = errno;
     }
     free(bin);
@@ -184,23 +184,23 @@ cl_int mwSetProgramFromBin(CLInfo* ci,const unsigned char* bin, size_t binSize)
     cl_int binStatus;
 
     ci->prog = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
-    mwCLWarn("Binary status", err);
+    mwPerrorCL("Binary status", err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to create program from binary", err);
+        mwPerrorCL("Failed to create program from binary", err);
         return err;
     }
 
     if (binStatus != CL_SUCCESS)
     {
-        mwCLWarn("Reading binary failed", err);
+        mwPerrorCL("Reading binary failed", err);
         return binStatus;
     }
 
     err = mwBuildProgram(ci, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error building program from binary", err);
+        mwPerrorCL("Error building program from binary", err);
         return err;
     }
 
@@ -218,14 +218,14 @@ cl_int mwSetProgramFromSrc(CLInfo* ci,
     ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, lengths, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating program", err);
+        mwPerrorCL("Error creating program", err);
         return err;
     }
 
     err = mwBuildProgram(ci, compileDefs);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error building program from source", err);
+        mwPerrorCL("Error building program from source", err);
         return err;
     }
 
@@ -242,7 +242,7 @@ cl_int mwCreateKernel(cl_kernel* kern, CLInfo* ci, const char* name)
     *kern = clCreateKernel(ci->prog, name, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to create kernel '%s'", err, name);
+        mwPerrorCL("Failed to create kernel '%s'", err, name);
         return err;
     }
 

@@ -75,7 +75,7 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
 
     if (fflush(f))
     {
-        perror("Body output flush");
+        mwPerror("Body output flush");
         return TRUE;
     }
 
@@ -105,7 +105,7 @@ int nbWriteBodies(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     {
         if (fclose(f) < 0)
         {
-            perror("Error closing output file");
+            mwPerror("Error closing output file '%s'", nbf->outFileName);
         }
     }
 

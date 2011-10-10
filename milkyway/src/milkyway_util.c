@@ -62,10 +62,12 @@
 #endif /* MW_IS_X86 */
 
 
-static char* fcloseVerbose(FILE* f, const char* err)
+static char* fcloseVerbose(FILE* f, const char* name, const char* err)
 {
     if (fclose(f))
-        perror(err);
+    {
+        mwPerror("Error closing file '%s' while %s", name, err);
+    }
 
     return NULL;
 }
@@ -78,17 +80,20 @@ char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut)
 
     if (!f)
     {
-        mw_printf("Failed to open file '%s' for reading\n", filename);
         return NULL;
     }
 
      /* Find size of file */
     if (fseek(f, 0, SEEK_END) == -1)
-        return fcloseVerbose(f, "Seeking file end");
+    {
+        return fcloseVerbose(f, filename, "seeking file end");
+    }
 
     fsize = ftell(f);
     if (fsize == -1)
-        return fcloseVerbose(f, "Getting file size");
+    {
+        return fcloseVerbose(f, filename, "getting file size");
+    }
 
     fseek(f, 0, SEEK_SET);
 
@@ -98,13 +103,13 @@ char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut)
     readSize = fread(buf, sizeof(char), fsize, f);
     if (readSize != (size_t) fsize)
     {
-        mw_printf("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
-                  filename, fsize, readSize);
+        mwPerror("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
+                 filename, fsize, readSize);
         free(buf);
         buf = NULL;
     }
 
-    fcloseVerbose(f, "Closing read file");
+    fcloseVerbose(f, filename, "closing read file");
 
     if (sizeOut)
         *sizeOut = readSize;
@@ -141,15 +146,17 @@ int mwWriteFile(const char* filename, const char* str)
     f = mw_fopen(filename, "wb");
     if (!f)
     {
-        perror("Writing file");
+        mwPerror("Writing file '%s'", filename);
         return 1;
     }
 
     rc = fputs(str, f);
     if (rc == EOF)
-        mw_printf("Error writing file '%s'\n", filename);
+    {
+        mwPerror("Error writing file '%s'\n", filename);
+    }
 
-    fcloseVerbose(f, "Closing write file");
+    fcloseVerbose(f, filename, "Closing write file");
     return rc;
 }
 
@@ -302,7 +309,7 @@ real* mwReadRestArgs(const char** rest, unsigned int n)
         parameters[i] = (real) strtod(rest[i], NULL);
         if (errno)
         {
-            perror("Error parsing command line fit parameters");
+            mwPerror("Error parsing command line fit parameters at '%s'", rest[i]);
             free(parameters);
             return NULL;
         }
@@ -412,7 +419,7 @@ const char** mwFixArgv(int argc, const char* argv[])
     np = strtoul(*p, &endP, 10);
     if (*endP != '\0')
     {
-        perror("Reading np");
+        mwPerror("Reading np");
         return NULL;
     }
 
@@ -541,6 +548,7 @@ static DWORD mwPriorityToPriorityClass(MWPriority x)
 int mwSetProcessPriority(MWPriority priority)
 {
     HANDLE handle;
+    DWORD pClass;
 
     if (!DuplicateHandle(GetCurrentProcess(),
                          GetCurrentProcess(),
@@ -550,13 +558,14 @@ int mwSetProcessPriority(MWPriority priority)
                          FALSE,
                          DUPLICATE_SAME_ACCESS))
     {
-        mw_printf("Failed to get process handle: %ld\n", GetLastError());
+        mwPerrorW32("Failed to get process handle");
         return 1;
     }
 
-    if (!SetPriorityClass(handle, mwPriorityToPriorityClass(priority)))
+    pClass = mwPriorityToPriorityClass(priority);
+    if (!SetPriorityClass(handle, pclass))
     {
-        mw_printf("Failed to set process priority class: %ld\n", GetLastError());
+        mwPerrorW32("Failed to set process priority class to %ld", pClass);
         return 1;
     }
 
@@ -568,7 +577,7 @@ int mwSetProcessPriority(MWPriority priority)
 {
     if (setpriority(PRIO_PROCESS, getpid(), priority))
     {
-        perror("Setting process priority");
+        mwPerror("Setting process priority to %d", priority);
         return 1;
     }
 
@@ -675,3 +684,5 @@ void mwPerrorW32(const char* fmt, ...)
     LocalFree(msgBuf);
 }
 #endif /* _WIN32 */
+
+

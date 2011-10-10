@@ -56,14 +56,14 @@ int nbSetupCursesOutput(void)
     stderrBack = dup(fileno(stderr));
     if (stderrBack < 0)
     {
-        perror("dup() error on STDERR_FILENO");
+        mwPerror("dup() error on STDERR_FILENO");
         return errno;
     }
 
     stderrTmp = open(stderrTmpFile, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (stderrTmp < 0)
     {
-        perror("Failed to get stderr dump fd");
+        mwPerror("Failed to get stderr dump file '%s'", stderrTmpFile);
         close(stderrBack);
         return errno;
     }
@@ -71,7 +71,7 @@ int nbSetupCursesOutput(void)
     redirect = dup2(stderrTmp, fileno(stderr));
     if (redirect < 0)
     {
-        perror("dup2() error to stderr redirect");
+        mwPerror("dup2() error to stderr redirect");
         close(stderrBack);
         return errno;
     }
@@ -117,7 +117,7 @@ void nbCleanupCursesOutput(void)
 
     if (close(stderrBack) < 0)
     {
-        perror("Error closing stderrBack");
+        mwPerror("Error closing stderrBack");
     }
 
     /* You can't seek on the redirected fd, so reopen the stderr tmp
@@ -125,7 +125,7 @@ void nbCleanupCursesOutput(void)
     f = fopen(stderrTmpFile, "r");
     if (!f)
     {
-        perror("Error reopening stderr log");
+        mwPerror("Error reopening stderr log '%s'", stderrTmpFile);
         return;
     }
 

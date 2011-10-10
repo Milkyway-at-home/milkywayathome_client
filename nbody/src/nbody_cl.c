@@ -280,7 +280,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error setting kernel arguments", err);
+        mwPerrorCL("Error setting kernel arguments", err);
     }
 
     return err;
@@ -303,7 +303,7 @@ cl_int nbCreateKernels(NBodyState* st)
 
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating kernels", err);
+        mwPerrorCL("Error creating kernels", err);
     }
 
     return err;
@@ -330,7 +330,7 @@ cl_int nbReleaseKernels(NBodyState* st)
     err |= clReleaseKernel_quiet(kernels->integration);
 
     if (err != CL_SUCCESS)
-        mwCLWarn("Error releasing kernels", err);
+        mwPerrorCL("Error releasing kernels", err);
 
     return err;
 }
@@ -588,7 +588,7 @@ static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
         memset(&tc, 0, sizeof(tc));
         err = nbReadTreeStatus(&tc, ci, nbb);
         if (err != CL_SUCCESS)
-            mwCLWarn("Reading tree status failed\n", err);
+            mwPerrorCL("Reading tree status failed\n", err);
         else
             printTreeStatus(&tc);
     }
@@ -880,7 +880,7 @@ static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         err = nbRunPreStep(st);
         if (err != CL_SUCCESS)
         {
-            mwCLWarn("Error running pre step", err);
+            mwPerrorCL("Error running pre step", err);
             return err;
         }
     }
@@ -934,7 +934,7 @@ cl_int nbReleaseBuffers(NBodyState* st)
     err |= clReleaseMemObject_quiet(nbb->sort);
 
     if (err != CL_SUCCESS)
-        mwCLWarn("Error releasing buffers", err);
+        mwPerrorCL("Error releasing buffers", err);
 
     return err;
 }
@@ -963,7 +963,7 @@ cl_int nbSetInitialTreeStatus(NBodyState* st)
 
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error writing initial tree status", err);
+        mwPerrorCL("Error writing initial tree status", err);
     }
 
     return err;

@@ -242,7 +242,7 @@ int readCheckpoint(EvaluationState* es)
     f = mwOpenResolved(CHECKPOINT_FILE, "rb");
     if (!f)
     {
-        perror("Opening checkpoint");
+        mwPerror("Opening checkpoint '%s'", CHECKPOINT_FILE);
         return 1;
     }
 
@@ -336,7 +336,10 @@ int writeCheckpoint(EvaluationState* es)
 
     if (mw_rename(CHECKPOINT_FILE_TMP, resolvedCheckpointPath))
     {
-        perror("Failed to update checkpoint file");
+        mwPerror("Failed to update checkpoint file ('%s' to '%s')",
+                 CHECKPOINT_FILE_TMP,
+                 resolvedCheckpointPath
+            );
         return 1;
     }
 

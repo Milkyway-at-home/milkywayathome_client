@@ -28,6 +28,18 @@
 #include "mw_cl_util.h"
 #include "mw_cl_setup.h"
 
+void mwPerrorCL(const char* fmt, cl_int err, ...)
+{
+    va_list argPtr;
+
+    va_start(argPtr, err);
+    vfprintf(stderr, fmt, argPtr);
+    va_end(argPtr);
+
+    fprintf(stderr, " (%d): %s", err, showCLInt(err));
+}
+
+
 /* Timing in nanoseconds */
 cl_ulong mwEventTimeNS(cl_event ev)
 {
@@ -37,14 +49,14 @@ cl_ulong mwEventTimeNS(cl_event ev)
     err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &ts, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to get event start time", err);
+        mwPerrorCL("Failed to get event start time", err);
         return 0;
     }
 
     err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &te, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to get event end time", err);
+        mwPerrorCL("Failed to get event end time", err);
         return 0;
     }
 
@@ -74,14 +86,14 @@ cl_int mwWaitReleaseEvent(cl_event* ev)
     err = clWaitForEvents(1, ev);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("%s: Failed to wait for event", err, FUNC_NAME);
+        mwPerrorCL("%s: Failed to wait for event", err, FUNC_NAME);
         return err;
     }
 
     err = clReleaseEvent(*ev);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("%s: Failed to release event", err, FUNC_NAME);
+        mwPerrorCL("%s: Failed to release event", err, FUNC_NAME);
         return err;
     }
 
@@ -98,7 +110,7 @@ cl_event mwCreateEvent(CLInfo* ci)
     ev = clCreateUserEvent(ci->clctx, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to create custom event", err);
+        mwPerrorCL("Failed to create custom event", err);
         return NULL;
     }
 
@@ -111,7 +123,7 @@ cl_int mwFinishEvent(cl_event ev)
 
     err = clSetUserEventStatus(ev, CL_COMPLETE);
     if (err != CL_SUCCESS)
-        mwCLWarn("Failed to mark custom event as completed", err);
+        mwPerrorCL("Failed to mark custom event as completed", err);
 
     return err;
 }
@@ -143,7 +155,7 @@ cl_int mwGetWorkGroupInfo(cl_kernel kern, const CLInfo* ci, WGInfo* wgi)
                                     &wgi->lms,
                                     NULL);
     if (err != CL_SUCCESS)
-        mwCLWarn("Failed to get kernel work group info", err);
+        mwPerrorCL("Failed to get kernel work group info", err);
 
     return err;
 }
@@ -168,7 +180,7 @@ cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
     mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to create zero buffer of size "ZU, err, size);
+        mwPerrorCL("Failed to create zero buffer of size "ZU, err, size);
         goto fail;
     }
 
@@ -176,7 +188,7 @@ cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
                            0, size, 0, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error mapping zero buffer", err);
+        mwPerrorCL("Error mapping zero buffer", err);
         goto fail;
     }
 
@@ -184,7 +196,7 @@ cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
 
     err = clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
     if (err != CL_SUCCESS)
-        mwCLWarn("Failed to unmap zero buffer", err);
+        mwPerrorCL("Failed to unmap zero buffer", err);
 fail:
     return mem;
 }
@@ -201,14 +213,14 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
     err = clGetMemObjectInfo(buf, CL_MEM_FLAGS, sizeof(flags), &flags, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to get memory flags for buffer duplication", err);
+        mwPerrorCL("Failed to get memory flags for buffer duplication", err);
         return NULL;
     }
 
     err = clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(size), &size, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to get memory size for buffer duplication", err);
+        mwPerrorCL("Failed to get memory size for buffer duplication", err);
         return NULL;
     }
 
@@ -219,14 +231,14 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
     bufCopy = clCreateBuffer(ci->clctx, flags, size, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to create copy buffer of size "ZU, err, size);
+        mwPerrorCL("Failed to create copy buffer of size "ZU, err, size);
         return NULL;
     }
 
     err = clEnqueueCopyBuffer(ci->queue, buf, bufCopy, 0, 0, size, 0, NULL, &ev);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to enqueue copy of buffer", err);
+        mwPerrorCL("Failed to enqueue copy of buffer", err);
         clReleaseMemObject(bufCopy);
         return NULL;
     }
@@ -234,7 +246,7 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
     err = mwWaitReleaseEvent(&ev);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to wait for buffer copy", err);
+        mwPerrorCL("Failed to wait for buffer copy", err);
         clReleaseMemObject(bufCopy);
         return NULL;
     }

@@ -43,11 +43,11 @@ cl_event mwCreateEvent(CLInfo* ci);
 cl_int mwFinishEvent(cl_event ev);
 #endif /* CL_VERSION_1_1 */
 
-/* Print a message with the name of a cl_int error the end of the line */
-#define mwCLWarn(msg, err, ...) fprintf(stderr, msg ": %s\n", ##__VA_ARGS__, showCLInt(err))
-
 cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size);
 cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf);
+
+/* Print a message with the name of a cl_int error the end of the line */
+void mwPerrorCL(const char* fmt, cl_int err, ...);
 
 #ifdef __cplusplus
 }

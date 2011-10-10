@@ -267,7 +267,7 @@ static char* readFD(int fd, size_t* lenOut)
 
     if (fstat(fd, &props) < 0)
     {
-        perror("fstat on temporary AMD binary file");
+        mwPerror("fstat on temporary AMD binary file");
     }
 
     if (props.st_size <= 0)
@@ -281,14 +281,14 @@ static char* readFD(int fd, size_t* lenOut)
     strBuf = (char*) malloc(len);
     if (!strBuf)
     {
-        perror("Failed to allocate space for AMD binary file");
+        mwPerror("Failed to allocate "ZU" for AMD binary file", len);
         return NULL;
     }
     strBuf[props.st_size] = '\0';
 
     if (read(fd, strBuf, props.st_size) < 0)
     {
-        perror("Error reading from AMD Binary file");
+        mwPerror("Error reading from AMD Binary file");
         free(strBuf);
         strBuf = NULL;
     }
@@ -392,13 +392,13 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, int nStr
     fd = open(tmpBinFile, openMode, openPermMode);
     if (fd < 0)
     {
-        perror("Failed to open AMD binary file");
+        mwPerror("Failed to open AMD binary file '%s", tmpBinFile);
         return NULL;
     }
 
     if (write(fd, bin, binSize) <= 0)
     {
-        perror("Failed to write temporary binary file");
+        mwPerror("Failed to write temporary binary file '%s'", tmpBinFile);
         return NULL;
     }
 
@@ -407,7 +407,7 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, int nStr
     {
         if (lseek(fd, 0, SEEK_SET) != 0)
         {
-            perror("Failed to seek temporary binary file");
+            mwPerror("Failed to seek temporary binary file '%s'", tmpBinFile);
             return NULL;
         }
 
@@ -416,7 +416,7 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, int nStr
 
     if (close(fd) < 0)
     {
-        perror("Failed to close binary file");
+        mwPerror("Failed to close binary file '%s'", tmpBinFile);
         free(newBin);
         return NULL;
     }

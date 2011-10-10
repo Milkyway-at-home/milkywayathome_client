@@ -897,23 +897,23 @@ int connectSharedScene(int instanceId)
     shmId = shm_open(name, O_RDWR, mode);
     if (shmId < 0)
     {
-        perror("Error getting shared memory");
+        mwPerror("Error getting shared memory");
         return errno;
     }
 
     if (fstat(shmId, &sb) < 0)
     {
-        perror("shmem fstat");
+        mwPerror("shmem fstat");
         return errno;
     }
 
     scene = (scene_t*) mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, shmId, 0);
     if (scene == MAP_FAILED)
     {
-        perror("mmap: Failed to mmap shared memory");
+        mwPerror("mmap: Failed to mmap shared memory");
         if (shm_unlink(name) < 0)
         {
-            perror("Unlink shared memory");
+            mwPerror("Unlink shared memory");
         }
 
         return 1;

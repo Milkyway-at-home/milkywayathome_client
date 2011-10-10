@@ -287,7 +287,7 @@ IntegralArea* readParameters(const char* filename,
     f = mwOpenResolved(filename, "r");
     if (!f)
     {
-        perror("Opening astronomy parameters file");
+        mwPerror("Opening astronomy parameters file '%s'", filename);
         return NULL;
     }
 

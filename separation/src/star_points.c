@@ -37,8 +37,7 @@ static int freadStarPoints(FILE* data_file, StarPoints* sp)
 
     if (fscanf(data_file, "%u\n", &sp->number_stars) != 1)
     {
-        perror("reading sp->number_stars");
-        mw_printf("Failed to read number of star points from file\n");
+        mwPerror("Failed to read number of star points from file\n");
         return 1;
     }
 
@@ -47,8 +46,7 @@ static int freadStarPoints(FILE* data_file, StarPoints* sp)
     {
         if (fscanf(data_file, STARPOINTS_READ_STR, &x, &y, &z) != 3)
         {
-            perror("star points");
-            mw_printf("Failed to read star points item\n");
+            mwPerror("Failed to read star points item\n");
             return 1;
         }
 
@@ -66,7 +64,7 @@ int readStarPoints(StarPoints* sp, const char* filename)
     f = mwOpenResolved(filename, "r");
     if (!f)
     {
-        perror("Opening star points file");
+        mwPerror("Opening star points file '%s'", filename);
         return 1;
     }
 

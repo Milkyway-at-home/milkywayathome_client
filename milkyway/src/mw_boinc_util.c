@@ -395,7 +395,7 @@ static int mwReadPref(MWProjectPrefs* pref, const char* prefConfig)
             if (item == endP || errno != 0)
             {
                 rc = 1;
-                perror("Error parsing preference double");
+                mwPerror("Error parsing preference double from item '%s'", item);
             }
             else
             {
@@ -410,8 +410,7 @@ static int mwReadPref(MWProjectPrefs* pref, const char* prefConfig)
             if (item == endP || errno != 0)
             {
                 rc = 1;
-                perror("Error parsing preference int or bool");
-
+                mwPerror("Error parsing preference int or bool from item '%s'", item);
             }
             else
             {

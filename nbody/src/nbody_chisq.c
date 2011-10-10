@@ -243,10 +243,10 @@ static void nbWriteHistogram(const NBodyCtx* ctx,
 
     if (nbf->histoutFileName && strcmp(nbf->histoutFileName, ""))  /* If file specified, try to open it */
     {
-        f = mwOpenResolved(nbf->histoutFileName, "w");
+        f = mwOpenResolved(nbf->histoutFileName, "w+");
         if (f == NULL)
         {
-            perror("Writing histout. Using output file instead");
+            mwPerror("Writing histogram '%s' Using output file instead", nbf->histoutFileName);
             f = DEFAULT_OUTPUT_FILE;
         }
     }

@@ -103,7 +103,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
     script = mwReadFileResolved(nbf->inputFile);
     if (!script)
     {
-        perror("Opening Lua script");
+        mwPerror("Opening Lua script '%s'", nbf->inputFile);
         lua_close(luaSt);
         return NULL;
     }

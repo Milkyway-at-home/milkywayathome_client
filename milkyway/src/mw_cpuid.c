@@ -170,24 +170,24 @@ int mwOSHasAVXSupport(void)
     int major = 0;
     int minor = 0;
     int patchLevel = 0;
-    static const int mib[2] = { CTL_KERN, KERN_OSRELEASE };
+    static int mib[2] = { CTL_KERN, KERN_OSRELEASE };
 
     if (sysctl(mib, 2, NULL, &len, NULL, 0) < 0)
     {
-        perror("sysctl kernel version size");
+        mwPerror("sysctl kernel version size");
         return FALSE;
     }
 
     kernelVersion = malloc(len * sizeof(char));
     if (!kernelVersion)
     {
-        perror("malloc");
+        mwPerror("malloc");
         return FALSE;
     }
 
     if (sysctl(mib, 2, kernelVersion, &len, NULL, 0) < 0)
     {
-        perror("sysctl kernel version");
+        mwPerror("sysctl kernel version");
         free(kernelVersion);
         return FALSE;
     }

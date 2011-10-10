@@ -196,13 +196,13 @@ unsigned char* separationLoadBinary(const AstronomyParameters* ap,
     f = mwOpenResolved(filename, "rb");
     if (!f)
     {
-        perror("Failed to open file to read program binary");
+        mwPerror("Failed to open '%s' to read program binary", filename);
         return NULL;
     }
 
     bin = separationLoadBinaryFile(f, &hdr, binSizeOut);
     if (fclose(f))
-        perror("Failed to close program binary");
+        mwPerror("Failed to close program binary '%s'", filename);
 
     if (!checkBinaryHeader(ap, di, &hdr))
     {
@@ -226,7 +226,7 @@ cl_bool separationSaveBinary(const AstronomyParameters* ap,
     f = mwOpenResolved(filename, "wb");
     if (!f)
     {
-        perror("Failed to open file to save program binary");
+        mwPerror("Failed to open '%s' to save program binary", filename);
         return CL_TRUE;
     }
 
@@ -239,7 +239,7 @@ cl_bool separationSaveBinary(const AstronomyParameters* ap,
 
     if (fclose(f))
     {
-        perror("Failed to close program binary");
+        mwPerror("Failed to close program binary '%s'", filename);
         return CL_TRUE;
     }
 

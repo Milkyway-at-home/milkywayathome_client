@@ -76,7 +76,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
         shmId = shm_open(name, O_CREAT | O_RDWR | O_EXCL, mode); /* Try to open exclusively */
         if (shmId < 0 && errno != EEXIST) /* Only failed if */
         {
-            perror("Error creating shared memory");
+            mwPerror("Error creating shared memory '%s'", name);
             return 1;
         }
     }
@@ -89,10 +89,10 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
     if (ftruncate(shmId, size) < 0) /* Make the segment the correct size */
     {
-        perror("ftruncate shared mmory");
+        mwPerror("Error ftruncate() shared memory");
         if (shm_unlink(name) < 0)
         {
-            perror("Unlink shared memory");
+            mwPerror("Error unlinking shared memory '%s'", name);
         }
 
         return 1;
@@ -101,10 +101,10 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
     p = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shmId, 0);
     if (p == MAP_FAILED)
     {
-        perror("mmap: Failed to mmap shared memory");
+        mwPerror("mmap: Failed to mmap shared memory");
         if (shm_unlink(name) < 0)
         {
-            perror("Unlink shared memory");
+            mwPerror("Error unlinking shared memory '%s'", name);
         }
 
         return 1;
@@ -183,19 +183,19 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
     path = getenv("PATH");
     if (!path)
     {
-        perror("Error getting PATH");
+        mwPerror("Error getting PATH");
     }
     else
     {
         if (asprintf(&newPath, ".:../bin/:%s", path) < 0)
         {
-            perror("Appending to path");
+            mwPerror("Appending to path");
         }
         else
         {
             if (setenv("PATH", newPath, TRUE) < 0)
             {
-                perror("Error setting PATH");
+                mwPerror("Error setting PATH");
             }
             free(newPath);
         }
@@ -226,7 +226,7 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 
     if (execvp(argv[0], argv) < 0)
     {
-        perror("Failed to launch visualizer");
+        mwPerror("Failed to launch visualizer '%s'", argv[0]);
     }
 
     free(buf);
