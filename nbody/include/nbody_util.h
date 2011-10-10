@@ -25,5 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwvector nbodyCenterOfMass(const NBodyState* st);
 
+double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
+double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops);
+
 #endif /* _NBODY_UTIL_H_ */
 

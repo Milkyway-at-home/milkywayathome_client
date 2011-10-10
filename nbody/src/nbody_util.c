@@ -43,3 +43,79 @@ mwvector nbodyCenterOfMass(const NBodyState* st)
     return cm;
 }
 
+static inline double log8(double x)
+{
+    return log(x) / log(8.0);
+}
+
+/* The estimate formula has the unfortunate property of being negative
+   for small n.  This will be the most negative. Add this as an extra
+   boost to prevent negative flops estimates.
+ */
+static double worstFlops(double cQ, double d, double f)
+{
+    double a = pow(2.0, 3.0 - 3.0 * d / cQ);
+    double b = (cQ - d) * log(8.0);
+    double c = cQ * log(pow(8.0, 1.0 - d / cQ));
+
+    return -a * sqr(f) * (cQ + b - c) / (M_E * log(8.0));
+}
+
+/* Estimate number of operations based on formula derived in
+   "A Practical Comparison of N-Body Algorithms" (Blelloc, Narlikar 1995)
+
+   Should be more accurate for more uniform distributions.  Does not
+   include the flops from the external potential. However, the effect
+   of the potential actually reduces the total number of flops by
+   tearing apart the system in general.
+
+   Does not account for newer opening criteria.
+ */
+double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
+{
+    double quadTerm, baseTerm;
+
+    double n = (double) nbody;
+    double nSteps = ctx->timeEvolve / ctx->timestep;
+
+    /* Cost of interaction for a cell using a quadrupole moment. */
+    const double cQ = ctx->useQuad ? 50.0 : 0;
+
+    /* Cost of a direct interaction */
+    const double d = 13;
+
+    /* Based on BH86 opening criterion. */
+    double f = 28.0 * M_PI / (3.0 * cube(ctx->theta));
+
+    /* FIXME: Don't be lazy and try rederiving for these. It should be
+     * some number larger than for BH86. Somewhere I remember
+     * something saying about 3x more operations for SW93
+     */
+    if (ctx->criterion != BH86)
+    {
+        f *= 3.0;
+    }
+
+    quadTerm = cQ * n * f * (log8(n / f) - 1.0);
+    baseTerm = d * n * f;
+
+    /* Total flops is then this times the number of timesteps */
+    return nSteps * (quadTerm + baseTerm - worstFlops(cQ, d, f));
+}
+
+/* These estimates seem to sometimes work OK but very often not */
+double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops)
+{
+    /* Spends < ~5% of the time in tree construction. Spends about
+     * half the time in tree traversal / memory access as actually
+     * calculating forces. */
+    const double factor = 2.05;
+
+    /* Not 100% efficient. Bullshit number */
+    const double efficiency = 0.95;
+
+    double nflop = nbEstimateNumberFlops(ctx, nbody);
+
+    return factor * nflop / (efficiency * flops);
+}
+
