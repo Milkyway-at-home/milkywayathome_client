@@ -1,6 +1,7 @@
 *~
 *.o
 *.a
+*.pyc
 *.rej
 *.orig
 *.vcproj
