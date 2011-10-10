@@ -80,7 +80,9 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
 
     ci = (CLInfo*) user_data;
 
-    infoErr = clGetProgramBuildInfo(ci->prog,
+    assert(ci->prog == prog);
+
+    infoErr = clGetProgramBuildInfo(prog,
                                     ci->dev,
                                     CL_PROGRAM_BUILD_STATUS,
                                     sizeof(stat),
@@ -148,7 +150,7 @@ int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
     size_t binSize;
     unsigned char* bin;
     FILE* f;
-    int rc;
+    int rc = 0;
 
     bin = mwGetProgramBinary(ci, &binSize);
     f = fopen(filename, "wb");
@@ -213,7 +215,7 @@ cl_int mwSetProgramFromSrc(CLInfo* ci,
 {
     cl_int err;
 
-    ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, NULL, &err);
+    ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, lengths, &err);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating program", err);

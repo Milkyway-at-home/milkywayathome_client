@@ -287,7 +287,7 @@ static void drawSimpleGalaxy(float galacticRadius, float galacticBulgeRadius, fl
     gluSphere(quadratic, galacticBulgeRadius / SCALE, 50, 50);
 }
 
-static void drawAxes()
+static void drawAxes(void)
 {
     glColor3f(1.0, 0.0, 0.0);  /* x axis */
     glBegin(GL_LINES);
@@ -308,7 +308,7 @@ static void drawAxes()
     glEnd();
 }
 
-static void drawOrbitTrace()
+static void drawOrbitTrace(void)
 {
     int i;
     const int n = scene->currentTracePoint;
@@ -341,7 +341,7 @@ static inline void setIgnoredColor(int ignore)
 }
 
 /* draw stars */
-static void drawPoints()
+static void drawPoints(void)
 {
     int i;
     int nbody = scene->nbody;
@@ -397,7 +397,7 @@ static void drawPoints()
 }
 
 
-static void setOrthographicProjection()
+static void setOrthographicProjection(void)
 {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -406,7 +406,7 @@ static void setOrthographicProjection()
     glMatrixMode(GL_MODELVIEW);
 }
 
-static void restorePerspectiveProjection()
+static void restorePerspectiveProjection(void)
 {
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -434,7 +434,7 @@ static void drawHelp()
     drawWords(helpBindings, width - 500, 20);
 }
 
-static void drawInfo()
+static void drawInfo(void)
 {
     char buf[1024];
 
@@ -449,7 +449,7 @@ static void drawInfo()
 }
 
 /* Center of mass to center of galaxy */
-static float centerOfMassDistance()
+static float centerOfMassDistance(void)
 {
     return sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1]) + sqr(scene->rootCenterOfMass[2]));
 }
@@ -459,7 +459,7 @@ static float centerOfMassDistance()
    body positions. I'm lazy and It doesn't need to be displayed 100%
    accurately so this should be good enough.
  */
-static void drawGLScene()
+static void drawGLScene(void)
 {
     if (!scene)
         return;
@@ -584,6 +584,7 @@ static void drawGLScene()
 /* The function called whenever a key is pressed. */
 static void keyPressed(unsigned char key, int x, int y)
 {
+    (void) x, (void) y;
     /* avoid thrashing this call */
     mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
@@ -711,6 +712,7 @@ static void keyPressed(unsigned char key, int x, int y)
 /* The function called whenever a normal key is pressed. */
 static void specialKeyPressed(int key, int x, int y)
 {
+    (void) x, (void) y;
     mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
     switch (key)
@@ -803,6 +805,8 @@ static void motionFunc(int x, int y)
 
 static void passiveMotionFunc(int x, int y)
 {
+    (void) x, (void) y;
+
     if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
@@ -853,7 +857,7 @@ static void assignParticleColors(int nbody)
     }
 }
 
-static int nbodyInitDrawState()
+static int nbodyInitDrawState(void)
 {
     color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
     assignParticleColors(scene->nbody);
@@ -863,7 +867,7 @@ static int nbodyInitDrawState()
 
 /* Only one screensaver can be allowed since we do touch some things
  * from the simulation although we probably shouldn't */
-static int alreadyAttached()
+static int alreadyAttached(void)
 {
     int oldVal;
 
@@ -921,7 +925,7 @@ int connectSharedScene(int instanceId)
 #else
 
 /* Returns TRUE if connection succeeds */
-static int attemptConnectSharedScene()
+static int attemptConnectSharedScene(void)
 {
     scene = (scene_t*) mw_graphics_get_shmem(NBODY_BIN_NAME);
     if (!scene)
@@ -1040,7 +1044,7 @@ int nbodyGLSetup(const VisArgs* args)
 }
 
 /* glut main loop never quits, so actually freeing these is a bad idea */
-void nbodyGLCleanup()
+void nbodyGLCleanup(void)
 {
     mwFreeA(color);
     color = NULL;
@@ -1053,7 +1057,7 @@ void nbodyGLCleanup()
     }
 }
 
-int checkConnectedVersion()
+int checkConnectedVersion(void)
 {
     if (   scene->nbodyMajorVersion != NBODY_VERSION_MAJOR
         || scene->nbodyMinorVersion != NBODY_VERSION_MINOR)

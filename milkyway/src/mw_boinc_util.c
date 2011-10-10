@@ -283,6 +283,7 @@ int mw_rename(const char* oldf, const char* newf)
 
 int mwBoincInit(MWInitType type)
 {
+    (void) type;
     return 0;
 }
 

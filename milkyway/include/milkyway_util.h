@@ -141,8 +141,8 @@ int mwWriteFile(const char* filename, const char* str);
 
 size_t mwCountLinesInFile(FILE* f);
 
-double mwGetTime();
-double mwGetTimeMilli();
+double mwGetTime(void);
+double mwGetTimeMilli(void);
 
 #ifdef _WIN32
   #define mwMilliSleep(x) Sleep((DWORD) (x))
@@ -153,8 +153,8 @@ double mwGetTimeMilli();
   #define mwMicroSleep(x) usleep((useconds_t)(x))
 #endif /* _WIN32 */
 
-int mwSetTimerMinResolution();
-int mwResetTimerResolution();
+int mwSetTimerMinResolution(void);
+int mwResetTimerResolution(void);
 
 #ifndef _WIN32
 
@@ -182,7 +182,7 @@ typedef enum
 int mwSetProcessPriority(MWPriority priority);
 
 #ifndef _WIN32
-long mwGetTimeMicro();
+long mwGetTimeMicro(void);
 #endif /* _WIN32 */
 
 #define mus_to_s(mus) ((double) (mus) / 1.0e6)
@@ -239,11 +239,11 @@ real* mwReadRestArgs(const char** rest, unsigned int n);
 const char** mwGetForwardedArguments(const char** args, unsigned int* nForwardedArgs);
 
 #if defined(__SSE__) && DISABLE_DENORMALS
-int mwDisableDenormalsSSE();
+int mwDisableDenormalsSSE(void);
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
-unsigned long long mwFixFPUPrecision();
-void mwDisableErrorBoxes();
+unsigned long long mwFixFPUPrecision(void);
+void mwDisableErrorBoxes(void);
 
 #ifdef __GNUC__
   #define mw_likely(x)    __builtin_expect((x), 1)

@@ -26,7 +26,7 @@
 #include "evaluation_state.h"
 
 
-static char resolvedCheckpointPath[2048];
+static char resolvedCheckpointPath[4096];
 
 
 void initializeCut(Cut* integral, unsigned int number_streams)
@@ -288,9 +288,6 @@ static inline void writeState(FILE* f, const EvaluationState* es)
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);
 }
 
-
-#if BOINC_APPLICATION
-
 /* Each checkpoint we introduce more errors from summing the entire
  * buffer. If we didn't we would have checkpoints hundreds of
  * megabytes in size. Make sure at least 10% has progressed (limiting
@@ -301,20 +298,17 @@ static inline void writeState(FILE* f, const EvaluationState* es)
  * avoid doing it too often.*/
 int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia)
 {
-    return (es->nu_step - es->lastCheckpointNuStep >= ia->nu_steps / 10) && boinc_time_to_checkpoint();
+    if (BOINC_APPLICATION)
+    {
+        return (es->nu_step - es->lastCheckpointNuStep >= ia->nu_steps / 10) && mw_time_to_checkpoint();
+    }
+    else
+    {
+        return FALSE;
+    }
 }
 
-#else
-
-int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia)
-{
-    return FALSE;
-}
-
-#endif /* BOINC_APPLICATION */
-
-
-int resolveCheckpoint()
+int resolveCheckpoint(void)
 {
     int rc;
 
@@ -327,13 +321,12 @@ int resolveCheckpoint()
 int writeCheckpoint(EvaluationState* es)
 {
     FILE* f;
-    int rc;
 
     /* Avoid corrupting the checkpoint file by writing to a temporary file, and moving that */
     f = mw_fopen(CHECKPOINT_FILE_TMP, "wb");
     if (!f)
     {
-        perror("Opening checkpoint temp");
+        mwPerror("Opening checkpoint '%s'", CHECKPOINT_FILE_TMP);
         return 1;
     }
 
@@ -363,7 +356,9 @@ int maybeResume(EvaluationState* es)
             return 1;
         }
         else
+        {
             mw_report("Successfully resumed checkpoint\n");
+        }
     }
 
     return 0;

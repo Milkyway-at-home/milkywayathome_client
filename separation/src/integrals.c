@@ -99,7 +99,7 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 
 #else /* Plain */
 
-static inline void doBoincCheckpoint(const EvaluationState* es,
+static inline void doBoincCheckpoint(EvaluationState* es,
                                      const IntegralArea* ia,
                                      real total_calc_probs)
 {
@@ -251,6 +251,8 @@ int integrate(const AstronomyParameters* ap,
     RConsts* rc;
     real* RESTRICT rPoints;
     real* RESTRICT qw_r3_N;
+
+    (void) clr, (void) _ci;
 
     if (ap->q == 0.0)
     {

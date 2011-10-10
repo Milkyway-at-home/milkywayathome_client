@@ -102,7 +102,7 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 
 extern cl_kernel _separationKernel;
 
-cl_int releaseSeparationKernel();
+cl_int releaseSeparationKernel(void);
 
 #ifdef __cplusplus
 }

@@ -31,6 +31,7 @@ static void CL_CALLBACK contextCallback(const char* errInfo,
                                         size_t cb,
                                         void* userData)
 {
+    (void) privateInfo, (void) cb, (void) userData;
     mw_printf("CL context error: %s\n", errInfo);
 }
 
@@ -120,7 +121,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     cl_device_id* devs;
     cl_uint platformChoice;
 
-    ids = mwGetAllPlatformIDs(ci, &nPlatform);
+    ids = mwGetAllPlatformIDs(&nPlatform);
     if (!ids)
         return MW_CL_ERROR;
 

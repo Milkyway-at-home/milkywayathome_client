@@ -115,7 +115,7 @@ int mwHasSSE2(const int abcd[4])
 
 
 #if defined(_WIN32)
-int mwOSHasAVXSupport()
+int mwOSHasAVXSupport(void)
 {
     OSVERSIONINFO vInfo;
 
@@ -132,7 +132,7 @@ int mwOSHasAVXSupport()
 #elif defined(__linux__)
 
 /* Scan through /proc/cpuinfo to see if the kernel supports AVX */
-int mwOSHasAVXSupport()
+int mwOSHasAVXSupport(void)
 {
     FILE* f;
     char lineBuf[4096];
@@ -161,16 +161,16 @@ int mwOSHasAVXSupport()
     return support;
 }
 
-#elif  defined(__APPLE__) && MW_IS_X86
+#elif defined(__APPLE__) && MW_IS_X86
 
-int mwOSHasAVXSupport()
+int mwOSHasAVXSupport(void)
 {
     size_t len;
     char* kernelVersion;
     int major = 0;
     int minor = 0;
     int patchLevel = 0;
-    static int mib[2] = { CTL_KERN, KERN_OSRELEASE };
+    static const int mib[2] = { CTL_KERN, KERN_OSRELEASE };
 
     if (sysctl(mib, 2, NULL, &len, NULL, 0) < 0)
     {

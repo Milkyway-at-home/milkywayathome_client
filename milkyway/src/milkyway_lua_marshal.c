@@ -345,9 +345,10 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)
 static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const char* badStr)
 {
     const MWEnumAssociation* nextP;
-    char errBuf[2048] = "Expected enum value where options are: ";
+    char errBuf[4096] = "Expected enum value where options are: ";
     char badOpt[1024];
     size_t badSize, enumLen, errLen;
+    size_t remSize; /* Remaining size in buffer */
 
     errLen = strlen(errBuf);
     while (p->enumName)
@@ -374,10 +375,10 @@ static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const ch
 
     /* If there's extra space, might as well say what the bad option was */
     badSize = snprintf(badOpt, sizeof(badOpt), " Invalid option '%s'", badStr);
-    if (   (badSize != sizeof(badOpt))
-        && (badSize < (sizeof(errBuf) - errLen + 3)))
+    remSize = sizeof(errBuf) - errLen - 1;
+    if ((badSize != sizeof(badOpt)) && (badSize < remSize))
     {
-        strncat(errBuf, badOpt, sizeof(errBuf));
+        strncat(errBuf, badOpt, remSize);
     }
 
     return luaL_argerror(luaSt, 1, errBuf);

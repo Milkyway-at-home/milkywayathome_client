@@ -55,9 +55,9 @@ typedef struct
 int nbglLoadStaticSceneFromFile(const char* filename);
 
 int connectSharedScene(int instanceId);
-int checkConnectedVersion();
+int checkConnectedVersion(void);
 int nbodyGLSetup(const VisArgs* args);
-void nbodyGLCleanup();
+void nbodyGLCleanup(void);
 
 #ifndef _WIN32
 int nbodyInitShmemKey(const char* progName);

@@ -40,7 +40,7 @@ void addTmpSums(EvaluationState* es);
 
 int writeCheckpoint(EvaluationState* es);
 int readCheckpoint(EvaluationState* es);
-int resolveCheckpoint();
+int resolveCheckpoint(void);
 int maybeResume(EvaluationState* es);
 int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia);
 

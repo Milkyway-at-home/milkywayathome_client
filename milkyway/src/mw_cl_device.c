@@ -595,7 +595,7 @@ void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
     }
 }
 
-cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
+cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out)
 {
     cl_uint n_platform = 0;
     cl_platform_id* ids;

@@ -156,7 +156,7 @@ typedef union
 /* 2^x, for x in [-1.0, 1.0[ */
 SEPARATION_ALIGN(16) static double exp2_table[2 * EXP2_TABLE_SIZE];
 
-static inline void initExpTable()
+static inline void initExpTable(void)
 {
     int i;
 

@@ -277,7 +277,7 @@ static real probabilities_avx(const AstronomyParameters* ap,
     return bg_prob;
 }
 
-ProbabilityFunc INIT_PROBABILITIES()
+ProbabilityFunc INIT_PROBABILITIES(void)
 {
     assert(mwAllocA32Safe());
     initExpTable();

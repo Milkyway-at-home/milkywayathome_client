@@ -183,7 +183,7 @@ size_t mwCountLinesInFile(FILE* f)
 
 #ifdef _WIN32
 
-double mwGetTime()
+double mwGetTime(void)
 {
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
@@ -191,12 +191,12 @@ double mwGetTime()
     return (double)t.QuadPart/(double)f.QuadPart;
 }
 
-double mwGetTimeMilli()
+double mwGetTimeMilli(void)
 {
     return 1.0e3 * mwGetTime();
 }
 
-static UINT mwGetMinTimerResolution()
+static UINT mwGetMinTimerResolution(void)
 {
     TIMECAPS tc;
 
@@ -210,7 +210,7 @@ static UINT mwGetMinTimerResolution()
     return MIN(MAX(tc.wPeriodMin, 1), tc.wPeriodMax);
 }
 
-int mwSetTimerMinResolution()
+int mwSetTimerMinResolution(void)
 {
     if (timeBeginPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
     {
@@ -221,7 +221,7 @@ int mwSetTimerMinResolution()
     return 0;
 }
 
-int mwResetTimerResolution()
+int mwResetTimerResolution(void)
 {
     if (timeEndPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
     {
@@ -235,7 +235,7 @@ int mwResetTimerResolution()
 #else
 
 /* Seconds */
-double mwGetTime()
+double mwGetTime(void)
 {
     struct timeval t;
     struct timezone tzp;
@@ -245,7 +245,7 @@ double mwGetTime()
 }
 
 /* Get time in microseconds */
-long mwGetTimeMicro()
+long mwGetTimeMicro(void)
 {
     struct timeval t;
     gettimeofday(&t, NULL);
@@ -253,17 +253,17 @@ long mwGetTimeMicro()
 }
 
 /* Get time in milliseconds */
-double mwGetTimeMilli()
+double mwGetTimeMilli(void)
 {
     return (double) mwGetTimeMicro() / 1.0e3;
 }
 
-int mwSetTimerMinResolution()
+int mwSetTimerMinResolution(void)
 {
 	return 0;
 }
 
-int mwResetTimerResolution()
+int mwResetTimerResolution(void)
 {
     return 0;
 }
@@ -272,7 +272,7 @@ int mwResetTimerResolution()
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 
-int mwDisableDenormalsSSE()
+int mwDisableDenormalsSSE(void)
 {
     int oldMXCSR = _mm_getcsr();
     int newMXCSR = oldMXCSR | 0x8040;
@@ -503,7 +503,7 @@ int mwCheckNormalPosNum(real n)
 
 /* Disable the stupid "Windows is checking for a solution to the
  * problem" boxes from showing up if this crashes */
-void mwDisableErrorBoxes()
+void mwDisableErrorBoxes(void)
 {
   #ifdef _WIN32
 
@@ -579,7 +579,7 @@ int mwSetProcessPriority(MWPriority priority)
 
 
 /*  From crlibm */
-unsigned long long mwFixFPUPrecision()
+unsigned long long mwFixFPUPrecision(void)
 {
 #if MW_IS_X86
 

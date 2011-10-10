@@ -86,7 +86,7 @@ static void hackQuad(NBodyCell* p)
     {
         q = desc[i];                            /* access each one in turn  */
         if (isCell(q))                          /* if it's also a cell      */
-            hackQuad((NBodyCell*) q);                /* then process it first    */
+            hackQuad((NBodyCell*) q);           /* then process it first    */
         dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
         mw_outv(drdr, dr, dr);                  /* form outer prod. of dr   */
         drsq = mw_sqrv(dr);                     /* and dot prod. dr * dr    */
@@ -308,9 +308,10 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
             return sqr(rc);
 
         case InvalidCriterion:
+        case Exact: /* Uses separate path */
         default:
             rc = 0.0; /* Stop clang static analysis warning */
-            mw_fail("Bad criterion: %d\n", ctx->criterion);
+            mw_fail("Invalid criterion: %s (%d)\n", showCriterionT(ctx->criterion), ctx->criterion);
 	    return 0.0;
     }
 }

@@ -46,7 +46,7 @@ MWDoubleExts mwGetDoubleExts(const char* extensions);
 cl_bool mwSupportsDoubles(const DevInfo* di);
 
 cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut);
-cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out);
+cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out);
 
 cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 

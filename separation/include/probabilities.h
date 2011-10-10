@@ -52,10 +52,10 @@ extern "C" {
 
 
 #if MW_IS_X86
-ProbabilityFunc initProbabilities_AVX();
-ProbabilityFunc initProbabilities_SSE41();
-ProbabilityFunc initProbabilities_SSE3();
-ProbabilityFunc initProbabilities_SSE2();
+ProbabilityFunc initProbabilities_AVX(void);
+ProbabilityFunc initProbabilities_SSE41(void);
+ProbabilityFunc initProbabilities_SSE3(void);
+ProbabilityFunc initProbabilities_SSE2(void);
 #endif /* MW_IS_X86 */
 
 
