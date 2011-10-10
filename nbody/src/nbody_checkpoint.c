@@ -142,9 +142,10 @@ static int verifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
 
 #ifndef _WIN32
 
-static int openCheckpointHandle(const NBodyState* st,
-                                CheckpointHandle* cp,
-                                const char* filename, int writing)
+static int nbOpenCheckpointHandle(const NBodyState* st,
+                                  CheckpointHandle* cp,
+                                  const char* filename,
+                                  int writing)
 {
     struct stat sb;
 
@@ -197,7 +198,7 @@ static int openCheckpointHandle(const NBodyState* st,
     return FALSE;
 }
 
-static int closeCheckpointHandle(CheckpointHandle* cp)
+static int nbCloseCheckpointHandle(CheckpointHandle* cp)
 {
     struct stat sb;
 
@@ -216,7 +217,7 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
             return TRUE;
         }
 
-        if (cp->mptr && cp->mptr != MAP_FAILED && munmap(cp->mptr, sb.st_size) == -1)
+        if (cp->mptr && (cp->mptr != MAP_FAILED) && (munmap(cp->mptr, sb.st_size) == -1))
         {
             mwPerror("munmap() checkpoint");
             return TRUE;
@@ -235,7 +236,10 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
              Flushing:
              http://msdn.microsoft.com/en-us/library/aa366563(v=VS.85).aspx
  */
-static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, const char* filename, int writing)
+static int nbOpenCheckpointHandle(const NBodyState* st,
+                                  CheckpointHandle* cp,
+                                  const char* filename,
+                                  int writing)
 {
     SYSTEM_INFO si;
     DWORD sysGran;
@@ -319,7 +323,7 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
     return FALSE;
 }
 
-static int closeCheckpointHandle(CheckpointHandle* cp)
+static int nbCloseCheckpointHandle(CheckpointHandle* cp)
 {
     if (cp->file != INVALID_HANDLE_VALUE)
     {
@@ -348,7 +352,7 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 #endif /* _WIN32 */
 
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
-static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
+static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
     size_t bodySize, traceSize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
@@ -391,7 +395,7 @@ static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     return FALSE;
 }
 
-static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
+static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(Body) * st->nbody;
     const size_t traceSize = sizeof(mwvector) * N_ORBIT_TRACE_POINTS;
@@ -440,20 +444,58 @@ int nbResolvedCheckpointExists(const NBodyState* st)
     return mw_file_exists(st->checkpointResolved);
 }
 
+/* Try to open a checkpoint with a few tries if the open fails.
+   This is in case of weird/rare failures like interrupted system calls.
+ */
+static int nbOpenCheckpointHandleWithAttempts(const NBodyState* st,
+                                              CheckpointHandle* cp,
+                                              const char* filename,
+                                              int writing)
+{
+    unsigned int tries = 0;
+    const unsigned int maxTries = 5;
+
+    do
+    {
+        if (!nbOpenCheckpointHandle(st, cp, filename, writing))
+            break;
+
+        if (nbCloseCheckpointHandle(cp))
+            return TRUE;
+
+        ++tries;
+        mwMilliSleep(10);
+    }
+    while (tries < maxTries);
+
+    if (tries >= maxTries)
+    {
+        mw_printf("Failed to open checkpoint '%s' after %d tries\n", filename, tries);
+        return TRUE;
+    }
+
+    return FALSE;
+}
 
 /* Read the actual checkpoint file to resume */
 int nbReadCheckpoint(NBodyCtx* ctx, NBodyState* st)
 {
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
-    if (openCheckpointHandle(st, &cp, st->checkpointResolved, FALSE))
+    if (nbOpenCheckpointHandleWithAttempts(st, &cp, st->checkpointResolved, FALSE))
     {
-        mw_printf("Opening checkpoint for resuming failed\n");
-        closeCheckpointHandle(&cp);
+        mw_printf("Opening checkpoint '%s' for resuming failed\n", st->checkpointResolved);
+        nbCloseCheckpointHandle(&cp);
         return TRUE;
     }
 
-    if (thawState(ctx, st, &cp) || closeCheckpointHandle(&cp))
+    if (nbThawState(ctx, st, &cp))
+    {
+        nbCloseCheckpointHandle(&cp);
+        return TRUE;
+    }
+
+    if (nbCloseCheckpointHandle(&cp))
     {
         return TRUE;
     }
@@ -472,17 +514,15 @@ int nbWriteCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, cons
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
     assert(st->checkpointResolved);
-    if (openCheckpointHandle(st, &cp, tmpFile, TRUE))
+
+    if (nbOpenCheckpointHandleWithAttempts(st, &cp, tmpFile, TRUE))
     {
-        closeCheckpointHandle(&cp);
-        mw_printf("Failed to open temporary checkpoint file\n"
-                  "Failed to write checkpoint\n");
         return TRUE;
     }
 
-    freezeState(ctx, st, &cp);
+    nbFreezeState(ctx, st, &cp);
 
-    if (closeCheckpointHandle(&cp))
+    if (nbCloseCheckpointHandle(&cp))
     {
         mw_printf("Failed to properly close temporary checkpoint file\n");
         failed = TRUE;
