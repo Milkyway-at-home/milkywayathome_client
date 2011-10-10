@@ -113,12 +113,11 @@ static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)
     return acc;
 }
 
-mwvector acceleration(const Potential* pot, mwvector pos)
+mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
     const real r = mw_absv(pos);
 
-    /* GCC and clang both turn these into jump tables */
     switch (pot->disk.type)
     {
         case ExponentialDisk:
@@ -129,7 +128,7 @@ mwvector acceleration(const Potential* pot, mwvector pos)
             break;
         case InvalidDisk:
         default:
-            mw_fail("Invalid disk type in acceleration()\n");
+            mw_fail("Invalid disk type in external acceleration\n");
     }
 
     switch (pot->halo.type)
@@ -145,7 +144,7 @@ mwvector acceleration(const Potential* pot, mwvector pos)
             break;
         case InvalidHalo:
         default:
-            mw_fail("Invalid halo type in acceleration()\n");
+            mw_fail("Invalid halo type in external acceleration\n");
     }
 
     mw_incaddv(acc, acctmp);

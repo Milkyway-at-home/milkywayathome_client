@@ -27,10 +27,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Calculate chisq from data read from histData and the histogram
  * generated from the simulation, histogram, with maxIdx bins. */
-static real calcChisq(const HistData* histData,
-                      const unsigned int* histogram,
-                      const unsigned int maxIdx,
-                      const real totalNum)
+static real nbCalcChisq(const HistData* histData,
+                        const unsigned int* histogram,
+                        const unsigned int maxIdx,
+                        const real totalNum)
 {
     unsigned int i;
     real tmp, chisqval = 0.0;
@@ -48,12 +48,12 @@ static real calcChisq(const HistData* histData,
     return -chisqval;
 }
 
-static void printHistogramHeader(FILE* f,
-                                 const NBodyCtx* ctx,
-                                 const HistogramParams* hp,
-                                 int nbody,
-                                 uint32_t seed,
-                                 real chisq)
+static void nbPrintHistogramHeader(FILE* f,
+                                   const NBodyCtx* ctx,
+                                   const HistogramParams* hp,
+                                   int nbody,
+                                   uint32_t seed,
+                                   real chisq)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
@@ -202,14 +202,14 @@ static void printHistogramHeader(FILE* f,
         );
 }
 
-static void printHistogram(FILE* f,
-                           const HistogramParams* hp,
-                           const HistData* histData,
-                           const unsigned int* histogram,
-                           unsigned int maxIdx,
-                           real start,
-                           real totalNum,
-                           int binUseIsValid)  /* If */
+static void nbPrintHistogram(FILE* f,
+                             const HistogramParams* hp,
+                             const HistData* histData,
+                             const unsigned int* histogram,
+                             unsigned int maxIdx,
+                             real start,
+                             real totalNum,
+                             int binUseIsValid)  /* If */
 {
     unsigned int i;
 
@@ -227,16 +227,16 @@ static void printHistogram(FILE* f,
     mw_boinc_print(f, "</histogram>\n");
 }
 
-static void writeHistogram(const NBodyCtx* ctx,
-                           NBodyState* st,
-                           const NBodyFlags* nbf,
-                           const HistogramParams* hp,
-                           const HistData* histData,      /* Read histogram data */
-                           const unsigned int* histogram, /* Binned simulation data */
-                           unsigned int maxIdx,           /* number of bins */
-                           real start,                    /* Calculated low point of bin range */
-                           real chisq,
-                           real totalNum)                 /* Total number in range */
+static void nbWriteHistogram(const NBodyCtx* ctx,
+                             NBodyState* st,
+                             const NBodyFlags* nbf,
+                             const HistogramParams* hp,
+                             const HistData* histData,      /* Read histogram data */
+                             const unsigned int* histogram, /* Binned simulation data */
+                             unsigned int maxIdx,           /* number of bins */
+                             real start,                    /* Calculated low point of bin range */
+                             real chisq,
+                             real totalNum)                 /* Total number in range */
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
     int binUseIsValid;
@@ -256,8 +256,8 @@ static void writeHistogram(const NBodyCtx* ctx,
        in some way, so we can't tell which bins should be ignored
      */
     binUseIsValid = !isnan(chisq);
-    printHistogramHeader(f, ctx, hp, st->nbody, nbf->seed, chisq);
-    printHistogram(f, hp, histData, histogram, maxIdx, start, totalNum, binUseIsValid);
+    nbPrintHistogramHeader(f, ctx, hp, st->nbody, nbf->seed, chisq);
+    nbPrintHistogram(f, hp, histData, histogram, maxIdx, start, totalNum, binUseIsValid);
 
     if (f != DEFAULT_OUTPUT_FILE)
         fclose(f);
@@ -266,10 +266,10 @@ static void writeHistogram(const NBodyCtx* ctx,
 /* We create a raw histogram from the simulation.
    To compare it, we need to remove the unused bins
  */
-static unsigned int correctTotalNumberInHistogram(const unsigned int* histogram,
-                                                  unsigned int nBin,
-                                                  unsigned int totalNum,
-                                                  const HistData* histData)
+static unsigned int nbCorrectTotalNumberInHistogram(const unsigned int* histogram,
+                                                    unsigned int nBin,
+                                                    unsigned int totalNum,
+                                                    const HistData* histData)
 
 {
     unsigned int i;
@@ -295,12 +295,12 @@ the data histogram A maximum correlation means the best fit */
 /* Bin the bodies from the simulation into maxIdx bins.
    Returns null on failure
  */
-static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation context */
-                                     const NBodyState* st,      /* Final state of the simulation */
-                                     const unsigned int maxIdx, /* Total number of bins */
-                                     const real start,          /* Calculated start point of bin range */
-                                     const HistogramParams* hp,
-                                     unsigned int* totalNumOut) /* Out: Number of particles in range */
+static unsigned int* nbCreateHistogram(const NBodyCtx* ctx,       /* Simulation context */
+                                       const NBodyState* st,      /* Final state of the simulation */
+                                       const unsigned int maxIdx, /* Total number of bins */
+                                       const real start,          /* Calculated start point of bin range */
+                                       const HistogramParams* hp,
+                                       unsigned int* totalNumOut) /* Out: Number of particles in range */
 {
     real lambda;
     unsigned int idx;
@@ -337,7 +337,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 /* The chisq is calculated by reading a histogram file of normalized data.
    Returns null on failure.
  */
-static HistData* readHistData(const char* histogram, unsigned int* maxIdxOut)
+static HistData* nbReadHistData(const char* histogram, unsigned int* maxIdxOut)
 {
     FILE* f;
     int rc = 0;
@@ -427,7 +427,7 @@ static HistData* readHistData(const char* histogram, unsigned int* maxIdxOut)
 }
 
 /* Calculate the likelihood from the final state of the simulation */
-real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp)
+real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp)
 {
     real chisqval = NAN;
     unsigned int totalNum = 0;
@@ -443,7 +443,7 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
 
     const real start = mw_ceil(hp->center - hp->binSize * (real) maxIdx / 2.0);
 
-    histogram = createHistogram(ctx, st, maxIdx, start, hp, &totalNum);
+    histogram = nbCreateHistogram(ctx, st, maxIdx, start, hp, &totalNum);
     if (!histogram)
     {
         mw_printf("Failed to create histogram\n");
@@ -452,7 +452,7 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
 
     if (nbf->histogramFileName) /* If we have an input histogram to match */
     {
-        histData = readHistData(nbf->histogramFileName, &dataMaxIdx);
+        histData = nbReadHistData(nbf->histogramFileName, &dataMaxIdx);
         if (!histData)
         {
             mw_printf("Failed to read histogram\n");
@@ -472,8 +472,8 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
 
                 if (totalNum != 0)
                 {
-                    effTotalNum = (real) correctTotalNumberInHistogram(histogram, maxIdx, totalNum, histData);
-                    chisqval = calcChisq(histData, histogram, maxIdx, effTotalNum);
+                    effTotalNum = (real) nbCorrectTotalNumberInHistogram(histogram, maxIdx, totalNum, histData);
+                    chisqval = nbCalcChisq(histData, histogram, maxIdx, effTotalNum);
                 }
                 else
                 {
@@ -487,7 +487,7 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
      * calculated (i.e. given a histogram) */
     if (nbf->printHistogram)
     {
-        writeHistogram(ctx, st, nbf, hp, histData, histogram, maxIdx, start, chisqval, (real) totalNum);
+        nbWriteHistogram(ctx, st, nbf, hp, histData, histogram, maxIdx, start, chisqval, (real) totalNum);
     }
 
     free(histogram);

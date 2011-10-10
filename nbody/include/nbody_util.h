@@ -23,10 +23,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-mwvector nbodyCenterOfMass(const NBodyState* st);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+mwvector nbCenterOfMass(const NBodyState* st);
 
 double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
 double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_UTIL_H_ */
 

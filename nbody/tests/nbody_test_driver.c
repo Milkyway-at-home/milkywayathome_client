@@ -241,7 +241,7 @@ static int hashNBodyTestTable(lua_State* luaSt)
 static int statusIsFatal(lua_State* luaSt)
 {
     NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
-    lua_pushboolean(luaSt, nbodyStatusIsFatal(rc));
+    lua_pushboolean(luaSt, nbStatusIsFatal(rc));
     return 1;
 }
 
@@ -432,7 +432,7 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     int rc;
     lua_State* luaSt;
 
-    luaSt = nbodyLuaOpen(TRUE);
+    luaSt = nbLuaOpen(TRUE);
     if (!luaSt)
         return 1;
 

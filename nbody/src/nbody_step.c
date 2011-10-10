@@ -74,14 +74,14 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 }
 
 /* stepSystem: advance N-body system one time-step. */
-NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc;
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt);
 
-    rc = gravMap(ctx, st);
+    rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt);
 
     st->step++;

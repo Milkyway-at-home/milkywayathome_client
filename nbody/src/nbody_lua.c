@@ -59,7 +59,7 @@ static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
 }
 
 /* Open a lua_State and load the stuff we define, but do not run anything */
-lua_State* nbodyLuaOpen(mwbool debug)
+lua_State* nbLuaOpen(mwbool debug)
 {
     lua_State* luaSt;
 
@@ -93,7 +93,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
     char* script;
     lua_State* luaSt;
 
-    luaSt = nbodyLuaOpen(nbf->debugLuaLibs);
+    luaSt = nbLuaOpen(nbf->debugLuaLibs);
     if (!luaSt)
         return NULL;
 
@@ -255,7 +255,7 @@ static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState
     return 0;
 }
 
-int setupNBody(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
+int nbSetup(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     int rc;
     lua_State* luaSt;

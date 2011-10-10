@@ -36,7 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
-static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+static inline int nbTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
     time_t now;
 
@@ -58,18 +58,18 @@ static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
     return FALSE;
 }
 
-static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+static inline void nbCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-    if (nbodyTimeToCheckpoint(ctx, st))
+    if (nbTimeToCheckpoint(ctx, st))
     {
-        if (writeCheckpoint(ctx, st))
+        if (nbWriteCheckpoint(ctx, st))
             mw_fail("Failed to write checkpoint\n");
 
         mw_checkpoint_completed();
     }
 }
 
-static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
+static inline void nbReportProgress(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
 {
     double frac = (double) st->step / (double) ctx->nStep;
 
@@ -89,7 +89,7 @@ static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int 
 }
 
 /* If enough time has passed, record the next center of mass position */
-static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
+static void nbAddTracePoint(const NBodyCtx* ctx, NBodyState* st)
 {
     int i = st->step * N_ORBIT_TRACE_POINTS / ctx->nStep;
 
@@ -105,35 +105,35 @@ static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
     st->orbitTrace[i] = Pos(st->tree.root);
 }
 
-static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+static NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     NBodyStatus rc = NBODY_SUCCESS;
 
     if (nbf->visualizer)
     {
-        launchVisualizer(st, nbf->visArgs);
+        nbLaunchVisualizer(st, nbf->visArgs);
     }
 
-    rc |= gravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
-    if (nbodyStatusIsFatal(rc))
+    rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
+    if (nbStatusIsFatal(rc))
         return rc;
 
     while (st->step < ctx->nStep)
     {
-        addTracePoint(ctx, st);
-        updateDisplayedBodies(ctx, st);
-        rc |= stepSystem(ctx, st);
-        if (nbodyStatusIsFatal(rc))   /* advance N-body system */
+        nbAddTracePoint(ctx, st);
+        nbUpdateDisplayedBodies(ctx, st);
+        rc |= nbStepSystem(ctx, st);
+        if (nbStatusIsFatal(rc))   /* advance N-body system */
             return rc;
 
-        nbodyCheckpoint(ctx, st);
-        nbodyReportProgress(ctx, st, nbf->reportProgress);
+        nbCheckpoint(ctx, st);
+        nbReportProgress(ctx, st, nbf->reportProgress);
     }
 
     if (BOINC_APPLICATION || ctx->checkpointT >= 0)
     {
         mw_report("Making final checkpoint\n");
-        if (writeCheckpoint(ctx, st))
+        if (nbWriteCheckpoint(ctx, st))
         {
             mw_printf("Failed to write final checkpoint\n");
             return NBODY_CHECKPOINT_ERROR;
@@ -143,31 +143,33 @@ static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     return rc;
 }
 
-static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
+/* If possible, resume from a checkpoint. Otherwise do the necessary
+ * initialization for a new run */
+static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
-    if (resolveCheckpoint(st, nbf->checkpointFileName))
+    if (nbResolveCheckpoint(st, nbf->checkpointFileName))
     {
         mw_printf("Failed to resolve checkpoint\n");
         return NBODY_ERROR;
     }
 
-    /* If the checkpoint exists, try to use it */
-    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists(st))
+    /* If the checkpoint exists (and we want to use it), try to use it */
+    if (nbf->ignoreCheckpoint || !nbResolvedCheckpointExists(st))
     {
-        if (setupNBody(ctx, st, hp, nbf))
+        if (nbSetup(ctx, st, hp, nbf))
         {
             mw_printf("Failed to read input parameters file\n");
             return NBODY_ERROR;
         }
     }
-    else
+    else /* Resume from checkpoint */
     {
         if (nbf->inputFile && !BOINC_APPLICATION)
         {
             mw_printf("Warning: input file '%s' unused\n", nbf->inputFile);
         }
 
-        if (readCheckpoint(ctx, st))
+        if (nbReadCheckpoint(ctx, st))
         {
             mw_report("Failed to read checkpoint\n");
             destroyNBodyState(st);
@@ -183,17 +185,17 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
 }
 
 /* Set context fields read from command line flags */
-static void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
+static void nbSetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
     ctx->checkpointT = nbf->checkpointPeriod;
 }
 
-static void nbodySetStateFromFlags(NBodyState* st, const NBodyFlags* nbf)
+static void nbSetStateFromFlags(NBodyState* st, const NBodyFlags* nbf)
 {
     st->ignoreResponsive = nbf->ignoreResponsive;
 }
 
-static void nbodySetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
+static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 {
     clr->platform = nbf->platform;
     clr->devNum = nbf->devNum;
@@ -203,13 +205,13 @@ static void nbodySetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->enableProfiling = TRUE;
 }
 
-int verifyFile(const NBodyFlags* nbf)
+int nbVerifyFile(const NBodyFlags* nbf)
 {
     int rc;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_NBODYSTATE;
 
-    rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
+    rc = nbSetup(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
     {
         mw_printf("File failed\n");
@@ -229,7 +231,7 @@ int verifyFile(const NBodyFlags* nbf)
 
 static int nbOutputIsUseful(const NBodyFlags* nbf)
 {
-    if (!nbf->outFileName && !nbf->histogramFileName && !nbf->histoutFileName)
+    if (!nbf->outFileName && !nbf->histogramFileName && !nbf->histoutFileName && !nbf->verifyOnly)
     {
         mw_printf("Don't you want some kind of result?\n");
         return FALSE;
@@ -243,7 +245,7 @@ static int nbOutputIsUseful(const NBodyFlags* nbf)
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
 
-int runNBodySimulation(const NBodyFlags* nbf)
+int nbMain(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
@@ -255,51 +257,51 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     if (!nbOutputIsUseful(nbf))
     {
-        return NBODY_ERROR;
+        return NBODY_USER_ERROR;
     }
 
-    if (setupRun(ctx, st, &ctx->histogramParams, nbf))
+    rc = nbResumeOrNewRun(ctx, st, &ctx->histogramParams, nbf);
+    if (nbStatusIsFatal(rc))
     {
-        mw_printf("Failed to setup run\n");
-        return NBODY_ERROR;
+        return rc;
     }
 
-    nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
-    nbodySetStateFromFlags(st, nbf);
-    nbodySetCLRequestFromFlags(&clr, nbf);
+    nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
+    nbSetStateFromFlags(st, nbf);
+    nbSetCLRequestFromFlags(&clr, nbf);
 
-    if (createSharedScene(st, ctx))
+    if (nbCreateSharedScene(st, ctx))
     {
         mw_printf("Failed to create shared scene\n");
     }
 
     if (nbf->reportProgress)
     {
-        setupCursesOutput();
+        nbSetupCursesOutput();
     }
 
     ts = mwGetTime();
   #if NBODY_OPENCL
     if (nbf->noCL)
     {
-        rc = runSystem(ctx, st, nbf);
+        rc = nbRunSystem(ctx, st, nbf);
     }
     else
     {
         rc = initCLNBodyState(st, ctx, &clr);
-        if (!nbodyStatusIsFatal(rc))
+        if (!nbStatusIsFatal(rc))
         {
-            rc = runSystemCL(ctx, st, nbf);
+            rc = nbRunSystemCL(ctx, st, nbf);
         }
     }
   #else
-    rc = runSystem(ctx, st, nbf);
+    rc = nbRunSystem(ctx, st, nbf);
   #endif /* NBODY_OPENCL */
     te = mwGetTime();
 
     if (nbf->reportProgress)
     {
-        cleanupCursesOutput();
+        nbCleanupCursesOutput();
     }
 
     if (nbf->printTiming)
@@ -308,14 +310,14 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
 
 
-    if (nbodyStatusIsFatal(rc))
+    if (nbStatusIsFatal(rc))
     {
         mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
         destroyNBodyState(st);
         return rc;
     }
 
-    if (nbodyStatusIsWarning(rc))
+    if (nbStatusIsWarning(rc))
     {
         mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
     }
@@ -324,7 +326,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
     if (nbf->histogramFileName || nbf->histoutFileName)  /* We want to match or produce a histogram */
     {
         /* Get the likelihood */
-        chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
+        chisq = nbChisq(ctx, st, nbf, &ctx->histogramParams);
     }
 
     if (nbf->histogramFileName) /* The likelihood only means something when matching a histogram */

@@ -170,7 +170,7 @@ static int luaReverseOrbit(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    reverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
+    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
@@ -189,7 +189,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     lua_newtable(luaSt);
     table = lua_gettop(luaSt);
 
-    setModelTableItem(luaSt, table, generatePlummer, "plummer");
+    setModelTableItem(luaSt, table, nbGeneratePlummer, "plummer");
 
     /*
       setModelTableItem(luaSt, table, generateKing, "king");
@@ -199,7 +199,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     lua_setglobal(luaSt, "predefinedModels");
 }
 
-static real calculateTimestep(real mass, real r0)
+static real nbCalculateTimestep(real mass, real r0)
 {
     return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
 }
@@ -214,11 +214,11 @@ static int luaCalculateTimestep(lua_State* luaSt)
     mass = luaL_checknumber(luaSt, 1);
     r0 = luaL_checknumber(luaSt, 2);
 
-    lua_pushnumber(luaSt, calculateTimestep(mass, r0));
+    lua_pushnumber(luaSt, nbCalculateTimestep(mass, r0));
     return 1;
 }
 
-static real calculateEps2(real nbody, real r0)
+static real nbCalculateEps2(real nbody, real r0)
 {
     real eps = r0 / (10.0 * mw_sqrt(nbody));
     return sqr(eps);
@@ -235,7 +235,7 @@ static int luaCalculateEps2(lua_State* luaSt)
     nbody = (int) luaL_checkinteger(luaSt, 1);
     r0 = luaL_checknumber(luaSt, 2);
 
-    lua_pushnumber(luaSt, calculateEps2((real) nbody, r0));
+    lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, r0));
 
     return 1;
 }

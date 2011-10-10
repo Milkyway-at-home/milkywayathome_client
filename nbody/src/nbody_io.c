@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_coordinates.h"
 #include "nbody_curses.h"
 
-static void printHeader(FILE* f, int cartesian)
+static void nbPrintBodyOutputHeader(FILE* f, int cartesian)
 {
     fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
             cartesian ? "x" : "l",
@@ -38,7 +38,7 @@ static void printHeader(FILE* f, int cartesian)
 }
 
 /* output: Print bodies */
-static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
+static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
     Body* p;
     mwvector lbr;
@@ -47,7 +47,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
     real lambda;
 
     nbGetHistTrig(&ht, &ctx->histogramParams);
-    printHeader(f, nbf->outputCartesian);
+    nbPrintBodyOutputHeader(f, nbf->outputCartesian);
 
     for (p = st->bodytab; p < endp; p++)
     {
@@ -98,7 +98,7 @@ int nbWriteBodies(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     }
 
     mw_boinc_print(f, "<bodies>\n");
-    rc = outputBodies(f, ctx, st, nbf);
+    rc = nbOutputBodies(f, ctx, st, nbf);
     mw_boinc_print(f, "</bodies>\n");
 
     if (f != DEFAULT_OUTPUT_FILE)

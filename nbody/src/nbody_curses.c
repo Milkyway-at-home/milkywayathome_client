@@ -34,7 +34,7 @@ static char stderrTmpFile[128];   /* Name of stderr dump file */
 static mwbool cursesSetup = FALSE;
 
 
-int setupCursesOutput(void)
+int nbSetupCursesOutput(void)
 {
     int stderrTmp;
     int redirect; /* Will become stderr, let it "leak" */
@@ -92,7 +92,7 @@ int setupCursesOutput(void)
     return 0;
 }
 
-void cleanupCursesOutput(void)
+void nbCleanupCursesOutput(void)
 {
     FILE* f;
     size_t readSize;
@@ -142,12 +142,12 @@ void cleanupCursesOutput(void)
 
 #else
 
-int setupCursesOutput()
+int nbSetupCursesOutput()
 {
     return 0;
 }
 
-void cleanupCursesOutput()
+void nbCleanupCursesOutput()
 {
 }
 

@@ -250,17 +250,17 @@ if(NOT BOINC_APPLICATION AND UNIX AND NOT APPLE)
 endif()
 
 
-add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
+add_library(nbody STATIC ${nbody_lib_src} ${nbody_lib_headers})
 if(SYSTEM_IS_X86)
-  enable_sse2(nbody_simulation)
+  enable_sse2(nbody)
 endif()
 
 
 
-set(nbody_exe_link_libs nbody_simulation
+set(nbody_exe_link_libs nbody
                         nbody_lua
                         milkyway_lua
-                        nbody_simulation
+                        nbody
                         milkyway
 
                         ${POPT_LIBRARY}

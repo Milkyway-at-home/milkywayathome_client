@@ -44,7 +44,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
 
-static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
+static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 {
     st->scene->nbodyMajorVersion = NBODY_VERSION_MAJOR;
     st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
@@ -56,7 +56,7 @@ static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 #if USE_SHMEM
 
 /* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127*/
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
+int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
     int shmId = -1;
@@ -114,14 +114,14 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
     st->shmId = shmId;
     st->scene->instanceId = instanceId;
     strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
-    prepareSceneFromState(ctx, st);
+    nbPrepareSceneFromState(ctx, st);
 
     return 0;
 }
 
 #elif USE_BOINC_SHMEM
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
+int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
@@ -133,14 +133,14 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
     }
 
     memset(st->scene, 0, size);
-    prepareSceneFromState(ctx, st);
+    nbPrepareSceneFromState(ctx, st);
 
     return 0;
 }
 
 #else
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
+int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
     mw_printf("Creating shared scene unimplemented for this system\n");
     return 0;
@@ -156,7 +156,7 @@ int visualizerIsAttached(const NBodyState* st)
 
 #ifndef _WIN32
 
-void launchVisualizer(NBodyState* st, const char* visArgs)
+void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 {
     pid_t pid;
     const char* path = NULL;
@@ -236,7 +236,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
 #else
 
-void launchVisualizer(NBodyState* st, const char* visArgs)
+void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 {
     PROCESS_INFORMATION pInfo;
     STARTUPINFO startInfo;
@@ -277,7 +277,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
 #endif /* _WIN32 */
 
-void updateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
+void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     const Body* b;
     int i = 0;

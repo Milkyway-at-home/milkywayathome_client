@@ -73,8 +73,8 @@ typedef struct
 
 #define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
-int verifyFile(const NBodyFlags* nbf);
-int runNBodySimulation(const NBodyFlags* nbf);
+int nbVerifyFile(const NBodyFlags* nbf);
+int nbMain(const NBodyFlags* nbf);
 
 #ifdef _cplusplus
 }

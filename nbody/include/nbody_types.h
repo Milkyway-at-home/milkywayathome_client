@@ -379,9 +379,9 @@ typedef enum
     NBODY_USER_ERROR           = 1 << 9
 } NBodyStatus;
 
-#define nbodyStatusIsFatal(x) ((x) > 0)
-#define nbodyStatusIsOK(x) ((x) <= 0)
-#define nbodyStatusIsWarning(x) ((x) < 0)
+#define nbStatusIsFatal(x) ((x) > 0)
+#define nbStatusIsOK(x) ((x) <= 0)
+#define nbStatusIsWarning(x) ((x) < 0)
 
 /* Reserve positive numbers for reporting depth > MAXDEPTH. Should match in kernel  */
 typedef enum
@@ -413,7 +413,7 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
 #endif
 
 int destroyNBodyState(NBodyState* st);
-int detachSharedScene(NBodyState* st);
+int nbDetachSharedScene(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);

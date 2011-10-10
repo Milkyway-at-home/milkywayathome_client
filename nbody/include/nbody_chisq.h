@@ -24,7 +24,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody.h"
 
-real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CHISQ_H_ */
 

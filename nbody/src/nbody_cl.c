@@ -66,7 +66,7 @@ static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
         );
 }
 
-cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 {
     cl_uint blocks = di->maxCompUnits;
 
@@ -92,7 +92,7 @@ cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 }
 
 /* Return CL_TRUE if some error */
-cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
+cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
 {
     ws->factors[0] = 1;
     ws->factors[1] = 2;
@@ -194,7 +194,7 @@ static cl_int setMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
     return err;
 }
 
-static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact)
+static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact)
 {
     cl_int err = CL_SUCCESS;
     cl_int step = 0;
@@ -256,7 +256,7 @@ static cl_int nbodySetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool
     return err;
 }
 
-cl_int nbodySetAllKernelArguments(NBodyState* st)
+cl_int nbSetAllKernelArguments(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     NBodyKernels* k = st->kernels;
@@ -264,19 +264,19 @@ cl_int nbodySetAllKernelArguments(NBodyState* st)
 
     if (!exact)
     {
-        err |= nbodySetKernelArguments(k->boundingBox, st->nbb, exact);
-        err |= nbodySetKernelArguments(k->buildTree, st->nbb, exact);
-        err |= nbodySetKernelArguments(k->summarization, st->nbb, exact);
-        err |= nbodySetKernelArguments(k->sort, st->nbb, exact);
-        err |= nbodySetKernelArguments(k->forceCalculation, st->nbb, exact);
+        err |= nbSetKernelArguments(k->boundingBox, st->nbb, exact);
+        err |= nbSetKernelArguments(k->buildTree, st->nbb, exact);
+        err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
+        err |= nbSetKernelArguments(k->sort, st->nbb, exact);
+        err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
     }
     else
     {
-        err |= nbodySetKernelArguments(k->forceCalculation_Exact, st->nbb, exact);
+        err |= nbSetKernelArguments(k->forceCalculation_Exact, st->nbb, exact);
     }
 
 
-    err |= nbodySetKernelArguments(k->integration, st->nbb, exact);
+    err |= nbSetKernelArguments(k->integration, st->nbb, exact);
 
     if (err != CL_SUCCESS)
     {
@@ -286,7 +286,7 @@ cl_int nbodySetAllKernelArguments(NBodyState* st)
     return err;
 }
 
-cl_int nbodyCreateKernels(NBodyState* st)
+cl_int nbCreateKernels(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     NBodyKernels* kernels = st->kernels;
@@ -317,7 +317,7 @@ static cl_int clReleaseKernel_quiet(cl_kernel kern)
     return clReleaseKernel(kern);
 }
 
-cl_int nbodyReleaseKernels(NBodyState* st)
+cl_int nbReleaseKernels(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     NBodyKernels* kernels = st->kernels;
@@ -335,7 +335,7 @@ cl_int nbodyReleaseKernels(NBodyState* st)
     return err;
 }
 
-static cl_uint findNNode(const DevInfo* di, cl_int nbody)
+static cl_uint nbFindNNode(const DevInfo* di, cl_int nbody)
 {
     cl_uint nNode = 2 * nbody;
 
@@ -347,7 +347,7 @@ static cl_uint findNNode(const DevInfo* di, cl_int nbody)
     return nNode - 1;
 }
 
-static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
+static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
 {
     char* buf;
     const NBodyWorkSizes* ws = st->workSizes;
@@ -417,7 +417,7 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  DOUBLEPREC,
 
                  st->nbody,
-                 findNNode(di, st->nbody),
+                 nbFindNNode(di, st->nbody),
                  di->warpSize,
 
                  (di->devType == CL_DEVICE_TYPE_CPU),
@@ -482,7 +482,7 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
     return buf;
 }
 
-cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
+cl_int nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 {
     CLInfo* ci = st->ci;
     cl_int err = CL_SUCCESS;
@@ -490,7 +490,7 @@ cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
     const char* src = (const char*) nbody_kernels_cl;
     size_t srcLen = nbody_kernels_cl_len;
 
-    compileFlags = getCompileFlags(ctx, st, &ci->di);
+    compileFlags = nbGetCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);
     err = mwSetProgramFromSrc(ci, 1, &src, &srcLen, compileFlags);
     if (err != CL_SUCCESS)
@@ -504,7 +504,7 @@ cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 }
 
 /* Return CL_FALSE if device isn't capable of running this */
-cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st)
+cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st)
 {
     (void) di;
     (void) ctx;
@@ -530,7 +530,7 @@ static cl_int debug(CLInfo* ci, NBodyBuffers* nbb)
     return err;
 }
 
-static cl_int readTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
+static cl_int nbReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
 {
     assert(tc);
 
@@ -574,7 +574,7 @@ static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
 {
     mw_printf("--------------------------------------------------------------------------------\n");
     cl_int err;
-    cl_uint nNode = findNNode(&ci->di, st->nbody);
+    cl_uint nNode = nbFindNNode(&ci->di, st->nbody);
     mw_printf("BEGIN CHILD\n");
     printBuffer(ci, nbb->child, NSUB * (nNode + 1), "child", 1);
     mw_printf("BEGIN START\n");
@@ -586,7 +586,7 @@ static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
     {
         TreeStatus tc;
         memset(&tc, 0, sizeof(tc));
-        err = readTreeStatus(&tc, ci, nbb);
+        err = nbReadTreeStatus(&tc, ci, nbb);
         if (err != CL_SUCCESS)
             mwCLWarn("Reading tree status failed\n", err);
         else
@@ -598,12 +598,12 @@ static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
 }
 
 /* Check the error code */
-static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
+static cl_bool nbCheckKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 {
     cl_int err;
     TreeStatus ts;
 
-    err = readTreeStatus(&ts, ci, nbb);
+    err = nbReadTreeStatus(&ts, ci, nbb);
     if (err != CL_SUCCESS)
         return CL_TRUE;
 
@@ -655,7 +655,7 @@ static cl_bool reevaluateWorkSizes(NBodyWorkSizes* ws)
     return CL_FALSE;
 }
 
-static void reportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
+static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
 {
     NBodyWorkSizes* ws = st->workSizes;
 
@@ -680,7 +680,7 @@ static void reportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
 }
 
 /* Run kernels used only by tree versions. */
-static cl_int executeTreeConstruction(NBodyState* st)
+static cl_int nbExecuteTreeConstruction(NBodyState* st)
 {
     cl_int err;
     size_t chunk;
@@ -751,7 +751,7 @@ static cl_int executeTreeConstruction(NBodyState* st)
 }
 
 /* Run force calculation and integration kernels */
-static cl_int executeForceKernels(NBodyState* st)
+static cl_int nbExecuteForceKernels(NBodyState* st)
 {
     cl_int err;
     size_t chunk = 0;
@@ -816,12 +816,12 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     if (!st->usesExact)
     {
-        err = executeTreeConstruction(st);
+        err = nbExecuteTreeConstruction(st);
         if (err != CL_SUCCESS)
             return err;
     }
 
-    err = executeForceKernels(st);
+    err = nbExecuteForceKernels(st);
     if (err != CL_SUCCESS)
         return err;
 
@@ -831,7 +831,7 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     if (st->reportProgress)
     {
-        reportProgressWithTimings(ctx, st);
+        nbReportProgressWithTimings(ctx, st);
     }
 
     for (i = 0; i < 6; ++i) /* Add timings to running totals */
@@ -844,7 +844,7 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
 /* We need to run a fake step to get the initial accelerations without
  * touching the positons/velocities */
-static cl_int runPreStep(NBodyState* st)
+static cl_int nbRunPreStep(NBodyState* st)
 {
     static const cl_int trueVal = TRUE;    /* Need an lvalue */
     static const cl_int falseVal = FALSE;
@@ -855,11 +855,11 @@ static cl_int runPreStep(NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    err = executeTreeConstruction(st);
+    err = nbExecuteTreeConstruction(st);
     if (err != CL_SUCCESS)
         return err;
 
-    err = executeForceKernels(st);
+    err = nbExecuteForceKernels(st);
     if (err != CL_SUCCESS)
         return err;
 
@@ -871,13 +871,13 @@ static cl_int runPreStep(NBodyState* st)
     return CL_SUCCESS;
 }
 
-static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
+static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
 
     if (!st->usesExact)
     {
-        err = runPreStep(st);
+        err = nbRunPreStep(st);
         if (err != CL_SUCCESS)
         {
             mwCLWarn("Error running pre step", err);
@@ -888,7 +888,7 @@ static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
     while (err == CL_SUCCESS && st->step < ctx->nStep)
     {
         st->dirty = TRUE;
-        if (!st->usesExact && checkKernelErrorCode(st->ci, st->nbb))
+        if (!st->usesExact && nbCheckKernelErrorCode(st->ci, st->nbb))
         {
             err = MW_CL_ERROR;
             break;
@@ -911,7 +911,7 @@ static cl_int clReleaseMemObject_quiet(cl_mem mem)
     return clReleaseMemObject(mem);
 }
 
-cl_int nbodyReleaseBuffers(NBodyState* st)
+cl_int nbReleaseBuffers(NBodyState* st)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
@@ -940,7 +940,7 @@ cl_int nbodyReleaseBuffers(NBodyState* st)
 }
 
 
-cl_int nbodySetInitialTreeStatus(NBodyState* st)
+cl_int nbSetInitialTreeStatus(NBodyState* st)
 {
     cl_int err;
     TreeStatus iniTreeStatus;
@@ -969,18 +969,18 @@ cl_int nbodySetInitialTreeStatus(NBodyState* st)
     return err;
 }
 
-static cl_uint findInc(cl_uint warpSize, cl_uint nbody)
+static cl_uint nbFindInc(cl_uint warpSize, cl_uint nbody)
 {
     return (nbody + warpSize - 1) & (-warpSize);
 }
 
-cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
+cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_uint i;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
-    cl_uint nNode = findNNode(&ci->di, st->nbody);
+    cl_uint nNode = nbFindNNode(&ci->di, st->nbody);
 
     for (i = 0; i < 3; ++i)
     {
@@ -1041,7 +1041,7 @@ cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     return CL_SUCCESS;
 }
 
-static cl_int mapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
+static cl_int nbMapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
 {
     cl_uint i;
 
@@ -1060,7 +1060,7 @@ static cl_int mapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* n
     return CL_SUCCESS;
 }
 
-static cl_int unmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers* nbb, CLInfo* ci)
+static cl_int nbUnmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers* nbb, CLInfo* ci)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
@@ -1081,7 +1081,7 @@ static cl_int unmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers* 
 }
 
 /* If last parameter is true, copy to the buffers. if false, copy from the buffers */
-cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn)
+cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
 {
     cl_int i;
     cl_int err = CL_SUCCESS;
@@ -1093,10 +1093,10 @@ cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn)
     NBodyBuffers* nbb = st->nbb;
     cl_map_flags flags = marshalIn ? CL_MAP_WRITE : CL_MAP_READ;
 
-    err = mapBodies(pos, vel, &mass, nbb, ci, flags, st);
+    err = nbMapBodies(pos, vel, &mass, nbb, ci, flags, st);
     if (err != CL_SUCCESS)
     {
-        unmapBodies(pos, vel, mass, nbb, ci);
+        nbUnmapBodies(pos, vel, mass, nbb, ci);
         return err;
     }
 
@@ -1133,7 +1133,7 @@ cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn)
         }
     }
 
-    return unmapBodies(pos, vel, mass, nbb, ci);
+    return nbUnmapBodies(pos, vel, mass, nbb, ci);
 }
 
 void nbodyPrintKernelTimings(const NBodyState* st)
@@ -1171,17 +1171,17 @@ void nbodyPrintKernelTimings(const NBodyState* st)
 }
 
 
-NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     cl_int err = CL_SUCCESS;
 
     (void) nbf;
 
-    err = nbodyMainLoop(ctx, st);
+    err = nbMainLoopCL(ctx, st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbodyMarshalBodies(st, CL_FALSE);
+    err = nbMarshalBodies(st, CL_FALSE);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 

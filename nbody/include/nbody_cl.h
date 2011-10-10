@@ -33,23 +33,22 @@ extern "C" {
 
 #define NBODY_MAXDEPTH 26
 
+cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
+cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di);
+cl_int nbLoadKernels(const NBodyCtx* ctx, NBodyState* st);
+cl_int nbCreateKernels(NBodyState* st);
+cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st);
 
-cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
-cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di);
-cl_int nbodyLoadKernels(const NBodyCtx* ctx, NBodyState* st);
-cl_int nbodyCreateKernels(NBodyState* st);
-cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st);
+cl_int nbSetInitialTreeStatus(NBodyState* st);
+cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st);
+cl_int nbReleaseBuffers(NBodyState* st);
+cl_int nbReleaseKernels(NBodyState* st);
 
-cl_int nbodySetInitialTreeStatus(NBodyState* st);
-cl_int nbodyCreateBuffers(const NBodyCtx* ctx, NBodyState* st);
-cl_int nbodyReleaseBuffers(NBodyState* st);
-cl_int nbodyReleaseKernels(NBodyState* st);
+cl_int nbSetAllKernelArguments(NBodyState* st);
 
-cl_int nbodySetAllKernelArguments(NBodyState* st);
+NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
-NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
-
-cl_int nbodyMarshalBodies(NBodyState* st, cl_bool marshalIn);
+cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn);
 
 
 #ifdef __cplusplus

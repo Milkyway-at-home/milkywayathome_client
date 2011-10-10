@@ -28,7 +28,7 @@
 #endif /* _OPENMP */
 
 
-static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
+static void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
 {
     if (!st->treeIncest)   /* don't repeat warning */
     {
@@ -67,7 +67,7 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
  *     mapForceBody(). Measurably better with the inline, but only
  *     slightly.
  */
-static inline mwvector nbodyGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
+static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     mwbool skipSelf = FALSE;
 
@@ -131,13 +131,13 @@ static inline mwvector nbodyGravity(const NBodyCtx* ctx, NBodyState* st, const B
         /* If a body does not encounter itself in its traversal of the
          * tree, it is "tree incest" */
 
-        reportTreeIncest(ctx, st);
+        nbReportTreeIncest(ctx, st);
     }
 
     return acc0;
 }
 
-static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
+static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
@@ -157,14 +157,14 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 /* Include the external potential */
                 b = &st->bodytab[i];
-                a = nbodyGravity(ctx, st, b);
+                a = nbGravity(ctx, st, b);
 
-                externAcc = acceleration(&ctx->pot, Pos(b));
+                externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
                 st->acctab[i] = mw_addv(a, externAcc);
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
-                st->acctab[i] = nbodyGravity(ctx, st, &st->bodytab[i]);
+                st->acctab[i] = nbGravity(ctx, st, &st->bodytab[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
@@ -176,7 +176,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static inline mwvector nbodyGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body* p)
+static inline mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     int i;
     const int nbody = st->nbody;
@@ -200,7 +200,7 @@ static inline mwvector nbodyGravity_Exact(const NBodyCtx* ctx, NBodyState* st, c
     return a;
 }
 
-static inline void mapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
+static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
@@ -216,14 +216,14 @@ static inline void mapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
         {
             case EXTERNAL_POTENTIAL_DEFAULT:
                 b = &st->bodytab[i];
-                a = nbodyGravity_Exact(ctx, st, b);
+                a = nbGravity_Exact(ctx, st, b);
 
-                externAcc = acceleration(&ctx->pot, Pos(b));
+                externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
                 st->acctab[i] = mw_addv(a, externAcc);
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
-                st->acctab[i] = nbodyGravity_Exact(ctx, st, &st->bodytab[i]);
+                st->acctab[i] = nbGravity_Exact(ctx, st, &st->bodytab[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
@@ -236,31 +236,33 @@ static inline void mapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 
 }
 
-static inline NBodyStatus incestStatusCheck(const NBodyCtx* ctx, const NBodyState* st)
+static inline NBodyStatus nbIncestStatusCheck(const NBodyCtx* ctx, const NBodyState* st)
 {
     if (st->treeIncest)
+    {
         return ctx->allowIncest ? NBODY_TREE_INCEST_NONFATAL : NBODY_TREE_INCEST_FATAL;
+    }
 
     return NBODY_SUCCESS;
 }
 
-NBodyStatus gravMap(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc;
 
     if (mw_likely(ctx->criterion != Exact))
     {
         rc = makeTree(ctx, st);
-        if (nbodyStatusIsFatal(rc))
+        if (nbStatusIsFatal(rc))
             return rc;
 
-        mapForceBody(ctx, st);
+        nbMapForceBody(ctx, st);
     }
     else
     {
-        mapForceBody_Exact(ctx, st);
+        nbMapForceBody_Exact(ctx, st);
     }
 
-    return incestStatusCheck(ctx, st); /* Check if incest occured during step */
+    return nbIncestStatusCheck(ctx, st); /* Check if incest occured during step */
 }
 

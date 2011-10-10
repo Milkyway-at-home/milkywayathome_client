@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 /* compute force on all the bodies */
-NBodyStatus gravMap(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st);
 
 #ifdef __cplusplus
 }

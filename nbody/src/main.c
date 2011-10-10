@@ -37,7 +37,7 @@
 #define SEED_ARGUMENT (1 << 1)
 
 
-static void nbodyPrintCopyright(void)
+static void nbPrintCopyright(void)
 {
     mw_printf(
         "Milkyway@Home N-body client %d.%d\n\n"
@@ -105,7 +105,7 @@ static void nbodyPrintCopyright(void)
         );
 }
 
-static void nbodyPrintVersion(int boincTag)
+static void nbPrintVersion(int boincTag)
 {
     char versionStr[2048];
 
@@ -136,12 +136,12 @@ static void nbodyPrintVersion(int boincTag)
 
 #if !BOINC_APPLICATION
 
-static int nbodyInit(const NBodyFlags* nbf) { (void) nbf; return 0; }
+static int nbInit(const NBodyFlags* nbf) { (void) nbf; return 0; }
 
 #else
 
 
-static int nbodyInit(const NBodyFlags* nbf)
+static int nbInit(const NBodyFlags* nbf)
 {
     MWInitType initType = 0;
 
@@ -159,7 +159,7 @@ static int nbodyInit(const NBodyFlags* nbf)
 
 
 /* Maybe set up some platform specific issues */
-static void specialSetup()
+static void nbSpecialSetup()
 {
     mwDisableErrorBoxes();
 
@@ -181,13 +181,13 @@ static void specialSetup()
 }
 
 /* For automated testing, pass extra arguments on to Lua script */
-static void setForwardedArguments(NBodyFlags* nbf, const char** args)
+static void nbSetForwardedArguments(NBodyFlags* nbf, const char** args)
 {
     nbf->forwardedArgs = mwGetForwardedArguments(args, &nbf->numForwardedArgs);
 }
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
-static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbfOut)
+static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* nbfOut)
 {
     int argRead;
     poptContext context;
@@ -397,12 +397,12 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
 
     if (version)
     {
-        nbodyPrintVersion(FALSE);
+        nbPrintVersion(FALSE);
     }
 
     if (copyright)
     {
-        nbodyPrintCopyright();
+        nbPrintCopyright();
     }
 
     if (version || copyright)
@@ -425,7 +425,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     }
     else
     {
-        setForwardedArguments(&nbf, rest);
+        nbSetForwardedArguments(&nbf, rest);
     }
 
     poptFreeContext(context);
@@ -435,7 +435,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     return FALSE;
 }
 
-static void setDefaultFlags(NBodyFlags* nbf)
+static void nbSetDefaultFlags(NBodyFlags* nbf)
 {
     /* Use default if checkpoint file not specified */
     stringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
@@ -464,7 +464,7 @@ static void freeNBodyFlags(NBodyFlags* nbf)
 }
 
 #ifdef _OPENMP
-static void setNumThreads(int numThreads)
+static void nbSetNumThreads(int numThreads)
 {
     if (numThreads != 0)
     {
@@ -476,7 +476,7 @@ static void setNumThreads(int numThreads)
 }
 #else
 
-static void setNumThreads(int numThreads) { }
+static void nbSetNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
@@ -486,36 +486,36 @@ int main(int argc, const char* argv[])
     int rc = 0;
     const char** argvCopy = mwFixArgv(argc, argv);
 
-    specialSetup();
+    nbSpecialSetup();
 
-    rc = readParameters(argc, argvCopy ? argvCopy : argv, &nbf);
+    rc = nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf);
     if (rc)
     {
         if (BOINC_APPLICATION)
         {
             freeNBodyFlags(&nbf);
             mwBoincInit(MW_PLAIN);
-            readParameters(argc, argvCopy ? argvCopy : argv, &nbf);
+            nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf);
         }
 
         mw_finish(EXIT_FAILURE);
     }
 
-    if (nbodyInit(&nbf))
+    if (nbInit(&nbf))
     {
         exit(EXIT_FAILURE);
     }
 
-    setDefaultFlags(&nbf);
-    setNumThreads(nbf.numThreads);
+    nbSetDefaultFlags(&nbf);
+    nbSetNumThreads(nbf.numThreads);
 
     if (nbf.verifyOnly)
     {
-        rc = verifyFile(&nbf);
+        rc = nbVerifyFile(&nbf);
     }
     else
     {
-        rc = runNBodySimulation(&nbf);
+        rc = nbMain(&nbf);
 
         if (!nbf.noCleanCheckpoint)
         {
@@ -528,7 +528,7 @@ int main(int argc, const char* argv[])
 
     if (BOINC_APPLICATION)
     {
-        nbodyPrintVersion(TRUE);
+        nbPrintVersion(TRUE);
         mw_finish(rc);
     }
 

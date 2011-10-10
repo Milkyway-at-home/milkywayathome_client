@@ -67,7 +67,7 @@ static int stepNBodyState(lua_State* luaSt)
     ctx = *checkNBodyCtx(luaSt, 2);
     ctx.pot = *checkPotential(luaSt, 3);
 
-    rc = stepSystem(&ctx, st);
+    rc = nbStepSystem(&ctx, st);
     lua_pushstring(luaSt, showNBodyStatus(rc));
     return 1;
 }
@@ -131,7 +131,7 @@ static int luaWriteCheckpoint(lua_State* luaSt)
     st->checkpointResolved = strdup(luaL_optstring(luaSt, 3, DEFAULT_CHECKPOINT_FILE));
     tmpFile = luaL_optstring(luaSt, 4, tmpPath);
 
-    if (writeCheckpointWithTmpFile(ctx, st, tmpFile))
+    if (nbWriteCheckpointWithTmpFile(ctx, st, tmpFile))
         luaL_error(luaSt, "Error writing checkpoint");
 
     free(st->checkpointResolved);
@@ -158,7 +158,7 @@ static int luaReadCheckpoint(lua_State* luaSt)
     NBodyState st = EMPTY_NBODYSTATE;
 
     st.checkpointResolved = strdup(luaL_optstring(luaSt, 1, DEFAULT_CHECKPOINT_FILE));
-    if (readCheckpoint(&ctx, &st))
+    if (nbReadCheckpoint(&ctx, &st))
         luaL_error(luaSt, "Error reading checkpoint '%s'", st.checkpointResolved);
 
     free(st.checkpointResolved);

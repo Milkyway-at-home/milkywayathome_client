@@ -23,11 +23,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-int resolveCheckpoint(NBodyState* st, const char* checkpointFileName);
-int resolvedCheckpointExists(const NBodyState* st);
-int readCheckpoint(NBodyCtx* ctx, NBodyState* st);
-int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
-int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int nbResolveCheckpoint(NBodyState* st, const char* checkpointFileName);
+int nbResolvedCheckpointExists(const NBodyState* st);
+int nbReadCheckpoint(NBodyCtx* ctx, NBodyState* st);
+int nbWriteCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
+int nbWriteCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_CHECKPOINT_H_ */
 

@@ -71,7 +71,7 @@ static void freeFreeCells(NBodyNode* freeCell)
     }
 }
 
-int detachSharedScene(NBodyState* st)
+int nbDetachSharedScene(NBodyState* st)
 {
  #if USE_SHMEM
     if (st->scene)
@@ -117,7 +117,7 @@ int destroyNBodyState(NBodyState* st)
     {
         cl_int err;
 
-        err = nbodyReleaseKernels(st);
+        err = nbReleaseKernels(st);
         free(st->kernels);
         failed |= (err != CL_SUCCESS);
     }
@@ -131,7 +131,7 @@ int destroyNBodyState(NBodyState* st)
     {
         cl_int err;
 
-        err = nbodyReleaseBuffers(st);
+        err = nbReleaseBuffers(st);
         free(st->nbb);
         st->nbb = NULL;
         failed |= (err != CL_SUCCESS);
@@ -140,7 +140,7 @@ int destroyNBodyState(NBodyState* st)
   #endif /* NBODY_OPENCL */
 
 
-    failed |= detachSharedScene(st);
+    failed |= nbDetachSharedScene(st);
 
     return failed;
 }
@@ -210,36 +210,36 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    if (!nbodyCheckDevCapabilities(&st->ci->di, ctx, st))
+    if (!nbCheckDevCapabilities(&st->ci->di, ctx, st))
         return NBODY_CAPABILITY_ERROR;
 
-    if (setThreadCounts(st->workSizes, &st->ci->di) || setWorkSizes(st->workSizes, &st->ci->di))
+    if (nbSetThreadCounts(st->workSizes, &st->ci->di) || nbSetWorkSizes(st->workSizes, &st->ci->di))
         return NBODY_ERROR;
 
-    err = nbodyLoadKernels(ctx, st);
+    err = nbLoadKernels(ctx, st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbodyCreateKernels(st);
+    err = nbCreateKernels(st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbodyCreateBuffers(ctx, st);
+    err = nbCreateBuffers(ctx, st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
     if (!st->usesExact)
     {
-        err = nbodySetInitialTreeStatus(st);
+        err = nbSetInitialTreeStatus(st);
         if (err != CL_SUCCESS)
             return NBODY_CL_ERROR;
     }
 
-    err = nbodySetAllKernelArguments(st);
+    err = nbSetAllKernelArguments(st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbodyMarshalBodies(st, CL_TRUE);
+    err = nbMarshalBodies(st, CL_TRUE);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 

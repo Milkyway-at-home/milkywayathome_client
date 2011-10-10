@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st);
 
 #ifdef _cplusplus
 }

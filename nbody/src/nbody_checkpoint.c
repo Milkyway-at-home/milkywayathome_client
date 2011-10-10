@@ -418,7 +418,7 @@ static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHan
 }
 
 /* Open the temporary checkpoint file for writing */
-int resolveCheckpoint(NBodyState* st, const char* checkpointFileName)
+int nbResolveCheckpoint(NBodyState* st, const char* checkpointFileName)
 {
     int rc = 0;
 
@@ -435,7 +435,7 @@ int resolveCheckpoint(NBodyState* st, const char* checkpointFileName)
     return rc;
 }
 
-int resolvedCheckpointExists(const NBodyState* st)
+int nbResolvedCheckpointExists(const NBodyState* st)
 {
     if (!st->checkpointResolved)
         mw_panic("Checking if checkpoint exists, but haven't resolved yet\n");
@@ -445,7 +445,7 @@ int resolvedCheckpointExists(const NBodyState* st)
 
 
 /* Read the actual checkpoint file to resume */
-int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
+int nbReadCheckpoint(NBodyCtx* ctx, NBodyState* st)
 {
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
@@ -473,7 +473,7 @@ int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
 
 /* Use specified temporary file to avoid bad things happening if
  * multiple tests running at a time */
-int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile)
+int nbWriteCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile)
 {
     int failed = FALSE;
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
@@ -511,12 +511,12 @@ int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const 
     return failed;
 }
 
-int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+int nbWriteCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
     char path[256];
 
     snprintf(path, sizeof(path), "nbody_checkpoint_tmp_%d", (int) getpid());
 
-    return writeCheckpointWithTmpFile(ctx, st, path);
+    return nbWriteCheckpointWithTmpFile(ctx, st, path);
 }
 

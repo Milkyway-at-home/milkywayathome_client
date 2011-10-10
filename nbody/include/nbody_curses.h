@@ -58,8 +58,8 @@ extern "C" {
 #endif /* ENABLE_CURSES */
 
 
-int setupCursesOutput(void);
-void cleanupCursesOutput(void);
+int nbSetupCursesOutput(void);
+void nbCleanupCursesOutput(void);
 
 
 #ifdef __cplusplus

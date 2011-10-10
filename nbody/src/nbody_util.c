@@ -21,7 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_util.h"
 #include "milkyway_math.h"
 
-mwvector nbodyCenterOfMass(const NBodyState* st)
+mwvector nbCenterOfMass(const NBodyState* st)
 {
     int i;
     const Body* b;
