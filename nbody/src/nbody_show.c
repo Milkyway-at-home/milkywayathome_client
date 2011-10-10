@@ -322,7 +322,6 @@ char* showPotential(const Potential* p)
                   diskBuf,
                   haloBuf,
                   p->rings);
-
     if (rc < 0)
         mw_fail("asprintf() failed\n");
 
@@ -343,34 +342,41 @@ char* showNBodyCtx(const NBodyCtx* ctx)
         return NULL;
 
     potBuf = showPotential(&ctx->pot);
+    if (!potBuf)
+        return NULL;
 
     if (0 > asprintf(&buf,
                      "ctx = { \n"
-                     "  pot = %s\n"
-                     "  timeEvolve      = %g\n"
-                     "  timestep        = %g\n"
-                     "  sunGCDist       = %g\n"
+                     "  eps2            = %f\n"
+                     "  theta           = %f\n"
+                     "  timestep        = %f\n"
+                     "  timeEvolve      = %f\n"
+                     "  treeRSize       = %f\n"
+                     "  sunGCDist       = %f\n"
                      "  criterion       = %s\n"
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
-                     "  treeRSize       = %g\n"
-                     "  theta           = %g\n"
-                     "  eps2            = %g\n"
-                     "  checkpointT     = %u\n"
+                     "  checkpointT     = %d\n"
                      "  freqOut         = %u\n"
+                     "  nStep           = %u\n"
+                     "  potentialType   = %s\n"
+                     "  pot = %s\n"
                      "};\n",
-                     potBuf,
-                     ctx->timeEvolve,
+                     ctx->eps2,
+                     ctx->theta,
                      ctx->timestep,
+                     ctx->timeEvolve,
+                     ctx->treeRSize,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
-                     ctx->treeRSize,
-                     ctx->theta,
-                     ctx->eps2,
                      (int) ctx->checkpointT,
-                     ctx->freqOut))
+                     ctx->freqOut,
+                     ctx->nStep,
+                     showExternalPotentialType(ctx->potentialType),
+                     potBuf
+            ))
     {
         mw_fail("asprintf() failed\n");
     }
@@ -500,7 +506,7 @@ char* showNBodyState(const NBodyState* st)
                      "  tree           = %s\n"
                      "  freecell       = %p\n"
                      "  lastCheckpoint = %d\n"
-                     "  tnow           = %.15g\n"
+                     "  step           = %u\n"
                      "  nbody          = %u\n"
                      "  bodytab        = %p\n"
                      "  acctab         = %p\n"
@@ -510,7 +516,7 @@ char* showNBodyState(const NBodyState* st)
                      treeBuf,
                      st->freecell,
                      (int) st->lastCheckpoint,
-                     st->tnow,
+                     st->step,
                      st->nbody,
                      st->bodytab,
                      st->acctab,

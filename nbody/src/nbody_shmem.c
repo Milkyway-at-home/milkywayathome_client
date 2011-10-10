@@ -277,7 +277,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
 #endif /* _WIN32 */
 
-void updateDisplayedBodies(NBodyState* st)
+void updateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     const Body* b;
     int i = 0;
@@ -295,7 +295,7 @@ void updateDisplayedBodies(NBodyState* st)
         cmPos = Pos(st->tree.root);
 
         scene->usleepcount += scene->usleepdt;
-        scene->info.currentTime = (float) st->tnow;
+        scene->info.currentTime = (float) st->step * ctx->timestep;
         scene->rootCenterOfMass[0] = (float) X(cmPos);
         scene->rootCenterOfMass[1] = (float) Y(cmPos);
         scene->rootCenterOfMass[2] = (float) Z(cmPos);

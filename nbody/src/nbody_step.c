@@ -84,7 +84,7 @@ NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st)
     rc = gravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt);
 
-    st->tnow += dt;                           /* finally, advance time */
+    st->step++;
 
     return rc;
 }

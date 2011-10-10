@@ -156,7 +156,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->usesExact = (ctx->criterion == Exact);
 
     st->tree.rsize = ctx->treeRSize;
-    st->tnow = 0.0;
+    st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
 
@@ -271,7 +271,7 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
 {
     assert(st1 && st2);
 
-    if (   st1->tnow != st2->tnow
+    if (   st1->step != st2->step
         || st1->lastCheckpoint != st2->lastCheckpoint
         || st1->nbody != st2->nbody)
     {
@@ -296,7 +296,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->freecell = NULL;
 
     st->lastCheckpoint = oldSt->lastCheckpoint;
-    st->tnow           = oldSt->tnow;
+    st->step           = oldSt->step;
     st->nbody          = oldSt->nbody;
 
     st->treeIncest = oldSt->treeIncest;

@@ -669,7 +669,7 @@ static void reportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
                 "  integration:      %15f ms\n"
                 "\n",
                 st->step,
-                100.0 * st->tnow / ctx->timeEvolve,
+                100.0 * (double) st->step / (double) ctx->nStep,
                 ws->timings[0],
                 ws->timings[1], ws->chunkTimings[1],
                 ws->timings[2],
@@ -874,7 +874,6 @@ static cl_int runPreStep(NBodyState* st)
 static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
-    const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     if (!st->usesExact)
     {
@@ -886,9 +885,7 @@ static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
         }
     }
 
-    st->tnow = 0.0;
-    st->step = 0;
-    while (err == CL_SUCCESS && st->tnow < tstop)
+    while (err == CL_SUCCESS && st->step < ctx->nStep)
     {
         st->dirty = TRUE;
         if (!st->usesExact && checkKernelErrorCode(st->ci, st->nbb))
@@ -899,7 +896,6 @@ static cl_int nbodyMainLoop(const NBodyCtx* ctx, NBodyState* st)
 
         err = stepSystemCL(ctx, st);
 
-        st->tnow += ctx->timestep;
         st->step++;
     }
 

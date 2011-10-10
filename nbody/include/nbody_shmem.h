@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 int createSharedScene(NBodyState* st, const NBodyCtx* ctx);
 void launchVisualizer(NBodyState* st, const char* visArgs);
-void updateDisplayedBodies(NBodyState* st);
+void updateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st);
 
 
 #endif /* _NBODY_SHMEM_H_ */

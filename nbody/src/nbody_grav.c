@@ -38,18 +38,18 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
         {
             if (ctx->allowIncest)
             {
-                mw_printf("[hackGrav: tree-incest detected at time %f / %f (%f%%)]\n",
-                          st->tnow,
-                          ctx->timeEvolve,
-                          100.0 * st->tnow / ctx->timeEvolve
+                mw_printf("[hackGrav: tree-incest detected at step %u / %u (%f%%)]\n",
+                          st->step,
+                          ctx->nStep,
+                          100.0 * (double) st->step / (double) ctx->nStep
                     );
             }
             else
             {
-                mw_printf("hackGrav: tree-incest detected (fatal) at time %f / %f (%f%%)\n",
-                          st->tnow,
-                          ctx->timeEvolve,
-                          100.0 * st->tnow / ctx->timeEvolve
+                mw_printf("hackGrav: tree-incest detected (fatal) at step %u / %u (%f%%)\n",
+                          st->step,
+                          ctx->nStep,
+                          100.0 * (double) st->step / (double) ctx->nStep
                     );
             }
         }

@@ -277,8 +277,7 @@ typedef struct NBODY_ALIGN
     scene_t* scene;
     time_t lastCheckpoint;
 
-    real tnow;
-    int step;
+    unsigned int step;
     int nbody;
     int treeIncest;     /* Tree incest has occured */
 
@@ -304,7 +303,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
@@ -353,6 +352,7 @@ typedef struct NBODY_ALIGN
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
+    unsigned int nStep;
 
     Potential pot;
     HistogramParams histogramParams;
@@ -403,7 +403,7 @@ typedef enum
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
                          FALSE, FALSE, FALSE,                           \
-                         0, 0,                                          \
+                         0, 0, 0,                                       \
                          EMPTY_POTENTIAL, EMPTY_HISTOGRAM_PARAMS }
 
 

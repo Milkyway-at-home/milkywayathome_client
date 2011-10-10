@@ -270,4 +270,3 @@ int setupNBody(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFl
     return rc;
 }
 
-

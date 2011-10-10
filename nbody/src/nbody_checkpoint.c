@@ -54,7 +54,7 @@ typedef struct __attribute__((packed, aligned(512)))
     size_t ptrSize;
     int majorVersion, minorVersion;  /* Version check */
     int nbody;                       /* Saved copies of state */
-    real tnow;
+    unsigned int step;
     real rsize;
     int treeIncest;
     int nOrbitTrace;
@@ -76,7 +76,7 @@ static void prepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyC
 
     memcpy(&cp->ctx, ctx, sizeof(cp->ctx));
     cp->nbody = st->nbody;
-    cp->tnow = st->tnow;
+    cp->step = st->step;
     cp->rsize = st->tree.rsize;
     cp->treeIncest = st->treeIncest;
     cp->nOrbitTrace = N_ORBIT_TRACE_POINTS;
@@ -86,7 +86,7 @@ static void readCheckpointHeader(NBodyCheckpointHeader* cp, NBodyCtx* ctx, NBody
 {
     memcpy(ctx, &cp->ctx, sizeof(*ctx));
     st->nbody = cp->nbody;
-    st->tnow = cp->tnow;
+    st->step = cp->step;
     st->tree.rsize = cp->rsize;
     st->treeIncest = cp->treeIncest;
 }

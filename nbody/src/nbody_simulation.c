@@ -71,15 +71,17 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 
 static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
 {
-    mw_fraction_done(st->tnow / ctx->timeEvolve);
+    double frac = (double) st->step / (double) ctx->nStep;
+
+    mw_fraction_done(frac);
 
     if (reportProgress)
     {
         mw_mvprintw(0, 0,
                     "Running: %f / %f (%f%%)\n",
-                    st->tnow,
+                    frac * ctx->timeEvolve,
                     ctx->timeEvolve,
-                    100.0 * st->tnow / ctx->timeEvolve
+                    100.0 * frac
             );
 
         mw_refresh();
@@ -89,7 +91,7 @@ static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int 
 /* If enough time has passed, record the next center of mass position */
 static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
 {
-    int i = (st->tnow / ctx->timeEvolve) * N_ORBIT_TRACE_POINTS;
+    int i = st->step * N_ORBIT_TRACE_POINTS / ctx->nStep;
 
     if (st->usesExact) /* FIXME?. We don't get the CM without the tree */
         return;
@@ -105,7 +107,6 @@ static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
 
 static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
-    const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
     NBodyStatus rc = NBODY_SUCCESS;
 
     if (nbf->visualizer)
@@ -117,10 +118,10 @@ static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     if (nbodyStatusIsFatal(rc))
         return rc;
 
-    while (st->tnow < tstop)
+    while (st->step < ctx->nStep)
     {
         addTracePoint(ctx, st);
-        updateDisplayedBodies(st);
+        updateDisplayedBodies(ctx, st);
         rc |= stepSystem(ctx, st);
         if (nbodyStatusIsFatal(rc))   /* advance N-body system */
             return rc;
