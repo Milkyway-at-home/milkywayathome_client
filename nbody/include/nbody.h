@@ -69,9 +69,10 @@ typedef struct
     int reportProgress;
     int ignoreResponsive;
     int noCleanCheckpoint;
+    int verbose;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int nbVerifyFile(const NBodyFlags* nbf);
 int nbMain(const NBodyFlags* nbf);

@@ -199,7 +199,7 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 {
     clr->platform = nbf->platform;
     clr->devNum = nbf->devNum;
-    clr->verbose = TRUE;
+    clr->verbose = nbf->verbose;
     clr->reportProgress = nbf->reportProgress;
     clr->enableCheckpointing = FALSE;
     clr->enableProfiling = TRUE;

@@ -298,13 +298,11 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             0, "Print histogram", NULL
         },
 
-      #ifdef _OPENMP
         {
             "nthreads", 'n',
             POPT_ARG_INT, &nbf.numThreads,
-            0, "BOINC argument for number of threads", NULL
+            0, "BOINC argument for number of threads. No effect if built without OpenMP", NULL
         },
-      #endif /* _OPENMP */
 
         {
             "p", 'p',
@@ -339,7 +337,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         {
             "disable-opencl", '\0',
             POPT_ARG_NONE, &nbf.noCL,
-            0, "Use normal CPU path instead of OpenCL", NULL
+            0, "Use normal CPU path instead of OpenCL. No effect if not built with OpenCL", NULL
         },
 
         {
@@ -358,6 +356,12 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             "no-clean-checkpoint", 'k',
             POPT_ARG_NONE, &nbf.noCleanCheckpoint,
             0, "Do not delete checkpoint on finish", NULL
+        },
+
+        {
+            "verbose", '\0',
+            POPT_ARG_NONE, &nbf.verbose,
+            0, "Print some extra debugging information", NULL
         },
 
         {
