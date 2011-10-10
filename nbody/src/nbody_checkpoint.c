@@ -419,9 +419,9 @@ int nbResolveCheckpoint(NBodyState* st, const char* checkpointFileName)
 {
     int rc = 0;
 
-    st->checkpointResolved = (char*) mwCalloc(2048, sizeof(char));
+    st->checkpointResolved = (char*) mwCalloc(4096, sizeof(char));
 
-    rc = mw_resolve_filename(checkpointFileName, st->checkpointResolved, 2048 * sizeof(char));
+    rc = mw_resolve_filename(checkpointFileName, st->checkpointResolved, 4096 * sizeof(char));
     if (rc)
     {
         mw_printf("Failed to resolve checkpoint file '%s': %d\n", checkpointFileName, rc);

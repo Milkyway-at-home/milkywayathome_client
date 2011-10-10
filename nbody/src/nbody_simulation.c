@@ -58,15 +58,17 @@ static inline int nbTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
     return FALSE;
 }
 
-static inline void nbCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+static inline NBodyStatus nbCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
     if (nbTimeToCheckpoint(ctx, st))
     {
         if (nbWriteCheckpoint(ctx, st))
-            mw_fail("Failed to write checkpoint\n");
+            return NBODY_CHECKPOINT_ERROR;
 
         mw_checkpoint_completed();
     }
+
+    return NBODY_SUCCESS;
 }
 
 static inline void nbReportProgress(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
@@ -126,7 +128,10 @@ static NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyF
         if (nbStatusIsFatal(rc))   /* advance N-body system */
             return rc;
 
-        nbCheckpoint(ctx, st);
+        rc |= nbCheckpoint(ctx, st);
+        if (nbStatusIsFatal(rc))
+            return rc;
+
         nbReportProgress(ctx, st, nbf->reportProgress);
     }
 
