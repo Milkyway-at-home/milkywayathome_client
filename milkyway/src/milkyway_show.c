@@ -37,3 +37,30 @@ void printVector(mwvector v)
     free(buf);
 }
 
+char* showMatrix(mwmatrix m)
+{
+    char* buf;
+
+    if (0 > asprintf(&buf,
+                     "{\n"
+                     "  { %g, %g, %g }\n"
+                     "  { %g, %g, %g }\n"
+                     "  { %g, %g, %g }\n"
+                     "}\n",
+                     X(m[0]), Y(m[0]), Z(m[0]),
+                     X(m[1]), Y(m[1]), Z(m[1]),
+                     X(m[2]), Y(m[2]), Z(m[2])))
+    {
+        mw_fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
+void printMatrix(mwmatrix m)
+{
+    char* buf = showMatrix(m);
+    puts(buf);
+    free(buf);
+}
+

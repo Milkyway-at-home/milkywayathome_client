@@ -29,6 +29,9 @@ extern "C" {
 char* showVector(mwvector v);
 void printVector(mwvector v);
 
+char* showMatrix(mwmatrix m);
+void printMatrix(mwmatrix m);
+
 #ifdef __cplusplus
 }
 #endif

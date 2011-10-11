@@ -84,6 +84,8 @@ typedef struct
     cl_ulong gMemCache;
     cl_ulong localMemSize;
     cl_device_local_mem_type localMemType;
+    cl_device_fp_config doubleFPConfig;
+    cl_device_fp_config floatFPConfig;
     //cl_bool unifiedMem;
     cl_uint maxConstArgs;
     cl_ulong maxConstBufSize;

@@ -45,6 +45,12 @@ cl_bool mwPlatformSupportsAMDOfflineDevices(const CLInfo* ci);
 MWDoubleExts mwGetDoubleExts(const char* extensions);
 cl_bool mwSupportsDoubles(const DevInfo* di);
 
+cl_bool mwDeviceHasDenormals(const DevInfo* di, cl_bool doublePrec);
+cl_bool mwDeviceHasFMA(const DevInfo* di, cl_bool doublePrec);
+cl_bool mwDeviceHasInfNan(const DevInfo* di, cl_bool doublePrec);
+cl_bool mwDeviceHasRTN(const DevInfo* di, cl_bool doublePrec);
+
+
 cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut);
 cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out);
 

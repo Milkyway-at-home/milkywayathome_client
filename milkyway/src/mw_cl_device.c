@@ -313,6 +313,30 @@ cl_bool mwSupportsDoubles(const DevInfo* di)
     return di->doubleExts != MW_NONE_DOUBLE;
 }
 
+cl_bool mwDeviceHasDenormals(const DevInfo* di, cl_bool doublePrec)
+{
+    cl_device_fp_config config = doublePrec ? di->doubleFPConfig : di->floatFPConfig;
+    return !!(config & CL_FP_DENORM);
+}
+
+cl_bool mwDeviceHasFMA(const DevInfo* di, cl_bool doublePrec)
+{
+    cl_device_fp_config config = doublePrec ? di->doubleFPConfig : di->floatFPConfig;
+    return !!(config & CL_FP_FMA);
+}
+
+cl_bool mwDeviceHasInfNan(const DevInfo* di, cl_bool doublePrec)
+{
+    cl_device_fp_config config = doublePrec ? di->doubleFPConfig : di->floatFPConfig;
+    return !!(config & CL_FP_INF_NAN);
+}
+
+cl_bool mwDeviceHasRTN(const DevInfo* di, cl_bool doublePrec)
+{
+    cl_device_fp_config config = doublePrec ? di->doubleFPConfig : di->floatFPConfig;
+    return !!(config & CL_FP_ROUND_TO_NEAREST);
+}
+
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 {
     const AMDGPUData* amdData;
@@ -341,6 +365,10 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 
   //err |= clGetDeviceInfo(dev, CL_DEVICE_HOST_UNIFIED_MEMORY,      sizeof(cl_ulong), &unifiedMem, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_TYPE, sizeof(cl_device_local_mem_type), &di->localMemType, NULL);
+
+    err |= clGetDeviceInfo(dev, CL_DEVICE_DOUBLE_FP_CONFIG, sizeof(cl_device_fp_config), &di->doubleFPConfig, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_SINGLE_FP_CONFIG, sizeof(cl_device_fp_config), &di->floatFPConfig, NULL);
+
     err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_SIZE,           sizeof(cl_ulong), &di->localMemSize, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_ARGS,        sizeof(cl_uint),  &di->maxConstArgs, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &di->maxConstBufSize, NULL);
@@ -468,7 +496,13 @@ void mwPrintDevInfo(const DevInfo* di)
               "VLIW:                %u\n"
               "Double extension:    %s\n"
               "Double fraction:     1/%u\n"
-              "Extensions:          %s\n",
+              "FP config:     float  | double\n"
+              "  FMA:       %8s  %8s\n"
+              "  Denormals: %8s  %8s\n"
+              "  RTN:       %8s  %8s\n"
+              "  Inf/Nan:   %8s  %8s\n"
+              "Extensions:\n"
+              "  %s\n",
               di->devName,
               di->vendor,
               di->vendorID,
@@ -502,6 +536,10 @@ void mwPrintDevInfo(const DevInfo* di)
               di->vliw,
               showMWDoubleExts(di->doubleExts),
               di->doubleFrac,
+              showCLBool(mwDeviceHasDenormals(di, CL_FALSE)), showCLBool(mwDeviceHasDenormals(di, CL_TRUE)),
+              showCLBool(mwDeviceHasFMA(di, CL_FALSE)), showCLBool(mwDeviceHasFMA(di, CL_TRUE)),
+              showCLBool(mwDeviceHasRTN(di, CL_FALSE)), showCLBool(mwDeviceHasRTN(di, CL_TRUE)),
+              showCLBool(mwDeviceHasInfNan(di, CL_FALSE)), showCLBool(mwDeviceHasInfNan(di, CL_TRUE)),
               di->exts
         );
 }
