@@ -30,19 +30,32 @@
  */
 #include <limits.h>
 
-#if (defined (_WIN32) && defined(_MSC_VER))
-  #if DOUBLEPREC
-    typedef double real;
-  #else
-    typedef float real;
-  #endif /* DOUBLEPREC */
+#ifndef DOUBLEPREC
+  #error DOUBLEPREC not defined
+#endif
+
+
+#if DOUBLEPREC
+typedef double real MW_ALIGN(8);
+typedef double double2[2] MW_ALIGN(16);
+typedef double double4[4] MW_ALIGN(32);
+
 #else
-  #if DOUBLEPREC
-    typedef double real MW_ALIGN(sizeof(double));
-  #else
-    typedef float real MW_ALIGN(sizeof(float));
-  #endif /* DOUBLEPREC */
-#endif /* (defined (_WIN32) && defined(_MSC_VER)) */
+typedef float real;
+typedef float float2[2] MW_ALIGN(8);
+typedef float float4[4] MW_ALIGN(16);
+#endif /* DOUBLEPREC */
+
+
+#if DOUBLEPREC
+  #define REAL_EPSILON DBL_EPSILON
+  #define REAL_MAX DBL_MAX
+  #define REAL_MIN DBL_MIN
+#else
+  #define REAL_EPSILON FLT_EPSILON
+  #define REAL_MAX FLT_MAX
+  #define REAL_MIN FLT_MIN
+#endif
 
 
 /* FIXME: This happens to work with MSVC with double since the
@@ -58,21 +71,17 @@
   #endif
 #endif /* __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 */
 
-#if ENABLE_FDLIBM
-  #include <fdlibm.h>
-#else
-  #ifndef __cplusplus
-    #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
-      #include <tgmath.h>
-    #else
-      #include <math.h>
-    #endif /* HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH */
+#ifndef __cplusplus
+  #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
+    #include <tgmath.h>
   #else
-    #include <cmath>
-  #endif /* __cplusplus */
-#endif /* ENABLE_FDLIBM */
+    #include <math.h>
+  #endif /* HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH */
+#else
+  #include <cmath>
+#endif /* __cplusplus */
 
-/* crlibm is a math.h supplement. fdlibm is a replacement.*/
+/* crlibm is a math.h supplement.*/
 #if ENABLE_CRLIBM
   #include <crlibm.h>
 #endif /* ENABLE_CRLIBM */

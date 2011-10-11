@@ -23,14 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define _MILKYWAY_MATH_H_INSIDE_
 
-#if __OPENCL_VERSION__ && DOUBLEPREC
-  #ifdef cl_amd_fp64
-    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #else
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-  #endif /* cl_amd_fp64 */
-#endif /* DOUBLEPREC */
-
 #define _USE_MATH_DEFINES
 
 #include "milkyway_config.h"
@@ -38,9 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
 
-#ifndef __OPENCL_VERSION__
-  #include <float.h>
-#endif
+#include <float.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,16 +115,6 @@ extern "C" {
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
 
-
-#if DOUBLEPREC
-  #define REAL_EPSILON DBL_EPSILON
-  #define REAL_MAX DBL_MAX
-  #define REAL_MIN DBL_MIN
-#else
-  #define REAL_EPSILON FLT_EPSILON
-  #define REAL_MAX FLT_MAX
-  #define REAL_MIN FLT_MIN
-#endif
 
 #if !defined(NAN) && defined(_MSC_VER) && DOUBLEPREC
   /* CHECKME, also float */
