@@ -33,6 +33,18 @@
   #error Potential defines misspecified
 #endif
 
+#if WARPSIZE <= 0
+  #error Invalid warp size
+#endif
+
+/* These were problems when being lazy and writing it */
+#if (THREADS6 / WARPSIZE) <= 0
+  #error (THREADS6 / WARPSIZE) must be > 0
+#elif (MAXDEPTH * THREADS6 / WARPSIZE) <= 0
+  #error (MAXDEPTH * THREADS6 / WARPSIZE) must be > 0
+#endif
+
+
 
 
 /* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
@@ -60,10 +72,22 @@ typedef enum
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 
 
+#if DEBUG
+#define assert(treeStatus, x)                        \
+    {                                                \
+      if (!(x))                                      \
+      {                                              \
+          (treeStatus)->assertionLine = __LINE__;    \
+      }                                              \
+    }
+#else
+#define assert(treeStatus, x)
+#endif /* DEBUG */
+
+
 
 #if 1
 #pragma OPENCL EXTENSION cl_amd_printf : enable
-#define assert(x) if (!(x)) { printf("Assertion failed[%d]: %s\n", __LINE__, #x); }
 #define dprintf(fmt, ...) printf("Line %d: " fmt, __LINE__, __VA_ARGS__)
 
 #define ddprintf(fmt, ...) printf("[%d][%d][%d]: Line %d: " fmt, (int) get_global_id(0), (int) get_group_id(0), (int) get_local_id(0),__LINE__, __VA_ARGS__)
@@ -72,7 +96,6 @@ typedef enum
   barrier(type);
 
 #else
-#define assert(x)
 #define dprintf(fmt, ...)
 #define __BARRIER(type) barrier((type))
 #define ddprintf(fmt, ...)
@@ -90,6 +113,17 @@ typedef float4 real4;
 #endif /* DOUBLEPREC */
 
 
+#if DOUBLEPREC
+  #define REAL_EPSILON DBL_EPSILON
+  #define REAL_MAX DBL_MAX
+  #define REAL_MIN DBL_MIN
+#else
+  #define REAL_EPSILON FLT_EPSILON
+  #define REAL_MAX FLT_MAX
+  #define REAL_MIN FLT_MIN
+#endif
+
+
 #define sqr(x) ((x) * (x))
 #define cube(x) ((x) * (x) * (x))
 
@@ -101,6 +135,7 @@ typedef struct __attribute__((aligned))
     volatile int bottom;
     volatile int maxDepth;
     volatile int errorCode;
+    volatile int assertionLine;
     volatile unsigned int blkCnt;
 } TreeStatus;
 

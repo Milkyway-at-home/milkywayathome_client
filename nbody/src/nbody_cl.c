@@ -36,6 +36,7 @@ typedef struct NBODY_ALIGN
     int bottom;
     int maxDepth;
     int errorCode;
+    int assertionLine;
     unsigned int blkCnt;
 } TreeStatus;
 
@@ -362,6 +363,12 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-cl-single-precision-constant "
                #endif
 
+               #ifndef NDEBUG
+                 "-D DEBUG=1 "
+               #else
+                 "-D DEBUG=0 "
+               #endif
+
                  "-D NBODY=%d "
                  "-D NNODE=%u "
                  "-D WARPSIZE=%u "
@@ -532,13 +539,20 @@ static cl_int debug(CLInfo* ci, NBodyBuffers* nbb)
 
 static cl_int nbReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
 {
+    cl_int err;
     assert(tc);
 
-    return clEnqueueReadBuffer(ci->queue,
+    err = clEnqueueReadBuffer(ci->queue,
                                nbb->treeStatus,
                                CL_TRUE,
                                0, sizeof(*tc), tc,
                                0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL("Error reading tree status", err);
+    }
+
+    return err;
 }
 
 static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, int type)
@@ -605,13 +619,23 @@ static cl_bool nbCheckKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 
     err = nbReadTreeStatus(&ts, ci, nbb);
     if (err != CL_SUCCESS)
+    {
         return CL_TRUE;
+    }
 
     if (ts.errorCode != 0)
     {
         mw_printf("Kernel reported error: %d (%s)\n", ts.errorCode, showNBodyKernelError(ts.errorCode));
         return CL_TRUE;
     }
+
+  #ifndef NDEBUG
+    if (ts.assertionLine >= 0)
+    {
+        mw_printf("Kernel assertion failed: line %d\n", ts.assertionLine);
+        return CL_TRUE;
+    }
+  #endif
 
     return CL_FALSE;
 }
@@ -952,6 +976,7 @@ cl_int nbSetInitialTreeStatus(NBodyState* st)
     iniTreeStatus.radius = 0;
     iniTreeStatus.bottom = 0;
     iniTreeStatus.maxDepth = 1;
+    iniTreeStatus.assertionLine = -1;
     iniTreeStatus.errorCode = 0;
     iniTreeStatus.blkCnt = 0;
 
