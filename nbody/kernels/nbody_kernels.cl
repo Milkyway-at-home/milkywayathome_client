@@ -709,15 +709,16 @@ __kernel void NBODY_KERNEL(summarization)
                 /* poll missing child */
                 ch = child[THREADS3 * (missing - 1) + get_local_id(0)];
                 m = _mass[ch];
-                if (m >= 0.0)
+                if (m >= 0.0) /* Body children can never be missing, so this is a cell */
                 {
+                    assert(_treeStatus, ch >= NBODY /* Missing child must be a cell */);
+
                     /* child is now ready */
                     --missing;
-                    if (ch >= NBODY) /* Is a cell */
-                    {
-                        /* count bodies (needed later) */
-                        cnt += _count[ch] - 1;
-                    }
+
+                    /* count bodies (needed later) */
+                    cnt += _count[ch] - 1;
+
                     /* add child's contribution */
                     cm += m;
                     px += _posX[ch] * m;
