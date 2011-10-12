@@ -36,7 +36,7 @@ void mwPerrorCL(const char* fmt, cl_int err, ...)
     vfprintf(stderr, fmt, argPtr);
     va_end(argPtr);
 
-    fprintf(stderr, " (%d): %s", err, showCLInt(err));
+    fprintf(stderr, " (%d): %s\n", err, showCLInt(err));
 }
 
 
