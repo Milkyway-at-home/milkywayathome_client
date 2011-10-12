@@ -546,7 +546,7 @@ void mwPrintDevInfo(const DevInfo* di)
 
 void mwPrintDevInfoShort(const DevInfo* di)
 {
-    mw_printf("Device %s (%s:0x%x) (%s)\n"
+    mw_printf("Device '%s' (%s:0x%x) (%s)\n"
               "Driver version:      %s\n"
               "Version:             %s\n"
               "Compute capability:  %u.%u\n"
@@ -661,7 +661,7 @@ cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out)
         return NULL;
     }
 
-    mw_printf("Found %u platform(s)\n", n_platform);
+    mw_printf("Found %u platform%s\n", n_platform, n_platform > 1 ? "s" : "");
 
     *n_platforms_out = n_platform;
     return ids;
@@ -686,7 +686,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
         return NULL;
     }
 
-    mw_printf("Found %u CL device(s)\n", numDev);
+    mw_printf("Found %u CL device%s\n", numDev, numDev > 1 ? "s" : "");
 
     devs = (cl_device_id*) mwMalloc(sizeof(cl_device_id) * numDev);
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
