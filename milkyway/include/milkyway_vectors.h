@@ -217,6 +217,39 @@ inline void mw_outv(mwmatrix p, mwvector v, mwvector u)
     Z(p[2]) = Z(v) * Z(u);
 }
 
+/* Outer product of a vector with itself*/
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline void mw_outsqrv(mwmatrix p, mwvector v)
+{
+    X(p[0]) = X(v) * X(v);
+    Y(p[0]) = X(v) * Y(v);
+    Z(p[0]) = X(v) * Z(v);
+
+    X(p[1]) = Y(p[0]);
+    Y(p[1]) = Y(v) * Y(v);
+    Z(p[1]) = Y(v) * Z(v);
+
+    X(p[2]) = Z(p[0]);
+    Y(p[2]) = Z(p[1]);
+    Z(p[2]) = Z(v) * Z(v);
+}
+
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline void mw_set_diagonal_matrix(mwmatrix p, real s)
+{
+    X(p[0]) = s;
+    Y(p[0]) = 0.0;
+    Z(p[0]) = 0.0;
+
+    X(p[1]) = 0.0;
+    Y(p[1]) = s;
+    Z(p[1]) = 0.0;
+
+    X(p[2]) = 0.0;
+    Y(p[2]) = 0.0;
+    Z(p[2]) = s;
+}
+
 ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_set_matrix_identity(mwmatrix p)
 {

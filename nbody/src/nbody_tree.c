@@ -72,13 +72,15 @@ static void hackQuad(NBodyCell* p)
     NBodyNode* q;
     mwvector dr;
     real drsq;
-    mwmatrix drdr, Idrsq, tmpm;
+    mwmatrix quad;
 
     ndesc = 0;                                  /* count occupied subnodes  */
     for (i = 0; i < NSUB; ++i)                  /* loop over all subnodes   */
     {
         if (Subp(p)[i] != NULL)                 /* if this one's occupied   */
+        {
             desc[ndesc++] = Subp(p)[i];         /* copy it to safety        */
+        }
     }
 
     mw_set_matrix_zero(Quad(p));                /* init quadrupole moment   */
@@ -86,18 +88,38 @@ static void hackQuad(NBodyCell* p)
     {
         q = desc[i];                            /* access each one in turn  */
         if (isCell(q))                          /* if it's also a cell      */
+        {
             hackQuad((NBodyCell*) q);           /* then process it first    */
+        }
+
         dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
-        mw_outv(drdr, dr, dr);                  /* form outer prod. of dr   */
-        drsq = mw_sqrv(dr);                     /* and dot prod. dr * dr    */
-        mw_set_matrix_identity(Idrsq);          /* init unit matrix         */
-        mw_incmulms(Idrsq, drsq);               /* and scale by dr * dr     */
-        mw_mulms(tmpm, drdr, 3.0);              /* scale drdr by 3          */
-        mw_incsubm(tmpm, Idrsq);                /* now form quad. moment    */
-        mw_incmulms(tmpm, Mass(q));             /* from cm of subnode       */
+        mw_outsqrv(quad, dr);                   /* form outer prod. of dr   */
+        drsq = mw_sqrv(dr);                     /* and dot prod. (dr . dr)  */
+
+        /* Outer product scaled by 3, then subtract drsq off the
+         * diagonal to form quad moment*/
+        {
+            real m = Mass(q);   /* from CM of subnode */
+
+            X(quad[0]) = m * (3.0 * (X(dr) * X(dr)) - drsq);
+            Y(quad[0]) = m * (3.0 * (X(dr) * Y(dr)));
+            Z(quad[0]) = m * (3.0 * (X(dr) * Z(dr)));
+
+            X(quad[1]) = Y(quad[0]);
+            Y(quad[1]) = m * (3.0 * (Y(dr) * Y(dr)) - drsq);
+            Z(quad[1]) = m * (3.0 * (Y(dr) * Z(dr)));
+
+            X(quad[2]) = Z(quad[0]);
+            Y(quad[2]) = Z(quad[1]);
+            Z(quad[2]) = m * (3.0 * (Z(dr) * Z(dr)) - drsq);
+        }
+
         if (isCell(q))                          /* if subnode is cell       */
-            mw_incaddm(tmpm, Quad(q));          /* then include its moment  */
-        mw_incaddm(Quad(p), tmpm);              /* increment moment of cell */
+        {
+            mw_incaddm(quad, Quad(q));          /* then include its moment  */
+        }
+
+        mw_incaddm(Quad(p), quad);              /* increment moment of cell */
     }
 }
 
