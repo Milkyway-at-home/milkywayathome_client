@@ -54,6 +54,7 @@ static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
               "  Bounding box kernel:  "ZU", "ZU"\n"
               "  Tree build kernel:    "ZU", "ZU"\n"
               "  Summarization kernel: "ZU", "ZU"\n"
+              "  Quadrupole kernel:    "ZU", "ZU"\n"
               "  Sort kernel:          "ZU", "ZU"\n"
               "  Force kernel:         "ZU", "ZU"\n"
               "  Integration kernel:   "ZU", "ZU"\n"
@@ -63,7 +64,8 @@ static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
               ws->global[2], ws->local[2],
               ws->global[3], ws->local[3],
               ws->global[4], ws->local[4],
-              ws->global[5], ws->local[5]
+              ws->global[5], ws->local[5],
+              ws->global[6], ws->local[6]
         );
 }
 
@@ -89,6 +91,9 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
     ws->global[5] = ws->threads[5] * ws->factors[5] * blocks;
     ws->local[5] = ws->threads[5];
 
+    ws->global[6] = ws->threads[6] * ws->factors[6] * blocks;
+    ws->local[6] = ws->threads[6];
+
     return CL_FALSE;
 }
 
@@ -101,6 +106,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
     ws->factors[3] = 1;
     ws->factors[4] = 1;
     ws->factors[5] = 1;
+    ws->factors[6] = 1;
 
     if (di->devType == CL_DEVICE_TYPE_CPU)
     {
@@ -110,6 +116,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
         ws->threads[3] = 1;
         ws->threads[4] = 1;
         ws->threads[5] = 1;
+        ws->threads[6] = 1;
     }
     else if (computeCapabilityIs(di, 1, 3))
     {
@@ -117,8 +124,9 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
         ws->threads[1] = 288;
         ws->threads[2] = 256;
         ws->threads[3] = 512;
-        ws->threads[4] = 384;
-        ws->threads[5] = 512;
+        ws->threads[4] = 256;
+        ws->threads[5] = 384;
+        ws->threads[6] = 512;
     }
     else if (minComputeCapabilityCheck(di, 2, 0))
     {
@@ -126,8 +134,9 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
         ws->threads[1] = 1024;
         ws->threads[2] = 1024;
         ws->threads[3] = 256;
-        ws->threads[4] = 256;
-        ws->threads[5] = 512;
+        ws->threads[4] = 1024;
+        ws->threads[5] = 256;
+        ws->threads[6] = 512;
     }
     else
     {
@@ -137,6 +146,8 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
         ws->threads[3] = 256;
         ws->threads[4] = 256;
         ws->threads[5] = 256;
+        ws->threads[5] = 256;
+        ws->threads[6] = 256;
     }
 
     return CL_FALSE;
@@ -182,7 +193,7 @@ static void printTreeStatus(const TreeStatus* ts)
 }
 
 /* Set arguments (idx, idx + 1, idx + 2) to the buffers in mem[3] */
-static cl_int setMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
+static cl_int nbSetMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
@@ -198,16 +209,16 @@ static cl_int setMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
 static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact)
 {
     cl_int err = CL_SUCCESS;
-    cl_int step = 0;
+    cl_int falseVal = 0;
 
-    err |= setMemArrayArgs(kern, nbb->pos, 0);
-    err |= setMemArrayArgs(kern, nbb->vel, 3);
-    err |= setMemArrayArgs(kern, nbb->acc, 6);
+    err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
+    err |= nbSetMemArrayArgs(kern, nbb->vel, 3);
+    err |= nbSetMemArrayArgs(kern, nbb->acc, 6);
 
     if (!exact)
     {
-        err |= setMemArrayArgs(kern, nbb->max, 9);
-        err |= setMemArrayArgs(kern, nbb->min, 12);
+        err |= nbSetMemArrayArgs(kern, nbb->max, 9);
+        err |= nbSetMemArrayArgs(kern, nbb->min, 12);
 
         err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->masses);
 
@@ -231,8 +242,8 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     else
     {
         /* For exact kernel just set whatever. These won't actually be used */
-        err |= setMemArrayArgs(kern, nbb->pos, 9);
-        err |= setMemArrayArgs(kern, nbb->pos, 12);
+        err |= nbSetMemArrayArgs(kern, nbb->pos, 9);
+        err |= nbSetMemArrayArgs(kern, nbb->pos, 12);
         err |= clSetKernelArg(kern, 15, sizeof(cl_mem), &nbb->pos[0]);
         err |= clSetKernelArg(kern, 16, sizeof(cl_mem), &nbb->pos[0]);
         err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->pos[0]);
@@ -243,16 +254,29 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
         err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->pos[0]);
     }
 
-
     /* Set the step to be 0 here. Only the force calculation kernel
      * actually cares. We'll set it before then. */
-    err |= clSetKernelArg(kern, 21, sizeof(cl_int), &step);
+    err |= clSetKernelArg(kern, 21, sizeof(cl_int), &falseVal);
 
     /* Value also doesn't matter */
-    err |= clSetKernelArg(kern, 22, sizeof(cl_int), &step);
-
+    err |= clSetKernelArg(kern, 22, sizeof(cl_int), &falseVal);
 
     err |= clSetKernelArg(kern, 24, sizeof(cl_mem), &nbb->debug);
+
+
+    if (nbb->quad[0][0]) /* If we're using quadrupole moments */
+    {
+        err |= nbSetMemArrayArgs(kern, nbb->quad[0], 25);
+        err |= nbSetMemArrayArgs(kern, nbb->quad[1], 28);
+        err |= nbSetMemArrayArgs(kern, nbb->quad[2], 31);
+    }
+    else
+    {
+        /* Set whatever */
+        err |= nbSetMemArrayArgs(kern, nbb->pos, 25);
+        err |= nbSetMemArrayArgs(kern, nbb->pos, 28);
+        err |= nbSetMemArrayArgs(kern, nbb->pos, 31);
+    }
 
     return err;
 }
@@ -269,6 +293,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
         err |= nbSetKernelArguments(k->buildTree, st->nbb, exact);
         err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
         err |= nbSetKernelArguments(k->sort, st->nbb, exact);
+        err |= nbSetKernelArguments(k->quadMoments, st->nbb, exact);
         err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
     }
     else
@@ -296,6 +321,7 @@ cl_int nbCreateKernels(NBodyState* st)
     err |= mwCreateKernel(&kernels->boundingBox, ci, "boundingBox");
     err |= mwCreateKernel(&kernels->buildTree, ci, "buildTree");
     err |= mwCreateKernel(&kernels->summarization, ci, "summarization");
+    err |= mwCreateKernel(&kernels->quadMoments, ci, "quadMoments");
     err |= mwCreateKernel(&kernels->sort, ci, "sort");
     err |= mwCreateKernel(&kernels->forceCalculation, ci, "forceCalculation");
     err |= mwCreateKernel(&kernels->integration, ci, "integration");
@@ -312,10 +338,7 @@ cl_int nbCreateKernels(NBodyState* st)
 
 static cl_int clReleaseKernel_quiet(cl_kernel kern)
 {
-    if (!kern)
-        return CL_SUCCESS;
-
-    return clReleaseKernel(kern);
+    return kern ? clReleaseKernel(kern) : CL_SUCCESS;
 }
 
 cl_int nbReleaseKernels(NBodyState* st)
@@ -326,6 +349,7 @@ cl_int nbReleaseKernels(NBodyState* st)
     err |= clReleaseKernel_quiet(kernels->boundingBox);
     err |= clReleaseKernel_quiet(kernels->buildTree);
     err |= clReleaseKernel_quiet(kernels->summarization);
+    err |= clReleaseKernel_quiet(kernels->quadMoments);
     err |= clReleaseKernel_quiet(kernels->sort);
     err |= clReleaseKernel_quiet(kernels->forceCalculation);
     err |= clReleaseKernel_quiet(kernels->integration);
@@ -381,11 +405,14 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-D THREADS4="ZU" "
                  "-D THREADS5="ZU" "
                  "-D THREADS6="ZU" "
+                 "-D THREADS7="ZU" "
+
                  "-D MAXDEPTH=%u "
 
                  "-D TIMESTEP=%a "
                  "-D EPS2=%a "
                  "-D THETA=%a "
+                 "-D USE_QUAD=%d "
 
                  "-D NEWCRITERION=%d "
                  "-D SW93=%d "
@@ -435,11 +462,13 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  ws->threads[3],
                  ws->threads[4],
                  ws->threads[5],
+                 ws->threads[6],
                  NBODY_MAXDEPTH,
 
                  ctx->timestep,
                  ctx->eps2,
                  ctx->theta,
+                 ctx->useQuad,
 
                  /* SEt criterion */
                  ctx->criterion == NewCriterion,
@@ -623,12 +652,6 @@ static cl_bool nbCheckKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
         return CL_TRUE;
     }
 
-    if (ts.errorCode != 0)
-    {
-        mw_printf("Kernel reported error: %d (%s)\n", ts.errorCode, showNBodyKernelError(ts.errorCode));
-        return CL_TRUE;
-    }
-
   #ifndef NDEBUG
     if (ts.assertionLine >= 0)
     {
@@ -636,6 +659,12 @@ static cl_bool nbCheckKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
         return CL_TRUE;
     }
   #endif
+
+    if (ts.errorCode != 0)
+    {
+        mw_printf("Kernel reported error: %d (%s)\n", ts.errorCode, showNBodyKernelError(ts.errorCode));
+        return CL_TRUE;
+    }
 
     return CL_FALSE;
 }
@@ -689,6 +718,7 @@ static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* s
                 "  buildTree:        %15f ms%15f ms\n"
                 "  summarization:    %15f ms\n"
                 "  sort:             %15f ms\n"
+                "  quad moments:     %15f ms\n"
                 "  forceCalculation: %15f ms%15f ms\n"
                 "  integration:      %15f ms\n"
                 "\n",
@@ -698,8 +728,10 @@ static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* s
                 ws->timings[1], ws->chunkTimings[1],
                 ws->timings[2],
                 ws->timings[3],
-                ws->timings[4], ws->chunkTimings[4],
-                ws->timings[5]);
+                ws->timings[4],
+                ws->timings[5], ws->chunkTimings[5],
+                ws->timings[6]
+        );
     mw_refresh();
 }
 
@@ -711,10 +743,11 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     size_t nChunk;
     int upperBound;
     size_t offset[1];
+    cl_event boxEv, sumEv, sortEv, quadEv;
     CLInfo* ci = st->ci;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-    cl_event boxEv, sumEv, sortEv;
+
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
@@ -759,6 +792,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
     ws->timings[2] += waitReleaseEventWithTime(sumEv);
 
+
     /* FIXME: This does not work unless ALL of the threads are
      * launched at once. This may be bad when we need
      * responsiveness. This also means it will always hang with
@@ -770,6 +804,19 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
         return err;
 
     ws->timings[3] += waitReleaseEventWithTime(sortEv);
+
+
+    if (st->usesQuad)
+    {
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->quadMoments, 1,
+                                     NULL, &ws->global[4], &ws->local[4],
+                                     0, NULL, &quadEv);
+        if (err != CL_SUCCESS)
+            return err;
+
+        ws->timings[4] += waitReleaseEventWithTime(quadEv);
+    }
+
 
     return CL_SUCCESS;
 }
@@ -794,37 +841,34 @@ static cl_int nbExecuteForceKernels(NBodyState* st)
         cl_event ev;
         double t;
 
-        if (upperBound > st->nbody)
-            upperBound = st->nbody;
+        upperBound = (upperBound > st->nbody) ? st->nbody : upperBound;
 
         err = clSetKernelArg(forceKern, 22, sizeof(cl_int), &upperBound);
         if (err != CL_SUCCESS)
             return err;
 
         err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
-                                     offset, &ws->global[4], &ws->local[4],
+                                     offset, &ws->global[5], &ws->local[5],
                                      0, NULL, &ev);
-
         if (err != CL_SUCCESS)
             return err;
 
         t = waitReleaseEventWithTime(ev);
 
-        ws->timings[4] += t;
-        upperBound += (cl_int) ws->global[4];
-        offset[0] += ws->global[4];
+        ws->timings[5] += t;
+        upperBound += (cl_int) ws->global[5];
+        offset[0] += ws->global[5];
     }
-    ws->chunkTimings[4] = ws->timings[4] / (double) nChunk;
+    ws->chunkTimings[5] = ws->timings[5] / (double) nChunk;
 
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
-                                 NULL, &ws->global[5], &ws->local[5],
+                                 NULL, &ws->global[6], &ws->local[6],
                                  0, NULL, &integrateEv);
     if (err != CL_SUCCESS)
         return err;
 
-    ws->timings[5] += waitReleaseEventWithTime(integrateEv);
-
+    ws->timings[6] += waitReleaseEventWithTime(integrateEv);
 
     return CL_SUCCESS;
 }
@@ -842,23 +886,32 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
     {
         err = nbExecuteTreeConstruction(st);
         if (err != CL_SUCCESS)
+        {
+            mwPerrorCL("Error executing tree construction kernels", err);
             return err;
+        }
     }
 
     err = nbExecuteForceKernels(st);
     if (err != CL_SUCCESS)
+    {
+        mwPerrorCL("Error executing force kernels", err);
         return err;
+    }
 
     err = clFinish(ci->queue);
     if (err != CL_SUCCESS)
+    {
+        mwPerrorCL("Error waiting for queue", err);
         return err;
+    }
 
     if (st->reportProgress)
     {
         nbReportProgressWithTimings(ctx, st);
     }
 
-    for (i = 0; i < 6; ++i) /* Add timings to running totals */
+    for (i = 0; i < 7; ++i) /* Add timings to running totals */
     {
         ws->kernelTimings[i] += ws->timings[i];
     }
@@ -888,11 +941,7 @@ static cl_int nbRunPreStep(NBodyState* st)
         return err;
 
     /* All later steps will be real timesteps */
-    err = clSetKernelArg(st->kernels->forceCalculation, 21, sizeof(cl_int), &trueVal);
-    if (err != CL_SUCCESS)
-        return err;
-
-    return CL_SUCCESS;
+    return clSetKernelArg(st->kernels->forceCalculation, 21, sizeof(cl_int), &trueVal);
 }
 
 static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
@@ -929,15 +978,12 @@ static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 /* This is dumb and errors if mem isn't set */
 static cl_int clReleaseMemObject_quiet(cl_mem mem)
 {
-    if (!mem)
-        return CL_SUCCESS;
-
-    return clReleaseMemObject(mem);
+    return mem ? clReleaseMemObject(mem) : CL_SUCCESS;
 }
 
 cl_int nbReleaseBuffers(NBodyState* st)
 {
-    cl_uint i;
+    cl_uint i, j;
     cl_int err = CL_SUCCESS;
     NBodyBuffers* nbb = st->nbb;
 
@@ -948,6 +994,11 @@ cl_int nbReleaseBuffers(NBodyState* st)
         err |= clReleaseMemObject_quiet(nbb->acc[i]);
         err |= clReleaseMemObject_quiet(nbb->max[i]);
         err |= clReleaseMemObject_quiet(nbb->min[i]);
+
+        for (j = 0; j < 3; ++j)
+        {
+            err |= clReleaseMemObject_quiet(nbb->quad[i][j]);
+        }
     }
 
     err |= clReleaseMemObject_quiet(nbb->masses);
@@ -958,7 +1009,9 @@ cl_int nbReleaseBuffers(NBodyState* st)
     err |= clReleaseMemObject_quiet(nbb->sort);
 
     if (err != CL_SUCCESS)
+    {
         mwPerrorCL("Error releasing buffers", err);
+    }
 
     return err;
 }
@@ -985,7 +1038,6 @@ cl_int nbSetInitialTreeStatus(NBodyState* st)
                                CL_TRUE,
                                0, sizeof(TreeStatus), &iniTreeStatus,
                                0, NULL, NULL);
-
     if (err != CL_SUCCESS)
     {
         mwPerrorCL("Error writing initial tree status", err);
@@ -1001,7 +1053,7 @@ static cl_uint nbFindInc(cl_uint warpSize, cl_uint nbody)
 
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
-    cl_uint i;
+    cl_uint i, j;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
@@ -1025,6 +1077,18 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
             if (!nbb->min[i] || !nbb->max[i])
             {
                 return MW_CL_ERROR;
+            }
+        }
+
+        if (ctx->useQuad)
+        {
+            for (j = 0; j < 3; ++j)
+            {
+                nbb->quad[i][j] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+                if (!nbb->quad[i][j])
+                {
+                    return MW_CL_ERROR;
+                }
             }
         }
     }
@@ -1052,14 +1116,18 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
         nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(cl_int));
 
         if (!nbb->treeStatus || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
+        {
             return MW_CL_ERROR;
+        }
 
         if (ctx->criterion == SW93 || ctx->criterion == NewCriterion)
         {
             /* This only is for cells, so we could subtract nbody if we wanted */
             nbb->critRadii = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
             if (!nbb->critRadii)
+            {
                 return MW_CL_ERROR;
+            }
         }
     }
 
@@ -1093,14 +1161,20 @@ static cl_int nbUnmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers
     for (i = 0; i < 3; ++i)
     {
         if (pos[i])
+        {
             err |= clEnqueueUnmapMemObject(ci->queue, nbb->pos[i], pos[i], 0, NULL, NULL);
+        }
 
         if (vel[i])
+        {
             err |= clEnqueueUnmapMemObject(ci->queue, nbb->vel[i], vel[i], 0, NULL, NULL);
+        }
     }
 
     if (mass)
+    {
         err |= clEnqueueUnmapMemObject(ci->queue, nbb->masses, mass, 0, NULL, NULL);
+    }
 
     return err;
 }
@@ -1161,14 +1235,14 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
     return nbUnmapBodies(pos, vel, mass, nbb, ci);
 }
 
-void nbodyPrintKernelTimings(const NBodyState* st)
+void nbPrintKernelTimings(const NBodyState* st)
 {
     double totalTime = 0.0;
     cl_uint i;
     double nStep = (double) st->step;
     const double* kernelTimings = st->workSizes->kernelTimings;
 
-    for (i = 0; i < 6; ++i)
+    for (i = 0; i < 7; ++i)
     {
         totalTime += kernelTimings[i];
     }
@@ -1181,6 +1255,7 @@ void nbodyPrintKernelTimings(const NBodyState* st)
               "  buildTree:        %16f   %16f   %15.4f%%\n"
               "  summarization:    %16f   %16f   %15.4f%%\n"
               "  sort:             %16f   %16f   %15.4f%%\n"
+              "  quad moments:     %16f   %16f   %15.4f%%\n"
               "  forceCalculation: %16f   %16f   %15.4f%%\n"
               "  integration:      %16f   %16f   %15.4f%%\n"
               "\n--------------------------------------------------------------------------------\n"
@@ -1191,7 +1266,8 @@ void nbodyPrintKernelTimings(const NBodyState* st)
               kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
               kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
               kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
-              kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime
+              kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime,
+              kernelTimings[6] / nStep, kernelTimings[6], 100.0 * kernelTimings[6] / totalTime
         );
 }
 
@@ -1204,11 +1280,20 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags*
 
     err = nbMainLoopCL(ctx, st);
     if (err != CL_SUCCESS)
+    {
         return NBODY_CL_ERROR;
+    }
+
+    fflush(stdout); /* Try to prevent some of the GPU printfs from getting lost */
+    fflush(stderr);
 
     err = nbMarshalBodies(st, CL_FALSE);
     if (err != CL_SUCCESS)
+    {
         return NBODY_CL_ERROR;
+    }
+
+    nbPrintKernelTimings(st);
 
     return NBODY_SUCCESS;
 }

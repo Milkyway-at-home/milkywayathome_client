@@ -223,16 +223,16 @@ typedef struct
     cl_mem sort;
 
     cl_mem critRadii; /* Used by the alternative cell opening criterion.
-                         Unnecessary for BH86.
-                         BH86 will be the fastest option since it won't need to load from this
-                       */
+                         Unnecessary for BH86. */
 
     cl_mem debug;
+
+    cl_mem quad[3][3];
 } NBodyBuffers;
 
 
-/* 6 used by tree, 2 used by exact. 1 shared. */
-#define NKERNELS 7
+/* 6 used by tree + 1 with quad, 2 used by exact. 1 shared. */
+#define NKERNELS 8
 
 
 typedef struct
@@ -241,6 +241,7 @@ typedef struct
     cl_kernel buildTree;
     cl_kernel summarization;
     cl_kernel sort;
+    cl_kernel quadMoments;
     cl_kernel forceCalculation;
     cl_kernel integration;
 
@@ -253,14 +254,14 @@ typedef struct
 
 typedef struct
 {
-    size_t factors[6];
-    size_t threads[6];
-    double timings[6];        /* In a single iteration */
-    double chunkTimings[6];   /* Average time per chunk */
-    double kernelTimings[6];  /* Running totals */
+    size_t factors[7];
+    size_t threads[7];
+    double timings[7];        /* In a single iteration */
+    double chunkTimings[7];   /* Average time per chunk */
+    double kernelTimings[7];  /* Running totals */
 
-    size_t global[6];
-    size_t local[6];
+    size_t global[7];
+    size_t local[7];
 } NBodyWorkSizes;
 
 
@@ -285,6 +286,7 @@ typedef struct NBODY_ALIGN
 
     mwbool ignoreResponsive;
     mwbool usesExact;
+    mwbool usesQuad;
     mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
     mwbool usesCL;
     mwbool reportProgress;
@@ -303,7 +305,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct

@@ -73,7 +73,7 @@ typedef enum
 
 
 #if DEBUG
-#define assert(treeStatus, x)                        \
+#define cl_assert(treeStatus, x)                     \
     {                                                \
       if (!(x))                                      \
       {                                              \
@@ -81,7 +81,7 @@ typedef enum
       }                                              \
     }
 #else
-#define assert(treeStatus, x)
+#define cl_assert(treeStatus, x)
 #endif /* DEBUG */
 
 
@@ -309,7 +309,10 @@ inline real4 externalAcceleration(real x, real y, real z)
     int updateVel,                                      \
     int maxNBody,                                       \
     RVPtr _critRadii,                                   \
-    __global volatile Debug* _debug                     \
+    __global volatile Debug* _debug,                    \
+    RVPtr _quadXX, RVPtr _quadXY, RVPtr _quadXZ,        \
+    RVPtr _quadYX, RVPtr _quadYY, RVPtr _quadYZ,        \
+    RVPtr _quadZX, RVPtr _quadZY, RVPtr _quadZZ         \
     )
 
 
@@ -421,7 +424,9 @@ __kernel void NBODY_KERNEL(boundingBox)
 
             #pragma unroll NSUB
             for (int k = 0; k < NSUB; ++k)
+            {
                 _child[NSUB * NNODE + k] = -1;
+            }
 
             _treeStatus->bottom = NNODE;
             _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
@@ -612,7 +617,7 @@ __kernel void NBODY_KERNEL(buildTree)
                 }
                 mem_fence(CLK_GLOBAL_MEM_FENCE);
                 localMaxDepth = max(depth, localMaxDepth);
-                i += inc;  /* move on to next body */
+                i += inc;  /* Move on to next body */
                 skip = 1;
             }
         }
@@ -711,7 +716,7 @@ __kernel void NBODY_KERNEL(summarization)
                 m = _mass[ch];
                 if (m >= 0.0) /* Body children can never be missing, so this is a cell */
                 {
-                    assert(_treeStatus, ch >= NBODY /* Missing child must be a cell */);
+                    cl_assert(_treeStatus, ch >= NBODY /* Missing child must be a cell */);
 
                     /* child is now ready */
                     --missing;
@@ -798,6 +803,12 @@ __kernel void NBODY_KERNEL(summarization)
                 _critRadii[k] = rc2;
             }
 
+            if (USE_QUAD)
+            {
+                /* We must initialize all cells quad moments to NaN */
+                _quadXX[k] = NAN;
+            }
+
             write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting mass */
             _mass[k] = cm;
             write_mem_fence(CLK_GLOBAL_MEM_FENCE);
@@ -806,6 +817,7 @@ __kernel void NBODY_KERNEL(summarization)
         }
     }
 }
+
 
 #if NOSORT
 /* Debugging */
@@ -876,16 +888,235 @@ __kernel void NBODY_KERNEL(sort)
 
 #endif /* NOSORT */
 
-#if WARPSIZE <= 0
-  #error Invalid warp size
-#endif
+inline void incAddMatrix(real a[3][3], real b[3][3])
+{
+    a[0][0] += b[0][0];
+    a[0][1] += b[0][1];
+    a[0][2] += b[0][2];
 
-/* These were problems when being lazy and writing it */
-#if (THREADS5 / WARPSIZE) <= 0
-  #error (THREADS5 / WARPSIZE) must be > 0
-#elif (MAXDEPTH * THREADS5 / WARPSIZE) <= 0
-  #error (MAXDEPTH * THREADS5 / WARPSIZE) must be > 0
-#endif
+    a[1][0] += b[1][0];
+    a[1][1] += b[1][1];
+    a[1][2] += b[1][2];
+
+    a[2][0] += b[2][0];
+    a[2][1] += b[2][1];
+    a[2][2] += b[2][2];
+}
+
+inline void outerProductDrSq(real m[3][3], real4 dr)
+{
+    m[0][0] = dr.x * dr.x;
+    m[0][1] = dr.x * dr.y;
+    m[0][2] = dr.x * dr.z;
+
+    m[1][0] = dr.y * dr.x;
+    m[1][1] = dr.y * dr.y;
+    m[1][2] = dr.y * dr.z;
+
+    m[2][0] = dr.z * dr.x;
+    m[2][1] = dr.z * dr.y;
+    m[2][2] = dr.z * dr.z;
+}
+
+
+inline void quadCalc(real quad[3][3], real4 chCM, real4 kp)
+{
+    real4 dr;
+    dr.x = chCM.x - kp.x;
+    dr.y = chCM.y - kp.y;
+    dr.z = chCM.z - kp.z;
+
+    real drSq = sqr(dr.x) + sqr(dr.y) + sqr(dr.z);
+
+    quad[0][0] = chCM.w * (3.0 * (dr.x * dr.x) - drSq);
+    quad[0][1] = chCM.w * (3.0 * (dr.x * dr.y));
+    quad[0][2] = chCM.w * (3.0 * (dr.x * dr.z));
+
+    quad[1][0] = quad[0][1];
+    quad[1][1] = chCM.w * (3.0 * (dr.y * dr.y) - drSq);
+    quad[1][2] = chCM.w * (3.0 * (dr.y * dr.z));
+
+    quad[2][0] = quad[0][2];
+    quad[2][1] = quad[1][2];
+    quad[2][2] = chCM.w * (3.0 * (dr.z * dr.z) - drSq);
+}
+
+
+/* Very similar to summarization kernel. Calculate the quadrupole
+ * moments for the cells in an almost identical way */
+__attribute__ ((reqd_work_group_size(THREADS5, 1, 1)))
+__kernel void NBODY_KERNEL(quadMoments)
+{
+    __local int bottom;
+    __local volatile int child[NSUB * THREADS5];
+    __local real rootSize;
+
+    if (get_local_id(0) == 0)
+    {
+        rootSize = _treeStatus->radius;
+        bottom = _treeStatus->bottom;
+    }
+    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+
+    int inc = get_local_size(0) * get_num_groups(0);
+    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
+    if (k < bottom)
+        k += inc;
+
+    int missing = 0;
+    while (k <= NNODE)   /* Iterate over all cells assigned to thread */
+    {
+        int ch;          /* Child index */
+        real4 kp;        /* Position of this cell k */
+        real kq[3][3];   /* Quad moment for this cell */
+        real qCh[3][3];  /* Loads of child quad moments */
+
+        kp.x = _posX[k];  /* This cell's center of mass position */
+        kp.y = _posY[k];
+        kp.z = _posZ[k];
+
+        if (missing == 0)
+        {
+            /* New cell, so initialize */
+            kq[0][0] = kq[0][1] = kq[0][2] = 0.0;
+            kq[1][0] = kq[1][1] = kq[1][2] = 0.0;
+            kq[2][0] = kq[2][1] = kq[2][2] = 0.0;
+
+            int j = 0;
+            #pragma unroll NSUB
+            for (int i = 0; i < NSUB; ++i)
+            {
+                real quad[3][3]; /* Increment from this descendent */
+                ch = _child[NSUB * k + i];
+
+                if (ch >= 0)
+                {
+                    if (isBody(ch))
+                    {
+                        real4 chCM;
+
+                        chCM.x = _posX[ch];
+                        chCM.y = _posY[ch];
+                        chCM.z = _posZ[ch];
+                        chCM.w = _mass[ch];
+
+                        quadCalc(quad, chCM, kp);
+                        incAddMatrix(kq, quad);  /* Add to total moment */
+                    }
+
+                    if (isCell(ch))
+                    {
+                        child[THREADS3 * missing + get_local_id(0)] = ch; /* Cache missing children */
+                        ++missing;
+
+                        qCh[0][0] = _quadXX[ch];
+                        if (!isnan(qCh[0][0]))
+                        {
+                            real4 chCM;
+
+                            chCM.x = _posX[ch];
+                            chCM.y = _posY[ch];
+                            chCM.z = _posZ[ch];
+                            chCM.w = _mass[ch];
+
+                            /* Load the rest */
+                          //qCh[0][0] = _quadXX[ch];
+                            qCh[0][1] = _quadXY[ch];
+                            qCh[0][2] = _quadXZ[ch];
+
+                            qCh[1][0] = _quadYX[ch];
+                            qCh[1][1] = _quadYY[ch];
+                            qCh[1][2] = _quadYZ[ch];
+
+                            qCh[2][0] = _quadZX[ch];
+                            qCh[2][1] = _quadZY[ch];
+                            qCh[2][2] = _quadZZ[ch];
+
+                            quadCalc(quad, chCM, kp);
+
+                            --missing;  /* Child is ready */
+
+                            incAddMatrix(quad, qCh);  /* Add child's contribution */
+                            incAddMatrix(kq, quad);   /* Add to total moment */
+                        }
+                    }
+
+                    ++j;
+                }
+            }
+            mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); /* Only for performance */
+        }
+
+        if (missing != 0)
+        {
+            do
+            {
+                real quad[3][3]; /* Increment from this missing child */
+
+                /* poll missing child */
+                ch = child[THREADS3 * (missing - 1) + get_local_id(0)];
+                cl_assert(_treeStatus, ch > 0);
+                cl_assert(_treeStatus, ch >= NBODY);
+                if (ch >= NBODY) /* Is a cell */
+                {
+                    qCh[0][0] = _quadXX[ch];
+                    if (!isnan(qCh[0][0]))
+                    {
+                        real4 chCM;
+
+                        chCM.x = _posX[ch];
+                        chCM.y = _posY[ch];
+                        chCM.z = _posZ[ch];
+                        chCM.w = _mass[ch];
+
+                      //qCh[0][0] = _quadXX[ch];
+                        qCh[0][1] = _quadXY[ch];
+                        qCh[0][2] = _quadXZ[ch];
+
+                        qCh[1][0] = _quadYX[ch];
+                        qCh[1][1] = _quadYY[ch];
+                        qCh[1][2] = _quadYZ[ch];
+
+                        qCh[2][0] = _quadZX[ch];
+                        qCh[2][1] = _quadZY[ch];
+                        qCh[2][2] = _quadZZ[ch];
+
+                        quadCalc(quad, chCM, kp);
+
+                        --missing;  /* Child is now ready */
+
+                        incAddMatrix(quad, qCh);  /* Add subcell's moment */
+                        incAddMatrix(kq, quad);   /* add child's contribution */
+                    }
+                }
+                /* repeat until we are done or child is not ready */
+            }
+            while ((!isnan(qCh[0][0])) && (missing != 0));
+        }
+
+        if (missing == 0)
+        {
+            /* All children are ready, so store computed information */
+          //_quadXX[k] = kq[0][0];  /* Store last */
+            _quadXY[k] = kq[0][1];
+            _quadXZ[k] = kq[0][2];
+
+            _quadYX[k] = kq[1][0];
+            _quadYY[k] = kq[1][1];
+            _quadYZ[k] = kq[1][2];
+
+            _quadZX[k] = kq[2][0];
+            _quadZY[k] = kq[2][1];
+            _quadZZ[k] = kq[2][2];
+
+            write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting tested quadx */
+            _quadXX[k] = kq[0][0];
+            write_mem_fence(CLK_GLOBAL_MEM_FENCE);
+
+            k += inc;  /* Move on to next cell */
+        }
+    }
+}
 
 
 /* OpenCL is missing thread voting functions.
@@ -944,22 +1175,36 @@ __kernel void NBODY_KERNEL(velocityIntegration)
     }
 }
 
-__attribute__ ((reqd_work_group_size(THREADS5, 1, 1)))
+__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
     __local real rootCritRadius;
-    __local int volatile ch[THREADS5 / WARPSIZE];
-    __local int volatile pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
-    __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
-    __local volatile real nm[THREADS5 / WARPSIZE];
+    __local volatile int ch[THREADS6 / WARPSIZE];
+    __local volatile int pos[MAXDEPTH * THREADS6 / WARPSIZE], node[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real nx[THREADS6 / WARPSIZE], ny[THREADS6 / WARPSIZE], nz[THREADS6 / WARPSIZE];
+    __local volatile real nm[THREADS6 / WARPSIZE];
 
-    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE];
+  #if USE_QUAD
+    __local volatile real quadXX[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real quadXY[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real quadXZ[MAXDEPTH * THREADS6 / WARPSIZE];
+
+    __local volatile real quadYX[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real quadYY[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real quadYZ[MAXDEPTH * THREADS6 / WARPSIZE];
+
+    __local volatile real quadZX[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real quadZY[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
+  #endif /* USE_QUAD */
+
+    __local real dq[MAXDEPTH * THREADS6 / WARPSIZE];
 
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
      */
-    __local volatile int allBlock[THREADS5];
+    __local volatile int allBlock[THREADS6];
 
     /* Excess threads will "die", however their slots in the
      * fake warp vote are still counted, but not set,
@@ -1091,11 +1336,55 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         /* Check if all threads agree that cell is far enough away (or is a body) */
                         if (isBody(n) || forceAllPredicate(allBlock, base, rSq >= dq[depth]))
                         {
-                            real r = sqrt(rSq + EPS2); /* Compute distance with softening */
+                            rSq += EPS2;
+                            real r = sqrt(rSq);   /* Compute distance with softening */
                             real ai = nm[base] / (r * r * r);
                             ax += ai * dx;
                             ay += ai * dy;
                             az += ai * dz;
+
+                          #if USE_QUAD
+                            {
+                                if (isCell(n))
+                                {
+                                    real quad_dx, quad_dy, quad_dz;
+
+                                    real dr5inv = 1.0 / (sqr(rSq) * r);
+
+                                    /* Matrix multiply Q . dr */
+                                    quad_dx =  quadXX[n] * dx;
+                                    quad_dx += quadYX[n] * dy;
+                                    quad_dx += quadZX[n] * dz;
+
+                                    quad_dy =  quadXY[n] * dx;
+                                    quad_dy += quadYY[n] * dy;
+                                    quad_dy += quadZY[n] * dz;
+
+                                    quad_dz =  quadXZ[n] * dx;
+                                    quad_dz += quadYZ[n] * dy;
+                                    quad_dz += quadZZ[n] * dz;
+
+                                    /* dr . Q . dr */
+                                    real drQdr = quad_dx * dx + quad_dy * dy + quad_dz * dz;
+
+                                    real phiQuad = -2.5 * (dr5inv * drQdr) / rSq;
+
+                                    ax -= phiQuad * dx;
+                                    ay -= phiQuad * dy;
+                                    az -= phiQuad * dz;
+
+                                    quad_dx *= dr5inv;
+                                    quad_dy *= dr5inv;
+                                    quad_dz *= dr5inv;
+
+                                    ax -= quad_dx;
+                                    ay -= quad_dy;
+                                    az -= quad_dz;
+                                }
+                            }
+                            #else
+                          #endif /* USE_QUAD */
+
 
                             /* Watch for self interaction. It's OK to
                              * not skip because dx, dy, dz will be
@@ -1118,6 +1407,22 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                 {
                                     dq[depth] = _critRadii[n];
                                 }
+
+                                #if USE_QUAD
+                                {
+                                    quadXX[depth] = _quadXX[n];
+                                    quadXY[depth] = _quadXY[n];
+                                    quadXZ[depth] = _quadXZ[n];
+
+                                    quadYX[depth] = _quadYX[n];
+                                    quadYY[depth] = _quadYY[n];
+                                    quadYZ[depth] = _quadYZ[n];
+
+                                    quadZX[depth] = _quadZX[n];
+                                    quadZY[depth] = _quadZY[n];
+                                    quadZZ[depth] = _quadZZ[n];
+                                }
+                                #endif /* USE_QUAD */
                             }
                             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
                         }
@@ -1166,7 +1471,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
 }
 
-__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
     int inc = get_local_size(0) * get_num_groups(0);

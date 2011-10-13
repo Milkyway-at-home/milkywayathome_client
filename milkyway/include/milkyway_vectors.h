@@ -198,8 +198,6 @@ inline real mw_vecangle(mwvector a, mwvector b)
 
 #define mw_normalize(v) { real len = mw_length(v); (v).x /= len; (v).y /= len; (v).z /= len; }
 
-
-
 /* Outer product */
 ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_outv(mwmatrix p, mwvector v, mwvector u)

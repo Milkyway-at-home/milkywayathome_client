@@ -153,12 +153,14 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 
     st->tree = emptyTree;
     st->freecell = NULL;
+    st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
 
     st->tree.rsize = ctx->treeRSize;
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
+
 
     st->orbitTrace = (mwvector*) mwMallocA(N_ORBIT_TRACE_POINTS * sizeof(mwvector));
     for (i = 0; i < N_ORBIT_TRACE_POINTS; ++i)
@@ -186,18 +188,13 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (!st->bodytab)
         return NBODY_CONSISTENCY_ERROR;
 
-    if (ctx->useQuad)
-    {
-        mw_printf("Quadrupole moments not yet implemented with OpenCL\n");
-        return NBODY_UNIMPLEMENTED;
-    }
-
     if (ctx->criterion == Exact)
     {
         mw_printf("Exact OpenCL N-body unimplemented\n");
         return NBODY_UNIMPLEMENTED;
     }
 
+    st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
     st->reportProgress = clr->reportProgress;
 
@@ -265,7 +262,7 @@ static int equalMaybeArray(const void* a, const void* b, size_t n)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 
-/* TODO: Doesn't handle tree */
+/* TODO: Doesn't handle tree or other parts */
 /* Returns nonzero if states are equal, 0 otherwise */
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
 {
@@ -298,6 +295,13 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->lastCheckpoint = oldSt->lastCheckpoint;
     st->step           = oldSt->step;
     st->nbody          = oldSt->nbody;
+
+    st->ignoreResponsive = oldSt->ignoreResponsive;
+    st->usesExact = oldSt->usesExact;
+    st->usesQuad = oldSt->usesQuad,
+    st->dirty = oldSt->dirty;
+    st->usesCL = oldSt->usesCL;
+    st->reportProgress = oldSt->reportProgress;
 
     st->treeIncest = oldSt->treeIncest;
     st->tree.structureError = oldSt->tree.structureError;

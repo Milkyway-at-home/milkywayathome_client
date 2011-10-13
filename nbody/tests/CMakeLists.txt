@@ -71,7 +71,7 @@ endforeach()
 
 function(make_bodycount_test_set n)
   add_custom_target(test_${n} COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*__${n}_test$"
-                              DEPENDS ${nbody_bin_name}
+                              DEPENDS milkyway_nbody
                               COMMENT "Running model tests with ${n} bodies")
 endfunction()
 
