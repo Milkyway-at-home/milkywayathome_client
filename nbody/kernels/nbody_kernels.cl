@@ -1303,7 +1303,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real dx = nx[base] - px;
                         real dy = ny[base] - py;
                         real dz = nz[base] - pz;
-                        real rSq = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
+                        real rSq = mad(dz, dz, mad(dy, dy, dx * dx));  /* Compute distance squared */
 
                         /* Check if all threads agree that cell is far enough away (or is a body) */
                         if (isBody(n) || forceAllPredicate(allBlock, base, rSq >= dq[depth]))
@@ -1311,9 +1311,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                             rSq += EPS2;
                             real r = sqrt(rSq);   /* Compute distance with softening */
                             real ai = nm[base] / (r * r * r);
-                            ax += ai * dx;
-                            ay += ai * dy;
-                            az += ai * dz;
+
+                            ax = mad(ai, dx, ax);
+                            ay = mad(ai, dy, ay);
+                            az = mad(ai, dz, az);
 
                           #if USE_QUAD
                             {
@@ -1324,34 +1325,22 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                     real dr5inv = 1.0 / (sqr(rSq) * r);
 
                                     /* Matrix multiply Q . dr */
-                                    quad_dx =  quadXX[n] * dx;
-                                    quad_dx += quadXY[n] * dy;
-                                    quad_dx += quadXZ[n] * dz;
-
-                                    quad_dy =  quadXY[n] * dx;
-                                    quad_dy += quadYY[n] * dy;
-                                    quad_dy += quadYZ[n] * dz;
-
-                                    quad_dz =  quadXZ[n] * dx;
-                                    quad_dz += quadYZ[n] * dy;
-                                    quad_dz += quadZZ[n] * dz;
+                                    quad_dx = mad(quadXZ[n], dz, mad(quadXY[n], dy, quadXX[n] * dx));
+                                    quad_dy = mad(quadYZ[n], dz, mad(quadYY[n], dy, quadXY[n] * dx));
+                                    quad_dy = mad(quadZZ[n], dz, mad(quadYZ[n], dy, quadXZ[n] * dx));
 
                                     /* dr . Q . dr */
-                                    real drQdr = quad_dx * dx + quad_dy * dy + quad_dz * dz;
+                                    real drQdr = mad(quad_dz, dz, mad(quad_dy, dy, quad_dx * dx));
 
-                                    real phiQuad = -2.5 * (dr5inv * drQdr) / rSq;
+                                    real phiQuad = 2.5 * (dr5inv * drQdr) / rSq;
 
-                                    ax -= phiQuad * dx;
-                                    ay -= phiQuad * dy;
-                                    az -= phiQuad * dz;
+                                    ax = mad(phiQuad, dx, ax);
+                                    ay = mad(phiQuad, dy, ay);
+                                    az = mad(phiQuad, dz, az);
 
-                                    quad_dx *= dr5inv;
-                                    quad_dy *= dr5inv;
-                                    quad_dz *= dr5inv;
-
-                                    ax -= quad_dx;
-                                    ay -= quad_dy;
-                                    az -= quad_dz;
+                                    ax = mad(-dr5inv, quad_dx, ax);
+                                    ay = mad(-dr5inv, quad_dy, ay);
+                                    az = mad(-dr5inv, quad_dz, az);
                                 }
                             }
                             #else

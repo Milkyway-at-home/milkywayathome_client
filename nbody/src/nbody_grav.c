@@ -115,11 +115,11 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                     dr5inv = 1.0 / (sqr(drSq) * drab);  /* form dr^-5 */
 
                     /* get quad. part of phi */
-                    phiQ = -2.5 * (dr5inv * drQdr) / drSq;
+                    phiQ = 2.5 * (dr5inv * drQdr) / drSq;
 
-                    acc0.x -= phiQ * dr.x;
-                    acc0.y -= phiQ * dr.y;
-                    acc0.z -= phiQ * dr.z;
+                    acc0.x += phiQ * dr.x;
+                    acc0.y += phiQ * dr.y;
+                    acc0.z += phiQ * dr.z;
 
                     /* acceleration */
                     acc0.x -= dr5inv * Qdr.x;

@@ -397,6 +397,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-cl-single-precision-constant "
                #endif
 
+                 "-cl-mad-enable "
+
                #ifndef NDEBUG
                  "-D DEBUG=1 "
                #else
