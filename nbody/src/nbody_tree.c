@@ -59,12 +59,22 @@ static int subIndex(Body* p, NBodyCell* q)
     return ind;
 }
 
+static inline void nbIncAddNBodyQuadMatrix(NBodyQuadMatrix* restrict a, NBodyQuadMatrix* restrict b)
+{
+    a->xx += b->xx;
+    a->xy += b->xy;
+    a->xz += b->xz;
+
+    a->yy += b->yy;
+    a->yz += b->yz;
+
+    a->zz += b->zz;
+}
+
 /* hackQuad: descend tree, evaluating quadrupole moments.  Note that this
  * routine is coded so that the Subp() and Quad() components of a cell can
  * share the same memory locations.
  */
-
-/* TODO: Incremental matrix operations */
 static void hackQuad(NBodyCell* p)
 {
     unsigned int ndesc, i;
@@ -72,7 +82,7 @@ static void hackQuad(NBodyCell* p)
     NBodyNode* q;
     mwvector dr;
     real drsq;
-    mwmatrix quad;
+    NBodyQuadMatrix quad = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     ndesc = 0;                                  /* count occupied subnodes  */
     for (i = 0; i < NSUB; ++i)                  /* loop over all subnodes   */
@@ -83,7 +93,6 @@ static void hackQuad(NBodyCell* p)
         }
     }
 
-    mw_set_matrix_zero(Quad(p));                /* init quadrupole moment   */
     for (i = 0; i < ndesc; ++i)                 /* loop over real subnodes  */
     {
         q = desc[i];                            /* access each one in turn  */
@@ -93,7 +102,6 @@ static void hackQuad(NBodyCell* p)
         }
 
         dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
-        mw_outsqrv(quad, dr);                   /* form outer prod. of dr   */
         drsq = mw_sqrv(dr);                     /* and dot prod. (dr . dr)  */
 
         /* Outer product scaled by 3, then subtract drsq off the
@@ -101,25 +109,22 @@ static void hackQuad(NBodyCell* p)
         {
             real m = Mass(q);   /* from CM of subnode */
 
-            X(quad[0]) = m * (3.0 * (X(dr) * X(dr)) - drsq);
-            Y(quad[0]) = m * (3.0 * (X(dr) * Y(dr)));
-            Z(quad[0]) = m * (3.0 * (X(dr) * Z(dr)));
+            quad.xx = m * (3.0 * (X(dr) * X(dr)) - drsq);
+            quad.xy = m * (3.0 * (X(dr) * Y(dr)));
+            quad.xz = m * (3.0 * (X(dr) * Z(dr)));
 
-            X(quad[1]) = Y(quad[0]);
-            Y(quad[1]) = m * (3.0 * (Y(dr) * Y(dr)) - drsq);
-            Z(quad[1]) = m * (3.0 * (Y(dr) * Z(dr)));
+            quad.yy = m * (3.0 * (Y(dr) * Y(dr)) - drsq);
+            quad.yz = m * (3.0 * (Y(dr) * Z(dr)));
 
-            X(quad[2]) = Z(quad[0]);
-            Y(quad[2]) = Z(quad[1]);
-            Z(quad[2]) = m * (3.0 * (Z(dr) * Z(dr)) - drsq);
+            quad.zz = m * (3.0 * (Z(dr) * Z(dr)) - drsq);
         }
 
-        if (isCell(q))                          /* if subnode is cell       */
+        if (isCell(q)) /* if subnode is cell       */
         {
-            mw_incaddm(quad, Quad(q));          /* then include its moment  */
+            nbIncAddNBodyQuadMatrix(&quad, &Quad(q));     /* then include its moment  */
         }
 
-        mw_incaddm(Quad(p), quad);              /* increment moment of cell */
+        nbIncAddNBodyQuadMatrix(&Quad(p), &quad); /* increment moment of cell */
     }
 }
 

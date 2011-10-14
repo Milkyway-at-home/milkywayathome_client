@@ -132,13 +132,22 @@ typedef struct NBODY_ALIGN
 
 typedef struct NBODY_ALIGN
 {
+    real xx, xy, xz;
+    real yy, yz;
+    real zz;
+} NBodyQuadMatrix;
+
+
+
+typedef struct NBODY_ALIGN
+{
     NBodyNode cellnode;         /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
     NBodyNode* more;            /* link to first descendent */
     union                       /* shared storage for... */
     {
         NBodyNode* subp[NSUB];  /* descendents of cell */
-        mwmatrix quad;          /* quad. moment of cell */
+        NBodyQuadMatrix quad;   /* quad. moment of cell. Unique symmetric matrix components */
     } stuff;
 } NBodyCell;
 
@@ -227,7 +236,12 @@ typedef struct
 
     cl_mem debug;
 
-    cl_mem quad[3][3];
+    struct
+    {
+        cl_mem xx, xy, xz;
+        cl_mem yy, yz;
+        cl_mem zz;
+    } quad;
 } NBodyBuffers;
 
 

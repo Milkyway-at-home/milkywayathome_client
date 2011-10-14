@@ -264,18 +264,28 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     err |= clSetKernelArg(kern, 24, sizeof(cl_mem), &nbb->debug);
 
 
-    if (nbb->quad[0][0]) /* If we're using quadrupole moments */
+    if (nbb->quad.xx) /* If we're using quadrupole moments */
     {
-        err |= nbSetMemArrayArgs(kern, nbb->quad[0], 25);
-        err |= nbSetMemArrayArgs(kern, nbb->quad[1], 28);
-        err |= nbSetMemArrayArgs(kern, nbb->quad[2], 31);
+        err |= clSetKernelArg(kern, 25, sizeof(cl_mem), &nbb->quad.xx);
+        err |= clSetKernelArg(kern, 26, sizeof(cl_mem), &nbb->quad.xy);
+        err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->quad.xz);
+
+        err |= clSetKernelArg(kern, 28, sizeof(cl_mem), &nbb->quad.yy);
+        err |= clSetKernelArg(kern, 29, sizeof(cl_mem), &nbb->quad.yz);
+
+        err |= clSetKernelArg(kern, 30, sizeof(cl_mem), &nbb->quad.zz);
     }
     else
     {
         /* Set whatever */
-        err |= nbSetMemArrayArgs(kern, nbb->pos, 25);
-        err |= nbSetMemArrayArgs(kern, nbb->pos, 28);
-        err |= nbSetMemArrayArgs(kern, nbb->pos, 31);
+        err |= clSetKernelArg(kern, 25, sizeof(cl_mem), &nbb->debug);
+        err |= clSetKernelArg(kern, 26, sizeof(cl_mem), &nbb->debug);
+        err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->debug);
+
+        err |= clSetKernelArg(kern, 28, sizeof(cl_mem), &nbb->debug);
+        err |= clSetKernelArg(kern, 29, sizeof(cl_mem), &nbb->debug);
+
+        err |= clSetKernelArg(kern, 30, sizeof(cl_mem), &nbb->debug);
     }
 
     return err;
@@ -983,7 +993,7 @@ static cl_int clReleaseMemObject_quiet(cl_mem mem)
 
 cl_int nbReleaseBuffers(NBodyState* st)
 {
-    cl_uint i, j;
+    cl_uint i;
     cl_int err = CL_SUCCESS;
     NBodyBuffers* nbb = st->nbb;
 
@@ -994,11 +1004,6 @@ cl_int nbReleaseBuffers(NBodyState* st)
         err |= clReleaseMemObject_quiet(nbb->acc[i]);
         err |= clReleaseMemObject_quiet(nbb->max[i]);
         err |= clReleaseMemObject_quiet(nbb->min[i]);
-
-        for (j = 0; j < 3; ++j)
-        {
-            err |= clReleaseMemObject_quiet(nbb->quad[i][j]);
-        }
     }
 
     err |= clReleaseMemObject_quiet(nbb->masses);
@@ -1007,6 +1012,16 @@ cl_int nbReleaseBuffers(NBodyState* st)
     err |= clReleaseMemObject_quiet(nbb->count);
     err |= clReleaseMemObject_quiet(nbb->child);
     err |= clReleaseMemObject_quiet(nbb->sort);
+
+
+    err |= clReleaseMemObject_quiet(nbb->quad.xx);
+    err |= clReleaseMemObject_quiet(nbb->quad.xy);
+    err |= clReleaseMemObject_quiet(nbb->quad.xz);
+
+    err |= clReleaseMemObject_quiet(nbb->quad.yy);
+    err |= clReleaseMemObject_quiet(nbb->quad.yz);
+
+    err |= clReleaseMemObject_quiet(nbb->quad.zz);
 
     if (err != CL_SUCCESS)
     {
@@ -1053,7 +1068,7 @@ static cl_uint nbFindInc(cl_uint warpSize, cl_uint nbody)
 
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
-    cl_uint i, j;
+    cl_uint i;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
@@ -1082,14 +1097,19 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 
         if (ctx->useQuad)
         {
-            for (j = 0; j < 3; ++j)
+            nbb->quad.xx = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            nbb->quad.xy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            nbb->quad.xz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+
+            nbb->quad.yy = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            nbb->quad.yz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+
+            nbb->quad.zz = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+            if (!nbb->quad.xx || !nbb->quad.xy || !nbb->quad.xz || !nbb->quad.yy || !nbb->quad.yz || !nbb->quad.zz)
             {
-                nbb->quad[i][j] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-                if (!nbb->quad[i][j])
-                {
-                    return MW_CL_ERROR;
-                }
+                return MW_CL_ERROR;
             }
+
         }
     }
 

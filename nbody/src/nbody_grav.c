@@ -79,9 +79,9 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
     while (q != NULL)               /* while not at end of scan */
     {
         mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
-        real drsq = mw_sqrv(dr);               /* and distance squared */
+        real drSq = mw_sqrv(dr);               /* and distance squared */
 
-        if (isBody(q) || (drsq >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
+        if (isBody(q) || (drSq >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
         {
             if (mw_likely((const Body*) q != p))   /* self-interaction? */
             {
@@ -89,28 +89,42 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
                 /* Compute gravity */
 
-                drsq += ctx->eps2;   /* use standard softening */
-                drab = mw_sqrt(drsq);
+                drSq += ctx->eps2;   /* use standard softening */
+                drab = mw_sqrt(drSq);
                 phii = Mass(q) / drab;
-                mor3 = phii / drsq;
+                mor3 = phii / drSq;
 
-                mw_incaddv(acc0, mw_mulvs(dr, mor3));   /* ... and to total accel. */
+                acc0.x += mor3 * dr.x;
+                acc0.y += mor3 * dr.y;
+                acc0.z += mor3 * dr.z;
 
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
-                    real dr5inv, drquaddr, phiquad;
-                    mwvector quaddr;
-                    mwvector ai;
+                    real dr5inv, drQdr, phiQ;
+                    mwvector Qdr;
 
-                    dr5inv = 1.0 / (sqr(drsq) * drab);  /* form dr^-5 */
-                    quaddr = mw_mulmv(Quad(q), dr);     /* form Q * dr */
-                    drquaddr = mw_dotv(dr, quaddr);     /* form dr * Q * dr */
-                    phiquad = -0.5 * dr5inv * drquaddr; /* get quad. part of phi */
-                    phiquad = 5.0 * phiquad / drsq;     /* save for acceleration */
-                    ai = mw_mulvs(dr, phiquad);         /* components of acc. */
-                    mw_incsubv(acc0, ai);               /* increment */
-                    mw_incmulvs(quaddr, dr5inv);
-                    mw_incsubv(acc0, quaddr);           /* acceleration */
+                    /* form Q * dr */
+                    Qdr.x = Quad(q).xx * dr.x + Quad(q).xy * dr.y + Quad(q).xz * dr.z;
+                    Qdr.y = Quad(q).xy * dr.x + Quad(q).yy * dr.y + Quad(q).yz * dr.z;
+                    Qdr.z = Quad(q).xz * dr.x + Quad(q).yz * dr.y + Quad(q).zz * dr.z;
+
+
+                    /* form dr * Q * dr */
+                    drQdr = Qdr.x * dr.x + Qdr.y * dr.y + Qdr.z * dr.z;
+
+                    dr5inv = 1.0 / (sqr(drSq) * drab);  /* form dr^-5 */
+
+                    /* get quad. part of phi */
+                    phiQ = -2.5 * (dr5inv * drQdr) / drSq;
+
+                    acc0.x -= phiQ * dr.x;
+                    acc0.y -= phiQ * dr.y;
+                    acc0.z -= phiQ * dr.z;
+
+                    /* acceleration */
+                    acc0.x -= dr5inv * Qdr.x;
+                    acc0.y -= dr5inv * Qdr.y;
+                    acc0.z -= dr5inv * Qdr.z;
                 }
             }
             else
@@ -188,11 +202,11 @@ static inline mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, cons
         const Body* b = &st->bodytab[i];
 
         mwvector dr = mw_subv(Pos(b), Pos(p));
-        real drsq = mw_sqrv(dr) + eps2;
+        real drSq = mw_sqrv(dr) + eps2;
 
-        real drab = mw_sqrt(drsq);
+        real drab = mw_sqrt(drSq);
         real phii = Mass(b) / drab;
-        real mor3 = phii / drsq;
+        real mor3 = phii / drSq;
 
         mw_incaddv(a, mw_mulvs(dr, mor3));
     }
