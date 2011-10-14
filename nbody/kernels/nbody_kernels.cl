@@ -1327,7 +1327,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                     /* Matrix multiply Q . dr */
                                     quad_dx = mad(quadXZ[n], dz, mad(quadXY[n], dy, quadXX[n] * dx));
                                     quad_dy = mad(quadYZ[n], dz, mad(quadYY[n], dy, quadXY[n] * dx));
-                                    quad_dy = mad(quadZZ[n], dz, mad(quadYZ[n], dy, quadXZ[n] * dx));
+                                    quad_dz = mad(quadZZ[n], dz, mad(quadYZ[n], dy, quadXZ[n] * dx));
 
                                     /* dr . Q . dr */
                                     real drQdr = mad(quad_dz, dz, mad(quad_dy, dy, quad_dx * dx));
