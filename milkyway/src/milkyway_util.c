@@ -103,7 +103,7 @@ char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut)
     readSize = fread(buf, sizeof(char), fsize, f);
     if (readSize != (size_t) fsize)
     {
-        mwPerror("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
+        mwPerror("Failed to read file '%s': Expected to read %ld, but got "ZU,
                  filename, fsize, readSize);
         free(buf);
         buf = NULL;
@@ -153,7 +153,7 @@ int mwWriteFile(const char* filename, const char* str)
     rc = fputs(str, f);
     if (rc == EOF)
     {
-        mwPerror("Error writing file '%s'\n", filename);
+        mwPerror("Error writing file '%s'", filename);
     }
 
     fcloseVerbose(f, filename, "Closing write file");
@@ -645,7 +645,7 @@ void mwPerror(const char* fmt, ...)
     vfprintf(stderr, fmt, argPtr);
     va_end(argPtr);
 
-    fprintf(stderr, " (%d): %s", errno, strerror(errno));
+    fprintf(stderr, " (%d): %s\n", errno, strerror(errno));
 }
 
 #ifdef _WIN32
