@@ -109,7 +109,7 @@ static void nbPrintCopyright(void)
         );
 }
 
-static void nbPrintVersion(int boincTag)
+static void nbPrintVersion(int boincTag, int verbose)
 {
     char versionStr[2048];
 
@@ -134,16 +134,12 @@ static void nbPrintVersion(int boincTag)
                   versionStr,
                   BOINC_APPLICATION ? "BOINC" : "");
     }
+
+    if (verbose)
+    {
+        mw_printf("Commit %s\n", MILKYWAY_GIT_COMMIT_ID);
+    }
 }
-
-
-
-#if !BOINC_APPLICATION
-
-static int nbInit(const NBodyFlags* nbf) { (void) nbf; return 0; }
-
-#else
-
 
 static int nbInit(const NBodyFlags* nbf)
 {
@@ -158,8 +154,6 @@ static int nbInit(const NBodyFlags* nbf)
 
     return mwBoincInit(initType);
 }
-
-#endif
 
 
 /* Maybe set up some platform specific issues */
@@ -405,7 +399,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
 
     if (version)
     {
-        nbPrintVersion(FALSE);
+        nbPrintVersion(FALSE, nbf.verbose);
     }
 
     if (copyright)
@@ -471,9 +465,9 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->visArgs);
 }
 
-#ifdef _OPENMP
 static void nbSetNumThreads(int numThreads)
 {
+  #ifdef _OPENMP
     if (numThreads != 0)
     {
         omp_set_num_threads(numThreads);
@@ -481,12 +475,8 @@ static void nbSetNumThreads(int numThreads)
                   omp_get_max_threads(),
                   omp_get_num_procs());
     }
+  #endif
 }
-#else
-
-static void nbSetNumThreads(int numThreads) { }
-
-#endif /* _OPENMP */
 
 int main(int argc, const char* argv[])
 {
@@ -536,7 +526,7 @@ int main(int argc, const char* argv[])
 
     if (BOINC_APPLICATION)
     {
-        nbPrintVersion(TRUE);
+        nbPrintVersion(TRUE, FALSE);
         mw_finish(rc);
     }
 

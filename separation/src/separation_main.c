@@ -119,7 +119,7 @@ static void printCopyright()
 }
 
 
-static void printVersion(int boincTag)
+static void printVersion(int boincTag, int verbose)
 {
     char versionStr[2048];
 
@@ -142,6 +142,11 @@ static void printVersion(int boincTag)
         mw_printf("%s %s\n",
                   versionStr,
                   BOINC_APPLICATION ? "BOINC" : "");
+    }
+
+    if (verbose)
+    {
+        mw_printf("Commit %s\n", MILKYWAY_GIT_COMMIT_ID);
     }
 }
 
@@ -460,7 +465,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 
     if (version)
     {
-        printVersion(FALSE);
+        printVersion(FALSE, sf.verbose);
     }
 
     if (copyright)
@@ -667,7 +672,7 @@ int main(int argc, const char* argv[])
 
     if (BOINC_APPLICATION)
     {
-        printVersion(TRUE);
+        printVersion(TRUE, FALSE);
         mw_finish(rc);
     }
 
