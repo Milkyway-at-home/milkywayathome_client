@@ -25,7 +25,13 @@ if(WIN32)
 elseif(APPLE)
   set(BOINC_PROJECT_DIRECTORY "/Library/Application Support/BOINC Data/projects/")
 else()
-  set(BOINC_PROJECT_DIRECTORY "/var/lib/boinc/projects/")
+  if(IS_DIRECTORY "/var/lib/boinc-client/")
+    set(BOINC_PROJECT_DIRECTORY "/var/lib/boinc-client/projects")
+  elseif(IS_DIRECTORY "/var/lib/boinc")
+    set(BOINC_PROJECT_DIRECTORY "/var/lib/boinc/projects")
+  else()
+    message(WARNING "Did not find BOINC install directory")
+  endif()
 endif()
 
 set(BOINC_USER "boinc")
@@ -33,6 +39,11 @@ set(BOINC_GROUP "boinc")
 
 set(MILKYWAY_PROJECT_DIRECTORY "${BOINC_PROJECT_DIRECTORY}/${MILKYWAY_PROJECT_HOST}_milkyway")
 
+macro(install_boinc targets)
+    install(TARGETS ${targets}
+            RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+  #FIXME: chown to boinc user
+endmacro()
 
 
 

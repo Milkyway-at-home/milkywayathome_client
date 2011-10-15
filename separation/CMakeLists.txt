@@ -301,7 +301,10 @@ milkyway_link(milkyway_separation ${BOINC_APPLICATION}
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
-install(TARGETS milkyway_separation
-          RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
-
+if(INSTALL_BOINC)
+  install_boinc(milkyway_separation)
+else()
+  install(TARGETS milkyway_separation
+            RUNTIME DESTINATION bin)
+endif()
 

@@ -36,9 +36,11 @@ function makePotential()
       return 5.0 / Vector.abs(position)
    end
 
-
-   return closure
---   return nil
+   return Potential.create{
+      disk      = disk,
+      halo      = halo,
+      spherical = spherical
+   }
 end
 
 function makeContext()

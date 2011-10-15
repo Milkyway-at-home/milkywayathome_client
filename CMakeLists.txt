@@ -22,6 +22,8 @@ cmake_minimum_required(VERSION 2.8)
 project(milkywayathome_client)
 enable_testing()
 
+include(CMakeDependentOption)
+
 # Find custom cmake modules
 set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
 list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
@@ -83,6 +85,12 @@ option(BOINC_APPLICATION
 
 option(BOINC_RELEASE
        "Build with all options for making an actual release" OFF)
+
+cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
+  "BOINC_APPLICATION" OFF)
+mark_as_advanced(INSTALL_BOINC)
+
+
 
 option(DOUBLEPREC
        "Build with double precision" ON)
@@ -421,5 +429,7 @@ add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/tools/app_info.xml"
 
 add_custom_target(app_info DEPENDS "${PROJECT_BINARY_DIR}/tools/app_info.xml")
 
-install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+if(INSTALL_BOINC)
+  install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+endif()
 
