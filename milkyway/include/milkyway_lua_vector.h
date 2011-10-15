@@ -27,12 +27,23 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "milkyway_math.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 mwvector* checkVector(lua_State* luaSt, int idx);
+mwvector* expectVector(lua_State* luaSt, int idx);
+mwvector* toVector(lua_State* luaSt, int idx);
+
 int pushVector(lua_State* luaSt, mwvector v);
 int registerVector(lua_State* luaSt);
 
 int setVector(lua_State* luaSt, void* v);
 int getVector(lua_State* luaSt, void* v);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MILKYWAY_LUA_VECTOR_H_ */
 

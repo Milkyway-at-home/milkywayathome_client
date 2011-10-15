@@ -1,21 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -133,18 +133,19 @@ static int luaLbrToCartesian(lua_State* luaSt)
 static int luaReverseOrbit(lua_State* luaSt)
 {
     mwvector finalPos, finalVel;
-    static real dt, tstop;
+    static real dt = 0.0;
+    static real tstop = 0.0;
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
 
     static const MWNamedArg argTable[] =
         {
-            { "potential",         LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
-            { "position",          LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
-            { "velocity",          LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
-            { "tstop",             LUA_TNUMBER,   NULL,           TRUE, &tstop },
-            { "dt",                LUA_TNUMBER,   NULL,           TRUE, &dt    },
+            { "potential", LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
+            { "position",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
+            { "velocity",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
+            { "tstop",     LUA_TNUMBER,   NULL,           TRUE, &tstop },
+            { "dt",        LUA_TNUMBER,   NULL,           TRUE, &dt    },
             END_MW_NAMED_ARG
         };
 

@@ -164,7 +164,7 @@ static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, HistogramPara
         if (nbSetup(ctx, st, hp, nbf))
         {
             mw_printf("Failed to read input parameters file\n");
-            return NBODY_ERROR;
+            return NBODY_PARAM_FILE_ERROR;
         }
     }
     else /* Resume from checkpoint */
@@ -183,6 +183,17 @@ static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, HistogramPara
         else
         {
             mw_report("Resumed from checkpoint '%s'\n", nbf->checkpointFileName);
+        }
+    }
+
+    if (ctx->potentialType == EXTERNAL_POTENTIAL_CUSTOM_LUA)
+    {
+        /* We're using a custom potential, so we'll reevaluate the
+         * script. We must do this once per thread.
+         */
+        if (nbOpenPotentialEvalStatePerThread(st, nbf))
+        {
+            return NBODY_PARAM_FILE_ERROR;
         }
     }
 

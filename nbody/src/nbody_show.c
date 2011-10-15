@@ -129,8 +129,14 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_CONSISTENCY_ERROR";
         case NBODY_UNIMPLEMENTED:
             return "NBODY_UNIMPLEMENTED";
+        case NBODY_UNSUPPORTED:
+            return "NBODY_UNSUPPORTED";
         case NBODY_USER_ERROR:
             return "NBODY_USER_ERROR";
+        case NBODY_PARAM_FILE_ERROR:
+            return "NBODY_PARAM_FILE_ERROR";
+        case NBODY_LUA_POTENTIAL_ERROR:
+            return "NBODY_LUA_POTENTIAL_ERROR";
         default:
             return "Unknown NBodyStatus";
     }

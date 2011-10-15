@@ -24,14 +24,15 @@
 #include "milkyway_util.h"
 
 
-
 /* Check if global function name exists.  Error if it doesn't or if
    it's the wrong type. If OK, puts on stack and returns its index. */
 int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name)
 {
     lua_getglobal(luaSt, name);
     if (lua_isnil(luaSt, -1))
+    {
         return luaL_error(luaSt, "Didn't find required global '%s'", name);
+    }
 
     if (!lua_isfunction(luaSt, -1))
     {
@@ -82,7 +83,9 @@ int mw_lua_checkluaclosure(lua_State* luaSt, int idx)
 {
     /* LUA_TFUNCTION can refer to a cclosure or a Lua closure */
     if (!lua_isfunction(luaSt, idx) || lua_iscfunction(luaSt, idx))
+    {
         luaL_typerror(luaSt, idx, "Lua closure");
+    }
 
     /* Copy since luaL_ref pops and no other lua_check* functions change the stack */
     lua_pushvalue(luaSt, -1);

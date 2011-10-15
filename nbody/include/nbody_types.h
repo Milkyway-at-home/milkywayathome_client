@@ -290,13 +290,19 @@ typedef struct NBODY_ALIGN
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
+
+    lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
+                                  We need one per thread in the general case. */
+    int* potEvalClosures;       /* Lua closure for each state */
+
     time_t lastCheckpoint;
 
     unsigned int step;
     int nbody;
-    int treeIncest;     /* Tree incest has occured */
+    int treeIncest;          /* Tree incest has occured */
+    int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
-    int shmId;          /* shmid, key when using shmem */
+    int shmId;               /* shmid, key when using shmem */
 
     mwbool ignoreResponsive;
     mwbool usesExact;
@@ -319,7 +325,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
@@ -392,7 +398,10 @@ typedef enum
     NBODY_CAPABILITY_ERROR     = 1 << 6,
     NBODY_CONSISTENCY_ERROR    = 1 << 7,
     NBODY_UNIMPLEMENTED        = 1 << 8,
-    NBODY_USER_ERROR           = 1 << 9
+    NBODY_UNSUPPORTED          = 1 << 9,
+    NBODY_USER_ERROR           = 1 << 10,
+    NBODY_PARAM_FILE_ERROR     = 1 << 11,
+    NBODY_LUA_POTENTIAL_ERROR  = 1 << 12
 } NBodyStatus;
 
 #define nbStatusIsFatal(x) ((x) > 0)

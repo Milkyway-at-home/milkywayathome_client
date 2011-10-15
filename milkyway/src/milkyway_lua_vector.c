@@ -30,6 +30,16 @@ mwvector* checkVector(lua_State* luaSt, int idx)
     return (mwvector*) mw_checknamedudata(luaSt, idx, MWVECTOR_TYPE);
 }
 
+mwvector* toVector(lua_State* luaSt, int idx)
+{
+    return (mwvector*) mw_tonamedudata(luaSt, idx, MWVECTOR_TYPE);
+}
+
+mwvector* expectVector(lua_State* luaSt, int idx)
+{
+    return (mwvector*) expectType(luaSt, idx, MWVECTOR_TYPE);
+}
+
 int pushVector(lua_State* luaSt, mwvector vIn)
 {
     mwvector* vNew;

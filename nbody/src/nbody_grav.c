@@ -182,7 +182,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
-                mw_panic("Implement me!\n");
+                a = nbGravity(ctx, st, &st->bodytab[i]);
+                nbEvalPotentialClosure(st, Pos(&st->bodytab[i]), &externAcc);
+                st->acctab[i] = mw_addv(a, externAcc);
+                break;
 
             default:
                 mw_fail("Bad external potential type: %d\n", ctx->potentialType);
@@ -241,13 +244,15 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
-                mw_panic("Implement me!\n");
+                a = nbGravity_Exact(ctx, st, &st->bodytab[i]);
+                nbEvalPotentialClosure(st, Pos(&st->bodytab[i]), &externAcc);
+                st->acctab[i] = mw_addv(a, externAcc);
+                break;
 
             default:
                 mw_fail("Bad external potential type: %d\n", ctx->potentialType);
         }
     }
-
 }
 
 static inline NBodyStatus nbIncestStatusCheck(const NBodyCtx* ctx, const NBodyState* st)
@@ -275,6 +280,11 @@ NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
     else
     {
         nbMapForceBody_Exact(ctx, st);
+    }
+
+    if (st->potentialEvalError)
+    {
+        return NBODY_LUA_POTENTIAL_ERROR;
     }
 
     return nbIncestStatusCheck(ctx, st); /* Check if incest occured during step */

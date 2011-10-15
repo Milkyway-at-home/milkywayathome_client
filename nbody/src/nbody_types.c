@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
+#include "nbody_util.h"
 #include "nbody_types.h"
 #include "nbody_show.h"
 #include "nbody_defaults.h"
@@ -73,7 +74,7 @@ static void freeFreeCells(NBodyNode* freeCell)
 
 int nbDetachSharedScene(NBodyState* st)
 {
- #if USE_SHMEM
+  #if USE_SHMEM
     if (st->scene)
     {
         if (shm_unlink(st->scene->shmemName) < 0)
@@ -85,7 +86,7 @@ int nbDetachSharedScene(NBodyState* st)
         st->shmId = -1;
         st->scene = NULL;
     }
-  #endif /* _WIN32 */
+  #endif /* USE_SHMEM */
 
     return 0;
 }
@@ -95,6 +96,8 @@ int nbDetachSharedScene(NBodyState* st)
 int destroyNBodyState(NBodyState* st)
 {
     int failed = FALSE;
+    int nThread = nbGetMaxThreads();
+    int i;
 
     freeNBodyTree(&st->tree);
     freeFreeCells(st->freecell);
@@ -103,6 +106,16 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->orbitTrace);
 
     free(st->checkpointResolved);
+
+    if (st->potEvalStates)
+    {
+        for (i = 0; i < nThread; ++i)
+        {
+            lua_close(st->potEvalStates[i]);
+        }
+        free(st->potEvalClosures);
+        free(st->potEvalStates);
+    }
 
   #if NBODY_OPENCL
 
@@ -186,7 +199,15 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
 
     /* Bodies must be set before trying to use this */
     if (!st->bodytab)
+    {
         return NBODY_CONSISTENCY_ERROR;
+    }
+
+    if (ctx->potentialType == EXTERNAL_POTENTIAL_CUSTOM_LUA)
+    {
+        mw_printf("Cannot use Lua potential with OpenCL\n");
+        return NBODY_UNSUPPORTED;
+    }
 
     if (ctx->criterion == Exact)
     {
