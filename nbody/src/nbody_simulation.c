@@ -312,6 +312,7 @@ int nbMain(const NBodyFlags* nbf)
     if (nbf->printTiming)
     {
         printf("<run_time> %f </run_time>\n", te - ts);
+        fflush(stdout); /* Odd things happen with the OpenCL one where stdout starts disappearing */
     }
 
 

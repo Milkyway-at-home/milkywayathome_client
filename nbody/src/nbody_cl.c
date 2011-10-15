@@ -1293,6 +1293,37 @@ void nbPrintKernelTimings(const NBodyState* st)
         );
 }
 
+void nbPrintKernelLimits(NBodyState* st)
+{
+   WGInfo wgi;
+   CLInfo* ci = st->ci;
+   NBodyKernels* kernels = st->kernels;
+
+   mw_printf("Bounding box:\n");
+   mwGetWorkGroupInfo(kernels->boundingBox, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+
+   mw_printf("Tree Build:\n");
+   mwGetWorkGroupInfo(kernels->buildTree, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+
+   mw_printf("Summarization:\n");
+   mwGetWorkGroupInfo(kernels->summarization, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+
+   mw_printf("Sort:\n");
+   mwGetWorkGroupInfo(kernels->sort, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+
+   mw_printf("Force calculation:\n");
+   mwGetWorkGroupInfo(kernels->forceCalculation, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+
+   mw_printf("Integration:\n");
+   mwGetWorkGroupInfo(kernels->integration, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+}
+
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
