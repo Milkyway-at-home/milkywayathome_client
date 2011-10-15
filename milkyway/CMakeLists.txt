@@ -31,8 +31,9 @@ include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC MILKYWAY_GIT_COMMIT_ID)
 git_describe(MILKYWAY_GIT_DESCRIBE)
 
+check_include_files(inttypes.h HAVE_INTTYPES_H)
+check_include_files(stdint.h HAVE_STDINT_H)
 check_function_exists(asprintf HAVE_ASPRINTF)
-check_include_files(err.h HAVE_ER_H)
 check_include_files(tgmath.h HAVE_TGMATH_H)
 check_include_files(fpu_control.h HAVE_FPU_CONTROL_H)
 if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
@@ -60,6 +61,17 @@ check_function_exists(_aligned_malloc HAVE__ALIGNED_MALLOC)
 check_function_exists(__mingw_aligned_malloc HAVE___MINGW_ALIGNED_MALLOC)
 set(CMAKE_REQUIRED_INCLUDES )
 
+set(CMAKE_REQUIRED_INCLUDES "time.h")
+check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+set(CMAKE_REQUIRED_INCLUDES )
+
+set(CMAKE_REQUIRED_INCLUDES "mach/mach_time.h")
+check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
+set(CMAKE_REQUIRED_INCLUDES )
+
+
+
+
 configure_file (
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"
   "${PROJECT_INCLUDE_DIR}/milkyway_config.h")
@@ -74,7 +86,8 @@ set(mw_lib_src src/milkyway_util.c
                src/mw_boinc_util.c
                src/milkyway_cpp_util.cc
                src/milkyway_show.c
-               src/mw_cpuid.c)
+               src/mw_cpuid.c
+               src/milkyway_timing.c)
 
 
 set(milkyway_lua_src src/milkyway_lua_marshal.c
@@ -103,6 +116,7 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/real.h
                    include/milkyway_show.h
                    include/mw_cpuid.h
+                   include/milkyway_timing.h
                    include/mw_asprintf.h)
 
 

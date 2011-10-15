@@ -31,13 +31,17 @@
 #cmakedefine01 HAVE_EXP10
 #cmakedefine01 HAVE_EXP2
 #cmakedefine01 HAVE_SINCOS
+#cmakedefine01 HAVE_INTTYPES_H
+#cmakedefine01 HAVE_STDINT_H
 #cmakedefine01 HAVE_TGMATH_H
 #cmakedefine01 HAVE_FPU_CONTROL_H
-#cmakedefine01 HAVE_ERR_H
 #cmakedefine01 HAVE_ASPRINTF
 #cmakedefine01 HAVE_POSIX_MEMALIGN
 #cmakedefine01 HAVE__ALIGNED_MALLOC
 #cmakedefine01 HAVE___MINGW_ALIGNED_MALLOC
+
+#cmakedefine01 HAVE_CLOCK_GETTIME
+#cmakedefine01 HAVE_MACH_ABSOLUTE_TIME
 
 /* C99 Restrict.
 

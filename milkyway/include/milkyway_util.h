@@ -38,13 +38,10 @@
 
 #include <popt.h>
 
-#if HAVE_ERR_H
-  #include <err.h>
-#endif
-
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
 #include "milkyway_show.h"
+#include "milkyway_timing.h"
 #include "milkyway_alloc.h"
 #include "mw_boinc_util.h"
 #include "mw_asprintf.h"
@@ -252,7 +249,6 @@ void mwDisableErrorBoxes(void);
   #define mw_likely(x)
   #define mw_unlikely(x)
 #endif /* __GNUC__ */
-
 
 #ifdef __cplusplus
 }

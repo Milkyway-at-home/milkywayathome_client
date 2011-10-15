@@ -38,6 +38,12 @@
 #include "milkyway_util.h"
 #include "mw_boinc_util.h"
 
+
+#if HAVE_MACH_ABSOLUTE_TIME
+  #include <mach/mach.h>
+  #include <mach/mach_time.h>
+#endif
+
 #if MW_IS_X86
   #if HAVE_FPU_CONTROL_H
     #include <fpu_control.h>
