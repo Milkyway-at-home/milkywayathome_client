@@ -205,7 +205,11 @@ int nbOpenPotentialEvalStatePerThread(NBodyState* st, const NBodyFlags* nbf)
 }
 
 /* Evaluate potential from a Lua closure. Will set the error flag on
- * the NBodyState in the event of an error */
+ * the NBodyState in the event of an error.
+ *
+ * The closure used must of type number, number, number -> number,
+ * number, number. (i.e. takes 3 numbers (x, y, z) and returns 3 numbers (a_x, a_y, a_z))
+ */
 void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
 {
   #ifdef _OPENMP
@@ -215,18 +219,20 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
   #endif
 
     int top;
-    const mwvector* a;
+    mwvector a;
     static const mwvector nanVector = mw_vec(NAN, NAN, NAN);
     lua_State* luaSt = st->potEvalStates[tid];
 
     /* Push closure */
     getLuaClosure(luaSt, &st->potEvalClosures[tid]);
 
-    /* Push position argument */
-    pushVector(luaSt, pos);
+    /* Push position arguments */
+    lua_pushnumber(luaSt, X(pos));
+    lua_pushnumber(luaSt, Y(pos));
+    lua_pushnumber(luaSt, Z(pos));
 
     /* Call closure */
-    if (lua_pcall(luaSt, 1, 1, 0))
+    if (lua_pcall(luaSt, 3, 3, 0))
     {
         /* Avoid spewing the same error billions of times */
         if (!st->potentialEvalError)
@@ -246,11 +252,11 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
         return;
     }
 
+
     /* Retrieve acceleration. Use to* type function to avoid excessive
      * error message printing in general case. */
     top = lua_gettop(luaSt);
-    a = toVector(luaSt, top);
-    if (!a)
+    if (!lua_isnumber(luaSt, top) || !lua_isnumber(luaSt, top - 1) || !lua_isnumber(luaSt, top - 2))
     {
         if (!st->potentialEvalError)
         {
@@ -258,19 +264,25 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
             #pragma omp critical
           #endif
             {
-                mw_printf("Error in Lua potential function: ");
-                mw_lua_typecheck(luaSt, top, LUA_TUSERDATA, MWVECTOR_TYPE);
+                mw_printf("Error in Lua potential function: "
+                          "Expected number, number, number. Got %s, %s, %s\n",
+                          luaL_typename(luaSt, top - 2),
+                          luaL_typename(luaSt, top - 1),
+                          luaL_typename(luaSt, top));
                 st->potentialEvalError = TRUE;
             }
         }
 
-        lua_pop(luaSt, 1);
         *aOut = nanVector;
         return;
     }
 
-    *aOut = *a;
-    lua_pop(luaSt, 1);
+    Z(a) = lua_tonumber(luaSt, top);
+    Y(a) = lua_tonumber(luaSt, top - 1);
+    X(a) = lua_tonumber(luaSt, top - 2);
+
+    *aOut = a;
+    lua_pop(luaSt, 3);
 }
 
 static int evaluatePotential(lua_State* luaSt, NBodyCtx* ctx)

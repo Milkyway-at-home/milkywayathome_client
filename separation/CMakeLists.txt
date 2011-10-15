@@ -34,7 +34,7 @@ include(BOINCPaths)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
-set(separation_VERSION_MINOR 93
+set(separation_VERSION_MINOR 95
                CACHE INTERNAL "Separation version number")
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
                CACHE INTERNAL "Separation version number")

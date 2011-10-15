@@ -1,3 +1,35 @@
+
+separation 1.0:
+	- CAL version removed.
+	- Added IL injection for AMD GPUs
+	- AVX detection, and --force-avx argument
+	- Redid chunking yet again
+	- Added --force-no-opencl argument
+	- Added --force-no-il-kernel argument
+	- Kernel source is now always inlined
+
+
+nbody 0.80:
+	- Added OpenCL version
+	- Add progress reporting if Ncurses is available
+	- "Exact" criterion is now an actual exact implementation. To get
+	       the old "Exact" behaviour, use theta = 0.0 with the BH86 criterion
+
+	- Histogram no longer needed to generate histogram
+	- Histogram is now CSV
+	- Histogram now have comments (#) and ignores blank lines
+	- Histogram now includes lambda
+	- Fix possibility of checkpoints breaking for simulations running the same directory
+	- Fix not using SSE2 intrinsics in dSFMT
+	- Can now return a Lua function from makePotential() as external potential.
+	     Must take 3 numbers as x, y, z and return acceleration as a_x, a_y, a_z
+
+	- Add --static-draw option to display body output file to visualizer
+	- Slightly reduced memory usage of cells
+	- Fixed annoying creation of empty output files at beginning
+	- Last checkpoint is now deleted by default on completion
+
+
 separation 0.80:
 	- GPU checkpointing for CAL and OpenCL builds
 	- New arguments to disable GPU checkpointing: --gpu-disable-checkpointing
