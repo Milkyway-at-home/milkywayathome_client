@@ -25,6 +25,7 @@
 #include "separation_lua.h"
 #include "milkyway_util.h"
 #include "milkyway_cpp_util.h"
+#include "milkyway_git_version.h"
 #include "io_util.h"
 #include <popt.h>
 

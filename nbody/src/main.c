@@ -25,6 +25,7 @@
 #include "milkyway_util.h"
 #include "nbody.h"
 #include "nbody_defaults.h"
+#include "milkyway_git_version.h"
 
 #ifdef _OPENMP
   #include <omp.h>

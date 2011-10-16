@@ -71,10 +71,14 @@ set(CMAKE_REQUIRED_INCLUDES )
 
 
 
-
-configure_file (
+configure_file(
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"
   "${PROJECT_INCLUDE_DIR}/milkyway_config.h")
+
+configure_file(
+  "${MILKYWAY_INCLUDE_DIR}/milkyway_git_version.h.in"
+  "${PROJECT_INCLUDE_DIR}/milkyway_git_version.h")
+
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 

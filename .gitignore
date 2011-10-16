@@ -71,3 +71,4 @@ libelf/lib/sys_elf.h
 tmp_cl_binary*.bin
 TAGS
 tags
+stderr_tmp*
