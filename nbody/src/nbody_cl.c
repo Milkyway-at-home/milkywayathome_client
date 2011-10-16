@@ -155,7 +155,6 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
 {
     /* Numbers need playing for float and different opening criteria */
 
-
     ws->factors[0] = 1;
     ws->factors[1] = 2;
     ws->factors[2] = 1;  /* Must be 1. All workitems must be resident */
@@ -186,21 +185,21 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
     }
     else if (minComputeCapabilityCheck(di, 2, 0))
     {
-        ws->factors[0] = 3;
+        ws->factors[0] = 1;
         ws->factors[1] = 1;
         ws->factors[2] = 1;
         ws->factors[3] = 1;
-        ws->factors[4] = 3;
+        ws->factors[4] = 1;
         ws->factors[5] = 4;
-        ws->factors[6] = 3;
+        ws->factors[6] = 4;
 
-        ws->threads[0] = 512;
+        ws->threads[0] = 1024;
         ws->threads[1] = 1024;
         ws->threads[2] = 1024;
-        ws->threads[3] = 256;
+        ws->threads[3] = 1024;
         ws->threads[4] = 1024;
         ws->threads[5] = 512;
-        ws->threads[6] = 512;
+        ws->threads[6] = 1024;
     }
     else
     {
@@ -209,7 +208,6 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
         ws->threads[2] = 256;
         ws->threads[3] = 256;
         ws->threads[4] = 256;
-        ws->threads[5] = 256;
         ws->threads[5] = 256;
         ws->threads[6] = 256;
     }
