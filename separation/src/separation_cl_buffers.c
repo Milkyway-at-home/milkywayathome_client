@@ -83,7 +83,7 @@ static cl_int createSCBuffer(CLInfo* ci,
 
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating stream constants buffer of size "ZU, err, sizes->sc);
+        mwPerrorCL(err, "Error creating stream constants buffer of size "ZU, sizes->sc);
         return err;
     }
 
@@ -108,21 +108,21 @@ static cl_int createRBuffers(CLInfo* ci,
 
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating stream r points buffer of size "ZU, err, sizes->rPts);
+        mwPerrorCL(err, "Error creating stream r points buffer of size "ZU, sizes->rPts);
         return err;
     }
 
     cm->rc = clCreateBuffer(ci->clctx, constBufFlags, sizes->rc, rc, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating stream r consts buffer of size "ZU, err, sizes->rc);
+        mwPerrorCL(err, "Error creating stream r consts buffer of size "ZU, sizes->rc);
         return err;
     }
 
     cm->sg_dx = clCreateBuffer(ci->clctx, constBufFlags, sizes->sg_dx, sg.dx, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating stream sg_dx buffer of size "ZU, err, sizes->sg_dx);
+        mwPerrorCL(err, "Error creating stream sg_dx buffer of size "ZU, sizes->sg_dx);
         return err;
     }
 
@@ -183,14 +183,14 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
     cm->lTrig = clCreateBuffer(ci->clctx, constBufFlags, sizes->lTrig, lTrig, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating lTrig buffer of size "ZU, err, sizes->lTrig);
+        mwPerrorCL(err, "Error creating lTrig buffer of size "ZU, sizes->lTrig);
         return err;
     }
 
     cm->bSin = clCreateBuffer(ci->clctx, constBufFlags, sizes->bSin, bSin, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating bSin buffer of size "ZU, err, sizes->bSin);
+        mwPerrorCL(err, "Error creating bSin buffer of size "ZU, sizes->bSin);
         return err;
     }
 
@@ -239,7 +239,7 @@ static cl_int createAPBuffer(CLInfo* ci,
     cm->ap = clCreateBuffer(ci->clctx, constBufFlags, sizeof(buf), (void*) buf, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating astronomy parameters buffer of size "ZU, err, sizes->ap);
+        mwPerrorCL(err, "Error creating astronomy parameters buffer of size "ZU, sizes->ap);
         return err;
     }
 
@@ -317,7 +317,7 @@ const real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSi
                                           NULL,
                                           &err);
     if (err != CL_SUCCESS)
-        mwPerrorCL("Error mapping integral result buffer", err);
+        mwPerrorCL(err, "Error mapping integral result buffer");
 
     return mapOutBg;
 }
@@ -335,7 +335,7 @@ const real* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsRes
                                                NULL,
                                                &err);
     if (err != CL_SUCCESS)
-        mwPerrorCL("Error mapping stream result buffer", err);
+        mwPerrorCL(err, "Error mapping stream result buffer");
 
     return mapOutStreams;
 }

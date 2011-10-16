@@ -47,7 +47,7 @@ cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size);
 cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf);
 
 /* Print a message with the name of a cl_int error the end of the line */
-void mwPerrorCL(const char* fmt, cl_int err, ...);
+void mwPerrorCL(cl_int err, const char* fmt, ...);
 
 #ifdef __cplusplus
 }

@@ -49,14 +49,14 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue, cl_bool enablePr
     ci->clctx = clCreateContext(NULL, 1, &ci->dev, MW_CONTEXT_LOGGER, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating context", err);
+        mwPerrorCL(err, "Error creating context");
         return err;
     }
 
     ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, props, &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating command queue", err);
+        mwPerrorCL(err, "Error creating command queue");
         return err;
     }
 
@@ -65,7 +65,7 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue, cl_bool enablePr
         ci->bufQueue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
         if (err != CL_SUCCESS)
         {
-            mwPerrorCL("Error creating buffer command queue", err);
+            mwPerrorCL(err, "Error creating buffer command queue");
             return err;
         }
     }
@@ -99,7 +99,7 @@ static cl_uint choosePlatform(const char* prefVendor, const cl_platform_id* plat
                                 NULL);
         if (err != CL_SUCCESS)
         {
-            mwPerrorCL("Error getting platform vendor", err);
+            mwPerrorCL(err, "Error getting platform vendor");
             return CL_UINT_MAX;
         }
 
@@ -162,7 +162,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     err = mwSelectDevice(ci, devs, clr, nDev);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Failed to select a device", err);
+        mwPerrorCL(err, "Failed to select a device");
         err = -1;
     }
 
@@ -222,7 +222,7 @@ cl_int mwDestroyCLInfo(CLInfo* ci)
 
     /* TODO: or'ing the err and showing = useless */
     if (err)
-        mwPerrorCL("Error cleaning up CLInfo", err);
+        mwPerrorCL(err, "Error cleaning up CLInfo");
 
     return err;
 }

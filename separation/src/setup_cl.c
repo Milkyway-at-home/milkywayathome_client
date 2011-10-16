@@ -47,7 +47,7 @@ static cl_int createSeparationKernel(const CLInfo* ci)
     _separationKernel = clCreateKernel(ci->prog, "mu_sum_kernel", &err);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating kernel '%s'", err, "mu_sum_kernel");
+        mwPerrorCL(err, "Error creating kernel '%s'", "mu_sum_kernel");
     }
 
     return err;
@@ -160,7 +160,7 @@ cl_bool findRunSizes(RunSizes* sizes,
     err = mwGetWorkGroupInfo(_separationKernel, ci, &wgi);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Failed to get work group info", err);
+        mwPerrorCL(err, "Failed to get work group info");
         return CL_TRUE;
     }
 
@@ -297,7 +297,7 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
 
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error setting kernel arguments", err);
+        mwPerrorCL(err, "Error setting kernel arguments");
         return err;
     }
 
@@ -441,7 +441,7 @@ static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, 
     free(modBin);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating program from binary", err);
+        mwPerrorCL(err, "Error creating program from binary");
         return err;
     }
 
@@ -489,7 +489,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error getting device and context", err);
+        mwPerrorCL(err, "Error getting device and context");
         return err;
     }
 
@@ -512,7 +512,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     err = mwSetProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error creating program from source", err);
+        mwPerrorCL(err, "Error creating program from source");
         goto setup_exit;
     }
 
@@ -527,7 +527,7 @@ cl_int setupSeparationCL(CLInfo* ci,
             err = mwSetProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
             if (err != CL_SUCCESS)
             {
-                mwPerrorCL("Error creating program from source", err);
+                mwPerrorCL(err, "Error creating program from source");
             }
         }
     }

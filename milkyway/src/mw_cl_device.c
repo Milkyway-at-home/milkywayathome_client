@@ -455,7 +455,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error getting device information", err);
+        mwPerrorCL(err, "Error getting device information");
     }
     else
     {
@@ -581,27 +581,27 @@ static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
     err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
                             sizeof(pi->name), pi->name, &readSize);
     if (readSize > sizeof(pi->name))
-        mwPerrorCL("Failed to read platform name", err);
+        mwPerrorCL(err, "Failed to read platform name");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_VENDOR,
                             sizeof(pi->vendor), pi->vendor, &readSize);
     if (readSize > sizeof(pi->vendor))
-        mwPerrorCL("Failed to read platform vendor", err);
+        mwPerrorCL(err, "Failed to read platform vendor");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
                             sizeof(pi->version), pi->version, &readSize);
     if (readSize > sizeof(pi->version))
-        mwPerrorCL("Failed to read platform version", err);
+        mwPerrorCL(err, "Failed to read platform version");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS,
                             sizeof(pi->extensions), pi->extensions, &readSize);
     if (readSize > sizeof(pi->extensions))
-        mwPerrorCL("Failed to read platform extensions", err);
+        mwPerrorCL(err, "Failed to read platform extensions");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_PROFILE,
                             sizeof(pi->profile), pi->profile, &readSize);
     if (readSize > sizeof(pi->profile))
-        mwPerrorCL("Failed to read platform profile", err);
+        mwPerrorCL(err, "Failed to read platform profile");
 }
 
 static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
@@ -642,7 +642,7 @@ cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out)
     err = clGetPlatformIDs(0, NULL, &n_platform);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error getting number of platform", err);
+        mwPerrorCL(err, "Error getting number of platform");
         return NULL;
     }
 
@@ -656,7 +656,7 @@ cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out)
     err = clGetPlatformIDs(n_platform, ids, NULL);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Error getting platform IDs", err);
+        mwPerrorCL(err, "Error getting platform IDs");
         free(ids);
         return NULL;
     }
@@ -676,7 +676,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDev);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Failed to find number of devices", err);
+        mwPerrorCL(err, "Failed to find number of devices");
         return NULL;
     }
 
@@ -692,7 +692,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL("Failed to get device IDs", err);
+        mwPerrorCL(err, "Failed to get device IDs");
         return NULL;
     }
 
@@ -706,7 +706,7 @@ static cl_int mwGetDeviceType(cl_device_id dev, cl_device_type* devType)
 
     err = clGetDeviceInfo(dev, CL_DEVICE_TYPE, sizeof(cl_device_type), devType, NULL);
     if (err != CL_SUCCESS)
-        mwPerrorCL("Failed to get device type", err);
+        mwPerrorCL(err, "Failed to get device type");
 
     return err;
 }
@@ -738,7 +738,7 @@ cl_bool mwPlatformSupportsAMDOfflineDevices(const CLInfo* ci)
     err = clGetPlatformInfo(ci->plat, CL_PLATFORM_EXTENSIONS, sizeof(exts), exts, &readSize);
     if ((err != CL_SUCCESS) || (readSize >= sizeof(exts)))
     {
-        mwPerrorCL("Error reading platform extensions (readSize = "ZU")\n", err, readSize);
+        mwPerrorCL(err, "Error reading platform extensions (readSize = "ZU")\n", readSize);
         return CL_FALSE;
     }
 
