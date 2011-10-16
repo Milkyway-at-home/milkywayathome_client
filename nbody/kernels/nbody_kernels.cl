@@ -990,7 +990,7 @@ __kernel void NBODY_KERNEL(quadMoments)
 
                     if (isCell(ch))
                     {
-                        child[THREADS3 * missing + get_local_id(0)] = ch; /* Cache missing children */
+                        child[THREADS5 * missing + get_local_id(0)] = ch; /* Cache missing children */
                         ++missing;
 
                         qCh.xx = _quadXX[ch];
@@ -1035,7 +1035,7 @@ __kernel void NBODY_KERNEL(quadMoments)
                 QuadMatrix quad; /* Increment from this missing child */
 
                 /* poll missing child */
-                ch = child[THREADS3 * (missing - 1) + get_local_id(0)];
+                ch = child[THREADS5 * (missing - 1) + get_local_id(0)];
                 cl_assert(_treeStatus, ch > 0);
                 cl_assert(_treeStatus, ch >= NBODY);
                 if (ch >= NBODY) /* Is a cell */
@@ -1103,7 +1103,7 @@ __kernel void NBODY_KERNEL(quadMoments)
  * wavefront.
  * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
  */
-inline int forceAllPredicate(__local volatile int allBlock[THREADS1], int warpId, int cond)
+inline int forceAllPredicate(__local volatile int allBlock[THREADS6], int warpId, int cond)
 {
 
     allBlock[get_local_id(0)] = cond;
@@ -1119,35 +1119,6 @@ inline int forceAllPredicate(__local volatile int allBlock[THREADS1], int warpId
     /* For exact, this could always just return false */
 
     return predicate;
-}
-
-
-__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
-__kernel void NBODY_KERNEL(velocityIntegration)
-{
-    int inc = get_local_size(0) * get_num_groups(0);
-
-    /* Iterate over all bodies assigned to thread */
-    for (int i = (int) get_global_id(0); i < NBODY; i += inc)
-    {
-        real dvx = _accX[i] * (0.5 * TIMESTEP);
-        real dvy = _accY[i] * (0.5 * TIMESTEP);
-        real dvz = _accZ[i] * (0.5 * TIMESTEP);
-
-        real vhx = _velX[i] + dvx;
-        real vhy = _velY[i] + dvy;
-        real vhz = _velZ[i] + dvz;
-
-        _posX[i] += vhx * TIMESTEP;
-        _posY[i] += vhy * TIMESTEP;
-        _posZ[i] += vhz * TIMESTEP;
-
-        mem_fence(CLK_GLOBAL_MEM_FENCE);
-
-        _velX[i] = vhx;
-        _velY[i] = vhy;
-        _velZ[i] = vhz;
-    }
 }
 
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
@@ -1171,7 +1142,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
   #endif /* USE_QUAD */
 
-    __local real dq[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real dq[MAXDEPTH * THREADS6 / WARPSIZE];
 
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
@@ -1325,9 +1296,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                     real dr5inv = 1.0 / (sqr(rSq) * r);
 
                                     /* Matrix multiply Q . dr */
-                                    quad_dx = mad(quadXZ[n], dz, mad(quadXY[n], dy, quadXX[n] * dx));
-                                    quad_dy = mad(quadYZ[n], dz, mad(quadYY[n], dy, quadXY[n] * dx));
-                                    quad_dz = mad(quadZZ[n], dz, mad(quadYZ[n], dy, quadXZ[n] * dx));
+                                    quad_dx = mad(quadXZ[depth], dz, mad(quadXY[depth], dy, quadXX[depth] * dx));
+                                    quad_dy = mad(quadYZ[depth], dz, mad(quadYY[depth], dy, quadXY[depth] * dx));
+                                    quad_dz = mad(quadZZ[depth], dz, mad(quadYZ[depth], dy, quadXZ[depth] * dx));
 
                                     /* dr . Q . dr */
                                     real drQdr = mad(quad_dz, dz, mad(quad_dy, dy, quad_dx * dx));
@@ -1343,7 +1314,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                     az = mad(-dr5inv, quad_dz, az);
                                 }
                             }
-                            #else
                           #endif /* USE_QUAD */
 
 

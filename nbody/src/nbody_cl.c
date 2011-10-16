@@ -54,8 +54,8 @@ static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
               "  Bounding box kernel:  "ZU", "ZU"\n"
               "  Tree build kernel:    "ZU", "ZU"\n"
               "  Summarization kernel: "ZU", "ZU"\n"
-              "  Quadrupole kernel:    "ZU", "ZU"\n"
               "  Sort kernel:          "ZU", "ZU"\n"
+              "  Quadrupole kernel:    "ZU", "ZU"\n"
               "  Force kernel:         "ZU", "ZU"\n"
               "  Integration kernel:   "ZU", "ZU"\n"
               "\n",
@@ -102,9 +102,9 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
 {
     ws->factors[0] = 1;
     ws->factors[1] = 2;
-    ws->factors[2] = 1;
-    ws->factors[3] = 1;
-    ws->factors[4] = 1;
+    ws->factors[2] = 1;  /* Must be 1. All workitems must be resident */
+    ws->factors[3] = 1;  /* Also must be 1 for the same reason */
+    ws->factors[4] = 1;  /* Also must be 1 for the same reason */
     ws->factors[5] = 1;
     ws->factors[6] = 1;
 
@@ -837,12 +837,12 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 static cl_int nbExecuteForceKernels(NBodyState* st)
 {
     cl_int err;
-    size_t chunk = 0;
+    size_t chunk;
     CLInfo* ci = st->ci;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-    size_t nChunk = st->ignoreResponsive ?          1 : mwDivRoundup((size_t) st->nbody, ws->global[4]);
-    cl_int upperBound = st->ignoreResponsive ? st->nbody : (cl_int) ws->global[4];
+    size_t nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) st->nbody, ws->global[5]);
+    cl_int upperBound = st->ignoreResponsive ? st->nbody : (cl_int) ws->global[5];
     size_t offset[1] = { 0 };
     cl_event integrateEv;
     cl_kernel forceKern = st->usesExact ? kernels->forceCalculation_Exact : kernels->forceCalculation;
@@ -1313,6 +1313,10 @@ void nbPrintKernelLimits(NBodyState* st)
 
    mw_printf("Sort:\n");
    mwGetWorkGroupInfo(kernels->sort, ci, &wgi);
+   mwPrintWorkGroupInfo(&wgi);
+
+   mw_printf("Quad moments:\n");
+   mwGetWorkGroupInfo(kernels->quadMoments, ci, &wgi);
    mwPrintWorkGroupInfo(&wgi);
 
    mw_printf("Force calculation:\n");
