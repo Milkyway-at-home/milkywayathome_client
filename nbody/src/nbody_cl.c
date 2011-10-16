@@ -46,6 +46,59 @@ typedef struct
     int i[64];
 } Debug;
 
+static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
+{
+    cl_ulong estMaxDepth;
+    cl_ulong wgSize = ws->threads[5];
+    cl_ulong warpPerWG = wgSize / di->warpSize;
+
+    /* I don't trust the device parameters reporting anymore */
+    cl_ulong localMemSize = (di->localMemSize > 0) ? di->localMemSize : 16384;
+
+    /* Pieces which are not part of the "stack" */
+    cl_ulong maxDepth = sizeof(cl_int);
+    cl_ulong rootCritRadius = sizeof(real);
+    cl_ulong allBlock = wgSize * sizeof(cl_int);
+
+    cl_ulong ch = warpPerWG * sizeof(cl_int);
+    cl_ulong nx = warpPerWG * sizeof(cl_int);
+    cl_ulong ny = warpPerWG * sizeof(cl_int);
+    cl_ulong nz = warpPerWG * sizeof(cl_int);
+    cl_ulong nm = warpPerWG * sizeof(cl_int);
+
+    cl_ulong constantPieces = maxDepth + rootCritRadius + allBlock + ch + nx + ny + nz + nm;
+
+    /* Individual sizes of elements on the cell stack. */
+    cl_ulong pos = sizeof(cl_int);
+    cl_ulong node = sizeof(cl_int);
+    cl_ulong dq = sizeof(real);
+    cl_ulong quadPieces = 6 * sizeof(real);
+
+    cl_ulong stackItemCount = pos + node + dq;
+    if (useQuad)
+    {
+        stackItemCount += quadPieces;
+    }
+
+    /* We now have the size requirement as:
+       d * warpPerWG * stackItemCount + constantPieces <= localMemSize
+       Solve for d.
+    */
+    estMaxDepth = (localMemSize - constantPieces) / (warpPerWG * stackItemCount);
+
+    return estMaxDepth - 1;  /* A bit extra will be used. Some kind of rounding up */
+}
+
+static cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
+{
+    cl_ulong d;
+
+    d = nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(di, ws, useQuad);
+
+
+    return 0;
+}
+
 
 static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
 {
@@ -100,6 +153,9 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 /* Return CL_TRUE if some error */
 cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
 {
+    /* Numbers need playing for float and different opening criteria */
+
+
     ws->factors[0] = 1;
     ws->factors[1] = 2;
     ws->factors[2] = 1;  /* Must be 1. All workitems must be resident */
@@ -130,12 +186,20 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
     }
     else if (minComputeCapabilityCheck(di, 2, 0))
     {
+        ws->factors[0] = 3;
+        ws->factors[1] = 1;
+        ws->factors[2] = 1;
+        ws->factors[3] = 1;
+        ws->factors[4] = 3;
+        ws->factors[5] = 4;
+        ws->factors[6] = 3;
+
         ws->threads[0] = 512;
         ws->threads[1] = 1024;
         ws->threads[2] = 1024;
         ws->threads[3] = 256;
         ws->threads[4] = 1024;
-        ws->threads[5] = 256;
+        ws->threads[5] = 512;
         ws->threads[6] = 512;
     }
     else
@@ -552,11 +616,54 @@ cl_int nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 }
 
 /* Return CL_FALSE if device isn't capable of running this */
-cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st)
+cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint nbody)
 {
-    (void) di;
+    cl_ulong nNode = (cl_ulong) nbFindNNode(di, nbody) + 1;
+    cl_ulong maxNodes = di->maxMemAlloc / (NSUB * sizeof(cl_int));
+
     (void) ctx;
-    (void) st;
+
+    if (di->devType != CL_DEVICE_TYPE_GPU)
+    {
+        mw_printf("Device is not a GPU.\n");
+        return CL_FALSE;
+    }
+
+    if (!isNvidiaGPUDevice(di) && !isAMDGPUDevice(di))
+    {
+        /* There is reliance on implementation details for Nvidia and
+         * AMD GPUs. If some other kind of GPU decides to exist, it
+         * would need to be tested.*/
+        mw_printf("Only Nvidia and AMD GPUs are supported\n");
+        return CL_FALSE;
+    }
+
+    if (!mwSupportsDoubles(di) && DOUBLEPREC)
+    {
+        mw_printf("Device does not have usable double precision extension\n");
+        return CL_FALSE;
+    }
+
+    if (   !strstr(di->exts, "cl_khr_global_int32_base_atomics")
+        || !strstr(di->exts, "cl_khr_global_int32_extended_atomics")
+        || !strstr(di->exts, "cl_khr_local_int32_base_atomics"))
+    {
+        mw_printf("Device lacks necessary atomics extensions\n");
+        return CL_FALSE;
+    }
+
+
+    if (nNode > maxNodes)
+    {
+        mw_printf("Simulation of %u bodies requires "LLU" nodes, "
+                  "however maximum allocation size only allows for "LLU"\n",
+                  nbody,
+                  nNode,
+                  maxNodes
+            );
+        return CL_FALSE;
+    }
+
     return CL_TRUE;
 }
 

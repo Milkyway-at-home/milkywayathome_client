@@ -13,7 +13,7 @@ fi
 
 # 0 = number 1 .. n
 # 1 = filename
-titleType=0
+titleType=1
 
 cmd="set xlabel \"λ\"; "
 cmd="${cmd} plot "

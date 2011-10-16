@@ -228,7 +228,7 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    if (!nbCheckDevCapabilities(&st->ci->di, ctx, st))
+    if (!nbCheckDevCapabilities(&st->ci->di, ctx, st->nbody))
         return NBODY_CAPABILITY_ERROR;
 
     if (nbSetThreadCounts(st->workSizes, &st->ci->di) || nbSetWorkSizes(st->workSizes, &st->ci->di))

@@ -45,18 +45,6 @@
 #endif
 
 
-
-
-/* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
-typedef enum
-{
-    NBODY_KERNEL_OK                   = 0,
-    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
-    NBODY_KERNEL_TREE_INCEST          = -2,
-    NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
-    NBODY_KERNEL_ERROR_OTHER          = -4
-} NBodyKernelError;
-
 #if DOUBLEPREC
   #if cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
@@ -72,6 +60,18 @@ typedef enum
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 
 
+
+
+/* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
+typedef enum
+{
+    NBODY_KERNEL_OK                   = 0,
+    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
+    NBODY_KERNEL_TREE_INCEST          = -2,
+    NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
+    NBODY_KERNEL_ERROR_OTHER          = -4
+} NBodyKernelError;
+
 #if DEBUG
 #define cl_assert(treeStatus, x)                     \
     {                                                \
@@ -83,23 +83,6 @@ typedef enum
 #else
 #define cl_assert(treeStatus, x)
 #endif /* DEBUG */
-
-
-
-#if 1
-#pragma OPENCL EXTENSION cl_amd_printf : enable
-#define dprintf(fmt, ...) printf("Line %d: " fmt, __LINE__, __VA_ARGS__)
-
-#define ddprintf(fmt, ...) printf("[%d][%d][%d]: Line %d: " fmt, (int) get_global_id(0), (int) get_group_id(0), (int) get_local_id(0),__LINE__, __VA_ARGS__)
-#define __BARRIER(type) \
-    dprintf("\t__BARRIER[%d] hit by thread %d\n", __LINE__, get_local_id(0)); \
-  barrier(type);
-
-#else
-#define dprintf(fmt, ...)
-#define __BARRIER(type) barrier((type))
-#define ddprintf(fmt, ...)
-#endif
 
 
 #if DOUBLEPREC
@@ -127,6 +110,11 @@ typedef float4 real4;
 #define sqr(x) ((x) * (x))
 #define cube(x) ((x) * (x) * (x))
 
+#define NSUB 8
+
+#define isBody(n) ((n) < NBODY)
+#define isCell(n) ((n) >= NBODY)
+
 
 /* FIXME: This needs to be the same as on the host */
 typedef struct __attribute__((aligned))
@@ -139,23 +127,12 @@ typedef struct __attribute__((aligned))
     volatile unsigned int blkCnt;
 } TreeStatus;
 
-#define NSUB 8
-
 typedef struct
 {
     volatile real f[32];
     volatile int i[64];
 } Debug;
 
-#define isBody(n) ((n) < NBODY)
-#define isCell(n) ((n) >= NBODY)
-
-
-typedef __global volatile real* restrict RVPtr;
-typedef __global volatile int* restrict IVPtr;
-
-//typedef __global real* restrict RVPtr;
-//typedef __global int* restrict IVPtr;
 
 typedef struct
 {
@@ -163,6 +140,11 @@ typedef struct
     real yy, yz;
     real zz;
 } QuadMatrix;
+
+
+
+typedef __global volatile real* restrict RVPtr;
+typedef __global volatile int* restrict IVPtr;
 
 
 
@@ -1126,10 +1108,20 @@ __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
     __local real rootCritRadius;
+
+    /* Used by the fake thread voting function.
+       We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
+     */
+    __local volatile int allBlock[THREADS6];
+
     __local volatile int ch[THREADS6 / WARPSIZE];
-    __local volatile int pos[MAXDEPTH * THREADS6 / WARPSIZE], node[MAXDEPTH * THREADS6 / WARPSIZE];
     __local volatile real nx[THREADS6 / WARPSIZE], ny[THREADS6 / WARPSIZE], nz[THREADS6 / WARPSIZE];
     __local volatile real nm[THREADS6 / WARPSIZE];
+
+    /* "Stack" things */
+    __local volatile int pos[MAXDEPTH * THREADS6 / WARPSIZE], node[MAXDEPTH * THREADS6 / WARPSIZE];
+    __local volatile real dq[MAXDEPTH * THREADS6 / WARPSIZE];
+
 
   #if USE_QUAD
     __local volatile real quadXX[MAXDEPTH * THREADS6 / WARPSIZE];
@@ -1142,12 +1134,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
   #endif /* USE_QUAD */
 
-    __local volatile real dq[MAXDEPTH * THREADS6 / WARPSIZE];
 
-    /* Used by the fake thread voting function.
-       We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
-     */
-    __local volatile int allBlock[THREADS6];
 
     /* Excess threads will "die", however their slots in the
      * fake warp vote are still counted, but not set,

@@ -37,7 +37,7 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
 cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di);
 cl_int nbLoadKernels(const NBodyCtx* ctx, NBodyState* st);
 cl_int nbCreateKernels(NBodyState* st);
-cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, NBodyState* st);
+cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint nbody);
 
 cl_int nbSetInitialTreeStatus(NBodyState* st);
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st);
