@@ -29,7 +29,7 @@
 extern const unsigned char nbody_kernels_cl[];
 extern const size_t nbody_kernels_cl_len;
 
-/* CHECKME: Padding between these fields might be a good idea */
+
 typedef struct NBODY_ALIGN
 {
     real radius;
@@ -161,6 +161,14 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
     ws->factors[4] = 1;  /* Also must be 1 for the same reason */
     ws->factors[5] = 1;
     ws->factors[6] = 1;
+
+    ws->threads[0] = 64;
+    ws->threads[1] = 64;
+    ws->threads[2] = 64;
+    ws->threads[3] = 64;
+    ws->threads[4] = 64;
+    ws->threads[5] = 64;
+    ws->threads[6] = 64;
 
     if (di->devType == CL_DEVICE_TYPE_CPU)
     {
@@ -938,7 +946,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 }
 
 /* Run force calculation and integration kernels */
-static cl_int nbExecuteForceKernels(NBodyState* st)
+static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 {
     cl_int err;
     size_t chunk;
@@ -948,7 +956,6 @@ static cl_int nbExecuteForceKernels(NBodyState* st)
     size_t nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) st->nbody, ws->global[5]);
     cl_int upperBound = st->ignoreResponsive ? st->nbody : (cl_int) ws->global[5];
     size_t offset[1] = { 0 };
-    cl_event integrateEv;
     cl_kernel forceKern = st->usesExact ? kernels->forceCalculation_Exact : kernels->forceCalculation;
 
 
@@ -978,13 +985,18 @@ static cl_int nbExecuteForceKernels(NBodyState* st)
     ws->chunkTimings[5] = ws->timings[5] / (double) nChunk;
 
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
-                                 NULL, &ws->global[6], &ws->local[6],
-                                 0, NULL, &integrateEv);
-    if (err != CL_SUCCESS)
-        return err;
+    if (mw_likely(updateState))
+    {
+        cl_event integrateEv;
 
-    ws->timings[6] += waitReleaseEventWithTime(integrateEv);
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
+                                     NULL, &ws->global[6], &ws->local[6],
+                                     0, NULL, &integrateEv);
+        if (err != CL_SUCCESS)
+            return err;
+
+        ws->timings[6] += waitReleaseEventWithTime(integrateEv);
+    }
 
     return CL_SUCCESS;
 }
@@ -1008,7 +1020,7 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
         }
     }
 
-    err = nbExecuteForceKernels(st);
+    err = nbExecuteForceKernels(st, CL_TRUE);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error executing force kernels");
@@ -1052,7 +1064,7 @@ static cl_int nbRunPreStep(NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    err = nbExecuteForceKernels(st);
+    err = nbExecuteForceKernels(st, CL_FALSE);
     if (err != CL_SUCCESS)
         return err;
 
