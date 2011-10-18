@@ -116,22 +116,26 @@ typedef float4 real4;
 #define isCell(n) ((n) >= NBODY)
 
 
-/* FIXME: This needs to be the same as on the host */
-typedef struct __attribute__((aligned))
+/* This needs to be the same as on the host */
+typedef struct __attribute__((aligned(64)))
 {
     volatile real radius;
     volatile int bottom;
     volatile int maxDepth;
+    volatile unsigned int blkCnt;
+
     volatile int errorCode;
     volatile int assertionLine;
-    volatile unsigned int blkCnt;
+
+    char _pad[64 - (sizeof(real) - 5 * sizeof(int))];
+
+    struct
+    {
+        volatile real f[32];
+        volatile int i[64];
+    } debug;
 } TreeStatus;
 
-typedef struct
-{
-    volatile real f[32];
-    volatile int i[64];
-} Debug;
 
 
 typedef struct
@@ -285,22 +289,23 @@ inline real4 externalAcceleration(real x, real y, real z)
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
     RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
     RVPtr _accX, RVPtr _accY, RVPtr _accZ,              \
+    RVPtr _mass,                                        \
                                                         \
     RVPtr _maxX, RVPtr _maxY, RVPtr _maxZ,              \
     RVPtr _minX, RVPtr _minY, RVPtr _minZ,              \
                                                         \
-    RVPtr _mass,                                        \
     IVPtr _start, IVPtr _count,                         \
     IVPtr _child, IVPtr _sort,                          \
-    __global volatile TreeStatus* restrict _treeStatus, \
                                                         \
-    int updateVel,                                      \
-    int maxNBody,                                       \
     RVPtr _critRadii,                                   \
-    __global volatile Debug* _debug,                    \
+                                                        \
     RVPtr _quadXX, RVPtr _quadXY, RVPtr _quadXZ,        \
     RVPtr _quadYY, RVPtr _quadYZ,                       \
-    RVPtr _quadZZ                                       \
+    RVPtr _quadZZ,                                      \
+                                                        \
+    __global volatile TreeStatus*  _treeStatus,         \
+    int maxNBody,                                       \
+    int updateVel                                       \
     )
 
 

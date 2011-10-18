@@ -224,7 +224,6 @@ typedef struct
     cl_mem max[3];
     cl_mem min[3];
     cl_mem masses;
-    cl_mem treeStatus;
 
     cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
     cl_mem count;
@@ -234,14 +233,14 @@ typedef struct
     cl_mem critRadii; /* Used by the alternative cell opening criterion.
                          Unnecessary for BH86. */
 
-    cl_mem debug;
-
     struct
     {
         cl_mem xx, xy, xz;
         cl_mem yy, yz;
         cl_mem zz;
     } quad;
+
+    cl_mem treeStatus;
 } NBodyBuffers;
 
 
