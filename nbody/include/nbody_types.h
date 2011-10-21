@@ -345,10 +345,20 @@ typedef struct
 typedef struct
 {
     int useBin;
+    unsigned int rawCount;
     real lambda;
-    real err;
     real count;
+    real err;
 } HistData;
+
+typedef struct
+{
+    unsigned int nBin;
+    unsigned int totalNum;
+    int hasRawCounts;
+    HistogramParams params;
+    HistData data[1];
+} NBodyHistogram;
 
 
 /* The context tracks settings of the simulation.  It should be set
