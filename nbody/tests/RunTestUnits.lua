@@ -322,6 +322,8 @@ function runCheckTest(testName, seed, nbody, ...)
    ret = runFullTest(testName, seed, nbody, ...)
    result = findLikelihood(ret)
 
+   io.stdout:write(ret)
+
    if generatingResults then
       io.stderr:write(string.format("Test result: %d, %d, %s: %20.15f\n", nbody, seed, testName, result))
       return false
