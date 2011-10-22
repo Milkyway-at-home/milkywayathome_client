@@ -172,6 +172,12 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
 
+    if (st->usesExact)
+    {
+        mw_printf("Visualizer broken with Exact\n");
+        return;
+    }
+
     pid = fork();
     if (pid != 0)  /* Parent */
         return;

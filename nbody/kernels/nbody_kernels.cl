@@ -1399,26 +1399,130 @@ __kernel void NBODY_KERNEL(integration)
     /* Iterate over all bodies assigned to thread */
     for (int i = (int) get_global_id(0); i < NBODY; i += inc)
     {
-        real dvx = _accX[i] * (0.5 * TIMESTEP);
-        real dvy = _accY[i] * (0.5 * TIMESTEP);
-        real dvz = _accZ[i] * (0.5 * TIMESTEP);
+        real px = _posX[i];
+        real py = _posY[i];
+        real pz = _posZ[i];
 
-        real vhx = _velX[i] + dvx;
-        real vhy = _velY[i] + dvy;
-        real vhz = _velZ[i] + dvz;
+        real ax = _accX[i];
+        real ay = _accY[i];
+        real az = _accZ[i];
 
-        _posX[i] += vhx * TIMESTEP;
-        _posY[i] += vhy * TIMESTEP;
-        _posZ[i] += vhz * TIMESTEP;
+        real vx = _velX[i];
+        real vy = _velY[i];
+        real vz = _velZ[i];
 
-        _velX[i] = vhx + dvx;
-        _velY[i] = vhy + dvy;
-        _velZ[i] = vhz + dvz;
+
+        real dvx = (0.5 * TIMESTEP) * ax;
+        real dvy = (0.5 * TIMESTEP) * ay;
+        real dvz = (0.5 * TIMESTEP) * az;
+
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
+
+        px = mad(TIMESTEP, vx, px);
+        py = mad(TIMESTEP, vy, py);
+        pz = mad(TIMESTEP, vz, pz);
+
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
+
+
+        _posX[i] = px;
+        _posY[i] = py;
+        _posZ[i] = pz;
+
+        _velX[i] = vx;
+        _velY[i] = vy;
+        _velZ[i] = vz;
     }
 }
 
-
+__attribute__ ((reqd_work_group_size(THREADS8, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation_Exact)
 {
+    __local real xs[THREADS8];
+    __local real ys[THREADS8];
+    __local real zs[THREADS8];
+    __local real ms[THREADS8];
+
+    for (int i = get_global_id(0); i < maxNBody; i += get_local_size(0) * get_num_groups(0))
+    {
+        real px = _posX[i];
+        real py = _posY[i];
+        real pz = _posZ[i];
+
+        real dax = _accX[i];
+        real day = _accY[i];
+        real daz = _accZ[i];
+
+        real dvx = _velX[i];
+        real dvy = _velY[i];
+        real dvz = _velZ[i];
+
+
+
+        real ax = 0.0;
+        real ay = 0.0;
+        real az = 0.0;
+
+        int nTile = NBODY / THREADS8;
+        for (int j = 0; j < nTile; ++j)
+        {
+            int idx = THREADS8 * j + get_local_id(0);
+            xs[get_local_id(0)] = _posX[idx];
+            ys[get_local_id(0)] = _posY[idx];
+            zs[get_local_id(0)] = _posZ[idx];
+
+            ms[get_local_id(0)] = _mass[idx];
+
+            /* FIXME: Prevent condition barrier for indivisible numbers of bodies */
+            barrier(CLK_LOCAL_MEM_FENCE);
+
+            /* WTF: This doesn't happen the correct number of times unless unrolling forced */
+            #pragma unroll 8
+            for (int k = 0; k < THREADS8; ++k)
+            {
+                real dx = xs[k] - px;
+                real dy = ys[k] - py;
+                real dz = zs[k] - pz;
+
+                real rSq = mad(dz, dz, mad(dy, dy, dx * dx)) + EPS2;
+                real r = sqrt(rSq);
+                real ai = ms[k] / (r * rSq);
+
+                ax = mad(ai, dx, ax);
+                ay = mad(ai, dy, ay);
+                az = mad(ai, dz, az);
+            }
+
+            barrier(CLK_LOCAL_MEM_FENCE);
+        }
+
+        if (USE_EXTERNAL_POTENTIAL)
+        {
+            real4 acc = externalAcceleration(px, py, pz);
+
+            ax += acc.x;
+            ay += acc.y;
+            az += acc.z;
+        }
+
+        if (updateVel)
+        {
+            dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
+            dvy = mad(0.5 * TIMESTEP, ay - day, dvy);
+            dvz = mad(0.5 * TIMESTEP, az - daz, dvz);
+
+            _velX[i] = dvx;
+            _velY[i] = dvy;
+            _velZ[i] = dvz;
+        }
+
+        _accX[i] = ax;
+        _accY[i] = ay;
+        _accZ[i] = az;
+    }
 }
 

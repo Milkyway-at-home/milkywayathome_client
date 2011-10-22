@@ -267,14 +267,14 @@ typedef struct
 
 typedef struct
 {
-    size_t factors[7];
-    size_t threads[7];
-    double timings[7];        /* In a single iteration */
-    double chunkTimings[7];   /* Average time per chunk */
-    double kernelTimings[7];  /* Running totals */
+    size_t factors[8];
+    size_t threads[8];
+    double timings[8];        /* In a single iteration */
+    double chunkTimings[8];   /* Average time per chunk */
+    double kernelTimings[8];  /* Running totals */
 
-    size_t global[7];
-    size_t local[7];
+    size_t global[8];
+    size_t local[8];
 } NBodyWorkSizes;
 
 

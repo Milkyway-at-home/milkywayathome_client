@@ -171,10 +171,6 @@ if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
 endif()
 
-if(SEPARATION_CAL)
-  set(MILKYWAY_CAL ON)
-endif()
-
 option(NBODY
         "Build the n-body code" ON)
 
@@ -217,6 +213,7 @@ set(gcc_warnings "-Wall"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
+                 "-Wno-psabi"
                #  "-Wsuggest-attribute=pure"
                #  "-Wsuggest-attribute=const"
                #  "-Wsuggest-attribute=noreturn"

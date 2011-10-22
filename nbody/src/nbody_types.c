@@ -209,12 +209,6 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
         return NBODY_UNSUPPORTED;
     }
 
-    if (ctx->criterion == Exact)
-    {
-        mw_printf("Exact OpenCL N-body unimplemented\n");
-        return NBODY_UNIMPLEMENTED;
-    }
-
     st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
     st->reportProgress = clr->reportProgress;
