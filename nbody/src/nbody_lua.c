@@ -120,7 +120,7 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
     return luaSt;
 }
 
-static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
+static int nbEvaluateContext(lua_State* luaSt, NBodyCtx* ctx)
 {
     NBodyCtx* tmp;
 
@@ -285,7 +285,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
     lua_pop(luaSt, 3);
 }
 
-static int evaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
+static int nbEvaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
 {
     int top;
     Potential* tmp;
@@ -333,10 +333,14 @@ static int evaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
     return 0;
 }
 
-static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
+int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp)
 {
     HistogramParams* tmp;
-    int rc = 0;
+
+    if (!luaSt)
+    {
+        return 1;
+    }
 
     getHistogramFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
@@ -346,15 +350,35 @@ static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
     }
 
     tmp = expectHistogramParams(luaSt, lua_gettop(luaSt));
-    if (!tmp)
-        rc = 1;
-    else
+    if (tmp)
+    {
         *hp = *tmp;
+    }
+
     lua_pop(luaSt, 1);
+    return (tmp == NULL);
+}
+
+/* Test that the histogram params in the input from the file are OK
+ * for file verification */
+int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
+{
+    lua_State* luaSt;
+    int rc;
+
+    luaSt = nbOpenLuaStateWithScript(nbf);
+    if (!luaSt)
+    {
+        return 1;
+    }
+
+    rc = nbEvaluateHistogramParams(luaSt, hp);
+    lua_close(luaSt);
+
     return rc;
 }
 
-static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
+static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
 {
     int level, nResults;
 
@@ -379,21 +403,18 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
     return readModels(luaSt, nResults, n);
 }
 
-static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st, HistogramParams* hp)
+static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
 {
     Body* bodies;
     int nbody;
 
-    if (evaluateContext(luaSt, ctx))
+    if (nbEvaluateContext(luaSt, ctx))
         return 1;
 
-    if (evaluatePotential(luaSt, ctx))
+    if (nbEvaluatePotential(luaSt, ctx))
         return 1;
 
-    if (evaluateHistogram(luaSt, hp))
-        return 1;
-
-    bodies = evaluateBodies(luaSt, ctx, &nbody);
+    bodies = nbEvaluateBodies(luaSt, ctx, &nbody);
     if (!bodies)
         return 1;
 
@@ -402,7 +423,7 @@ static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState
     return 0;
 }
 
-int nbSetup(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
+int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     int rc;
     lua_State* luaSt;
@@ -411,7 +432,7 @@ int nbSetup(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags
     if (!luaSt)
         return 1;
 
-    rc = evaluateInitialNBodyState(luaSt, ctx, st, hp);
+    rc = nbEvaluateInitialNBodyState(luaSt, ctx, st);
     lua_close(luaSt);
 
     return rc;

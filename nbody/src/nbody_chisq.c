@@ -484,18 +484,38 @@ static NBodyHistogram* nbReadHistogram(const char* histogramFile)
     return histogram;
 }
 
+
 /* Calculate the likelihood from the final state of the simulation */
-real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp)
+real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     real chisqval = NAN;
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
+    lua_State* luaSt = NULL;
+    HistogramParams hp;
+
+
+    luaSt = nbOpenLuaStateWithScript(nbf);
+    if (!luaSt)
+    {
+        return NAN;
+    }
+
+    if (nbEvaluateHistogramParams(luaSt, &hp))
+    {
+        lua_close(luaSt);
+        return NAN;
+    }
+
+    lua_close(luaSt);
+
+
 
     /* Calculate the bounds of the bin range, making sure to use a
      * fixed bin size which spans the entire range, and is symmetric
      * around 0 */
 
-    histogram = nbCreateHistogram(ctx, st, hp);
+    histogram = nbCreateHistogram(ctx, st, &hp);
     if (!histogram)
     {
         mw_printf("Failed to create histogram\n");

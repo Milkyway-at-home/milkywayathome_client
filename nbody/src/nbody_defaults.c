@@ -44,8 +44,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .freqout         */  DEFAULT_OUTPUT_FREQUENCY,
     /* .nStep           */  0,
 
-    /* .pot             */  EMPTY_POTENTIAL,
-    /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS
+    /* .pot             */  EMPTY_POTENTIAL
 };
 
 const HistogramParams defaultHistogramParams =

@@ -26,14 +26,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static void nbPrintBodyOutputHeader(FILE* f, int cartesian)
 {
-    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
+    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s\n",
             cartesian ? "x" : "l",
             cartesian ? "y" : "b",
             cartesian ? "z" : "r",
             "v_x",
             "v_y",
-            "v_z",
-            "lambda"
+            "v_z"
         );
 }
 
@@ -43,33 +42,26 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
     Body* p;
     mwvector lbr;
     const Body* endp = st->bodytab + st->nbody;
-    NBHistTrig ht;
-    real lambda;
 
-    nbGetHistTrig(&ht, &ctx->histogramParams);
     nbPrintBodyOutputHeader(f, nbf->outputCartesian);
 
     for (p = st->bodytab; p < endp; p++)
     {
-        lambda = nbXYZToLambda(&ht, Pos(p), ctx->sunGCDist);
-
         fprintf(f, "%8d,", ignoreBody(p));  /* Print if model it belongs to is ignored */
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)),
-                    lambda);
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)));
         }
         else
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)),
-                    lambda);
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)));
         }
     }
 

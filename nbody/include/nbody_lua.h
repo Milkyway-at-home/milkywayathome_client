@@ -30,11 +30,12 @@ extern "C" {
 
 int nbOpenPotentialEvalStatePerThread(NBodyState* st, const NBodyFlags* nbf);
 void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut);
-
+int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp);
+int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp);
 
 lua_State* nbLuaOpen(mwbool debug);
 lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf);
-int nbSetup(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf);
+int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
 #ifdef __cplusplus
 }

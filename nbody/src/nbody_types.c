@@ -503,7 +503,6 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && feqWithNan(ctx1->checkpointT, ctx2->checkpointT)
         && feqWithNan(ctx1->freqOut, ctx2->freqOut)
-        && equalHistogramParams(&ctx1->histogramParams, &ctx2->histogramParams)
         && equalPotential(&ctx1->pot, &ctx2->pot);
 }
 

@@ -150,7 +150,7 @@ static NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyF
 
 /* If possible, resume from a checkpoint. Otherwise do the necessary
  * initialization for a new run */
-static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
+static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     if (nbResolveCheckpoint(st, nbf->checkpointFileName))
     {
@@ -161,7 +161,7 @@ static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, HistogramPara
     /* If the checkpoint exists (and we want to use it), try to use it */
     if (nbf->ignoreCheckpoint || !nbResolvedCheckpointExists(st))
     {
-        if (nbSetup(ctx, st, hp, nbf))
+        if (nbSetup(ctx, st, nbf))
         {
             mw_printf("Failed to read input parameters file\n");
             return NBODY_PARAM_FILE_ERROR;
@@ -221,27 +221,28 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->enableProfiling = TRUE;
 }
 
+/* Try evaluating everything in the file to make sure it's OK */
 int nbVerifyFile(const NBodyFlags* nbf)
 {
-    int rc;
+    int rc = 0;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_NBODYSTATE;
+    HistogramParams hp;
 
-    rc = nbSetup(&ctx, &st, &ctx.histogramParams, nbf);
-    if (rc)
+    if (nbSetup(&ctx, &st, nbf) || nbHistogramParamsCheck(nbf, &hp))
     {
         mw_printf("File failed\n");
+        destroyNBodyState(&st);
+        return FALSE;
     }
     else
     {
         mw_printf("File is OK\n");
         printNBodyCtx(&ctx);
-        printHistogramParams(&ctx.histogramParams);
+        printHistogramParams(&hp);
+        destroyNBodyState(&st);
+        return TRUE;
     }
-
-    destroyNBodyState(&st);
-
-    return rc;
 }
 
 
@@ -276,7 +277,7 @@ int nbMain(const NBodyFlags* nbf)
         return NBODY_USER_ERROR;
     }
 
-    rc = nbResumeOrNewRun(ctx, st, &ctx->histogramParams, nbf);
+    rc = nbResumeOrNewRun(ctx, st, nbf);
     if (nbStatusIsFatal(rc))
     {
         return rc;
@@ -343,7 +344,7 @@ int nbMain(const NBodyFlags* nbf)
     if (nbf->histogramFileName || nbf->histoutFileName)  /* We want to match or produce a histogram */
     {
         /* Get the likelihood */
-        chisq = nbChisq(ctx, st, nbf, &ctx->histogramParams);
+        chisq = nbChisq(ctx, st, nbf);
     }
 
     if (nbf->histogramFileName) /* The likelihood only means something when matching a histogram */
