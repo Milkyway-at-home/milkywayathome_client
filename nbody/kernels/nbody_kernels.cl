@@ -900,7 +900,7 @@ inline void quadCalc(QuadMatrix* quad, real4 chCM, real4 kp)
     dr.y = chCM.y - kp.y;
     dr.z = chCM.z - kp.z;
 
-    real drSq = sqr(dr.x) + sqr(dr.y) + sqr(dr.z);
+    real drSq = mad(dr.z, dr.z, mad(dr.y, dr.y, dr.x * dr.x));
 
     quad->xx = chCM.w * (3.0 * (dr.x * dr.x) - drSq);
     quad->xy = chCM.w * (3.0 * (dr.x * dr.y));
@@ -1273,7 +1273,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         {
                             rSq += EPS2;
                             real r = sqrt(rSq);   /* Compute distance with softening */
-                            real ai = nm[base] / (r * r * r);
+                            real ai = nm[base] / (rSq * r);
 
                             ax = mad(ai, dx, ax);
                             ay = mad(ai, dy, ay);
