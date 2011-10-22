@@ -1439,6 +1439,7 @@ __kernel void NBODY_KERNEL(integration)
     }
 }
 
+/* EFFNBODY must be divisible by workgroup size to prevent conditional barrier */
 __attribute__ ((reqd_work_group_size(THREADS8, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation_Exact)
 {
@@ -1467,7 +1468,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
         real ay = 0.0;
         real az = 0.0;
 
-        int nTile = NBODY / THREADS8;
+        int nTile = EFFNBODY / THREADS8;
         for (int j = 0; j < nTile; ++j)
         {
             int idx = THREADS8 * j + get_local_id(0);
@@ -1477,10 +1478,10 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
 
             ms[get_local_id(0)] = _mass[idx];
 
-            /* FIXME: Prevent condition barrier for indivisible numbers of bodies */
             barrier(CLK_LOCAL_MEM_FENCE);
 
-            /* WTF: This doesn't happen the correct number of times unless unrolling forced */
+            /* WTF: This doesn't happen the correct number of times
+             * unless unrolling forced with on AMD */
             #pragma unroll 8
             for (int k = 0; k < THREADS8; ++k)
             {

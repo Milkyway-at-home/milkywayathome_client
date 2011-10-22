@@ -35,6 +35,8 @@ extern "C" {
 
 cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
 cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di);
+cl_int nbFindEffectiveNBody(const NBodyWorkSizes* ws, cl_bool exact, cl_int nbody);
+
 cl_int nbLoadKernels(const NBodyCtx* ctx, NBodyState* st);
 cl_int nbCreateKernels(NBodyState* st);
 cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint nbody);
@@ -50,7 +52,6 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags*
 
 cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn);
 void nbPrintKernelTimings(const NBodyState* st);
-
 
 #ifdef __cplusplus
 }

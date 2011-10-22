@@ -243,7 +243,6 @@ static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
     return clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, flags, 0,
                               size,
                               0, NULL, NULL, NULL);
-
 }
 
 static void nbPrintDebug(const TreeStatus* ts)
@@ -483,6 +482,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                #endif
 
                  "-D NBODY=%d "
+                 "-D EFFNBODY=%d "
                  "-D NNODE=%u "
                  "-D WARPSIZE=%u "
 
@@ -541,6 +541,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  DOUBLEPREC,
 
                  st->nbody,
+                 st->effNBody,
                  nbFindNNode(di, st->nbody),
                  di->warpSize,
 
@@ -707,7 +708,10 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
 
     p = mapBuffer(ci, mem, CL_MAP_READ, n * (type == 0 ? sizeof(real) : sizeof(int)));
     if (!p)
+    {
+        mw_printf("Fail to map buffer for printing\n");
         return MW_CL_ERROR;
+    }
 
     if (type == 0)
     {
@@ -734,7 +738,8 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
     cl_int err;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
-    cl_uint nNode = nbFindNNode(&ci->di, st->nbody);
+    cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
+
 
     if (children)
     {
@@ -852,7 +857,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     CLInfo* ci = st->ci;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-
+    cl_int effNBody = st->effNBody;
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
@@ -862,15 +867,15 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
     ws->timings[0] += waitReleaseEventWithTime(boxEv);
 
-    nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[1]);
-    upperBound = st->ignoreResponsive ? st->nbody : (int) ws->global[1];
+    nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) effNBody, ws->global[1]);
+    upperBound = st->ignoreResponsive ? effNBody : (int) ws->global[1];
     offset[0] = 0;
     for (chunk = 0; chunk < nChunk; ++chunk)
     {
         cl_event ev;
 
-        if (upperBound > st->nbody)
-            upperBound = st->nbody;
+        if (upperBound > effNBody)
+            upperBound = effNBody;
 
         err = clSetKernelArg(kernels->buildTree, 28, sizeof(int), &upperBound);
         if (err != CL_SUCCESS)
@@ -940,7 +945,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     CLInfo* ci = st->ci;
     NBodyKernels* kernels = st->kernels;
     NBodyWorkSizes* ws = st->workSizes;
-
+    cl_int effNBody = st->effNBody;
 
 
     if (st->usesExact)
@@ -956,8 +961,8 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
         local[0] = ws->local[5];
     }
 
-    nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) st->nbody, global[0]);
-    upperBound = st->ignoreResponsive ? st->nbody : (cl_int) global[0];
+    nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) effNBody, global[0]);
+    upperBound = st->ignoreResponsive ? effNBody : (cl_int) global[0];
 
 
     for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += global[0])
@@ -965,7 +970,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
         cl_event ev;
         double t;
 
-        upperBound = (upperBound > st->nbody) ? st->nbody : upperBound;
+        upperBound = (upperBound > effNBody) ? effNBody : upperBound;
 
         err = clSetKernelArg(forceKern, 28, sizeof(cl_int), &upperBound);
         if (err != CL_SUCCESS)
@@ -1186,19 +1191,36 @@ static cl_uint nbFindInc(cl_uint warpSize, cl_uint nbody)
     return (nbody + warpSize - 1) & (-warpSize);
 }
 
+/* In some cases to avoid conditionally barriering we want to round up to nearest workgroup size.
+   Find the least common multiple necessary for kernels that need to avoid the issue
+ */
+cl_int nbFindEffectiveNBody(const NBodyWorkSizes* workSizes, cl_bool exact, cl_int nbody)
+{
+    if (exact)
+    {
+        /* Exact force kernel needs this */
+        return mwNextMultiple((cl_int) workSizes->local[7], nbody);
+    }
+    else
+    {
+        /* Maybe tree construction will need this later */
+        return nbody;
+    }
+}
+
 cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_uint i;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
-    cl_uint nNode = nbFindNNode(&ci->di, st->nbody);
+    cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
 
     for (i = 0; i < 3; ++i)
     {
         nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-        nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
-        nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
+        nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
+        nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
 
         if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
         {
@@ -1233,7 +1255,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
         }
     }
 
-    massSize = st->usesExact ? st->nbody * sizeof(real) : (nNode + 1) * sizeof(real);
+    massSize = st->usesExact ? st->effNBody * sizeof(real) : (nNode + 1) * sizeof(real);
     nbb->masses = mwCreateZeroReadWriteBuffer(ci, massSize);
     if (!nbb->masses)
     {
@@ -1252,7 +1274,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     {
         nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
         nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
-        nbb->sort = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(cl_int));
+        nbb->sort = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(cl_int));
         nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(cl_int));
 
         if (!nbb->start || !nbb->count || !nbb->sort || !nbb->child)

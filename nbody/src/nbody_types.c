@@ -228,6 +228,8 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (nbSetThreadCounts(st->workSizes, &st->ci->di) || nbSetWorkSizes(st->workSizes, &st->ci->di))
         return NBODY_ERROR;
 
+    st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);
+
     err = nbLoadKernels(ctx, st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;

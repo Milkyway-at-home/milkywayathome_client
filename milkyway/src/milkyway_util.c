@@ -692,3 +692,22 @@ void mwPerrorW32(const char* fmt, ...)
 #endif /* _WIN32 */
 
 
+uint64_t mwEuclidGCD(uint64_t a, uint64_t b)
+{
+    uint64_t t = 0;
+
+    while (b > 0)
+    {
+        t = b;
+        b = a % b;
+        a = t;
+    }
+
+    return t;
+}
+
+uint64_t mwLCM(uint64_t a, uint64_t b)
+{
+    return a * (b / mwEuclidGCD(a, b));
+}
+

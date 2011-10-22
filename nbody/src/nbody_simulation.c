@@ -224,7 +224,6 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 /* Try evaluating everything in the file to make sure it's OK */
 int nbVerifyFile(const NBodyFlags* nbf)
 {
-    int rc = 0;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_NBODYSTATE;
     HistogramParams hp;

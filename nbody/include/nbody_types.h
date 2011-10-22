@@ -298,6 +298,7 @@ typedef struct NBODY_ALIGN
 
     unsigned int step;
     int nbody;
+    int effNBody;            /* Sometimes needed rounded up number of bodies. >= nbody are just padding */
     int treeIncest;          /* Tree incest has occured */
     int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
@@ -324,7 +325,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
