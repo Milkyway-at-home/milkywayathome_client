@@ -174,16 +174,13 @@ int nbglLoadStaticSceneFromFile(const char* filename)
             rc = fscanf(f, " , %lf \n", &lambda);
             if (rc != 1)
             {
-                rc = fscanf(f, " \n");
+                fscanf(f, " \n");
             }
-            else
-            {
-                assert(line < lnCount);
+            assert(line < lnCount);
 
-                r[line].x = (float) x;
-                r[line].y = (float) y;
-                r[line].z = (float) z;
-            }
+            r[line].x = (float) x;
+            r[line].y = (float) y;
+            r[line].z = (float) z;
         }
         else if (rc != EOF)
         {
@@ -341,7 +338,7 @@ static inline void setIgnoredColor(int ignore)
 }
 
 /* draw stars */
-static void drawPoints(void)
+static void drawParticles(void)
 {
     int i;
     int nbody = scene->nbody;
@@ -559,7 +556,7 @@ static void drawGLScene(void)
 
         if (scene->drawParticles)
         {
-            drawPoints();
+            drawParticles();
         }
 
         if (scene->drawOrbitTrace)
