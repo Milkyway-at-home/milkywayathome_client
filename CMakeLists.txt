@@ -23,6 +23,7 @@ project(milkywayathome_client)
 enable_testing()
 
 include(CMakeDependentOption)
+include(CheckLibraryExists)
 
 # Find custom cmake modules
 set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
@@ -62,6 +63,8 @@ include(Profiling)
 include(BOINCPaths)
 
 check_function_exists(stpcpy HAVE_STPCPY)
+check_library_exists(rt shm_open "" HAVE_LIBRT)
+
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
 mark_as_advanced(MSVC_USE_STATIC_CRT)
