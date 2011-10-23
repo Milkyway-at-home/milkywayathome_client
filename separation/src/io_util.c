@@ -228,6 +228,8 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     mw_begin_critical_section();
 
+    fflush(stdout);
+
     /* Print integrals */
     mw_printf("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
     mw_printf("<stream_integral> ");
@@ -244,6 +246,8 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     /* Print overall likelihood */
     mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+
+    fflush(stderr);
 
     mw_end_critical_section();
 }
