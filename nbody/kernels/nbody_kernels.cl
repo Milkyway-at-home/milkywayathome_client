@@ -1356,6 +1356,15 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 --depth;  /* Done with this level */
             }
 
+            real accX = _accX[i];
+            real accY = _accY[i];
+            real accZ = _accZ[i];
+
+            real vx = _velX[i];
+            real vy = _velY[i];
+            real vz = _velZ[i];
+
+
             if (USE_EXTERNAL_POTENTIAL)
             {
                 real4 acc = externalAcceleration(px, py, pz);
@@ -1365,18 +1374,21 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 az += acc.z;
             }
 
-            if (updateVel)
-            {
-                _velX[i] += (ax - _accX[i]) * (0.5 * TIMESTEP);
-                _velY[i] += (ay - _accY[i]) * (0.5 * TIMESTEP);
-                _velZ[i] += (az - _accZ[i]) * (0.5 * TIMESTEP);
-            }
-
+            vx = mad(0.5 * TIMESTEP, ax - accX, vx);
+            vy = mad(0.5 * TIMESTEP, ay - accY, vy);
+            vz = mad(0.5 * TIMESTEP, az - accZ, vz);
 
             /* Save computed acceleration */
             _accX[i] = ax;
             _accY[i] = ay;
             _accZ[i] = az;
+
+            if (updateVel)
+            {
+                _velX[i] = vx;
+                _velY[i] = vy;
+                _velZ[i] = vz;
+            }
 
             if (!skipSelf)
             {
