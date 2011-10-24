@@ -104,11 +104,28 @@ static int pushConstants(lua_State* luaSt)
     return 0;
 }
 
+static int tryEvaluateScript(lua_State* luaSt, const char* script, const SeparationFlags* sf)
+{
+    if (script[0] == '\0')
+    {
+        mw_printf("Parameter file '%s' is empty\n", sf->ap_file);
+        return 1;
+    }
+
+    if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->nForwardedArgs))
+    {
+        mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", sf->ap_file);
+        return 1;
+    }
+
+    return 0;
+}
 
 /* Open a lua_State, bind run information such as server arguments and
  * BOINC status, and evaluate input script. */
 static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
 {
+    int failed;
     char* script;
     lua_State* luaSt;
 
@@ -124,14 +141,14 @@ static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
         return NULL;
     }
 
-    if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->nForwardedArgs))
-    {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", sf->ap_file);
-        lua_close(luaSt);
-        luaSt = NULL;
-    }
-
+    failed = tryEvaluateScript(luaSt, script, sf);
     free(script);
+
+    if (failed)
+    {
+        lua_close(luaSt);
+        return NULL;
+    }
 
     return luaSt;
 }

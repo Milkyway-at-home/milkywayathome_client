@@ -1,23 +1,26 @@
 /*
-Copyright 2010, 2011 Matthew Arsenault, Travis Desell, Dave Przybylo,
-Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
 
 #ifndef DOUBLEPREC
   #error DOUBLEPREC not defined
@@ -174,18 +177,22 @@ __kernel void probabilities(__global real* restrict bgOut,
         real rg = mw_fsqrt(tmp);
         real rs = rg + R0;
 
-      #if FAST_H_PROB
-        bg_prob += mw_div(rPt.y, rg * cube(rs));
-      #else
-        bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
-      #endif /* FAST_H_PROB */
+        if (FAST_H_PROB)
+        {
+            bg_prob += mw_div(rPt.y, rg * cube(rs));
+        }
+        else
+        {
+            bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+        }
 
-      #if AUX_BG_PROFILE
-        /* Currently not used */
-        /* Add a quadratic term in g to the Hernquist profile */
-        real g = rc.y + sg_dx[i];
-        bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
-      #endif /* AUX_BG_PROFILE */
+        if (AUX_BG_PROFILE)
+        {
+            /* Currently not used */
+            /* Add a quadratic term in g to the Hernquist profile */
+            real g = rc.y + sg_dx[i];
+            bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
+        }
 
         #pragma unroll NSTREAM
         for (int j = 0; j < NSTREAM; ++j)

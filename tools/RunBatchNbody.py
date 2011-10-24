@@ -133,10 +133,10 @@ def realMain(outDir, inputFile, inputHistogram, seed=None, platform=0, device=No
         if platform:
             nbodyCmd.extend(["--platform", str(platform)])
 
-        if device:
-            nbodyCmd.extend(["--device",  str(device)])
-        else:
+        if device is None:
             nbodyCmd.append("--disable-opencl")
+        else:
+            nbodyCmd.extend(["--device",  str(device)])
 
 
         nbodyCmd.extend(extraArgs)
