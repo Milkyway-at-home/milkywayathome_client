@@ -30,9 +30,6 @@ extern "C" {
 #endif
 
 
-
-#define NBODY_MAXDEPTH 26
-
 cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
 cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx* ctx);
 cl_int nbFindEffectiveNBody(const NBodyWorkSizes* ws, cl_bool exact, cl_int nbody);

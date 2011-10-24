@@ -50,7 +50,6 @@ extern const unsigned char nbody_kernels_cl[];
 extern const size_t nbody_kernels_cl_len;
 
 
-
 static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
 {
     cl_ulong estMaxDepth;
@@ -80,6 +79,7 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     cl_ulong quadPieces = 6 * sizeof(real);
 
     cl_ulong stackItemCount = pos + node + dq;
+
     if (useQuad)
     {
         stackItemCount += quadPieces;
@@ -580,14 +580,14 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  ws->threads[5],
                  ws->threads[6],
                  ws->threads[7],
-                 NBODY_MAXDEPTH,
+                 nbFindMaxDepthForDevice(di, st->workSizes, ctx->useQuad),
 
                  ctx->timestep,
                  ctx->eps2,
                  ctx->theta,
                  ctx->useQuad,
 
-                 /* SEt criterion */
+                 /* Set criterion */
                  ctx->criterion == NewCriterion,
                  ctx->criterion == SW93,
                  ctx->criterion == BH86,
@@ -800,10 +800,12 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
 }
 
 /* Check the error code */
-static cl_bool nbCheckKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
+static cl_bool nbCheckKernelErrorCode(NBodyState* st)
 {
     cl_int err;
     TreeStatus ts;
+    CLInfo* ci = st->ci;
+    NBodyBuffers* nbb = st->nbb;
 
     err = nbReadTreeStatus(&ts, ci, nbb);
     if (mw_unlikely(err != CL_SUCCESS))
@@ -819,7 +821,21 @@ static cl_bool nbCheckKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 
     if (mw_unlikely(ts.errorCode != 0))
     {
-        mw_printf("Kernel reported error: %d (%s)\n", ts.errorCode, showNBodyKernelError(ts.errorCode));
+
+        mw_printf("Kernel reported error: %d ", ts.errorCode);
+
+        if (ts.errorCode > 0)
+        {
+            mw_printf("(%s (%u))\n",
+                      showNBodyKernelError(ts.errorCode),
+                      nbFindMaxDepthForDevice(&ci->di, st->workSizes, st->usesQuad));
+        }
+        else
+        {
+            mw_printf("(%s)\n", showNBodyKernelError(ts.errorCode));
+        }
+
+
         return CL_TRUE;
     }
 
@@ -1122,7 +1138,7 @@ static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
     while (err == CL_SUCCESS && st->step < ctx->nStep)
     {
         st->dirty = TRUE;
-        if (!st->usesExact && nbCheckKernelErrorCode(st->ci, st->nbb))
+        if (!st->usesExact && nbCheckKernelErrorCode(st))
         {
             err = MW_CL_ERROR;
             break;
