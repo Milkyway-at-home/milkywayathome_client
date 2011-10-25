@@ -225,7 +225,7 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
     if (!nbCheckDevCapabilities(&st->ci->di, ctx, st->nbody))
         return NBODY_CAPABILITY_ERROR;
 
-    if (nbSetThreadCounts(st->workSizes, &st->ci->di) || nbSetWorkSizes(st->workSizes, &st->ci->di))
+    if (nbSetThreadCounts(st->workSizes, &st->ci->di, ctx) || nbSetWorkSizes(st->workSizes, &st->ci->di))
         return NBODY_ERROR;
 
     st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);

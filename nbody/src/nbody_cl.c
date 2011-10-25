@@ -157,8 +157,26 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
     return CL_FALSE;
 }
 
+/* CHECKME: May not apply on GT200? */
+static cl_bool nbShouldForceLargeGroup(const DevInfo* di, const NBodyCtx* ctx)
+{
+    return !ctx->useQuad && isNvidiaGPUDevice(di) && hasNvidiaCompilerFlags(di);
+}
+
+static const char* nbMaybeNvMaxRegCount(const DevInfo* di, const NBodyCtx* ctx)
+{
+    if (nbShouldForceLargeGroup(di, ctx))
+    {
+        return "-cl-nv-maxrregcount=32 ";
+    }
+    else
+    {
+        return "";
+    }
+}
+
 /* Return CL_TRUE if some error */
-cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
+cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx* ctx)
 {
     /* Numbers need playing for float and different opening criteria */
 
@@ -218,7 +236,12 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
         ws->threads[2] = 1024;
         ws->threads[3] = 1024;
         ws->threads[4] = 1024;
-        ws->threads[5] = 512;
+
+        /* It's faster to restrain the used number of registers and
+         * get a larger workgroup size, but when using quadrupole
+         * moments this gives a very small constraining maximum depth */
+        ws->threads[5] = nbShouldForceLargeGroup(di, ctx) ? 1024 : 512;
+
         ws->threads[6] = 1024;
         ws->threads[7] = 1024;
     }
@@ -537,7 +560,9 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DHALO_C2=%a "
                  "-DHALO_C3=%a "
 
-                 "%s ",
+                 "%s "
+                 "%s "
+                 ,
                  DOUBLEPREC,
 
                  st->nbody,
@@ -600,7 +625,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.c3,
 
                  /* Misc. other stuff */
-                 hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : ""
+                 hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",
+                 nbMaybeNvMaxRegCount(di, ctx)
             ) < 1)
     {
         mw_printf("Error getting compile flags\n");
