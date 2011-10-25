@@ -267,3 +267,23 @@ function tableToVector(vTable)
    return Vector.create(vTable.x, vTable.y, vTable.z)
 end
 
+
+function os.readProcess(bin, ...)
+   local args, cmd
+   args = table.concat({...}, " ")
+   -- Redirect stderr to stdout, since popen only gets stdout
+   cmd = table.concat({ bin, args, "2>&1" }, " ")
+   local f = assert(io.popen(cmd, "r"))
+   local s = assert(f:read('*a'))
+   f:close()
+   return s
+end
+
+function getExtraNBodyFlags()
+   nbodyFlags = os.getenv("NBODY_FLAGS")
+   if nbodyFlags == nil then
+      nbodyFlags = ""
+   end
+   return nbodyFlags
+end
+

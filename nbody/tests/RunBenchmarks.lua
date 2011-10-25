@@ -6,12 +6,18 @@ local arg = {...}
 
 local nbodyBinary = arg[1]
 
+local nbodyFlags = getExtraNBodyFlags()
+print("NBODY_FLAGS = ", nbodyFlags)
+
+
+
 local sampleSeeds = { "670828913", "886885833", "715144259", "430281807", "543966758" }
 
 local lineSep = string.rep("-", 80) .. "\n"
 
 function runBenchmark(testName, seed, ...)
    local ret
+
    io.stdout:write(lineSep)
    print("Running benchmark " .. testName .. " with seed " .. seed)
    ret = os.readProcess(nbodyBinary,
@@ -23,6 +29,7 @@ function runBenchmark(testName, seed, ...)
                          "--output-cartesian",
                          "--output-file", testName .. ".out",
                          "--seed", seed,
+                         nbodyFlags,
                          table.concat({...}, " ")
                       )
    io.stdout:write(ret)

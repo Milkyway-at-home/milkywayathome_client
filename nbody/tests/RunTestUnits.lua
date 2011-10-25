@@ -1,4 +1,6 @@
 
+require "NBodyTesting"
+
 local arg = {...}
 
 assert(#arg == 5, "Test driver expected 5 arguments got " .. #arg)
@@ -8,6 +10,9 @@ local testDir = arg[2]
 local testName = arg[3]
 local histogramName = arg[4]
 local testBodies = arg[5]
+
+local nbodyFlags = getExtraNBodyFlags()
+print("NBODY_FLAGS = ", nbodyFlags)
 
 
 -- Pick one of the random seeds used in generating these tests
@@ -261,18 +266,6 @@ function getHistogramFilePath(histogramFileName)
    return testDir .. "/" .. histogramFileName
 end
 
-function os.readProcess(bin, ...)
-   local args, cmd
-   args = table.concat({...}, " ")
-   -- Redirect stderr to stdout, since popen only gets stdout
-   cmd = table.concat({ bin, args, "2>&1" }, " ")
-   local f = assert(io.popen(cmd, "r"))
-   local s = assert(f:read('*a'))
-   f:close()
-   return s
-end
-
-
 function runFullTest(testName, seed, ...)
    return os.readProcess(nbodyBinary,
                          "-i", "--checkpoint-interval=-1", -- Disable checkpointing
@@ -281,6 +274,7 @@ function runFullTest(testName, seed, ...)
                          "-f", getTestFilePath(testName),
                          "-h", getHistogramFilePath(histogramName),
                          "--seed", seed,
+                         nbodyFlags,
                          table.concat({...}, " ")
                       )
 end
