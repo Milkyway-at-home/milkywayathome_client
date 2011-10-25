@@ -87,5 +87,8 @@ endforeach()
 
 add_custom_target(context_test COMMAND ${CMAKE_CTEST_COMMAND} -R "context_test")
 
+add_custom_target(bench COMMAND nbody_test_driver "RunBenchmarks.lua"
+                                                  $<TARGET_FILE:milkyway_nbody>
+                                                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
 
 
