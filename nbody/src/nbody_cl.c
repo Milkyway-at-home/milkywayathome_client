@@ -128,31 +128,14 @@ static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
 
 cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 {
+    cl_uint i;
     cl_uint blocks = di->maxCompUnits;
 
-    ws->global[0] = ws->threads[0] * ws->factors[0] * blocks;
-    ws->local[0] = ws->threads[0];
-
-    ws->global[1] = ws->threads[1] * ws->factors[1] * blocks;
-    ws->local[1] = ws->threads[1];
-
-    ws->global[2] = ws->threads[2] * ws->factors[2] * blocks;
-    ws->local[2] = ws->threads[2];
-
-    ws->global[3] = ws->threads[3] * ws->factors[3] * blocks;
-    ws->local[3] = ws->threads[3];
-
-    ws->global[4] = ws->threads[4] * ws->factors[4] * blocks;
-    ws->local[4] = ws->threads[4];
-
-    ws->global[5] = ws->threads[5] * ws->factors[5] * blocks;
-    ws->local[5] = ws->threads[5];
-
-    ws->global[6] = ws->threads[6] * ws->factors[6] * blocks;
-    ws->local[6] = ws->threads[6];
-
-    ws->global[7] = ws->threads[7] * ws->factors[7] * blocks;
-    ws->local[7] = ws->threads[7];
+    for (i = 0; i < 8; ++i)
+    {
+        ws->global[i] = ws->threads[i] * ws->factors[i] * blocks;
+        ws->local[i] = ws->threads[i];
+    }
 
     return CL_FALSE;
 }
@@ -174,7 +157,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     /* Numbers need playing for float and different opening criteria */
 
     ws->factors[0] = 1;
-    ws->factors[1] = 2;
+    ws->factors[1] = 1;
     ws->factors[2] = 1;  /* Must be 1. All workitems must be resident */
     ws->factors[3] = 1;  /* Also must be 1 for the same reason */
     ws->factors[4] = 1;  /* Also must be 1 for the same reason */
@@ -240,6 +223,15 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     }
     else
     {
+        ws->factors[0] = 1;
+        ws->factors[1] = 1;
+        ws->factors[2] = 1;
+        ws->factors[3] = 1;
+        ws->factors[4] = 1;
+        ws->factors[5] = 1;
+        ws->factors[6] = 2;
+        ws->factors[7] = 1;
+
         ws->threads[0] = 256;
         ws->threads[1] = 256;
         ws->threads[2] = 256;
@@ -886,7 +878,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     cl_int err;
     size_t chunk;
     size_t nChunk;
-    int upperBound;
+    cl_int upperBound;
     size_t offset[1];
     cl_event boxEv, sumEv, sortEv, quadEv;
     CLInfo* ci = st->ci;
@@ -900,19 +892,16 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    ws->timings[0] += waitReleaseEventWithTime(boxEv);
-
     nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) effNBody, ws->global[1]);
-    upperBound = st->ignoreResponsive ? effNBody : (int) ws->global[1];
-    offset[0] = 0;
-    for (chunk = 0; chunk < nChunk; ++chunk)
+    upperBound = st->ignoreResponsive ? effNBody : (cl_int) ws->global[1];
+    for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += ws->global[1])
     {
         cl_event ev;
 
         if (upperBound > effNBody)
             upperBound = effNBody;
 
-        err = clSetKernelArg(kernels->buildTree, 28, sizeof(int), &upperBound);
+        err = clSetKernelArg(kernels->buildTree, 28, sizeof(cl_int), &upperBound);
         if (err != CL_SUCCESS)
             return err;
 
@@ -922,21 +911,16 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
         if (err != CL_SUCCESS)
             return err;
 
+        upperBound += (cl_int) ws->global[1];
         ws->timings[1] += waitReleaseEventWithTime(ev);
-
-        upperBound += (int) ws->global[1];
-        offset[0] += ws->global[1];
     }
-    ws->chunkTimings[1] = ws->timings[1] / (double) nChunk;
+
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
                                  NULL, &ws->global[2], &ws->local[2],
                                  0, NULL, &sumEv);
     if (err != CL_SUCCESS)
         return err;
-
-    ws->timings[2] += waitReleaseEventWithTime(sumEv);
-
 
     /* FIXME: This does not work unless ALL of the threads are
      * launched at once. This may be bad when we need
@@ -948,9 +932,6 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    ws->timings[3] += waitReleaseEventWithTime(sortEv);
-
-
     if (st->usesQuad)
     {
         err = clEnqueueNDRangeKernel(ci->queue, kernels->quadMoments, 1,
@@ -958,10 +939,16 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                                      0, NULL, &quadEv);
         if (err != CL_SUCCESS)
             return err;
-
-        ws->timings[4] += waitReleaseEventWithTime(quadEv);
     }
 
+    ws->timings[0] += mwReleaseEventWithTiming(boxEv);
+    ws->chunkTimings[1] = ws->timings[1] / (double) nChunk;
+    ws->timings[2] += waitReleaseEventWithTime(sumEv);
+    ws->timings[3] += waitReleaseEventWithTime(sortEv);
+    if (st->usesQuad)
+    {
+        ws->timings[4] += waitReleaseEventWithTime(quadEv);
+    }
 
     return CL_SUCCESS;
 }
@@ -976,6 +963,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     size_t global[1];
     size_t local[1];
     size_t offset[1];
+    cl_event integrateEv;
     cl_kernel forceKern;
     CLInfo* ci = st->ci;
     NBodyKernels* kernels = st->kernels;
@@ -998,12 +986,9 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 
     nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) effNBody, global[0]);
     upperBound = st->ignoreResponsive ? effNBody : (cl_int) global[0];
-
-
     for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += global[0])
     {
         cl_event ev;
-        double t;
 
         upperBound = (upperBound > effNBody) ? effNBody : upperBound;
 
@@ -1014,28 +999,26 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
         err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
                                      offset, global, local,
                                      0, NULL, &ev);
-
         if (err != CL_SUCCESS)
             return err;
 
-        t = waitReleaseEventWithTime(ev);
-
-        ws->timings[5] += t;
         upperBound += (cl_int) global[0];
+        ws->timings[5] += waitReleaseEventWithTime(ev);
     }
-    ws->chunkTimings[5] = ws->timings[5] / (double) nChunk;
-
 
     if (mw_likely(updateState))
     {
-        cl_event integrateEv;
-
         err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
                                      NULL, &ws->global[6], &ws->local[6],
                                      0, NULL, &integrateEv);
         if (err != CL_SUCCESS)
             return err;
+    }
 
+
+    ws->chunkTimings[5] = ws->timings[5] / (double) nChunk;
+    if (mw_likely(updateState))
+    {
         ws->timings[6] += waitReleaseEventWithTime(integrateEv);
     }
 
@@ -1065,13 +1048,6 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error executing force kernels");
-        return err;
-    }
-
-    err = clFinish(ci->queue);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error waiting for queue");
         return err;
     }
 

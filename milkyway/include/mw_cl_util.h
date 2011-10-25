@@ -36,6 +36,7 @@ cl_ulong mwEventTimeNS(cl_event ev);
 double mwEventTimeMS(cl_event ev);
 double mwEventTime(cl_event ev);
 
+double mwReleaseEventWithTiming(cl_event ev);
 cl_int mwWaitReleaseEvent(cl_event* ev);
 
 #ifdef CL_VERSION_1_1
