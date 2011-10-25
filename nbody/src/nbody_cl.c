@@ -165,14 +165,7 @@ static cl_bool nbShouldForceLargeGroup(const DevInfo* di, const NBodyCtx* ctx)
 
 static const char* nbMaybeNvMaxRegCount(const DevInfo* di, const NBodyCtx* ctx)
 {
-    if (nbShouldForceLargeGroup(di, ctx))
-    {
-        return "-cl-nv-maxrregcount=32 ";
-    }
-    else
-    {
-        return "";
-    }
+    return nbShouldForceLargeGroup(di, ctx) ? "-cl-nv-maxrregcount=32 " : "";
 }
 
 /* Return CL_TRUE if some error */
@@ -227,7 +220,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->factors[2] = 1;
         ws->factors[3] = 1;
         ws->factors[4] = 1;
-        ws->factors[5] = 4;
+        ws->factors[5] = 1;
         ws->factors[6] = 4;
         ws->factors[7] = 4;
 
