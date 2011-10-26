@@ -1431,6 +1431,8 @@ void nbPrintKernelTimings(const NBodyState* st)
               "  quad moments:     %16f   %16f   %15.4f%%\n"
               "  forceCalculation: %16f   %16f   %15.4f%%\n"
               "  integration:      %16f   %16f   %15.4f%%\n"
+              "  ==============================================================================\n"
+              "  total             %16f   %16f   %15.4f%%\n"
               "\n--------------------------------------------------------------------------------\n"
               "\n",
               st->step,
@@ -1440,7 +1442,8 @@ void nbPrintKernelTimings(const NBodyState* st)
               kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
               kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
               kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime,
-              kernelTimings[6] / nStep, kernelTimings[6], 100.0 * kernelTimings[6] / totalTime
+              kernelTimings[6] / nStep, kernelTimings[6], 100.0 * kernelTimings[6] / totalTime,
+              totalTime / nStep,        totalTime,        100.0 * totalTime / totalTime
         );
 }
 
