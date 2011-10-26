@@ -1,22 +1,23 @@
-/* Copyright 2010 Ben Willett, Matthew Arsenault, Boleslaw Szymanski,
-Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and Rensselaer
-Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Ben Willett
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +25,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "nbody_chisq.h"
 #include "milkyway_util.h"
+
+
+typedef enum
+{
+    NBODY_LIKELIHOOD,
+    NBODY_ALT_LIKELIHOOD
+} NBodyLikelihoodMethod;
 
 
 /* From the range of a histogram, find the number of bins */
@@ -69,16 +77,19 @@ static unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histog
     return totalNum;
 }
 
-
 /* Calculate chisq from read data histogarm and the generated histogram */
 static real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
-                        const NBodyHistogram* histogram)   /* Generated histogram */
+                        const NBodyHistogram* histogram,   /* Generated histogram */
+                        NBodyLikelihoodMethod method)
 {
     unsigned int i;
     real tmp;
     real effTotalNum;
-    real chisqval = 0.0;
+    real chiSq = 0.0;
+    real n;
+    real err;
     unsigned int nBin = data->nBin;
+
 
     assert(histogram->hasRawCounts);
     assert(nBin == histogram->nBin);
@@ -93,13 +104,30 @@ static real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     {
         if (data->data[i].useBin)  /* Skip bins with missing data */
         {
-            tmp = (data->data[i].count - ((real) histogram->data[i].rawCount / effTotalNum)) / data->data[i].err;
-            chisqval += sqr(tmp);
+            n = (real) histogram->data[i].rawCount;
+            err = data->data[i].err;
+
+            switch (method)
+            {
+                case NBODY_LIKELIHOOD:
+                    tmp = (data->data[i].count - (n / effTotalNum)) / err;
+                    chiSq += sqr(tmp);
+                    break;
+
+                case NBODY_ALT_LIKELIHOOD:
+                    /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
+                    err = sqrt(sqr(err) + n / effTotalNum);
+                    tmp = (data->data[i].count - (n / effTotalNum)) / err;
+                    chiSq += sqr(tmp);
+                    break;
+
+                default:
+                    mw_fail("Invalid likelihood method\n");
+            }
         }
     }
 
-    // MAXIMUM likelihood, multiply by -1
-    return -chisqval;
+    return -chiSq;     /* MAXIMUM likelihood, multiply by -1 */
 }
 
 static void nbPrintHistogramHeader(FILE* f,
@@ -488,7 +516,8 @@ static NBodyHistogram* nbReadHistogram(const char* histogramFile)
 /* Calculate the likelihood from the final state of the simulation */
 real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
-    real chisqval = NAN;
+    real chiSq = NAN;
+    real altChiSq = NAN;
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     lua_State* luaSt = NULL;
@@ -540,21 +569,24 @@ real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
             }
             else
             {
-                chisqval = nbCalcChisq(data, histogram);
+                chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
+                altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
             }
         }
     }
+
+    mw_printf("<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) */
     if (nbf->printHistogram)
     {
-        nbWriteHistogram(ctx, st, nbf, histogram, chisqval);
+        nbWriteHistogram(ctx, st, nbf, histogram, chiSq);
     }
 
     free(data);
     free(histogram);
 
-    return chisqval;
+    return chiSq;
 }
 

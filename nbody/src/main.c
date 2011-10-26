@@ -47,8 +47,9 @@ static void nbPrintCopyright(void)
     mw_printf(
         "Milkyway@Home N-body client %d.%d\n\n"
         "Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.\n"
-        "Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010 Ben Willett\n"
         "Copyright (c) 2010-2011 Matthew Arsenault\n"
+        "Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.\n"
         "Copyright (c) 2010 The University of Texas at Austin\n"
         "Copyright (c) 2010 Dr. Martin Burtscher\n"
         "\n"
