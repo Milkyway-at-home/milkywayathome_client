@@ -39,6 +39,7 @@
 
 #cmakedefine01 HAVE_CLOCK_GETTIME
 #cmakedefine01 HAVE_MACH_ABSOLUTE_TIME
+#cmakedefine01 HAVE_GETTIMEOFDAY
 
 /* C99 Restrict.
 

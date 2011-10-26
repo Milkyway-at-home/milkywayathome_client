@@ -19,7 +19,6 @@
  */
 
 #ifndef _WIN32
-  #include <sys/time.h>
   #include <sys/resource.h>
 #else
   #include <stdlib.h>
@@ -193,95 +192,6 @@ size_t mwCountLinesInFile(FILE* f)
 
     return lineCount;
 }
-
-#ifdef _WIN32
-
-double mwGetTime(void)
-{
-    LARGE_INTEGER t, f;
-    QueryPerformanceCounter(&t);
-    QueryPerformanceFrequency(&f);
-    return (double)t.QuadPart/(double)f.QuadPart;
-}
-
-double mwGetTimeMilli(void)
-{
-    return 1.0e3 * mwGetTime();
-}
-
-static UINT mwGetMinTimerResolution(void)
-{
-    TIMECAPS tc;
-
-    if (timeGetDevCaps(&tc, sizeof(tc)) != TIMERR_NOERROR)
-    {
-        mw_printf("Failed to get timer resolution\n");
-        return 0;
-    }
-
-	/* target 1-millisecond target resolution */
-    return MIN(MAX(tc.wPeriodMin, 1), tc.wPeriodMax);
-}
-
-int mwSetTimerMinResolution(void)
-{
-    if (timeBeginPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
-    {
-        mw_printf("Failed to set timer resolution\n");
-        return 1;
-    }
-
-    return 0;
-}
-
-int mwResetTimerResolution(void)
-{
-    if (timeEndPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
-    {
-        mw_printf("Failed to end timer resolution\n");
-        return 1;
-    }
-
-    return 0;
-}
-
-#else
-
-/* Seconds */
-double mwGetTime(void)
-{
-    struct timeval t;
-    struct timezone tzp;
-    gettimeofday(&t, &tzp);
-    /* Prevent weird breakage when building with -fsingle-precision-constant */
-    return t.tv_sec + t.tv_usec * (double) 1.0e-6;
-}
-
-/* Get time in microseconds */
-long mwGetTimeMicro(void)
-{
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    return 1000000 * t.tv_sec  + t.tv_usec;
-}
-
-/* Get time in milliseconds */
-double mwGetTimeMilli(void)
-{
-    return (double) mwGetTimeMicro() / 1.0e3;
-}
-
-int mwSetTimerMinResolution(void)
-{
-	return 0;
-}
-
-int mwResetTimerResolution(void)
-{
-    return 0;
-}
-
-#endif
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 

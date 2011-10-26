@@ -245,7 +245,7 @@ if(ENABLE_CURSES)
   list(APPEND nbody_link_libs ${CURSES_LIBRARIES})
 endif()
 
-if(NOT BOINC_APPLICATION AND HAVE_LIBRT)
+if(HAVE_LIBRT)
   list(APPEND nbody_link_libs rt)
 endif()
 
@@ -312,7 +312,7 @@ if(NBODY_GL)
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
-  if(NOT BOINC_APPLICATION AND HAVE_LIBRT)
+  if(HAVE_LIBRT)
     list(APPEND vis_link_libs rt)
   endif()
 
