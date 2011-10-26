@@ -1412,7 +1412,7 @@ void nbPrintKernelTimings(const NBodyState* st)
 {
     double totalTime = 0.0;
     cl_uint i;
-    double nStep = (double) st->step;
+    double nStep = (double) (st->step + 1);
     const double* kernelTimings = st->workSizes->kernelTimings;
 
     for (i = 0; i < 7; ++i)
@@ -1421,7 +1421,7 @@ void nbPrintKernelTimings(const NBodyState* st)
     }
 
     mw_printf("\n--------------------------------------------------------------------------------\n"
-              "Total timing over %d steps:\n"
+              "Total timing over %d (+1) steps:\n"
               "                         Average             Total            Fraction\n"
               "                    ----------------   ----------------   ----------------\n"
               "  boundingBox:      %16f   %16f   %15.4f%%\n"
