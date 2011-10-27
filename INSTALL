@@ -1,4 +1,7 @@
 
+Building the target doc, e.g. "make doc" should build PDF
+documentation if texinfo is found.
+
 --------------------------------------------------------------------------------
 Dependencies:
   Everything can be built independently of BOINC for separate use

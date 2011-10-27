@@ -1,3 +1,4 @@
+@documentencoding UTF-8
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
 @setfilename milkyway.info
@@ -43,12 +44,74 @@ This is a short sample Texinfo file.
 
 @node Building
 @chapter Building
+@cindex build
+@cindex cmake
 
-@cindex build, cmake
+@section
 
-Instructions on building
+Milkyway N-Body uses CMake.
+From the command line,
 
-@unnumberedsec Build Options
+@code{$ cmake /path/to/milkywayathome_client -DBUILD_OPTION=Value}
+
+@code{$ make}
+
+Alternatively cmake-gui can be used. For more information refer to the
+CMake documentation.
+
+
+@section Optional Dependencies
+@table @samp
+@item OpenSSL
+Used for some tests
+@item GLUT, OpenGL
+Used for visualizer / screensaver
+@item ncurses
+Used for optional progress reporting
+@item OpenCL
+GPU version
+@item OpenMP
+Multithreaded version
+@item BOINC
+BOINC libraries
+@end table
+
+@section Build Options
+@cindex cmake
+@cindex build
+Build options can be passed to cmake on the command line with
+-D@var{option name}=@var{value} or checked if using cmake-gui
+
+@multitable @columnfractions .3 .15 .55
+@headitem Option @tab Default @tab Description
+@item CMAKE_BUILD_TYPE
+@tab ``Release''
+@tab Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Profile.
+@item BOINC_APPLICATION
+@tab ON
+@tab Build with BOINC.
+@item DOUBLEPREC
+@tab ON
+@tab Use double precision
+@item NBODY_OPENMP
+@tab ON*
+@tab Use OpenMP for threading (* OFF if not supported by compiler)
+@item NBODY_OPENCL
+@tab OFF
+@tab Build with OpenCL
+@item NBODY_CRLIBM
+@tab ON
+@tab Use crlibm for math functions
+@item NBODY_GL
+@tab OFF
+@tab Build visualizer/screensaver
+@item ENABLE_CURSES
+@tab ON*
+@tab Build with NCurses for progress reporting. On if available and not @var{BOINC_APPLICATION}
+@item NBODY_STATIC
+@tab OFF
+@tab Build as a static binary
+@end multitable
 
 
 @node Basic Usage
@@ -56,11 +119,98 @@ Instructions on building
 
 @cindex usage, basic
 
+@section Invocation
+
+Milkyway N-Body is controlled through various command line
+arguments. For more detail @xref{Arguments}.
+
+The @samp{--input-file} argument is always necessary and is the
+primary way to control simulations. The input file is a Lua script
+which sets the parameters and inital system for the simulation.
+
+The @samp{--output-file} specifies a file to write the final body
+positions and velocities to. The positions will by default be in lbr
+coordinates. The @samp{--output-cartesian} option can switch this to
+galactic coordinates.
+
+To calculate a likelihood, an input histogram may be specified with
+@samp{--histogram-file}. If the @samp{--histoout-file} argument is
+given, a generated histogram will be written to the given file.
+
+Arguments not used by the main application are forwarded to the Lua
+input script.  Seed bound to ``argSeed''. This way you can easily
+script batches of simulations while changing any parameter you would
+like.
+
+@section Input File Description
+An input file consists of a Lua script which optionally handles
+arguments passed to it, and must contain several functions to define a
+simulation. Various utility functions and types are defined for
+convenience. These functions set up the initial bodies, specify
+parameters for the simulation such as timestep size and run time, and
+specify an external potential to apply. This allows for running
+totally arbitrary configurations of particles.
+
+@xref{Required Functions} for which functions are required.
+
+@xref{Utility Functions} for information on other tools.
+
+@xref{Custom Lua Types} for information on types.
 
 
-Extra arguments are forwarded to the Lua input script.
-Seed bound to ``argSeed''
 
+@section Running
+@subsection Checking Progress
+If built with @code{ENABLE_CURSES}, the @samp{--progress} flag will
+continuously update the terminal with some progress
+information. Progress can also be viewed from the visualizer. See @xref{Graphics}
+
+@subsection Checkpointing
+If running as a BOINC application, checkpointing will occur according
+to BOINC preferences.
+
+Without BOINC, checkpointing will occur every 15 minutes by
+default. The checkpoint interval can be controlled with the
+@samp{--checkpoint-interval} option, which takes the checkpointing
+interval in seconds.
+
+By default checkpoints will be written to a file called
+@samp{nbody_checkpoint}. The @samp{--checkpoint} can be used to use a
+different file. This can also be used to resume a simulation from an
+arbitrary checkpoint file.
+
+If you do not want to resume from a checkpoint, the
+@samp{--ignore-checkpoint} will ensure a fresh new simulation will be run.
+
+On the end of the simulation, the checkpoint file will be
+deleted. This behaviour can be surpressed with the
+@samp{--no-clean-checkpoint} flag.
+
+
+
+
+
+@subsection Graphics
+A simple N-Body visualizer is available from
+@code{milkyway_nbody_graphics}. Invoking the main program with the
+@samp{--visualizer} option will launch the visualizer along with the
+simulation. @samp{--visualizer-args} flag is available for passing
+additional options to the visualizer launched this way.
+
+The graphics program can be separately launched to view any number of
+currently running simulations.
+
+N-body simulations running with graphics support create a shared
+memory segment called ``milkyway_nbody_#'' where # starts at 0 and
+goes up. The # will be the instance ID which you can refer to the
+simulation by. Launching the graphics with @samp{--instance-id} flag
+will choose which simulation to view.
+
+Various mouse and keyboard controls exist for the simulation. You can
+get help with these by pressing the 'h' or '?' key.
+
+If run with the @samp{--fullscreen}, the graphics will behave more
+appropriately for a screensaver.
 
 
 @node Algorithmic Considerations
@@ -207,7 +357,7 @@ flattening in direction 2 (Usually held at 1 to eliminate degeneracy)
 Z axis flattening
 @item @math{r_{halo}}
 scale length
-@item @math{phi}
+@item @math{φ}
 triaxiality angle
 @end table
 
@@ -399,7 +549,7 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab Mass of disk
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length ``b''
+@tab Scale length @math{b}
 
 @end multitable
 
@@ -416,7 +566,7 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab Halo speed (contains total halo mass)
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length ``d'' of halo
+@tab Scale length @math{d} of halo
 @item @code{flattenZ}
 @tab @code{number}
 @tab Z-axis flattening
@@ -433,7 +583,7 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab Halo speed (contains total halo mass)
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length ``d'' of halo
+@tab Scale length @math{d} of halo
 
 @end multitable
 
@@ -447,7 +597,7 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab Halo speed (contains total halo mass)
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length ``rhalo'' of halo
+@tab Scale length @math{r_halo} of halo
 @item @code{flattenX}
 @tab @code{number}
 @tab Flattening in direction 1
@@ -459,9 +609,20 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab Z-Axis flattening
 @item @code{triaxAngle}
 @tab @code{number}
-@tab Triaxiality angle ``phi''
+@tab Triaxiality angle @math{φ}
 
 @end multitable
+
+@node DSFMT type
+@unnumberedsec DSFMT
+@cindex DSFMT
+@cindex PRNG
+@cindex random
+@cindex seed
+
+@deftp {DSFMT} DSFMT
+@end deftp
+
 
 @node HistogramParams type
 @unnumberedsec HistogramParams
@@ -473,10 +634,10 @@ Lambda. Currently not that generally useful.
 
 @item @code{phi}
 @tab @code{number}
-@tab ``phi''
+@tab  @math{φ}
 @item @code{theta}
 @tab @code{number}
-@tab ``theta''
+@tab @math{θ}
 @item @code{startRaw}
 @tab @code{number}
 @tab Lambda to try start bins if creating a milkyway histogram
@@ -493,17 +654,84 @@ Lambda. Currently not that generally useful.
 @end multitable
 
 
-@node Utility functions
-@chapter Utility functions
+@node Utility Functions
+@chapter Utility Functions
 
 @cindex utilities
 
 Miscellaneous useful functions for coordinate conversions, model
 creation, etc.
 
-@deffn utility function plummerTimestepIntegral (smalla, biga, Md, step)
+@section Predefined models
+
+@unnumberedsubsec predefinedModels.generatePlummer()
+Returns a table of bodies in a Plummer sphere distribution.
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{nbody}
+@tab @code{number}
+@tab Number of bodies to put in the Plummer sphere
+@item @code{mass}
+@tab @code{number}
+@tab Total mass of Plummer sphere. Will be evenly distributed among
+particles in model.
+@item @code{scaleRadius}
+@tab @code{number}
+@tab Scale radius for Plummer sphere
+@item @code{position}
+@tab @code{Vector}
+@tab Initial position for center of Plummer sphere
+@item @code{velocity}
+@tab @code{Vector}
+@tab Initial velocity for center of Plummer sphere
+@item @code{ignore}*
+@tab @code{bool}
+@tab The bodies in this model will be tagged to be ignored in
+likelihood calculations. i.e. this is a dark matter model.
+@item @code{prng}
+@tab @code{DSFMT}
+@tab Random number generator to use
+
+@end multitable
 
 
+@section Utility functions
+@deffn utility function plummerTimestepIntegral(@var{smalla}, @var{biga}, @var{Md}, [@var{step}=1.0-e5])
+Calculate a timestep for two Plummer spheres where @var{smalla} is the
+smaller scale radius, @var{biga} is the larger scale radius, @var{Md}
+is the enclosed mass of the big sphere within the smaller's radius,
+and the optional argument @var{step} is the radial integral step size.
+@end deffn
+
+@deffn utility function reverseOrbit(potential, position, velocity, tstop, dt)
+Do a reverse orbit in a Milkyway potential from a particle.
+@end deffn
+
+@deffn utility function calculateEps2(@var{n}, @var{r0})
+Calculates the softening parameter squared for a Plummer sphere using
+the formula
+@tex
+$$\epsilon^2$$
+@end tex
+@tex
+$$\epsilon \equiv r_0 / (10 \sqrt{n});$$
+@end tex
+where @math{r_0} is the scale length and @math{n} is the number of bodies.
+@end deffn
+
+
+@deffn utility function calculateTimestep(@var{mass}, @var{r0})
+Calculate a timestep for a Plummer sphere using the formula
+@tex
+$$(1/10)^2 * \sqrt{(4\pi/3) r_0^3} / m$$
+@end tex
+where @math{r_0} is the scale lengt hand @math{m} is the mass.
+@end deffn
+
+@deffn utility function lbrToCartesian(@var{ctx}, @var{position}, [@var{useRadians}=false])
+Takes an @ref{NBodyCtx type} and a position and converts it to
+galactic coordinates. Optional argument indicates that the l and b in
+the input vector are in radians.
 @end deffn
 
 
@@ -526,7 +754,7 @@ e.g. -a).
 @node Arguments
 @appendixsec Arguments
 
-  Here is a table of action arguments:
+  Additional information and argumments can be obtained from running with the @var{--help} argument.
 
 @table @samp
 @item -f @var{file}

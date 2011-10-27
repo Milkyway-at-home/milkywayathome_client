@@ -390,3 +390,5 @@ else()
 endif()
 
 
+add_subdirectory(doc EXCLUDE_FROM_ALL)
+
