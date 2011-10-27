@@ -72,3 +72,5 @@ tmp_cl_binary*.bin
 TAGS
 tags
 stderr_tmp*
+milkyway_nbody.pdf
+milkyway_nbody.log
