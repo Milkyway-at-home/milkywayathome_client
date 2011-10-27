@@ -363,7 +363,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
                      "  checkpointT     = %d\n"
-                     "  freqOut         = %u\n"
                      "  nStep           = %u\n"
                      "  potentialType   = %s\n"
                      "  pot = %s\n"
@@ -378,7 +377,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
                      (int) ctx->checkpointT,
-                     ctx->freqOut,
                      ctx->nStep,
                      showExternalPotentialType(ctx->potentialType),
                      potBuf

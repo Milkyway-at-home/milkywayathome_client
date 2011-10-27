@@ -383,7 +383,6 @@ typedef struct NBODY_ALIGN
     mwbool quietErrors;
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
-    unsigned int freqOut;
     unsigned int nStep;
 
     Potential pot;
@@ -437,7 +436,7 @@ typedef enum
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
                          FALSE, FALSE, FALSE,                           \
-                         0, 0, 0,                                       \
+                         0, 0,                                          \
                          EMPTY_POTENTIAL }
 
 

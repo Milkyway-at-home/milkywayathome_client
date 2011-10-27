@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 #include "nbody_lua_nbodyctx.h"
-#include "nbody_lua_potential.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
@@ -79,7 +78,6 @@ criterion_t readCriterion(lua_State* luaSt, const char* name)
 static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
-    static real freqOutf = 0.0;
     static const char* criterionName = NULL;
     double nStepf = 0.0;
 
@@ -87,7 +85,6 @@ static int createNBodyCtx(lua_State* luaSt)
         {
             { "timestep",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep    },
             { "timeEvolve",  LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve  },
-            { "freqOut",     LUA_TNUMBER,  NULL, FALSE, &freqOutf        },
             { "theta",       LUA_TNUMBER,  NULL, FALSE, &ctx.theta       },
             { "eps2",        LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2        },
             { "treeRSize",   LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize   },
@@ -100,15 +97,12 @@ static int createNBodyCtx(lua_State* luaSt)
         };
 
     criterionName = NULL;
-    freqOutf = 0.0;
     ctx = defaultNBodyCtx;
 
     if (lua_gettop(luaSt) != 1)
         return luaL_argerror(luaSt, 1, "Expected named argument table");
 
     handleNamedArgumentTable(luaSt, argTable, 1);
-
-    ctx.freqOut = (unsigned int) freqOutf;
 
     /* FIXME: Hacky handling of enum. Will result in not good error
      * messages as well as not fitting in. */
@@ -171,7 +165,6 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 {
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)  },
-    { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)     },
     { "theta",           getNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)   },
@@ -180,7 +173,6 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
-    { "potential",       getPotential,  offsetof(NBodyCtx, pot)         },
     { NULL, NULL, 0 }
 };
 
@@ -188,7 +180,6 @@ static const Xet_reg_pre settersNBodyCtx[] =
 {
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)  },
-    { "freqOut",         setNumber,     offsetof(NBodyCtx, freqOut)     },
     { "theta",           setNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)   },
@@ -197,7 +188,6 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
-    { "potential",       setPotential,  offsetof(NBodyCtx, pot)         },
     { NULL, NULL, 0 }
 };
 
