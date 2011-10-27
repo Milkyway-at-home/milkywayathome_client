@@ -1,8 +1,8 @@
-@documentencoding UTF-8
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
 @setfilename milkyway.info
 @settitle Milkyway N-Body Manual 1.0
+@documentencoding UTF-8
 @c %**end of header
 
 
@@ -189,7 +189,7 @@ deleted. This behaviour can be surpressed with the
 
 
 
-
+@node Graphics
 @subsection Graphics
 A simple N-Body visualizer is available from
 @code{milkyway_nbody_graphics}. Invoking the main program with the
@@ -247,7 +247,7 @@ the direct summation.
 @cindex potential
 @cindex model
 Description of available galaxy potential models with parameter
-descriptions. For usage, @xref{Potential type}
+descriptions. For usage, @xref{Potential}
 
 @table @dfn
 @item Spherical Models
@@ -273,6 +273,7 @@ scale length
 @cindex disk
 @cindex Miyamoto-Nagai disk
 
+@anchor {Miyamoto-Nagai disk}
 @table @dfn
 @item	Miyamoto-Nagai Disk
 @tex
@@ -286,6 +287,8 @@ scale length
 @item @math{b}
 scale height
 @end table
+
+@anchor {Exponential disk}
 @item	Exponential Disk
 @tex
 $$\phi = -G M_{disk} ((1-\exp(-r/b])/r)$$
@@ -305,6 +308,7 @@ scale length
 @cindex halo
 @cindex logarithmic halo
 @table @dfn
+@anchor {Logarithmic halo}
 @item Logarithmic Halo
 @tex
 $$\phi = v_{halo}^2 \ln(X_{gc}^2 + Y_{gc}^2 + (Z_{gc}^2/q^2) + d^2)$$
@@ -319,9 +323,10 @@ scale length
 @end table
 
 @cindex NFW halo
+@anchor {NFW halo}
 @item  NFW halo
 @tex
-$$\phi = (-(((a v_{cmax}^2)/0.216) \log(1+(r/a)))/r$$
+$$\phi = -(((a v_{cmax}^2)/0.216) \log(1+(r/a)))/r$$
 @end tex
 
 @table @code
@@ -332,6 +337,7 @@ scale length
 @end table
 
 @cindex Triaxial halo
+@anchor {Triaxial halo}
 @item Triaxial Halo
 @tex
 $$\phi = v_{halo}^2 \ln(C_1 X_{gc}^2 + C_2 Y_{gc}^2 + C_3 X_{gc} Y_{gc} + (Z_{gc}/q_z)^2 + r_{halo}^2)$$
@@ -376,13 +382,13 @@ distribution of particles and flexible calculations for any parameters.
 @deffn required function makeContext ()
 Returns the context for controlling the simulation. This configures
 basic items such as timestep size and evolution time.
-@xref{NBodyCtx type}
+@xref{NBodyCtx}
 @end deffn
 
 @deffn required function makeBodies (context, potential)
 Takes the NBodyCtx for the simulation, and the Potential if used
 Return an arbitrary number of table of bodies which will run in the simulation.
-@xref{Body type}
+@xref{Body}
 @end deffn
 
 @deffn required function makePotential ()
@@ -394,7 +400,7 @@ Options are one of the following:
 nil. A generic N-body simulation with no external potential.
 
 @item
-A galaxy external potential defined by the Potential type. @xref{Potential type}
+A galaxy external potential defined by the Potential type. @xref{Potential}
 
 @item
 A Lua function which takes 3 arguments (x, y, z) positions in standard
@@ -405,7 +411,7 @@ components of the acceleration. Invalid to use when running with OpenCL.
 
 @deffn optional function makeHistogram ()
 Parameters for a milkyway histogram if generating it.
-@xref{HistogramParams type}
+@xref{HistogramParams}
 @end deffn
 
 
@@ -417,13 +423,40 @@ Parameters for a milkyway histogram if generating it.
 Items marked with a * are optional and will use a default value if omitted.
 @cindex index entry, another
 
-@node NBodyCtx type
+@node NBodyCtx
 @unnumberedsec NBodyCtx
 
-@unnumberedsubsec NBodyCtx.create()
+@deftp NBodyCtx NBodyCtx
+Simulation context controlling simulation parameters such as timesteps.
+@end deftp
+
+@deftypeivar NBodyCtx number timestep
+@end deftypeivar
+@deftypeivar NBodyCtx number timeEvolve
+@end deftypeivar
+@deftypeivar NBodyCtx number theta
+@end deftypeivar
+@deftypeivar NBodyCtx number eps2
+@end deftypeivar
+@deftypeivar NBodyCtx number treeRSize
+@end deftypeivar
+@deftypeivar NBodyCtx number sunGCDist
+@end deftypeivar
+@deftypeivar NBodyCtx stringenum criterion
+@end deftypeivar
+@deftypeivar NBodyCtx boolean useQuad
+@end deftypeivar
+@deftypeivar NBodyCtx boolean allowIncest
+@end deftypeivar
+@deftypeivar NBodyCtx boolean quietErrors
+@end deftypeivar
+
+
+@defmethod NBodyCtx create(argTable)
+Create a new NBodyCtx with parameters given by arg table.
+This is to use fake named arguments.
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{timestep}
 @tab @code{number}
 @tab Size of timesteps to use in gigayears
@@ -456,19 +489,41 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @tab @code{boolean}
 @tab Silence printing of certain errors, such as tree incest.
      Most useful when treating incest as non-fatal.
-
 @end multitable
+@end defmethod
 
-@node Body type
+@node Body
 @unnumberedsec Body
 
-@unnumberedsubsec Body.create()
+@deftp Body Body
+Userdata representing a particle
+@end deftp
+
+@deftypeivar Body number mass
+Mass of particle in units of @math{1/(222288.47 M_{sun})}
+@end deftypeivar
+
+@deftypeivar Body Vector position
+Position of particle in standard galactic coordinates in kiloparsecs
+@end deftypeivar
+
+@deftypeivar Body Vector velocity
+Velocity of particle in kiloparsecs / gigayear
+@end deftypeivar
+
+@deftypeivar Body boolean ignore
+Exclude particle from likelihood calculations (e.g. true if dark matter particle)
+@end deftypeivar
+
+
+@defmethod Body create(argTable)
+Create a new Body with given parameters given by arg table. This is to use fake named arguments.
+
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{mass}
 @tab @code{number}
-@tab Mass of body in units of 1/(222288.47 M_sun). This is to get G =
+@tab Mass of body in units of @math{1/(222288.47 M_{sun})}. This is to get G =
 1 with distances in kiloparsecs and time in gigayears
 @item @code{position}
 @tab @code{Vector}
@@ -479,88 +534,107 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @item @code{ignore}*
 @tab @code{boolean}
 @tab Ignore body if doing a likelihood calculation (e.g. dark matter particle = true)
-
 @end multitable
+@end defmethod
 
-@node Potential type
+@node Potential
 @unnumberedsec Potential
+@deftp Potential Potential
+Userdata representing a static Milkyway potential
+@end deftp
 
-@unnumberedsubsec Potential.create()
+@defmethod Potential create(argTable)
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{spherical}
 @tab @code{Spherical}
 @tab Spherical bulge component of galaxy potential
 @item @code{halo}
 @tab @code{Halo}
 @tab Halo component of galaxy potential
-@item @code{halo}
-@tab @code{Halo}
-@tab Halo component of galaxy potential
 @item @code{disk}
 @tab @code{Disk}
 @tab Disk component of galaxy potential
-
 @end multitable
+@end defmethod
 
-
+@node Spherical
 @unnumberedsec Spherical
+@deftp Spherical Spherical
+Userdata containing parameters describing galaxy's bulge
+@end deftp
 
-@unnumberedsubsec Spherical.spherical()
+@deftypeivar Spherical stringenum type
+Type of bulge
+@end deftypeivar
+
+@deftypeivar Spherical number mass
+Bulge mass
+@end deftypeivar
+
+@deftypeivar Spherical number scale
+Bulge scale length
+@end deftypeivar
+
+@defmethod Spherical create
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{mass}
 @tab @code{number}
 @tab Mass of bulge
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length ``a'' of bulge
-
+@tab Scale length @math{a} of bulge
 @end multitable
+@end defmethod
 
-
+@node Disk
 @unnumberedsec Disk
+@deftp Disk Disk
+Userdata containing parameters describing galaxy's disk
+@end deftp
 
-@unnumberedsubsec Disk.miyamotoNagai()
+@defmethod Disk miyamotoNagai()
+Create a Disk userdata with Miyamoto-Nagai disk model parameters. @xref{Miyamoto-Nagai disk}
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{mass}
 @tab @code{number}
 @tab Mass of disk
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length ``a''
+@tab Scale length @math{a}
 @item @code{scaleHeight}
 @tab @code{number}
-@tab Scale height ``b''
-
+@tab Scale height @math{b}
 @end multitable
+@end defmethod
 
 
-@unnumberedsubsec Disk.exponential()
+@defmethod Disk exponential()
+Create a Disk userdata with Exponential disk parameters. @xref{Exponential disk}
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{mass}
 @tab @code{number}
 @tab Mass of disk
 @item @code{scaleLength}
 @tab @code{number}
 @tab Scale length @math{b}
-
 @end multitable
+@end defmethod
 
 
-
+@node Halo
 @unnumberedsec Halo
+@deftp Disk Disk
+Usedata containing parameters describing galaxy's halo
+@end deftp
 
-@unnumberedsubsec Halo.logarithmic()
+@defmethod Halo logarithmic()
+Create a Halo userdata describing a logarithmic halo.
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{vhalo}
 @tab @code{number}
 @tab Halo speed (contains total halo mass)
@@ -570,34 +644,34 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @item @code{flattenZ}
 @tab @code{number}
 @tab Z-axis flattening
-
 @end multitable
+@end defmethod
 
 
-@unnumberedsubsec Halo.nfw()
+@defmethod Halo nfw()
+Create a Halo userdata describing an NFW halo. @xref{NFW halo}
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{vhalo}
 @tab @code{number}
 @tab Halo speed (contains total halo mass)
 @item @code{scaleLength}
 @tab @code{number}
 @tab Scale length @math{d} of halo
-
 @end multitable
+@end defmethod
 
 
-@unnumberedsubsec Halo.triaxial()
+@defmethod Halo triaxial()
+Create a Halo userdata describing a Triaxial halo. @xref{Triaxial halo}
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{vhalo}
 @tab @code{number}
 @tab Halo speed (contains total halo mass)
 @item @code{scaleLength}
 @tab @code{number}
-@tab Scale length @math{r_halo} of halo
+@tab Scale length @math{r_{halo}} of halo
 @item @code{flattenX}
 @tab @code{number}
 @tab Flattening in direction 1
@@ -610,28 +684,84 @@ Incest is when a particle does not encounter itself while calculating forces on 
 @item @code{triaxAngle}
 @tab @code{number}
 @tab Triaxiality angle @math{φ}
-
 @end multitable
+@end defmethod
 
-@node DSFMT type
+
+@node DSFMT
 @unnumberedsec DSFMT
 @cindex DSFMT
 @cindex PRNG
 @cindex random
 @cindex seed
 
-@deftp {DSFMT} DSFMT
+@deftp DSFMT DSFMT
+Pseudorandom number generator state.
 @end deftp
 
+@defmethod DSFMT create([@var{seed}=time(NULL)])
+Create a new DSFMT pseudorandom number generator. If omitted (or nil),
+it will use a time seed.
+@end defmethod
 
-@node HistogramParams type
+@defmethod DSFMT random()
+Return a new random number between 0.0 and 1.0
+@end defmethod
+
+@node Vector
+@unnumberedsec Vector
+@cindex Vector
+@deftp Vector Vector
+Userdata describing a 3 component vector
+@end deftp
+
+@deftypeivar Vector number x
+X-component of vector
+@end deftypeivar
+
+@deftypeivar Vector number y
+Y-component of vector
+@end deftypeivar
+
+@deftypeivar Vector number z
+Z-component of vector
+@end deftypeivar
+
+@defmethod Vector create(@var{x}, @var{y}, @var{z})
+Create a new vector with components x, y, z
+@end defmethod
+
+@defmethod Vector abs()
+Returns the absolute value of the vector
+@end defmethod
+
+@defmethod Vector length()
+Returns the length of the vector
+@end defmethod
+
+@defmethod Vector cross(@var{a}, @var{b})
+Returns the cross product of vectors @var{a} and @var{b}
+@end defmethod
+
+@defmethod Vector dist(@var{a}, @var{b})
+Returns the distance between vectors @var{a} and @var{b}
+@end defmethod
+
+
+
+
+@node HistogramParams
 @unnumberedsec HistogramParams
+@cindex histogram
+@cindex HistogramParams
+@deftp HistogramParams HistogramParams
 Used to specify histogram parameters for binning along a stream in
 Lambda. Currently not that generally useful.
-@unnumberedsubsec HistogramParams.create()
+@end deftp
+
+@defmethod HistogramParams create()
 @multitable @columnfractions .15 .15 .7
 @headitem Argument @tab Type @tab Description
-
 @item @code{phi}
 @tab @code{number}
 @tab  @math{φ}
@@ -650,8 +780,8 @@ Lambda. Currently not that generally useful.
 @item @code{binSize}
 @tab @code{number}
 @tab Bin size in lambda in degrees
-
 @end multitable
+@end defmethod
 
 
 @node Utility Functions
@@ -729,7 +859,7 @@ where @math{r_0} is the scale lengt hand @math{m} is the mass.
 @end deffn
 
 @deffn utility function lbrToCartesian(@var{ctx}, @var{position}, [@var{useRadians}=false])
-Takes an @ref{NBodyCtx type} and a position and converts it to
+Takes an @ref{NBodyCtx} and a position and converts it to
 galactic coordinates. Optional argument indicates that the l and b in
 the input vector are in radians.
 @end deffn
