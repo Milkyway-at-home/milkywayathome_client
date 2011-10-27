@@ -74,3 +74,16 @@ tags
 stderr_tmp*
 milkyway_nbody.pdf
 milkyway_nbody.log
+nbody/doc/milkyway_nbody.aux
+nbody/doc/milkyway_nbody.cp
+nbody/doc/milkyway_nbody.cps
+nbody/doc/milkyway_nbody.fn
+nbody/doc/milkyway_nbody.fns
+nbody/doc/milkyway_nbody.ky
+nbody/doc/milkyway_nbody.log
+nbody/doc/milkyway_nbody.pdf
+nbody/doc/milkyway_nbody.pg
+nbody/doc/milkyway_nbody.toc
+nbody/doc/milkyway_nbody.tp
+nbody/doc/milkyway_nbody.tps
+nbody/doc/milkyway_nbody.vr
