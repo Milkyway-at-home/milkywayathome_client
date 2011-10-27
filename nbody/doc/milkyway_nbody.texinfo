@@ -63,7 +63,7 @@ Seed bound to ``argSeed''
 
 
 
-
+@node Algorithmic Considerations
 @chapter Algorithmic Considerations
 @cindex algorithmic considerations
 @cindex algorithm
@@ -72,7 +72,7 @@ Seed bound to ``argSeed''
 Milkyway N-Body uses the Barnes-Hut algorithm, or optionally can use
 the direct summation.
 
-@anchor {criteria-description}
+@node{Opening Criteria}
 @unnumberedsec Opening Criteria
 @multitable @columnfractions .2 .8
 @headitem Name @tab Description
@@ -87,13 +87,137 @@ the direct summation.
 @tab Barnes newer opening criterion using the center of mass offset
 
 @item @code{"Exact"}
-@tab Use O(n^2) direct N-body calculation
+@tab Use @math{O(n^2)} direct N-body calculation
 @end multitable
 
+
+@node Potential Descriptions
+@chapter Potential Descriptions
+@cindex external potentials
+@cindex potential
+@cindex model
+Description of available galaxy potential models with parameter
+descriptions. For usage, @xref{Potential type}
+
+@table @dfn
+@item Spherical Models
+@cindex spherical
+
+@table @dfn
+@item Sphere with scale length:
+@cindex spherical
+
+@comment Why doesn't \frac work?
+@tex
+$$\phi = - G M_{sphere} / (r + r_0)$$
+@end tex
+@table @code
+@item @math{M_{sphere}}
+total mass
+@item @math{r0}
+scale length
+@end table
+@end table
+
+@item Disk Models
+@cindex disk
+@cindex Miyamoto-Nagai disk
+
+@table @dfn
+@item	Miyamoto-Nagai Disk
+@tex
+$$\phi = -G M_{disk} / \sqrt{X_{gc}^2 + Y_{gc}^2 + (a + \sqrt{Z_{gc}^2 + b^2})^2}$$
+@end tex
+@table @code
+@item @math{M_{disk}}
+total mass
+@item @math{a}
+scale length
+@item @math{b}
+scale height
+@end table
+@item	Exponential Disk
+@tex
+$$\phi = -G M_{disk} ((1-\exp(-r/b])/r)$$
+@end tex
+@tex
+$$r \equiv \sqrt{X_{gc}^2 + Y_{gc}^2 + Z_{gc}^2}$$
+@end tex
+@table @code
+@item @math{M_{disk}}
+total mass
+@item @math{b}
+scale length
+@end table
+@end table
+
+@item Halo Models
+@cindex halo
+@cindex logarithmic halo
+@table @dfn
+@item Logarithmic Halo
+@tex
+$$\phi = v_{halo}^2 \ln(X_{gc}^2 + Y_{gc}^2 + (Z_{gc}^2/q^2) + d^2)$$
+@end tex
+@table @code
+@item @math{v_{halo}}
+halo speed (contains total halo mass)
+@item @math{q}
+Z axis flattening
+@item @math{d}
+scale length
+@end table
+
+@cindex NFW halo
+@item  NFW halo
+@tex
+$$\phi = (-(((a v_{cmax}^2)/0.216) \log(1+(r/a)))/r$$
+@end tex
+
+@table @code
+@item @math{v_{cmax}}
+halo speed (contains total halo mass)
+@item @math{q}
+scale length
+@end table
+
+@cindex Triaxial halo
+@item Triaxial Halo
+@tex
+$$\phi = v_{halo}^2 \ln(C_1 X_{gc}^2 + C_2 Y_{gc}^2 + C_3 X_{gc} Y_{gc} + (Z_{gc}/q_z)^2 + r_{halo}^2)$$
+@end tex
+@tex
+$$C_1 \equiv (cos^2\phi/q_1^2) + (\sin^2\phi/q_2^2)$$
+@end tex
+@tex
+$$C_2 \equiv (cos^2\phi/q_2^2) + (\sin^2\phi/q_1^2)$$
+@end tex
+@tex
+$$C_3 \equiv 2\sin\phi \cos\phi ((1/q_1^2) - (1/q_2^2))$$
+@end tex
+
+@table @code
+@item @math{v_{halo}}
+halo speed (contains total halo mass)
+@item @math{q_1}
+flattening in direction 1
+@item @math{q_2}
+flattening in direction 2 (Usually held at 1 to eliminate degeneracy)
+@item @math{q_z}
+Z axis flattening
+@item @math{r_{halo}}
+scale length
+@item @math{phi}
+triaxiality angle
+@end table
+
+@end table
+@end table
 
 
 @node Required Functions
 @chapter Required Functions
+@cindex usage
 
 An N-Body simulation is set up by writing several small functions in
 the input Lua script. This allows for a totally arbitrary initial
@@ -105,13 +229,11 @@ basic items such as timestep size and evolution time.
 @xref{NBodyCtx type}
 @end deffn
 
-
 @deffn required function makeBodies (context, potential)
 Takes the NBodyCtx for the simulation, and the Potential if used
 Return an arbitrary number of table of bodies which will run in the simulation.
 @xref{Body type}
 @end deffn
-
 
 @deffn required function makePotential ()
 Returns the external potential to apply to the simulation.
@@ -130,7 +252,6 @@ galactic coordinates and returns 3 numbers for the (x, y, z)
 components of the acceleration. Invalid to use when running with OpenCL.
 @end itemize
 @end deffn
-
 
 @deffn optional function makeHistogram ()
 Parameters for a milkyway histogram if generating it.
@@ -164,7 +285,7 @@ Items marked with a * are optional and will use a default value if omitted.
 @tab Barnes-Hut opening angle (ignored with "Exact" criterion")
 @item @code{eps2}
 @tab @code{number}
-@tab (softening parameter)^2 in kiloparsecs^2
+@tab @math{\epsilon^2} in kiloparsecs@math{^2} (Softening parameter)
 @item @code{treeRSize}*
 @tab @code{number}
 @tab Initial size guess of tree root cell
@@ -173,7 +294,7 @@ Items marked with a * are optional and will use a default value if omitted.
 @tab Distance from galactic center to Earth in kiloparsecs
 @item @code{criterion}
 @tab @code{string enum}
-@tab Select formula for calculating critical radius. For options, see @xref{criteria-description, criteria description}
+@tab Select formula for calculating critical radius. For options, @xref{Opening Criteria}
 @item @code{useQuad}*
 @tab @code{boolean}
 @tab Use quadrupole moments for body-cell force calculations
