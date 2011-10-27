@@ -116,7 +116,7 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
 int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
 int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* name);
 
-int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name);
+int mw_lua_getglobalfunction(lua_State* luaSt, const char* name);
 
 int mw_lua_checkboolean(lua_State* luaSt, int idx);
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);

@@ -23,24 +23,30 @@
 #include "milkyway_lua_marshal.h"
 #include "milkyway_util.h"
 
-
-/* Check if global function name exists.  Error if it doesn't or if
-   it's the wrong type. If OK, puts on stack and returns its index. */
-int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name)
+/*
+  Check if global function exists.
+   If symbol exists and is a function, put it on the stack and return 0.
+   Return > 0 if wrong type
+   Return < 0 if does not exist
+*/
+int mw_lua_getglobalfunction(lua_State* luaSt, const char* name)
 {
     lua_getglobal(luaSt, name);
     if (lua_isnil(luaSt, -1))
     {
-        return luaL_error(luaSt, "Didn't find required global '%s'", name);
+        mw_printf("Didn't find required global function '%s'\n", name);
+        return -1;
     }
-
-    if (!lua_isfunction(luaSt, -1))
+    else if (!lua_isfunction(luaSt, -1))
     {
-        return luaL_error(luaSt, "Expected required global '%s' to be %s, got %s",
-                          name, lua_typename(luaSt, LUA_TFUNCTION), luaL_typename(luaSt, -1));
+        mw_printf("Expected required global '%s' to be %s, got %s\n",
+                  name, lua_typename(luaSt, LUA_TFUNCTION), luaL_typename(luaSt, -1));
+        return 1;
     }
-
-    return lua_gettop(luaSt);
+    else
+    {
+        return 0;
+    }
 }
 
 int mw_lua_checkboolean(lua_State* luaSt, int idx)

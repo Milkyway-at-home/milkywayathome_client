@@ -33,22 +33,22 @@
 
 static int getNBodyCtxFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobalfunction(luaSt, "makeContext");
+    return mw_lua_getglobalfunction(luaSt, "makeContext");
 }
 
 static int getNBodyPotentialFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobalfunction(luaSt, "makePotential");
+    return mw_lua_getglobalfunction(luaSt, "makePotential");
 }
 
 static int getHistogramFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobalfunction(luaSt, "makeHistogram");
+    return mw_lua_getglobalfunction(luaSt, "makeHistogram");
 }
 
 static int getBodiesFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobalfunction(luaSt, "makeBodies");
+    return mw_lua_getglobalfunction(luaSt, "makeBodies");
 }
 
 static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
@@ -124,7 +124,11 @@ static int nbEvaluateContext(lua_State* luaSt, NBodyCtx* ctx)
 {
     NBodyCtx* tmp;
 
-    getNBodyCtxFunc(luaSt);
+    if (!luaSt || getNBodyCtxFunc(luaSt))
+    {
+        return 1;
+    }
+
     if (lua_pcall(luaSt, 0, 1, 0))
     {
         mw_lua_pcall_warn(luaSt, "Error evaluating NBodyCtx");
@@ -152,12 +156,11 @@ static int nbGetPotentialClosure(lua_State* luaSt)
     int top;
     int closure;
 
-    if (!luaSt)
+    if (!luaSt || getNBodyPotentialFunc(luaSt))
     {
         return LUA_NOREF;
     }
 
-    getNBodyPotentialFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
     {
         mw_lua_pcall_warn(luaSt, "Error evaluating potential closure");
@@ -337,12 +340,11 @@ int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp)
 {
     HistogramParams* tmp;
 
-    if (!luaSt)
+    if (!luaSt || getHistogramFunc(luaSt))
     {
         return 1;
     }
 
-    getHistogramFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
     {
         mw_lua_pcall_warn(luaSt, "Error evaluating HistogramParams");
@@ -383,8 +385,11 @@ static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
     int level, nResults;
 
     level = lua_gettop(luaSt);
+    if (getBodiesFunc(luaSt))
+    {
+        return NULL;
+    }
 
-    getBodiesFunc(luaSt);
     pushNBodyCtx(luaSt, ctx);
 
     if (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT)
