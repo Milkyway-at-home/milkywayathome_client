@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
 #ifdef __cplusplus
 }

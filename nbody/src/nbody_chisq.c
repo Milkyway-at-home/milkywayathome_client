@@ -42,10 +42,15 @@ static unsigned int nbHistogramNBin(const HistogramParams* hp)
 }
 
 /* Find the corrected starting point for the histogram */
-static real nbHistogramStart(const HistogramParams* hp)
+static double nbHistogramStart(const HistogramParams* hp)
 {
     unsigned int nBin = nbHistogramNBin(hp);
-    return mw_ceil(hp->center - hp->binSize * (real) nBin / 2.0);
+    return mw_ceil(hp->center - hp->binSize * (double) nBin / 2.0);
+}
+
+static inline double nbNormalizedHistogramError(unsigned int n, double total)
+{
+    return (n == 0) ? inv(total) : sqrt((double) n) / total;
 }
 
 
@@ -78,16 +83,18 @@ static unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histog
 }
 
 /* Calculate chisq from read data histogarm and the generated histogram */
-static real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
-                        const NBodyHistogram* histogram,   /* Generated histogram */
-                        NBodyLikelihoodMethod method)
+static double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
+                          const NBodyHistogram* histogram,   /* Generated histogram */
+                          NBodyLikelihoodMethod method)
 {
     unsigned int i;
-    real tmp;
-    real effTotalNum;
-    real chiSq = 0.0;
-    real n;
-    real err;
+    double tmp;
+    double effTotalNum;
+    double chiSq = 0.0;
+    double n;
+    double err;
+    double simErr;
+    double m, s;
     unsigned int nBin = data->nBin;
 
 
@@ -99,12 +106,13 @@ static real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
         return -INFINITY;
     }
 
-    effTotalNum = (real) nbCorrectTotalNumberInHistogram(histogram, data);
+    effTotalNum = (double) nbCorrectTotalNumberInHistogram(histogram, data);
+
     for (i = 0; i < nBin; ++i)
     {
         if (data->data[i].useBin)  /* Skip bins with missing data */
         {
-            n = (real) histogram->data[i].rawCount;
+            n = (double) histogram->data[i].rawCount;
             err = data->data[i].err;
 
             switch (method)
@@ -115,8 +123,14 @@ static real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                     break;
 
                 case NBODY_ALT_LIKELIHOOD:
+                    /* We already have errors from the simulation, but
+                     * we need to correct the errors in case there
+                     * were any bins we are skipping for matching to
+                     * the data */
+                    simErr = nbNormalizedHistogramError(histogram->data[i].rawCount, effTotalNum);
+
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
-                    err = sqrt(sqr(err) + n / effTotalNum);
+                    err = sqrt(sqr(err) + sqr(simErr));
                     tmp = (data->data[i].count - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;
@@ -135,7 +149,7 @@ static void nbPrintHistogramHeader(FILE* f,
                                    const HistogramParams* hp,
                                    int nbody,
                                    uint32_t seed,
-                                   real chisq)
+                                   double chisq)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
@@ -309,7 +323,7 @@ static void nbWriteHistogram(const NBodyCtx* ctx,
                              NBodyState* st,
                              const NBodyFlags* nbf,
                              NBodyHistogram* histogram,
-                             real chisq)
+                             double chisq)
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
 
@@ -330,26 +344,25 @@ static void nbWriteHistogram(const NBodyCtx* ctx,
         fclose(f);
 }
 
-
 /* Get normalized histogram counts and errors */
 static void nbNormalizeHistogram(NBodyHistogram* histogram)
 {
     unsigned int i;
-    real count;
+    double count;
 
     unsigned int nBin = histogram->nBin;
     const HistogramParams* hp = &histogram->params;
-    real totalNum = (real) histogram->totalNum;
+    double totalNum = (double) histogram->totalNum;
     HistData* histData = histogram->data;
-    real start = nbHistogramStart(&histogram->params);
+    double start = nbHistogramStart(&histogram->params);
 
 
     for (i = 0; i < nBin; ++i)
     {
-        count = (real) histData[i].rawCount;
-        histData[i].lambda = ((real) i  + 0.5) * hp->binSize + start;  /* Report center of the bins */
+        count = (double) histData[i].rawCount;
+        histData[i].lambda = ((double) i  + 0.5) * hp->binSize + start;  /* Report center of the bins */
         histData[i].count = count / totalNum;
-        histData[i].err = (histData[i].rawCount == 0) ? inv(totalNum) : mw_sqrt(count) / totalNum;
+        histData[i].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
     }
 }
 
@@ -367,7 +380,7 @@ static NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulati
                                          const NBodyState* st,       /* Final state of the simulation */
                                          const HistogramParams* hp)  /* Range of histogram to create */
 {
-    real lambda;
+    double lambda;
     unsigned int i;
     unsigned int idx;
     unsigned int totalNum = 0;
@@ -377,7 +390,7 @@ static NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulati
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
 
-    real start = nbHistogramStart(hp);
+    double start = nbHistogramStart(hp);
     unsigned int nBin = nbHistogramNBin(hp);
 
 
@@ -471,10 +484,10 @@ static NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
         if (!readParams)  /* One line is allowed for information on the histogram */
         {
-            real phi, theta, psi;
+            double phi, theta, psi;
 
             rc = sscanf(lineBuf,
-                        DOUBLEPREC ? " phi = %lf , theta = %lf , psi = %lf \n" : " phi = %f , theta = %f , psi = %f \n",
+                        " phi = %lf , theta = %lf , psi = %lf \n",
                         &phi, &theta, &psi);
             if (rc == 3)
             {
@@ -484,7 +497,7 @@ static NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    DOUBLEPREC ? "%d %lf %lf %lf \n" : "%d %f %f %f \n",
+                    "%d %lf %lf %lf \n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].count,
@@ -514,10 +527,13 @@ static NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
 
 /* Calculate the likelihood from the final state of the simulation */
-real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
-    real chiSq = NAN;
-    real altChiSq = NAN;
+    double chiSq = NAN;
+    double altChiSq = NAN;
+    double alt1ChiSq = NAN;
+    double alt2ChiSq = NAN;
+    double alt3ChiSq = NAN;
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     lua_State* luaSt = NULL;
@@ -571,11 +587,17 @@ real nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
             {
                 chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
                 altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
+                alt1ChiSq = nbCalcChisq(data, histogram, NBODY_ALT1_LIKELIHOOD);
+                alt2ChiSq = nbCalcChisq(data, histogram, NBODY_ALT2_LIKELIHOOD);
+                alt3ChiSq = nbCalcChisq(data, histogram, NBODY_ALT3_LIKELIHOOD);
             }
         }
     }
 
     mw_printf("<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
+    mw_printf("<alt1_likelihood>%.15f</alt1_likelihood>\n", alt1ChiSq);
+    mw_printf("<alt2_likelihood>%.15f</alt2_likelihood>\n", alt2ChiSq);
+    mw_printf("<alt3_likelihood>%.15f</alt3_likelihood>\n", alt3ChiSq);
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) */
