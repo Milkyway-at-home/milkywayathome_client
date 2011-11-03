@@ -30,7 +30,10 @@
 typedef enum
 {
     NBODY_LIKELIHOOD,
-    NBODY_ALT_LIKELIHOOD
+    NBODY_ALT_LIKELIHOOD,
+    NBODY_POISSON_LIKELIHOOD,
+    NBODY_W_LIKELIHOOD,
+    NBODY_W_ALT_LIKELIHOOD
 } NBodyLikelihoodMethod;
 
 
@@ -82,6 +85,69 @@ static unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histog
     return totalNum;
 }
 
+
+static double nbWTerm(double m, double s)
+{
+    /*
+      W = product_{i = 1 .. B }
+
+                  (m_i + s_i)!
+                 --------------
+                   m_i! s_i!
+
+       Using Stirling's approximation with an additional term
+       ln(n!) ~= ln(2 *pi * n) / 2 + n * ln(n) - n
+       ln(n!) ~= ln(2 pi) / 2 + (n + 1/2) * ln(n) - n
+
+       This reduces to
+
+       ln(W) = sum_{i = 1 .. B}
+
+
+     */
+
+    /* Stirling's approximation fails miserably at n = 0
+
+       If s_i == 0 or m_i == 0
+       the sum term reduces to 0.
+
+       Suppose m_i == 0
+       ln(0!) == 0
+
+       ln(0!s_i!) - ln(0!) - ln(s_i) == ln(s_i!) - ln(s_i!) == 0
+
+       If both == 0
+       ln(0!0!) - ln(0!) - ln(0!) == 0
+     */
+
+    if (fabs(m) < 1.0e-10 || fabs(s) < 1.0e-10)
+    {
+        return 0.0;
+    }
+    else
+    {
+        return -0.5 * log(M_2PI) + (m + s + 0.5) * log(m + s) - (m + 0.5) * log(m) - (s + 0.5) * log(s);
+    }
+}
+
+static double nbPoissonTerm(double f, double y)
+{
+    /*
+      Fitting a data set y(y1, y2, .. yn)  to a model function f(f1, f2, .. fn)
+      sum = i .. N bins,
+      2 sum(f_i - y_i) - sum(i != 1, y_i != 0) y_i * ln(f_i / y_i))
+     */
+
+    if (fabs(f) < 1.0e-10 || fabs(y) < 1.0e-10)
+    {
+        return 2.0 * f;
+    }
+    else
+    {
+        return 2.0 * ((f - y) - y * log(f / y));
+    }
+}
+
 /* Calculate chisq from read data histogarm and the generated histogram */
 static double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                           const NBodyHistogram* histogram,   /* Generated histogram */
@@ -96,6 +162,7 @@ static double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram *
     double simErr;
     double m, s;
     unsigned int nBin = data->nBin;
+    const double scale = 1500.0;
 
 
     assert(histogram->hasRawCounts);
@@ -135,10 +202,37 @@ static double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram *
                     chiSq += sqr(tmp);
                     break;
 
+                case NBODY_POISSON_LIKELIHOOD:
+                    /* Poisson one */
+                    chiSq += nbPoissonTerm(data->data[i].count, n / effTotalNum);
+                    break;
+
+
+                case NBODY_W_LIKELIHOOD:
+                    /* Correctly scaled version */
+                    m = n;
+                    s = scale * data->data[i].count;
+                    chiSq += nbWTerm(m, s);
+                    break;
+
+
+                case NBODY_W_ALT_LIKELIHOOD:
+                    /* Trying to use paper one with logs and not denormalizing */
+                    m = n / effTotalNum;
+                    s = data->data[i].count;
+                    chiSq += nbWTerm(m, s);
+                    break;
+
                 default:
                     mw_fail("Invalid likelihood method\n");
             }
         }
+    }
+
+    if (method == NBODY_W_LIKELIHOOD || method == NBODY_W_ALT_LIKELIHOOD)
+    {
+        /* This is actually ln(W). W is an unreasonably large number. */
+        return chiSq;
     }
 
     return -chiSq;     /* MAXIMUM likelihood, multiply by -1 */
@@ -531,9 +625,9 @@ double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     double chiSq = NAN;
     double altChiSq = NAN;
-    double alt1ChiSq = NAN;
-    double alt2ChiSq = NAN;
-    double alt3ChiSq = NAN;
+    double poissonChiSq = NAN;
+    double wChiSq = NAN;
+    double wAltChiSq = NAN;
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     lua_State* luaSt = NULL;
@@ -587,17 +681,17 @@ double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
             {
                 chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
                 altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
-                alt1ChiSq = nbCalcChisq(data, histogram, NBODY_ALT1_LIKELIHOOD);
-                alt2ChiSq = nbCalcChisq(data, histogram, NBODY_ALT2_LIKELIHOOD);
-                alt3ChiSq = nbCalcChisq(data, histogram, NBODY_ALT3_LIKELIHOOD);
+                poissonChiSq = nbCalcChisq(data, histogram, NBODY_POISSON_LIKELIHOOD);
+                wChiSq = nbCalcChisq(data, histogram, NBODY_W_LIKELIHOOD);
+                wAltChiSq = nbCalcChisq(data, histogram, NBODY_W_ALT_LIKELIHOOD);
             }
         }
     }
 
     mw_printf("<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
-    mw_printf("<alt1_likelihood>%.15f</alt1_likelihood>\n", alt1ChiSq);
-    mw_printf("<alt2_likelihood>%.15f</alt2_likelihood>\n", alt2ChiSq);
-    mw_printf("<alt3_likelihood>%.15f</alt3_likelihood>\n", alt3ChiSq);
+    mw_printf("<poisson_likelihood>%.15f</poisson_likelihood>\n", poissonChiSq);
+    mw_printf("<w_likelihood>%.15f</w_likelihood>\n", wChiSq);
+    mw_printf("<w_alt_likelihood>%.15f</w_alt_likelihood>\n", wAltChiSq);
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) */
