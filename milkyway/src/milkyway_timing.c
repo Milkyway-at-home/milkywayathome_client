@@ -19,6 +19,8 @@
  */
 
 #include "milkyway_timing.h"
+#include "milkyway_util.h"
+
 
 #ifdef _WIN32
   #include <windows.h>

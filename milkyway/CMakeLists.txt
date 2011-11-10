@@ -185,6 +185,10 @@ if(WIN32)
   target_link_libraries(milkyway winmm)
 endif()
 
+if(HAVE_LIBRT)
+  target_link_libraries(milkyway rt)
+endif()
+
 maybe_disable_ssen(milkyway milkyway_lua)
 if(MILKYWAY_OPENCL)
     maybe_disable_ssen(milkyway_cl)
