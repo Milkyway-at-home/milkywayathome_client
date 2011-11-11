@@ -58,12 +58,6 @@ mwbool checkDiskConstants(Disk* d)
             break;
 
         case ExponentialDisk:
-            if (mwCheckNormalPosNum(d->scaleHeight))
-            {
-                mw_printf("Scale height unused for disk type '%s'\n", showDiskT(d->type));
-                badDisk = TRUE;
-            }
-
             if (mwCheckNormalPosNum(d->scaleLength))
             {
                 mw_printf("Invalid parameter for disk type '%s': scaleLength = %.15f\n",
@@ -99,7 +93,6 @@ mwbool checkHaloConstants(Halo* h)
     if (!isfinite(h->vhalo) || mwCheckNormalPosNum(h->scaleLength))
         return invalidHaloWarning(h->type);
 
-    /* TODO: Check for set things which don't match the model? */
     switch (h->type)
     {
         case LogarithmicHalo:
