@@ -160,15 +160,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
 endif()
 
-option(SEPARATION_OPENCL
-        "Build the OpenCL separation" OFF)
+cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
+                                         "OPENCL_FOUND" OFF)
 
-option(NBODY_OPENCL
-        "Build the OpenCL nbody" OFF)
-
-option(MILKYWAY_OPENCL
-        "Build the OpenCL parts of milkyway" OFF)
-mark_as_advanced(MILKYWAY_OPENCL)
+cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
+                                    "OPENCL_FOUND" OFF)
 
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
@@ -340,7 +336,6 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 
 
 
-
 # Look for GPU things first. This way we can continue normally if not found.
 find_package(OpenCL)
 find_package(OpenMP)
@@ -352,7 +347,6 @@ find_package(Curses)
 add_subdirectory(tools)
 add_subdirectory(popt)
 add_subdirectory(lua)
-add_subdirectory(tinyxml)
 
 if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
