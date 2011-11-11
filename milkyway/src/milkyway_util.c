@@ -479,7 +479,7 @@ int mwSetProcessPriority(MWPriority priority)
     }
 
     pClass = mwPriorityToPriorityClass(priority);
-    if (!SetPriorityClass(handle, pclass))
+    if (!SetPriorityClass(handle, pClass))
     {
         mwPerrorW32("Failed to set process priority class to %ld", pClass);
         return 1;
@@ -577,7 +577,7 @@ void mwPerror(const char* fmt, ...)
 void mwPerrorW32(const char* fmt, ...)
 {
     va_list argPtr;
-    LPVOID msgBuf;
+    LPSTR msgBuf;
     DWORD rc;
 
     static const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER

@@ -98,7 +98,7 @@ mark_as_advanced(INSTALL_BOINC)
 option(DOUBLEPREC
        "Build with double precision" ON)
 
-option(NVIDIA_OPENCL "Using Nvidia OpenCL" ON)
+option(NVIDIA_OPENCL "Using Nvidia OpenCL" OFF)
 mark_as_advanced(NVIDIA_OPENCL)
 
 option(AMD_OPENCL "Using AMD OpenCL" OFF)
@@ -352,6 +352,7 @@ find_package(Curses)
 add_subdirectory(tools)
 add_subdirectory(popt)
 add_subdirectory(lua)
+add_subdirectory(tinyxml)
 
 if(SEPARATION_OPENCL)
   add_subdirectory(libelf)

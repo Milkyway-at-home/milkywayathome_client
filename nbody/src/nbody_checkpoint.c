@@ -369,7 +369,11 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     supposedCheckpointSize = hdrSize + bodySize + traceSize;
 
-    verifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize);
+    if (verifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
+    {
+        return 1;
+    }
+
 
     /* Read the bodies */
     st->bodytab = (Body*) mwMallocA(bodySize);

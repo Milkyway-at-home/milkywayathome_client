@@ -68,7 +68,7 @@ static char* mwGetBuildLog(CLInfo* ci)
 static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
 {
     cl_int infoErr;
-    cl_build_status stat;
+    cl_build_status status;
     CLInfo* ci;
     char* buildLog;
 
@@ -85,8 +85,8 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
     infoErr = clGetProgramBuildInfo(prog,
                                     ci->dev,
                                     CL_PROGRAM_BUILD_STATUS,
-                                    sizeof(stat),
-                                    &stat,
+                                    sizeof(status),
+                                    &status,
                                     NULL);
     if (infoErr != CL_SUCCESS)
     {
@@ -94,7 +94,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
     }
     else
     {
-        mw_printf("Build status: %s\n", showCLBuildStatus(stat));
+        mw_printf("Build status: %s\n", showCLBuildStatus(status));
     }
 
     buildLog = mwGetBuildLog(ci);

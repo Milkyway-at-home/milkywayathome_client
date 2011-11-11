@@ -24,10 +24,8 @@
 
 #ifdef _WIN32
   #include <windows.h>
+  #include <mmsystem.h>
 #endif /* _WIN32 */
-
-#include <time.h>
-
 
 #if HAVE_GETTIMEOFDAY
   #include <sys/time.h>
@@ -37,6 +35,8 @@
   #include <mach/mach.h>
   #include <mach/mach_time.h>
 #endif
+
+#include <time.h>
 
 
 static const uint64_t nsPerSec = 1000000000ULL;
@@ -116,9 +116,19 @@ int mwGetHighResTime_RealTime(MWHighResTime* timer)
 
 #elif defined(_WIN32)
 
-int mwGetHighResTime_RealTime(MWHighResTime* t)
+int mwGetHighResTime_RealTime(MWHighResTime* timer)
 {
-    mw_printf("Implement me\n");
+    LARGE_INTEGER tick, freq;
+    LONGLONG sec;
+
+    QueryPerformanceCounter(&tick);
+    QueryPerformanceFrequency(&freq);
+
+    sec = tick.QuadPart / freq.QuadPart;
+
+    timer->sec = sec / nsPerSec;
+    timer->nSec = sec - nsPerSec * timer->sec;
+
     return 1;
 }
 

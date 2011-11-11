@@ -33,29 +33,27 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sys/stat.h>
 
-
-
 #ifdef _WIN32
 
 static int transactionFuncsInit = FALSE;
 static int transactionFuncsOK = FALSE;
 
-static HANDLE (WINAPI *__CreateTransaction) (__in_opt  LPSECURITY_ATTRIBUTES,
-                                             __in_opt  LPGUID,
-                                             __in_opt  DWORD,
-                                             __in_opt  DWORD,
-                                             __in_opt  DWORD,
-                                             __in_opt  DWORD,
-                                             __in_opt  LPWSTR) = NULL;
+static HANDLE (WINAPI *__CreateTransaction) (LPSECURITY_ATTRIBUTES,
+                                             LPGUID,
+                                             DWORD,
+                                             DWORD,
+                                             DWORD,
+                                             DWORD,
+                                             LPWSTR) = NULL;
 
-static BOOL (WINAPI *__MoveFileTransacted) (__in      LPCTSTR,
-                                            __in_opt  LPCTSTR,
-                                            __in_opt  LPPROGRESS_ROUTINE,
-                                            __in_opt  LPVOID,
-                                            __in      DWORD,
-                                            __in      HANDLE) = NULL;
+static BOOL (WINAPI *__MoveFileTransacted) (LPCTSTR,
+                                            LPCTSTR,
+                                            LPPROGRESS_ROUTINE,
+                                            LPVOID,
+                                            DWORD,
+                                            HANDLE) = NULL;
 
-static BOOL (WINAPI *__CommitTransaction) (__in  HANDLE TransactionHandle) = NULL;
+static BOOL (WINAPI *__CommitTransaction) (HANDLE TransactionHandle) = NULL;
 
 
 
@@ -254,7 +252,6 @@ static int mw_boinc_rename_aux(const char* oldf, const char* newf)
 /* Pretty much boinc_rename() mangled a bit to fit here temporarily */
 static int mw_boinc_rename(const char* old, const char* newf)
 {
-    int i;
     int retval;
     const double fileRetryInterval = 5;
 
