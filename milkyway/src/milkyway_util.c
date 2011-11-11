@@ -28,6 +28,7 @@
 #include <time.h>
 #include <errno.h>
 #include <float.h>
+#include <stdarg.h>
 
 #ifdef __SSE__
   #include <xmmintrin.h>

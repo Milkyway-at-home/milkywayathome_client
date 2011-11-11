@@ -59,7 +59,7 @@ static int subIndex(Body* p, NBodyCell* q)
     return ind;
 }
 
-static inline void nbIncAddNBodyQuadMatrix(NBodyQuadMatrix* restrict a, NBodyQuadMatrix* restrict b)
+static inline void nbIncAddNBodyQuadMatrix(NBodyQuadMatrix* RESTRICT a, NBodyQuadMatrix* RESTRICT b)
 {
     a->xx += b->xx;
     a->xy += b->xy;

@@ -76,6 +76,9 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool 
     flags << "-D BG_B="           << ap->bg_b           << " ";
     flags << "-D BG_C="           << ap->bg_c           << " ";
 
+    flags << "-D ALPHA="          << ap->alpha          << " ";
+    flags << "-D ALPHA_DELTA_3="  << ap->alpha_delta3   << " ";
+
 
     /* FIXME: Device vendor not necessarily the platform vendor */
     if (hasNvidiaCompilerFlags(di))

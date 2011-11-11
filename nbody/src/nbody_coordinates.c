@@ -109,7 +109,7 @@ real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
     lcos = mw_cos(L(lbr));
 
     lambda = r2d(mw_atan2(
-                     - (sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
+                      -(sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
                      + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
                      + cospsi * sinth * bsin,
 

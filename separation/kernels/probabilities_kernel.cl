@@ -183,7 +183,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         }
         else
         {
-            bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+            bg_prob += mw_div(rPt.y, powr(rg, ALPHA) * powr(rs, ALPHA_DELTA_3));
         }
 
         if (AUX_BG_PROFILE)

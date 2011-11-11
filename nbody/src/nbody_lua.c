@@ -223,7 +223,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
 
     int top;
     mwvector a;
-    static const mwvector nanVector = mw_vec(NAN, NAN, NAN);
+    static const mwvector badVector = mw_vec(REAL_MAX, REAL_MAX, REAL_MAX);
     lua_State* luaSt = st->potEvalStates[tid];
 
     /* Push closure */
@@ -251,7 +251,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
         }
 
         /* Make sure we break everything */
-        *aOut = nanVector;
+        *aOut = badVector;
         return;
     }
 
@@ -276,7 +276,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
             }
         }
 
-        *aOut = nanVector;
+        *aOut = badVector;
         return;
     }
 

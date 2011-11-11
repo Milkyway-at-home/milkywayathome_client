@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"

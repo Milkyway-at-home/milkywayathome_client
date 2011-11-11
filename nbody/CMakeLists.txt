@@ -45,9 +45,6 @@ cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
 mark_as_advanced(NBODY_STATIC)
 maybe_static(${NBODY_STATIC})
 
-if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLUT_FOUND)
-  set(NBODY_GL ON CACHE INTERNAL "Build N-body graphics")
-endif()
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})

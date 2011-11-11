@@ -20,7 +20,6 @@
 #ifndef _MW_ASPRINTF_H_
 #define _MW_ASPRINTF_H_
 
-#include <stdarg.h>
 #include "milkyway_config.h"
 
 #ifdef __cplusplus
@@ -29,9 +28,7 @@ extern "C" {
 
 
 #if defined(_WIN32) && !HAVE_ASPRINTF
-int _mw_asprintf(char** buf, const char* format, ...);
-#define asprintf(buf, fmt, ...) _mw_asprintf(buf, fmt, ##__VA_ARGS__)
-
+int asprintf(char** buf, const char* format, ...);
 #endif
 
 #ifdef __cplusplus

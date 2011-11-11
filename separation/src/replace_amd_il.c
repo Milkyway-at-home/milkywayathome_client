@@ -20,6 +20,8 @@
 
 #include <sys/stat.h>
 #include <string.h>
+#include <stdarg.h>
+
 #include <libelf.h>
 
 #include "replace_amd_il.h"

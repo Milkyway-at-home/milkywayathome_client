@@ -23,6 +23,8 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
+#include "milkyway_config.h"
+
 
 /* We need to pull in the __GLIBC__ macros for our lazy check of
  * broken tgmath, and this is the recommended header to use for that
@@ -36,15 +38,16 @@
 
 
 #if DOUBLEPREC
-typedef double real MW_ALIGN(8);
-typedef double double2[2] MW_ALIGN(16);
-typedef double double4[4] MW_ALIGN(32);
+typedef MW_ALIGN_TYPE(8) double real;
+typedef MW_ALIGN_TYPE(16)double double2[2];
+typedef MW_ALIGN_TYPE(32) double double4[4];
 
 #else
-typedef float real;
-typedef float float2[2] MW_ALIGN(8);
-typedef float float4[4] MW_ALIGN(16);
+typedef MW_ALIGN_TYPE(4) float real;
+typedef MW_ALIGN_TYPE(8) float float2[2];
+typedef MW_ALIGN_TYPE(16) float float4[4];
 #endif /* DOUBLEPREC */
+
 
 
 #if DOUBLEPREC

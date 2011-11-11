@@ -231,8 +231,8 @@ void mwDisableErrorBoxes(void);
   #define mw_likely(x)    __builtin_expect((x), 1)
   #define mw_unlikely(x)  __builtin_expect((x), 0)
 #else
-  #define mw_likely(x)
-  #define mw_unlikely(x)
+  #define mw_likely(x) (x)
+  #define mw_unlikely(x) (x)
 #endif /* __GNUC__ */
 
 #ifdef __cplusplus

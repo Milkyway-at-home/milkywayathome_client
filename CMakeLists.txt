@@ -121,8 +121,6 @@ mark_as_advanced(BOINC_RELEASE_NAMES)
 set(MILKYWAY_ROOT ${PROJECT_BINARY_DIR})
 list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
 
-# Stuff which the build will download and use from there.
-set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
@@ -344,6 +342,25 @@ find_package(OpenGL)
 find_package(GLUT)
 find_package(Curses)
 
+
+cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
+                                         "OPENCL_FOUND" OFF)
+
+cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
+                                    "OPENCL_FOUND" OFF)
+
+if(NBODY_OPENCL OR SEPARATION_OPENCL)
+  set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
+endif()
+
+
+cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
+                                    "OPENMP_FOUND" OFF)
+
+cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
+                                "OPENGL_FOUND;OPENGL_GLU_FOUND;GLUT_FOUND" OFF)
+
+
 add_subdirectory(tools)
 add_subdirectory(popt)
 add_subdirectory(lua)
@@ -351,6 +368,7 @@ add_subdirectory(lua)
 if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
 endif()
+
 
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")

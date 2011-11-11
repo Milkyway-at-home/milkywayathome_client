@@ -151,8 +151,12 @@
 
 #ifdef _MSC_VER
   #define MW_ALIGN(x) __declspec(align(x))
+  /* __declspec(align) is shit. If you use it on some typedef,
+     and use that type as a function parameter it errors. */
+  #define MW_ALIGN_TYPE(x)
 #else
   #define MW_ALIGN(x) __attribute__((aligned(x)))
+  #define MW_ALIGN_TYPE(x) __attribute__((aligned(x)))
 #endif /* _MSC_VER */
 
 #ifdef _WIN32

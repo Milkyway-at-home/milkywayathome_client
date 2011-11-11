@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <stdarg.h>
 #include "mw_asprintf.h"
 
 #ifndef _WIN32
@@ -30,7 +30,7 @@
 #if defined(_WIN32) && !HAVE_ASPRINTF
 
 /* Intended for use on windows where asprintf is missing */
-int _mw_asprintf(char** bufOut, const char* format, ...)
+int asprintf(char** bufOut, const char* format, ...)
 {
     int size, rc;
     char* buf;
