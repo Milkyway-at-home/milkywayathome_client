@@ -28,11 +28,19 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#ifndef _WIN32
+#if HAVE_UNISTD_H
   #include <unistd.h>
+#endif
+
+#if HAVE_FCNTL_H
   #include <fcntl.h>
-#else
+#endif
+
+#if HAVE_MALLOC_H
   #include <malloc.h>
+#endif
+
+#ifdef _WIN32
   #include <windows.h>
 #endif /* _WIN32 */
 

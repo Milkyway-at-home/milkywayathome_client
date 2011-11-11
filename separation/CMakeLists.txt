@@ -73,22 +73,14 @@ if(NOT BOINC_APPLICATION AND SEPARATION_GRAPHICS)
   set(SEPARATION_GRAPHICS OFF)
 endif()
 
-if(SEPARATION_OPENCL AND NOT OPENCL_FOUND)
-  message(FATAL_ERROR "Separation OpenCL was requested, but OpenCL not found.")
-else()
+if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
 endif()
 
 
-if(SEPARATION_OPENCL)
-  set(SEPARATION_GPU 1)
-endif()
-
-if(SEPARATION_GPU)
-  message(AUTHOR_WARNING "Using GPU, so unsetting static separation")
-  set(SEPARATION_STATIC 0)
-endif()
-
+cmake_dependent_option(SEPARATION_STATIC "Build separation as fully static binary" OFF
+                                         "NOT SEPARATION_OPENCL" OFF)
+mark_as_advanced(SEPARATION_STATIC)
 maybe_static(${SEPARATION_STATIC})
 
 

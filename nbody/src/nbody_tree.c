@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _WIN32
   #include <sys/stat.h>
   #include <sys/mman.h>
-  #include <unistd.h>
 #else
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
@@ -34,6 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include <lauxlib.h>
 #include "nbody_lua_types.h"
+#include "milkyway_util.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wfloat-equal"

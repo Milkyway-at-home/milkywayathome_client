@@ -75,10 +75,6 @@ if(NOT DOUBLEPREC AND NBODY_CRLIBM)
   set(NBODY_CRLIBM OFF)
 endif()
 
-if(NBODY_OPENCL AND NOT OPENCL_FOUND)
-  message(FATAL "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
-endif()
-
 print_separator()
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")

@@ -142,12 +142,14 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
+    (void) st, (void) ctx;
     mw_printf("Creating shared scene unimplemented for this system\n");
     return 0;
 }
 
 int visualizerIsAttached(const NBodyState* st)
 {
+    (void) st;
     return 0;
 }
 
@@ -248,6 +250,8 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
     STARTUPINFO startInfo;
     size_t visArgsLen, argvSize;
     char* buf;
+
+    (void) st;
 
     memset(&pInfo, 0, sizeof(pInfo));
     memset(&startInfo, 0, sizeof(startInfo));

@@ -101,7 +101,6 @@ static int mw_rename_w32_fallback(const char* oldf, const char* newf)
 static int mw_rename_w32_atomic(const char* oldf, const char* newf)
 {
     HANDLE tx;
-    int rc;
 
     tx = __CreateTransaction(NULL, NULL, 0, 0, 0, 0, L"AtomicFileRenameTransaction");
     if (!tx)

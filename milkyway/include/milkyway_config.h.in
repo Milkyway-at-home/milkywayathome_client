@@ -28,8 +28,12 @@
 #cmakedefine01 HAVE_EXP10
 #cmakedefine01 HAVE_EXP2
 #cmakedefine01 HAVE_SINCOS
+
+#cmakedefine01 HAVE_UNISTD_H
+#cmakedefine01 HAVE_FCNTL_H
 #cmakedefine01 HAVE_INTTYPES_H
 #cmakedefine01 HAVE_STDINT_H
+#cmakedefine01 HAVE_MALLOC_H
 #cmakedefine01 HAVE_TGMATH_H
 #cmakedefine01 HAVE_FPU_CONTROL_H
 #cmakedefine01 HAVE_ASPRINTF

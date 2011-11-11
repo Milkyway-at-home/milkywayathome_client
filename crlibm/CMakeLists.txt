@@ -144,11 +144,13 @@ find_path(IBM_H
 	  /usr/include/ /usr/local/include/
 	  DOC "Path of Mathlib.h, the include file for IBM's libultim, for comparison purpose"
 )
+mark_as_advanced(IBM_H)
 
 find_library(IBM_LIB
              NAMES ultim
              PATH /usr/lib/ /usr/local/lib/
              DOC "Directory of IBM's libultim, for comparison purpose")
+mark_as_advanced(IBM_LIB)
 
 # for compatibility with configure
 if(IBM_H AND IBM_LIB)

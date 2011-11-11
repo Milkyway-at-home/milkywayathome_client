@@ -104,6 +104,8 @@ mark_as_advanced(
 
 if(OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARIES)
   set(OPENCL_FOUND TRUE)
+else()
+  set(OPENCL_FOUND FALSE)
 endif()
 
 

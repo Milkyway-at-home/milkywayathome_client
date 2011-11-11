@@ -21,7 +21,6 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdarg.h>
-
 #include <libelf.h>
 
 #include "replace_amd_il.h"
@@ -243,7 +242,7 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
 
         if (verboseDebug)
         {
-            printf("Section %-4.4jd %s\n", (uintmax_t) elf_ndxscn(scn), name);
+            printf("Section %u %s\n", (unsigned int) elf_ndxscn(scn), name);
         }
     }
 

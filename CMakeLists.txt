@@ -158,26 +158,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
 endif()
 
-cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
-                                         "OPENCL_FOUND" OFF)
-
-cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
-                                    "OPENCL_FOUND" OFF)
-
-if(NBODY_OPENCL OR SEPARATION_OPENCL)
-  set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
-endif()
-
 option(NBODY
         "Build the n-body code" ON)
-
-option(NBODY_OPENMP
-         "Use OpenMP" ON)
-
-option(NBODY_OPENCL
-         "Use OpenCL" OFF)
-
-option(NBODY_GL "Lots of pixels" OFF)
 
 cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
                          "DOUBLEPREC" ON)
@@ -310,12 +292,6 @@ if(CXX_COMPILER_IS_CLANG)
   set(CMAKE_CXX_FLAGS "${shut_up_unknown_flags} ${CMAKE_CXX_FLAGS}")
 endif()
 
-print_separator()
-print_build_info()
-print_build_options()
-print_separator()
-
-
 if(NOT SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
@@ -334,7 +310,6 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 
 
 
-# Look for GPU things first. This way we can continue normally if not found.
 find_package(OpenCL)
 find_package(OpenMP)
 find_package(Boost)
@@ -348,7 +323,6 @@ cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
 
 cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
                                     "OPENCL_FOUND" OFF)
-
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
 endif()
@@ -359,6 +333,12 @@ cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
 
 cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
                                 "OPENGL_FOUND;OPENGL_GLU_FOUND;GLUT_FOUND" OFF)
+
+
+print_separator()
+print_build_info()
+print_build_options()
+print_separator()
 
 
 add_subdirectory(tools)
