@@ -30,7 +30,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
 
-#include <float.h>
+#if HAVE_FLOAT_H
+  #include <float.h>
+#endif
 
 
 #ifdef __cplusplus

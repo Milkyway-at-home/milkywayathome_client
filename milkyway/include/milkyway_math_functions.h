@@ -25,6 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_MATH_FUNCTIONS_H_
 #define _MILKYWAY_MATH_FUNCTIONS_H_
 
+#include "milkyway_extra.h"
+
 /* simple math macros */
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x)  ((x) * (x))
@@ -66,8 +68,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* ENABLE_CRLIBM */
 
 #define mw_abs   fabs
-#define mw_max   fmax
-#define mw_min   fmin
+
 
 #define mw_acosh acosh
 #define mw_acospi(x) (mw_acos(x) / M_PI))
@@ -105,8 +106,26 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* TODO: Have fma */
 #define mw_fma(a, b, c) (((a) * (b)) + (c))
 
+#if HAVE_FMAX
 #define mw_fmax fmax
-#define mw_fmin fmin
+#else
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline real mw_fmax(real a, real b)
+{
+    return ((a >= b) || isnan(b)) ?  a : b;
+}
+#endif
+
+#if HAVE_FMIN
+#define mw_fmin   fmin
+#else
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline real mw_fmin(real a, real b)
+{
+    return ((a <= b) || isnan(b)) ? a : b;
+}
+#endif
+
 #define mw_fmod fmod
 
 /* CHECKME: mw_fract */

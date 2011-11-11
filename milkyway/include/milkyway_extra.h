@@ -31,6 +31,10 @@
   #include <stdint.h>
 #endif
 
+#if HAVE_FLOAT_H
+  #include <float.h>
+#endif
+
 typedef char mwbool;
 
 #ifndef TRUE

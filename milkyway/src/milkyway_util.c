@@ -27,8 +27,11 @@
 
 #include <time.h>
 #include <errno.h>
-#include <float.h>
 #include <stdarg.h>
+
+#if HAVE_FLOAT_H
+#include <float.h>
+#endif
 
 #ifdef __SSE__
   #include <xmmintrin.h>

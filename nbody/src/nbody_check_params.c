@@ -58,7 +58,7 @@ mwbool checkDiskConstants(Disk* d)
             break;
 
         case ExponentialDisk:
-            if (isnormal(d->scaleHeight))
+            if (mwCheckNormalPosNum(d->scaleHeight))
             {
                 mw_printf("Scale height unused for disk type '%s'\n", showDiskT(d->type));
                 badDisk = TRUE;

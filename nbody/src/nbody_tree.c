@@ -168,9 +168,9 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
     {
-        xyzmax = mw_max(xyzmax, mw_abs(X(Pos(p)) - X(Pos(root))));
-        xyzmax = mw_max(xyzmax, mw_abs(Y(Pos(p)) - Y(Pos(root))));
-        xyzmax = mw_max(xyzmax, mw_abs(Z(Pos(p)) - Z(Pos(root))));
+        xyzmax = mw_fmax(xyzmax, mw_abs(X(Pos(p)) - X(Pos(root))));
+        xyzmax = mw_fmax(xyzmax, mw_abs(Y(Pos(p)) - Y(Pos(root))));
+        xyzmax = mw_fmax(xyzmax, mw_abs(Z(Pos(p)) - Z(Pos(root))));
     }
 
     while (t->rsize < 2.0 * xyzmax)
@@ -287,7 +287,7 @@ static inline real bmax2Inc(real cmPos, real pPos, real psize)
 {
     real dmin;
     dmin = cmPos - (pPos - 0.5 * psize);         /* dist from 1st corner */
-    return sqr(mw_max(dmin, psize - dmin));      /* sum max distance^2 */
+    return sqr(mw_fmax(dmin, psize - dmin));      /* sum max distance^2 */
 }
 
 ALWAYS_INLINE
