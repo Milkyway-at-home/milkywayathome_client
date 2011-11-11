@@ -212,7 +212,7 @@ inline real4 nfwHaloAccel(real4 pos, real r)
 {
     const real a  = HALO_SCALE_LENGTH;
     const real ar = a + r;
-    const real c  = a * sqr(HALO_VHALO) * ((-ar * log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
+    const real c  = a * sqr(HALO_VHALO) * (r - ar * log((a + r) / a)) / (0.2162165954 * cube(r) * ar);
 
     return c * pos;
 }
