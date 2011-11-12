@@ -202,7 +202,7 @@ int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* 
 
 #else
 
-static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
+int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
 {
     probabilityFunc = selectStandardFunction(ap);
     return 0;

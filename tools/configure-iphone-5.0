@@ -13,7 +13,7 @@ unset DYLD_FALLBACK_FRAMEWORK_PATH
 CMAKE_PATH=/usr/bin/cmake
 #CMAKE_PATH=/opt/local/bin/cmake
 
-export SDKVER="4.3"
+export SDKVER="5.0"
 export DEVROOT="/Developer/Platforms/iPhoneOS.platform/Developer"
 export SDKROOT="$DEVROOT/SDKs/iPhoneOS$SDKVER.sdk"
 export PKG_CONFIG_PATH="$SDKROOT/usr/lib/pkgconfig":"/opt/iphone-$SDKVER/lib/pkgconfig":"/usr/local/iphone-$SDKVER/lib/pkgconfig"
@@ -28,6 +28,6 @@ if [ ! -d "${BUILDDIR}" ]; then
     mkdir -p ${BUILDDIR}
 fi
 
-MW_BUILD_OPTS="-DBOINC_APPLICATION=OFF -DNBODY=OFF -DMILKYWAY_IPHONE_APP=1"
-cd ${BUILDDIR} >/dev/null 2>&1 && ${CMAKE_PATH} .. -DCMAKE_TOOLCHAIN_FILE="$MAINFOLDER/cmake_modules/iphone-$SDKVER.toolchain" -DCMAKE_INSTALL_PREFIX="/opt/iphone-$SDKVER" -DPOPT_LIBRARY=${POPT_LIB} -DPOPT_INCLUDE_DIR=${POPT_INC} ${MW_BUILD_OPTS} "$@"
+MW_BUILD_OPTS="-DBOINC_APPLICATION=OFF -DNBODY=ON -DMILKYWAY_IPHONE_APP=0"
+cd ${BUILDDIR} >/dev/null 2>&1 && ${CMAKE_PATH} .. -DCMAKE_TOOLCHAIN_FILE="$MAINFOLDER/cmake_modules/iphone-$SDKVER.toolchain" -DCMAKE_INSTALL_PREFIX="/opt/iphone-$SDKVER" ${MW_BUILD_OPTS} "$@"
 

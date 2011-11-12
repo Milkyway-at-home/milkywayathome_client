@@ -295,7 +295,7 @@ add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 if(INSTALL_BOINC)
   install_boinc(milkyway_separation)
-else()
+elseif(NOT MILKYWAY_IPHONE_APP)
   install(TARGETS milkyway_separation
             RUNTIME DESTINATION bin)
 endif()

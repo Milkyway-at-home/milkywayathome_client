@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 project(milkywayathome_client)
 enable_testing()
 
@@ -192,7 +192,6 @@ set(gcc_warnings "-Wall"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
-                 "-Wno-psabi"
                #  "-Wsuggest-attribute=pure"
                #  "-Wsuggest-attribute=const"
                #  "-Wsuggest-attribute=noreturn"
@@ -201,6 +200,7 @@ set(gcc_warnings "-Wall"
                # "-Wmissing-declarations"
                # "-Wunreachable-code"
                )
+add_flag_if_supported("-Wno-psabi")
 
 # set(clang_analyzer "--analyze"
 #                    -Xanalyzer -analyzer-eagerly-assume

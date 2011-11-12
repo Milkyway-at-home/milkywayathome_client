@@ -87,6 +87,8 @@ void mw_cpuid(int abcd[4], int a, int c)
 
 void mw_cpuid(int abcd[4], int a, int c)
 {
+    (void) a, (void) c;
+
     abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
 }
 
