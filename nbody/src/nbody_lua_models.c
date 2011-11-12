@@ -241,12 +241,92 @@ static int luaCalculateEps2(lua_State* luaSt)
     return 1;
 }
 
+static const real solarMassesPerMassUnit = 222288.47;
+
+static int luaSolarMassToMassUnit(lua_State* luaSt)
+{
+    real mSolar;
+    real m;
+
+    if (lua_gettop(luaSt) != 1)
+    {
+        return luaL_argerror(luaSt, 0, "Expected 1 argument");
+    }
+
+    mSolar = luaL_checknumber(luaSt, 1);
+    m = mSolar / solarMassesPerMassUnit;
+    lua_pushnumber(luaSt, m);
+
+    return 1;
+}
+
+static int luaMassUnitToSolarMass(lua_State* luaSt)
+{
+    real mSolar;
+    real m;
+
+    if (lua_gettop(luaSt) != 1)
+    {
+        return luaL_argerror(luaSt, 0, "Expected 1 argument");
+    }
+
+    m = luaL_checknumber(luaSt, 1);
+    mSolar = solarMassesPerMassUnit * m;
+    lua_pushnumber(luaSt, mSolar);
+
+    return 1;
+}
+
+static int luaLightyearToKiloparsec(lua_State* luaSt)
+{
+    real kpc;
+    real ly;
+
+    if (lua_gettop(luaSt) != 1)
+    {
+        return luaL_argerror(luaSt, 0, "Expected 1 argument");
+    }
+
+    ly = luaL_checknumber(luaSt, 1);
+    kpc = 0.000306599 * ly;
+    lua_pushnumber(luaSt, kpc);
+
+    return 1;
+
+}
+
+static int luaKiloparsecToLightyear(lua_State* luaSt)
+{
+    real kpc;
+    real ly;
+
+    if (lua_gettop(luaSt) != 1)
+    {
+        return luaL_argerror(luaSt, 0, "Expected 1 argument");
+    }
+
+    kpc = luaL_checknumber(luaSt, 1);
+    ly = 3271.59 * kpc;
+    lua_pushnumber(luaSt, ly);
+
+    return 1;
+
+}
+
+
 void registerModelUtilityFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "plummerTimestepIntegral", luaPlummerTimestepIntegral);
     lua_register(luaSt, "reverseOrbit", luaReverseOrbit);
     lua_register(luaSt, "calculateEps2", luaCalculateEps2);
     lua_register(luaSt, "calculateTimestep", luaCalculateTimestep);
+
     lua_register(luaSt, "lbrToCartesian", luaLbrToCartesian);
+
+    /* Unit conversions */
+    lua_register(luaSt, "solarMassToMassUnit", luaSolarMassToMassUnit);
+    lua_register(luaSt, "massUnitToSolarMass", luaMassUnitToSolarMass);
+    lua_register(luaSt, "lightyearToKiloparsec", luaLightyearToKiloparsec);
+    lua_register(luaSt, "kiloparsecToLightyear", luaKiloparsecToLightyear);
 }
 

@@ -864,6 +864,21 @@ galactic coordinates. Optional argument indicates that the l and b in
 the input vector are in radians.
 @end deffn
 
+@deffn utility function solarMassToMassUnits(@var{mass})
+Convert a mass in solar masses to one in simulation units.
+@end deffn
+
+@deffn utility function massUnitsToSolarMass(@var{mass})
+Convert a mass in solar masses to one in simulation units.
+@end deffn
+
+@deffn utility function lyToKiloparsecs(@var{length})
+Convert a distance in lightyears to kiloparsecs
+@end deffn
+
+@deffn utility function mToKiloparsecs(@var{length})
+Convert a distance in meters to kiloparsecs
+@end deffn
 
 
 @node Milkyway N-Body Invocation
