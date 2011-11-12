@@ -41,7 +41,7 @@ cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
 
 
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
-                                      "NOT NBODY_OPENCL" OFF)
+                                      "NOT NBODY_OPENCL;NOT ENABLE_CURSES" OFF)
 mark_as_advanced(NBODY_STATIC)
 maybe_static(${NBODY_STATIC})
 

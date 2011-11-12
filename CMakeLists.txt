@@ -22,13 +22,14 @@ cmake_minimum_required(VERSION 2.6)
 project(milkywayathome_client)
 enable_testing()
 
-include(CMakeDependentOption)
-include(CheckLibraryExists)
-
 # Find custom cmake modules
 set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
 list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
 set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
+
+include(CMakeDependentOption)
+include(CheckLibraryExists)
+include(CompilerID)
 
 
 if(APPLE)
@@ -44,9 +45,14 @@ if(APPLE)
   endif()
 endif()
 
-if(NOT MSVC)
-  set(CMAKE_C_FLAGS "-pthread -static-libgcc ${CMAKE_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "-pthread -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+if(HAVE_FLAG_STATIC_LIBGCC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc ")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
+endif()
+
+if(HAVE_FLAG_PTHREAD)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
 
@@ -201,7 +207,7 @@ set(gcc_warnings "-Wall"
                # "-Wunreachable-code"
                )
 add_flag_if_supported("-Wno-psabi")
-
+add_flag_if_supported("-std=gnu99")
 # set(clang_analyzer "--analyze"
 #                    -Xanalyzer -analyzer-eagerly-assume
 #                    -Xanalyzer -analyzer-check-dead-stores
@@ -224,9 +230,6 @@ if(SYSTEM_IS_X86)
   list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
 endif()
 
-if(NOT MSVC)
-  set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
-endif()
 
 #Set math assumptions that we can make. We don't ever use the error
 #checking, or the other rounding modes.
@@ -235,18 +238,6 @@ set(extra_gcc_math_flags "-fno-rounding-math"
 
 if(NOT DOUBLEPREC)
   list(APPEND gcc_extra_flags "-fsingle-precision-constant")
-endif()
-
-if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
-  set(C_COMPILER_IS_CLANG 1)
-endif()
-
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  set(CXX_COMPILER_IS_CLANG 1)
-endif()
-
-if(CXX_COMPILER_IS_CLANG OR C_COMPILER_IS_CLANG)
-  set(COMPILER_IS_CLANG 1)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
@@ -290,6 +281,11 @@ endif()
 
 if(CXX_COMPILER_IS_CLANG)
   set(CMAKE_CXX_FLAGS "${shut_up_unknown_flags} ${CMAKE_CXX_FLAGS}")
+endif()
+
+if(C_COMPILER_IS_PATHCC)
+  # C99 inline apparently not supported and without this there are billions of warnings about it
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline")
 endif()
 
 if(NOT SEPARATION AND NOT NBODY)

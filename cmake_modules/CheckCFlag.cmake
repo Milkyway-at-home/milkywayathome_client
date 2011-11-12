@@ -21,8 +21,6 @@
 include(CheckCCompilerFlag)
 
 function(add_flag_if_supported flagname)
-  message("Checking for flag ${flagname}")
-
   check_c_compiler_flag("${flagname}" HAVE_FLAG_${flagname})
 
   if(${HAVE_FLAG_${flagname}})
@@ -36,9 +34,23 @@ function(append_supported_flags flags)
   endforeach()
 endfunction()
 
-if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
-  set(FAST_MATH_FLAGS "-ffast-math")
-elseif(MSVC)
+
+check_c_compiler_flag("/fp:fast" HAVE_FP_FAST_MATH)
+if(HAVE_FP_FAST_MATH)
   set(FAST_MATH_FLAGS "/fp:fast")
 endif()
+
+check_c_compiler_flag("-ffast-math" HAVE_F_FAST_MATH)
+if(HAVE_F_FAST_MATH)
+  set(FAST_MATH_FLAGS "-ffast-math")
+endif()
+
+
+#check_c_compiler_flag("-march=em64t" HAVE_MARCH_EM64T)
+#check_c_compiler_flag("-march=anyx86" HAVE_MARCH_ANYX86)
+#check_c_compiler_flag("-mtune=generic" HAVE_MTUNE_GENERIC)
+
+check_c_compiler_flag("-static-libstdc++" HAVE_FLAG_STATIC_LIBSTDCPP)
+check_c_compiler_flag("-static-libgcc" HAVE_FLAG_STATIC_LIBGCC)
+check_c_compiler_flag("-pthread" HAVE_FLAG_PTHREAD)
 

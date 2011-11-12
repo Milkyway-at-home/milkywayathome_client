@@ -14,6 +14,7 @@ project(crlibm C)
 include(CheckIncludeFile)
 include(CheckFunctionExists)
 include(CPUNameTest)
+include(CheckSSE2)
 
 option(CRLIBM_QUIET_BUILD "Quietly build" ON)
 
@@ -186,15 +187,6 @@ endif()
 
 
 option(ENABLE_SSE2 "Enable SSE2" ON)
-
-if(SYSTEM_IS_X86)
-  if(NOT MSVC)
-    set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
-  else()
-    set(SSE2_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2")
-  endif()
-endif()
-
 
 option(ENABLE_DOUBLE_EXTENDED "Enable double-extended optimised versions of functions if hardware supports it" ON)
 
