@@ -275,7 +275,7 @@ static int equalMaybeArray(const void* a, const void* b, size_t n)
 }
 
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 

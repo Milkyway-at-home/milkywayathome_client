@@ -26,12 +26,15 @@
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+/* This should work with ICC, but if I use it it dies on some files with the error:
+   (0): internal error: backend signals
+ */
   #define NBODY_ALIGN __attribute__((aligned))
   #define NBODY_ALIGN_V(x) __attribute__((aligned(x)))
 #else
   #define NBODY_ALIGN
-  #define NBODY_ALIGN_V(x) __attribute__((aligned(x)))
+  #define NBODY_ALIGN_V(x)
 #endif /* _MSC_VER */
 
 #define _SPHERICAL 0

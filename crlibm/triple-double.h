@@ -1231,7 +1231,7 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
 */
 
 
-#define  DoSqrt13(resh, resm, resl , x)                                                          \
+#define  DoSqrt13(resh, resm, resl, x)                                                        \
 {                                                                                             \
   db_number _xdb;                                                                             \
   int _E;                                                                                     \
@@ -1248,8 +1248,8 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
   /* Special case x = 0 */                                                                    \
   if ((x) == 0) {                                                                             \
     (*(resh)) = (x);                                                                          \
-    (*(resm)) = 0;                                                                            \
-    (*(resl)) = 0;                                                                            \
+    (*(resm)) = 0.0;                                                                          \
+    (*(resl)) = 0.0;                                                                          \
   } else {                                                                                    \
                                                                                               \
     _E = 0;                                                                                   \
@@ -1260,7 +1260,7 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
     /* Handle subnormal case */                                                               \
     if (_xdb.i[HI] < 0x00100000) {                                                            \
       _E = -52;                                                                               \
-      _xdb.d *= ((db_number) ((double) SQRTTWO52)).d;                                         \
+      _xdb.d *= ((double) SQRTTWO52);                                                         \
                         /* make x a normal number */                                          \
     }                                                                                         \
                                                                                               \
@@ -1286,8 +1286,8 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
                                                                                               \
     /* Iterate two times on double precision */                                               \
                                                                                               \
-    _r1 = 0.5 * _r0 * (3 - _m * (_r0 * _r0));                                                 \
-    _r2 = 0.5 * _r1 * (3 - _m * (_r1 * _r1));                                                 \
+    _r1 = 0.5 * _r0 * (3.0 - _m * (_r0 * _r0));                                               \
+    _r2 = 0.5 * _r1 * (3.0 - _m * (_r1 * _r1));                                               \
                                                                                               \
     /* Iterate two times on double-double precision */                                        \
                                                                                               \
@@ -1302,10 +1302,10 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
     Add22(&_r3h, &_r3l, _r2PHr2h, _r2PHr2l, _MHmMr2Ch, _MHmMr2Cl);                            \
                                                                                               \
     Mul22(&_r3Sqh, &_r3Sql, _r3h, _r3l, _r3h, _r3l);                                          \
-    Mul22(&_mMr3Sqh, &_mMr3Sql, _m, 0.0, _r3Sqh, _r3Sql);                                       \
+    Mul22(&_mMr3Sqh, &_mMr3Sql, _m, 0.0, _r3Sqh, _r3Sql);                                     \
              /* To prove: mMr3Sqh = 1.0 in each case */                                       \
                                                                                               \
-    Mul22(&_r4h, &_r4l, _r3h, _r3l, 1.0, (-0.5 * _mMr3Sql));                                    \
+    Mul22(&_r4h, &_r4l, _r3h, _r3l, 1.0, (-0.5 * _mMr3Sql));                                  \
                                                                                               \
     /* Iterate once on triple-double precision */                                             \
                                                                                               \
@@ -1317,7 +1317,7 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
     _HmMr4Sqm = -0.5 * _mMr4Sqm;                                                              \
     _HmMr4Sql = -0.5 * _mMr4Sql;                                                              \
                                                                                               \
-    Mul233(&_r5h,&_r5m,&_r5l,_r4h,_r4l,1.0,_HmMr4Sqm,_HmMr4Sql);                                \
+    Mul233(&_r5h,&_r5m,&_r5l,_r4h,_r4l,1.0,_HmMr4Sqm,_HmMr4Sql);                              \
                                                                                               \
     /* Multiply obtained reciprocal square root by m */                                       \
                                                                                               \

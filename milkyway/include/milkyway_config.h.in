@@ -166,12 +166,6 @@
   #define MW_ALIGN_TYPE(x) __attribute__((aligned(x)))
 #endif /* _MSC_VER */
 
-#ifdef _WIN32
-  #define _CRT_SECURE_NO_WARNINGS
-  #define WIN32_LEAN_AND_MEAN
-  #define VC_EXTRALEAN
-#endif /* _WIN32 */
-
 /* Can use x87 or some non-x86 math */
 #if !defined(__APPLE__) && !MW_IS_X86_64
   #define HAVE_OTHER_MATH_X87 1

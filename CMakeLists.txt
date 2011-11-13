@@ -45,6 +45,15 @@ if(APPLE)
   endif()
 endif()
 
+if(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS=1 -DWIN32_LEAN_AND_MEAN=1 -DVC_EXTRALEAN=1")
+endif()
+if(CXX_COMPILER_IS_SUN)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -features=zla")
+endif()
+
+
+
 if(HAVE_FLAG_STATIC_LIBGCC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc ")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
@@ -208,6 +217,7 @@ set(gcc_warnings "-Wall"
                )
 add_flag_if_supported("-Wno-psabi")
 add_flag_if_supported("-std=gnu99")
+add_flag_if_supported("-xc99")
 # set(clang_analyzer "--analyze"
 #                    -Xanalyzer -analyzer-eagerly-assume
 #                    -Xanalyzer -analyzer-check-dead-stores
@@ -226,10 +236,15 @@ add_flag_if_supported("-std=gnu99")
 set(gcc_extra_flags "-fno-common -funswitch-loops ")
 set(gcc_only_extra_flags "-freg-struct-return ")
 
+
 if(SYSTEM_IS_X86)
   list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
 endif()
 
+
+# ICC does bad things by default
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SAFE_MATH_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SAFE_MATH_FLAGS}")
 
 #Set math assumptions that we can make. We don't ever use the error
 #checking, or the other rounding modes.

@@ -36,4 +36,12 @@ if(CXX_COMPILER_IS_CLANG OR C_COMPILER_IS_CLANG)
 endif()
 
 
+if("${CMAKE_C_COMPILER_ID}" MATCHES "SunPro")
+  set(C_COMPILER_IS_SUN 1)
+endif()
+
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "SunPro")
+  set(CXX_COMPILER_IS_SUN 1)
+endif()
+
 

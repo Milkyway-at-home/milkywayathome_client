@@ -53,6 +53,9 @@ static void setprogdir (lua_State *L);
   #include <windows.h>
   #define _PATH_MAX MAX_PATH
 #else
+  #ifndef PATH_MAX
+    #define PATH_MAX 4096
+  #endif
   #define _PATH_MAX PATH_MAX
 #endif
 

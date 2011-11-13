@@ -28,6 +28,18 @@ endmacro()
 
 
 if(SYSTEM_IS_X86)
+  if(MSVC OR "${CMAKE_C_COMPILER_ID}" MATCHES "SunPro")
+    set(NEED_SSE_DEFINES TRUE)
+  endif()
+
+  if("${CMAKE_C_COMPILER_ID}" MATCHES "SunPro")
+    set(HAVE_FLAG_XARCH_SSE TRUE)
+    set(HAVE_FLAG_XARCH_SSE2 TRUE)
+    set(HAVE_FLAG_XARCH_SSE3 TRUE)
+    set(HAVE_FLAG_XARCH_SSE4 TRUE)
+    set(HAVE_FLAG_XARCH_SSE4_1 TRUE)
+  endif()
+
   if(NOT MSVC)
     check_c_compiler_flag("-mfpmath=sse" HAVE_FLAG_M_FPMATH_SSE)
     check_c_compiler_flag("-msse" HAVE_FLAG_M_SSE)
@@ -35,8 +47,23 @@ if(SYSTEM_IS_X86)
     check_c_compiler_flag("-msse3" HAVE_FLAG_M_SSE3)
     check_c_compiler_flag("-msse4" HAVE_FLAG_M_SSE4)
     check_c_compiler_flag("-msse4.1" HAVE_FLAG_M_SSE41)
-    check_c_compiler_flag("-msse4_1" HAVE_FLAG_M_SSE4_1) # pathcc uses sse4_1 names
     check_c_compiler_flag("-mavx" HAVE_FLAG_M_AVX)
+
+
+    # These all fail for some reason
+    #check_c_compiler_flag("-xarch=sse" HAVE_FLAG_XARCH_SSE)
+    #check_c_compiler_flag("-xarch=sse2" HAVE_FLAG_XARCH_SSE2)
+    #check_c_compiler_flag("-xarch=sse3" HAVE_FLAG_XARCH_SSE3)
+    #check_c_compiler_flag("-xarch=sse4" HAVE_FLAG_XARCH_SSE4)
+    #check_c_compiler_flag("-xarch=sse4_1" HAVE_FLAG_XARCH_SSE4_1)
+
+
+    if("${CMAKE_C_COMPILER_ID}" MATCHES "Intel")
+      # Check succeeds when it shouldn't for some reason.
+      set(HAVE_FLAG_M_SSE4_1 FALSE)
+    else()
+      check_c_compiler_flag("-msse4_1" HAVE_FLAG_M_SSE4_1) # pathcc uses sse4_1 names
+    endif()
 
     set(BASE_SSE_FLAGS )
     if(HAVE_FLAG_M_FPMATH_SSE)
@@ -45,20 +72,32 @@ if(SYSTEM_IS_X86)
     if(HAVE_FLAG_M_SSE)
       str_append(BASE_SSE_FLAGS "-msse")
     endif()
+    if(HAVE_FLAG_XARCH_SSE)
+      str_append(BASE_SSE_FLAGS "-xarch=sse")
+    endif()
 
     set(SSE2_FLAGS ${BASE_SSE_FLAGS})
     if(HAVE_FLAG_M_SSE2)
       str_append(SSE2_FLAGS "-msse2")
+    endif()
+    if(HAVE_FLAG_XARCH_SSE2)
+      str_append(SSE2_FLAGS "-xarch=sse2")
     endif()
 
     set(SSE3_FLAGS ${SSE2_FLAGS})
     if(HAVE_FLAG_M_SSE3)
       str_append(SSE3_FLAGS "-msse3")
     endif()
+    if(HAVE_FLAG_XARCH_SSE3)
+      str_append(SSE3_FLAGS "-xarch=sse3")
+    endif()
 
     set(SSE4_FLAGS ${SSE3_FLAGS})
     if(HAVE_FLAG_M_SSE4)
       str_append(SSE4_FLAGS "-msse4")
+    endif()
+    if(HAVE_FLAG_XARCH_SSE4)
+      str_append(SSE4_FLAGS "-xarch=sse4")
     endif()
 
     set(SSE41_FLAGS ${SSE4_FLAGS})
@@ -68,11 +107,19 @@ if(SYSTEM_IS_X86)
     if(HAVE_FLAG_M_SSE4_1)
       str_append(SSE41_FLAGS "-msse4_1")
     endif()
+    if(HAVE_FLAG_XARCH_SSE4_1)
+      str_append(SSE41_FLAGS "-xarch=sse4_1")
+    endif()
+
 
     set(AVX_FLAGS ${SSE41_FLAGS})
     if(HAVE_FLAG_M_AVX)
       str_append(AVX_FLAGS "-mavx")
     endif()
+    if(HAVE_FLAG_XARCH_AVX)
+      str_append(AVX_FLAGS "-xarch=avx")
+    endif()
+
 
     check_c_compiler_flag("-mfpmath=387" HAVE_FLAG_M_FPMATH_387)
     check_c_compiler_flag("-mno-sse" HAVE_FLAG_M_NO_SSE)
@@ -119,18 +166,29 @@ if(SYSTEM_IS_X86)
       str_append(DISABLE_AVX_FLAGS "-mno-avx")
     endif()
   else()
-    set(SSE2_FLAGS "/arch:SSE2 /D__SSE2__=1")
+    #set(BASE_SSE_FLAGS "/arch:SSE")
+    set(SSE2_FLAGS "/arch:SSE2")
     set(DISABLE_SSE2_FLAGS "")
     set(DISABLE_SSE3_FLAGS "")
     set(DISABLE_SSE41_FLAGS "")
     set(DISABLE_AVX_FLAGS "")
 
     # MSVC doesn't generate SSE3 itself, and doesn't define this
-    set(SSE3_FLAGS "${SSE2_FLAGS} /D__SSE3__=1")
-    set(SSE41_FLAGS "${SSE3_FLAGS} /D__SSE4_1__=1")
-    set(AVX_FLAGS "/arch:AVX /D__AVX__=1 ${SSE2_FLAGS}")
+    set(SSE3_FLAGS "${SSE2_FLAGS}")
+    set(SSE41_FLAGS "${SSE3_FLAGS}")
+    set(AVX_FLAGS "/arch:AVX ${SSE41_FLAGS}")
+  endif()
+
+  if(NEED_SSE_DEFINES)
+    str_append(BASE_SSE_FLAGS "-D__SSE__=1")
+    str_append(SSE2_FLAGS "-D__SSE2__=1")
+    str_append(SSE3_FLAGS "-D__SSE3__=1")
+    str_append(SSE4_FLAGS "-D__SSE4__=1")
+    str_append(SSE41_FLAGS "-D__SSE4_1__=1")
+    str_append(AVX_FLAGS "-D__AVX__=1")
   endif()
 endif()
+
 
 set(CMAKE_REQUIRED_FLAGS "${AVX_FLAGS}")
 
@@ -144,8 +202,6 @@ if(AVX_CHECK)
 endif()
 
 mark_as_advanced(HAVE_AVX)
-
-
 
 set(CMAKE_REQUIRED_FLAGS "${SSE41_FLAGS}")
 check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
