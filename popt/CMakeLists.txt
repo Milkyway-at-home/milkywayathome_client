@@ -31,7 +31,7 @@ set(POPT_VERSION_MINOR 17)
 set(POPT_VERSION "${POPT_VERSION_MAJOR}.${POPT_VERSION_MINOR}")
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99")
 endif()
 
 check_function_exists(dcgettext HAVE_DCGETTEXT)
@@ -82,10 +82,13 @@ set(libpopt_headers include/popt.h
                     include/system.h)
 set(libpopt_public_headers include/popt.h)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/popt_config.h.in ${PROJECT_BINARY_DIR}/include/popt_config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/popt_config.h.in ${PROJECT_INCLUDE_DIR}/popt_config.h)
 
-include_directories(${PROJECT_BINARY_DIR}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(POPT_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "popt headers")
+set(POPT_LIBRARY popt CACHE INTERNAL "popt library")
+
+include_directories(${POPT_INCLUDE_DIR})
+include_directories(${PROJECT_INCLUDE_DIR})
 
 add_definitions("-DHAVE_CONFIG_H")
 
@@ -96,8 +99,6 @@ set_target_properties(popt PROPERTIES
                              PUBLIC_HEADER ${libpopt_public_headers}
                              COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 
-set(POPT_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "popt headers")
-set(POPT_LIBRARY popt CACHE INTERNAL "popt library")
 
 ########### install files ###############
 
