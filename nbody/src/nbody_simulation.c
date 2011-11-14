@@ -343,7 +343,7 @@ int nbMain(const NBodyFlags* nbf)
     if (nbf->histogramFileName || nbf->histoutFileName)  /* We want to match or produce a histogram */
     {
         /* Get the likelihood */
-        chisq = nbChisq(ctx, st, nbf);
+        chisq = nbSystemChisq(ctx, st, nbf);
     }
 
     if (nbf->histogramFileName) /* The likelihood only means something when matching a histogram */

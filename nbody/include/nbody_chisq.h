@@ -24,11 +24,31 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody.h"
 
+typedef enum
+{
+    NBODY_LIKELIHOOD,
+    NBODY_ALT_LIKELIHOOD,
+    NBODY_CHISQ_ALT_LIKELIHOOD,
+    NBODY_POISSON_LIKELIHOOD,
+    NBODY_KOLMOGOROV_DISTANCE,
+    NBODY_KULLBACK_LEIBLER_DISTANCE,
+    NBODY_W_LIKELIHOOD,
+    NBODY_W_ALT_LIKELIHOOD
+} NBodyLikelihoodMethod;
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
+                   const NBodyHistogram* histogram,   /* Generated histogram */
+                   NBodyLikelihoodMethod method);
+
+double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+
+NBodyHistogram* nbReadHistogram(const char* histogramFile);
 
 #ifdef __cplusplus
 }

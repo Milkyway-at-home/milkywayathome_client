@@ -323,7 +323,6 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 
 find_package(OpenCL)
 find_package(OpenMP)
-find_package(Boost)
 find_package(OpenGL)
 find_package(GLUT)
 find_package(Curses)
@@ -358,6 +357,11 @@ add_subdirectory(lua)
 
 if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
+endif()
+
+if(NBODY_GL AND FALSE)
+  #TODO: use it
+  add_subdirectory(openpa)
 endif()
 
 

@@ -25,16 +25,7 @@
 #include "nbody_priv.h"
 #include "nbody_chisq.h"
 #include "milkyway_util.h"
-
-
-typedef enum
-{
-    NBODY_LIKELIHOOD,
-    NBODY_ALT_LIKELIHOOD,
-    NBODY_POISSON_LIKELIHOOD,
-    NBODY_W_LIKELIHOOD,
-    NBODY_W_ALT_LIKELIHOOD
-} NBodyLikelihoodMethod;
+#include "emd_rubner.h"
 
 
 /* From the range of a histogram, find the number of bins */
@@ -148,10 +139,52 @@ static double nbPoissonTerm(double f, double y)
     }
 }
 
+static double nbLog2(double x)
+{
+    return log(x) / M_LN2;
+}
+
+static double nbKullbackLeiblerTerm(double h, double k)
+{
+    /* Symmetrized version. (Jeffrey divergence?) */
+    double m;
+
+    if (fabs(h) < 1.0e-10 || fabs(k) < 1.0e-10)
+    {
+        return 0.0;
+    }
+    else
+    {
+        m = (h + k) / 2.0;
+        return h * log(h / m) + k * log(k / m);
+    }
+
+
+#if 0
+    double p = h;
+    double q = k;
+    /* Non-symmetrized version */
+    if (fabs(p) < 1.0e-10 || fabs(q) < 1.0e-10)
+    {
+        /* Not sure this is really correct for q == 0 */
+        return 0.0;
+    }
+    else
+    {
+        return p * (nbLog2(p) / nbLog2(q));
+    }
+#endif
+}
+
+static double nbChisqAlt(double p, double q)
+{
+    return 0.5 * sqr(p - q) / (p + q);
+}
+
 /* Calculate chisq from read data histogarm and the generated histogram */
-static double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
-                          const NBodyHistogram* histogram,   /* Generated histogram */
-                          NBodyLikelihoodMethod method)
+double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
+                   const NBodyHistogram* histogram,   /* Generated histogram */
+                   NBodyLikelihoodMethod method)
 {
     unsigned int i;
     double tmp;
@@ -202,11 +235,23 @@ static double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram *
                     chiSq += sqr(tmp);
                     break;
 
+                case NBODY_CHISQ_ALT_LIKELIHOOD:
+                    chiSq += nbChisqAlt(data->data[i].count, n / effTotalNum);
+                    break;
+
                 case NBODY_POISSON_LIKELIHOOD:
                     /* Poisson one */
                     chiSq += nbPoissonTerm(data->data[i].count, n / effTotalNum);
                     break;
 
+                case NBODY_KOLMOGOROV_DISTANCE:
+                    chiSq = fmax(chiSq, fabs(data->data[i].count - (n / effTotalNum)));
+                    break;
+
+                case NBODY_KULLBACK_LEIBLER_DISTANCE:
+                    /* "Relative entropy" */
+                    chiSq += nbKullbackLeiblerTerm(data->data[i].count, n / effTotalNum);
+                    break;
 
                 case NBODY_W_LIKELIHOOD:
                     /* Correctly scaled version */
@@ -460,6 +505,39 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     }
 }
 
+/* Find the center of mass of the normalized histogram. If
+ * useBinIndex, use the position in the histogram rather than the
+ * position in lambda  */
+static double nbHistogramCenterOfMass(const NBodyHistogram* hist, int useBinIndex)
+{
+    unsigned int i;
+    unsigned int n = hist->nBin;
+    const HistData* data = hist->data;
+    double cm = 0.0;
+
+    if (useBinIndex)
+    {
+        for (i = 0; i < n; ++i)
+        {
+            cm += (double) i * data[i].count;
+        }
+    }
+    else
+    {
+        for (i = 0; i < n; ++i)
+        {
+            cm += data[i].lambda * data[i].count;
+        }
+    }
+
+    /* cm /= (total mass = 1.0) */
+
+    return cm;
+}
+
+
+
+
 /*
 Takes a treecode position, converts it to (l,b), then to (lambda,
 beta), and then constructs a histogram of the density in lambda.
@@ -529,7 +607,7 @@ static NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulati
 /* The chisq is calculated by reading a histogram file of normalized data.
    Returns null on failure.
  */
-static NBodyHistogram* nbReadHistogram(const char* histogramFile)
+NBodyHistogram* nbReadHistogram(const char* histogramFile)
 {
     FILE* f;
     int rc = 0;
@@ -619,15 +697,95 @@ static NBodyHistogram* nbReadHistogram(const char* histogramFile)
     return histogram;
 }
 
+static double emdDistanceFunction(const feature_t* a, const feature_t* b)
+{
+    return fabs(a->lambda - b->lambda);
+}
+
+static double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    unsigned int i;
+    unsigned int n = data->nBin;
+    HistData* correctedHistogram;
+    double count;
+    double effTotalNum;
+    double emd;
+    double* histWeights;
+    double* datWeights;
+
+    signature_t dSig;
+    signature_t hSig;
+
+
+    assert(histogram->hasRawCounts);
+
+    if (data->nBin != histogram->nBin)
+    {
+        /* FIXME?: We could have mismatched histogram sizes, but I'm not sure what to do with ignored bins and renormalization */
+        return NAN;
+    }
+
+    if (n > MAX_SIG_SIZE)
+    {
+        mw_printf("Histogram has too many bins: %u > %u\n", n, MAX_SIG_SIZE);
+        return NAN;
+    }
+
+    /* We need a correctly normalized histogram with the missing bins filtered out */
+    correctedHistogram = mwCalloc(n, sizeof(HistData));
+    histWeights = mwCalloc(n, sizeof(double));
+    datWeights = mwCalloc(n, sizeof(double));
+
+
+    effTotalNum = (double) nbCorrectTotalNumberInHistogram(histogram, data);
+
+    for (i = 0; i < n; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            correctedHistogram[i] = histogram->data[i];
+            count = (double) correctedHistogram[i].rawCount;
+            correctedHistogram[i].count = count / effTotalNum;
+
+            datWeights[i] = data->data[i].count;
+            histWeights[i] = correctedHistogram[i].count;
+        }
+        /* Otherwise weight is 0.0 */
+    }
+
+
+    dSig.n = n;
+    dSig.Features = data->data;
+    dSig.Weights = datWeights;
+
+    hSig.n = n;
+    hSig.Features = correctedHistogram;
+    hSig.Weights = histWeights;
+
+
+    emd = emd_rubner(&dSig, &hSig, NULL, NULL, FALSE, emdDistanceFunction);
+
+
+    free(correctedHistogram);
+    free(histWeights);
+    free(datWeights);
+
+    return emd;
+}
+
 
 /* Calculate the likelihood from the final state of the simulation */
-double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     double chiSq = NAN;
     double altChiSq = NAN;
+    double chiSqAlt = NAN;
     double poissonChiSq = NAN;
+    double kolmogorovDist = NAN;
+    double klDist = NAN;
     double wChiSq = NAN;
     double wAltChiSq = NAN;
+    double emd = NAN;
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     lua_State* luaSt = NULL;
@@ -681,17 +839,53 @@ double nbChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
             {
                 chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
                 altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
+                chiSqAlt = nbCalcChisq(data, histogram, NBODY_CHISQ_ALT_LIKELIHOOD);
                 poissonChiSq = nbCalcChisq(data, histogram, NBODY_POISSON_LIKELIHOOD);
+                kolmogorovDist = nbCalcChisq(data, histogram, NBODY_KOLMOGOROV_DISTANCE);
+                klDist = nbCalcChisq(data, histogram, NBODY_KULLBACK_LEIBLER_DISTANCE);
                 wChiSq = nbCalcChisq(data, histogram, NBODY_W_LIKELIHOOD);
                 wAltChiSq = nbCalcChisq(data, histogram, NBODY_W_ALT_LIKELIHOOD);
+                emd = nbMatchEMD(data, histogram);
             }
+
+            mw_printf(
+                "Effective total counts:\n"
+                "  hist: %u\n",
+                histogram->totalNum
+                );
+
+            double dCM = nbHistogramCenterOfMass(data, FALSE);
+            double hCM = nbHistogramCenterOfMass(histogram, FALSE);
+
+            mw_printf(
+                "Centers of mass:\n"
+                "  data: %.15f\n"
+                "  hist: %.15f\n"
+                "  dist: %.15f\n",
+                dCM, hCM, fabs(dCM - hCM)
+                );
+
+            double dCM_i = nbHistogramCenterOfMass(data, TRUE);
+            double hCM_i = nbHistogramCenterOfMass(histogram, TRUE);
+            mw_printf(
+                "Centers of mass (index):\n"
+                "  data: %.15f\n"
+                "  hist: %.15f\n"
+                "  dist: %.15f\n",
+                dCM_i, hCM_i, fabs(dCM_i - hCM_i)
+                );
+
         }
     }
 
     mw_printf("<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
+    mw_printf("<alt_chisq_likelihood>%.15f</alt_chisq_likelihood>\n", chiSqAlt);
     mw_printf("<poisson_likelihood>%.15f</poisson_likelihood>\n", poissonChiSq);
+    mw_printf("<kolmogorov_distance>%.15f</kolmogorov_distance>\n", kolmogorovDist);
+    mw_printf("<kl_distance>%.15f</kl_distance>\n", klDist);
     mw_printf("<w_likelihood>%.15f</w_likelihood>\n", wChiSq);
     mw_printf("<w_alt_likelihood>%.15f</w_alt_likelihood>\n", wAltChiSq);
+    mw_printf("<emd>%.15f</emd>\n", emd);
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) */
