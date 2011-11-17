@@ -446,6 +446,11 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     registerNBodyCtxTestMethods(luaSt);
     //registerFindRCrit(luaSt);
 
+    /* This way we can have different behaviour if using a script as a test */
+    lua_pushboolean(luaSt, TRUE);
+    lua_setglobal(luaSt, "NBODY_TESTING");
+
+
     rc = dofileWithArgs(luaSt, file, args, nArgs);
     if (rc)
         mw_lua_pcall_warn(luaSt, "Error evaluating script '%s'\n", file);

@@ -25,7 +25,7 @@
 
 #define NBODY_VERSION_MAJOR ${nbody_VERSION_MAJOR}
 #define NBODY_VERSION_MINOR ${nbody_VERSION_MINOR}
-#define NBODY_VERSION       ${nbody_VERSION}
+#define NBODY_VERSION       "${nbody_VERSION}"
 
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 NBODY_CRLIBM

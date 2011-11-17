@@ -59,6 +59,49 @@ static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
     return 0;
 }
 
+static int bindVersionNumber(lua_State* luaSt)
+{
+    lua_pushinteger(luaSt, NBODY_VERSION_MAJOR);
+    lua_setglobal(luaSt, "NBODY_VERSION_MAJOR");
+
+    lua_pushinteger(luaSt, NBODY_VERSION_MINOR);
+    lua_setglobal(luaSt, "NBODY_VERSION_MINOR");
+
+    lua_pushstring(luaSt, NBODY_VERSION);
+    lua_setglobal(luaSt, "NBODY_VERSION");
+
+    return 0;
+}
+
+static int nbCheckMinVersionRequired(lua_State* luaSt)
+{
+    const char* version;
+    int major, minor;
+
+    lua_getglobal(luaSt, "nbodyMinVersion");
+    version = luaL_optstring(luaSt, -1, "0.0");
+
+    if (sscanf(version, "%d.%d", &major, &minor) != 2)
+    {
+        mw_printf("Error reading minimum required version\n");
+        lua_pop(luaSt, 1);
+        return 0;
+    }
+
+    lua_pop(luaSt, 1);
+
+    if ((NBODY_VERSION_MAJOR < major) || (NBODY_VERSION_MAJOR == major && NBODY_VERSION_MINOR < minor))
+    {
+        mw_printf("Application version too old. Workunit requires version %d.%d, but this is %d.%d\n",
+                  major, minor,
+                  NBODY_VERSION_MAJOR, NBODY_VERSION_MINOR
+            );
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /* Open a lua_State and load the stuff we define, but do not run anything */
 lua_State* nbLuaOpen(mwbool debug)
 {
@@ -98,6 +141,7 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
     if (!luaSt)
         return NULL;
 
+    bindVersionNumber(luaSt);
     bindArgSeed(luaSt, nbf);
     mwBindBOINCStatus(luaSt);
 
@@ -112,6 +156,12 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
     if (dostringWithArgs(luaSt, script, nbf->forwardedArgs, nbf->numForwardedArgs))
     {
         mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", nbf->inputFile);
+        lua_close(luaSt);
+        luaSt = NULL;
+    }
+
+    if (!nbCheckMinVersionRequired(luaSt))
+    {
         lua_close(luaSt);
         luaSt = NULL;
     }
