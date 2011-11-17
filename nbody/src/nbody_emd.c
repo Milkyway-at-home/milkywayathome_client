@@ -1225,8 +1225,12 @@ float emdCalc(const float* RESTRICT signature_arr1,
     if (!emdIterateSolution(&state))
     {
         totalCost = emdComputeTotalFlow(&state, flow);
-        emdPrintFlowMatrix(flow, size1, size2);
         emd = (float)(totalCost / state.weight);
+    }
+
+    if (debugFlow)
+    {
+        emdPrintFlowMatrix(flow, size1, size2);
     }
 
     free(flow);

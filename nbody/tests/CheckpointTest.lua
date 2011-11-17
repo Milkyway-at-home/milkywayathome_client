@@ -72,7 +72,6 @@ for i = 1, nTests do
 
    ctx = randomNBodyCtx(prng)
    pot = SP.randomPotential(prng)
-   ctx.potential = pot  -- Kind of dumb hack so I don't have to fix separate potential in everything else
    m = SM.randomPlummer(prng, 500)
 
    st = NBodyState.create(ctx, pot, m)

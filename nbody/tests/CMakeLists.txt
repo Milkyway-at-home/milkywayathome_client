@@ -23,6 +23,9 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 add_executable(nbody_test_driver nbody_test_driver.c)
 target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_libs})
 
+add_executable(emd_test emd_test.c)
+target_link_libraries(emd_test nbody milkyway)
+
 if(BOINC_APPLICATION)
   if(UNIX)
     target_link_libraries(nbody_test_driver pthread)
@@ -35,6 +38,7 @@ add_test(NAME checkpoint_test
            COMMAND nbody_test_driver "CheckpointTest.lua")
 
 
+add_test(NAME emd_test COMMAND emd_test)
 # add_test(NAME context_test
 #          COMMAND nbody_test_driver "ContextTest.lua")
 
