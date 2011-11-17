@@ -59,6 +59,7 @@ static void nbPrintCopyright(void)
         " permission notices:\n"
         "\n"
         "Copyright (C) 2007, 2008 Mutsuo Saito, Makoto Matsumoto and Hiroshima University\n"
+        "Copyright (C) 2000, Intel Corporation\n"
         "\n"
         " Redistribution and use in source and binary forms, with or without\n"
         " modification, are permitted provided that the following conditions are met:\n"

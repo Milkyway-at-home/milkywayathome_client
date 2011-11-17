@@ -25,7 +25,7 @@
 #include "nbody_priv.h"
 #include "nbody_chisq.h"
 #include "milkyway_util.h"
-#include "emd_rubner.h"
+#include "nbody_emd.h"
 
 
 /* From the range of a histogram, find the number of bins */
@@ -697,24 +697,14 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     return histogram;
 }
 
-static double emdDistanceFunction(const feature_t* a, const feature_t* b)
-{
-    return fabs(a->lambda - b->lambda);
-}
-
-static double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
+double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int i;
     unsigned int n = data->nBin;
-    HistData* correctedHistogram;
-    double count;
     double effTotalNum;
     double emd;
-    double* histWeights;
-    double* datWeights;
-
-    signature_t dSig;
-    signature_t hSig;
+    WeightPos* hist;
+    WeightPos* dat;
 
 
     assert(histogram->hasRawCounts);
@@ -725,17 +715,9 @@ static double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histo
         return NAN;
     }
 
-    if (n > MAX_SIG_SIZE)
-    {
-        mw_printf("Histogram has too many bins: %u > %u\n", n, MAX_SIG_SIZE);
-        return NAN;
-    }
-
     /* We need a correctly normalized histogram with the missing bins filtered out */
-    correctedHistogram = mwCalloc(n, sizeof(HistData));
-    histWeights = mwCalloc(n, sizeof(double));
-    datWeights = mwCalloc(n, sizeof(double));
-
+    hist = mwCalloc(n, sizeof(WeightPos));
+    dat = mwCalloc(n, sizeof(WeightPos));
 
     effTotalNum = (double) nbCorrectTotalNumberInHistogram(histogram, data);
 
@@ -743,32 +725,21 @@ static double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histo
     {
         if (data->data[i].useBin)
         {
-            correctedHistogram[i] = histogram->data[i];
-            count = (double) correctedHistogram[i].rawCount;
-            correctedHistogram[i].count = count / effTotalNum;
+            double correctedCount = (double) histogram->data[i].rawCount / effTotalNum;
 
-            datWeights[i] = data->data[i].count;
-            histWeights[i] = correctedHistogram[i].count;
+            hist[i].weight = correctedCount;
+            dat[i].weight = data->data[i].count;
         }
         /* Otherwise weight is 0.0 */
+
+        hist[i].pos = histogram->data[i].lambda;
+        dat[i].pos = data->data[i].lambda;
     }
 
+    emd = emdCalc((const float*) dat, (const float*) hist, n, n, NULL);
 
-    dSig.n = n;
-    dSig.Features = data->data;
-    dSig.Weights = datWeights;
-
-    hSig.n = n;
-    hSig.Features = correctedHistogram;
-    hSig.Weights = histWeights;
-
-
-    emd = emd_rubner(&dSig, &hSig, NULL, NULL, FALSE, emdDistanceFunction);
-
-
-    free(correctedHistogram);
-    free(histWeights);
-    free(datWeights);
+    free(hist);
+    free(dat);
 
     return emd;
 }
