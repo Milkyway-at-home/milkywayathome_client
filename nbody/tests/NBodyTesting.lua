@@ -22,6 +22,15 @@
 require "persistence"
 require "curry"
 
+function printf(...)
+   io.stdout:write(string.format(...))
+end
+
+function eprintf(...)
+   io.stderr:write(string.format(...))
+end
+
+
 
 -- Given a function of an arbitrary number of arguments, and a number
 -- of lists corresponding to that number of arguments, returns that
@@ -271,6 +280,7 @@ end
 function os.readProcess(bin, ...)
    local args, cmd
    args = table.concat({...}, " ")
+
    -- Redirect stderr to stdout, since popen only gets stdout
    cmd = table.concat({ bin, args, "2>&1" }, " ")
    local f = assert(io.popen(cmd, "r"))
@@ -286,4 +296,111 @@ function getExtraNBodyFlags()
    end
    return nbodyFlags
 end
+
+
+function calcMean(table)
+   local total = 0.0
+   assert(type(table) == "table")
+
+   for k, v in ipairs(table) do
+      total = total + v
+   end
+
+   return total / #table
+end
+
+function calcStddev(table, mean)
+   local total = 0.0
+   if mean == nil then
+      mean = calcMean(table)
+   end
+
+   for k, v in ipairs(table) do
+      total = total + sqr(v - mean)
+   end
+
+   return sqrt(total / (#table - 1))
+end
+
+function calcStats(table)
+   local avg = calcMean(table)
+   return avg, calcStddev(table, avg)
+end
+
+
+
+function randomSeed()
+   return math.random(0, 32767)
+end
+
+function findMinMax(table)
+   assert(type(table) == "table" and #table > 0)
+
+   local low = table[1]
+   local high = table[1]
+
+   for _, i in ipairs(table) do
+      if i < low then
+         low = i
+      end
+
+      if i > high then
+         high = i
+      end
+   end
+
+   return low, high
+end
+
+
+function runFullTest(arg)
+   local testPath, histogramPath = arg.testName, arg.histogram
+   if arg.testDir then
+      testPath = string.format("%s/%s.lua", arg.testDir, arg.testName)
+      histogramPath = string.format("%s/%s", arg.testDir, arg.histogram)
+   else
+      testPath = arg.testName .. ".lua"
+   end
+
+   local cpFlag = string.format("--no-clean-checkpoint -c %s/%s__%d",
+                                ".checkpoints",
+                                arg.testName,
+                                arg.seed)
+   if not cached then
+      cpFlag = cpFlag .. " --ignore-checkpoint"
+   end
+
+   return os.readProcess(arg.nbodyBin or "milkyway_nbody",
+                         "--checkpoint-interval=-1", -- Disable checkpointing
+                         "-g", -- Prevent stderr from getting consumed with BOINC
+                         "-t",
+                         "-f", testPath,
+                         "-h", histogramPath,
+                         "--seed", arg.seed,
+                         cpFlag,
+                         getExtraNBodyFlags(),
+                         table.concat(arg.extraArgs, " ")
+                      )
+
+end
+
+
+-- Find the likelihood from the output of the process
+function findLikelihood(str, emd)
+   local m
+   if emd then
+      m = str:match("<emd>(.+)</emd>")
+   else
+      m = str:match("<search_likelihood>(.+)</search_likelihood>")
+   end
+   local lineSep = string.rep("-", 80) .. "\n"
+   if m == nil then
+      io.stderr:write("Didn't match likelihood in output\nOffending output:\n" .. lineSep)
+      io.stderr:write(str .. lineSep)
+      return nil
+   else
+      return tonumber(m)
+   end
+end
+
 

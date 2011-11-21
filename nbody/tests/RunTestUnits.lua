@@ -1,5 +1,6 @@
 
 require "NBodyTesting"
+require "persistence"
 
 local arg = {...}
 
@@ -12,14 +13,14 @@ local histogramName = arg[4]
 local testBodies = arg[5]
 
 local nbodyFlags = getExtraNBodyFlags()
-print("NBODY_FLAGS = ", nbodyFlags)
+eprintf("NBODY_FLAGS = %s\n", nbodyFlags)
 
+math.randomseed(os.time())
 
 -- Pick one of the random seeds used in generating these tests
 local testSeeds = { "670828913", "886885833", "715144259", "430281807", "543966758" }
-math.randomseed(os.time())
 local testSeed = testSeeds[math.random(1, #testSeeds)]
-local generatingResults = false
+
 
 refResults = {
    ["model_1"] = {
@@ -258,39 +259,7 @@ refResults = {
    }
 }
 
-function getTestFilePath(baseName)
-   return testDir .. "/" .. baseName .. ".lua"
-end
 
-function getHistogramFilePath(histogramFileName)
-   return testDir .. "/" .. histogramFileName
-end
-
-function runFullTest(testName, seed, ...)
-   return os.readProcess(nbodyBinary,
-                         "-i", "--checkpoint-interval=-1", -- Disable checkpointing
-                         "-g", -- Prevent stderr from getting consumed with BOINC
-                         "-t",
-                         "-f", getTestFilePath(testName),
-                         "-h", getHistogramFilePath(histogramName),
-                         "--seed", seed,
-                         nbodyFlags,
-                         table.concat({...}, " ")
-                      )
-end
-
--- Find the likelihood from the output of the process
-function findLikelihood(str)
-   local m = str:match("<search_likelihood>([+-]?%d+[.]?%d+e?[+-]?%d+)</search_likelihood>")
-   local lineSep = string.rep("-", 80) .. "\n"
-   if m == nil then
-      io.stderr:write("Didn't match likelihood in output\nOffending output:\n" .. lineSep)
-      io.stderr:write(str .. lineSep)
-      return nil
-   else
-      return tonumber(m)
-   end
-end
 
 function resultCloseEnough(a, b)
    return math.abs(a - b) < 1.0e-10
@@ -301,7 +270,7 @@ Result differs from expected:
    Expected = %20.15f  Actual = %20.15f  |Difference| = %20.15f
 ]]
 
-function runCheckTest(testName, seed, nbody, ...)
+function runCheckTest(testName, histogram, seed, nbody, ...)
    local fileResults, bodyResults
    local ret, result
 
@@ -313,8 +282,17 @@ function runCheckTest(testName, seed, nbody, ...)
    end
 
 
-   ret = runFullTest(testName, seed, nbody, ...)
-   result = findLikelihood(ret)
+   ret = runFullTest{
+      nbodyBin  = nbodyBinary,
+      testDir   = testDir,
+      testName  = testName,
+      histogram = histogram,
+      seed      = seed,
+      cached    = false,
+      extraArgs = { nbody }
+   }
+
+   result = findLikelihood(ret, false)
 
    io.stdout:write(ret)
 
@@ -335,7 +313,33 @@ function runCheckTest(testName, seed, nbody, ...)
    return notClose
 end
 
-if runCheckTest(testName, testSeed, testBodies) then
+-- return true if passed
+function testProbabilistic(resultFile, testName, histogram, nbody, iterations)
+   local testTable, histTable, answer
+   local resultTable = persisence.load(resultFile)
+   assert(resultTable, "Failed to open result file " .. resultFile)
+
+   testTable = assert(resultTable[testName], "Did not find result for test " .. testName)
+   histTable = assert(testTable[nbody], "Did not find result for nbody " .. tostring(nbody))
+   answer = assert(histTable[nbody], "Did not find result for histogram " .. histogram)
+
+   local minAccepted = answer.mean - 3.0 * answer.stddev
+   local maxAccepted = answer.mean + 3.0 * answer.stddev
+
+   local result = 0.0
+   local z = (result - answer.mean) / answer.stddev
+
+
+   return true
+end
+
+
+
+function getResultName(testName)
+   return string.format("%s__results.lua", testName)
+end
+
+if runCheckTest(testName, histogramName, testSeed, testBodies) then
    os.exit(1)
 end
 
