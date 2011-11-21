@@ -45,6 +45,7 @@ extern "C" {
 double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                    const NBodyHistogram* histogram,   /* Generated histogram */
                    NBodyLikelihoodMethod method);
+double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
 double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 

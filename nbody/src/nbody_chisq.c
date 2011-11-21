@@ -48,6 +48,23 @@ static inline double nbNormalizedHistogramError(unsigned int n, double total)
 }
 
 
+static double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
+{
+    unsigned int i;
+    unsigned int nBin = data->nBin;
+    double total = 0.0;
+
+    for (i = 0; i < nBin; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            total += histogram->data[i].count;
+        }
+    }
+
+    return total;
+}
+
 /* We create a raw histogram from the simulation.
    To compare it, we need to remove the unused bins totals.
 
@@ -697,17 +714,20 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     return histogram;
 }
 
+static double nbWorstCaseEMD(const NBodyHistogram* hist)
+{
+    return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
+}
+
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int i;
     unsigned int n = data->nBin;
-    double effTotalNum;
+    unsigned int effTotalNum = 0;
     double emd;
     WeightPos* hist;
     WeightPos* dat;
-
-
-    assert(histogram->hasRawCounts);
+    double renormalize = 0.0;
 
     if (data->nBin != histogram->nBin)
     {
@@ -715,20 +735,43 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         return NAN;
     }
 
+    if (histogram->hasRawCounts)
+    {
+        effTotalNum = nbCorrectTotalNumberInHistogram(histogram, data);
+        mw_printf("Histogram has %u bodies with %u in accepted bins\n",
+                  histogram->totalNum,
+                  effTotalNum
+            );
+
+        if (effTotalNum == 0)
+        {
+            /* If the histogram is totally empty, it is worse than the worst case */
+            return INFINITY;
+        }
+    }
+    else
+    {
+        renormalize = nbCorrectRenormalizedInHistogram(histogram, data);
+    }
+
     /* We need a correctly normalized histogram with the missing bins filtered out */
     hist = mwCalloc(n, sizeof(WeightPos));
     dat = mwCalloc(n, sizeof(WeightPos));
-
-    effTotalNum = (double) nbCorrectTotalNumberInHistogram(histogram, data);
 
     for (i = 0; i < n; ++i)
     {
         if (data->data[i].useBin)
         {
-            double correctedCount = (double) histogram->data[i].rawCount / effTotalNum;
-
-            hist[i].weight = correctedCount;
             dat[i].weight = data->data[i].count;
+            if (histogram->hasRawCounts)
+            {
+                double correctedCount = (double) histogram->data[i].rawCount / (double) effTotalNum;
+                hist[i].weight = correctedCount;
+            }
+            else
+            {
+                hist[i].weight = histogram->data[i].count / renormalize;
+            }
         }
         /* Otherwise weight is 0.0 */
 
@@ -757,6 +800,7 @@ double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     double wChiSq = NAN;
     double wAltChiSq = NAN;
     double emd = NAN;
+    double worstEMD;
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     lua_State* luaSt = NULL;
@@ -778,7 +822,6 @@ double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     lua_close(luaSt);
 
 
-
     /* Calculate the bounds of the bin range, making sure to use a
      * fixed bin size which spans the entire range, and is symmetric
      * around 0 */
@@ -789,6 +832,32 @@ double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         mw_printf("Failed to create histogram\n");
         return NAN;
     }
+
+    /* We could have far crazier variations in the distance in cases
+     * where the number of particles resulting in the bins is very
+     * small, such as when a few particles on the edge are thrown out
+     * and happen to end up in the binning range.
+     *
+     * Make sure that at least 1% of the total particles are being
+     * counted to hopefully smooth away potential issues.
+     *
+     * If there are truly no particles in useful bins, the EMD will
+     * return infinity. Having more than 0 particles should be better
+     * than infinity, so use something a bit worse than the case where
+     * 100% is located in opposite bins.
+     */
+    if (histogram->totalNum < 0.01 * (double) st->nbody)
+    {
+        mw_printf("Number of particles in bins is very small compared to total. (%u << %u). Skipping distance calculation\n",
+                  histogram->totalNum,
+                  st->nbody
+            );
+        worstEMD = nbWorstCaseEMD(histogram);
+
+        free(histogram);
+        return 2.0 * worstEMD;
+    }
+
 
     if (nbf->histogramFileName) /* If we have an input histogram to match */
     {

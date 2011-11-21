@@ -268,7 +268,7 @@ int nbMain(const NBodyFlags* nbf)
     CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
-    double chisq;
+    double chisq = NAN;
     double ts = 0.0, te = 0.0;
 
     if (!nbOutputIsUseful(nbf))
