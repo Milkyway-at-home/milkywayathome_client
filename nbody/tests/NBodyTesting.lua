@@ -352,6 +352,16 @@ function findMinMax(table)
    return low, high
 end
 
+function runSimple(arg)
+   return os.readProcess(arg.nbodyBin or "milkyway_nbody",
+                         "--checkpoint-interval=-1",
+                         "-g",
+                         "-t",
+                         "-f", arg.input,
+                         "-o", arg.output,
+                         table.concat(arg.extraArgs, " ")
+                      )
+end
 
 function runFullTest(arg)
    local testPath, histogramPath = arg.testName, arg.histogram
@@ -384,23 +394,32 @@ function runFullTest(arg)
 
 end
 
-
 -- Find the likelihood from the output of the process
-function findLikelihood(str, emd)
-   local m
-   if emd then
-      m = str:match("<emd>(.+)</emd>")
-   else
-      m = str:match("<search_likelihood>(.+)</search_likelihood>")
-   end
+function findNumber(str, name)
+   local pattern = string.format("<%s>(.+)</%s>", name, name)
+   local m = str:match(pattern)
    local lineSep = string.rep("-", 80) .. "\n"
    if m == nil then
-      io.stderr:write("Didn't match likelihood in output\nOffending output:\n" .. lineSep)
-      io.stderr:write(str .. lineSep)
+      eprintf("Didn't match '%s' in output\nOffending output:\n%s\n%s%s",
+              name,
+              lineSep,
+              str,
+              lineSep
+           )
       return nil
    else
       return tonumber(m)
    end
 end
+
+function findLikelihood(str, emd)
+   if emd then
+      name = "emd"
+   else
+      name = "search_likelihood"
+   end
+   return findNumber(str, name)
+end
+
 
 
