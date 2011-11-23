@@ -321,18 +321,19 @@ int nbMain(const NBodyFlags* nbf)
         nbCleanupCursesOutput();
     }
 
-    if (nbf->printTiming)
-    {
-        printf("<run_time> %f </run_time>\n", te - ts);
-        fflush(stdout); /* Odd things happen with the OpenCL one where stdout starts disappearing */
-    }
-
-
     if (nbStatusIsFatal(rc))
     {
         mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
         destroyNBodyState(st);
         return rc;
+    }
+    else
+    {
+        if (nbf->printTiming)
+        {
+            printf("<run_time> %f </run_time>\n", te - ts);
+            fflush(stdout); /* Odd things happen with the OpenCL one where stdout starts disappearing */
+        }
     }
 
     if (nbStatusIsWarning(rc))

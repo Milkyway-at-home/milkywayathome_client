@@ -2,19 +2,21 @@
 require "NBodyTesting"
 require "persistence"
 
-local bin="../../bin/milkyway_nbody"
+local bin = "../../bin/milkyway_nbody"
 local output = "/tmp/arst.out"
 
 local nAvg = 3
+local nTimestep = 50
 
-local nbodies = { 1024, 10000, 32768, 50000, 750000, 1000000, 1500000 }
+
+local nbodies = { 1024, 10000, 32768, 50000, 100000, 250000, 500000, 750000, 1000000 }
 local thetas = { 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }
 local criteria = { "BH86", "SW93", "NewCriterion" }
+local quads = { true, false }
 
 
 function runSamples(deviceFlag)
    local timings = { }
-   local nTimestep = 100
    local mass = 16
    local radius = 0.2
    local args = {
@@ -47,18 +49,13 @@ function runSamples(deviceFlag)
 
                eprintf("Running test %s/%f/%d/%s...", crit, theta, nbody, tostring(quad))
 
+               -- Take the best of n
                for i = 1, nAvg do
                   local output = runSimple(args)
-                  samples[i] = assert(findNumber(output, "run_time"))
+                  samples[i] = findNumber(output, "run_time") or -1.0
                end
 
-               local total = 0.0
-               for i = 1, nAvg do
-                  total = total + samples[i]
-               end
-
-               local tAvg = total / nAvg
-               timings[nbody][crit][quad][theta] = tAvg
+               timings[nbody][crit][quad][theta] = findMin(samples)
                eprintf("%f\n", tAvg)
             end
          end

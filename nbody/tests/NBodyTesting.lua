@@ -311,6 +311,13 @@ end
 
 function calcStddev(table, mean)
    local total = 0.0
+
+   -- Bad things happen if this ends up nan
+   if #table == 0 then
+      return 0.0
+   end
+
+
    if mean == nil then
       mean = calcMean(table)
    end
@@ -332,6 +339,19 @@ end
 function randomSeed()
    return math.random(0, 32767)
 end
+
+function findMin(table)
+   assert(type(table) == "table" and #table > 0)
+   local low = table[1]
+   for _, i in ipairs(table) do
+      if i < low then
+         low = i
+      end
+   end
+
+   return low
+end
+
 
 function findMinMax(table)
    assert(type(table) == "table" and #table > 0)

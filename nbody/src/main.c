@@ -528,6 +528,7 @@ int main(int argc, const char* argv[])
     if (BOINC_APPLICATION)
     {
         nbPrintVersion(TRUE, FALSE);
+        fflush(stderr);
         mw_finish(rc);
     }
 
