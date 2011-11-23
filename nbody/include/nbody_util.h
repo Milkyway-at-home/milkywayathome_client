@@ -36,6 +36,8 @@ mwvector nbCenterOfMass(const NBodyState* st);
 double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
 double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops);
 
+void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st);
+
 #ifdef _OPENMP
 #define nbGetMaxThreads() omp_get_max_threads()
 #else

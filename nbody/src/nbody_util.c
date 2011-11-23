@@ -119,3 +119,31 @@ double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops)
     return factor * nflop / (efficiency * flops);
 }
 
+void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
+{
+    if (!st->treeIncest)   /* don't repeat warning */
+    {
+        st->treeIncest = TRUE;
+
+        if (!ctx->quietErrors) /* Avoid massive printing of tests causing incest */
+        {
+            if (ctx->allowIncest)
+            {
+                mw_printf("[tree-incest detected at step %u / %u (%f%%)]\n",
+                          st->step,
+                          ctx->nStep,
+                          100.0 * (double) st->step / (double) ctx->nStep
+                    );
+            }
+            else
+            {
+                mw_printf("tree-incest detected (fatal) at step %u / %u (%f%%)\n",
+                          st->step,
+                          ctx->nStep,
+                          100.0 * (double) st->step / (double) ctx->nStep
+                    );
+            }
+        }
+    }
+}
+

@@ -785,7 +785,7 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
 }
 
 /* Check the error code */
-static cl_bool nbCheckKernelErrorCode(NBodyState* st)
+static cl_bool nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     TreeStatus ts;
@@ -806,22 +806,29 @@ static cl_bool nbCheckKernelErrorCode(NBodyState* st)
 
     if (mw_unlikely(ts.errorCode != 0))
     {
-
-        mw_printf("Kernel reported error: %d ", ts.errorCode);
-
-        if (ts.errorCode > 0)
+        /* Incest is special because we can choose to ignore it */
+        if (ts.errorCode == NBODY_KERNEL_TREE_INCEST)
         {
-            mw_printf("(%s (%u))\n",
-                      showNBodyKernelError(ts.errorCode),
-                      nbFindMaxDepthForDevice(&ci->di, st->workSizes, st->usesQuad));
+            nbReportTreeIncest(ctx, st);
+            return (cl_bool) !ctx->allowIncest;
         }
         else
         {
-            mw_printf("(%s)\n", showNBodyKernelError(ts.errorCode));
+            mw_printf("Kernel reported error: %d ", ts.errorCode);
+
+            if (ts.errorCode > 0)
+            {
+                mw_printf("(%s (%u))\n",
+                          showNBodyKernelError(ts.errorCode),
+                          nbFindMaxDepthForDevice(&ci->di, st->workSizes, st->usesQuad));
+            }
+            else
+            {
+                mw_printf("(%s)\n", showNBodyKernelError(ts.errorCode));
+            }
+
+            return CL_TRUE;
         }
-
-
-        return CL_TRUE;
     }
 
     return CL_FALSE;
@@ -1107,7 +1114,7 @@ static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
     while (err == CL_SUCCESS && st->step < ctx->nStep)
     {
         st->dirty = TRUE;
-        if (!st->usesExact && nbCheckKernelErrorCode(st))
+        if (!st->usesExact && nbCheckKernelErrorCode(ctx, st))
         {
             err = MW_CL_ERROR;
             break;

@@ -20,41 +20,12 @@
  */
 
 #include "nbody_priv.h"
-#include "milkyway_util.h"
+#include "nbody_util.h"
 #include "nbody_grav.h"
 
 #ifdef _OPENMP
   #include <omp.h>
 #endif /* _OPENMP */
-
-
-static void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
-{
-    if (!st->treeIncest)   /* don't repeat warning */
-    {
-        st->treeIncest = TRUE;
-
-        if (!ctx->quietErrors) /* Avoid massive printing of tests causing incest */
-        {
-            if (ctx->allowIncest)
-            {
-                mw_printf("[hackGrav: tree-incest detected at step %u / %u (%f%%)]\n",
-                          st->step,
-                          ctx->nStep,
-                          100.0 * (double) st->step / (double) ctx->nStep
-                    );
-            }
-            else
-            {
-                mw_printf("hackGrav: tree-incest detected (fatal) at step %u / %u (%f%%)\n",
-                          st->step,
-                          ctx->nStep,
-                          100.0 * (double) st->step / (double) ctx->nStep
-                    );
-            }
-        }
-    }
-}
 
 
 /*
