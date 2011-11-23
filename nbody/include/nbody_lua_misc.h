@@ -17,21 +17,21 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_LUA_MODELS_H_
-#define _NBODY_LUA_MODELS_H_
+#ifndef _NBODY_LUA_MISC_H_
+#define _NBODY_LUA_MISC_H_
 
 #include "nbody_types.h"
+#include <lua.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void registerPredefinedModelGenerators(lua_State* luaSt);
-void registerModelFunctions(lua_State* luaSt);
+int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NBODY_LUA_MODELS_H_ */
+#endif /* _NBODY_LUA_MISC_H_ */
 

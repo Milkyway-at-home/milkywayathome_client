@@ -164,6 +164,8 @@ endif()
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_models.c
+                  ${NBODY_SRC_DIR}/nbody_lua_util.c
+                  ${NBODY_SRC_DIR}/nbody_lua_misc.c
 
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
@@ -182,6 +184,8 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_util.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_misc.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
 

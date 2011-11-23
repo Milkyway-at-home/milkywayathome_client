@@ -74,6 +74,7 @@ typedef struct
 
 #define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
+NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, int reportProgress);
 int nbVerifyFile(const NBodyFlags* nbf);
 int nbMain(const NBodyFlags* nbf);
 

@@ -28,6 +28,8 @@
 #include "nbody_lua.h"
 #include "nbody_lua_types.h"
 #include "nbody_lua_models.h"
+#include "nbody_lua_util.h"
+#include "nbody_lua_misc.h"
 #include "milkyway_lua.h"
 #include "nbody_check_params.h"
 
@@ -124,8 +126,9 @@ lua_State* nbLuaOpen(mwbool debug)
     registerDiskKinds(luaSt);
     registerHaloKinds(luaSt);
 
-    registerModelUtilityFunctions(luaSt);
+    registerModelFunctions(luaSt);
     registerUtilityFunctions(luaSt);
+    nbRegisterUtilityFunctions(luaSt);
 
     return luaSt;
 }
@@ -336,7 +339,6 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
 static int nbEvaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
 {
     int top;
-    Potential* tmp;
 
     getNBodyPotentialFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
@@ -346,38 +348,13 @@ static int nbEvaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
     }
 
     top = lua_gettop(luaSt);
-    if (lua_isnoneornil(luaSt, top))
+    if (nbGetPotentialTyped(luaSt, ctx, top))
     {
-        ctx->potentialType = EXTERNAL_POTENTIAL_NONE;
         lua_pop(luaSt, 1);
-        return 0;
-    }
-    else if (lua_isfunction(luaSt, top))
-    {
-        /* Set the potential type. We will be reevaluating the script
-         * later on if we're using this, so don't bother getting the
-         * closure now. */
-        ctx->potentialType = EXTERNAL_POTENTIAL_CUSTOM_LUA;
-        lua_pop(luaSt, 1);
-        return 0;
-    }
-    else
-    {
-        tmp = expectPotential(luaSt, top);
-        if (!tmp)
-        {
-            lua_pop(luaSt, 1);
-            return 1;
-        }
-
-        ctx->potentialType = EXTERNAL_POTENTIAL_DEFAULT;
-        ctx->pot = *tmp;
-
-        lua_pop(luaSt, 1);
-        return checkPotentialConstants(&ctx->pot);
+        return 1;
     }
 
-    mw_unreachable();
+    lua_pop(luaSt, 1);
     return 0;
 }
 

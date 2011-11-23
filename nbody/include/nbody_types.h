@@ -398,18 +398,19 @@ typedef enum
     NBODY_TREE_INCEST_NONFATAL = -(1 << 2), /* Negative of NBODY_TREE_INCEST */
     NBODY_SUCCESS              = 0 << 0,
     NBODY_ERROR                = 1 << 0,
-    NBODY_TREE_STRUCTURE_ERROR = 1 << 1,
-    NBODY_TREE_INCEST_FATAL    = 1 << 2,
-    NBODY_IO_ERROR             = 1 << 3,
-    NBODY_CHECKPOINT_ERROR     = 1 << 4,
-    NBODY_CL_ERROR             = 1 << 5,
-    NBODY_CAPABILITY_ERROR     = 1 << 6,
-    NBODY_CONSISTENCY_ERROR    = 1 << 7,
-    NBODY_UNIMPLEMENTED        = 1 << 8,
-    NBODY_UNSUPPORTED          = 1 << 9,
-    NBODY_USER_ERROR           = 1 << 10,
-    NBODY_PARAM_FILE_ERROR     = 1 << 11,
-    NBODY_LUA_POTENTIAL_ERROR  = 1 << 12
+    NBODY_ASSERTION_FAILURE    = 1 << 1,
+    NBODY_TREE_STRUCTURE_ERROR = 1 << 2,
+    NBODY_TREE_INCEST_FATAL    = 1 << 3,
+    NBODY_IO_ERROR             = 1 << 4,
+    NBODY_CHECKPOINT_ERROR     = 1 << 5,
+    NBODY_CL_ERROR             = 1 << 6,
+    NBODY_CAPABILITY_ERROR     = 1 << 7,
+    NBODY_CONSISTENCY_ERROR    = 1 << 8,
+    NBODY_UNIMPLEMENTED        = 1 << 9,
+    NBODY_UNSUPPORTED          = 1 << 10,
+    NBODY_USER_ERROR           = 1 << 11,
+    NBODY_PARAM_FILE_ERROR     = 1 << 12,
+    NBODY_LUA_POTENTIAL_ERROR  = 1 << 13
 } NBodyStatus;
 
 #define nbStatusIsFatal(x) ((x) > 0)

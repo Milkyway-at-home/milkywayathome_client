@@ -113,6 +113,8 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_SUCCESS";
         case NBODY_ERROR:
             return "NBODY_ERROR";
+        case NBODY_ASSERTION_FAILURE:
+            return "NBODY_ASSERTION_FAILURE";
         case NBODY_TREE_STRUCTURE_ERROR:
             return "NBODY_TREE_STRUCTURE_ERROR";
         case NBODY_TREE_INCEST_FATAL:

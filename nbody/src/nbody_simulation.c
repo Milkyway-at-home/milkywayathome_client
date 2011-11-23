@@ -107,14 +107,9 @@ static void nbAddTracePoint(const NBodyCtx* ctx, NBodyState* st)
     st->orbitTrace[i] = Pos(st->tree.root);
 }
 
-static NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
 {
     NBodyStatus rc = NBODY_SUCCESS;
-
-    if (nbf->visualizer)
-    {
-        nbLaunchVisualizer(st, nbf->visArgs);
-    }
 
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
     if (nbStatusIsFatal(rc))
@@ -132,7 +127,7 @@ static NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyF
         if (nbStatusIsFatal(rc))
             return rc;
 
-        nbReportProgress(ctx, st, nbf->reportProgress);
+        nbReportProgress(ctx, st, reportProgress);
     }
 
     if (BOINC_APPLICATION || ctx->checkpointT >= 0)
@@ -296,11 +291,17 @@ int nbMain(const NBodyFlags* nbf)
         nbSetupCursesOutput();
     }
 
+    if (nbf->visualizer)
+    {
+        nbLaunchVisualizer(st, nbf->visArgs);
+    }
+
+
     ts = mwGetTime();
   #if NBODY_OPENCL
     if (nbf->noCL)
     {
-        rc = nbRunSystem(ctx, st, nbf);
+        rc = nbRunSystem(ctx, st, nbf->reportProgress);
     }
     else
     {
@@ -311,7 +312,7 @@ int nbMain(const NBodyFlags* nbf)
         }
     }
   #else
-    rc = nbRunSystem(ctx, st, nbf);
+    rc = nbRunSystem(ctx, st, nbf->reportProgress);
   #endif /* NBODY_OPENCL */
     te = mwGetTime();
 

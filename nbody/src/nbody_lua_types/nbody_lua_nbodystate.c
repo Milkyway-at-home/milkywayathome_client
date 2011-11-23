@@ -32,6 +32,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_step.h"
 #include "nbody_defaults.h"
 #include "nbody_checkpoint.h"
+#include "nbody_lua_misc.h"
+#include "nbody.h"
 
 
 NBodyState* checkNBodyState(lua_State* luaSt, int idx)
@@ -69,6 +71,29 @@ static int stepNBodyState(lua_State* luaSt)
 
     rc = nbStepSystem(&ctx, st);
     lua_pushstring(luaSt, showNBodyStatus(rc));
+    return 1;
+}
+
+static int luaRunSystem(lua_State* luaSt)
+{
+    NBodyStatus rc;
+    NBodyState* st;
+    NBodyCtx ctx;
+
+    if (lua_gettop(luaSt) != 3)
+        return luaL_argerror(luaSt, 3, "Expected 3 arguments");
+
+    st = checkNBodyState(luaSt, 1);
+    ctx = *checkNBodyCtx(luaSt, 2);
+
+    if (nbGetPotentialTyped(luaSt, &ctx, 3))
+    {
+        return luaL_argerror(luaSt, 3, "Expected potential type as argument 3\n");
+    }
+
+    rc = nbRunSystem(&ctx, st, FALSE);
+    lua_pushstring(luaSt, showNBodyStatus(rc));
+
     return 1;
 }
 
@@ -202,6 +227,7 @@ static const luaL_reg methodsNBodyState[] =
 {
     { "create",          createNBodyState     },
     { "step",            stepNBodyState       },
+    { "runSystem",       luaRunSystem         },
     { "sortBodies",      sortBodiesNBodyState },
     { "clone",           luaCloneNBodyState   },
     { "writeCheckpoint", luaWriteCheckpoint   },
