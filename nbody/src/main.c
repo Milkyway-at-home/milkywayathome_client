@@ -463,7 +463,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
 static void nbSetDefaultFlags(NBodyFlags* nbf)
 {
     /* Use default if checkpoint file not specified */
-    stringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
+    mwStringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
 
     /* Use a specified seed or time seeding */
     nbf->seed = nbf->setSeed ? nbf->seed : (uint32_t) time(NULL);

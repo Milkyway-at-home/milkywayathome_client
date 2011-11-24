@@ -164,9 +164,9 @@ static void freeSeparationFlags(SeparationFlags* sf)
 /* Use hardcoded names if files not specified */
 static void setDefaultFiles(SeparationFlags* sf)
 {
-    stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
-    stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
-    stringDefault(sf->preferredPlatformVendor, DEFAULT_PREFERRED_PLATFORM_VENDOR);
+    mwStringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
+    mwStringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
+    mwStringDefault(sf->preferredPlatformVendor, DEFAULT_PREFERRED_PLATFORM_VENDOR);
 }
 
 static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)

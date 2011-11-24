@@ -54,23 +54,23 @@ cl_bool mwDeviceHasRTN(const DevInfo* di, cl_bool doublePrec);
 cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut);
 cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out);
 
-cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
+cl_double mwDeviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 
-cl_bool isNvidiaGPUDevice(const DevInfo* di);
-cl_bool isAMDGPUDevice(const DevInfo* di);
+cl_bool mwIsNvidiaGPUDevice(const DevInfo* di);
+cl_bool mwIsAMDGPUDevice(const DevInfo* di);
 
 
 /* AMD specific functions */
-cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
-cl_bool deviceVendorIsAMD(const DevInfo* di);
-cl_int uavIdFromMWCALtargetEnum(MWCALtargetEnum x);
+cl_double mwAMDEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
+cl_bool mwDeviceVendorIsAMD(const DevInfo* di);
+cl_int mwUAVIdFromMWCALtargetEnum(MWCALtargetEnum x);
 
 /* Nvidia specific functions */
-cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor);
-cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor);
-cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
-cl_bool hasNvidiaCompilerFlags(const DevInfo* di);
-cl_bool deviceVendorIsNvidia(const DevInfo* di);
+cl_bool mwMinComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor);
+cl_bool mwComputeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor);
+cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
+cl_bool mwHasNvidiaCompilerFlags(const DevInfo* di);
+cl_bool mwDeviceVendorIsNvidia(const DevInfo* di);
 
 
 #ifdef __cplusplus

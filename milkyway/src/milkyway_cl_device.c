@@ -100,12 +100,12 @@ static const AMDGPUData amdGPUData[] =
     { NULL,          MW_CAL_TARGET_INVALID, 5, 0, 64 }
 };
 
-cl_int uavIdFromMWCALtargetEnum(MWCALtargetEnum x)
+cl_int mwUAVIdFromMWCALtargetEnum(MWCALtargetEnum x)
 {
     return (x >= MW_CAL_TARGET_CYPRESS) ? 11 : 1;
 }
 
-static const AMDGPUData* lookupAMDGPUInfo(const DevInfo* di)
+static const AMDGPUData* mwLookupAMDGPUInfo(const DevInfo* di)
 {
     const AMDGPUData* p = amdGPUData;
 
@@ -122,7 +122,7 @@ static const AMDGPUData* lookupAMDGPUInfo(const DevInfo* di)
     return &invalidAMDGPUData;
 }
 
-cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+cl_double mwAMDEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
     cl_uint vliw = di->vliw;
     cl_uint doubleFrac = di->doubleFrac;
@@ -154,43 +154,43 @@ cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     return gflops;
 }
 
-cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
+cl_bool mwHasNvidiaCompilerFlags(const DevInfo* di)
 {
     return strstr(di->exts, "cl_nv_compiler_options") != NULL;
 }
 
-cl_bool deviceVendorIsAMD(const DevInfo* di)
+cl_bool mwDeviceVendorIsAMD(const DevInfo* di)
 {
     return (strncmp(di->vendor, "Advanced Micro Devices, Inc.", sizeof(di->vendor)) == 0);
 }
 
-cl_bool deviceVendorIsNvidia(const DevInfo* di)
+cl_bool mwDeviceVendorIsNvidia(const DevInfo* di)
 {
     return (strncmp(di->vendor, "Nvidia Corporation", sizeof(di->vendor)) == 0);
 }
 
 /* True if devices compute capability >= requested version */
-cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
+cl_bool mwMinComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
 {
-    return     di->computeCapabilityMajor > major
+    return    di->computeCapabilityMajor > major
            || (   di->computeCapabilityMajor == major
                && di->computeCapabilityMinor >= minor);
 }
 
 /* Exact check on compute capability version */
-cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
+cl_bool mwComputeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
 {
     return di->computeCapabilityMajor == major && di->computeCapabilityMinor == minor;
 }
 
 /* approximate ratio of float : double flops */
-static cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
+static cl_uint mwCUDAEstimateDoubleFrac(const DevInfo* di)
 {
     /* FIXME: This also differs with generation.
        Is there a better way to find out the generation and if
      */
 
-    if (minComputeCapabilityCheck(di, 2, 0))
+    if (mwMinComputeCapabilityCheck(di, 2, 0))
     {
         if (strstr(di->devName, "Tesla") != NULL)
         {
@@ -216,19 +216,19 @@ static cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
 
 /* Different on different Nvidia architectures.
    Uses numbers from appendix of Nvidia OpenCL programming guide. */
-static cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
+static cl_uint mwCUDACoresPerComputeUnit(const DevInfo* di)
 {
-    if (minComputeCapabilityCheck(di, 2, 0))
+    if (mwMinComputeCapabilityCheck(di, 2, 0))
         return 32;
 
     return 8;     /* 1.x is 8 */
 }
 
-cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
     cl_ulong flopsFloat, flopsDouble, flops;
-    cl_uint doubleRat = cudaEstimateDoubleFrac(di);
-    cl_uint corePerCU = cudaCoresPerComputeUnit(di);
+    cl_uint doubleRat = mwCUDAEstimateDoubleFrac(di);
+    cl_uint corePerCU = mwCUDACoresPerComputeUnit(di);
     cl_uint numCUDACores = di->maxCompUnits * corePerCU;
     cl_double gflops;
 
@@ -251,34 +251,34 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     return gflops;
 }
 
-cl_bool isNvidiaGPUDevice(const DevInfo* di)
+cl_bool mwIsNvidiaGPUDevice(const DevInfo* di)
 {
     return (di->vendorID == MW_NVIDIA) && (di->devType == CL_DEVICE_TYPE_GPU);
 }
 
-cl_bool isAMDGPUDevice(const DevInfo* di)
+cl_bool mwIsAMDGPUDevice(const DevInfo* di)
 {
     /* Not sure if the vendor ID for AMD is the same with their
        CPUs.  Also something else weird was going on with the
        vendor ID, so check the name just in case.
     */
 
-    return (di->vendorID == MW_AMD_ATI || deviceVendorIsAMD(di));
+    return (di->vendorID == MW_AMD_ATI || mwDeviceVendorIsAMD(di));
 }
 
-cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+cl_double mwDeviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
     cl_double gflops = 0.0;
 
     if (di->devType == CL_DEVICE_TYPE_GPU)
     {
-        if (isNvidiaGPUDevice(di))
+        if (mwIsNvidiaGPUDevice(di))
         {
-            gflops = cudaEstimateGFLOPs(di, useDouble);
+            gflops = mwCUDAEstimateGFLOPs(di, useDouble);
         }
-        else if (isAMDGPUDevice(di))
+        else if (mwIsAMDGPUDevice(di))
         {
-            gflops = amdEstimateGFLOPs(di, useDouble);
+            gflops = mwAMDEstimateGFLOPs(di, useDouble);
         }
         else
         {
@@ -421,10 +421,10 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
     di->nonOutput = ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
 
 
-    if (isNvidiaGPUDevice(di))
+    if (mwIsNvidiaGPUDevice(di))
     {
         di->vliw = 1;
-        di->doubleFrac = cudaEstimateDoubleFrac(di);
+        di->doubleFrac = mwCUDAEstimateDoubleFrac(di);
         di->calTarget = MW_CAL_TARGET_INVALID;
 
         if (strstr(di->exts, "cl_nv_device_attribute_query") != NULL)
@@ -437,9 +437,9 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
                                    sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
         }
     }
-    else if (isAMDGPUDevice(di))
+    else if (mwIsAMDGPUDevice(di))
     {
-        amdData = lookupAMDGPUInfo(di);
+        amdData = mwLookupAMDGPUInfo(di);
 
         di->vliw       = amdData->vliw;
         di->doubleFrac = amdData->doubleFrac;

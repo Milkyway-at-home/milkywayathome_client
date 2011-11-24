@@ -133,7 +133,7 @@ void mwPerrorW32(const char* fmt, ...);
 
 
 /* If one of these options is null, use the default. */
-#define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
+#define mwStringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 char* mwReadFile(const char* filename);
 char* mwReadFileWithSize(const char* filename, size_t* sizeOut);

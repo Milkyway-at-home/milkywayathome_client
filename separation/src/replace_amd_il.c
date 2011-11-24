@@ -63,7 +63,7 @@ static char* replaceUAVIds(const char* ilSrc, size_t* lenOut, ...)
 static char* getILSrc(int nStream, MWCALtargetEnum target, cl_int uavGuess, size_t* len)
 {
     char* ilSrc = NULL;
-    cl_int u = (uavGuess >= 0) ? uavGuess : uavIdFromMWCALtargetEnum(target);
+    cl_int u = (uavGuess >= 0) ? uavGuess : mwUAVIdFromMWCALtargetEnum(target);
 
     /* Should we be checking which UAV is used from the binary? */
     if (u > 99)

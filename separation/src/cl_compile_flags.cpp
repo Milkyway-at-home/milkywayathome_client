@@ -29,7 +29,7 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     const char* regCount32 = "-cl-nv-maxrregcount=32 ";
     const char* regDefault = "";
 
-    if (computeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
+    if (mwComputeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
     {
         /* 32 allows for greatest number of threads at a time */
         mw_printf("Found a compute capability 1.3 device. Using %s\n", regCount32);
@@ -81,7 +81,7 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool 
 
 
     /* FIXME: Device vendor not necessarily the platform vendor */
-    if (hasNvidiaCompilerFlags(di))
+    if (mwHasNvidiaCompilerFlags(di))
     {
         flags << "-cl-nv-verbose ";
         flags << getNvidiaRegCount(di);

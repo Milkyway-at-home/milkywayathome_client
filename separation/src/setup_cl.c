@@ -102,7 +102,7 @@ static cl_uint findNChunk(const AstronomyParameters* ap,
                           const DevInfo* di,
                           const CLRequest* clr)
 {
-    cl_double gflops = deviceEstimateGFLOPs(di, DOUBLEPREC);
+    cl_double gflops = mwDeviceEstimateGFLOPs(di, DOUBLEPREC);
     cl_double effFlops = GPU_EFFICIENCY_ESTIMATE * (cl_double) gflops;
     cl_double iterFlops = estimateWUGFLOPsPerIter(ap, ia);
 
@@ -397,7 +397,7 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
     cl_double devFactor;
 
     /* Experimentally determined constants */
-    devFactor = computeCapabilityIs(di, 1, 3) ? 1.87 : 1.53;
+    devFactor = mwComputeCapabilityIs(di, 1, 3) ? 1.87 : 1.53;
 
     /* Idea is this is a sort of efficiency factor for the
      * architecture vs. the theoretical FLOPs. We can then scale by
@@ -471,7 +471,7 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
         return CL_FALSE;
 
     /* Make sure an acceptable device */
-    return (isAMDGPUDevice(di) && isILKernelTarget(di) && mwPlatformSupportsAMDOfflineDevices(ci));
+    return (mwIsAMDGPUDevice(di) && isILKernelTarget(di) && mwPlatformSupportsAMDOfflineDevices(ci));
 }
 
 cl_int setupSeparationCL(CLInfo* ci,
@@ -480,7 +480,6 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const CLRequest* clr)
 {
     char* compileFlags;
-    char* kernelSrc;
     cl_bool useILKernel;
     cl_int err;
     const char* kernSrc = (const char*) probabilities_kernel_cl;

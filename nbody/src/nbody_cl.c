@@ -143,7 +143,7 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 /* CHECKME: May not apply on GT200? */
 static cl_bool nbShouldForceLargeGroup(const DevInfo* di, const NBodyCtx* ctx)
 {
-    return !ctx->useQuad && isNvidiaGPUDevice(di) && hasNvidiaCompilerFlags(di);
+    return !ctx->useQuad && mwIsNvidiaGPUDevice(di) && mwHasNvidiaCompilerFlags(di);
 }
 
 static const char* nbMaybeNvMaxRegCount(const DevInfo* di, const NBodyCtx* ctx)
@@ -185,7 +185,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[6] = 1;
         ws->threads[7] = 1;
     }
-    else if (computeCapabilityIs(di, 1, 3))
+    else if (mwComputeCapabilityIs(di, 1, 3))
     {
         ws->threads[0] = 256;
         ws->threads[1] = 288;
@@ -196,7 +196,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[6] = 512;
         ws->threads[7] = 512;
     }
-    else if (minComputeCapabilityCheck(di, 2, 0))
+    else if (mwMinComputeCapabilityCheck(di, 2, 0))
     {
         ws->factors[0] = 1;
         ws->factors[1] = 1;
@@ -610,7 +610,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.c3,
 
                  /* Misc. other stuff */
-                 hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",
+                 mwHasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",
                  nbMaybeNvMaxRegCount(di, ctx)
             ) < 1)
     {
@@ -656,7 +656,7 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
         return CL_FALSE;
     }
 
-    if (!isNvidiaGPUDevice(di) && !isAMDGPUDevice(di))
+    if (!mwIsNvidiaGPUDevice(di) && !mwIsAMDGPUDevice(di))
     {
         /* There is reliance on implementation details for Nvidia and
          * AMD GPUs. If some other kind of GPU decides to exist, it
