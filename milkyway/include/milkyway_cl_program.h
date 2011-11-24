@@ -22,10 +22,10 @@
   #error "Only milkyway_cl.h can be included directly."
 #endif
 
-#ifndef _MW_CL_PROGRAM_H_
-#define _MW_CL_PROGRAM_H_
+#ifndef _MILKYWAY_CL_PROGRAM_H_
+#define _MILKYWAY_CL_PROGRAM_H_
 
-#include "mw_cl_types.h"
+#include "milkyway_cl_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,5 +48,5 @@ cl_int mwCreateKernel(cl_kernel* kern, CLInfo* ci, const char* name);
 }
 #endif
 
-#endif /* _MW_CL_PROGRAM_H_ */
+#endif /* _MILKYWAY_CL_PROGRAM_H_ */
 

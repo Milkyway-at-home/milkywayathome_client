@@ -19,7 +19,6 @@
  */
 
 #include "milkyway_util.h"
-#include "mw_cl.h"
 #include "separation_cl_buffers.h"
 #include "r_points.h"
 #include "calculated_constants.h"

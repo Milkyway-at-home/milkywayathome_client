@@ -26,7 +26,6 @@
 #include "milkyway_util.h"
 #include "setup_cl.h"
 #include "milkyway_cl.h"
-#include "mw_cl.h"
 #include "separation_cl_buffers.h"
 #include "calculated_constants.h"
 #include "run_cl.h"

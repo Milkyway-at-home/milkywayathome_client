@@ -102,10 +102,10 @@ include_directories(${MILKYWAY_INCLUDE_DIR})
 # with crlibm, leading to unexpected results
 set(mw_lib_src src/milkyway_util.c
                src/milkyway_alloc.c
-               src/mw_boinc_util.c
+               src/milkyway_boinc_util.c
                src/milkyway_cpp_util.cc
                src/milkyway_show.c
-               src/mw_cpuid.c
+               src/milkyway_cpuid.c
                src/milkyway_timing.c)
 
 
@@ -116,11 +116,11 @@ set(milkyway_lua_src src/milkyway_lua_marshal.c
                      src/milkyway_lua_dsfmt.c
                      src/milkyway_lua_types.c)
 
-set(mw_cl_lib_src src/mw_cl_show_types.c
-                  src/mw_cl_device.c
-                  src/mw_cl_util.c
-                  src/mw_cl_program.c
-                  src/mw_cl_setup.c)
+set(mw_cl_lib_src src/milkyway_cl_show_types.c
+                  src/milkyway_cl_device.c
+                  src/milkyway_cl_util.c
+                  src/milkyway_cl_program.c
+                  src/milkyway_cl_setup.c)
 
 set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_extra.h
@@ -128,15 +128,15 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_math_functions.h
                    include/milkyway_util.h
                    include/milkyway_alloc.h
-                   include/mw_boinc_util.h
+                   include/milkyway_boinc_util.h
                    include/milkyway_cpp_util.h
                    include/milkyway_vectors.h
                    include/milkyway_vector_types.h
-                   include/real.h
+                   include/milkyway_real.h
                    include/milkyway_show.h
-                   include/mw_cpuid.h
+                   include/milkyway_cpuid.h
                    include/milkyway_timing.h
-                   include/mw_asprintf.h)
+                   include/milkyway_asprintf.h)
 
 
 set(milkyway_lua_headers include/milkyway_lua.h
@@ -149,15 +149,15 @@ set(milkyway_lua_headers include/milkyway_lua.h
 
 set(mw_cl_lib_headers include/milkyway_cl.h
                       include/mw_cl.h
-                      include/mw_cl_types.h
-                      include/mw_cl_show_types.h
-                      include/mw_cl_util.h
-                      include/mw_cl_device.h
-                      include/mw_cl_program.h
-                      include/mw_cl_setup.h)
+                      include/milkyway_cl_types.h
+                      include/milkyway_cl_show_types.h
+                      include/milkyway_cl_util.h
+                      include/milkyway_cl_device.h
+                      include/milkyway_cl_program.h
+                      include/milkyway_cl_setup.h)
 
 if(WIN32 AND NOT HAVE_ASPRINTF)
-    list(APPEND mw_lib_src src/mw_asprintf.c)
+    list(APPEND mw_lib_src src/milkyway_asprintf.c)
 endif()
 
 

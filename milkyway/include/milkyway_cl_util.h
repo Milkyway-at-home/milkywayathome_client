@@ -18,11 +18,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MW_CL_UTIL_H_
-#define _MW_CL_UTIL_H_
+#ifndef _MILKYWAY_CL_UTIL_H_
+#define _MILKYWAY_CL_UTIL_H_
 
-#include "mw_cl_setup.h"
-#include "mw_cl_types.h"
+#include "milkyway_cl_setup.h"
+#include "milkyway_cl_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,5 +54,5 @@ void mwPerrorCL(cl_int err, const char* fmt, ...);
 }
 #endif
 
-#endif /* _MW_CL_UTIL_H_ */
+#endif /* _MILKYWAY_CL_UTIL_H_ */
 

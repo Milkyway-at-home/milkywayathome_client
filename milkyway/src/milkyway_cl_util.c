@@ -25,9 +25,9 @@
 #include <stdarg.h>
 
 #include "milkyway_util.h"
-#include "mw_cl_show_types.h"
-#include "mw_cl_util.h"
-#include "mw_cl_setup.h"
+#include "milkyway_cl_show_types.h"
+#include "milkyway_cl_util.h"
+#include "milkyway_cl_setup.h"
 
 void mwPerrorCL(cl_int err, const char* fmt, ...)
 {

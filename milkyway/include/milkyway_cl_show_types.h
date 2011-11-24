@@ -23,10 +23,10 @@
 #endif
 
 
-#ifndef _MW_CL_SHOW_TYPES_H_
-#define _MW_CL_SHOW_TYPES_H_
+#ifndef _MILKYWAY_CL_SHOW_TYPES_H_
+#define _MILKYWAY_CL_SHOW_TYPES_H_
 
-#include "mw_cl_types.h"
+#include "milkyway_cl_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,5 +51,5 @@ const char* showMWCALtargetEnum(const MWCALtargetEnum x);
 }
 #endif
 
-#endif /* _MW_CL_SHOW_TYPES_H_ */
+#endif /* _MILKYWAY_CL_SHOW_TYPES_H_ */
 

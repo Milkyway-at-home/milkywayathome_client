@@ -21,7 +21,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mw_cpuid.h"
+#include "milkyway_cpuid.h"
 #include "milkyway_util.h"
 #include "probabilities_dispatch.h"
 #include "probabilities.h"

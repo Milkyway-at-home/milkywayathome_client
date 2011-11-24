@@ -22,9 +22,9 @@
 #include <errno.h>
 
 #include "milkyway_util.h"
-#include "mw_cl_show_types.h"
-#include "mw_cl_program.h"
-#include "mw_cl_util.h"
+#include "milkyway_cl_show_types.h"
+#include "milkyway_cl_program.h"
+#include "milkyway_cl_util.h"
 
 static char* mwGetBuildLog(CLInfo* ci)
 {

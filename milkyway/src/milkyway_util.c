@@ -44,7 +44,7 @@
 #endif
 
 #include "milkyway_util.h"
-#include "mw_boinc_util.h"
+#include "milkyway_boinc_util.h"
 
 
 

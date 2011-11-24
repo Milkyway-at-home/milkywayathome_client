@@ -20,11 +20,11 @@
 
 #include "milkyway_util.h"
 #include "milkyway_math.h"
-#include "mw_cl_show_types.h"
-#include "mw_cl_setup.h"
-#include "mw_cl_program.h"
-#include "mw_cl_device.h"
-#include "mw_cl_util.h"
+#include "milkyway_cl_show_types.h"
+#include "milkyway_cl_setup.h"
+#include "milkyway_cl_program.h"
+#include "milkyway_cl_device.h"
+#include "milkyway_cl_util.h"
 
 static void CL_CALLBACK contextCallback(const char* errInfo,
                                         const void* privateInfo,

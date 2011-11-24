@@ -23,10 +23,10 @@
 #endif
 
 
-#ifndef _MW_CL_DEVICE_H_
-#define _MW_CL_DEVICE_H_
+#ifndef _MILKYWAY_CL_DEVICE_H_
+#define _MILKYWAY_CL_DEVICE_H_
 
-#include "mw_cl_types.h"
+#include "milkyway_cl_types.h"
 #include "milkyway_util.h"
 
 
@@ -77,5 +77,5 @@ cl_bool deviceVendorIsNvidia(const DevInfo* di);
 }
 #endif
 
-#endif /* _MW_CL_DEVICE_H_ */
+#endif /* _MILKYWAY_CL_DEVICE_H_ */
 

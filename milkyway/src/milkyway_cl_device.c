@@ -18,10 +18,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mw_cl_device.h"
-#include "mw_cl_util.h"
+#include "milkyway_cl_device.h"
+#include "milkyway_cl_util.h"
 #include "milkyway_util.h"
-#include "mw_cl_show_types.h"
+#include "milkyway_cl_show_types.h"
 
 /* These are missing from the current OS X headers */
 #ifndef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV

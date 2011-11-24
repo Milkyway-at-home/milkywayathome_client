@@ -23,7 +23,6 @@
 
 #include "milkyway_util.h"
 #include "milkyway_cl.h"
-#include "mw_cl.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_binaries.h"

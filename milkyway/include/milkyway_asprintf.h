@@ -17,8 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MW_ASPRINTF_H_
-#define _MW_ASPRINTF_H_
+#ifndef _MILKYWAY_ASPRINTF_H_
+#define _MILKYWAY_ASPRINTF_H_
 
 #include "milkyway_config.h"
 
@@ -36,5 +36,5 @@ int asprintf(char** buf, const char* format, ...);
 #endif
 
 
-#endif /* _MW_ASPRINTF_H_ */
+#endif /* _MILKYWAY_ASPRINTF_H_ */
 

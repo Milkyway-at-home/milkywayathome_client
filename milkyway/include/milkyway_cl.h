@@ -24,12 +24,12 @@
 #define _MILKYWAY_CL_H_INSIDE_
 
 #include "mw_cl.h"
-#include "mw_cl_types.h"
-#include "mw_cl_show_types.h"
-#include "mw_cl_util.h"
-#include "mw_cl_setup.h"
-#include "mw_cl_device.h"
-#include "mw_cl_program.h"
+#include "milkyway_cl_types.h"
+#include "milkyway_cl_show_types.h"
+#include "milkyway_cl_util.h"
+#include "milkyway_cl_setup.h"
+#include "milkyway_cl_device.h"
+#include "milkyway_cl_program.h"
 
 #undef _MILKYWAY_CL_H_INSIDE_
 

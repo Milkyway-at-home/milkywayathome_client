@@ -51,8 +51,8 @@
 #include "milkyway_show.h"
 #include "milkyway_timing.h"
 #include "milkyway_alloc.h"
-#include "mw_boinc_util.h"
-#include "mw_asprintf.h"
+#include "milkyway_boinc_util.h"
+#include "milkyway_asprintf.h"
 #include "dSFMT.h"
 
 #ifdef __cplusplus

@@ -26,7 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _MILKYWAY_VECTORS_H_
 
 
-#include "real.h"
+#include "milkyway_real.h"
 #include "milkyway_vector_types.h"
 #include "milkyway_math_functions.h"
 

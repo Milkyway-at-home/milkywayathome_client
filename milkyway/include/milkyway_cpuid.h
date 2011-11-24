@@ -1,6 +1,6 @@
 /*
- *  Copyright (c) 2010-2011 Matthew Arsenault
- *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2011 Matthew Arsenault
+ *  Copyright (c) 2011 Rensselaer Polytechnic Institute
  *
  *  This file is part of Milkway@Home.
  *
@@ -18,27 +18,28 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _IL_KERNELS_H_
-#define _IL_KERNELS_H_
-
-#include "milkyway_cl.h"
-#include "separation_types.h"
-
+#ifndef _MILKYWAY_CPUID_H_
+#define _MILKYWAY_CPUID_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern const char* ilKernelSrc1;
-extern const char* ilKernelSrc2;
-extern const char* ilKernelSrc3;
-extern const char* ilKernelSrc4;
+/* returns eax, ebx, ecx, edx in abcd[], using a = eax, c = ecx as input */
+void mw_cpuid(int abcd[4], int a, int c);
 
+/* Takes populated array from mw_cpuid() and tests for different instructions */
+int mwHasSSE41(const int abcd[4]);
+int mwHasSSE3(const int abcd[4]);
+int mwHasSSE2(const int abcd[4]);
+int mwHasAVX(const int abcd[4]);
 
+int mwOSHasAVXSupport(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _IL_KERNELS_H_ */
+#endif /* _MILKYWAY_CPUID_H_ */
+
 

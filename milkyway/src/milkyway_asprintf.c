@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "mw_asprintf.h"
+#include "milkyway_asprintf.h"
 
 #ifndef _WIN32
   /* Random internet person says this should work but it seems to not */

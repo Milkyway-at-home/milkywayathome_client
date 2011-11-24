@@ -19,7 +19,7 @@
  */
 
 #include "milkyway_util.h"
-#include "mw_cl_show_types.h"
+#include "milkyway_cl_show_types.h"
 
 const char* showCLDeviceType(const cl_device_type x)
 {

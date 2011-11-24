@@ -22,7 +22,6 @@
 #define _CL_COMPILER_FLAGS_H_
 
 #include "milkyway_cl.h"
-#include "mw_cl.h"
 #include "separation_types.h"
 
 

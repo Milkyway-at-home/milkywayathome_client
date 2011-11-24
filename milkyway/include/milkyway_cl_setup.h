@@ -23,10 +23,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
-#ifndef _MW_CL_SETUP_H_
-#define _MW_CL_SETUP_H_
+#ifndef _MILKYWAY_CL_SETUP_H_
+#define _MILKYWAY_CL_SETUP_H_
 
-#include "mw_cl_types.h"
+#include "milkyway_cl_types.h"
 #include "milkyway_util.h"
 
 #ifdef __cplusplus
@@ -40,5 +40,5 @@ cl_int mwDestroyCLInfo(CLInfo* ci);
 }
 #endif
 
-#endif /* _MW_CL_SETUP_H_ */
+#endif /* _MILKYWAY_CL_SETUP_H_ */
 

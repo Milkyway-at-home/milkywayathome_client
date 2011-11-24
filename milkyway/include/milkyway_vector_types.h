@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_VECTOR_TYPES_H_
 #define _MILKYWAY_VECTOR_TYPES_H_
 
-#include "real.h"
+#include "milkyway_real.h"
 
 #ifndef _MSC_VER
 

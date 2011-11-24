@@ -20,8 +20,8 @@
 #endif
 
 
-#ifndef _REAL_H_
-#define _REAL_H_
+#ifndef _MILKYWAY_REAL_H_
+#define _MILKYWAY_REAL_H_
 
 #include "milkyway_config.h"
 
@@ -89,5 +89,5 @@ typedef MW_ALIGN_TYPE(16) float float4[4];
   #include <crlibm.h>
 #endif /* ENABLE_CRLIBM */
 
-#endif /* _REAL_H_ */
+#endif /* _MILKYWAY_REAL_H_ */
 
