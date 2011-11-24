@@ -27,6 +27,21 @@
 #include <lua.h>
 #include "milkyway_util.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Print the error from pcall assumed to be the top of the stack, and remove the error */
+#define mw_lua_pcall_warn(luaSt, msg, ...)                              \
+    do                                                                  \
+    {                                                                   \
+        fprintf(stderr, msg ": %s \n",                                  \
+                ##__VA_ARGS__, lua_tostring(luaSt, -1));                \
+        lua_pop(luaSt, 1);                                              \
+    }                                                                   \
+    while (0)                                                           \
+
+
 int registerUtilityFunctions(lua_State* luaSt);
 void mw_lua_openlibs(lua_State *L, mwbool debug);
 
@@ -34,6 +49,10 @@ int dostringWithArgs(lua_State* luaSt, const char* str, const char** args, unsig
 int dofileWithArgs(lua_State* luaSt, const char* filename, const char** args, unsigned int nArgs);
 
 int mwBindBOINCStatus(lua_State* luaSt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MILKYWAY_LUA_UTIL_H_ */
 
