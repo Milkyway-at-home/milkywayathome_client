@@ -22,6 +22,7 @@
 
 #include "milkyway_util.h"
 #include "nbody.h"
+#include "nbody_chisq.h"
 #include "nbody_defaults.h"
 #include "milkyway_git_version.h"
 
@@ -185,6 +186,13 @@ static void nbSetForwardedArguments(NBodyFlags* nbf, const char** args)
     nbf->forwardedArgs = mwGetForwardedArguments(args, &nbf->numForwardedArgs);
 }
 
+static mwbool nbPoptHelpError(poptContext context)
+{
+    poptPrintHelp(context, stderr, 0);
+    poptFreeContext(context);
+    return TRUE;
+}
+
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* nbfOut)
 {
@@ -217,6 +225,12 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             "histogram-file", 'h',
             POPT_ARG_STRING, &nbf.histogramFileName,
             0, "Histogram file", NULL
+        },
+
+        {
+            "match-histogram", 's',
+            POPT_ARG_STRING, &nbf.matchHistogram,
+            0, "Only match this histogram against other histogram (requires histogram argument)", NULL
         },
 
         {
@@ -413,12 +427,18 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     if (version || copyright)
     {
         poptFreeContext(context);
-        exit(EXIT_SUCCESS);
     }
 
-    if (!nbf.inputFile && !nbf.checkpointFileName)
+    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram)
     {
-        poptPrintHelp(context, stderr, 0);
+        mw_printf("An input file, checkpoint, or matching histogram argument is required\n");
+        return nbPoptHelpError(context);
+    }
+
+    if (nbf.matchHistogram && !nbf.histogramFileName)
+    {
+        mw_printf("--match-histogram argument requires --histogram-file\n");
+        return nbPoptHelpError(context);
     }
 
     nbf.setSeed = !!(argRead & SEED_ARGUMENT);
@@ -461,6 +481,7 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->checkpointFileName);
     free(nbf->histogramFileName);
     free(nbf->histoutFileName);
+    free(nbf->matchHistogram);
     free(nbf->forwardedArgs);
     free(nbf->visArgs);
 }
@@ -506,8 +527,7 @@ int main(int argc, const char* argv[])
 
     nbSpecialSetup();
 
-    rc = nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf);
-    if (rc)
+    if (nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf))
     {
         if (BOINC_APPLICATION)
         {
@@ -531,9 +551,18 @@ int main(int argc, const char* argv[])
     {
         rc = nbVerifyFile(&nbf);
     }
+    else if (nbf.matchHistogram)
+    {
+        double emd;
+
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram);
+        mw_printf("%.15f\n", emd);
+        rc = isnan(emd);
+    }
     else
     {
         rc = nbMain(&nbf);
+        rc = nbStatusToRC(rc);
 
         if (!nbf.noCleanCheckpoint)
         {
@@ -548,7 +577,6 @@ int main(int argc, const char* argv[])
 
     freeNBodyFlags(&nbf);
 
-    rc = nbStatusToRC(rc);
     if (BOINC_APPLICATION)
     {
         nbPrintVersion(TRUE, FALSE);

@@ -890,3 +890,23 @@ double nbSystemChisq(const NBodyCtx* ctx,
     return chiSq;
 }
 
+double nbMatchHistogramFiles(const char* datHist, const char* matchHist)
+{
+    NBodyHistogram* dat;
+    NBodyHistogram* match;
+    double emd = NAN;
+
+    dat = nbReadHistogram(datHist);
+    match = nbReadHistogram(matchHist);
+
+    if (dat && match)
+    {
+        emd = nbMatchEMD(dat, match);
+    }
+
+    free(dat);
+    free(match);
+
+    return emd;
+}
+

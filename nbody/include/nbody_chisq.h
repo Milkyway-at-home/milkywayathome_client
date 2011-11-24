@@ -53,6 +53,7 @@ double nbSystemChisq(const NBodyCtx* ctx,
                      const NBodyHistogram* data,
                      const NBodyHistogram* histogram);
 
+double nbMatchHistogramFiles(const char* datHist, const char* matchHist);
 
 NBodyHistogram* nbReadHistogram(const char* histogramFile);
 NBodyHistogram* nbGenerateHistogram(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf);
