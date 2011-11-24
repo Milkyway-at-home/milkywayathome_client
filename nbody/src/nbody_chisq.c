@@ -878,36 +878,7 @@ double nbSystemChisq(const NBodyCtx* ctx,
     wAltChiSq = nbCalcChisq(data, histogram, NBODY_W_ALT_LIKELIHOOD);
     emd = nbMatchEMD(data, histogram);
 
-
-    mw_printf(
-        "Effective total counts:\n"
-        "  hist: %u\n",
-        histogram->totalNum
-        );
-
-    double dCM = nbHistogramCenterOfMass(data, FALSE);
-    double hCM = nbHistogramCenterOfMass(histogram, FALSE);
-
-    mw_printf(
-        "Centers of mass:\n"
-        "  data: %.15f\n"
-        "  hist: %.15f\n"
-        "  dist: %.15f\n",
-        dCM, hCM, fabs(dCM - hCM)
-        );
-
-    double dCM_i = nbHistogramCenterOfMass(data, TRUE);
-    double hCM_i = nbHistogramCenterOfMass(histogram, TRUE);
-    mw_printf(
-        "Centers of mass (index):\n"
-        "  data: %.15f\n"
-        "  hist: %.15f\n"
-        "  dist: %.15f\n",
-        dCM_i, hCM_i, fabs(dCM_i - hCM_i)
-        );
-
-
-    mw_printf("<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
+    mw_printf("\n<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
     mw_printf("<alt_chisq_likelihood>%.15f</alt_chisq_likelihood>\n", chiSqAlt);
     mw_printf("<poisson_likelihood>%.15f</poisson_likelihood>\n", poissonChiSq);
     mw_printf("<kolmogorov_distance>%.15f</kolmogorov_distance>\n", kolmogorovDist);
