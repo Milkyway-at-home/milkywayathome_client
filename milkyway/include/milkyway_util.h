@@ -40,9 +40,9 @@
   #include <malloc.h>
 #endif
 
-#ifdef _WIN32
+#if HAVE_WINDOWS_H
   #include <windows.h>
-#endif /* _WIN32 */
+#endif
 
 #include <popt.h>
 

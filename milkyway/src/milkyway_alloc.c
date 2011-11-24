@@ -18,16 +18,21 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "milkyway_util.h"
+#include "milkyway_alloc.h"
+
 #ifndef _WIN32
   #include <sys/time.h>
   #include <sys/resource.h>
-#else
-  #include <malloc.h>
-  #include <windows.h>
 #endif /* _WIN32 */
 
-#include "milkyway_util.h"
-#include "milkyway_alloc.h"
+#if HAVE_MALLOC_H
+  #include <malloc.h>
+#endif
+
+#if HAVE_WINDOWS_H
+  #include <windows.h>
+#endif
 
 
 void* mwCalloc(size_t count, size_t size)

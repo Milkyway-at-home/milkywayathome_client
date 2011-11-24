@@ -18,19 +18,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _WIN32
-  #include <sys/mman.h>
-  #include <sys/types.h>
-  #include <sys/stat.h>
-  #include <fcntl.h>
-#else
-  #include <windows.h>
-#endif /* _WIN32 */
-
 #include "nbody_types.h"
 #include "nbody_checkpoint.h"
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
+
+#if HAVE_FCNTL_H
+  #include <fcntl.h>
+#endif
+
+#if HAVE_WINDOWS_H
+  #include <windows.h>
+#endif
+
+#if HAVE_SYS_MMAN_H
+  #include <sys/mman.h>
+#endif
+
+#if HAVE_SYS_TYPES_H
+  #include <sys/types.h>
+#endif
+
+#if HAVE_SYS_STAT_H
+  #include <sys/stat.h>
+#endif
 
 
 

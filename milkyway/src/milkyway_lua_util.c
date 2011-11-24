@@ -104,11 +104,19 @@ static int luaZipWith(lua_State* luaSt)
     return 1;
 }
 
+static int luaGetTime(lua_State* luaSt)
+{
+    lua_Number t = mwGetTime();
+    lua_pushnumber(luaSt, t);
+    return 1;
+}
+
 int registerUtilityFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "map", luaMap);
     lua_register(luaSt, "foldl", luaFoldl);
     lua_register(luaSt, "zipWith", luaZipWith);
+    lua_register(luaSt, "getTime", luaGetTime);
 
     return 0;
 }

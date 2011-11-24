@@ -32,6 +32,7 @@
 #cmakedefine01 HAVE_FMIN
 
 #cmakedefine01 HAVE_UNISTD_H
+#cmakedefine01 HAVE_WINDOWS_H
 #cmakedefine01 HAVE_FCNTL_H
 #cmakedefine01 HAVE_INTTYPES_H
 #cmakedefine01 HAVE_STDINT_H
@@ -39,6 +40,10 @@
 #cmakedefine01 HAVE_TGMATH_H
 #cmakedefine01 HAVE_FLOAT_H
 #cmakedefine01 HAVE_FPU_CONTROL_H
+#cmakedefine01 HAVE_SYS_RESOURCE_H
+#cmakedefine01 HAVE_SYS_MMAN_H
+#cmakedefine01 HAVE_SYS_TYPES_H
+#cmakedefine01 HAVE_SYS_STAT_H
 #cmakedefine01 HAVE_ASPRINTF
 #cmakedefine01 HAVE_POSIX_MEMALIGN
 #cmakedefine01 HAVE__ALIGNED_MALLOC

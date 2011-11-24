@@ -18,34 +18,36 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _WIN32
+#if HAVE_SYS_RESOURCE_H
   #include <sys/resource.h>
-#else
-  #include <stdlib.h>
+#endif
+
+#if HAVE_WINDOWS_H
   #include <windows.h>
 #endif /* _WIN32 */
+
+#if HAVE_FLOAT_H
+  #include <float.h>
+#endif
 
 #include <time.h>
 #include <errno.h>
 #include <stdarg.h>
 
-#if HAVE_FLOAT_H
-#include <float.h>
-#endif
-
 #ifdef __SSE__
   #include <xmmintrin.h>
 #endif /* __SSE__ */
-
-
-#include "milkyway_util.h"
-#include "mw_boinc_util.h"
-
 
 #if HAVE_MACH_ABSOLUTE_TIME
   #include <mach/mach.h>
   #include <mach/mach_time.h>
 #endif
+
+#include "milkyway_util.h"
+#include "mw_boinc_util.h"
+
+
+
 
 #if MW_IS_X86
   #if HAVE_FPU_CONTROL_H
@@ -106,7 +108,12 @@ char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut)
 
     fseek(f, 0, SEEK_SET);
 
-    buf = (char*) mwMalloc((fsize + 1) * sizeof(char));
+    buf = (char*) malloc((fsize + 1) * sizeof(char));
+    if (!buf)
+    {
+        return fcloseVerbose(f, filename, "closing read file");
+    }
+
     buf[fsize] = '\0';
 
     readSize = fread(buf, sizeof(char), fsize, f);
@@ -257,7 +264,9 @@ const char** mwGetForwardedArguments(const char** args, unsigned int* nForwarded
     forwardedArgs = (const char**) mwMalloc(sizeof(const char*) * argCount);
 
     for (i = 0; i < argCount; ++i)
+    {
         forwardedArgs[i] = args[i];
+    }
 
     *nForwardedArgs = argCount;
 

@@ -19,14 +19,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _WIN32
-  #include <sys/stat.h>
-  #include <sys/mman.h>
-#else
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
-#endif /* _WIN32 */
-
 #include "nbody_priv.h"
 #include "nbody_tree.h"
 
@@ -35,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "milkyway_util.h"
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 
