@@ -2,7 +2,7 @@
 require "NBodyTesting"
 require "persistence"
 
-local bin = "../../bin/milkyway_nbody"
+local bin = "milkyway_nbody"
 local output = "/tmp/arst.out"
 
 local nAvg = 3
@@ -55,8 +55,9 @@ function runSamples(deviceFlag)
                   samples[i] = findNumber(output, "run_time") or -1.0
                end
 
-               timings[nbody][crit][quad][theta] = findMin(samples)
-               eprintf("%f\n", tAvg)
+               local tMin = findMin(samples)
+               timings[nbody][crit][quad][theta] = tMin
+               eprintf("%f\n", tMin)
             end
          end
       end
@@ -79,12 +80,18 @@ function runSamples(deviceFlag)
          mass,
          radius
       }
+
+      local samples = { }
       eprintf("Running test Exact/%d/false...", nbody)
       args.extraArgs = exactArgs
-      output = runSimple(args)
-      t = assert(findNumber(output, "run_time"))
-      timings[nbody]["Exact"][false][0.0] = t
-      eprintf("%f\n", t)
+      for i = 1, nAvg do
+         output = runSimple(args)
+         samples[i] = findNumber(output, "run_time") or -1.0
+      end
+
+      local tMin = findMin(samples)
+      timings[nbody]["Exact"][false][0.0] = tMin
+      eprintf("%f\n", tMin)
    end
    eprintf("\n")
 
@@ -117,8 +124,8 @@ function printCSV(timings)
 end
 
 local timings = runSamples("--disable-opencl")
---runSample("--device 0")
---runSample("--nthreads 1")
+--local timings = runSample("--device 0")
+--local timings = runSample("--nthreads 1")
 persistence.store("CriterionBenchmarkResults.lua", timings)
 printCSV(timings)
 

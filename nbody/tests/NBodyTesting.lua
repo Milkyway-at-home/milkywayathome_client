@@ -22,12 +22,25 @@
 require "persistence"
 require "curry"
 
+-- Utility for helping get errors from printf/eprintf only with error reported at actual use site
+local function stringFormatCatchError(...)
+   local args = { ... }
+   -- trap the errors from string.format so we can tell where the error actually comes from
+   local success, str = pcall(function() return string.format(unpack(args)) end)
+   if success then
+      return str
+   else
+      io.stderr:write(str .. "\n") -- str is the error from string.format
+      error(str, 3) -- call level is not here, and then above printf/eprintf
+   end
+end
+
 function printf(...)
-   io.stdout:write(string.format(...))
+   io.stdout:write(stringFormatCatchError(...))
 end
 
 function eprintf(...)
-   io.stderr:write(string.format(...))
+   io.stderr:write(stringFormatCatchError(...))
 end
 
 
