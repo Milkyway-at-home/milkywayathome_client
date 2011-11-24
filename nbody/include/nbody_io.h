@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-int nbWriteBodies(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+int nbWriteBodies(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf);
 
 #ifdef __cplusplus
 }

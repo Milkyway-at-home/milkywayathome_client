@@ -119,10 +119,10 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_tree.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
                   ${NBODY_SRC_DIR}/nbody_potential.c
-                  ${NBODY_SRC_DIR}/nbody_simulation.c
+                  ${NBODY_SRC_DIR}/nbody.c
+                  ${NBODY_SRC_DIR}/nbody_plain.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
-                  ${NBODY_SRC_DIR}/nbody_step.c
                   ${NBODY_SRC_DIR}/nbody_show.c
                   ${NBODY_SRC_DIR}/nbody_checkpoint.c
                   ${NBODY_SRC_DIR}/nbody_defaults.c
@@ -142,6 +142,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
+                      ${NBODY_INCLUDE_DIR}/nbody_plain.h
                       ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h

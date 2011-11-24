@@ -1,22 +1,24 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
-Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ * Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
+ * Copyright (c) 2010, 2011 Matthew Arsenault
+ * Copyright (c) 2010, 2011 Rensselaer Polytechnic Institute.
+ * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _NBODY_H_
 #define _NBODY_H_
@@ -60,8 +62,8 @@ typedef struct
     int outputCartesian;
     int printTiming;
     int verifyOnly;
-    int printBodies;
-    int printHistogram;
+    int printHistogram;  /* Print histogram at end */
+    int outputBinary;
     int ignoreCheckpoint;
 
     int debugLuaLibs;   /* Open IO libraries etc. */
@@ -74,7 +76,8 @@ typedef struct
 
 #define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
-NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, int reportProgress);
+NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st);
 int nbVerifyFile(const NBodyFlags* nbf);
 int nbMain(const NBodyFlags* nbf);
 

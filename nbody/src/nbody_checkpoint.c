@@ -558,3 +558,27 @@ int nbWriteCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
     return nbWriteCheckpointWithTmpFile(ctx, st, path);
 }
 
+int nbTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+{
+    time_t now;
+
+    if (BOINC_APPLICATION)
+    {
+        return mw_time_to_checkpoint();
+    }
+
+    if (ctx->checkpointT < 0)
+    {
+        return FALSE;
+    }
+
+    now = time(NULL);
+    if ((now - st->lastCheckpoint) > ctx->checkpointT)
+    {
+        st->lastCheckpoint = now;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+

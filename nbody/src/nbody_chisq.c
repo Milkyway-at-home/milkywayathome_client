@@ -303,9 +303,7 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
 static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
-                                   int nbody,
-                                   uint32_t seed,
-                                   double chisq)
+                                   int nbody)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
@@ -316,15 +314,12 @@ static void nbPrintHistogramHeader(FILE* f,
             "#\n"
             "# Generated %s\n"
             "#\n"
-            "# Likelihood = %.15f\n"
-            "#\n"
             "# (phi,   theta,  psi) = (%f, %f, %f)\n"
             "# (start, center, end) = (%f, %f, %f)\n"
             "# Bin size = %f\n"
             "#\n"
             "#\n",
             tBuf,
-            chisq,
             hp->phi, hp->theta, hp->psi,
             hp->startRaw, hp->center, hp->endRaw,
             hp->binSize);
@@ -339,7 +334,6 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Theta = %f\n"
             "# Quadrupole Moments = %s\n"
             "# Eps = %f\n"
-            "# Seed = %u\n"
             "#\n",
             nbody,
             ctx->timeEvolve,
@@ -348,8 +342,7 @@ static void nbPrintHistogramHeader(FILE* f,
             showCriterionT(ctx->criterion),
             ctx->theta,
             showBool(ctx->useQuad),
-            mw_sqrt(ctx->eps2),
-            seed
+            mw_sqrt(ctx->eps2)
         );
 
 
@@ -454,7 +447,8 @@ static void nbPrintHistogramHeader(FILE* f,
         );
 }
 
-static void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
+/* Print the histogram without a header. */
+void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 {
     unsigned int i;
     const HistData* data;
@@ -475,25 +469,25 @@ static void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     mw_boinc_print(f, "</histogram>\n");
 }
 
-static void nbWriteHistogram(const NBodyCtx* ctx,
-                             NBodyState* st,
-                             const NBodyFlags* nbf,
-                             NBodyHistogram* histogram,
-                             double chisq)
+/* Write histogram to given file name along with descriptive header */
+void nbWriteHistogram(const char* histoutFileName,
+                      const NBodyCtx* ctx,
+                      const NBodyState* st,
+                      const NBodyHistogram* histogram)
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
 
-    if (nbf->histoutFileName && strcmp(nbf->histoutFileName, ""))  /* If file specified, try to open it */
+    if (histoutFileName && strcmp(histoutFileName, ""))  /* If file specified, try to open it */
     {
-        f = mwOpenResolved(nbf->histoutFileName, "w+");
+        f = mwOpenResolved(histoutFileName, "w+");
         if (f == NULL)
         {
-            mwPerror("Writing histogram '%s' Using output file instead", nbf->histoutFileName);
+            mwPerror("Error opening histogram '%s'. Using default output instead.", histoutFileName);
             f = DEFAULT_OUTPUT_FILE;
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, nbf->seed, chisq);
+    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody);
     nbPrintHistogram(f, histogram);
 
     if (f != DEFAULT_OUTPUT_FILE)
@@ -565,9 +559,9 @@ the data histogram A maximum correlation means the best fit */
 /* Bin the bodies from the simulation into maxIdx bins.
    Returns null on failure
  */
-static NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context */
-                                         const NBodyState* st,       /* Final state of the simulation */
-                                         const HistogramParams* hp)  /* Range of histogram to create */
+NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context */
+                                  const NBodyState* st,       /* Final state of the simulation */
+                                  const HistogramParams* hp)  /* Range of histogram to create */
 {
     double lambda;
     unsigned int i;
@@ -787,9 +781,47 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     return emd;
 }
 
+/* Load parameters where in the sky the histogram goes, and create the histogram. */
+NBodyHistogram* nbGenerateHistogram(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
+{
+    lua_State* luaSt = NULL;
+    NBodyHistogram* histogram;
+    HistogramParams hp;
+
+    luaSt = nbOpenLuaStateWithScript(nbf);
+    if (!luaSt)
+    {
+        return NULL;
+    }
+
+    if (nbEvaluateHistogramParams(luaSt, &hp))
+    {
+        lua_close(luaSt);
+        return NULL;
+    }
+
+    lua_close(luaSt);
+
+    /* Calculate the bounds of the bin range, making sure to use a
+     * fixed bin size which spans the entire range, and is symmetric
+     * around 0 */
+
+    histogram = nbCreateHistogram(ctx, st, &hp);
+    if (!histogram)
+    {
+        mw_printf("Failed to create histogram\n");
+        return NULL;
+    }
+
+    return histogram;
+}
+
 
 /* Calculate the likelihood from the final state of the simulation */
-double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+double nbSystemChisq(const NBodyCtx* ctx,
+                     const NBodyState* st,
+                     const NBodyHistogram* data,
+                     const NBodyHistogram* histogram)
 {
     double chiSq = NAN;
     double altChiSq = NAN;
@@ -801,35 +833,14 @@ double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     double wAltChiSq = NAN;
     double emd = NAN;
     double worstEMD;
-    NBodyHistogram* data = NULL;
-    NBodyHistogram* histogram = NULL;
-    lua_State* luaSt = NULL;
-    HistogramParams hp;
 
 
-    luaSt = nbOpenLuaStateWithScript(nbf);
-    if (!luaSt)
+    if (data->nBin != histogram->nBin)
     {
-        return NAN;
-    }
-
-    if (nbEvaluateHistogramParams(luaSt, &hp))
-    {
-        lua_close(luaSt);
-        return NAN;
-    }
-
-    lua_close(luaSt);
-
-
-    /* Calculate the bounds of the bin range, making sure to use a
-     * fixed bin size which spans the entire range, and is symmetric
-     * around 0 */
-
-    histogram = nbCreateHistogram(ctx, st, &hp);
-    if (!histogram)
-    {
-        mw_printf("Failed to create histogram\n");
+        mw_printf("Number of bins does not match those in histogram file. "
+                  "Expected %u, got %u\n",
+                  histogram->nBin,
+                  data->nBin);
         return NAN;
     }
 
@@ -848,75 +859,53 @@ double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
      */
     if (histogram->totalNum < 0.01 * (double) st->nbody)
     {
-        mw_printf("Number of particles in bins is very small compared to total. (%u << %u). Skipping distance calculation\n",
+        mw_printf("Number of particles in bins is very small compared to total. "
+                  "(%u << %u). Skipping distance calculation\n",
                   histogram->totalNum,
                   st->nbody
             );
         worstEMD = nbWorstCaseEMD(histogram);
-
-        free(histogram);
         return 2.0 * worstEMD;
     }
 
+    chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
+    altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
+    chiSqAlt = nbCalcChisq(data, histogram, NBODY_CHISQ_ALT_LIKELIHOOD);
+    poissonChiSq = nbCalcChisq(data, histogram, NBODY_POISSON_LIKELIHOOD);
+    kolmogorovDist = nbCalcChisq(data, histogram, NBODY_KOLMOGOROV_DISTANCE);
+    klDist = nbCalcChisq(data, histogram, NBODY_KULLBACK_LEIBLER_DISTANCE);
+    wChiSq = nbCalcChisq(data, histogram, NBODY_W_LIKELIHOOD);
+    wAltChiSq = nbCalcChisq(data, histogram, NBODY_W_ALT_LIKELIHOOD);
+    emd = nbMatchEMD(data, histogram);
 
-    if (nbf->histogramFileName) /* If we have an input histogram to match */
-    {
-        data = nbReadHistogram(nbf->histogramFileName);
-        if (!data)
-        {
-            mw_printf("Failed to read histogram\n");
-        }
-        else
-        {
-            if (data->nBin != histogram->nBin)
-            {
-                mw_printf("Number of bins does not match those in histogram file. "
-                          "Expected %u, got %u\n",
-                          histogram->nBin,
-                          data->nBin);
-            }
-            else
-            {
-                chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
-                altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
-                chiSqAlt = nbCalcChisq(data, histogram, NBODY_CHISQ_ALT_LIKELIHOOD);
-                poissonChiSq = nbCalcChisq(data, histogram, NBODY_POISSON_LIKELIHOOD);
-                kolmogorovDist = nbCalcChisq(data, histogram, NBODY_KOLMOGOROV_DISTANCE);
-                klDist = nbCalcChisq(data, histogram, NBODY_KULLBACK_LEIBLER_DISTANCE);
-                wChiSq = nbCalcChisq(data, histogram, NBODY_W_LIKELIHOOD);
-                wAltChiSq = nbCalcChisq(data, histogram, NBODY_W_ALT_LIKELIHOOD);
-                emd = nbMatchEMD(data, histogram);
-            }
 
-            mw_printf(
-                "Effective total counts:\n"
-                "  hist: %u\n",
-                histogram->totalNum
-                );
+    mw_printf(
+        "Effective total counts:\n"
+        "  hist: %u\n",
+        histogram->totalNum
+        );
 
-            double dCM = nbHistogramCenterOfMass(data, FALSE);
-            double hCM = nbHistogramCenterOfMass(histogram, FALSE);
+    double dCM = nbHistogramCenterOfMass(data, FALSE);
+    double hCM = nbHistogramCenterOfMass(histogram, FALSE);
 
-            mw_printf(
-                "Centers of mass:\n"
-                "  data: %.15f\n"
-                "  hist: %.15f\n"
-                "  dist: %.15f\n",
-                dCM, hCM, fabs(dCM - hCM)
-                );
+    mw_printf(
+        "Centers of mass:\n"
+        "  data: %.15f\n"
+        "  hist: %.15f\n"
+        "  dist: %.15f\n",
+        dCM, hCM, fabs(dCM - hCM)
+        );
 
-            double dCM_i = nbHistogramCenterOfMass(data, TRUE);
-            double hCM_i = nbHistogramCenterOfMass(histogram, TRUE);
-            mw_printf(
-                "Centers of mass (index):\n"
-                "  data: %.15f\n"
-                "  hist: %.15f\n"
-                "  dist: %.15f\n",
-                dCM_i, hCM_i, fabs(dCM_i - hCM_i)
-                );
+    double dCM_i = nbHistogramCenterOfMass(data, TRUE);
+    double hCM_i = nbHistogramCenterOfMass(histogram, TRUE);
+    mw_printf(
+        "Centers of mass (index):\n"
+        "  data: %.15f\n"
+        "  hist: %.15f\n"
+        "  dist: %.15f\n",
+        dCM_i, hCM_i, fabs(dCM_i - hCM_i)
+        );
 
-        }
-    }
 
     mw_printf("<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
     mw_printf("<alt_chisq_likelihood>%.15f</alt_chisq_likelihood>\n", chiSqAlt);
@@ -926,16 +915,6 @@ double nbSystemChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     mw_printf("<w_likelihood>%.15f</w_likelihood>\n", wChiSq);
     mw_printf("<w_alt_likelihood>%.15f</w_alt_likelihood>\n", wAltChiSq);
     mw_printf("<emd>%.15f</emd>\n", emd);
-
-    /* We want to write something whether or not the likelihood can be
-     * calculated (i.e. given a histogram) */
-    if (nbf->printHistogram)
-    {
-        nbWriteHistogram(ctx, st, nbf, histogram, chiSq);
-    }
-
-    free(data);
-    free(histogram);
 
     return chiSq;
 }

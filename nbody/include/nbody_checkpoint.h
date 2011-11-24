@@ -33,6 +33,8 @@ int nbReadCheckpoint(NBodyCtx* ctx, NBodyState* st);
 int nbWriteCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
 int nbWriteCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile);
 
+int nbTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st);
+
 #ifdef __cplusplus
 }
 #endif

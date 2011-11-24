@@ -225,6 +225,14 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             0, "Output file", NULL
         },
 
+      #if 0
+        {
+            "binary-output", 'B',
+            POPT_ARG_NONE, &nbf.outputBinary,
+            0, "Write output dump as a binary", NULL
+        },
+      #endif
+
         {
             "output-cartesian", 'x',
             POPT_ARG_NONE, &nbf.outputCartesian,
@@ -286,15 +294,9 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
 
         {
-            "print-bodies", 'b',
-            POPT_ARG_NONE, &nbf.printBodies,
-            0, "Print bodies", NULL
-        },
-
-        {
             "print-histogram", 'm',
             POPT_ARG_NONE, &nbf.printHistogram,
-            0, "Print histogram", NULL
+            0, "Print generated histogram to stderr", NULL
         },
 
         {
@@ -446,13 +448,10 @@ static void nbSetDefaultFlags(NBodyFlags* nbf)
     /* Use a specified seed or time seeding */
     nbf->seed = nbf->setSeed ? nbf->seed : (uint32_t) time(NULL);
 
-    /* Specifying output files implies using them */
-    if (!nbf->printBodies)
-        nbf->printBodies = (nbf->outFileName != NULL);
-    if (!nbf->printHistogram)
-        nbf->printHistogram = (nbf->histoutFileName != NULL);
     if (nbf->checkpointPeriod == 0)
+    {
         nbf->checkpointPeriod = NOBOINC_DEFAULT_CHECKPOINT_PERIOD;
+    }
 }
 
 static void freeNBodyFlags(NBodyFlags* nbf)
@@ -477,6 +476,26 @@ static void nbSetNumThreads(int numThreads)
                   omp_get_num_procs());
     }
   #endif
+}
+
+/* Maximum exit code is 255 which ruins everything even though we want
+ * to have or'able errors. */
+static int nbStatusToRC(NBodyStatus rc)
+{
+    unsigned int n = (unsigned int) rc;
+    unsigned int shift = 0;
+
+    if (rc == NBODY_SUCCESS || (nbStatusIsWarning(rc) && !nbStatusIsFatal(rc)))
+    {
+        return 0;
+    }
+
+    while (n >> shift)
+    {
+        ++shift;
+    }
+
+    return (int) shift - 1;
 }
 
 int main(int argc, const char* argv[])
@@ -523,8 +542,13 @@ int main(int argc, const char* argv[])
         }
     }
 
+    fflush(stderr);
+    fflush(stdout); /* Odd things happen with the OpenCL one where stdout starts disappearing */
+
+
     freeNBodyFlags(&nbf);
 
+    rc = nbStatusToRC(rc);
     if (BOINC_APPLICATION)
     {
         nbPrintVersion(TRUE, FALSE);

@@ -45,10 +45,13 @@ cl_int nbReleaseKernels(NBodyState* st);
 
 cl_int nbSetAllKernelArguments(NBodyState* st);
 
-NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
-
 cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn);
 void nbPrintKernelTimings(const NBodyState* st);
+
+
+NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st);
+
 
 #ifdef __cplusplus
 }

@@ -31,7 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_tree.h"
 #include "nbody_potential.h"
 #include "nbody_orbit_integrator.h"
-#include "nbody_step.h"
+#include "nbody_plain.h"
 #include "nbody_show.h"
 #include "nbody_io.h"
 #include "nbody_checkpoint.h"

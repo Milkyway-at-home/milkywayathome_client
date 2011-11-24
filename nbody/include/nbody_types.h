@@ -395,27 +395,47 @@ typedef struct NBODY_ALIGN
  */
 typedef enum
 {
-    NBODY_TREE_INCEST_NONFATAL = -(1 << 2), /* Negative of NBODY_TREE_INCEST */
     NBODY_SUCCESS              = 0 << 0,
-    NBODY_ERROR                = 1 << 0,
-    NBODY_ASSERTION_FAILURE    = 1 << 1,
-    NBODY_TREE_STRUCTURE_ERROR = 1 << 2,
-    NBODY_TREE_INCEST_FATAL    = 1 << 3,
-    NBODY_IO_ERROR             = 1 << 4,
-    NBODY_CHECKPOINT_ERROR     = 1 << 5,
-    NBODY_CL_ERROR             = 1 << 6,
-    NBODY_CAPABILITY_ERROR     = 1 << 7,
-    NBODY_CONSISTENCY_ERROR    = 1 << 8,
-    NBODY_UNIMPLEMENTED        = 1 << 9,
-    NBODY_UNSUPPORTED          = 1 << 10,
-    NBODY_USER_ERROR           = 1 << 11,
-    NBODY_PARAM_FILE_ERROR     = 1 << 12,
-    NBODY_LUA_POTENTIAL_ERROR  = 1 << 13
+    NBODY_ERROR                = 1 << 1,
+    NBODY_ASSERTION_FAILURE    = 1 << 2,
+    NBODY_TREE_STRUCTURE_ERROR = 1 << 3,
+    NBODY_TREE_INCEST_FATAL    = 1 << 4,
+    NBODY_IO_ERROR             = 1 << 5,
+    NBODY_CHECKPOINT_ERROR     = 1 << 6,
+    NBODY_CL_ERROR             = 1 << 7,
+    NBODY_CAPABILITY_ERROR     = 1 << 8,
+    NBODY_CONSISTENCY_ERROR    = 1 << 9,
+    NBODY_UNIMPLEMENTED        = 1 << 10,
+    NBODY_UNSUPPORTED          = 1 << 11,
+    NBODY_USER_ERROR           = 1 << 12,
+    NBODY_PARAM_FILE_ERROR     = 1 << 13,
+    NBODY_LUA_POTENTIAL_ERROR  = 1 << 14,
+    NBODY_LIKELIHOOD_ERROR     = 1 << 15,
+    NBODY_RESERVED_ERROR_1     = 1 << 16,
+    NBODY_RESERVED_ERROR_2     = 1 << 17,
+    NBODY_RESERVED_ERROR_3     = 1 << 18,
+    NBODY_RESERVED_ERROR_4     = 1 << 19,
+    NBODY_RESERVED_ERROR_5     = 1 << 20,
+    NBODY_RESERVED_ERROR_6     = 1 << 21,
+    NBODY_RESERVED_ERROR_7     = 1 << 22,
+    NBODY_RESERVED_ERROR_8     = 1 << 23,
+
+    /* Warnings */
+    NBODY_TREE_INCEST_NONFATAL = 1 << 24,
+    NBODY_RESERVED_WARNING_1   = 1 << 25,
+    NBODY_RESERVED_WARNING_2   = 1 << 26,
+    NBODY_RESERVED_WARNING_3   = 1 << 27,
+    NBODY_RESERVED_WARNING_4   = 1 << 28,
+    NBODY_RESERVED_WARNING_5   = 1 << 29,
+    NBODY_RESERVED_WARNING_6   = 1 << 30,
+    NBODY_RESERVED_WARNING_7   = 1 << 31
 } NBodyStatus;
 
-#define nbStatusIsFatal(x) ((x) > 0)
-#define nbStatusIsOK(x) ((x) <= 0)
-#define nbStatusIsWarning(x) ((x) < 0)
+#define NBODY_STATUS_ALL_WARNINGS (NBODY_TREE_INCEST_NONFATAL | NBODY_RESERVED_WARNING_1 | NBODY_RESERVED_WARNING_2 | NBODY_RESERVED_WARNING_3 | NBODY_RESERVED_WARNING_4 | NBODY_RESERVED_WARNING_5 | NBODY_RESERVED_WARNING_6 | NBODY_RESERVED_WARNING_7)
+
+/* Right now there is only one warning */
+#define nbStatusIsFatal(x) (((x) & ~NBODY_STATUS_ALL_WARNINGS) != 0)
+#define nbStatusIsWarning(x) (((x) & NBODY_STATUS_ALL_WARNINGS) != 0)
 
 /* Reserve positive numbers for reporting depth > MAXDEPTH. Should match in kernel  */
 typedef enum
@@ -443,7 +463,7 @@ typedef enum
 
 
 #if NBODY_OPENCL
-NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
+NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
 #endif
 
 int destroyNBodyState(NBodyState* st);

@@ -193,7 +193,7 @@ NBodyState* newNBodyState()
 
 #if NBODY_OPENCL
 
-NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
 {
     cl_int err;
 
@@ -211,7 +211,6 @@ NBodyStatus initCLNBodyState(NBodyState* st, const NBodyCtx* ctx, const CLReques
 
     st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
-    st->reportProgress = clr->reportProgress;
 
     st->ci = mwCalloc(1, sizeof(CLInfo));
     st->nbb = mwCalloc(1, sizeof(NBodyBuffers));

@@ -74,31 +74,38 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
     return FALSE;
 }
 
-int nbWriteBodies(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+int nbWriteBodies(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
-    FILE* f = DEFAULT_OUTPUT_FILE;
+    FILE* f;
     int rc = 0;
 
-    if (nbf->outFileName)
+    if (!nbf->outFileName)
     {
-        f = mwOpenResolved(nbf->outFileName, "w");
-        if (!f)
-        {
-            mw_printf("Failed to open output file '%s'. Using default output\n", nbf->outFileName);
-            f = DEFAULT_OUTPUT_FILE;
-        }
+        return 1;
     }
 
-    mw_boinc_print(f, "<bodies>\n");
-    rc = nbOutputBodies(f, ctx, st, nbf);
-    mw_boinc_print(f, "</bodies>\n");
-
-    if (f != DEFAULT_OUTPUT_FILE)
+    f = mwOpenResolved(nbf->outFileName, nbf->outputBinary ? "wb" : "w");
+    if (!f)
     {
-        if (fclose(f) < 0)
-        {
-            mwPerror("Error closing output file '%s'", nbf->outFileName);
-        }
+        mw_printf("Failed to open output file '%s'\n", nbf->outFileName);
+        return 1;
+    }
+
+    if (nbf->outputBinary)
+    {
+        mw_printf("Binary output unimplemented\n");
+        return 1;
+    }
+    else
+    {
+        mw_boinc_print(f, "<bodies>\n");
+        rc = nbOutputBodies(f, ctx, st, nbf);
+        mw_boinc_print(f, "</bodies>\n");
+    }
+
+    if (fclose(f) < 0)
+    {
+        mwPerror("Error closing output file '%s'", nbf->outFileName);
     }
 
     return rc;

@@ -29,7 +29,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_nbodyctx.h"
 #include "nbody_lua_potential.h"
 #include "nbody_lua_type_marshal.h"
-#include "nbody_step.h"
 #include "nbody_defaults.h"
 #include "nbody_checkpoint.h"
 #include "nbody_lua_misc.h"
@@ -81,7 +80,9 @@ static int luaRunSystem(lua_State* luaSt)
     NBodyCtx ctx;
 
     if (lua_gettop(luaSt) != 3)
+    {
         return luaL_argerror(luaSt, 3, "Expected 3 arguments");
+    }
 
     st = checkNBodyState(luaSt, 1);
     ctx = *checkNBodyCtx(luaSt, 2);
@@ -91,7 +92,7 @@ static int luaRunSystem(lua_State* luaSt)
         return luaL_argerror(luaSt, 3, "Expected potential type as argument 3\n");
     }
 
-    rc = nbRunSystem(&ctx, st, FALSE);
+    rc = nbRunSystem(&ctx, st);
     lua_pushstring(luaSt, showNBodyStatus(rc));
 
     return 1;

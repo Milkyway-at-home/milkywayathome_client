@@ -107,8 +107,6 @@ const char* showNBodyStatus(NBodyStatus x)
 {
     switch (x)
     {
-        case NBODY_TREE_INCEST_NONFATAL:
-            return "NBODY_TREE_INCEST_NONFATAL";
         case NBODY_SUCCESS:
             return "NBODY_SUCCESS";
         case NBODY_ERROR:
@@ -117,8 +115,6 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_ASSERTION_FAILURE";
         case NBODY_TREE_STRUCTURE_ERROR:
             return "NBODY_TREE_STRUCTURE_ERROR";
-        case NBODY_TREE_INCEST_FATAL:
-            return "NBODY_TREE_INCEST_FATAL";
         case NBODY_IO_ERROR:
             return "NBODY_IO_ERROR";
         case NBODY_CHECKPOINT_ERROR:
@@ -139,6 +135,44 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_PARAM_FILE_ERROR";
         case NBODY_LUA_POTENTIAL_ERROR:
             return "NBODY_LUA_POTENTIAL_ERROR";
+        case NBODY_LIKELIHOOD_ERROR:
+            return "NBODY_LIKELIHOOD_ERROR";
+        case NBODY_RESERVED_ERROR_1:
+            return "NBODY_RESERVED_ERROR_1";
+        case NBODY_RESERVED_ERROR_2:
+            return "NBODY_RESERVED_ERROR_2";
+        case NBODY_RESERVED_ERROR_3:
+            return "NBODY_RESERVED_ERROR_3";
+        case NBODY_RESERVED_ERROR_4:
+            return "NBODY_RESERVED_ERROR_4";
+        case NBODY_RESERVED_ERROR_5:
+            return "NBODY_RESERVED_ERROR_5";
+        case NBODY_RESERVED_ERROR_6:
+            return "NBODY_RESERVED_ERROR_6";
+        case NBODY_RESERVED_ERROR_7:
+            return "NBODY_RESERVED_ERROR_7";
+        case NBODY_RESERVED_ERROR_8:
+            return "NBODY_RESERVED_ERROR_8";
+
+        case NBODY_TREE_INCEST_NONFATAL:
+            return "NBODY_TREE_INCEST_NONFATAL";
+        case NBODY_TREE_INCEST_FATAL:
+            return "NBODY_TREE_INCEST_FATAL";
+        case NBODY_RESERVED_WARNING_1:
+            return "NBODY_RESERVED_WARNING_1";
+        case NBODY_RESERVED_WARNING_2:
+            return "NBODY_RESERVED_WARNING_2";
+        case NBODY_RESERVED_WARNING_3:
+            return "NBODY_RESERVED_WARNING_3";
+        case NBODY_RESERVED_WARNING_4:
+            return "NBODY_RESERVED_WARNING_4";
+        case NBODY_RESERVED_WARNING_5:
+            return "NBODY_RESERVED_WARNING_5";
+        case NBODY_RESERVED_WARNING_6:
+            return "NBODY_RESERVED_WARNING_6";
+        case NBODY_RESERVED_WARNING_7:
+            return "NBODY_RESERVED_WARNING_7";
+
         default:
             return "Unknown NBodyStatus";
     }

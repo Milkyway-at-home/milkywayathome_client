@@ -104,7 +104,7 @@ static cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* 
 }
 
 
-static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
+static void nbPrintNBodyWorkSizes(const NBodyWorkSizes* ws)
 {
     mw_printf("\n"
               "Kernel launch sizes:\n"
@@ -700,10 +700,10 @@ static cl_int nbReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
     assert(tc);
 
     err = clEnqueueReadBuffer(ci->queue,
-                               nbb->treeStatus,
-                               CL_TRUE,
-                               0, sizeof(*tc), tc,
-                               0, NULL, NULL);
+                              nbb->treeStatus,
+                              CL_TRUE,
+                              0, sizeof(*tc), tc,
+                              0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error reading tree status");
@@ -1032,7 +1032,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     return CL_SUCCESS;
 }
 
-static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     cl_uint i;
@@ -1047,7 +1047,7 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error executing tree construction kernels");
-            return err;
+            return NBODY_CL_ERROR;
         }
     }
 
@@ -1055,7 +1055,7 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error executing force kernels");
-        return err;
+        return NBODY_CL_ERROR;
     }
 
     if (st->reportProgress)
@@ -1068,7 +1068,7 @@ static cl_int stepSystemCL(const NBodyCtx* ctx, NBodyState* st)
         ws->kernelTimings[i] += ws->timings[i];
     }
 
-    return err;
+    return NBODY_SUCCESS;
 }
 
 /* We need to run a fake step to get the initial accelerations without
@@ -1100,32 +1100,38 @@ static cl_int nbRunPreStep(NBodyState* st)
     return clSetKernelArg(kernel, 29, sizeof(cl_int), &trueVal);
 }
 
-static cl_int nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
+static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
-    cl_int err = CL_SUCCESS;
+    NBodyStatus rc = NBODY_SUCCESS;
+    cl_int err;
 
     err = nbRunPreStep(st);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error running pre step");
-        return err;
+        return NBODY_CL_ERROR;
     }
 
-    while (err == CL_SUCCESS && st->step < ctx->nStep)
+    while (st->step < ctx->nStep)
     {
         st->dirty = TRUE;
-        if (!st->usesExact && nbCheckKernelErrorCode(ctx, st))
+
+        rc = nbCheckKernelErrorCode(ctx, st);
+        if (nbStatusIsFatal(rc))
         {
-            err = MW_CL_ERROR;
-            break;
+            return rc;
         }
 
-        err = stepSystemCL(ctx, st);
+        rc = nbStepSystemCL(ctx, st);
+        if (nbStatusIsFatal(rc))
+        {
+            return rc;
+        }
 
         st->step++;
     }
 
-    return err;
+    return rc;
 }
 
 /* This is dumb and errors if mem isn't set */
@@ -1494,16 +1500,15 @@ void nbPrintKernelLimits(NBodyState* st)
 }
 
 
-NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
+    NBodyStatus rc;
     cl_int err;
 
-    (void) nbf;
-
-    err = nbMainLoopCL(ctx, st);
-    if (err != CL_SUCCESS)
+    rc = nbMainLoopCL(ctx, st);
+    if (nbStatusIsFatal(rc))
     {
-        return NBODY_CL_ERROR;
+        return rc;
     }
 
     fflush(stdout); /* Try to prevent some of the GPU printfs from getting lost */
@@ -1517,6 +1522,6 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags*
 
     nbPrintKernelTimings(st);
 
-    return NBODY_SUCCESS;
+    return rc;
 }
 

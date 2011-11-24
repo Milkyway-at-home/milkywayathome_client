@@ -86,7 +86,6 @@ typedef struct
     int forceAVX;
     int verbose;
     int enableProfiling;
-    int reportProgress;
 } CLRequest;
 
 #if MW_ENABLE_DEBUG
