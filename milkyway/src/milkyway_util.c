@@ -18,6 +18,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "milkyway_util.h"
+#include "milkyway_boinc_util.h"
+
 #if HAVE_SYS_RESOURCE_H
   #include <sys/resource.h>
 #endif
@@ -42,11 +45,6 @@
   #include <mach/mach.h>
   #include <mach/mach_time.h>
 #endif
-
-#include "milkyway_util.h"
-#include "milkyway_boinc_util.h"
-
-
 
 
 #if MW_IS_X86

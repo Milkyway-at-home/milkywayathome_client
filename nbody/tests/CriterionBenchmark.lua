@@ -6,11 +6,12 @@ local bin = "milkyway_nbody"
 local output = "/tmp/arst.out"
 
 local nAvg = 3
-local nTimestep = 50
+local nTimestep = 40
 
 
-local nbodies = { 1024, 10000, 32768, 50000, 100000, 250000, 500000, 750000, 1000000 }
+local nbodies = { 1024, 10000, 32768, 50000, 100000, 250000, 500000 }
 local thetas = { 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }
+
 local criteria = { "BH86", "SW93", "NewCriterion" }
 local quads = { true, false }
 
@@ -22,7 +23,7 @@ function runSamples(deviceFlag)
    local args = {
       nbodyBin  = bin,
       input     = "benchmark.lua",
-      output    = output
+      output    = "/tmp/arst.out"
    }
 
    for _, nbody in ipairs(nbodies) do
@@ -55,7 +56,7 @@ function runSamples(deviceFlag)
                   samples[i] = findNumber(output, "run_time") or -1.0
                end
 
-               local tMin = findMin(samples)
+               local tMin = findMin(samples) / nTimestep
                timings[nbody][crit][quad][theta] = tMin
                eprintf("%f\n", tMin)
             end
@@ -85,11 +86,11 @@ function runSamples(deviceFlag)
       eprintf("Running test Exact/%d/false...", nbody)
       args.extraArgs = exactArgs
       for i = 1, nAvg do
-         output = runSimple(args)
+         local output = runSimple(args)
          samples[i] = findNumber(output, "run_time") or -1.0
       end
 
-      local tMin = findMin(samples)
+      local tMin = findMin(samples) / nTimestep
       timings[nbody]["Exact"][false][0.0] = tMin
       eprintf("%f\n", tMin)
    end
