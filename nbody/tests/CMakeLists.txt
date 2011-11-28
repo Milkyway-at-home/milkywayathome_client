@@ -39,11 +39,23 @@ add_test(NAME checkpoint_test
 
 
 add_test(NAME emd_test COMMAND emd_test)
+
+set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
+file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
+add_test(NAME invalid_input_test
+         COMMAND nbody_test_driver "RunInvalidInputTests.lua"
+                                   $<TARGET_FILE:milkyway_nbody>
+                                   ${INVALID_TEST_INPUTS})
+
+
+
+
+
 # add_test(NAME context_test
 #          COMMAND nbody_test_driver "ContextTest.lua")
 
 # Run these first 3 tests
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,2,1)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,3,1)
 
 # TODO: Test with known tree incest to check return status right
 

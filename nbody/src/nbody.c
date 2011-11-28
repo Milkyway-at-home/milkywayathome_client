@@ -108,6 +108,27 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->enableProfiling = TRUE;
 }
 
+/* Try to run a potential function and see if it fails. Return TRUE on failure. */
+static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx, NBodyState* st)
+{
+    mwvector acc;
+    mwvector pos = mw_vec(1.0, 1.0, 0.0);
+
+    if (ctx->potentialType != EXTERNAL_POTENTIAL_CUSTOM_LUA)
+    {
+        return FALSE;
+    }
+
+    /* Try to use it once to make sure it is OK */
+    if (nbOpenPotentialEvalStatePerThread(st, nbf))
+    {
+        return TRUE;
+    }
+
+    nbEvalPotentialClosure(st, pos, &acc);
+    return st->potentialEvalError;
+}
+
 /* Try evaluating everything in the file to make sure it's OK */
 int nbVerifyFile(const NBodyFlags* nbf)
 {
@@ -115,7 +136,7 @@ int nbVerifyFile(const NBodyFlags* nbf)
     NBodyState st = EMPTY_NBODYSTATE;
     HistogramParams hp;
 
-    if (nbSetup(&ctx, &st, nbf) || nbHistogramParamsCheck(nbf, &hp))
+    if (nbSetup(&ctx, &st, nbf) || nbHistogramParamsCheck(nbf, &hp) || nbVerifyPotentialFunction(nbf, &ctx, &st))
     {
         mw_printf("File failed\n");
         destroyNBodyState(&st);
@@ -138,7 +159,8 @@ static int nbOutputIsUseful(const NBodyFlags* nbf)
         && !nbf->histogramFileName
         && !nbf->histoutFileName
         && !nbf->printHistogram
-        && !nbf->verifyOnly)
+        && !nbf->verifyOnly
+        && !nbf->printTiming)
     {
         mw_printf("Don't you want some kind of result?\n");
         return FALSE;

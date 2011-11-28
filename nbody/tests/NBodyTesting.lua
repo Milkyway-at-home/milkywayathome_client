@@ -296,10 +296,10 @@ function os.readProcess(bin, ...)
 
    -- Redirect stderr to stdout, since popen only gets stdout
    cmd = table.concat({ bin, args, "2>&1" }, " ")
-   local f = assert(io.popen(cmd, "r"))
+   local f, rc = assert(io.popen(cmd, "r"))
    local s = assert(f:read('*a'))
    f:close()
-   return s
+   return s, rc
 end
 
 function getExtraNBodyFlags()
@@ -391,7 +391,6 @@ function runSimple(arg)
                          "-g",
                          "-t",
                          "-f", arg.input,
-                         "-o", arg.output,
                          table.concat(arg.extraArgs, " ")
                       )
 end
