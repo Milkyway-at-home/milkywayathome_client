@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_grav.h"
 #include "nbody_show.h"
 #include "nbody_lua.h"
-#include "milkyway_cpp_util.h"
 #include "nbody_shmem.h"
 #include "nbody_defaults.h"
 

@@ -125,7 +125,10 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     if (!ids)
         return MW_CL_ERROR;
 
-    mwPrintPlatforms(ids, nPlatform);
+    if (mwIsFirstRun())
+    {
+        mwPrintPlatforms(ids, nPlatform);
+    }
 
     /* We have this set by default to UINT_MAX, so if it's in a
      * legitimate range, it was specified */
@@ -194,13 +197,16 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
         return err;
     }
 
-    if (clr->verbose)
+    if (mwIsFirstRun())
     {
-        mwPrintDevInfo(&ci->di);
-    }
-    else
-    {
-        mwPrintDevInfoShort(&ci->di);
+        if (clr->verbose)
+        {
+            mwPrintDevInfo(&ci->di);
+        }
+        else
+        {
+            mwPrintDevInfoShort(&ci->di);
+        }
     }
 
     return mwCreateCtxQueue(ci, CL_FALSE, clr->enableProfiling);

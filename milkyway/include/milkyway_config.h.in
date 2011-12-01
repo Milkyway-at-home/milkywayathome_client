@@ -44,6 +44,7 @@
 #cmakedefine01 HAVE_SYS_MMAN_H
 #cmakedefine01 HAVE_SYS_TYPES_H
 #cmakedefine01 HAVE_SYS_STAT_H
+#cmakedefine01 HAVE_SYS_TIME_H
 #cmakedefine01 HAVE_ASPRINTF
 #cmakedefine01 HAVE_POSIX_MEMALIGN
 #cmakedefine01 HAVE__ALIGNED_MALLOC

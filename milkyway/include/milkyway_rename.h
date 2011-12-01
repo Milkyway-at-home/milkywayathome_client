@@ -18,47 +18,20 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MILKYWAY_CPP_UTIL_H_
-#define _MILKYWAY_CPP_UTIL_H_
+#ifndef _MILKYWAY_RENAME_H_
+#define _MILKYWAY_RENAME_H_
 
-
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-#endif /* BOINC_APPLICATION */
+#include "milkyway_config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Stuff that might be actually useful */
-typedef struct
-{
-    int majorVersion;
-    int minorVersion;
-    int release;
-    int appVersion;
-    double checkpointPeriod;
-    char wuName[256];
-    char projectDir[256];
-    char boincDir[256];
-    char* projectPrefs;
-} MWAppInitData;
-
-void freeMWAppInitData(MWAppInitData* mwaid);
-
-#if BOINC_APPLICATION
-
-int mwGetMWAppInitData(MWAppInitData* mwaid);
-void mwGetBoincOptionsDefault(BOINC_OPTIONS* options);
-void* mw_graphics_make_shmem(const char* x, int y);
-void* mw_graphics_get_shmem(const char* x);
-void mw_boinc_sleep(double seconds);
-
-#endif /* BOINC_APPLICATION */
+int mw_rename(const char* oldf, const char* newf);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _MILKYWAY_CPP_UTIL_H_ */
+#endif /* _MILKYWAY_RENAME_H_ */
 

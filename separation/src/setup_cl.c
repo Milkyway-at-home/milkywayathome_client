@@ -20,7 +20,6 @@
 
 #include "milkyway_util.h"
 #include "milkyway_extra.h"
-#include "milkyway_cpp_util.h"
 #include "milkyway_cl.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"

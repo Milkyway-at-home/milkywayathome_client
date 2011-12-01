@@ -24,6 +24,11 @@
 #include "milkyway_config.h"
 #include <stddef.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if HAVE___MINGW_ALIGNED_MALLOC
   #define mwFreeA __mingw_aligned_free
 #elif HAVE__ALIGNED_MALLOC
@@ -53,6 +58,9 @@ void* mwCallocA(size_t count, size_t size);
 int mwAllocA32Safe();
 int mwAllocA16Safe();
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MILKYWAY_ALLOC_H_ */
 

@@ -18,13 +18,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MW_BOINC_UTIL_H_
-#define _MW_BOINC_UTIL_H_
+#ifndef _MILKYWAY_BOINC_UTIL_H_
+#define _MILKYWAY_BOINC_UTIL_H_
 
 #include "milkyway_config.h"
 
+
 #if BOINC_APPLICATION
-  #ifndef _WIN32
+  #if HAVE_SYS_TYPES_H
     /* Workaround: Old version of BOINC libraries missed including this */
     #include <sys/types.h>
   #endif
@@ -34,10 +35,17 @@
 
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
+
+typedef enum
+{
+    MW_PLAIN       = 1 << 0,
+    MW_MULTITHREAD = 1 << 1,
+    MW_CAL         = 1 << 2,
+    MW_OPENCL      = 1 << 3,
+    MW_DEBUG       = 1 << 4,
+    MW_GRAPHICS    = 1 << 5
+} MWInitType;
 
 typedef enum
 {
@@ -59,6 +67,9 @@ typedef struct
 #define END_MW_PROJECT_PREFS { NULL, MW_PREF_NONE, FALSE, NULL }
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if BOINC_APPLICATION
   #define mw_boinc_print(f, msg, ...) fprintf(f, msg, ##__VA_ARGS__)
@@ -82,29 +93,35 @@ typedef struct
   #define mw_checkpoint_completed()
 #endif /* BOINC_APPLICATION */
 
-typedef enum
-{
-    MW_PLAIN       = 1 << 0,
-    MW_MULTITHREAD = 1 << 1,
-    MW_CAL         = 1 << 2,
-    MW_OPENCL      = 1 << 3,
-    MW_DEBUG       = 1 << 4,
-    MW_GRAPHICS    = 1 << 5
-} MWInitType;
 
 int mwBoincInit(MWInitType type);
+
+/* BOINC file function wrappers */
 char* mwReadFileResolved(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
-int mw_rename(const char* oldf, const char* newf);
 
 int mw_resolve_filename(const char* filename, char* buf, size_t bufSize);
 int mw_file_exists(const char* file);
 
+
+/* Things for checkinb BOINC status */
+int mwGetAppInitData(void);
 int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig);
+
+int mwIsFirstRun(void);
+const char* mwGetProjectPrefs(void);
+
+
+
+#if BOINC_APPLICATION
+void mw_boinc_sleep(double t);
+void* mw_graphics_make_shmem(const char* x, int y);
+void* mw_graphics_get_shmem(const char* x);
+#endif /* BOINC_APPLICATION */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _MW_BOINC_UTIL_H_ */
+#endif /* _MILKYWAY_BOINC_UTIL_H_ */
 

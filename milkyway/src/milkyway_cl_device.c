@@ -573,38 +573,38 @@ void mwPrintDevInfoShort(const DevInfo* di)
         );
 }
 
-static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
+static void mwGetPlatformInfo(PlatformInfo* pInfo, cl_platform_id platform)
 {
     cl_int err;
     size_t readSize;
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
-                            sizeof(pi->name), pi->name, &readSize);
-    if (readSize > sizeof(pi->name))
+                            sizeof(pInfo->name), pInfo->name, &readSize);
+    if (readSize > sizeof(pInfo->name))
         mwPerrorCL(err, "Failed to read platform name");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_VENDOR,
-                            sizeof(pi->vendor), pi->vendor, &readSize);
-    if (readSize > sizeof(pi->vendor))
+                            sizeof(pInfo->vendor), pInfo->vendor, &readSize);
+    if (readSize > sizeof(pInfo->vendor))
         mwPerrorCL(err, "Failed to read platform vendor");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
-                            sizeof(pi->version), pi->version, &readSize);
-    if (readSize > sizeof(pi->version))
+                            sizeof(pInfo->version), pInfo->version, &readSize);
+    if (readSize > sizeof(pInfo->version))
         mwPerrorCL(err, "Failed to read platform version");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS,
-                            sizeof(pi->extensions), pi->extensions, &readSize);
-    if (readSize > sizeof(pi->extensions))
+                            sizeof(pInfo->extensions), pInfo->extensions, &readSize);
+    if (readSize > sizeof(pInfo->extensions))
         mwPerrorCL(err, "Failed to read platform extensions");
 
     err = clGetPlatformInfo(platform, CL_PLATFORM_PROFILE,
-                            sizeof(pi->profile), pi->profile, &readSize);
-    if (readSize > sizeof(pi->profile))
+                            sizeof(pInfo->profile), pInfo->profile, &readSize);
+    if (readSize > sizeof(pInfo->profile))
         mwPerrorCL(err, "Failed to read platform profile");
 }
 
-static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
+static void mwPrintPlatformInfo(PlatformInfo* pInfo, cl_uint n)
 {
     mw_printf("Platform %u information:\n"
               "  Name:       %s\n"
@@ -613,23 +613,23 @@ static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
               "  Extensions: %s\n"
               "  Profile:    %s\n",
               n,
-              pi->name,
-              pi->version,
-              pi->vendor,
-              pi->extensions,
-              pi->profile
+              pInfo->name,
+              pInfo->version,
+              pInfo->vendor,
+              pInfo->extensions,
+              pInfo->profile
         );
 }
 
 void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
 {
     cl_uint i;
-    PlatformInfo pi = EMPTY_PLATFORM_INFO;
+    PlatformInfo pInfo = EMPTY_PLATFORM_INFO;
 
     for (i = 0; i < n_platforms; ++i)
     {
-        mwGetPlatformInfo(&pi, platforms[i]);
-        mwPrintPlatformInfo(&pi, i);
+        mwGetPlatformInfo(&pInfo, platforms[i]);
+        mwPrintPlatformInfo(&pInfo, i);
     }
 }
 

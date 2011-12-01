@@ -52,6 +52,7 @@
 #include "milkyway_timing.h"
 #include "milkyway_alloc.h"
 #include "milkyway_boinc_util.h"
+#include "milkyway_rename.h"
 #include "milkyway_asprintf.h"
 #include "dSFMT.h"
 

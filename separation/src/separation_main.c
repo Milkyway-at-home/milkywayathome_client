@@ -24,7 +24,7 @@
 #include "separation.h"
 #include "separation_lua.h"
 #include "milkyway_util.h"
-#include "milkyway_cpp_util.h"
+#include "milkyway_boinc_util.h"
 #include "milkyway_git_version.h"
 #include "io_util.h"
 #include <popt.h>
@@ -207,8 +207,6 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
  * still work without BOINC */
 static void separationReadPreferences(SeparationFlags* sf)
 {
-    MWAppInitData aid;
-
     static struct
     {
         double gpuTargetFrequency;
@@ -231,16 +229,13 @@ static void separationReadPreferences(SeparationFlags* sf)
     prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
     prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
 
-    if (mwGetMWAppInitData(&aid))
+    if (mwGetAppInitData())
     {
         mw_printf("Error reading app init data. Project preferences will not be used\n");
     }
     else
     {
-        if (aid.projectPrefs)
-        {
-            mwReadProjectPrefs(sepPrefs, aid.projectPrefs);
-        }
+        mwReadProjectPrefs(sepPrefs, mwGetProjectPrefs());
     }
 
     /* Any successfully found setting will be used; otherwise it will get the default */
@@ -603,6 +598,12 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
     if (rc)
         return rc;
 
+    if (BOINC_APPLICATION && mwIsFirstRun())
+    {
+        /* Print the version, but only once for the workunit */
+        printVersion(TRUE, FALSE);
+    }
+
     /* For GPU versions, default to using a higher process priority if not set */
 
     /* If a  priority was specified, use that */
@@ -647,6 +648,7 @@ int main(int argc, const char* argv[])
             freeSeparationFlags(&sf);
             mwBoincInit(MW_PLAIN);
             parseParameters(argc, argvCopy, &sf);
+            printVersion(TRUE, FALSE);
         }
 
         mw_printf("Failed to parse parameters\n");
@@ -671,9 +673,8 @@ int main(int argc, const char* argv[])
     }
   #endif
 
-    if (BOINC_APPLICATION)
+    if (BOINC_APPLICATION && mwIsFirstRun())
     {
-        printVersion(TRUE, FALSE);
         mw_finish(rc);
     }
 

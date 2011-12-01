@@ -30,11 +30,12 @@
 */
 
 #include "milkyway_util.h"
+#include "milkyway_boinc_util.h"
 #include "nbody_gl.h"
 #include "nbody_gl_util.h"
 #include "nbody_graphics.h"
 #include "nbody_types.h"
-#include "milkyway_cpp_util.h"
+
 
 #if !BOINC_APPLICATION
   #include <sys/mman.h>

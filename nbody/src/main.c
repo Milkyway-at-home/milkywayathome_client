@@ -427,6 +427,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     if (version || copyright)
     {
         poptFreeContext(context);
+        return FALSE;
     }
 
     if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram)
@@ -534,6 +535,7 @@ int main(int argc, const char* argv[])
             freeNBodyFlags(&nbf);
             mwBoincInit(MW_PLAIN);
             nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf);
+            nbPrintVersion(TRUE, FALSE);
         }
 
         mw_finish(EXIT_FAILURE);
@@ -542,6 +544,11 @@ int main(int argc, const char* argv[])
     if (nbInit(&nbf))
     {
         exit(EXIT_FAILURE);
+    }
+
+    if (BOINC_APPLICATION && mwIsFirstRun())
+    {
+        nbPrintVersion(TRUE, FALSE);
     }
 
     nbSetDefaultFlags(&nbf);
@@ -579,8 +586,6 @@ int main(int argc, const char* argv[])
 
     if (BOINC_APPLICATION)
     {
-        nbPrintVersion(TRUE, FALSE);
-        fflush(stderr);
         mw_finish(rc);
     }
 
