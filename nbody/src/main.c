@@ -400,8 +400,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);
-        poptFreeContext(context);
-        return TRUE;
+        return nbPoptHelpError(context);
     }
 
     /* Check for invalid options, and must have the input file or a
@@ -427,7 +426,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     if (version || copyright)
     {
         poptFreeContext(context);
-        return FALSE;
+        exit(EXIT_SUCCESS);
     }
 
     if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram)
@@ -532,7 +531,6 @@ int main(int argc, const char* argv[])
     {
         if (BOINC_APPLICATION)
         {
-            freeNBodyFlags(&nbf);
             mwBoincInit(MW_PLAIN);
             nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf);
             nbPrintVersion(TRUE, FALSE);

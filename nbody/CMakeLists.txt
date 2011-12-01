@@ -269,10 +269,6 @@ set(nbody_exe_link_libs nbody
                         ${OS_SPECIFIC_LIBS}
                         ${nbody_link_libs})
 
-if(BOINC_APPLICATION)
-  list(INSERT nbody_exe_link_libs 5 ${BOINC_LIBRARIES})
-endif()
-
 if(NBODY_OPENCL)
   list(INSERT nbody_exe_link_libs 5 milkyway_cl)
 endif()
@@ -311,7 +307,7 @@ if(NBODY_GL)
 
   set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES})
   if(BOINC_APPLICATION)
-    list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
+    list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
   endif()
   if(HAVE_LIBRT)
     list(APPEND vis_link_libs rt)
