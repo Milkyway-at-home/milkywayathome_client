@@ -46,7 +46,7 @@ extern "C" {
   #define mw_getch() getch()
 #else
   #define mw_printw mw_printf
-  #define mw_mvprintw(y, x, ...) mw_printf(__VA_ARGS__)
+  #define mw_mvprintw(y, x, ...) printf(__VA_ARGS__)
   #define mw_initscr()
   #define mw_delscreen()
   #define mw_refresh()
