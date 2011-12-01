@@ -184,7 +184,7 @@ int mwIsFirstRun(void)
     return FALSE;
 }
 
-char* mwGetProjectPrefs(void)
+const char* mwGetProjectPrefs(void)
 {
     return NULL;
 }

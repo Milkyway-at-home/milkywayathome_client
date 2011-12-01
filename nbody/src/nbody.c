@@ -240,7 +240,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_LIKELIHOOD_ERROR;
         }
 
-        likelihood = nbSystemChisq(ctx, st, data, histogram);
+        likelihood = nbSystemChisq(st, data, histogram);
     }
 
     free(histogram);

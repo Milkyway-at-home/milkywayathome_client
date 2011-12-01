@@ -74,7 +74,7 @@ function generateSampleUnits(outputName, testName, histograms, nbodies, iteratio
       for _, histogram in pairs(histograms) do
          local histItem = histTable[histogram]
          local histSamples = histItem["samples"]
-         histItem["mean"], histItem["stddev"] = calcStats(histSamples, mean)
+         histItem["mean"], histItem["stddev"] = calcStats(histSamples)
          histItem["min"], histItem["max"] =  findMinMax(histSamples)
       end
    end

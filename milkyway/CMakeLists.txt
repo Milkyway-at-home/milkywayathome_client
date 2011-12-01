@@ -180,6 +180,7 @@ set_target_properties(milkyway PROPERTIES
 
 
 if(MILKYWAY_OPENCL)
+  add_definitions("-DCL_USE_DEPRECATED_OPENCL_1_1_APIS=1")   # For now stick to 1.1
   add_library(milkyway_cl STATIC ${mw_cl_lib_src} ${mw_cl_lib_headers})
   target_link_libraries(milkyway_cl milkyway)
   set_target_properties(milkyway_cl PROPERTIES

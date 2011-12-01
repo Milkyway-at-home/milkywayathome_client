@@ -315,6 +315,10 @@ function calcMean(table)
    local total = 0.0
    assert(type(table) == "table")
 
+   if #table == 0 then
+      return 0.0
+   end
+
    for k, v in ipairs(table) do
       total = total + v
    end

@@ -48,10 +48,7 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                    NBodyLikelihoodMethod method);
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
-double nbSystemChisq(const NBodyCtx* ctx,
-                     const NBodyState* st,
-                     const NBodyHistogram* data,
-                     const NBodyHistogram* histogram);
+double nbSystemChisq(const NBodyState* st, const NBodyHistogram* data, const NBodyHistogram* histogram);
 
 double nbMatchHistogramFiles(const char* datHist, const char* matchHist);
 
