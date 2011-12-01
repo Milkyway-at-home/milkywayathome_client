@@ -258,6 +258,7 @@ static SeparationResults* freadReferenceResults(FILE* f, unsigned int nStream)
     SeparationResults* r;
     char buf[256] = "";
     unsigned int i;
+    double tmp;
 
     r = newSeparationResults(nStream);
 
@@ -265,22 +266,27 @@ static SeparationResults* freadReferenceResults(FILE* f, unsigned int nStream)
     while (buf[0] == '#' || buf[0] == ' ' || !strncmp(buf, "", sizeof(buf)))
         fgets(buf, sizeof(buf), f);
 
-    if (sscanf(buf, "likelihood: %lf\n", &r->likelihood) != 1)
+    if (sscanf(buf, "likelihood: %lf\n", &tmp) != 1)
         goto fail_read;
+    r->likelihood = tmp;
 
-    if (fscanf(f, "background_integral: %lf\n", &r->backgroundIntegral) != 1)
+    if (fscanf(f, "background_integral: %lf\n", &tmp) != 1)
         goto fail_read;
+    tmp = r->backgroundIntegral;
 
-    if (fscanf(f, "background_likelihood: %lf\n", &r->backgroundLikelihood) != 1)
+    if (fscanf(f, "background_likelihood: %lf\n", &tmp) != 1)
         goto fail_read;
+    tmp = r->backgroundLikelihood;
 
     for (i = 0; i < nStream; ++i)
     {
-        if (fscanf(f, "stream_integral: %lf\n", &r->streamIntegrals[i]) != 1)
+        if (fscanf(f, "stream_integral: %lf\n", &tmp) != 1)
             goto fail_read;
+        r->streamIntegrals[i] = tmp;
 
-        if (fscanf(f, "stream_likelihood: %lf\n", &r->streamLikelihoods[i]) != 1)
+        if (fscanf(f, "stream_likelihood: %lf\n", &tmp) != 1)
             goto fail_read;
+        r->streamLikelihoods[i] = tmp;
     }
 
     return r;

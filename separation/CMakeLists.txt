@@ -236,7 +236,7 @@ endif()
 
 set(separation_core_libs )
 # Build the critical area separately for SSE2, SSE3, no SSE2
-if(SYSTEM_IS_X86 AND DOUBLEPREC)
+if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
   if(HAVE_SSE2)
     add_library(separation_core_sse2 STATIC src/probabilities_sse2.c)
     enable_sse2(separation_core_sse2)

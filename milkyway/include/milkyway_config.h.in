@@ -37,7 +37,6 @@
 #cmakedefine01 HAVE_INTTYPES_H
 #cmakedefine01 HAVE_STDINT_H
 #cmakedefine01 HAVE_MALLOC_H
-#cmakedefine01 HAVE_TGMATH_H
 #cmakedefine01 HAVE_FLOAT_H
 #cmakedefine01 HAVE_FPU_CONTROL_H
 #cmakedefine01 HAVE_SYS_RESOURCE_H
@@ -146,6 +145,12 @@
   #define ARCH_STRING "PPC64"
 #elif defined(__arm__) || defined(__arm)
   #define ARCH_STRING "ARM"
+#elif defined(__sparc)
+  #define ARCH_STRING "SPARC"
+#elif defined(__mips64)
+  #define ARCH_STRING "MIPS64"
+#elif defined(__mips)
+  #define ARCH_STRING "MIPS"
 #else
   #define ARCH_STRING "Unknown architecture"
   #warning "Unknown architecture!"

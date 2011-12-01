@@ -22,17 +22,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #error "Only milkyway_math.h can be included directly."
 #endif
 
-#ifndef _MILKYWAY_MATH_FUNCTIONS_H_
-#define _MILKYWAY_MATH_FUNCTIONS_H_
+#ifndef _MILKYWAY_MATH_DOUBLE_H_
+#define _MILKYWAY_MATH_DOUBLE_H_
 
 #include "milkyway_extra.h"
 
-/* simple math macros */
-#define cube(x) ((x) * (x) * (x))
-#define sqr(x)  ((x) * (x))
-#define inv(x)  ((real) 1.0 / (x))
+#if !DOUBLEPREC
+#error Double not enabled for double math
+#endif
 
-#if ENABLE_CRLIBM && DOUBLEPREC
+typedef MW_ALIGN_TYPE(8) double real;
+typedef MW_ALIGN_TYPE(16)double double2[2];
+typedef MW_ALIGN_TYPE(32) double double4[4];
+
+
+#define REAL_EPSILON DBL_EPSILON
+#define REAL_MAX DBL_MAX
+#define REAL_MIN DBL_MIN
+
+#if ENABLE_CRLIBM
   #define mw_sin   sin_rn
   #define mw_cos   cos_rn
   #define mw_tan   tan_rn
@@ -65,15 +73,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define mw_cosh  cosh
   #define mw_tanh  tanh
   #define mw_pow   pow
-#endif /* ENABLE_CRLIBM */
+#endif /* ENABLE_CRLIBM && DOUBLEPREC */
 
 #define mw_abs   fabs
-
 
 #define mw_acosh acosh
 #define mw_acospi(x) (mw_acos(x) / M_PI))
 #define mw_asinh asinh
-#define mw_asinpi asinpi (mw_asin(x) / M_PI))
+#define mw_asinpi (mw_asin(x) / M_PI)
 #define mw_atan2 atan2
 #define mw_atanh atanh
 #define mw_atanpi(x) (mw_atan(x) / M_PI)
@@ -102,29 +109,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define mw_fabs fabs
 #define mw_fdim fdim
 #define mw_floor floor
-
-/* TODO: Have fma */
-#define mw_fma(a, b, c) (((a) * (b)) + (c))
-
-#if HAVE_FMAX
-#define mw_fmax fmax
-#else
-CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline real mw_fmax(real a, real b)
-{
-    return ((a >= b) || isnan(b)) ?  a : b;
-}
-#endif
-
-#if HAVE_FMIN
-#define mw_fmin   fmin
-#else
-CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline real mw_fmin(real a, real b)
-{
-    return ((a <= b) || isnan(b)) ? a : b;
-}
-#endif
 
 #define mw_fmod fmod
 
@@ -156,29 +140,10 @@ inline real mw_fmin(real a, real b)
 #define mw_rootn(x, y) mw_pow((x), 1.0 / (y))
 #define mw_round round
 
-#if HAVE_RSQRT && USE_RSQRT
-  /* warning: This loses precision */
-  #define mw_rsqrt rsqrt
-#else
-  #define mw_rsqrt(x) (1.0 / mw_sqrt(x))
-#endif /* HAVE_RSQRT && USE_RSQRT */
-
-
-#if HAVE_SINCOS
-  /* Assuming glibc style, e.g. sincos(x, &sinval, &cosval) */
-  #define mw_sincos sincos
-#else
-    /* TODO: Using real sincos() would be nice in coordinate conversions
-   for speed, but it's a glibc extension. It is in opencl though.  We
-   could take it from glibc, but it's in assembly and would be kind of
-   annoying to add, but probably worth it. */
-  #define mw_sincos(x, s, c) { *(s) = mw_sin(x); *(c) = mw_cos(x); }
-#endif /* HAVE_SINCOS */
-
 #define mw_sqrt sqrt
 #define mw_tgamma tgamma
 #define mw_trunc trunc
 
 
-#endif /* _MILKYWAY_MATH_FUNCTIONS_H_ */
+#endif /* _MILKYWAY_MATH_DOUBLE_H_ */
 

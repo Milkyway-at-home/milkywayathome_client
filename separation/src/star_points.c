@@ -24,15 +24,9 @@
 #include "star_points.h"
 #include "milkyway_util.h"
 
-#if DOUBLEPREC
-  #define STARPOINTS_READ_STR "%lf %lf %lf\n"
-#else
-  #define STARPOINTS_READ_STR "%f %f %f\n"
-#endif /* DOUBLEPREC */
-
 static int freadStarPoints(FILE* data_file, StarPoints* sp)
 {
-    real x, y, z;
+    double x, y, z;
     unsigned int i;
 
     if (fscanf(data_file, "%u\n", &sp->number_stars) != 1)
@@ -44,13 +38,13 @@ static int freadStarPoints(FILE* data_file, StarPoints* sp)
     sp->stars = (mwvector*) mwMallocA(sizeof(mwvector) * sp->number_stars);
     for (i = 0; i < sp->number_stars; ++i)
     {
-        if (fscanf(data_file, STARPOINTS_READ_STR, &x, &y, &z) != 3)
+        if (fscanf(data_file, "%lf %lf %lf\n", &x, &y, &z) != 3)
         {
             mwPerror("Failed to read star points item\n");
             return 1;
         }
 
-        SET_VECTOR(sp->stars[i], x, y, z);
+        SET_VECTOR(sp->stars[i], (real) x, (real) y, (real) z);
     }
 
     return 0;

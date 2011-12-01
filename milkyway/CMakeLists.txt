@@ -38,7 +38,6 @@ check_include_files(inttypes.h HAVE_INTTYPES_H)
 check_include_files(stdint.h HAVE_STDINT_H)
 check_include_files(malloc.h HAVE_MALLOC_H)
 check_function_exists(asprintf HAVE_ASPRINTF)
-check_include_files(tgmath.h HAVE_TGMATH_H)
 check_include_files(float.h HAVE_FLOAT_H)
 check_include_files(fpu_control.h HAVE_FPU_CONTROL_H)
 check_include_files(sys/resource.h HAVE_SYS_RESOURCE_H)
@@ -46,10 +45,6 @@ check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
 check_include_files(sys/types.h HAVE_SYS_TYPES_H)
 check_include_files(sys/stat.h HAVE_SYS_STAT_H)
 check_include_files(sys/time.h HAVE_SYS_TIME_H)
-if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
-  message(FATAL_ERROR "Float requires tgmath.h")
-endif()
-
 
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "libmilkyway headers")
 include_directories(${MILKYWAY_INCLUDE_DIR})
@@ -126,14 +121,13 @@ set(mw_cl_lib_src src/milkyway_cl_show_types.c
 set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_extra.h
                    include/milkyway_math.h
-                   include/milkyway_math_functions.h
+                   include/milkyway_math_double.h
+                   include/milkyway_math_float.h
                    include/milkyway_util.h
                    include/milkyway_alloc.h
                    include/milkyway_boinc_util.h
                    include/milkyway_rename.h
                    include/milkyway_vectors.h
-                   include/milkyway_vector_types.h
-                   include/milkyway_real.h
                    include/milkyway_show.h
                    include/milkyway_cpuid.h
                    include/milkyway_timing.h

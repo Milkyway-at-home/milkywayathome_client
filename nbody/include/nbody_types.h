@@ -347,9 +347,9 @@ typedef struct
 {
     int useBin;
     unsigned int rawCount;
-    real lambda;
-    real count;
-    real err;
+    double lambda;
+    double count;
+    double err;
 } HistData;
 
 typedef struct

@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #if !defined(_MILKYWAY_MATH_H_INSIDE_) && !defined(MILKYWAY_MATH_COMPILATION)
   #error "Only milkyway_math.h can be included directly."
@@ -25,10 +25,45 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_VECTORS_H_
 #define _MILKYWAY_VECTORS_H_
 
+#ifndef _MSC_VER
 
-#include "milkyway_real.h"
-#include "milkyway_vector_types.h"
-#include "milkyway_math_functions.h"
+typedef struct MW_ALIGN(4 * sizeof(real))
+{
+    real x, y, z, w;
+} mwvector;
+
+#else
+
+typedef struct
+{
+    real x, y, z, w;
+} mwvector;
+
+#endif /* _MSC_VER */
+
+
+#define L(v) ((v).x)
+#define B(v) ((v).y)
+#define R(v) ((v).z)
+
+#define X(v) ((v).x)
+#define Y(v) ((v).y)
+#define Z(v) ((v).z)
+#define W(v) ((v).w)
+
+
+#define mw_vec(x, y, z) { (x), (y), (z), 0.0 }
+
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
+
+
+#define NDIM 3
+
+#define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
+typedef mwvector mwmatrix[NDIM];
+#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+
+#define MWVECTOR_TYPE "Vector"
 
 
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
