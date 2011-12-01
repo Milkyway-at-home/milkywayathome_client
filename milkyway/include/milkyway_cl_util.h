@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_int pollingMode, cl_uint initialWait);
 
 cl_int mwGetWorkGroupInfo(cl_kernel kern, const CLInfo* ci, WGInfo* wgi);
 void mwPrintWorkGroupInfo(const WGInfo* wgi);

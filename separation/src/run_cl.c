@@ -105,7 +105,7 @@ static real sumBgResults(const real* bgResults,
     return bg_prob.sum + bg_prob.correction;
 }
 
-static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint nu_step)
+static cl_int setNuKernelArgs(const IntegralArea* ia, cl_uint nu_step)
 {
     cl_int err;
     NuId nuid;
@@ -182,7 +182,7 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     cl_int err = CL_SUCCESS;
     size_t offset[1];
 
-    err = setNuKernelArgs(ci, ia, nu_step);
+    err = setNuKernelArgs(ia, nu_step);
     if (err != CL_SUCCESS)
     {
         mw_printf("Failed to set nu kernel argument\n");

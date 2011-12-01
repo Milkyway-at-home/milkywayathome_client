@@ -815,10 +815,7 @@ NBodyHistogram* nbGenerateHistogram(const NBodyCtx* ctx, const NBodyState* st, c
 
 
 /* Calculate the likelihood from the final state of the simulation */
-double nbSystemChisq(const NBodyCtx* ctx,
-                     const NBodyState* st,
-                     const NBodyHistogram* data,
-                     const NBodyHistogram* histogram)
+double nbSystemChisq(const NBodyState* st, const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     double chiSq = NAN;
     double altChiSq = NAN;

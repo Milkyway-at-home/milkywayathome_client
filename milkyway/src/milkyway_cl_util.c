@@ -265,5 +265,46 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
     return bufCopy;
 }
 
+/* Optionally manually poll for event completion.  This is because some
+   versions of both the Nvidia and AMD drivers developed an issue
+   where clWaitForEvents/clFinish would cause 100% CPU usage.
+*/
+cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_int pollingMode, cl_uint initialWait)
+{
+    cl_int err;
+    cl_int execStatus;
 
+    if (pollingMode == 0)
+    {
+        return clWaitForEvents(1, &ev);
+    }
+
+
+    err = clFlush(ci->queue);  /* If we don't flush the queue the event probably won't ever run */
+    if (err != CL_SUCCESS)
+        return err;
+
+    mwMilliSleep(initialWait);  /* Sleep for initial estimate before polling */
+
+    do
+    {
+
+        err = clGetEventInfo(ev,
+                             CL_EVENT_COMMAND_EXECUTION_STATUS,
+                             sizeof(cl_int),
+                             &execStatus,
+                             NULL);
+        if (err != CL_SUCCESS)
+            return err;
+
+        if (pollingMode > 0) /* Busy wait if < 0 */
+        {
+            mwMilliSleep(pollingMode);
+        }
+    }
+    while (execStatus != CL_COMPLETE);
+
+
+    return CL_SUCCESS;
+}
 
