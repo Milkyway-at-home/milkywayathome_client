@@ -193,7 +193,8 @@ set(boinc_lib_headers boinc/version.h
                       boinc/svn_version.h
                       boinc/win_build/config.h
                       ${BOINC_LIB_SRC_DIR}/str_util.h
-                      ${BOINC_LIB_SRC_DIR}/procinfo.h)
+                      ${BOINC_LIB_SRC_DIR}/procinfo.h
+                      ${BOINC_LIB_SRC_DIR}/proc_control.h)
 
 set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/app_ipc.cpp
@@ -213,7 +214,8 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/base64.cpp
                   ${BOINC_LIB_SRC_DIR}/url.cpp
                   ${BOINC_LIB_SRC_DIR}/coproc.cpp
-                  ${BOINC_LIB_SRC_DIR}/procinfo.cpp)
+                  ${BOINC_LIB_SRC_DIR}/procinfo.cpp
+                  ${BOINC_LIB_SRC_DIR}/proc_control.cpp)
 
 if(WIN32)
   list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/win_util.cpp
