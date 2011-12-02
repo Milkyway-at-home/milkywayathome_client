@@ -21,8 +21,8 @@ export PKG_CONFIG_LIBDIR="$PKG_CONFIG_PATH"
 export MAINFOLDER=`pwd`/..
 export BUILDDIR=`pwd`/../build_iphone
 
-export POPT_LIB="/opt/iphone-$SDKVER/lib/libpopt.a"
-export POPT_INC="/opt/iphone-$SDKVER/include"
+#export POPT_LIB="/opt/iphone-$SDKVER/lib/libpopt.a"
+#export POPT_INC="/opt/iphone-$SDKVER/include"
 
 if [ ! -d "${BUILDDIR}" ]; then
     mkdir -p ${BUILDDIR}

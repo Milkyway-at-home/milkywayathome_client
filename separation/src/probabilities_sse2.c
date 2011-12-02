@@ -55,14 +55,13 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "milkyway_util.h"
-#include "probabilities.h"
-#include "probabilities_intrin.h"
-
-
 #ifndef __SSE2__
   #error SSE2 not defined
 #endif
+
+#include "milkyway_util.h"
+#include "probabilities.h"
+#include "probabilities_intrin.h"
 
 
 static inline __m128d _mm_rcp_pd(__m128d x)

@@ -186,6 +186,11 @@ if(SYSTEM_IS_X86)
     str_append(SSE4_FLAGS "-D__SSE4__=1")
     str_append(SSE41_FLAGS "-D__SSE4_1__=1")
     str_append(AVX_FLAGS "-D__AVX__=1")
+
+    str_append(AVX_FLAGS ${SSE2_FLAGS})
+    str_append(AVX_FLAGS ${SSE3_FLAGS})
+    str_append(AVX_FLAGS ${SSE4_FLAGS})
+    str_append(AVX_FLAGS ${SSE41_FLAGS})
   endif()
 endif()
 

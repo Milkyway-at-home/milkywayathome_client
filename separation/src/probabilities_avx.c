@@ -55,24 +55,23 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "milkyway_util.h"
-#include "probabilities.h"
-#include "probabilities_intrin.h"
-
 #ifndef __AVX__
   #error AVX not defined
 #endif
 
+#include "milkyway_util.h"
+#include "probabilities.h"
+#include "probabilities_intrin.h"
 
 
 static inline __m256d _mm256_fsqrt_pd(__m256d y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
     __m256d x, res;
-	const __m256d C0  = _mm256_set1_pd(0.75);
-	const __m256d C1  = _mm256_set1_pd(0.0625);
-
     ssp_m256 tmp;
+    const __m256d C0  = _mm256_set1_pd(0.75);
+    const __m256d C1  = _mm256_set1_pd(0.0625);
+
     tmp.m128[0] = _mm256_cvtpd_ps(y);
     tmp.f = _mm256_rsqrt_ps(tmp.f);
     x = _mm256_cvtps_pd(tmp.m128[0]); // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction

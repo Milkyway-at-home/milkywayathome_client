@@ -38,5 +38,10 @@
   #define CL_CALLBACK
 #endif
 
+
+#ifndef CL_PLATFORM_NOT_FOUND_KHR
+#define CL_PLATFORM_NOT_FOUND_KHR  -1001
+#endif
+
 #endif /* _MW_CL_H_ */
 

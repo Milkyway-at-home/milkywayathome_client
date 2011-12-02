@@ -59,7 +59,7 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
 
     if(C_COMPILER_IS_PATHCC)
       list(APPEND link_libs stl)
-    else()
+    elseif(NOT WIN32)
       list(APPEND link_libs stdc++)
     endif()
   endif()
