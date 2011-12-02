@@ -373,7 +373,7 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParamet
     if (!mwSupportsDoubles(di))
     {
         mw_printf("Device doesn't support double precision\n");
-        return MW_CL_ERROR;
+        return CL_FALSE;
     }
   #endif /* DOUBLEPREC */
 
