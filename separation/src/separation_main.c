@@ -453,7 +453,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     argRead = mwReadArguments(context);
     if (argRead < 0)
     {
-        poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
         freeSeparationFlags(&sf);
         exit(EXIT_FAILURE);

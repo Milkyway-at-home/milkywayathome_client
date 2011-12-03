@@ -186,13 +186,6 @@ static void nbSetForwardedArguments(NBodyFlags* nbf, const char** args)
     nbf->forwardedArgs = mwGetForwardedArguments(args, &nbf->numForwardedArgs);
 }
 
-static mwbool nbPoptHelpError(poptContext context)
-{
-    poptPrintHelp(context, stderr, 0);
-    poptFreeContext(context);
-    return TRUE;
-}
-
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* nbfOut)
 {
@@ -400,7 +393,8 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);
-        return nbPoptHelpError(context);
+        poptFreeContext(context);
+        return TRUE;
     }
 
     /* Check for invalid options, and must have the input file or a
@@ -408,7 +402,6 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     argRead = mwReadArguments(context);
     if (argRead < 0)
     {
-        poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
         return TRUE;
     }
@@ -432,13 +425,15 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram)
     {
         mw_printf("An input file, checkpoint, or matching histogram argument is required\n");
-        return nbPoptHelpError(context);
+        poptFreeContext(context);
+        return TRUE;
     }
 
     if (nbf.matchHistogram && !nbf.histogramFileName)
     {
         mw_printf("--match-histogram argument requires --histogram-file\n");
-        return nbPoptHelpError(context);
+        poptFreeContext(context);
+        return TRUE;
     }
 
     nbf.setSeed = !!(argRead & SEED_ARGUMENT);
