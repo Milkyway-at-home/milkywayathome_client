@@ -1,24 +1,35 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
+ * Copyright (c) 2011 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-This file is part of Milkway@Home.
+#ifndef USE_SSL_TESTS
+  #define USE_SSL_TESTS 0
+  #warning USE_SSL_TESTS not defined
+#endif
 
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+#if USE_SSL_TESTS
+  #include <openssl/evp.h>
+  #include <openssl/sha.h>
+#endif
 
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <openssl/evp.h>
-#include <openssl/sha.h>
+#if !USE_SSL_TESTS
+#define SHA_DIGEST_LENGTH 20
+#endif
 
 #include "milkyway_util.h"
 #include "nbody_priv.h"
@@ -61,6 +72,7 @@ typedef union
     unsigned char md[SHA_DIGEST_LENGTH];
 } MWHash;
 
+
 #define EMPTY_BODY_HASH { .mdi = { 0x0, 0x0, 0x0, 0x0, 0x0 } }
 
 
@@ -69,6 +81,7 @@ static void showHash(char* buf, const MWHash* hash)
     sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
 }
 
+#if USE_SSL_TESTS
 static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
 {
     int rc = 1;
@@ -110,55 +123,6 @@ static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, in
     }
 
     return 0;
-}
-
-static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
-{
-    static NBodyTest test = EMPTY_NBODYTEST;
-    static const char* criterionName = NULL;
-    static real seedf = 0.0;
-    static real nStepsf = 0.0;
-    static real nbodyf = 0.0;
-    static mwbool failed = FALSE;
-    static const char* resultHash = NULL;
-    static const char* resultName = NULL;
-    static const MWNamedArg argTable[] =
-        {
-            { "potential",   LUA_TSTRING,  NULL, TRUE,  &test.potentialName   },
-            { "model",       LUA_TSTRING,  NULL, TRUE,  &test.modelName       },
-            { "nbody",       LUA_TNUMBER,  NULL, TRUE,  &nbodyf               },
-            { "nSteps",      LUA_TNUMBER,  NULL, TRUE,  &nStepsf              },
-            { "seed",        LUA_TNUMBER,  NULL, TRUE,  &seedf                },
-            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &test.ctx.theta       },
-            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE,  &test.ctx.treeRSize   },
-            { "criterion",   LUA_TSTRING,  NULL, TRUE,  &criterionName        },
-            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
-            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
-
-            { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
-
-            /* Unused in hash; these ones may or may not exist, just don't error if there */
-            { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
-            { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName          },
-            { "failed",     LUA_TBOOLEAN,  NULL,  FALSE, &failed              },
-            END_MW_NAMED_ARG
-        };
-
-    /* Oh look, we conveniently already have the table constructed
-     * that we want. Just run type checking on it. */
-    handleNamedArgumentTable(luaSt, argTable, idx);
-
-    test.seed = (uint32_t) seedf;
-    test.nSteps = (unsigned int) nStepsf;
-    test.nbody = (unsigned int) nbodyf;
-
-    test.ctx.criterion = readCriterion(luaSt, criterionName);
-    lua_pushvalue(luaSt, lua_gettop(luaSt));
-
-    if (testOut)
-        *testOut = test;
-
-    return 1;
 }
 
 static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest* t)
@@ -222,6 +186,55 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     return failed;
 }
 
+static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
+{
+    static NBodyTest test = EMPTY_NBODYTEST;
+    static const char* criterionName = NULL;
+    static real seedf = 0.0;
+    static real nStepsf = 0.0;
+    static real nbodyf = 0.0;
+    static mwbool failed = FALSE;
+    static const char* resultHash = NULL;
+    static const char* resultName = NULL;
+    static const MWNamedArg argTable[] =
+        {
+            { "potential",   LUA_TSTRING,  NULL, TRUE,  &test.potentialName   },
+            { "model",       LUA_TSTRING,  NULL, TRUE,  &test.modelName       },
+            { "nbody",       LUA_TNUMBER,  NULL, TRUE,  &nbodyf               },
+            { "nSteps",      LUA_TNUMBER,  NULL, TRUE,  &nStepsf              },
+            { "seed",        LUA_TNUMBER,  NULL, TRUE,  &seedf                },
+            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &test.ctx.theta       },
+            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE,  &test.ctx.treeRSize   },
+            { "criterion",   LUA_TSTRING,  NULL, TRUE,  &criterionName        },
+            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
+            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
+
+            { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
+
+            /* Unused in hash; these ones may or may not exist, just don't error if there */
+            { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
+            { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName          },
+            { "failed",     LUA_TBOOLEAN,  NULL,  FALSE, &failed              },
+            END_MW_NAMED_ARG
+        };
+
+    /* Oh look, we conveniently already have the table constructed
+     * that we want. Just run type checking on it. */
+    handleNamedArgumentTable(luaSt, argTable, idx);
+
+    test.seed = (uint32_t) seedf;
+    test.nSteps = (unsigned int) nStepsf;
+    test.nbody = (unsigned int) nbodyf;
+
+    test.ctx.criterion = readCriterion(luaSt, criterionName);
+    lua_pushvalue(luaSt, lua_gettop(luaSt));
+
+    if (testOut)
+        *testOut = test;
+
+    return 1;
+}
+
 /* Return the hash of NBodyCtxTest table to Lua */
 static int hashNBodyTestTable(lua_State* luaSt)
 {
@@ -238,18 +251,6 @@ static int hashNBodyTestTable(lua_State* luaSt)
     return 1;
 }
 
-static int statusIsFatal(lua_State* luaSt)
-{
-    NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
-    lua_pushboolean(luaSt, nbStatusIsFatal(rc));
-    return 1;
-}
-
-static void registerNBodyTestFunctions(lua_State* luaSt)
-{
-    lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
-    lua_register(luaSt, "statusIsFatal", statusIsFatal);
-}
 
 /* Hash of just the bodies masses, positions and velocities */
 static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies, int nbody)
@@ -309,16 +310,39 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     return 0;
 }
 
-static void nbodyTestInit()
+#endif /* USE_SSL_TESTS */
+
+static int statusIsFatal(lua_State* luaSt)
 {
+    NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
+    lua_pushboolean(luaSt, nbStatusIsFatal(rc));
+    return 1;
+}
+
+static void registerNBodyTestFunctions(lua_State* luaSt)
+{
+  #if USE_SSL_TESTS
+    lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
+  #endif
+
+    lua_register(luaSt, "statusIsFatal", statusIsFatal);
+}
+
+static void nbodyTestInit(void)
+{
+  #if USE_SSL_TESTS
     OpenSSL_add_all_digests();
+  #endif
 }
 
-static void nbodyTestCleanup()
+static void nbodyTestCleanup(void)
 {
+  #if USE_SSL_TESTS
     EVP_cleanup();
+  #endif
 }
 
+#if USE_SSL_TESTS
 int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
 {
     EVP_MD_CTX hashCtx;
@@ -407,7 +431,7 @@ static int installHashFunctions(lua_State* luaSt)
 
     return 0;
 }
-
+#endif
 
 /* Create a context with everything unset, useful for testing but
  * undesirable for actual work. */
@@ -441,9 +465,13 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
      * to not include useless / and or less safe versions of
      * functions. */
     registerNBodyState(luaSt);
+
+  #if USE_SSL_TESTS
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
     registerNBodyCtxTestMethods(luaSt);
+  #endif
+
     //registerFindRCrit(luaSt);
 
     /* This way we can have different behaviour if using a script as a test */
@@ -466,6 +494,11 @@ int main(int argc, const char* argv[])
     const char* testScript;
 
     testScript = argc > 1 ? argv[1] : NULL;
+    if (!testScript)
+    {
+        mw_printf("No test script for test driver\n");
+        return 1;
+    }
 
     nbodyTestInit();
 

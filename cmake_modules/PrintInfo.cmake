@@ -25,6 +25,7 @@ macro(print_libs)
   message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
   message("   OpenGL Libraries   ${OPENGL_LIBRARIES}")
   message("   GLUT Libraries     ${GLUT_LIBRARY}")
+  message("   OpenSSL Libraries  ${OPENSSL_LIBARIES}")
 endmacro()
 
 macro(print_build_options)

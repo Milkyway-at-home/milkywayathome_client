@@ -326,6 +326,7 @@ find_package(OpenMP)
 find_package(OpenGL)
 find_package(GLUT)
 find_package(Curses)
+find_package(OpenSSL)
 
 
 cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON

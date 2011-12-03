@@ -48,12 +48,13 @@ function runNSteps(st, n, ctx)
 end
 
 function runInterruptedSteps(st, totalSteps, ctx, prng)
-   local checkpoint = os.tmpname()
+   local tmpDir = os.getenv("TMP") or ""
+   local checkpoint = tmpDir .. os.tmpname()
 
    for i = 1, totalSteps do
       st:step(ctx)
       if prng:randomBool() then
-         local tmp = os.tmpname()
+         local tmp = tmpDir .. os.tmpname()
          st:writeCheckpoint(ctx, checkpoint, tmp)
          ctx, st = NBodyState.readCheckpoint(checkpoint)
          os.remove(checkpoint)

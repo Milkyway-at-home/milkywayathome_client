@@ -376,10 +376,6 @@ configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
-
-find_package(OpenSSL)
-message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
-
 if(NOT OPENSSL_FOUND)
   message(WARNING "OpenSSL not found, not using N-body tests")
 else()
