@@ -168,13 +168,17 @@
 #endif /* DOUBLEPREC */
 
 #ifdef _MSC_VER
-  #define MW_ALIGN(x) __declspec(align(x))
-  /* __declspec(align) is shit. If you use it on some typedef,
-     and use that type as a function parameter it errors. */
-  #define MW_ALIGN_TYPE(x)
+/* __declspec(align) is shit. If you use it on some typedef,
+   and use that type as a function parameter it errors. */
+  #define MW_ALIGN __attribute__((aligned))
+  #define MW_ALIGN_V(x) __declspec(align(x))
+  #define MW_ALIGN_TYPE
+  #define MW_ALIGN_TYPE_V(x)
 #else
-  #define MW_ALIGN(x) __attribute__((aligned(x)))
-  #define MW_ALIGN_TYPE(x) __attribute__((aligned(x)))
+  #define MW_ALIGN __attribute__((aligned))
+  #define MW_ALIGN_V(x) __attribute__((aligned(x)))
+  #define MW_ALIGN_TYPE __attribute__((aligned))
+  #define MW_ALIGN_TYPE_V(x) __attribute__((aligned(x)))
 #endif /* _MSC_VER */
 
 /* Can use x87 or some non-x86 math */

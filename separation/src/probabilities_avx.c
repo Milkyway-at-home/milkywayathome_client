@@ -181,8 +181,8 @@ static real probabilities_avx(const AstronomyParameters* ap,
 {
     double bg_prob, dotted, xyz_norm;
     int i, j, k, convolve, nStreams;
-    SEPARATION_ALIGN(64) double psgt[256], psgf[256], xyzstr[256];
-    SEPARATION_ALIGN(64) double xs[256], ys[256], zs[256];
+    MW_ALIGN_V(64) double psgt[256], psgf[256], xyzstr[256];
+    MW_ALIGN_V(64) double xs[256], ys[256], zs[256];
 
     const __m256d REF_XR = _mm256_set1_pd(reff_xr_rp3);
 

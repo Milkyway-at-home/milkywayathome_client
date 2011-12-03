@@ -45,7 +45,7 @@
 
 #ifndef _WIN32
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
@@ -56,7 +56,7 @@ typedef struct NBODY_ALIGN
 
 #else
 
-typedef struct NBODY_ALIGN_TYPE
+typedef struct MW_ALIGN_TYPE
 {
     HANDLE file;
     HANDLE mapFile;
@@ -81,7 +81,7 @@ typedef struct NBODY_ALIGN_TYPE
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
 
-typedef struct NBODY_ALIGN_TYPE
+typedef struct MW_ALIGN_TYPE
 {
     char header[128];                /* "mwnbody" */
     int majorVersion, minorVersion;  /* Version check */

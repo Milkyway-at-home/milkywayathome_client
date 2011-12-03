@@ -26,17 +26,6 @@
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
-#if !defined(_MSC_VER) && !defined(__INTEL_COMPILER)
-/* This should work with ICC, but if I use it it dies on some files with the error:
-   (0): internal error: backend signals
- */
-  #define NBODY_ALIGN __attribute__((aligned))
-  #define NBODY_ALIGN_V(x) __attribute__((aligned(x)))
-#else
-  #define NBODY_ALIGN
-  #define NBODY_ALIGN_V(x)
-#endif /* _MSC_VER */
-
 #define _SPHERICAL 0
 
 typedef enum
@@ -46,7 +35,7 @@ typedef enum
 } spherical_t;
 
 /* Spherical potential */
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     spherical_t type;
     real mass;
@@ -69,7 +58,7 @@ typedef enum
     ExponentialDisk   = _EXP_DISK
 } disk_t;
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     disk_t type;
     real mass;         /* disk mass */
@@ -93,7 +82,7 @@ typedef enum
     TriaxialHalo    = _TRIAXIAL_HALO
 } halo_t;
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     halo_t type;
     real vhalo;         /* common to all 3 halos */
@@ -110,7 +99,7 @@ typedef struct NBODY_ALIGN
 
 #define HALO_TYPE "Halo"
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     Spherical sphere[1];
     Disk disk;

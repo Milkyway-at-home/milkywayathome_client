@@ -75,9 +75,9 @@ static inline __m128d _mm_rcp_pd(__m128d x)
 
 
 #define CONST_128D(var, val)                                    \
-    SEPARATION_ALIGN(16) static const double var[2] = {(val), (val)}
+    MW_ALIGN_V(16) static const double var[2] = {(val), (val)}
 #define CONST_128I(var, v1, v2, v3, v4)                                 \
-    SEPARATION_ALIGN(16) static const int var[4] = {(v1), (v2), (v3), (v4)}
+    MW_ALIGN_V(16) static const int var[4] = {(v1), (v2), (v3), (v4)}
 
 
 CONST_128D(log2e, 1.4426950408889634073599);
@@ -276,8 +276,8 @@ static real probabilities_intrinsics(const AstronomyParameters* ap,
 {
     double bg_prob, dotted, xyz_norm;
     int i, j, k, convolve, nStreams;
-    SEPARATION_ALIGN(64) double psgt[256], psgf[256], xyzstr[256];
-    SEPARATION_ALIGN(64) double xs[256], ys[256], zs[256];
+    MW_ALIGN_V(64) double psgt[256], psgf[256], xyzstr[256];
+    MW_ALIGN_V(64) double xs[256], ys[256], zs[256];
 
     const __m128d REF_XR = _mm_set1_pd(reff_xr_rp3);
 

@@ -153,7 +153,7 @@ typedef union
 #define TBL_SIZE_RECIP ((double)(1/EXP2_TABLE_SIZE))
 
 /* 2^x, for x in [-1.0, 1.0[ */
-SEPARATION_ALIGN(16) static double exp2_table[2 * EXP2_TABLE_SIZE];
+MW_ALIGN_V(32) static double exp2_table[2 * EXP2_TABLE_SIZE];
 
 static inline void initExpTable(void)
 {

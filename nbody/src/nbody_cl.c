@@ -26,7 +26,7 @@
 #include "nbody_curses.h"
 
 
-typedef struct NBODY_ALIGN_V(64)
+typedef struct MW_ALIGN_TYPE_V(64)
 {
     real radius;
     cl_int bottom;

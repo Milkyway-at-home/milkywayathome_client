@@ -25,22 +25,10 @@
 #ifndef _MILKYWAY_VECTORS_H_
 #define _MILKYWAY_VECTORS_H_
 
-#ifndef _MSC_VER
-
-typedef struct MW_ALIGN(4 * sizeof(real))
+typedef struct MW_ALIGN_TYPE_V(4 * sizeof(real))
 {
     real x, y, z, w;
 } mwvector;
-
-#else
-
-typedef struct
-{
-    real x, y, z, w;
-} mwvector;
-
-#endif /* _MSC_VER */
-
 
 #define L(v) ((v).x)
 #define B(v) ((v).y)

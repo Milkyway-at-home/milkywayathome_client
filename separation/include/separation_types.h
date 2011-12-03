@@ -175,14 +175,6 @@ typedef struct
 
 
 
-
-#ifndef _MSC_VER
-  #define SEPARATION_ALIGN(x) __attribute__ ((aligned(x)))
-#else
-  #define SEPARATION_ALIGN(x) __declspec(align(x))
-#endif /* _MSC_VER */
-
-
 #ifdef __OPENCL_VERSION__
 
 
@@ -200,7 +192,7 @@ typedef struct
 
 
 
-typedef struct SEPARATION_ALIGN(128)
+typedef struct MW_ALIGN_TYPE_V(128)
 {
     mwvector a;
     mwvector c;
@@ -212,7 +204,7 @@ typedef struct SEPARATION_ALIGN(128)
 
 /* Parameter related types */
 
-typedef struct SEPARATION_ALIGN(128)
+typedef struct MW_ALIGN_TYPE_V(128)
 {
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
@@ -222,7 +214,7 @@ typedef struct SEPARATION_ALIGN(128)
 
 
 /* Kitchen sink of constants, etc. */
-typedef struct SEPARATION_ALIGN(128)
+typedef struct MW_ALIGN_TYPE_V(128)
 {
     /* Constants determined by other parameters */
     real m_sun_r0;
@@ -251,7 +243,7 @@ typedef struct SEPARATION_ALIGN(128)
     real exp_background_weight;
 } AstronomyParameters;
 
-typedef struct SEPARATION_ALIGN(16)
+typedef struct MW_ALIGN_TYPE_V(16)
 {
     real sum;
     real correction;

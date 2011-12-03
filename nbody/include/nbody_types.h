@@ -97,7 +97,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 typedef short body_t;
 
 /* node: data common to BODY and CELL structures. */
-typedef struct NBODY_ALIGN _NBodyNode
+typedef struct MW_ALIGN_TYPE _NBodyNode
 {
     mwvector pos;             /* position of node */
     struct _NBodyNode* next;  /* link to next force-calc */
@@ -114,7 +114,7 @@ typedef struct NBODY_ALIGN _NBodyNode
 
 /* BODY: data structure used to represent particles. */
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     NBodyNode bodynode;         /* data common to all nodes */
     mwvector vel;               /* velocity of body */
@@ -130,7 +130,7 @@ typedef struct NBODY_ALIGN
 
 #define NSUB (1 << NDIM)        /* subcells per cell */
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     real xx, xy, xz;
     real yy, yz;
@@ -139,7 +139,7 @@ typedef struct NBODY_ALIGN
 
 
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     NBodyNode cellnode;         /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
@@ -177,7 +177,7 @@ typedef enum
 
 /* Variables used in tree construction. */
 
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     NBodyCell* root;         /* pointer to root cell */
     real rsize;              /* side-length of root cell */
@@ -255,7 +255,7 @@ typedef struct
 
 
 /* Mutable state used during an evaluation */
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     NBodyTree tree;
     NBodyNode* freecell;      /* list of free cells */
@@ -341,7 +341,7 @@ typedef struct
    once at the beginning of a simulation based on settings, and then
    stays constant for the actual simulation.
  */
-typedef struct NBODY_ALIGN
+typedef struct MW_ALIGN_TYPE
 {
     real eps2;                /* (potential softening parameter)^2 */
     real theta;               /* accuracy parameter: 0.0 */
