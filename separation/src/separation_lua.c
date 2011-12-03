@@ -285,18 +285,21 @@ static int evaluateIntegralAreas(lua_State* luaSt)
 
 static int evaluateConstants(lua_State* luaSt)
 {
-    const SeparationConstant* p = constants;
+    const SeparationConstant* c = constants;
 
-    while (p->name)
+    while (c->name)
     {
-        lua_getglobal(luaSt, p->name);
+        lua_getglobal(luaSt, c->name);
         if (mw_lua_typecheck(luaSt, -1, LUA_TNUMBER, NULL))
         {
-            return luaL_error(luaSt, "Expected constant '%s' to be a number\n", p->name);
+            return luaL_error(luaSt,
+                              "constant '%s': %s",
+                              c->name,
+                              lua_tostring(luaSt, -1));
         }
 
-        *p->value = lua_tonumber(luaSt, -1);
-        ++p;
+        *c->value = lua_tonumber(luaSt, -1);
+        ++c;
     }
 
     return 0;
@@ -349,7 +352,7 @@ static int evaluateGlobalName(lua_State* luaSt, lua_CFunction func, const char* 
     lua_pushcfunction(luaSt, func);
     if (lua_pcall(luaSt, 0, 0, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating '%s'", name);
+        mw_lua_pcall_warn(luaSt, "Error evaluating %s", name);
         return 1;
     }
 

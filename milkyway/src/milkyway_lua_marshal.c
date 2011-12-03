@@ -156,8 +156,7 @@ void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName)
  * getting what we want with within C side stuff.
 
  This is for printing an error when manually checking values returned
- to C stuff. Returns 1 if type problem, 0 otherwise and prints
- appropriate error */
+ to C stuff. Returns 1 if type problem, 0 otherwise and places appropriate error on stack */
 int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* typeName)
 {
     int type;
@@ -168,14 +167,15 @@ int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* ty
         && !mw_lua_equal_userdata_name(luaSt, idx, typeName))
     {
         /* TODO: Get typename of wong userdata type, which is kind of the point of checking for this */
-        mw_printf("Type error: userdata %s expected, got other userdata\n", typeName);
+        lua_pushfstring(luaSt, "Type error: userdata %s expected, got other userdata", typeName);
         return 1;
     }
     else if (type != expectedType) /* Anything else is wrong. */
     {
-        mw_printf("Type error: %s expected, got %s\n",
-                  lua_typename(luaSt, expectedType),
-                  luaL_typename(luaSt, idx));
+        lua_pushfstring(luaSt,
+                        "Type error: %s expected, got %s",
+                        lua_typename(luaSt, expectedType),
+                        luaL_typename(luaSt, idx));
         return 1;
     }
     else

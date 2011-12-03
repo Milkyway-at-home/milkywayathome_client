@@ -43,7 +43,10 @@ Body* expectBody(lua_State* luaSt, int idx)
 
     b = toBody(luaSt, idx);
     if (!b)
+    {
+        /* Push error message onto stack */
         mw_lua_typecheck(luaSt, idx, LUA_TUSERDATA, BODY_TYPE);
+    }
 
     return b;
 }
