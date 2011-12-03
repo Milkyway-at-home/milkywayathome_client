@@ -296,17 +296,6 @@ int equalBody(const Body* a, const Body* b)
     return TRUE;
 }
 
-static int equalMaybeArray(const void* a, const void* b, size_t n)
-{
-    if (!a && !b)  /* Both not set, equal */
-        return TRUE;
-
-    if (!a || !b)  /* One is not set, not equal */
-        return FALSE;
-
-    return !(!!memcmp(a, b, n));  /* Compare actual values */
-}
-
 static int equalVectorArray(const mwvector* a, const mwvector* b, size_t n)
 {
     size_t i;

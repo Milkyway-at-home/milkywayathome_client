@@ -48,6 +48,12 @@ static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, const NBodyFl
     /* If the checkpoint exists (and we want to use it), try to use it */
     if (nbf->ignoreCheckpoint || !nbResolvedCheckpointExists(st))
     {
+        if (!nbf->inputFile)
+        {
+            mw_printf("No input file and no checkpoint\n");
+            return NBODY_USER_ERROR;
+        }
+
         if (nbSetup(ctx, st, nbf))
         {
             mw_printf("Failed to read input parameters file\n");
