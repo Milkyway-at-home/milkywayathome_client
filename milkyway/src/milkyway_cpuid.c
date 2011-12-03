@@ -119,16 +119,18 @@ int mwHasSSE2(const int abcd[4])
 #if defined(_WIN32)
 int mwOSHasAVXSupport(void)
 {
-    OSVERSIONINFO vInfo;
+    OSVERSIONINFOEX vInfo;
 
-    if (GetVersionEx(&vInfo))
+    vInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    if (!GetVersionEx(&vInfo))
     {
-        mw_printf("Error getting Windows version info: %ld\n", GetLastError());
+        mwPerrorW32("Error getting Windows version info");
         return FALSE;
     }
 
-    /* Windows 7 SP1 or greater required */
-    return (vInfo.dwMajorVersion >= 6 && vInfo.dwMinorVersion > 1);
+    /* Windows 7 SP1 or greater required. Can't find a real way to check. */
+    return (vInfo.dwMajorVersion > 6)
+        || (vInfo.dwMajorVersion == 6 && vInfo.dwMinorVersion >= 1 && vInfo.wServicePackMajor >= 1);
 }
 
 #elif defined(__linux__)

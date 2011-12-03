@@ -66,7 +66,9 @@
   #include <pmmintrin.h>
 #elif defined(__SSE2__)
   #include <emmintrin.h>
-#endif /* __SSE3__ */
+#else
+  #error No intrinsic enabled
+#endif /* __AVX__ */
 
 #if defined(__GNUC__)
   #pragma GCC diagnostic ignored "-Wunknown-pragmas"
@@ -84,12 +86,9 @@
 #endif
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifdef __SSE2__
 
 typedef   signed char      ssp_s8;
 typedef unsigned char      ssp_u8;
@@ -273,7 +272,6 @@ static inline __m128d gmx_mm_exp_pd(__m128d x)
     return  z;
 }
 
-#endif /* __SSE2__ */
 
 
 #ifdef __cplusplus

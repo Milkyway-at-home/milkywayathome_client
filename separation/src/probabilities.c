@@ -57,7 +57,6 @@
 
 #include "milkyway_util.h"
 #include "probabilities.h"
-#include "probabilities_intrin.h"
 
 
 static inline mwvector lbr2xyz_2(const AstronomyParameters* ap, real rPoint, LBTrig lbt)

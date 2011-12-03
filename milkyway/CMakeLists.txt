@@ -123,6 +123,7 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_math.h
                    include/milkyway_math_double.h
                    include/milkyway_math_float.h
+                   include/milkyway_math_supplemental.h
                    include/milkyway_util.h
                    include/milkyway_alloc.h
                    include/milkyway_boinc_util.h

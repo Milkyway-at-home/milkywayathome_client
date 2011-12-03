@@ -145,6 +145,7 @@ set(separation_headers include/calculated_constants.h
                        include/separation.h
                        include/evaluation.h
                        include/probabilities_dispatch.h
+                       include/probabilities.h
                        include/io_util.h
                        include/star_points.h
                        include/evaluation_state.h
@@ -237,8 +238,9 @@ endif()
 set(separation_core_libs )
 # Build the critical area separately for SSE2, SSE3, no SSE2
 if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
+  set(core_headers include/probabilities.h include/probabilities_intrin.h)
   if(HAVE_SSE2)
-    add_library(separation_core_sse2 STATIC src/probabilities_sse2.c)
+    add_library(separation_core_sse2 STATIC src/probabilities_sse2.c ${core_headers})
     enable_sse2(separation_core_sse2)
     disable_sse3(separation_core_sse2)
     disable_sse41(separation_core_sse2)
@@ -246,7 +248,7 @@ if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
   endif()
 
   if(HAVE_SSE3)
-    add_library(separation_core_sse3 STATIC src/probabilities_sse2.c)
+    add_library(separation_core_sse3 STATIC src/probabilities_sse2.c ${core_headers})
     enable_sse2(separation_core_sse3)
     enable_sse3(separation_core_sse3)
     disable_sse41(separation_core_sse3)
@@ -254,7 +256,7 @@ if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
   endif()
 
   if(HAVE_SSE41)
-    add_library(separation_core_sse41 STATIC src/probabilities_sse2.c)
+    add_library(separation_core_sse41 STATIC src/probabilities_sse2.c ${core_headers})
     enable_sse2(separation_core_sse41)
     enable_sse3(separation_core_sse41)
     enable_sse41(separation_core_sse41)
@@ -262,7 +264,7 @@ if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
   endif()
 
   if(HAVE_AVX)
-    add_library(separation_core_avx STATIC src/probabilities_avx.c)
+    add_library(separation_core_avx STATIC src/probabilities_avx.c ${core_headers})
     enable_avx(separation_core_avx)
     list(APPEND separation_core_libs separation_core_avx)
   endif()
