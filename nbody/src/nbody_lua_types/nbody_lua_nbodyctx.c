@@ -1,22 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * Copyright (c) 2011 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lualib.h>
@@ -25,9 +24,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 #include "nbody_lua_nbodyctx.h"
+#include "nbody_lua_potential.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
+#include "nbody_lua_misc.h"
+
 
 
 static const MWEnumAssociation criterionOptions[] =
@@ -148,6 +150,19 @@ static int eqNBodyCtx(lua_State* luaSt)
     return 1;
 }
 
+static int addPotential(lua_State* luaSt)
+{
+    NBodyCtx* ctx;
+
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 1, "Expected named 2 arguments");
+
+    ctx = checkNBodyCtx(luaSt, 1);
+    ctx->pot = *checkPotential(luaSt, 2);
+
+    return 0;
+}
+
 static const luaL_reg metaMethodsNBodyCtx[] =
 {
     { "__tostring", toStringNBodyCtx },
@@ -158,6 +173,7 @@ static const luaL_reg metaMethodsNBodyCtx[] =
 static const luaL_reg methodsNBodyCtx[] =
 {
     { "create", createNBodyCtx },
+    { "addPotential", addPotential },
     { NULL, NULL }
 };
 

@@ -22,6 +22,10 @@
 #include "nbody_potential.h"
 #include "milkyway_util.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 static inline mwvector sphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
     const real tmp = sph->scale + r;

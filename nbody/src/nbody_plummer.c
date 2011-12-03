@@ -123,6 +123,8 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
     Body b;
     real r, velScale;
 
+    memset(&b, 0, sizeof(b));
+
     velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */

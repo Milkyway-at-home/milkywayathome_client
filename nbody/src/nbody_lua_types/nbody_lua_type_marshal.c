@@ -81,7 +81,7 @@ Body* readModels(lua_State* luaSt, int nModels, int* nOut)
         return NULL;
     }
 
-    bodies = allBodies = (Body*) mwMallocA(totalN * sizeof(Body));
+    bodies = allBodies = (Body*) mwCallocA(totalN, sizeof(Body));
 
     for (i = 0; i < nModels; ++i)
     {
@@ -108,5 +108,4 @@ Body* readModels(lua_State* luaSt, int nModels, int* nOut)
 
     return allBodies;
 }
-
 

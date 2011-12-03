@@ -43,27 +43,52 @@
   #include <sys/stat.h>
 #endif
 
+#ifndef _WIN32
+
+typedef struct NBODY_ALIGN
+{
+    int fd;            /* File descriptor for checkpoint file */
+    char* mptr;        /* mmap'd pointer for checkpoint file */
+    size_t cpFileSize; /* For checking how big the file should be for expected bodies */
+} CheckpointHandle;
+
+#define EMPTY_CHECKPOINT_HANDLE { 1, NULL, 0 }
+
+#else
+
+typedef struct NBODY_ALIGN_TYPE
+{
+    HANDLE file;
+    HANDLE mapFile;
+    char* mptr;
+    DWORD cpFileSize;
+} CheckpointHandle;
+
+#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL, 0 }
+
+#endif /* _WIN32 */
 
 
 /* Checkpoint file: Very simple binary "format"
-   Name     Type    Values     Notes
+   Name        Type         Values     Notes
 -------------------------------------------------------
    NBodyCheckpointHeader
-   bodytab       Body*    anything   Array of bodies
-   ending        string   "end"      Kind of dumb and pointless
+   bodytab       Body[]     anything   Array of bodies
+   orbitTrace    mwvector[] anything   Array of center of mass history
+   ending        string     "end"      Kind of dumb and pointless
  */
 
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
 
-typedef struct __attribute__((packed, aligned(512)))
+typedef struct NBODY_ALIGN_TYPE
 {
-    char header[sizeof(hdr)];        /* "mwnbody" */
-    size_t realSize;                 /* Does the checkpoint use float or double */
-    size_t ptrSize;
+    char header[128];                /* "mwnbody" */
     int majorVersion, minorVersion;  /* Version check */
     int nbody;                       /* Saved copies of state */
     unsigned int step;
+    size_t realSize;                 /* Does the checkpoint use float or double */
+    size_t ptrSize;
     real rsize;
     int treeIncest;
     int nOrbitTrace;
@@ -381,7 +406,7 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     if (verifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
-        return 1;
+        return TRUE;
     }
 
 
@@ -411,8 +436,8 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
 static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
-    const size_t bodySize = sizeof(Body) * st->nbody;
-    const size_t traceSize = sizeof(mwvector) * N_ORBIT_TRACE_POINTS;
+    const size_t bodySize =  st->nbody * sizeof(Body);
+    const size_t traceSize = N_ORBIT_TRACE_POINTS * sizeof(mwvector);
     char* p = cp->mptr;
     NBodyCheckpointHeader cpHdr;
 

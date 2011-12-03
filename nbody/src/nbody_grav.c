@@ -145,7 +145,8 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 a = nbGravity(ctx, st, b);
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
-                st->acctab[i] = mw_addv(a, externAcc);
+                mw_incaddv(a, externAcc);
+                st->acctab[i] = a;
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
@@ -155,7 +156,8 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 a = nbGravity(ctx, st, &st->bodytab[i]);
                 nbEvalPotentialClosure(st, Pos(&st->bodytab[i]), &externAcc);
-                st->acctab[i] = mw_addv(a, externAcc);
+                mw_incaddv(a, externAcc)
+                st->acctab[i] = a;
                 break;
 
             default:
@@ -205,9 +207,8 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 b = &st->bodytab[i];
                 a = nbGravity_Exact(ctx, st, b);
-
-                externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
-                st->acctab[i] = mw_addv(a, externAcc);
+                mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b)));
+                st->acctab[i] = a;
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
@@ -217,7 +218,8 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 a = nbGravity_Exact(ctx, st, &st->bodytab[i]);
                 nbEvalPotentialClosure(st, Pos(&st->bodytab[i]), &externAcc);
-                st->acctab[i] = mw_addv(a, externAcc);
+                mw_incaddv(a, externAcc);
+                st->acctab[i] = a;
                 break;
 
             default:

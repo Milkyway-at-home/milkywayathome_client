@@ -181,7 +181,6 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
         st->orbitTrace[i] = maxV;
     }
 
-
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 }
@@ -261,22 +260,94 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
 
 #endif /* NBODY_OPENCL */
 
-static int equalMaybeArray(const void* a, const void* b, size_t n)
-{
-    if (!a && !b)  /* Both not set, equal */
-        return 1;
-
-    if (!a || !b)  /* One is not set, not equal */
-        return 0;
-
-    assert(a && b);
-    return memcmp(a, b, n);  /* Compare actual values */
-}
-
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
+static int equalVector(const mwvector* a, const mwvector* b)
+{
+    return (a->x == b->x && a->y == b->y && a->z == b->z);
+}
+
+int equalBody(const Body* a, const Body* b)
+{
+    if (Mass(a) != Mass(b))
+    {
+        mw_printf("mass differ\n");
+        return FALSE;
+    }
+    if (Type(a) != Type(b))
+    {
+        mw_printf("type ndiffer\n");
+        return FALSE;
+    }
+    if (!equalVector(&Pos(a), &Pos(b)))
+    {
+        mw_printf("pos differ\n");
+        return FALSE;
+    }
+    if (!equalVector(&Vel(a), &Vel(b)))
+    {
+        mw_printf("VElocity differ\n");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int equalMaybeArray(const void* a, const void* b, size_t n)
+{
+    if (!a && !b)  /* Both not set, equal */
+        return TRUE;
+
+    if (!a || !b)  /* One is not set, not equal */
+        return FALSE;
+
+    return !(!!memcmp(a, b, n));  /* Compare actual values */
+}
+
+static int equalVectorArray(const mwvector* a, const mwvector* b, size_t n)
+{
+    size_t i;
+
+    if (!a && !b)
+        return TRUE;
+
+    if (!a || !b)
+        return FALSE;
+
+    for (i = 0; i < n; ++i)
+    {
+        if (!equalVector(&a[i], &b[i]))
+        {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+static int equalBodyArray(const Body* a, const Body* b, size_t n)
+{
+    size_t i;
+
+    if (!a && !b)
+        return TRUE;
+
+    if (!a || !b)
+        return FALSE;
+
+    for (i = 0; i < n; ++i)
+    {
+        if (!equalBody(&a[i], &b[i]))
+        {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
 
 /* TODO: Doesn't handle tree or other parts */
 /* Returns nonzero if states are equal, 0 otherwise */
@@ -288,13 +359,15 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
         || st1->lastCheckpoint != st2->lastCheckpoint
         || st1->nbody != st2->nbody)
     {
-        return 0;
+        return FALSE;
     }
 
-    if (!equalMaybeArray(st1->bodytab, st2->bodytab, st1->nbody * sizeof(Body)))
-        return 1;
+    if (!equalBodyArray(st1->bodytab, st2->bodytab, st1->nbody))
+    {
+        return FALSE;
+    }
 
-    return equalMaybeArray(st1->acctab, st2->acctab, st1->nbody * sizeof(mwvector));
+    return equalVectorArray(st1->acctab, st2->acctab, st1->nbody);
 }
 
 /* TODO: Doesn't clone tree or CL stuffs */
@@ -311,6 +384,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->lastCheckpoint = oldSt->lastCheckpoint;
     st->step           = oldSt->step;
     st->nbody          = oldSt->nbody;
+    st->effNBody       = oldSt->effNBody;
 
     st->ignoreResponsive = oldSt->ignoreResponsive;
     st->usesExact = oldSt->usesExact;
@@ -325,14 +399,14 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     assert(nbody > 0);
     assert(st->bodytab == NULL && st->acctab == NULL);
 
-    st->bodytab = (Body*) mwMallocA(sizeof(Body) * nbody);
-    memcpy(st->bodytab, oldSt->bodytab, sizeof(Body) * nbody);
+    st->bodytab = (Body*) mwMallocA(nbody * sizeof(Body));
+    memcpy(st->bodytab, oldSt->bodytab, nbody * sizeof(Body));
 
-    st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
-    memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
+    st->acctab = (mwvector*) mwMallocA(nbody * sizeof(mwvector));
+    memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));
 
-    st->orbitTrace = (mwvector*) mwMallocA(sizeof(mwvector) * N_ORBIT_TRACE_POINTS);
-    memcpy(st->orbitTrace, oldSt->orbitTrace, sizeof(mwvector) * N_ORBIT_TRACE_POINTS);
+    st->orbitTrace = (mwvector*) mwMallocA(N_ORBIT_TRACE_POINTS * sizeof(mwvector));
+    memcpy(st->orbitTrace, oldSt->orbitTrace, N_ORBIT_TRACE_POINTS * sizeof(mwvector));
 
     if (st->ci)
     {
@@ -439,7 +513,7 @@ static int feqWithNan(real a, real b)
 int equalDisk(const Disk* d1, const Disk* d2)
 {
     return (d1->type == d2->type)
-        && feqWithNan(d1->mass,d2->mass)
+        && feqWithNan(d1->mass, d2->mass)
         && feqWithNan(d1->scaleLength, d1->scaleLength)
         && feqWithNan(d1->scaleHeight, d1->scaleHeight);
 }
@@ -485,18 +559,19 @@ int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2)
 
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
 {
-    return (ctx1->potentialType == ctx2->potentialType)
+    return feqWithNan(ctx1->eps2, ctx2->eps2)
+        && feqWithNan(ctx1->theta, ctx2->theta)
         && feqWithNan(ctx1->timestep, ctx2->timestep)
         && feqWithNan(ctx1->timeEvolve, ctx2->timeEvolve)
-        && feqWithNan(ctx1->theta, ctx2->theta)
-        && feqWithNan(ctx1->eps2, ctx2->eps2)
         && feqWithNan(ctx1->treeRSize, ctx2->treeRSize)
         && feqWithNan(ctx1->sunGCDist, ctx2->sunGCDist)
         && feqWithNan(ctx1->criterion, ctx2->criterion)
+        && (ctx1->potentialType == ctx2->potentialType)
         && feqWithNan(ctx1->useQuad, ctx2->useQuad)
         && feqWithNan(ctx1->allowIncest, ctx2->allowIncest)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && feqWithNan(ctx1->checkpointT, ctx2->checkpointT)
+        && feqWithNan(ctx1->nStep, ctx2->nStep)
         && equalPotential(&ctx1->pot, &ctx2->pot);
 }
 

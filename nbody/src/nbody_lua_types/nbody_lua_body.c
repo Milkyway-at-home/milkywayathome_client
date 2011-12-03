@@ -91,6 +91,7 @@ static int createBody(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
     }
 
+    memset(&b, 0, sizeof(b));
     b.bodynode.pos = *x;
     b.vel = *v;
     b.bodynode.type = BODY(ignore);

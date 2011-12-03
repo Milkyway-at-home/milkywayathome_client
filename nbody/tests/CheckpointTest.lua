@@ -40,53 +40,55 @@ function randomNBodyCtx(prng)
    }
 end
 
-function runNSteps(st, n, ctx, pot)
+function runNSteps(st, n, ctx)
    for i = 1, n do
-      st:step(ctx, pot)
+      st:step(ctx)
    end
-
    return ctx, st
 end
 
-function runInterruptedSteps(st, totalSteps, ctx, pot, prng)
+function runInterruptedSteps(st, totalSteps, ctx, prng)
    local checkpoint = os.tmpname()
+
    for i = 1, totalSteps do
-      st:step(ctx, pot)
+      st:step(ctx)
       if prng:randomBool() then
-         st:writeCheckpoint(ctx, checkpoint, os.tmpname())
+         local tmp = os.tmpname()
+         st:writeCheckpoint(ctx, checkpoint, tmp)
          ctx, st = NBodyState.readCheckpoint(checkpoint)
+         os.remove(checkpoint)
       end
    end
 
-   os.remove(checkpoint)
-
    return ctx, st
 end
 
-local nTests = 2
+
+local nTests = 5
 
 for i = 1, nTests do
    local testSteps, st, stCopy
-   local ctx, pot, m
+   local ctx, m
    local prng = DSFMT.create()
 
-   ctx = randomNBodyCtx(prng)
-   pot = SP.randomPotential(prng)
    m = SM.randomPlummer(prng, 500)
+   ctx = randomNBodyCtx(prng)
+   ctx:addPotential(SP.randomPotential(prng))
 
-   st = NBodyState.create(ctx, pot, m)
 
+   st = NBodyState.create(ctx, m)
    stClone = st:clone()
+
    testSteps = floor(prng:random(0, 51))
 
-   ctx, st = runNSteps(st, testSteps, ctx, pot)
-   ctxClone, stClone = runInterruptedSteps(stClone, testSteps, ctx, pot, prng)
+   ctx, st = runNSteps(st, testSteps, ctx)
+   ctxClone, stClone = runInterruptedSteps(stClone, testSteps, ctx, prng)
 
    assert(ctx == ctxClone,
-           string.format("Checkpointed context does not match:\nctx 1 = %s\n ctx 2 = %s\n",
-                         tostring(ctx),
-                         tostring(ctxClone))
-        )
+          string.format("Checkpointed context does not match:\nctx 1 = %s\n ctx 2 = %s\n",
+                        tostring(ctx),
+                        tostring(ctxClone))
+       )
 
    assert(st == stClone,
           string.format("Checkpointed state does not match:\nstate 1 = %s\n state 2 = %s\n",
