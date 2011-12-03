@@ -435,6 +435,20 @@ typedef enum
                          0, 0,                                          \
                          EMPTY_POTENTIAL }
 
+typedef enum
+{
+    NBODY_INVALID_METHOD = -1,
+    NBODY_EMD,
+    NBODY_ORIG_CHISQ,
+    NBODY_ORIG_ALT,
+    NBODY_CHISQ_ALT,
+    NBODY_POISSON,
+    NBODY_KOLMOGOROV,
+    NBODY_KULLBACK_LEIBLER,
+    NBODY_SAHA
+} NBodyLikelihoodMethod;
+
+
 
 
 #if NBODY_OPENCL

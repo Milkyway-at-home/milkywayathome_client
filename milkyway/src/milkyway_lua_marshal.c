@@ -353,20 +353,21 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)
     return 1;
 }
 
-static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const char* badStr)
+static void checkEnumErrorStr(char* errBuf, size_t errBufSize, const MWEnumAssociation* p, const char* badStr)
 {
     const MWEnumAssociation* nextP;
-    char errBuf[4096] = "Expected enum value where options are: ";
+    static const char errStart[] = "Expected enum value where options are: ";
     char badOpt[1024];
     size_t badSize, enumLen, errLen;
     size_t remSize; /* Remaining size in buffer */
 
-    errLen = strlen(errBuf);
+    strcpy(errBuf, errStart);
+    errLen = sizeof(errStart);
     while (p->enumName)
     {
         nextP = &p[1];
         enumLen = strlen(p->enumName);
-        if (errLen + enumLen + 6 > sizeof(errBuf))  /* max possible */
+        if (errLen + enumLen + 6 > errBufSize)  /* max possible */
             mw_panic("Enum options too large for error string buffer!\n");
 
         errLen += enumLen;
@@ -391,16 +392,16 @@ static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const ch
     {
         strncat(errBuf, badOpt, remSize);
     }
-
-    return luaL_argerror(luaSt, 1, errBuf);
 }
 
-int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
+static int findEnumEntry(const MWEnumAssociation* table, const char* str)
 {
-    const char* str;
     const MWEnumAssociation* p = table;
 
-    str = luaL_checklstring(luaSt, idx, NULL);
+    if (!str)
+    {
+        return InvalidEnum;
+    }
 
     while (p->enumName)
     {
@@ -409,14 +410,48 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
         ++p;
     }
 
-    if (!p->enumName)
-    {
-        checkEnumError(luaSt, table, str);
-        return InvalidEnum;
-    }
-
     return p->enumVal;
 }
+
+/* Check for the expected enum value at idx. Put error string on stack */
+int expectEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
+{
+    int entry;
+    const char* checkStr;
+    char errBuf[4096];
+
+    checkStr = lua_tostring(luaSt, idx);
+    entry = findEnumEntry(table, checkStr);
+    if (entry != InvalidEnum)
+    {
+        return entry;
+    }
+
+    checkEnumErrorStr(errBuf, sizeof(errBuf), table, checkStr);
+    mw_printf("%s\n", errBuf);
+    lua_pop(luaSt, 1);
+    return InvalidEnum;
+}
+
+/* Check for the expected enum value at idx. Error if invalid value */
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
+{
+    int entry;
+    const char* str;
+    char errBuf[4096];
+
+    str = luaL_checklstring(luaSt, idx, NULL);
+    entry = findEnumEntry(table, str);
+    if (entry != InvalidEnum)
+    {
+        return entry;
+    }
+
+    checkEnumErrorStr(errBuf, sizeof(errBuf), table, str);
+    luaL_argerror(luaSt, 1, errBuf);
+    return InvalidEnum;
+}
+
 
 int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* name)
 {

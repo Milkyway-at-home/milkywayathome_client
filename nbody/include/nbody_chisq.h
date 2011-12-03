@@ -25,19 +25,6 @@
 #include "nbody_types.h"
 #include "nbody.h"
 
-typedef enum
-{
-    NBODY_LIKELIHOOD,
-    NBODY_ALT_LIKELIHOOD,
-    NBODY_CHISQ_ALT_LIKELIHOOD,
-    NBODY_POISSON_LIKELIHOOD,
-    NBODY_KOLMOGOROV_DISTANCE,
-    NBODY_KULLBACK_LEIBLER_DISTANCE,
-    NBODY_W_LIKELIHOOD,
-    NBODY_W_ALT_LIKELIHOOD
-} NBodyLikelihoodMethod;
-
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,12 +35,15 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                    NBodyLikelihoodMethod method);
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
-double nbSystemChisq(const NBodyState* st, const NBodyHistogram* data, const NBodyHistogram* histogram);
+double nbSystemChisq(const NBodyState* st,
+                     const NBodyHistogram* data,
+                     const NBodyHistogram* histogram,
+                     NBodyLikelihoodMethod method);
+
+int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method);
 
 double nbMatchHistogramFiles(const char* datHist, const char* matchHist);
-
 NBodyHistogram* nbReadHistogram(const char* histogramFile);
-NBodyHistogram* nbGenerateHistogram(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf);
 NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp);
 
 

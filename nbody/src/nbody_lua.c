@@ -32,6 +32,7 @@
 #include "nbody_lua_misc.h"
 #include "milkyway_lua.h"
 #include "nbody_check_params.h"
+#include "nbody_defaults.h"
 
 static int getNBodyCtxFunc(lua_State* luaSt)
 {
@@ -358,6 +359,33 @@ static int nbEvaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
     return 0;
 }
 
+NBodyLikelihoodMethod nbEvaluateLikelihoodMethod(lua_State* luaSt)
+{
+    int top;
+
+    static const MWEnumAssociation methodOptions[] =
+        {
+            { "EMD",             NBODY_EMD              },
+            { "Original",        NBODY_ORIG_CHISQ       },
+            { "AltOriginal",     NBODY_ORIG_ALT         },
+            { "ChisqAlt",        NBODY_CHISQ_ALT        },
+            { "Poisson",         NBODY_POISSON          },
+            { "Kolmogorov",      NBODY_KOLMOGOROV       },
+            { "KullbackLeibler", NBODY_KULLBACK_LEIBLER },
+            { "Saha",            NBODY_SAHA             },
+            END_MW_ENUM_ASSOCIATION
+        };
+
+    lua_getglobal(luaSt, "nbodyLikelihoodMethod");
+    top = lua_gettop(luaSt);
+    if (lua_isnoneornil(luaSt, top))
+    {
+        return DEFAULT_LIKELIHOOD_METHOD;
+    }
+
+    return (NBodyLikelihoodMethod) expectEnum(luaSt, methodOptions, top);
+}
+
 int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp)
 {
     HistogramParams* tmp;
@@ -389,6 +417,7 @@ int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
 {
     lua_State* luaSt;
     int rc;
+    NBodyLikelihoodMethod method;
 
     luaSt = nbOpenLuaStateWithScript(nbf);
     if (!luaSt)
@@ -397,9 +426,10 @@ int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
     }
 
     rc = nbEvaluateHistogramParams(luaSt, hp);
+    method = nbEvaluateLikelihoodMethod(luaSt);
     lua_close(luaSt);
 
-    return rc;
+    return (rc || method == NBODY_INVALID_METHOD);
 }
 
 static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)

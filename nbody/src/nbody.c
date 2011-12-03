@@ -207,6 +207,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     double likelihood = NAN;
+    NBodyLikelihoodMethod method;
 
     /* The likelihood only means something when matching a histogram */
     mwbool calculateLikelihood = (nbf->histogramFileName != NULL);
@@ -218,9 +219,20 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
     if (calculateLikelihood || nbf->histoutFileName || nbf->printHistogram)
     {
-        histogram = nbGenerateHistogram(ctx, st, nbf);
+        HistogramParams hp;
+
+        if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
+        {
+            mw_printf("Failed to get likelihood information\n");
+            return NBODY_LIKELIHOOD_ERROR;
+        }
+
+        mw_printf("Got method '%s'\n", showNBodyLikelihoodMethod(method));
+
+        histogram = nbCreateHistogram(ctx, st, &hp);
         if (!histogram)
         {
+            mw_printf("Failed to create histogram\n");
             return NBODY_LIKELIHOOD_ERROR;
         }
     }
@@ -246,7 +258,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_LIKELIHOOD_ERROR;
         }
 
-        likelihood = nbSystemChisq(st, data, histogram);
+        likelihood = nbSystemChisq(st, data, histogram, method);
     }
 
     free(histogram);
@@ -254,7 +266,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
     if (calculateLikelihood)
     {
-        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", likelihood);
+        /* Reported negated distance since the search maximizes this */
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
         if (isnan(likelihood))
         {
             mw_printf("Failed to calculate likelihood\n");

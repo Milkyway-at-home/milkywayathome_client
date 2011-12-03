@@ -54,7 +54,7 @@ typedef struct
     int enumVal;
 } MWEnumAssociation;
 
-#define END_MW_ENUM_ASSOCIATION { NULL, -1 }
+#define END_MW_ENUM_ASSOCIATION { NULL, InvalidEnum }
 
 typedef struct
 {
@@ -110,8 +110,10 @@ int registerStruct(lua_State* luaSt,
                    const luaL_reg* regMethods);
 
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
-int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
 int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* name);
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
+int expectEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
+
 
 int mw_lua_getglobalfunction(lua_State* luaSt, const char* name);
 

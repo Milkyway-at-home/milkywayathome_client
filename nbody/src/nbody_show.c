@@ -578,3 +578,30 @@ void printNBodyState(const NBodyState* st)
     free(buf);
 }
 
+const char* showNBodyLikelihoodMethod(NBodyLikelihoodMethod x)
+{
+    switch (x)
+    {
+        case NBODY_INVALID_METHOD:
+            return "InvalidMethod";
+        case NBODY_EMD:
+            return "EMD";
+        case NBODY_ORIG_CHISQ:
+            return "Original";
+        case NBODY_ORIG_ALT:
+            return "AltOriginal";
+        case NBODY_CHISQ_ALT:
+            return "ChisqAlt";
+        case NBODY_POISSON:
+            return "Poisson";
+        case NBODY_KOLMOGOROV:
+            return "Kolmogorov";
+        case NBODY_KULLBACK_LEIBLER:
+            return "KullbackLeibler";
+        case NBODY_SAHA:
+            return "Saha";
+        default:
+            return "Invalid NBodyLikelihoodMethod";
+    }
+}
+

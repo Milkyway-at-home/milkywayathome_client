@@ -91,7 +91,7 @@ static unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histog
 }
 
 
-static double nbWTerm(double m, double s)
+static double nbSahaTerm(double m, double s)
 {
     /*
       W = product_{i = 1 .. B }
@@ -211,13 +211,12 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     unsigned int nBin = data->nBin;
     const double scale = 1500.0;
 
-
     assert(histogram->hasRawCounts);
     assert(nBin == histogram->nBin);
 
     if (histogram->totalNum == 0)
     {
-        return -INFINITY;
+        return INFINITY;
     }
 
     effTotalNum = (double) nbCorrectTotalNumberInHistogram(histogram, data);
@@ -231,12 +230,12 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
 
             switch (method)
             {
-                case NBODY_LIKELIHOOD:
+                case NBODY_ORIG_CHISQ:
                     tmp = (data->data[i].count - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;
 
-                case NBODY_ALT_LIKELIHOOD:
+                case NBODY_ORIG_ALT:
                     /* We already have errors from the simulation, but
                      * we need to correct the errors in case there
                      * were any bins we are skipping for matching to
@@ -249,52 +248,42 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                     chiSq += sqr(tmp);
                     break;
 
-                case NBODY_CHISQ_ALT_LIKELIHOOD:
+                case NBODY_CHISQ_ALT:
                     chiSq += nbChisqAlt(data->data[i].count, n / effTotalNum);
                     break;
 
-                case NBODY_POISSON_LIKELIHOOD:
+                case NBODY_POISSON:
                     /* Poisson one */
                     chiSq += nbPoissonTerm(data->data[i].count, n / effTotalNum);
                     break;
 
-                case NBODY_KOLMOGOROV_DISTANCE:
-                    chiSq = fmax(chiSq, fabs(data->data[i].count - (n / effTotalNum)));
+                case NBODY_KOLMOGOROV:
+                    chiSq = mw_fmax(chiSq, fabs(data->data[i].count - (n / effTotalNum)));
                     break;
 
-                case NBODY_KULLBACK_LEIBLER_DISTANCE:
+                case NBODY_KULLBACK_LEIBLER:
                     /* "Relative entropy" */
                     chiSq += nbKullbackLeiblerTerm(data->data[i].count, n / effTotalNum);
                     break;
 
-                case NBODY_W_LIKELIHOOD:
-                    /* Correctly scaled version */
+                case NBODY_SAHA:
+                    /* This will actually find ln(W). W is an unreasonably large number.
+                       FIXME: hardcoded scale factor
+                     */
                     m = n;
                     s = scale * data->data[i].count;
-                    chiSq += nbWTerm(m, s);
+                    chiSq += nbSahaTerm(m, s);
                     break;
 
-
-                case NBODY_W_ALT_LIKELIHOOD:
-                    /* Trying to use paper one with logs and not denormalizing */
-                    m = n / effTotalNum;
-                    s = data->data[i].count;
-                    chiSq += nbWTerm(m, s);
-                    break;
-
+                case NBODY_INVALID_METHOD:
+                case NBODY_EMD:
                 default:
                     mw_fail("Invalid likelihood method\n");
             }
         }
     }
 
-    if (method == NBODY_W_LIKELIHOOD || method == NBODY_W_ALT_LIKELIHOOD)
-    {
-        /* This is actually ln(W). W is an unreasonably large number. */
-        return chiSq;
-    }
-
-    return -chiSq;     /* MAXIMUM likelihood, multiply by -1 */
+    return chiSq;
 }
 
 static void nbPrintHistogramHeader(FILE* f,
@@ -544,8 +533,6 @@ static double nbHistogramCenterOfMass(const NBodyHistogram* hist, int useBinInde
 }
 
 
-
-
 /*
 Takes a treecode position, converts it to (l,b), then to (lambda,
 beta), and then constructs a histogram of the density in lambda.
@@ -569,6 +556,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
+
+    /* Calculate the bounds of the bin range, making sure to use a
+     * fixed bin size which spans the entire range, and is symmetric
+     * around 0 */
 
     double start = nbHistogramStart(hp);
     unsigned int nBin = nbHistogramNBin(hp);
@@ -778,57 +769,41 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     return emd;
 }
 
-/* Load parameters where in the sky the histogram goes, and create the histogram. */
-NBodyHistogram* nbGenerateHistogram(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
+/*
+  Load information necessary to calculate the likelihood from input lua script.
+
+  Load parameters where in the sky the histogram goes and likelihood type.
+
+  Return TRUE on failure.
+*/
+int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method)
 {
     lua_State* luaSt = NULL;
-    NBodyHistogram* histogram;
-    HistogramParams hp;
 
     luaSt = nbOpenLuaStateWithScript(nbf);
     if (!luaSt)
     {
-        return NULL;
+        return TRUE;
     }
 
-    if (nbEvaluateHistogramParams(luaSt, &hp))
+    if (nbEvaluateHistogramParams(luaSt, hp))
     {
         lua_close(luaSt);
-        return NULL;
+        return TRUE;
     }
+
+    *method = nbEvaluateLikelihoodMethod(luaSt);
 
     lua_close(luaSt);
-
-    /* Calculate the bounds of the bin range, making sure to use a
-     * fixed bin size which spans the entire range, and is symmetric
-     * around 0 */
-
-    histogram = nbCreateHistogram(ctx, st, &hp);
-    if (!histogram)
-    {
-        mw_printf("Failed to create histogram\n");
-        return NULL;
-    }
-
-    return histogram;
+    return FALSE;
 }
 
-
 /* Calculate the likelihood from the final state of the simulation */
-double nbSystemChisq(const NBodyState* st, const NBodyHistogram* data, const NBodyHistogram* histogram)
+double nbSystemChisq(const NBodyState* st,
+                     const NBodyHistogram* data,
+                     const NBodyHistogram* histogram,
+                     NBodyLikelihoodMethod method)
 {
-    double chiSq = NAN;
-    double altChiSq = NAN;
-    double chiSqAlt = NAN;
-    double poissonChiSq = NAN;
-    double kolmogorovDist = NAN;
-    double klDist = NAN;
-    double wChiSq = NAN;
-    double wAltChiSq = NAN;
-    double emd = NAN;
-    double worstEMD;
-
-
     if (data->nBin != histogram->nBin)
     {
         mw_printf("Number of bins does not match those in histogram file. "
@@ -838,50 +813,40 @@ double nbSystemChisq(const NBodyState* st, const NBodyHistogram* data, const NBo
         return NAN;
     }
 
-    /* We could have far crazier variations in the distance in cases
-     * where the number of particles resulting in the bins is very
-     * small, such as when a few particles on the edge are thrown out
-     * and happen to end up in the binning range.
-     *
-     * Make sure that at least 1% of the total particles are being
-     * counted to hopefully smooth away potential issues.
-     *
-     * If there are truly no particles in useful bins, the EMD will
-     * return infinity. Having more than 0 particles should be better
-     * than infinity, so use something a bit worse than the case where
-     * 100% is located in opposite bins.
-     */
-    if (histogram->totalNum < 0.01 * (double) st->nbody)
+    if (method == NBODY_EMD)
     {
-        mw_printf("Number of particles in bins is very small compared to total. "
-                  "(%u << %u). Skipping distance calculation\n",
-                  histogram->totalNum,
-                  st->nbody
-            );
-        worstEMD = nbWorstCaseEMD(histogram);
-        return 2.0 * worstEMD;
+        /* We could have far crazier variations in the distance in cases
+         * where the number of particles resulting in the bins is very
+         * small, such as when a few particles on the edge are thrown out
+         * and happen to end up in the binning range.
+         *
+         * Make sure that at least 1% of the total particles are being
+         * counted to hopefully smooth away potential issues.
+         *
+         * If there are truly no particles in useful bins, the EMD will
+         * return infinity. Having more than 0 particles should be better
+         * than infinity, so use something a bit worse than the case where
+         * 100% is located in opposite bins.
+         */
+        if (histogram->totalNum < 0.01 * (double) st->nbody)
+        {
+            double worstEMD;
+
+            mw_printf("Number of particles in bins is very small compared to total. "
+                      "(%u << %u). Skipping distance calculation\n",
+                      histogram->totalNum,
+                      st->nbody
+                );
+            worstEMD = nbWorstCaseEMD(histogram);
+            return 2.0 * worstEMD;
+        }
+
+        return nbMatchEMD(data, histogram);
     }
-
-    chiSq = nbCalcChisq(data, histogram, NBODY_LIKELIHOOD);
-    altChiSq = nbCalcChisq(data, histogram, NBODY_ALT_LIKELIHOOD);
-    chiSqAlt = nbCalcChisq(data, histogram, NBODY_CHISQ_ALT_LIKELIHOOD);
-    poissonChiSq = nbCalcChisq(data, histogram, NBODY_POISSON_LIKELIHOOD);
-    kolmogorovDist = nbCalcChisq(data, histogram, NBODY_KOLMOGOROV_DISTANCE);
-    klDist = nbCalcChisq(data, histogram, NBODY_KULLBACK_LEIBLER_DISTANCE);
-    wChiSq = nbCalcChisq(data, histogram, NBODY_W_LIKELIHOOD);
-    wAltChiSq = nbCalcChisq(data, histogram, NBODY_W_ALT_LIKELIHOOD);
-    emd = nbMatchEMD(data, histogram);
-
-    mw_printf("\n<alt_likelihood>%.15f</alt_likelihood>\n", altChiSq);
-    mw_printf("<alt_chisq_likelihood>%.15f</alt_chisq_likelihood>\n", chiSqAlt);
-    mw_printf("<poisson_likelihood>%.15f</poisson_likelihood>\n", poissonChiSq);
-    mw_printf("<kolmogorov_distance>%.15f</kolmogorov_distance>\n", kolmogorovDist);
-    mw_printf("<kl_distance>%.15f</kl_distance>\n", klDist);
-    mw_printf("<w_likelihood>%.15f</w_likelihood>\n", wChiSq);
-    mw_printf("<w_alt_likelihood>%.15f</w_alt_likelihood>\n", wAltChiSq);
-    mw_printf("<emd>%.15f</emd>\n", emd);
-
-    return chiSq;
+    else
+    {
+        return nbCalcChisq(data, histogram, method);
+    }
 }
 
 double nbMatchHistogramFiles(const char* datHist, const char* matchHist)
