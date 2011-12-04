@@ -47,20 +47,19 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
     set(strip_exe "-s")
   endif()
 
-  if(use_static)
-    if(use_static AND UNIX AND NOT APPLE)
-      set(link_flags "-static ${link_flags}")
-    endif()
+  if(use_static AND UNIX AND NOT APPLE)
+    set(link_flags "-static ${link_flags}")
+  endif()
 
-    if(HAVE_FLAG_STATIC_LIBSTDCPP)
-      set(link_flags "${link_flags} -static-libstdc++ ")
-    endif()
+
+  if(HAVE_FLAG_STATIC_LIBSTDCPP)
+    set(link_flags "${link_flags} -static-libstdc++ ")
   else()
-
     if(C_COMPILER_IS_PATHCC)
       list(APPEND link_libs stl)
     else()
-      if(NOT WIN32)
+      if(NOT WIN32 AND 0)
+        # We should probably always statically link libstdc++
         list(APPEND link_libs stdc++)
       endif()
     endif()

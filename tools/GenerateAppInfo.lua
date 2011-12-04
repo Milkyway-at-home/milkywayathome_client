@@ -4,9 +4,10 @@ argv = { ... }
 separation_bin = argv[1]
 nbody_bin = argv[2]
 nbody_graphics_bin = argv[3]
+openmpLib = argv[4]
+
 
 print(separation_bin, nbody_bin, nbody_graphics_bin)
-print("arsotenareotneiarstnarntarnst")
 
 -- <ncpu>4</ncpu>
 -- <avg_ncpus>4</avg_ncpus>
@@ -99,6 +100,14 @@ function getVersionNum(version)
    end
 end
 
+libTemplate = [[
+    <file_ref>
+      <file_name>%s</file_name>
+      <open_name>%s</open_name>
+      <copy_file/>
+    </file_ref>
+]]
+
 fileRefMainProgramTemplate = [[
     <file_ref>
       <file_name>%s</file_name>
@@ -124,10 +133,14 @@ function getFileRefGraphics(file)
    end
 end
 
-function buildAppInfo(name, ufName, binName, graphicsName)
+function buildAppInfo(name, ufName, binName, graphicsName, libName)
 
    local pc = getPlanClass(findPlanClassFromName(binName))
 
+   local libStr = nil
+   if libName ~= nil then
+      libStr = string.format(libTemplate, libName, libName)
+   end
 
    local parts = {
       string.format(base_template,
@@ -135,13 +148,15 @@ function buildAppInfo(name, ufName, binName, graphicsName)
                     ufName),
       getExeFileInfo(binName),
       getExeFileInfo(graphicsName),
+      getExeFileInfo(libName),
       beginAppVersion,
-        getAppName(name),
+      getAppName(name),
         getVersionNum(findVersionFromName(binName)),
         pc,
         getFlops(flopsEstimateFromPlanClass(pc)),
         getFileRefMainProgram(binName),
         getFileRefGraphics(graphicsName),
+        libStr,
       endAppVersion
      }
 
@@ -160,12 +175,13 @@ function buildNbodyXML()
    return buildAppInfo("milkyway_nbody",
                        "MilkyWay@Home N-body",
                        nbody_bin,
-                       nbody_graphics_bin
+                       nbody_graphics_bin,
+                       openmpLib
                     )
 end
 
 function buildSeparationXML()
-   return buildAppInfo("milkyway_separation",
+   return buildAppInfo("milkyway",
                        "MilkyWay@Home Separation",
                        separation_bin,
                        nil

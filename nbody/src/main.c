@@ -467,6 +467,12 @@ static void nbSetDefaultFlags(NBodyFlags* nbf)
     {
         nbf->checkpointPeriod = NOBOINC_DEFAULT_CHECKPOINT_PERIOD;
     }
+
+    if (BOINC_APPLICATION && nbf->debugLuaLibs)
+    {
+        mw_printf("Warning: disabling --lua-debug-libraries\n");
+        nbf->debugLuaLibs = FALSE;
+    }
 }
 
 static void freeNBodyFlags(NBodyFlags* nbf)

@@ -70,7 +70,7 @@
   #error No intrinsic enabled
 #endif /* __AVX__ */
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
   #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #elif defined(_MSC_VER)
   #pragma warning( disable : 4068 )

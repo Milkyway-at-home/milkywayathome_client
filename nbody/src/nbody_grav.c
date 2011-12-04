@@ -166,7 +166,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static inline mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body* p)
+static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     int i;
     const int nbody = st->nbody;

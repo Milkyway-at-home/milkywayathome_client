@@ -31,6 +31,8 @@ nbody 0.80:
 	- Added 'make bench' simple benchmark
 	- Setting NBODY_FLAGS environment variable will pass extra flags to tests/benchmark
 	- Add more user documentation using texinfo.
+	- Add --match-histogram argument
+	- Add new likelihood options
 
 
 separation 0.80:

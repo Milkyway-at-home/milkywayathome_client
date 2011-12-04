@@ -392,7 +392,7 @@ end
 function runSimple(arg)
    return os.readProcess(arg.nbodyBin or "milkyway_nbody",
                          "--checkpoint-interval=-1",
-                         "-g",
+                         "--debug-boinc",
                          "-t",
                          "-f", arg.input,
                          table.concat(arg.extraArgs, " ")

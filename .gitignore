@@ -89,3 +89,7 @@ nbody/doc/milkyway_nbody.tps
 nbody/doc/milkyway_nbody.vr
 nbody/tests/.checkpoints
 .checkpoints
+replace_amd_il
+*.bin
+*.out
+*.ps

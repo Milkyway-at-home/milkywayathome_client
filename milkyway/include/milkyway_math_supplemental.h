@@ -98,7 +98,11 @@ inline real mw_fmin(real a, real b)
 
 #if HAVE_SINCOS
   /* Assuming glibc style, e.g. sincos(x, &sinval, &cosval) */
-  #define mw_sincos sincosf
+  #if DOUBLEPREC
+    #define mw_sincos sincos
+  #else
+    #define mw_sincos sincosf
+  #endif /* DOUBLEPREC */
 #else
     /* TODO: Using real sincos() would be nice in coordinate conversions
    for speed, but it's a glibc extension. It is in opencl though.  We

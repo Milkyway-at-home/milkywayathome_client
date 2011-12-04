@@ -287,7 +287,7 @@ else()
 endif()
 
 set(BOINC_INCLUDE_DIR "${BOINC_API_SRC_DIR};${BOINC_LIB_SRC_DIR}" CACHE INTERNAL "BOINC headers" FORCE)
-set(BOINC_LIBRARIES boinc_api boinc boinc_graphics2 CACHE INTERNAL "BOINC libraries" FORCE)
+set(BOINC_LIBRARIES boinc_graphics2 boinc_api boinc CACHE INTERNAL "BOINC libraries" FORCE)
 set(BOINC_GRAPHICS_LIBRARY boinc_graphics2 CACHE INTERNAL "BOINC graphics library" FORCE)
 set(BOINC_GRAPHICS_FOUND TRUE CACHE INTERNAL "Built BOINC libraries" FORCE)
 

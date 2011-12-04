@@ -31,18 +31,19 @@ include(CMakeDependentOption)
 include(CheckLibraryExists)
 include(CompilerID)
 
+if(NOT MSVC)
+  # Use the separate generator for MSVC
+  option(BUILD_32 "32 bit build" OFF)
+endif()
 
-if(APPLE)
-  option(BUILD_OSX_32 "32 bit build on OS X" OFF)
-  option(BUILD_OSX_UNIVERSAL "32-64 bit x86 universal build on OS X" OFF)
-
-  # TODO: If using this, it seems only the Apple GCC works
-  if(BUILD_OSX_32)
+if(BUILD_32)
+  if(APPLE)
+    # TODO: If using this, it seems only the Apple gcc/llvm-gcc works
     set(CMAKE_OSX_ARCHITECTURES i386)
   endif()
-  if(BUILD_OSX_UNIVERSAL)
-    set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
-  endif()
+
+  set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_C_FLAGS}")
 endif()
 
 if(WIN32)
@@ -50,18 +51,6 @@ if(WIN32)
 endif()
 if(CXX_COMPILER_IS_SUN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -features=zla")
-endif()
-
-
-
-if(HAVE_FLAG_STATIC_LIBGCC)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc ")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
-endif()
-
-if(HAVE_FLAG_PTHREAD)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
 
@@ -76,6 +65,19 @@ include(CMakeDependentOption)
 include(CheckFunctionExists)
 include(Profiling)
 include(BOINCPaths)
+
+#These must be after CheckCFlags is included
+
+if(HAVE_FLAG_STATIC_LIBGCC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
+endif()
+
+if(HAVE_FLAG_PTHREAD)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()
+
 
 check_function_exists(stpcpy HAVE_STPCPY)
 check_library_exists(rt shm_open "" HAVE_LIBRT)
@@ -439,6 +441,9 @@ add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/tools/app_info.xml"
 add_custom_target(app_info DEPENDS "${PROJECT_BINARY_DIR}/tools/app_info.xml")
 
 if(INSTALL_BOINC)
+  # FIXME:
+  # Need to rename and install libraries, e.g. libgomp
+  # Need to chown to boinc user
   install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
 endif()
 
