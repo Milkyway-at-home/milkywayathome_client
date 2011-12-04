@@ -362,7 +362,7 @@ static void checkEnumErrorStr(char* errBuf, size_t errBufSize, const MWEnumAssoc
     size_t remSize; /* Remaining size in buffer */
 
     strcpy(errBuf, errStart);
-    errLen = sizeof(errStart);
+    errLen = sizeof(errStart) - 1;
     while (p->enumName)
     {
         nextP = &p[1];
@@ -791,6 +791,8 @@ int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
         mw_printf("Creating userdata '%s' failed\n", typeName);
         return 0;
     }
+
+    assert((uintptr_t) lp % MW_LUA_ALIGN == 0); /* This must be true for dSFMT intrinsics stuff to work */
 
     luaL_getmetatable(luaSt, typeName);
     lua_setmetatable(luaSt, -2);

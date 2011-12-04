@@ -218,3 +218,65 @@ int mwBindBOINCStatus(lua_State* luaSt)
     return 0;
 }
 
+static void* mwLuaAlignedAllocator(void* ud, void* ptr, size_t osize, size_t nsize)
+{
+    (void) ud, (void) osize;
+
+    if (nsize == 0)
+    {
+        if (ptr)
+        {
+            free(*((void**) ptr - 1));
+        }
+
+        return NULL;
+    }
+    else
+    {
+        unsigned char* mem;  /* Raw allocated pointer */
+        unsigned char* aptr; /* offset inside aligned to MW_LUA_ALIGN */
+
+        if (ptr)
+        {
+            ptr = *((void**) ptr - 1);
+        }
+
+        /* Add (align - 1) to guarantee we get an address in range, then space for original pointer */
+        mem = realloc(ptr, nsize + (MW_LUA_ALIGN - 1) + sizeof(void*));
+        if (!mem)
+            return NULL;
+
+        aptr = (unsigned char*) mem + sizeof(void*);
+        aptr += MW_LUA_ALIGN - ((uintptr_t) aptr & (MW_LUA_ALIGN - 1));
+
+        assert((uintptr_t) aptr % MW_LUA_ALIGN == 0);
+
+        *((void**) aptr - 1) = mem;
+        return aptr;
+    }
+}
+
+
+/* Add the standard panic function back to our state with the custom allocator */
+static int mw_lua_panic(lua_State* luaSt)
+{
+    (void) luaSt;
+    fprintf(stderr,
+            "PANIC: unprotected error in call to Lua API (%s)\n",
+            lua_tostring(luaSt, -1));
+    return 0;
+}
+
+lua_State* mw_lua_newstate(void)
+{
+    lua_State* luaSt;
+
+    luaSt = lua_newstate(mwLuaAlignedAllocator, NULL);
+    if (luaSt)
+    {
+        lua_atpanic(luaSt, mw_lua_panic);
+    }
+
+    return luaSt;
+}
+

@@ -56,11 +56,14 @@ if(${MILKYWAY_OPENCL} MATCHES "ON")
   include_directories(${OPENCL_INCLUDE_DIRS})
 endif()
 
+set(CMAKE_REQUIRED_LIBRARIES m)
 check_function_exists(exp10 HAVE_EXP10)
 check_function_exists(exp2 HAVE_EXP2)
 check_function_exists(sincos HAVE_SINCOS)
 check_function_exists(fmax HAVE_FMAX)
 check_function_exists(fmin HAVE_FMIN)
+set(CMAKE_REQUIRED_LIBRARIES )
+
 
 set(CMAKE_REQUIRED_INCLUDES "malloc.h")
 check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
@@ -69,7 +72,7 @@ check_function_exists(__mingw_aligned_malloc HAVE___MINGW_ALIGNED_MALLOC)
 set(CMAKE_REQUIRED_INCLUDES )
 
 #check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)  # WHY DOESN'T THIS WORK?
-check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+check_library_exists(rt clock_gettime "" HAVE_CLOCK_GETTIME)
 
 set(CMAKE_REQUIRED_INCLUDES "sys/time.h")
 check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)

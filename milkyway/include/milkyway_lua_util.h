@@ -42,6 +42,8 @@ extern "C" {
     while (0)                                                           \
 
 
+lua_State* mw_lua_newstate(void);
+
 int registerUtilityFunctions(lua_State* luaSt);
 void mw_lua_openlibs(lua_State *L, mwbool debug);
 

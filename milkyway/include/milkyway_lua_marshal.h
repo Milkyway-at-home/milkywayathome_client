@@ -30,6 +30,11 @@
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
 
+/* All Lua allocations will be aligned to this */
+#define MW_LUA_ALIGN 16
+
+
+
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
 
