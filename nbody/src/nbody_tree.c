@@ -175,18 +175,16 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
 {
     NBodyCell* c;
-    size_t i;
 
     if (st->freecell == NULL)                   /* no free cells left? */
         c = (NBodyCell*) mwMallocA(sizeof(*c)); /* allocate a new one */
     else                                        /* use existing free cell */
     {
-        c = (NBodyCell*) st->freecell;             /* take one on front */
-        st->freecell = Next(c);                   /* go on to next one */
+        c = (NBodyCell*) st->freecell;          /* take one on front */
+        st->freecell = Next(c);                 /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
-    for (i = 0; i < NSUB; i++)                  /* loop over subcells */
-        Subp(c)[i] = NULL;                      /* and empty each one */
+    memset(&c->stuff, 0, sizeof(c->stuff));     /* empty sub cells */
     t->cellused++;                              /* count one more cell */
     return c;
 }
