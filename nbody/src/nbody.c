@@ -227,8 +227,6 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_LIKELIHOOD_ERROR;
         }
 
-        mw_printf("Got method '%s'\n", showNBodyLikelihoodMethod(method));
-
         histogram = nbCreateHistogram(ctx, st, &hp);
         if (!histogram)
         {

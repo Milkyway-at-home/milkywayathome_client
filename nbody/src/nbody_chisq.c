@@ -207,12 +207,28 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     double n;
     double err;
     double simErr;
-    double m, s;
+    double scale = 1.0;
     unsigned int nBin = data->nBin;
-    const double scale = 1500.0;
 
-    assert(histogram->hasRawCounts);
     assert(nBin == histogram->nBin);
+
+    if (!histogram->hasRawCounts)
+    {
+        mw_printf("FIXME: other likelihoods need raw count on generated histogram\n");
+        return NAN;
+    }
+
+    if (method == NBODY_SAHA)
+    {
+        /* We need to have the total number to scale to the correct
+         * numbers for Saha likelihood */
+        scale = (double) data->totalNum;
+        if (data->totalNum == 0 || histogram->totalNum == 0)
+        {
+            mw_printf("Histogram scales required for Saha likelihood but missing\n");
+            return NAN;
+        }
+    }
 
     if (histogram->totalNum == 0)
     {
@@ -267,12 +283,8 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                     break;
 
                 case NBODY_SAHA:
-                    /* This will actually find ln(W). W is an unreasonably large number.
-                       FIXME: hardcoded scale factor
-                     */
-                    m = n;
-                    s = scale * data->data[i].count;
-                    chiSq += nbSahaTerm(m, s);
+                    /* This will actually find ln(W). W is an unreasonably large number. */
+                    chiSq += nbSahaTerm(n, scale * data->data[i].count);
                     break;
 
                 case NBODY_INVALID_METHOD:
@@ -441,6 +453,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     unsigned int nBin = histogram->nBin;
 
     mw_boinc_print(f, "<histogram>\n");
+    fprintf(f, "n = %u\n", histogram->totalNum);
     for (i = 0; i < nBin; ++i)
     {
         data = &histogram->data[i];
@@ -616,7 +629,9 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     unsigned int fileCount = 0;
     unsigned int lineNum = 0;
     mwbool error = FALSE;
-    mwbool readParams = FALSE;
+    mwbool readParams = FALSE; /* Read some other optional histogram params */
+    mwbool readNGen = FALSE;  /* Read the scale for the histogram (particles in data bin) */
+    unsigned int nGen = 0;    /* Number of particles read from the */
     char lineBuf[1024];
 
     f = mwOpenResolved(histogramFile, "r");
@@ -667,6 +682,16 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
             }
         }
 
+        if (!readNGen)
+        {
+            rc = sscanf(lineBuf, " n = %u \n", &nGen);
+            if (rc == 1)
+            {
+                readNGen = TRUE;
+                continue;
+            }
+        }
+
         rc = sscanf(lineBuf,
                     "%d %lf %lf %lf \n",
                     &histData[fileCount].useBin,
@@ -693,6 +718,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
 
     histogram->nBin = fileCount;
+    histogram->totalNum = nGen;
     return histogram;
 }
 
