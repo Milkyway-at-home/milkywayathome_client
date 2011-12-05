@@ -20,6 +20,10 @@ if(APPLE)
     endif()
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_definitions("-DLUA_USE_APICHECK")
+endif()
+
 
 ## CONFIGURATION
 # Default configuration (we assume POSIX by default)

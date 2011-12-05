@@ -30,7 +30,9 @@ static int luaMap(lua_State* luaSt)
     int i, n, f = 1, table = 2, newTable = 3;
 
     if (lua_gettop(luaSt) != 2)
+    {
         luaL_argerror(luaSt, 2, "Expected 2 arguments");
+    }
 
     mw_lua_checktable(luaSt, table);
     mw_lua_checkfunction(luaSt, f);
@@ -196,26 +198,114 @@ int dofileWithArgs(lua_State* luaSt,
                    unsigned int nArgs)
 {
     if (luaL_loadfile(luaSt, filename))
+    {
         return 1;
+    }
 
     return doWithArgs(luaSt, args, nArgs);
 }
 
 int mwBindBOINCStatus(lua_State* luaSt)
 {
-    int isStandalone = TRUE;
-
     lua_pushboolean(luaSt, BOINC_APPLICATION);
     lua_setglobal(luaSt, "isBOINCApplication");
 
-    #if BOINC_APPLICATION
-    isStandalone = boinc_is_standalone();
-    #endif
-
-    lua_pushboolean(luaSt, isStandalone);
+    lua_pushboolean(luaSt, mw_is_standalone());
     lua_setglobal(luaSt, "isStandalone");
 
     return 0;
+}
+
+/*
+  Derived from _mingw_aligned_malloc and friends, implemented using Microsoft's public
+  interfaces and with the help of the algorithm description provided
+  by Wu Yongwei: http://sourceforge.net/mailarchive/message.php?msg_id=3847075
+
+  I hereby place this implementation in the public domain.
+  -- Steven G. Johnson (stevenj@alum.mit.edu)
+*/
+#define POWER_OF_TWO(n) (!((n) & ((n) - 1)))
+#define UI(p) ((uintptr_t) (p))
+#define CP(p) ((char*) p)
+
+#define PTR_ALIGN(p0, alignment)                \
+    ((void*) (((UI(p0) + (alignment + sizeof(void*)))   \
+                & (~UI(alignment - 1)))))
+
+/* Pointer must sometimes be aligned; assume sizeof(void*) is a power of two. */
+#define ORIG_PTR(p) (*(((void**) (UI(p) & (~UI(sizeof(void*) - 1)))) - 1))
+
+
+static void* mw_lua_aligned_malloc(size_t size)
+{
+    void* p;
+    void* p0;
+
+    assert(POWER_OF_TWO(MW_LUA_ALIGN));
+    assert(MW_LUA_ALIGN >= sizeof(void*));
+
+    /* Including the extra sizeof(void*) is overkill on a 32-bit
+       machine, since malloc is already 8-byte aligned, as long
+       as we enforce alignment >= 8 ...but oh well.  */
+
+    p0 = malloc(size + MW_LUA_ALIGN + sizeof(void*));
+    if (!p0)
+    {
+        return NULL;
+    }
+
+    p = PTR_ALIGN(p0, MW_LUA_ALIGN);
+    ORIG_PTR(p) = p0;
+    return p;
+}
+
+static void mw_lua_aligned_free(void* memblock)
+{
+    if (memblock)
+    {
+        free(ORIG_PTR(memblock));
+    }
+}
+
+static void* mw_lua_aligned_realloc(void* memblock, size_t size)
+{
+    void* p;
+    void* p0;
+    ptrdiff_t shift;
+
+    if (!memblock)
+    {
+        return mw_lua_aligned_malloc(size);
+    }
+
+    if (size == 0)
+    {
+        mw_lua_aligned_free(memblock);
+        return NULL;
+    }
+
+    p0 = ORIG_PTR(memblock);
+
+    assert(memblock == PTR_ALIGN(p0, MW_LUA_ALIGN));    /* It is an error for the alignment to change. */
+    shift = CP(memblock) - CP(p0);
+
+    p0 = realloc(p0, size + MW_LUA_ALIGN + sizeof(void*));
+    if (!p0)
+    {
+        return NULL;
+    }
+
+    p = PTR_ALIGN(p0, MW_LUA_ALIGN);
+
+    /* Relative shift of actual data may be different from before, ugh.  */
+    if (shift != CP(p) - CP(p0))
+    {
+        /* ugh, moves more than necessary if size is increased.  */
+        memmove(CP(p), CP(p0) + shift, size);
+    }
+
+    ORIG_PTR(p) = p0;
+    return p;
 }
 
 static void* mwLuaAlignedAllocator(void* ud, void* ptr, size_t osize, size_t nsize)
@@ -224,36 +314,15 @@ static void* mwLuaAlignedAllocator(void* ud, void* ptr, size_t osize, size_t nsi
 
     if (nsize == 0)
     {
-        if (ptr)
-        {
-            free(*((void**) ptr - 1));
-        }
-
+        mw_lua_aligned_free(ptr);
         return NULL;
     }
+
     else
     {
-        unsigned char* mem;  /* Raw allocated pointer */
-        unsigned char* aptr; /* offset inside aligned to MW_LUA_ALIGN */
-
-        if (ptr)
-        {
-            ptr = *((void**) ptr - 1);
-        }
-
-        /* Add (align - 1) to guarantee we get an address in range, then space for original pointer */
-        mem = realloc(ptr, nsize + (MW_LUA_ALIGN - 1) + sizeof(void*));
-        if (!mem)
-            return NULL;
-
-        aptr = (unsigned char*) mem + sizeof(void*);
-        aptr += MW_LUA_ALIGN - ((uintptr_t) aptr & (MW_LUA_ALIGN - 1));
-
-        assert((uintptr_t) aptr % MW_LUA_ALIGN == 0);
-
-        *((void**) aptr - 1) = mem;
-        return aptr;
+        return mw_lua_aligned_realloc(ptr, nsize);
     }
+
 }
 
 

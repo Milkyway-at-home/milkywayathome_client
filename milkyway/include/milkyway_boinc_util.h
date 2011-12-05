@@ -81,6 +81,7 @@ extern "C" {
   #define mw_fraction_done(x) boinc_fraction_done(x)
   #define mw_time_to_checkpoint() boinc_time_to_checkpoint()
   #define mw_checkpoint_completed() boinc_checkpoint_completed()
+  #define mw_is_standalone() boinc_is_standalone()
 #else
   #define mw_boinc_print(f, msg, ...)
   #define mw_finish(x) exit(x)
@@ -91,6 +92,7 @@ extern "C" {
   #define mw_fraction_done(x)
   #define mw_time_to_checkpoint() (FALSE)
   #define mw_checkpoint_completed()
+  #define mw_is_standalone() (TRUE)
 #endif /* BOINC_APPLICATION */
 
 
