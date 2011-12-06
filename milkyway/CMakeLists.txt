@@ -33,6 +33,7 @@ git_describe(MILKYWAY_GIT_DESCRIBE)
 
 check_include_files(unistd.h HAVE_UNISTD_H)
 check_include_files(windows.h HAVE_WINDOWS_H)
+check_include_files(direct.h HAVE_DIRECT_H)
 check_include_files(fcntl.h HAVE_FCNTL_H)
 check_include_files(inttypes.h HAVE_INTTYPES_H)
 check_include_files(stdint.h HAVE_STDINT_H)

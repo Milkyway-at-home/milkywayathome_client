@@ -68,18 +68,6 @@ set(crlibm_src crlibm_private.c
 
 
 
-# FIXME: test_big_endian seems to be broken sometimes
-# This should be done correctly
-#test_big_endian(crlibm_is_big_endian)
-
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "powerpc" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
-  set(crlibm_is_big_endan TRUE)
-endif()
-
-if(crlibm_is_big_endian)
-  add_definitions("-DWORDS_BIGENDIAN")
-endif()
-
 # All of the stuff that's here
 # set(crlibm_headers crlibm.h
 #                    crlibm_private.h
@@ -215,6 +203,9 @@ enable_testing()
 set(CRLIBM_TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
+# FIXME: test_big_endian seems to be broken sometimes
+# This should be done correctly
+#test_big_endian(crlibm_is_big_endian)
 
 # First check the host processor
 
@@ -229,14 +220,17 @@ endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES alpha)
   add_definitions(-DCRLIBM_TYPECPU_ALPHA)
+  set(crlibm_is_big_endian TRUE)
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES powerpc*)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES powerpc* OR CMAKE_SYSTEM_PROCESSOR MATCHES ppc*)
   add_definitions(-DCRLIBM_TYPECPU_POWERPC)
+  set(crlibm_is_big_endian TRUE)
 endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES sparc)
   add_definitions(-DCRLIBM_TYPECPU_SPARC)
+  set(crlibm_is_big_endian TRUE)
 endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES x86_64|amd64)
@@ -246,6 +240,13 @@ endif()
 if(CMAKE_SYSTEM_PROCESSOR MATCHES ia64)
   add_definitions(-DCRLIBM_TYPECPU_ITANIUM)
 endif()
+
+
+
+if(crlibm_is_big_endian)
+  add_definitions("-DWORDS_BIGENDIAN")
+endif()
+
 
 
 if(ENABLE_SSE2)

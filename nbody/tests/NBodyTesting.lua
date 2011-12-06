@@ -408,11 +408,13 @@ function runFullTest(arg)
       testPath = arg.testName .. ".lua"
    end
 
+   mkdir(".checkpoints")
+
    local cpFlag = string.format("--no-clean-checkpoint -c %s/%s__%d",
                                 ".checkpoints",
                                 arg.testName,
                                 arg.seed)
-   if not cached then
+   if not arg.cached then
       cpFlag = cpFlag .. " --ignore-checkpoint"
    end
 
@@ -454,7 +456,9 @@ function findLikelihood(str, emd)
    else
       name = "search_likelihood"
    end
-   return findNumber(str, name)
+
+   -- likelihood is negated
+   return -findNumber(str, name)
 end
 
 

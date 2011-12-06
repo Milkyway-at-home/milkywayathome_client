@@ -55,8 +55,8 @@ void* mwCallocA(size_t count, size_t size);
 
 
 /* Checks that we can actually align to 16/32 */
-int mwAllocA32Safe();
-int mwAllocA16Safe();
+int mwAllocA32Safe(void);
+int mwAllocA16Safe(void);
 
 #ifdef __cplusplus
 }

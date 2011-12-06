@@ -19,10 +19,29 @@
 
 #include <lua.h>
 #include <lualib.h>
+#include <sys/stat.h>
 
 #include "milkyway_lua_marshal.h"
 #include "milkyway_util.h"
 #include "milkyway_lua_util.h"
+
+#if HAVE_DIRECT_H
+  #include <direct.h>
+#endif
+
+#if HAVE_SYS_STAT_H
+  #include <sys/stat.h>
+#endif
+
+/* Lazy binding for creating directories. Should probably error and things */
+static int lua_mkdir(lua_State* luaSt)
+{
+	const char* path;
+
+    path = luaL_checkstring(luaSt, 1);
+	lua_pushinteger(luaSt, mkdir(path, 0777));
+    return 1;
+}
 
 /* Map over values in a table */
 static int luaMap(lua_State* luaSt)
@@ -119,6 +138,7 @@ int registerUtilityFunctions(lua_State* luaSt)
     lua_register(luaSt, "foldl", luaFoldl);
     lua_register(luaSt, "zipWith", luaZipWith);
     lua_register(luaSt, "getTime", luaGetTime);
+    lua_register(luaSt, "mkdir", lua_mkdir);
 
     return 0;
 }

@@ -63,7 +63,7 @@ function generateSampleUnits(outputName, testName, histograms, nbodies, iteratio
                extraArgs = { nbody }
             }
 
-            local result = findLikelihood(output, true)
+            local result = findLikelihood(output, false)
             assert(result, "Did not find result in test output")
             eprintf("  iteration %4d (seed %6d) = %f\n", i, seed, result)
             this[i + nSamples[histogram]] = result
