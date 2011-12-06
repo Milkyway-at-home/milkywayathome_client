@@ -203,15 +203,15 @@ add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
 
-add_test(exp ${TEST_DIR}/blind_test ${TEST_DIR}/exp.testdata)
-add_test(log ${TEST_DIR}/blind_test ${TEST_DIR}/log.testdata)
-add_test(sin ${TEST_DIR}/blind_test ${TEST_DIR}/sin.testdata)
+add_test(NAME exp COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/exp.testdata)
+add_test(NAME log COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/log.testdata)
+add_test(NAME sin COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/sin.testdata)
 
-add_test(cos ${TEST_DIR}/blind_test ${TEST_DIR}/cos.testdata)
-add_test(tan ${TEST_DIR}/blind_test ${TEST_DIR}/tan.testdata)
-add_test(atan ${TEST_DIR}/blind_test ${TEST_DIR}/atan.testdata)
-add_test(sinh ${TEST_DIR}/blind_test ${TEST_DIR}/sinh.testdata)
-add_test(cosh ${TEST_DIR}/blind_test ${TEST_DIR}/cosh.testdata)
+add_test(NAME cos COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/cos.testdata)
+add_test(NAME tan COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/tan.testdata)
+add_test(NAME atan COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/atan.testdata)
+add_test(NAME sinh COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/sinh.testdata)
+add_test(NAME cosh COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/cosh.testdata)
 
 
 
