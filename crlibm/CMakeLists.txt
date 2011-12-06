@@ -15,6 +15,7 @@ include(CheckIncludeFile)
 include(CheckFunctionExists)
 include(CPUNameTest)
 include(CheckSSE2)
+include(TestBigEndian)
 
 option(CRLIBM_QUIET_BUILD "Quietly build" ON)
 
@@ -65,6 +66,19 @@ set(crlibm_src crlibm_private.c
                atan_accurate.c
 	           csh_fast.c)
 
+
+
+# FIXME: test_big_endian seems to be broken sometimes
+# This should be done correctly
+#test_big_endian(crlibm_is_big_endian)
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "powerpc" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
+  set(crlibm_is_big_endan TRUE)
+endif()
+
+if(crlibm_is_big_endian)
+  add_definitions("-DWORDS_BIGENDIAN")
+endif()
 
 # All of the stuff that's here
 # set(crlibm_headers crlibm.h
