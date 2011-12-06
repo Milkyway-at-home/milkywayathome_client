@@ -184,6 +184,7 @@ static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
         st->freecell = Next(c);                 /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
+    More(c) = NULL;
     memset(&c->stuff, 0, sizeof(c->stuff));     /* empty sub cells */
     t->cellused++;                              /* count one more cell */
     return c;
@@ -203,7 +204,9 @@ static void newTree(NBodyState* st, NBodyTree* t)
             p = More(p);                    /* scan down tree */
         }
         else                                /* skip over bodies */
+        {
             p = Next(p);                    /* go on to next */
+        }
     }
 
     t->cellused = 0;   /* init count of cells, levels */

@@ -75,6 +75,7 @@ static int createBody(lua_State* luaSt)
             END_MW_NAMED_ARG
         };
 
+    memset(&b, 0, sizeof(b));
     ignore = FALSE; /* Set to default value for table */
     switch (lua_gettop(luaSt))
     {
@@ -94,7 +95,6 @@ static int createBody(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
     }
 
-    memset(&b, 0, sizeof(b));
     b.bodynode.pos = *x;
     b.vel = *v;
     b.bodynode.type = BODY(ignore);

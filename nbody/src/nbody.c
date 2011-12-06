@@ -70,7 +70,6 @@ static NBodyStatus nbResumeOrNewRun(NBodyCtx* ctx, NBodyState* st, const NBodyFl
         if (nbReadCheckpoint(ctx, st))
         {
             mw_report("Failed to read checkpoint\n");
-            destroyNBodyState(st);
             return NBODY_CHECKPOINT_ERROR;
         }
         else
@@ -298,6 +297,7 @@ int nbMain(const NBodyFlags* nbf)
     rc = nbResumeOrNewRun(ctx, st, nbf);
     if (nbStatusIsFatal(rc))
     {
+        destroyNBodyState(st);
         return rc;
     }
 
