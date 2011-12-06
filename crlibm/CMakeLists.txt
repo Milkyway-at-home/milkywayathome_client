@@ -196,23 +196,10 @@ add_definitions(-DSCS_NB_WORDS=8 -DSCS_NB_BITS=30)
 include_directories(${PROJECT_SOURCE_DIR})
 
 enable_testing()
+
+
+set(CRLIBM_TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
-
-
-
-
-set(TEST_DIR ${PROJECT_SOURCE_DIR}/tests)
-
-add_test(NAME exp COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/exp.testdata)
-add_test(NAME log COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/log.testdata)
-add_test(NAME sin COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/sin.testdata)
-
-add_test(NAME cos COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/cos.testdata)
-add_test(NAME tan COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/tan.testdata)
-add_test(NAME atan COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/atan.testdata)
-add_test(NAME sinh COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/sinh.testdata)
-add_test(NAME cosh COMMAND $<TARGET_FILE:blind_test> ${TEST_DIR}/cosh.testdata)
-
 
 
 # First check the host processor

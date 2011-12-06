@@ -53,7 +53,7 @@ set(test_data acos
               tanpi)
 
 foreach(test ${test_data})
-  add_test(NAME ${test} COMMAND blind_test tests/${test_data}.testdata)
+  add_test(NAME ${test} COMMAND $<TARGET_FILE:blind_test> -v ${CRLIBM_TEST_DIR}/${test}.testdata)
 endforeach()
 
 
