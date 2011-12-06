@@ -33,13 +33,20 @@
   #include <sys/stat.h>
 #endif
 
+
+#ifdef _WIN32
+  /* WTF? Why is the windows one missing the 2nd argument? */
+  #define mkdir(x, y) mkdir(x)
+#endif
+
 /* Lazy binding for creating directories. Should probably error and things */
 static int lua_mkdir(lua_State* luaSt)
 {
-	const char* path;
+    const char* path;
 
     path = luaL_checkstring(luaSt, 1);
-	lua_pushinteger(luaSt, mkdir(path, 0777));
+    lua_pushinteger(luaSt, mkdir(path, 0777));
+
     return 1;
 }
 

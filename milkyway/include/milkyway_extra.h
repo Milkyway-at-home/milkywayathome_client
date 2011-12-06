@@ -60,6 +60,7 @@ typedef char mwbool;
   #define read _read
   #define write _write
   #define lseek _lseek
+  #define mkdir _mkdir
 #endif /* _MSC_VER */
 
 /* Horrible workaround for lack of C99 in MSVCRT and it being
