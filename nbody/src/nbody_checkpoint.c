@@ -45,7 +45,7 @@
 
 #ifndef _WIN32
 
-typedef struct MW_ALIGN
+typedef struct
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
@@ -56,7 +56,7 @@ typedef struct MW_ALIGN
 
 #else
 
-typedef struct MW_ALIGN_TYPE
+typedef struct
 {
     HANDLE file;
     HANDLE mapFile;
@@ -81,17 +81,17 @@ typedef struct MW_ALIGN_TYPE
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
 
-typedef struct MW_ALIGN_TYPE
+typedef struct
 {
-    char header[128];                /* "mwnbody" */
-    int majorVersion, minorVersion;  /* Version check */
-    int nbody;                       /* Saved copies of state */
-    unsigned int step;
-    size_t realSize;                 /* Does the checkpoint use float or double */
-    size_t ptrSize;
+    char header[128];                     /* "mwnbody" */
+    uint32_t majorVersion, minorVersion;  /* Version check */
+    uint32_t nbody;
+    uint32_t step;
+    uint32_t realSize;                   /* Does the checkpoint use float or double */
+    uint32_t ptrSize;
     real rsize;
-    int treeIncest;
-    int nOrbitTrace;
+    uint32_t treeIncest;
+    uint32_t nOrbitTrace;
     NBodyCtx ctx;
 } NBodyCheckpointHeader;
 
@@ -151,14 +151,14 @@ static int verifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
     {
         mw_printf("Got checkpoint file for wrong type. "
                   "Expected sizeof(real) = "ZU", got "ZU"\n",
-                  sizeof(real), cpHdr->realSize);
+                  sizeof(real), (size_t) cpHdr->realSize);
         return 1;
     }
 
     if (cpHdr->ptrSize != sizeof(void*))
     {
         mw_printf("Got checkpoint file for wrong architecture. "
-                  "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), cpHdr->ptrSize);
+                  "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), (size_t) cpHdr->ptrSize);
         return 1;
     }
 

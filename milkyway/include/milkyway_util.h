@@ -110,9 +110,9 @@ void mwPerrorW32(const char* fmt, ...);
 #endif
 
 /* Controlled, but lazy failure */
-#define mw_fail(msg, ...)                           \
+#define mw_fail(...)                                \
     {                                               \
-        fprintf(stderr, msg, ##__VA_ARGS__);        \
+        fprintf(stderr, __VA_ARGS__);               \
         mw_finish(EXIT_FAILURE);                    \
     }
 

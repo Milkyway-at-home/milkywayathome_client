@@ -39,12 +39,12 @@
 
 typedef enum
 {
-    MW_PLAIN       = 1 << 0,
-    MW_MULTITHREAD = 1 << 1,
-    MW_CAL         = 1 << 2,
-    MW_OPENCL      = 1 << 3,
-    MW_DEBUG       = 1 << 4,
-    MW_GRAPHICS    = 1 << 5
+    MW_PLAIN       = 0,
+    MW_MULTITHREAD = 1 << 0,
+    MW_CAL         = 1 << 1,
+    MW_OPENCL      = 1 << 2,
+    MW_DEBUG       = 1 << 3,
+    MW_GRAPHICS    = 1 << 4
 } MWInitType;
 
 typedef enum

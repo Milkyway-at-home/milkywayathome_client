@@ -145,7 +145,7 @@ static void nbPrintVersion(int boincTag, int verbose)
 
 static int nbInit(const NBodyFlags* nbf)
 {
-    MWInitType initType = 0;
+    MWInitType initType = MW_PLAIN;
 
   #ifdef _OPENMP
     initType |= MW_MULTITHREAD;

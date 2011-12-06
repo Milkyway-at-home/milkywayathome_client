@@ -579,7 +579,7 @@ static int worker(const SeparationFlags* sf)
 static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
 {
     int rc;
-    MWInitType initType = 0;
+    MWInitType initType = MW_PLAIN;
 
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();

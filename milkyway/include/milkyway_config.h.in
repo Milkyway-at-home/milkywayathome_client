@@ -190,5 +190,11 @@
 #define MILKYWAY_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}"
 
 
+#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+  #pragma error_messages (off, E_CANT_SET_NONDEF_ALIGN_FUNC)
+  #pragma error_messages (off, E_CANT_SET_NONDEF_ALIGN_AUTO)
+  #pragma error_messages (off, E_CANT_SET_NONDEF_ALIGN_PARAM)
+#endif
+
 #endif /* _MILKYWAY_CONFIG_H_ */
 
