@@ -181,7 +181,7 @@ int mwGetAppInitData(void)
 
 int mwIsFirstRun(void)
 {
-    return FALSE;
+    return TRUE;
 }
 
 const char* mwGetProjectPrefs(void)
