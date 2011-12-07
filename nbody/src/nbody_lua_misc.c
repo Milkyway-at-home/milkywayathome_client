@@ -50,7 +50,7 @@ int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx, const char* er
         {
             if (errMsg)
             {
-                mw_lua_pcall_warn(luaSt, "%s", errMsg);
+                mw_lua_perror(luaSt, "%s", errMsg);
             }
 
             return 1;

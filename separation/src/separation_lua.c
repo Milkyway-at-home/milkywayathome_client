@@ -114,7 +114,7 @@ static int tryEvaluateScript(lua_State* luaSt, const char* script, const Separat
 
     if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->nForwardedArgs))
     {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", sf->ap_file);
+        mw_lua_perror(luaSt, "Error loading Lua script '%s'", sf->ap_file);
         return 1;
     }
 
@@ -352,7 +352,7 @@ static int evaluateGlobalName(lua_State* luaSt, lua_CFunction func, const char* 
     lua_pushcfunction(luaSt, func);
     if (lua_pcall(luaSt, 0, 0, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating %s", name);
+        mw_lua_perror(luaSt, "Error evaluating %s", name);
         return 1;
     }
 

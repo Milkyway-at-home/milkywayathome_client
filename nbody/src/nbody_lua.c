@@ -162,7 +162,7 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
     free(script);
     if (execFailed)
     {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", nbf->inputFile);
+        mw_lua_perror(luaSt, "Error loading Lua script '%s'", nbf->inputFile);
         lua_close(luaSt);
         return NULL;
     }
@@ -187,14 +187,14 @@ static int nbEvaluateContext(lua_State* luaSt, NBodyCtx* ctx)
 
     if (lua_pcall(luaSt, 0, 1, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating NBodyCtx");
+        mw_lua_perror(luaSt, "Error evaluating NBodyCtx");
         return 1;
     }
 
     tmp = expectNBodyCtx(luaSt, lua_gettop(luaSt));
     if (!tmp)
     {
-        mw_lua_pcall_warn(luaSt, "Invalid return from makeContext()");
+        mw_lua_perror(luaSt, "Invalid return from makeContext()");
         return 1;
     }
 
@@ -219,7 +219,7 @@ static int nbGetPotentialClosure(lua_State* luaSt)
 
     if (lua_pcall(luaSt, 0, 1, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating potential closure");
+        mw_lua_perror(luaSt, "Error evaluating potential closure");
         return LUA_NOREF;
     }
 
@@ -301,7 +301,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
             #pragma omp critical
           #endif
             {
-                mw_lua_pcall_warn(luaSt, "Error evaluating potential closure");
+                mw_lua_perror(luaSt, "Error evaluating potential closure");
                 st->potentialEvalError = TRUE;
             }
         }
@@ -355,7 +355,7 @@ static int nbEvaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
 
     if (lua_pcall(luaSt, 0, 1, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating makePotential()");
+        mw_lua_perror(luaSt, "Error evaluating makePotential()");
         return 1;
     }
 
@@ -408,14 +408,14 @@ int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp)
 
     if (lua_pcall(luaSt, 0, 1, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating makeHistogram()");
+        mw_lua_perror(luaSt, "Error evaluating makeHistogram()");
         return 1;
     }
 
     tmp = expectHistogramParams(luaSt, lua_gettop(luaSt));
     if (!tmp)
     {
-        mw_lua_pcall_warn(luaSt, "Invalid return from makeHistogram()");
+        mw_lua_perror(luaSt, "Invalid return from makeHistogram()");
         return 1;
     }
 
@@ -463,7 +463,7 @@ static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
 
     if (lua_pcall(luaSt, 2, LUA_MULTRET, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating makeBodies()");
+        mw_lua_perror(luaSt, "Error evaluating makeBodies()");
         return NULL;
     }
 

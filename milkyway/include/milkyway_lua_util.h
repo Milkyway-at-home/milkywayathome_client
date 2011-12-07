@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 /* Print the error from pcall assumed to be the top of the stack, and remove the error */
-#define mw_lua_pcall_warn(luaSt, msg, ...)                              \
+#define mw_lua_perror(luaSt, msg, ...)                                  \
     do                                                                  \
     {                                                                   \
         fprintf(stderr, msg ": %s \n",                                  \

@@ -481,7 +481,7 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
 
     rc = dofileWithArgs(luaSt, file, args, nArgs);
     if (rc)
-        mw_lua_pcall_warn(luaSt, "Error evaluating script '%s'\n", file);
+        mw_lua_perror(luaSt, "Error evaluating script '%s'\n", file);
 
     lua_close(luaSt);
 
