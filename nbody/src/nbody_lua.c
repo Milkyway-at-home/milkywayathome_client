@@ -140,6 +140,7 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
 {
     char* script;
     lua_State* luaSt;
+    int execFailed;
 
     luaSt = nbLuaOpen(nbf->debugLuaLibs);
     if (!luaSt)
@@ -157,15 +158,21 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
         return NULL;
     }
 
-    if (   dostringWithArgs(luaSt, script, nbf->forwardedArgs, nbf->numForwardedArgs)
-        || !nbCheckMinVersionRequired(luaSt))
+    execFailed = dostringWithArgs(luaSt, script, nbf->forwardedArgs, nbf->numForwardedArgs);
+    free(script);
+    if (execFailed)
     {
         mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", nbf->inputFile);
         lua_close(luaSt);
-        luaSt = NULL;
+        return NULL;
     }
 
-    free(script);
+    if (!nbCheckMinVersionRequired(luaSt))
+    {
+        lua_close(luaSt);
+        return NULL;
+    }
+
     return luaSt;
 }
 

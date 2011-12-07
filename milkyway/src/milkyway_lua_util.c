@@ -200,23 +200,19 @@ static int doWithArgs(lua_State* luaSt, const char** args, unsigned int nArgs)
 
     if (lua_pcall(luaSt, nArgs, 0, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating script");
         return 1;
     }
 
     return 0;
 }
 
-
 int dostringWithArgs(lua_State* luaSt,
                      const char* str,
                      const char** args,
                      unsigned int nArgs)
 {
-    if (luaL_loadstring(luaSt, str))
-        return 1;
-
-    return doWithArgs(luaSt, args, nArgs);
+    /* If either fails there will be 1 error on the stack */
+    return luaL_loadstring(luaSt, str) || doWithArgs(luaSt, args, nArgs);
 }
 
 int dofileWithArgs(lua_State* luaSt,
@@ -224,12 +220,7 @@ int dofileWithArgs(lua_State* luaSt,
                    const char** args,
                    unsigned int nArgs)
 {
-    if (luaL_loadfile(luaSt, filename))
-    {
-        return 1;
-    }
-
-    return doWithArgs(luaSt, args, nArgs);
+    return luaL_loadfile(luaSt, filename) || doWithArgs(luaSt, args, nArgs);
 }
 
 int mwBindBOINCStatus(lua_State* luaSt)
