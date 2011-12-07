@@ -86,9 +86,9 @@ static int luaRunSystem(lua_State* luaSt)
     st = checkNBodyState(luaSt, 1);
     ctx = *checkNBodyCtx(luaSt, 2);
 
-    if (nbGetPotentialTyped(luaSt, &ctx, 3))
+    if (nbGetPotentialTyped(luaSt, &ctx, 3, NULL))
     {
-        return luaL_argerror(luaSt, 3, "Expected potential type as argument 3\n");
+        return luaL_argerror(luaSt, 3, "Expected potential as argument 3\n");
     }
 
     rc = nbRunSystem(&ctx, st);

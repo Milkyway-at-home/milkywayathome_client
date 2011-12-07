@@ -35,7 +35,7 @@ static int totalBodies(lua_State* luaSt, int nModels)
     {
         if (expectTable(luaSt, i))
         {
-            mw_printf("Error reading body table\n");
+            mw_lua_pcall_warn(luaSt, "Error reading body table");
             return 0;
         }
 
@@ -56,8 +56,7 @@ static int readBodyArray(lua_State* luaSt, int table, Body* bodies, int n)
         b = expectBody(luaSt, lua_gettop(luaSt));
         if (!b)
         {
-            mw_printf("Error reading body %d: %s\n", i, lua_tostring(luaSt, -1));
-            lua_pop(luaSt, 1);
+            mw_lua_pcall_warn(luaSt, "Error reading body %d", i);
             break;
         }
 

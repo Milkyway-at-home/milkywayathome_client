@@ -115,7 +115,7 @@ static int createNBodyCtx(lua_State* luaSt)
 
     if ((ctx.criterion != Exact) && (ctx.theta < 0.0))
     {
-        return luaL_argerror(luaSt, 1, "Theta argument required for ");
+        return luaL_argerror(luaSt, 1, "Theta argument required for criterion != 'Exact'");
     }
     else if (ctx.criterion == Exact)
     {

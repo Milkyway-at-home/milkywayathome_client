@@ -26,7 +26,7 @@
 
 
 /* Try to read item at idx as one of the accepted potential types into ctx. */
-int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx)
+int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx, const char* errMsg)
 {
     if (lua_isnoneornil(luaSt, idx))
     {
@@ -48,6 +48,11 @@ int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx)
         tmp = expectPotential(luaSt, idx);
         if (!tmp)
         {
+            if (errMsg)
+            {
+                mw_lua_pcall_warn(luaSt, "%s", errMsg);
+            }
+
             return 1;
         }
 

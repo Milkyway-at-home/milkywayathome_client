@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx);
+int nbGetPotentialTyped(lua_State* luaSt, NBodyCtx* ctx, int idx, const char* errMsg);
 
 #ifdef __cplusplus
 }
