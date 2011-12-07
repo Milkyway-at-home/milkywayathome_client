@@ -70,20 +70,18 @@ if(BOINC_INCLUDE_DIR AND BOINC_LIBRARY)
 endif()
 
 
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(BOINC DEFAULT_MSG BOINC_LIBRARY BOINC_INCLUDE_DIR)
+mark_as_advanced(BOINC_INCLUDE_DIR BOINC_LIBRARY )
+
+
 if(BOINC_FOUND)
-   if(NOT Boinc_FIND_QUIETLY)
-      message(STATUS "Found BOINC Libraries: ${BOINC_LIBRARY}")
-   endif(NOT Boinc_FIND_QUIETLY)
-else(BOINC_FOUND)
-   if(Boinc_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find BOINC Libraries")
-   endif(Boinc_FIND_REQUIRED)
+   set(CMAKE_REQUIRED_INCLUDES ${BOINC_INCLUDE_DIR})
+   check_struct_has_member("BOINC_OPTIONS" "multi_thread" "boinc_api.h" HAVE_BOINC_OPTIONS_MULTI_THREAD)
+   if(NOT HAVE_BOINC_OPTIONS_MULTI_THREAD)
+     message(FATAL_ERROR "Found BOINC libraries too old")
+   endif()
+   set(CMAKE_REQUIRED_INCLUDES)
 endif()
 
-set(CMAKE_REQUIRED_INCLUDES ${BOINC_INCLUDE_DIR})
-check_struct_has_member("BOINC_OPTIONS" "multi_thread" "boinc_api.h" HAVE_BOINC_OPTIONS_MULTI_THREAD)
-if(NOT HAVE_BOINC_OPTIONS_MULTI_THREAD)
-  message(FATAL_ERROR "Found BOINC libraries too old")
-endif()
-set(CMAKE_REQUIRED_INCLUDES)
 
