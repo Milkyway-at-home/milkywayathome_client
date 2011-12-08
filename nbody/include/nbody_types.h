@@ -386,14 +386,14 @@ typedef enum
     NBODY_PARAM_FILE_ERROR     = 1 << 13,
     NBODY_LUA_POTENTIAL_ERROR  = 1 << 14,
     NBODY_LIKELIHOOD_ERROR     = 1 << 15,
-    NBODY_RESERVED_ERROR_1     = 1 << 16,
-    NBODY_RESERVED_ERROR_2     = 1 << 17,
-    NBODY_RESERVED_ERROR_3     = 1 << 18,
-    NBODY_RESERVED_ERROR_4     = 1 << 19,
-    NBODY_RESERVED_ERROR_5     = 1 << 20,
-    NBODY_RESERVED_ERROR_6     = 1 << 21,
-    NBODY_RESERVED_ERROR_7     = 1 << 22,
-    NBODY_RESERVED_ERROR_8     = 1 << 23,
+    NBODY_MAX_DEPTH_ERROR      = 1 << 16,
+    NBODY_CELL_OVERFLOW_ERROR  = 1 << 17,
+    NBODY_RESERVED_ERROR_1     = 1 << 18,
+    NBODY_RESERVED_ERROR_2     = 1 << 19,
+    NBODY_RESERVED_ERROR_3     = 1 << 20,
+    NBODY_RESERVED_ERROR_4     = 1 << 21,
+    NBODY_RESERVED_ERROR_5     = 1 << 22,
+    NBODY_RESERVED_ERROR_6     = 1 << 23,
 
     /* Warnings */
     NBODY_TREE_INCEST_NONFATAL = 1 << 24,
@@ -416,7 +416,7 @@ typedef enum
 typedef enum
 {
     NBODY_KERNEL_OK                   = 0,
-    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
+    NBODY_KERNEL_CELL_OVERFLOW        = -1,
     NBODY_KERNEL_TREE_INCEST          = -2,
     NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
     NBODY_KERNEL_ERROR_OTHER          = -4

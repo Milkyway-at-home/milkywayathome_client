@@ -66,7 +66,7 @@
 typedef enum
 {
     NBODY_KERNEL_OK                   = 0,
-    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
+    NBODY_KERNEL_CELL_OVERFLOW        = -1,
     NBODY_KERNEL_TREE_INCEST          = -2,
     NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
     NBODY_KERNEL_ERROR_OTHER          = -4
@@ -536,7 +536,7 @@ __kernel void NBODY_KERNEL(buildTree)
                         int cell = atom_dec(&_treeStatus->bottom) - 1;
                         if (cell <= NBODY)
                         {
-                            _treeStatus->errorCode = NBODY_KERNEL_CELL_LEQ_NBODY;
+                            _treeStatus->errorCode = NBODY_KERNEL_CELL_OVERFLOW;
                             _treeStatus->bottom = NNODE;
                         }
                         patch = max(patch, cell);

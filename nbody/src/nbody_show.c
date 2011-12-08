@@ -136,10 +136,10 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_LUA_POTENTIAL_ERROR";
         case NBODY_LIKELIHOOD_ERROR:
             return "NBODY_LIKELIHOOD_ERROR";
-        case NBODY_RESERVED_ERROR_1:
-            return "NBODY_RESERVED_ERROR_1";
-        case NBODY_RESERVED_ERROR_2:
-            return "NBODY_RESERVED_ERROR_2";
+        case NBODY_MAX_DEPTH_ERROR:
+            return "NBODY_MAX_DEPTH_ERROR";
+        case NBODY_CELL_OVERFLOW_ERROR:
+            return "NBODY_CELL_OVERFLOW_ERROR";
         case NBODY_RESERVED_ERROR_3:
             return "NBODY_RESERVED_ERROR_3";
         case NBODY_RESERVED_ERROR_4:
@@ -148,10 +148,6 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_RESERVED_ERROR_5";
         case NBODY_RESERVED_ERROR_6:
             return "NBODY_RESERVED_ERROR_6";
-        case NBODY_RESERVED_ERROR_7:
-            return "NBODY_RESERVED_ERROR_7";
-        case NBODY_RESERVED_ERROR_8:
-            return "NBODY_RESERVED_ERROR_8";
 
         case NBODY_TREE_INCEST_NONFATAL:
             return "NBODY_TREE_INCEST_NONFATAL";
@@ -188,8 +184,8 @@ const char* showNBodyKernelError(NBodyKernelError x)
     {
         case NBODY_KERNEL_OK:
             return "NBODY_KERNEL_OK";
-        case NBODY_KERNEL_CELL_LEQ_NBODY:
-            return "NBODY_KERNEL_CELL_LEQ_NBODY";
+        case NBODY_KERNEL_CELL_OVERFLOW:
+            return "NBODY_KERNEL_CELL_OVERFLOW";
         case NBODY_KERNEL_TREE_INCEST:
             return "NBODY_KERNEL_CELL_TREE_INCEST";
         case NBODY_KERNEL_TREE_STRUCTURE_ERROR:

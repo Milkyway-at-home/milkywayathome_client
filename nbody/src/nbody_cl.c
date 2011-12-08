@@ -734,10 +734,10 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
     }
     else
     {
-        const int* pi = (const int*) p;
+        const int* ip = (const int*) p;
         for (i = 0; i < n; ++i)
         {
-            mw_printf("%s["ZU"] = %d\n", name, i, pi[i]);
+            mw_printf("%s["ZU"] = %d\n", name, i, ip[i]);
         }
     }
 
@@ -784,6 +784,26 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
     mw_printf("--------------------------------------------------------------------------------\n");
 }
 
+static NBodyStatus nbKernelErrorToNBodyStatus(NBodyKernelError x)
+{
+    switch (x)
+    {
+        case NBODY_KERNEL_OK:
+            return NBODY_SUCCESS;
+        case NBODY_KERNEL_CELL_OVERFLOW:
+            return NBODY_CELL_OVERFLOW_ERROR;
+        case NBODY_KERNEL_TREE_INCEST:
+            return NBODY_TREE_INCEST_FATAL; /* Somewhat inaccurate but shouldn't happen  */
+        case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
+            return NBODY_TREE_STRUCTURE_ERROR;
+        case NBODY_KERNEL_ERROR_OTHER:
+            return NBODY_ERROR;
+        default:
+            return NBODY_ERROR;
+    }
+}
+
+
 /* Check the error code */
 static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -821,13 +841,13 @@ static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
                 mw_printf("(%s (%u))\n",
                           showNBodyKernelError(ts.errorCode),
                           nbFindMaxDepthForDevice(&ci->di, st->workSizes, st->usesQuad));
+                return NBODY_MAX_DEPTH_ERROR;
             }
             else
             {
                 mw_printf("(%s)\n", showNBodyKernelError(ts.errorCode));
+                return nbKernelErrorToNBodyStatus(ts.errorCode);
             }
-
-            return NBODY_ERROR;
         }
     }
 
@@ -932,7 +952,8 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     /* FIXME: This does not work unless ALL of the threads are
      * launched at once. This may be bad when we need
      * responsiveness. This also means it will always hang with
-     * CPUs */
+     * CPUs. It seems to be fast enough though in every case I've
+     * tried. */
     err = clEnqueueNDRangeKernel(ci->queue, kernels->sort, 1,
                                  NULL, &ws->global[3], &ws->local[3],
                                  0, NULL, &sortEv);
@@ -1036,7 +1057,6 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     cl_uint i;
-    CLInfo* ci = st->ci;
     NBodyWorkSizes* ws = st->workSizes;
 
     memset(ws->timings, 0, sizeof(ws->timings));
