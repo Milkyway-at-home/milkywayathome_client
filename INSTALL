@@ -145,3 +145,42 @@ Building:
      2. Open the generated sln and build the project
 
 
+
+
+--------------------------------------------------------------------------------
+
+For building Linux binaries with against an old glibc for
+compatability, install an old system in a chroot, but it's easier to
+build using new tools (gcc, cmake etc.) outside of the chroot.
+
+To do this install a chroot (mostly following these instructions
+https://help.ubuntu.com/community/DebootstrapChroot for Hardy
+
+Make sure that gcc-multilib and g++-multilib are installed on the host
+system. Inside the chroot install libssl-dev and freeglut3-dev, then do
+
+for 32 bit (the -DBUILD_32=ON only adds -m32 to CMAKE_C_FLAGS and CMAKE_CXX_FLAGS on Linux)
+
+  $ mkdir build_i386; cd build_i386
+  $ cmake /path/to/source -DBUILD_32=ON \
+                                           -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386 \
+                                           -DCMAKE_C_COMPILER=/usr/bin/gcc  \
+                                           -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+                                           -DCMAKE_AR=/usr/bin/ar  \
+                                           -DCMAKE_RANLIB=/usr/bin/ranlib \
+                                           -DCMAKE_C_FLAGS="--sysroot=/srv/chroot/hardy_i386/"  \
+                                           -DCMAKE_CXX_FLAGS="--sysroot=/srv/chroot/hardy_i386/"
+   $  make
+
+for 64 bit
+  $ mkdir build_amd64; cd build_amd64
+  $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64 \
+                                           -DCMAKE_C_COMPILER=/usr/bin/gcc  \
+                                           -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+                                           -DCMAKE_AR=/usr/bin/ar  \
+                                           -DCMAKE_RANLIB=/usr/bin/ranlib \
+                                           -DCMAKE_C_FLAGS="--sysroot=/srv/chroot/hardy_amd64/"  \
+                                           -DCMAKE_CXX_FLAGS="--sysroot=/srv/chroot/hardy_amd64/"
+  $ make
+
+

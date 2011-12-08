@@ -402,15 +402,17 @@ if(NBODY)
 endif()
 
 
-find_package(Git)
+if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" GREATER 2.8)
+  find_package(Git)
+endif()
+
 find_program(XZ_COMMAND xz)
 
-macro(make_release_tarball targetname releasename)
-  add_custom_target(${targetname} COMMAND ${GIT_EXECUTABLE} archive --prefix="${releasename}/" --format=tar HEAD | ${XZ_COMMAND} -9 > "${releasename}.tar.xz")
-endmacro()
-
-
 if(GIT_FOUND AND XZ_COMMAND)
+  macro(make_release_tarball targetname releasename)
+    add_custom_target(${targetname} COMMAND ${GIT_EXECUTABLE} archive --prefix="${releasename}/" --format=tar HEAD | ${XZ_COMMAND} -9 > "${releasename}.tar.xz")
+  endmacro()
+
   make_release_tarball("nbody_release" "milkyway_nbody_${nbody_VERSION}")
   make_release_tarball("separation_release" "milkyway_separation_${separation_VERSION}")
 endif()

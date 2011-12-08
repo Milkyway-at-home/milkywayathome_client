@@ -72,8 +72,9 @@ check_function_exists(_aligned_malloc HAVE__ALIGNED_MALLOC)
 check_function_exists(__mingw_aligned_malloc HAVE___MINGW_ALIGNED_MALLOC)
 set(CMAKE_REQUIRED_INCLUDES )
 
-#check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)  # WHY DOESN'T THIS WORK?
-check_library_exists(rt clock_gettime "" HAVE_CLOCK_GETTIME)
+set(CMAKE_REQUIRED_LIBRARIES rt)
+check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+set(CMAKE_REQUIRED_LIBRARIES )
 
 set(CMAKE_REQUIRED_INCLUDES "sys/time.h")
 check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)

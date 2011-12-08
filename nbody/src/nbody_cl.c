@@ -785,7 +785,7 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
 }
 
 /* Check the error code */
-static cl_bool nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
+static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     TreeStatus ts;
@@ -795,22 +795,22 @@ static cl_bool nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
     err = nbReadTreeStatus(&ts, ci, nbb);
     if (mw_unlikely(err != CL_SUCCESS))
     {
-        return CL_TRUE;
+        return NBODY_CL_ERROR;
     }
 
     if (mw_unlikely(ts.assertionLine >= 0))
     {
         mw_printf("Kernel assertion failed: line %d\n", ts.assertionLine);
-        return CL_TRUE;
+        return NBODY_ASSERTION_FAILURE;
     }
 
     if (mw_unlikely(ts.errorCode != 0))
     {
-        /* Incest is special because we can choose to ignore it */
+        /* Incest is special because we cagn choose to ignore it */
         if (ts.errorCode == NBODY_KERNEL_TREE_INCEST)
         {
             nbReportTreeIncest(ctx, st);
-            return (cl_bool) !ctx->allowIncest;
+            return ctx->allowIncest ? NBODY_TREE_INCEST_NONFATAL: NBODY_TREE_INCEST_FATAL;
         }
         else
         {
@@ -827,11 +827,11 @@ static cl_bool nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
                 mw_printf("(%s)\n", showNBodyKernelError(ts.errorCode));
             }
 
-            return CL_TRUE;
+            return NBODY_ERROR;
         }
     }
 
-    return CL_FALSE;
+    return NBODY_SUCCESS;
 }
 
 static cl_double waitReleaseEventWithTime(cl_event ev)
