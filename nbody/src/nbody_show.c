@@ -315,10 +315,10 @@ char* showBody(const Body* p)
 
     if (0 > asprintf(&buf,
                      "body { \n"
-                     "      mass   = %g\n"
-                     "      pos    = %s\n"
-                     "      vel    = %s\n"
-                     "      ignore = %s\n"
+                     "      mass     = %g\n"
+                     "      position = %s\n"
+                     "      velocity = %s\n"
+                     "      ignore   = %s\n"
                      "    };\n",
                      Mass(p),
                      pos,
@@ -511,14 +511,14 @@ char* showNBodyTree(const NBodyTree* t)
                      "  Tree %p = {\n"
                      "    root     = %p\n"
                      "    rsize    = %g\n"
-                     "    cellused = %u\n"
-                     "    maxlevel = %u\n"
+                     "    cellUsed = %u\n"
+                     "    maxDepth = %u\n"
                      "  };\n",
                      t,
                      t->root,
                      t->rsize,
-                     t->cellused,
-                     t->maxlevel))
+                     t->cellUsed,
+                     t->maxDepth))
     {
         mw_fail("asprintf() failed\n");
     }
@@ -543,7 +543,7 @@ char* showNBodyState(const NBodyState* st)
     if (0 > asprintf(&buf,
                      "NBodyState %p = {\n"
                      "  tree           = %s\n"
-                     "  freecell       = %p\n"
+                     "  freeCell       = %p\n"
                      "  lastCheckpoint = %d\n"
                      "  step           = %u\n"
                      "  nbody          = %u\n"
@@ -553,7 +553,7 @@ char* showNBodyState(const NBodyState* st)
                      "};\n",
                      st,
                      treeBuf,
-                     st->freecell,
+                     st->freeCell,
                      (int) st->lastCheckpoint,
                      st->step,
                      st->nbody,

@@ -182,8 +182,8 @@ typedef struct MW_ALIGN_TYPE
     NBodyCell* root;         /* pointer to root cell */
     real rsize;              /* side-length of root cell */
 
-    unsigned int cellused;   /* count of cells in tree */
-    unsigned int maxlevel;   /* count of levels in tree */
+    unsigned int cellUsed;   /* count of cells in tree */
+    unsigned int maxDepth;   /* count of levels in tree */
     int structureError;
 } NBodyTree;
 
@@ -258,7 +258,7 @@ typedef struct
 typedef struct MW_ALIGN_TYPE
 {
     NBodyTree tree;
-    NBodyNode* freecell;      /* list of free cells */
+    NBodyNode* freeCell;      /* list of free cells */
     char* checkpointResolved;
     Body* bodytab;            /* points to array of bodies */
     mwvector* acctab;         /* Corresponding accelerations of bodies */

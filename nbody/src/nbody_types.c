@@ -54,8 +54,8 @@ static void freeNBodyTree(NBodyTree* t)
     }
 
     t->root = NULL;
-    t->cellused = 0;
-    t->maxlevel = 0;
+    t->cellUsed = 0;
+    t->maxDepth = 0;
 }
 
 static void freeFreeCells(NBodyNode* freeCell)
@@ -74,6 +74,8 @@ static void freeFreeCells(NBodyNode* freeCell)
 
 int nbDetachSharedScene(NBodyState* st)
 {
+    (void) st;
+
   #if USE_SHMEM
     if (st->scene)
     {
@@ -100,7 +102,7 @@ int destroyNBodyState(NBodyState* st)
     int i;
 
     freeNBodyTree(&st->tree);
-    freeFreeCells(st->freecell);
+    freeFreeCells(st->freeCell);
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
@@ -165,7 +167,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     int i;
 
     st->tree = emptyTree;
-    st->freecell = NULL;
+    st->freeCell = NULL;
     st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
 
@@ -369,7 +371,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->tree = emptyTree;
     st->tree.rsize = oldSt->tree.rsize;
 
-    st->freecell = NULL;
+    st->freeCell = NULL;
 
     st->lastCheckpoint = oldSt->lastCheckpoint;
     st->step           = oldSt->step;

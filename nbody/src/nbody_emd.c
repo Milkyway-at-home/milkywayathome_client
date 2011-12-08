@@ -1008,7 +1008,7 @@ static mwbool emdNewSolution(EMDState* state)
 
     if (!leave_x)
     {
-        return NAN;
+        return FALSE;
     }
 
     /* update the loop */

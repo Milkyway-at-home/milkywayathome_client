@@ -176,17 +176,19 @@ static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
 {
     NBodyCell* c;
 
-    if (st->freecell == NULL)                   /* no free cells left? */
+    if (st->freeCell == NULL)                   /* no free cells left? */
+    {
         c = (NBodyCell*) mwMallocA(sizeof(*c)); /* allocate a new one */
+    }
     else                                        /* use existing free cell */
     {
-        c = (NBodyCell*) st->freecell;          /* take one on front */
-        st->freecell = Next(c);                 /* go on to next one */
+        c = (NBodyCell*) st->freeCell;          /* take one on front */
+        st->freeCell = Next(c);                 /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
     More(c) = NULL;
     memset(&c->stuff, 0, sizeof(c->stuff));     /* empty sub cells */
-    t->cellused++;                              /* count one more cell */
+    t->cellUsed++;                              /* count one more cell */
     return c;
 }
 
@@ -199,8 +201,8 @@ static void newTree(NBodyState* st, NBodyTree* t)
     {
         if (isCell(p))                      /* found cell to free? */
         {
-            Next(p) = st->freecell;         /* link to front of */
-            st->freecell = p;               /* ...existing list */
+            Next(p) = st->freeCell;         /* link to front of */
+            st->freeCell = p;               /* ...existing list */
             p = More(p);                    /* scan down tree */
         }
         else                                /* skip over bodies */
@@ -209,8 +211,8 @@ static void newTree(NBodyState* st, NBodyTree* t)
         }
     }
 
-    t->cellused = 0;   /* init count of cells, levels */
-    t->maxlevel = 0;
+    t->cellUsed = 0;   /* init count of cells, levels */
+    t->maxDepth = 0;
 
     t->root = makeCell(st, t);    /* allocate the root cell */
     mw_zerov(Pos(t->root));                          /* initialize the midpoint */
@@ -272,7 +274,7 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
         ++lev;                            /* count another level */
     }
     Subp(q)[qind] = (NBodyNode*) p;            /* found place, store p */
-    t->maxlevel = MAX(t->maxlevel, lev);  /* remember maximum level */
+    t->maxDepth = MAX(t->maxDepth, lev);  /* remember maximum level */
 }
 
 ALWAYS_INLINE
