@@ -18,14 +18,6 @@ function makeHistogram()
    return HistogramParams.create()
 end
 
-function makeContext1()
-   return "dicks"
-end
-
-function makeContext3()
-   error("wowomg")
-end
-
 function makeContext()
    return NBodyCtx.create{
       timestep = 0.1,

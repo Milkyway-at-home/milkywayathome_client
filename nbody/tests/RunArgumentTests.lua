@@ -7,6 +7,7 @@ nbodyBin = assert(args[1], "Missing binary name")
 inputTest = "ArgumentTestInput.lua"
 
 local simple = os.readProcess(nbodyBin,
+                              "--debug-boinc",
                               "--verify-file",
                               "--input-file", inputTest,
                               "-np 5 -p hello -4 -3.14 1.23 13434")
@@ -20,6 +21,7 @@ end
 
 
 local startNthread = os.readProcess(nbodyBin,
+                                    "--debug-boinc",
                                     "--nthreads 5",
                                     "--verify-file",
                                     "--input-file", inputTest,
@@ -33,6 +35,7 @@ end
 
 
 local endNthread = os.readProcess(nbodyBin,
+                                  "--debug-boinc",
                                   "--verify-file",
                                   "--input-file", inputTest,
                                   "-np 5 -p hello -4 -3.14 1.23 13434",
@@ -46,6 +49,7 @@ end
 
 
 local multiEnd = os.readProcess(nbodyBin,
+                                "--debug-boinc",
                                 "--verify-file",
                                 "--input-file", inputTest,
                                 "-np 5 -p hello -4 -3.14 1.23 13434",
