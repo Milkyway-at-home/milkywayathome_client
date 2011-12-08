@@ -44,6 +44,9 @@
   #error (MAXDEPTH * THREADS6 / WARPSIZE) must be > 0
 #endif
 
+#if DEBUG && cl_amd_printf
+  #pragma OPENCL EXTENSION cl_amd_printf : enable
+#endif
 
 #if DOUBLEPREC
   #if cl_khr_fp64
@@ -923,11 +926,13 @@ __kernel void NBODY_KERNEL(quadMoments)
     __local int bottom;
     __local volatile int child[NSUB * THREADS5];
     __local real rootSize;
+    __local int maxDepth;
 
     if (get_local_id(0) == 0)
     {
         rootSize = _treeStatus->radius;
         bottom = _treeStatus->bottom;
+        maxDepth = _treeStatus->maxDepth;
     }
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
@@ -935,6 +940,12 @@ __kernel void NBODY_KERNEL(quadMoments)
     int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
     if (k < bottom)
         k += inc;
+
+    if (maxDepth > MAXDEPTH)
+    {
+        _treeStatus->errorCode = maxDepth;
+        return;
+    }
 
     int missing = 0;
     while (k <= NNODE)   /* Iterate over all cells assigned to thread */
