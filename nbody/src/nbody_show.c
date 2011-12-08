@@ -140,6 +140,10 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_MAX_DEPTH_ERROR";
         case NBODY_CELL_OVERFLOW_ERROR:
             return "NBODY_CELL_OVERFLOW_ERROR";
+        case NBODY_RESERVED_ERROR_1:
+            return "NBODY_RESERVED_ERROR_1";
+        case NBODY_RESERVED_ERROR_2:
+            return "NBODY_RESERVED_ERROR_2";
         case NBODY_RESERVED_ERROR_3:
             return "NBODY_RESERVED_ERROR_3";
         case NBODY_RESERVED_ERROR_4:

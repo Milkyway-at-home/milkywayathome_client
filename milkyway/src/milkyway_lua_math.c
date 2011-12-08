@@ -17,9 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "milkyway_lua_marshal.h"
 #include "milkyway_math.h"
+#include "milkyway_lua_marshal.h"
 #include "milkyway_lua_math.h"
+
 
 #define DEFINE_LUA_MW_FUNC_1(cname, name)                               \
      static int lua_##cname(lua_State* luaSt)                           \

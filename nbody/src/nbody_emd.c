@@ -1006,6 +1006,11 @@ static mwbool emdNewSolution(EMDState* state)
         }
     }
 
+    if (!leave_x)
+    {
+        return NAN;
+    }
+
     /* update the loop */
     for (i = 0; i < steps; i += 2)
     {

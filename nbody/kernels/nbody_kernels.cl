@@ -74,12 +74,14 @@ typedef enum
 
 #if DEBUG
 #define cl_assert(treeStatus, x)                     \
+    do                                               \
     {                                                \
       if (!(x))                                      \
       {                                              \
           (treeStatus)->assertionLine = __LINE__;    \
       }                                              \
-    }
+    }                                                \
+    while (0)
 #else
 #define cl_assert(treeStatus, x)
 #endif /* DEBUG */
