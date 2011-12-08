@@ -210,6 +210,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
 
     st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
+    st->usesCL = TRUE;
 
     st->ci = mwCalloc(1, sizeof(CLInfo));
     st->nbb = mwCalloc(1, sizeof(NBodyBuffers));
