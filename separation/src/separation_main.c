@@ -125,7 +125,7 @@ static void printVersion(int boincTag, int verbose)
     char versionStr[2048];
 
     snprintf(versionStr, sizeof(versionStr), "%s %u.%u %s %s %s%s%s%s",
-             SEPARATION_APP_NAME,
+             SEPARATION_PROJECT_NAME,
              SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
              MILKYWAY_SYSTEM_NAME,
              ARCH_STRING,

@@ -117,7 +117,7 @@ static void nbPrintVersion(int boincTag, int verbose)
 
     snprintf(versionStr, sizeof(versionStr),
              "%s %u.%u %s %s %s %s %s, %s",
-             NBODY_BIN_NAME,
+             NBODY_PROJECT_NAME,
              NBODY_VERSION_MAJOR, NBODY_VERSION_MINOR,
              MILKYWAY_SYSTEM_NAME,
              ARCH_STRING,

@@ -38,7 +38,7 @@ function(get_boinc_bin_name basename version plan)
       # for some reason, and you get the 64 bit one anyway
       if(SYSTEM_IS_64 AND SYSTEM_IS_X86)
         set(boinc_sys_name "x86_64-apple-darwin")
-      elseif(NOT SYSTEM_IS_64 AND SYSTEM_IS_x86)
+      elseif(NOT SYSTEM_IS_64 AND SYSTEM_IS_X86)
         set(boinc_sys_name "i686-apple-darwin")
       elseif(SYSTEM_IS_PPC)
         set(boinc_sys_name "powerpc-apple-darwin")
