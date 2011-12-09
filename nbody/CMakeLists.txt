@@ -66,6 +66,11 @@ elseif(NOT OPENMP_FOUND AND NBODY_OPENMP)
   message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
 endif()
 
+if(APPLE AND NBODY_OPENMP)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5 CACHE STRING "" FORCE)
+endif()
+
+
 if(BOINC_RELEASE)
   set(NBODY_CRLIBM ON)
 endif()

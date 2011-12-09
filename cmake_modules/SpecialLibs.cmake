@@ -69,6 +69,7 @@ if(APPLE)
       list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
     else()
       set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4 CACHE STRING "" FORCE)
+
       # if(CMAKE_OSX_ARCHITECTURES MATCHES "i386")
       #   if(NOT HAVE_10_4_SDK)
       #     message(FATAL "OS X 10.4 SDK required for x86_32 build")
