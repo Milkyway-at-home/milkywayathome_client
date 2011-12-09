@@ -490,16 +490,16 @@ static void freeNBodyFlags(NBodyFlags* nbf)
 static int nbSetNumThreads(int numThreads)
 {
   #ifdef _OPENMP
+    int nProc = omp_get_num_procs();
+
+    if (nProc <= 0) /* It's happened before... */
+    {
+        mw_printf("Number of processors %d is crazy\n", nProc);
+        return 1;
+    }
+
     if (numThreads != 0)
     {
-        int nProc = omp_get_num_procs();
-
-        if (nProc <= 0) /* It's happened before... */
-        {
-            mw_printf("Number of processors %d is crazy\n", nProc);
-            return 1;
-        }
-
         omp_set_num_threads(numThreads);
         mw_printf("Using OpenMP %d max threads on a system with %d processors\n",
                   omp_get_max_threads(),
