@@ -22,15 +22,6 @@ cmake_minimum_required(VERSION 2.6)
 project(milkywayathome_client)
 enable_testing()
 
-# Find custom cmake modules
-set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
-list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
-set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
-
-include(CMakeDependentOption)
-include(CheckLibraryExists)
-include(CompilerID)
-
 if(NOT MSVC)
   # Use the separate generator for MSVC
   option(BUILD_32 "32 bit build" OFF)
@@ -45,6 +36,17 @@ if(BUILD_32)
   set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_C_FLAGS}")
 endif()
+
+
+
+# Find custom cmake modules
+set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
+set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
+
+include(CMakeDependentOption)
+include(CheckLibraryExists)
+include(CompilerID)
 
 if(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS=1 -DWIN32_LEAN_AND_MEAN=1 -DVC_EXTRALEAN=1")
@@ -401,8 +403,7 @@ if(NBODY)
   add_subdirectory(nbody)
 endif()
 
-
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" GREATER 2.8)
+if(${CMAKE_VERSION} VERSION_GREATER "2.8.0" OR ${CMAKE_VERSION} VERSION_EQUAL "2.8.0")
   find_package(Git)
 endif()
 
