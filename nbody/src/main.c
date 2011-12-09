@@ -487,17 +487,27 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->visArgs);
 }
 
-static void nbSetNumThreads(int numThreads)
+static int nbSetNumThreads(int numThreads)
 {
   #ifdef _OPENMP
     if (numThreads != 0)
     {
+        int nProc = omp_get_num_procs();
+
+        if (nProc <= 0) /* It's happened before... */
+        {
+            mw_printf("Number of processors %d is crazy\n", nProc);
+            return 1;
+        }
+
         omp_set_num_threads(numThreads);
         mw_printf("Using OpenMP %d max threads on a system with %d processors\n",
                   omp_get_max_threads(),
-                  omp_get_num_procs());
+                  nProc);
     }
   #endif
+
+    return 0;
 }
 
 /* Maximum exit code is 255 which ruins everything even though we want
@@ -551,7 +561,10 @@ int main(int argc, const char* argv[])
     }
 
     nbSetDefaultFlags(&nbf);
-    nbSetNumThreads(nbf.numThreads);
+    if (nbSetNumThreads(nbf.numThreads))
+    {
+        mw_finish(EXIT_FAILURE);
+    }
 
     if (nbf.verifyOnly)
     {
