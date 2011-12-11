@@ -1473,6 +1473,8 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
     __local real zs[THREADS8];
     __local real ms[THREADS8];
 
+    cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
+
     for (int i = get_global_id(0); i < maxNBody; i += get_local_size(0) * get_num_groups(0))
     {
         real px = _posX[i];

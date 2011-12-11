@@ -243,12 +243,9 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    if (!st->usesExact)
-    {
-        err = nbSetInitialTreeStatus(st);
-        if (err != CL_SUCCESS)
-            return NBODY_CL_ERROR;
-    }
+    err = nbSetInitialTreeStatus(st);
+    if (err != CL_SUCCESS)
+        return NBODY_CL_ERROR;
 
     err = nbSetAllKernelArguments(st);
     if (err != CL_SUCCESS)
