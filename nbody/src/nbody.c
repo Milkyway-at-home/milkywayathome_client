@@ -275,8 +275,6 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     return NBODY_SUCCESS;
 }
 
-
-/* FIXME */
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
 

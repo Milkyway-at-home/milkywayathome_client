@@ -221,6 +221,11 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
     cl_int err;
     cl_event ev;
 
+    if (!buf)
+    {
+        return NULL;
+    }
+
     err = clGetMemObjectInfo(buf, CL_MEM_FLAGS, sizeof(flags), &flags, NULL);
     if (err != CL_SUCCESS)
     {

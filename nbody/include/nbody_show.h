@@ -53,6 +53,9 @@ void printHistogramParams(const HistogramParams*);
 char* showBody(const Body* p);
 void printBody(const Body* p);
 
+char* showCell(const NBodyCell* c);
+void printCell(const NBodyCell* c);
+
 void printBodies(const Body* bs, int n);
 
 char* showNBodyState(const NBodyState*);

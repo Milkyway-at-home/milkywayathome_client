@@ -301,6 +301,71 @@ char* showDisk(const Disk* d)
     return buf;
 }
 
+char* showCell(const NBodyCell* c)
+{
+    char* buf;
+    char* posBuf;
+
+    if (!c)
+        return NULL;
+
+
+    posBuf = showVector(Pos(c));
+
+    if (0 > asprintf(&buf,
+                     "NBodyCell = {\n"
+                     "  cellnode = {\n"
+                     "    pos  = %s\n"
+                     "    next = %p\n"
+                     "    mass = %f\n"
+                     "    type = %d\n"
+                     "  }\n"
+                     "  rcrit2   = %f\n"
+                     "  more     = %p\n"
+                     "  stuff    = {\n"
+                     "    .quad = {\n"
+                     "      .xx = %f, .xy = %f, .xz = %f,\n"
+                     "      .yy = %f, .yz = %f,\n"
+                     "      .zz = %f\n"
+                     "    },\n"
+                     "\n"
+                     "    .subp = {\n"
+                     "      %p, %p, %p, %p,\n"
+                     "      %p, %p, %p, %p\n"
+                     "    }\n"
+                     "  }\n"
+                     "}\n",
+                     posBuf,
+                     (void*) Next(c),
+                     Mass(c),
+                     Type(c),
+
+                     Rcrit2(c),
+                     (void*) More(c),
+
+                     Quad(c).xx, Quad(c).xy, Quad(c).xz,
+                     Quad(c).yy, Quad(c).yz,
+                     Quad(c).zz,
+
+                     (void*) Subp(c)[0], (void*) Subp(c)[1], (void*) Subp(c)[2], (void*) Subp(c)[3],
+                     (void*) Subp(c)[5], (void*) Subp(c)[5], (void*) Subp(c)[6], (void*) Subp(c)[7]
+            ))
+    {
+        mw_fail("asprintf() failed\n");
+    }
+
+    free(posBuf);
+
+    return buf;
+}
+
+void printCell(const NBodyCell* c)
+{
+    char* buf = showCell(c);
+    puts(buf);
+    free(buf);
+}
+
 char* showBody(const Body* p)
 {
     char* buf;

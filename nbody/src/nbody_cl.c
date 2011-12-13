@@ -665,7 +665,7 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
         return CL_FALSE;
     }
 
-    if (!mwSupportsDoubles(di) && DOUBLEPREC)
+    if (DOUBLEPREC && !mwSupportsDoubles(di))
     {
         mw_printf("Device does not have usable double precision extension\n");
         return CL_FALSE;
