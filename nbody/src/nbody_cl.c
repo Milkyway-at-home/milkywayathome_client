@@ -744,13 +744,12 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
     return clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
 }
 
-static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
+static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_bool quads)
 {
     cl_int err;
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
-
 
     if (children)
     {
@@ -763,7 +762,47 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree)
 
         mw_printf("BEGIN MASS\n");
         printBuffer(ci, nbb->masses, nNode + 1, "mass", 0);
+
+        mw_printf("BEGIN POSX\n");
+        printBuffer(ci, nbb->pos[0], nNode + 1, "posX", 0);
+        mw_printf("BEGIN POSY\n");
+        printBuffer(ci, nbb->pos[1], nNode + 1, "posY", 0);
+        mw_printf("BEGIN POSY\n");
+        printBuffer(ci, nbb->pos[2], nNode + 1, "posZ", 0);
+
+        mw_printf("BEGIN VELX\n");
+        printBuffer(ci, nbb->vel[0], st->effNBody, "velX", 0);
+        mw_printf("BEGIN VELY\n");
+        printBuffer(ci, nbb->vel[1], st->effNBody, "velY", 0);
+        mw_printf("BEGIN VELY\n");
+        printBuffer(ci, nbb->vel[2], st->effNBody, "velZ", 0);
+
+        mw_printf("BEGIN ACCX\n");
+        printBuffer(ci, nbb->acc[0], st->effNBody, "accX", 0);
+        mw_printf("BEGIN ACCY\n");
+        printBuffer(ci, nbb->acc[1], st->effNBody, "accY", 0);
+        mw_printf("BEGIN ACCY\n");
+        printBuffer(ci, nbb->acc[2], st->effNBody, "accZ", 0);
     }
+
+    if (quads)
+    {
+        mw_printf("BEGIN QUAD.XX\n");
+        printBuffer(ci, nbb->quad.xx, nNode + 1, "quad.xx", 0);
+        mw_printf("BEGIN QUAD.XY\n");
+        printBuffer(ci, nbb->quad.xy, nNode + 1, "quad.xy", 0);
+        mw_printf("BEGIN QUAD.XZ\n");
+        printBuffer(ci, nbb->quad.xz, nNode + 1, "quad.xz", 0);
+
+        mw_printf("BEGIN QUAD.YY\n");
+        printBuffer(ci, nbb->quad.yy, nNode + 1, "quad.yy", 0);
+        mw_printf("BEGIN QUAD.YZ\n");
+        printBuffer(ci, nbb->quad.yz, nNode + 1, "quad.yz", 0);
+
+        mw_printf("BEGIN QUAD.ZZ\n");
+        printBuffer(ci, nbb->quad.zz, nNode + 1, "quad.zz", 0);
+    }
+
 
     if (tree)
     {
@@ -830,7 +869,7 @@ static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
         if (ts.errorCode == NBODY_KERNEL_TREE_INCEST)
         {
             nbReportTreeIncest(ctx, st);
-            return ctx->allowIncest ? NBODY_TREE_INCEST_NONFATAL: NBODY_TREE_INCEST_FATAL;
+            return ctx->allowIncest ? NBODY_TREE_INCEST_NONFATAL : NBODY_TREE_INCEST_FATAL;
         }
         else
         {
@@ -919,7 +958,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) effNBody, ws->global[1]);
+    nChunk     = st->ignoreResponsive ?        1 : mwDivRoundup((size_t) effNBody, ws->global[1]);
     upperBound = st->ignoreResponsive ? effNBody : (cl_int) ws->global[1];
     for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += ws->global[1])
     {
@@ -1160,11 +1199,15 @@ static cl_int clReleaseMemObject_quiet(cl_mem mem)
     return mem ? clReleaseMemObject(mem) : CL_SUCCESS;
 }
 
-cl_int nbReleaseBuffers(NBodyState* st)
+static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
-    NBodyBuffers* nbb = st->nbb;
+
+    if (!nbb)
+    {
+        return CL_SUCCESS;
+    }
 
     for (i = 0; i < 3; ++i)
     {
@@ -1200,6 +1243,10 @@ cl_int nbReleaseBuffers(NBodyState* st)
     return err;
 }
 
+cl_int nbReleaseBuffers(NBodyState* st)
+{
+    return _nbReleaseBuffers(st->nbb);
+}
 
 cl_int nbSetInitialTreeStatus(NBodyState* st)
 {
@@ -1482,41 +1529,41 @@ void nbPrintKernelTimings(const NBodyState* st)
 
 void nbPrintKernelLimits(NBodyState* st)
 {
-   WGInfo wgi;
-   CLInfo* ci = st->ci;
-   NBodyKernels* kernels = st->kernels;
+    WGInfo wgi;
+    CLInfo* ci = st->ci;
+    NBodyKernels* kernels = st->kernels;
 
-   mw_printf("Bounding box:\n");
-   mwGetWorkGroupInfo(kernels->boundingBox, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Bounding box:\n");
+    mwGetWorkGroupInfo(kernels->boundingBox, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Tree Build:\n");
-   mwGetWorkGroupInfo(kernels->buildTree, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Tree Build:\n");
+    mwGetWorkGroupInfo(kernels->buildTree, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Summarization:\n");
-   mwGetWorkGroupInfo(kernels->summarization, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Summarization:\n");
+    mwGetWorkGroupInfo(kernels->summarization, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Sort:\n");
-   mwGetWorkGroupInfo(kernels->sort, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Sort:\n");
+    mwGetWorkGroupInfo(kernels->sort, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Quad moments:\n");
-   mwGetWorkGroupInfo(kernels->quadMoments, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Quad moments:\n");
+    mwGetWorkGroupInfo(kernels->quadMoments, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Force calculation:\n");
-   mwGetWorkGroupInfo(kernels->forceCalculation, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Force calculation:\n");
+    mwGetWorkGroupInfo(kernels->forceCalculation, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Integration:\n");
-   mwGetWorkGroupInfo(kernels->integration, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Integration:\n");
+    mwGetWorkGroupInfo(kernels->integration, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 
-   mw_printf("Force calculation (Exact):\n");
-   mwGetWorkGroupInfo(kernels->forceCalculation_Exact, ci, &wgi);
-   mwPrintWorkGroupInfo(&wgi);
+    mw_printf("Force calculation (Exact):\n");
+    mwGetWorkGroupInfo(kernels->forceCalculation_Exact, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
 }
 
 

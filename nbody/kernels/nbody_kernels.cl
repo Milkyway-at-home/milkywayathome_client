@@ -76,17 +76,34 @@ typedef enum
 } NBodyKernelError;
 
 #if DEBUG
-#define cl_assert(treeStatus, x)                     \
+/* Want first failed assertion to be where it is marked */
+#define cl_assert(treeStatus, x)                        \
+    do                                                  \
+    {                                                   \
+        if (!(x))                                       \
+      {                                                 \
+          if ((treeStatus)->assertionLine < 0)          \
+          {                                             \
+              (treeStatus)->assertionLine = __LINE__;   \
+          }                                             \
+      }                                                 \
+    }                                                   \
+    while (0)
+
+#define cl_assert_rtn(treeStatus, x)                 \
     do                                               \
     {                                                \
       if (!(x))                                      \
       {                                              \
           (treeStatus)->assertionLine = __LINE__;    \
+          return;                                    \
       }                                              \
     }                                                \
     while (0)
+
 #else
 #define cl_assert(treeStatus, x)
+#define cl_assert_rtn(treeStatus, x)
 #endif /* DEBUG */
 
 
@@ -1140,8 +1157,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile int pos[MAXDEPTH * THREADS6 / WARPSIZE], node[MAXDEPTH * THREADS6 / WARPSIZE];
     __local volatile real dq[MAXDEPTH * THREADS6 / WARPSIZE];
 
-
   #if USE_QUAD
+    __local real rootQXX, rootQXY, rootQXZ;
+    __local real rootQYY, rootQYZ;
+    __local real rootQZZ;
+
     __local volatile real quadXX[MAXDEPTH * THREADS6 / WARPSIZE];
     __local volatile real quadXY[MAXDEPTH * THREADS6 / WARPSIZE];
     __local volatile real quadXZ[MAXDEPTH * THREADS6 / WARPSIZE];
@@ -1164,10 +1184,20 @@ __kernel void NBODY_KERNEL(forceCalculation)
      */
     allBlock[get_local_id(0)] = 1;
 
+
     if (get_local_id(0) == 0)
     {
         maxDepth = _treeStatus->maxDepth;
         real rootSize = _treeStatus->radius;
+
+      #if USE_QUAD
+        rootQXX = _quadXX[NNODE];
+        rootQXY = _quadXY[NNODE];
+        rootQXZ = _quadXZ[NNODE];
+        rootQYY = _quadYY[NNODE];
+        rootQYZ = _quadYZ[NNODE];
+        rootQZZ = _quadZZ[NNODE];
+      #endif
 
         if (SW93 || NEWCRITERION)
         {
@@ -1244,6 +1274,17 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 {
                     dq[j] = rootCritRadius;
                 }
+
+                #if USE_QUAD
+                {
+                    quadXX[j] = rootQXX;
+                    quadXY[j] = rootQXY;
+                    quadXZ[j] = rootQXZ;
+                    quadYY[j] = rootQYY;
+                    quadYZ[j] = rootQYZ;
+                    quadZZ[j] = rootQZZ;
+                }
+                #endif
             }
             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
@@ -1357,6 +1398,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                 }
                                 #endif /* USE_QUAD */
                             }
+                            /* Full barrier not necessary since items only synced on wavefront level */
                             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
                         }
                     }
