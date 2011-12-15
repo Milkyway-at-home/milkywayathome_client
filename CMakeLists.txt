@@ -107,7 +107,7 @@ option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
 
 option(BOINC_RELEASE
-       "Build with all options for making an actual release" ON)
+       "Build with all options for making an actual release" OFF)
 
 cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
   "BOINC_APPLICATION" OFF)
