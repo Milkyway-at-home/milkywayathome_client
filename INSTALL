@@ -149,6 +149,7 @@ Building:
 
 --------------------------------------------------------------------------------
 
+
 For building Linux binaries with against an old glibc for
 compatability, install an old system in a chroot, but it's easier to
 build using new tools (gcc, cmake etc.) outside of the chroot.
@@ -158,19 +159,17 @@ https://help.ubuntu.com/community/DebootstrapChroot for Hardy
 
 To go even older, something is broken with debootstrap but you can get
 cdebootstrap to work. You will need to edit
-/usr/share/cdebootstrap/suites and copy one of the ubuntu lines and
+/usr/share/cdebootstrap/suites and copy one of the Ubuntu lines and
 add the name of the old one you are trying to.
 I had issues getting one installe older than breezy.
 
 For building with very old glibcs, add -fgnu89-inline to CMAKE_C_FLAGS
-to avoid multiple definitions
+to avoid multiple definitions (this is necessary with breezy)
 
 # cdebootstrap --flavour=build --arch=i386 breezy /srv/chroot/breezy_i386 http://old-releases.ubuntu.com/ubuntu/
 
 Make sure that gcc-multilib and g++-multilib are installed on the host
 system. Inside the chroot install libssl-dev and freeglut3-dev, then do
-
-for 32 bit (the -DBUILD_32=ON only adds -m32 to CMAKE_C_FLAGS and CMAKE_CXX_FLAGS on Linux)
 
   $ mkdir build_i386; cd build_i386
   $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386 \

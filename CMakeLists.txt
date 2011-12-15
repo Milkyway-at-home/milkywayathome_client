@@ -24,6 +24,7 @@ enable_testing()
 
 if(NOT MSVC)
   # Use the separate generator for MSVC
+  # FIXME: This doesn't really work. The tests that cmake runs before anything else will detect 64bitness
   option(BUILD_32 "32 bit build" OFF)
 endif()
 
@@ -106,7 +107,7 @@ option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
 
 option(BOINC_RELEASE
-       "Build with all options for making an actual release" OFF)
+       "Build with all options for making an actual release" ON)
 
 cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
   "BOINC_APPLICATION" OFF)
