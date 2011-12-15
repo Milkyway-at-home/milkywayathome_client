@@ -100,21 +100,12 @@
   #define _GNU_SOURCE 1
 #endif
 
-/* Apple's GCC 4.2 has many features backported, so it counts as a newer GCC even though it isn't.
-   Apple GCC 4.0 on x86 seems to do this, but not the one one PPC
- */
-#if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 0)
-  #define _MW_NEW_APPLE_GCC
-#endif
-
-/* GCC 4.3 switched to C99 compliant inlining with -std=c99/gnu99 */
-/* clang also reports itself as compatibile with GCC 4.2.1, and
- * llvm-gcc 4.2.1 also works. */
-#if (__GNUC__ <= 4 && __GNUC_MINOR__ < 3) && !defined(_MW_NEW_APPLE_GCC) && !defined(__clang__) && !defined(__llvm__)
+#ifdef __GNUC_GNU_INLINE__
   #define OLD_GCC_EXTERNINLINE extern
 #else
+  /* Assume C99 inline semantics */
   #define OLD_GCC_EXTERNINLINE
-#endif
+#endif /* __GNUC_GNU_INLINE__ */
 
 
 #if DOUBLEPREC
