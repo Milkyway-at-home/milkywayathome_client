@@ -83,17 +83,21 @@ static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool
 static cl_double estimateWUGFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
 {
     cl_ulong perItem, perIter;
-    cl_ulong tmp = 32 + ap->number_streams * 68;
-    if (ap->aux_bg_profile)
-        tmp += 8;
+    cl_ulong loop;
 
-    perItem = tmp * ap->convolve + 1 + (ap->number_streams * 2);
+    loop = 58 * ap->number_streams + 56;
+    if (ap->aux_bg_profile)
+        loop += 8;
+
+    perItem = ap->convolve * loop + (2 * ap->number_streams) + 4;
     perIter = perItem * ia->mu_steps * ia->r_steps;
 
     return 1.0e-9 * (cl_double) perIter;
 }
 
-#define GPU_EFFICIENCY_ESTIMATE (0.95)
+/* Somewhat bullshit factor because of instructions not related to
+ * actual work + other possible inefficiencies */
+#define GPU_EFFICIENCY_ESTIMATE (0.80)
 
 /* Based on the flops of the device and workunit, pick a target number of chunks */
 static cl_uint findNChunk(const AstronomyParameters* ap,
@@ -203,7 +207,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 
         if (clr->magicFactor <= 0) /* Use default calculation */
         {
-            /*   m * b ~= area / n   */
+            /* m * b ~= area / n   */
             magic = sizes->area / (sizes->nChunkEstimate * blockSize);
             if (magic == 0)
                 magic = 1;
