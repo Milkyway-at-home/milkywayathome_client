@@ -195,18 +195,18 @@ if(SYSTEM_IS_X86)
 endif()
 
 
-set(CMAKE_REQUIRED_FLAGS "${AVX_FLAGS}")
-
 # On OS X 10.6 the macports GCC can support AVX, but you must use the
 # system assembler which doesn't and fails
-try_compile(AVX_CHECK ${CMAKE_BINARY_DIR} ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES}/test_avx.c
-                CMAKE_FLAGS "-DCMAKE_C_FLAGS:STRING=${AVX_FLAGS}")
+set(_CMAKE_C_FLAGS "${CMAKE_C_FLAGS}") # Other methods of passing cflags to try_compile don't seem to work
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX_FLAGS}")
+try_compile(AVX_CHECK ${CMAKE_BINARY_DIR} ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES}/test_avx.c)
+set(CMAKE_C_FLAGS ${_CMAKE_C_FLAGS})
 if(AVX_CHECK)
   message(STATUS "AVX compiler flags - '${AVX_FLAGS}'")
   set(HAVE_AVX TRUE CACHE INTERNAL "Compiler has AVX support")
 endif()
-
 mark_as_advanced(HAVE_AVX)
+
 
 set(CMAKE_REQUIRED_FLAGS "${SSE41_FLAGS}")
 check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
