@@ -70,7 +70,6 @@ typedef struct
     unsigned int platform;
     unsigned int devNum;
 
-    int magicFactor;      /* Factor for number of blocks for GPU */
     int nonResponsive;    /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     double targetFrequency;
     int pollingMode;

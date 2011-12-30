@@ -194,45 +194,33 @@ cl_bool findRunSizes(RunSizes* sizes,
      */
     blockSize = nWavefrontPerCU * di->warpSize * di->maxCompUnits;
     {
-        cl_uint magic = 1;
+        cl_uint nBlockPerChunk = 1;
         sizes->nChunkEstimate = findNChunk(ap, ia, di, clr);
 
         /* If specified and acceptable, use a user specified factor for the
          * number of blocks to use. Otherwise, make a guess appropriate for the hardware. */
 
-        if (clr->magicFactor < 0)
-        {
-            mw_printf("Invalid magic factor %d. Magic factor must be >= 0\n", clr->magicFactor);
-        }
+        /* m * b ~= area / n   */
+        nBlockPerChunk = sizes->area / (sizes->nChunkEstimate * blockSize);
+        if (nBlockPerChunk == 0)
+            nBlockPerChunk = 1;
 
-        if (clr->magicFactor <= 0) /* Use default calculation */
-        {
-            /* m * b ~= area / n   */
-            magic = sizes->area / (sizes->nChunkEstimate * blockSize);
-            if (magic == 0)
-                magic = 1;
-        }
-        else   /* Use user setting */
-        {
-            magic = (cl_uint) clr->magicFactor;
-        }
-
-        sizes->chunkSize = magic * blockSize;
+        sizes->chunkSize = nBlockPerChunk * blockSize;
     }
 
     sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
     sizes->nChunk = forceOneChunk ? 1 : mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
     sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
 
-    if (sizes->nChunk == 1) /* Magic factor probably too high or very small workunit, or nonresponsive */
+    if (sizes->nChunk == 1) /* BlockPerChunk factor probably too high or very small workunit, or nonresponsive */
     {
-        /* Like using magic == 1 */
+        /* Like using nBlockPerChunk == 1 */
         sizes->effectiveArea = blockSize * mwDivRoundup(sizes->area, blockSize);
         sizes->chunkSize = sizes->effectiveArea;
         sizes->extra = sizes->effectiveArea - sizes->area;
     }
 
-    mw_printf("Using a block size of "ZU" with a magic factor of "ZU"\n",
+    mw_printf("Using a block size of "ZU" with a n-block/chunk factor of "ZU"\n",
               blockSize,
               sizes->chunkSize / blockSize);
 

@@ -24,6 +24,7 @@
   #include <graphics2.h>
   #include <util.h>
   #include <diagnostics.h>
+  #include <parse.h>
 #endif
 
 #ifndef _WIN32
@@ -172,6 +173,95 @@ void* mw_graphics_get_shmem(const char* x)
     return boinc_graphics_get_shmem(x);
 }
 
+int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
+{
+    MIOFILE xmlPrefsFile;
+    XML_PARSER parser(&xmlPrefsFile);
+
+
+    if (!prefs || !prefConfig)
+        return 1;
+
+    xmlPrefsFile.init_buf_read(prefConfig);
+
+    if (!parser.parse_start("project_preferences"))
+    {
+        mw_printf("Missing project_preferences start tag\n");
+        return 1;
+    }
+
+    /* Skip ahead to the project specific preferences */
+    while (!parser.get_tag() && !parser.match_tag("project_specific"));
+
+
+    while (!parser.get_tag())
+    {
+        bool parseSuccess = false;
+        MWProjectPrefs* p = prefs;
+
+        if (!parser.is_tag)
+        {
+            mw_printf("Non-tag found in preferences: '%s'\n", parser.parsed_tag);
+            continue;
+        }
+
+        if (parser.match_tag("/project_specific"))
+        {
+            return 0;
+        }
+
+        while (p->name)
+        {
+            if (parser.match_tag(p->name))
+            {
+                bool tmp;
+
+                switch (p->type)
+                {
+                    case MW_PREF_DOUBLE:
+                        parseSuccess = parser.parse_double(p->name, *(double*) p->value);
+                        break;
+
+                    case MW_PREF_BOOL:
+                        parseSuccess = parser.parse_bool(p->name, tmp);
+                        *(int*) p->value = (int) tmp;
+                        break;
+
+                    case MW_PREF_INT:
+                        parseSuccess = parser.parse_int(p->name, *(int*) p->value);
+                        break;
+
+                    case MW_PREF_STRING:
+                    case MW_PREF_NONE:
+                    default:
+                        mw_panic("Unhandled preference type %d\n", p->type);
+                }
+
+                if (!parseSuccess)
+                {
+                    mw_printf("Error reading preference '%s'\n", p->name);
+                }
+                else
+                {
+                    p->found = TRUE;
+                }
+
+                break;
+            }
+
+            ++p;
+        }
+
+        if (!parseSuccess)
+        {
+            parser.skip_unexpected(true, "project preferences");
+        }
+    }
+
+    mw_printf("Reading preferences ended prematurely\n");
+    return 1;
+}
+
 #else /* !BOINC_APPLICATION */
 
 int mwGetAppInitData(void)
@@ -220,129 +310,12 @@ int mw_file_exists(const char* file)
     return !stat(file, &statBuf);
 }
 
+int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
+{
+    return 0;
+}
+
 #endif /* BOINC_APPLICATION */
 
 
-
-#define MAX_TAG_NAME_LENGTH 256
-
-static char* matchTagName(const char* prefs, const char* name)
-{
-    int rcOpen, rcClose;
-    char openTag[MAX_TAG_NAME_LENGTH];
-    char closeTag[MAX_TAG_NAME_LENGTH];
-
-    const char* openPos = NULL;
-    const char* closePos = NULL;
-    const char* beginItem = NULL;
-    size_t itemSize = 0;
-    char* item = NULL;
-
-    if (!prefs || !name)
-        return NULL;
-
-    rcOpen = snprintf(openTag, sizeof(openTag), "<%s>", name);
-    rcClose = snprintf(closeTag, sizeof(closeTag), "</%s>", name);
-    if ((size_t) rcOpen == sizeof(openTag) || (size_t) rcClose == sizeof(closeTag))
-    {
-        mw_panic("Tag buffers too small\n");
-    }
-
-    openPos = strstr(prefs, openTag);
-    if (!openPos)
-    {
-        mw_printf("Didn't find opening tag for preference '%s'\n", name);
-        return NULL;
-    }
-
-    beginItem = openPos + rcOpen;
-    closePos = strstr(beginItem, closeTag);
-    if (!closePos)
-    {
-        mw_printf("Didn't find close tag for preference '%s'\n", name);
-        return NULL;
-    }
-
-    itemSize = closePos - beginItem;
-    item = (char*) mwMalloc(itemSize + 1);
-    item[itemSize] = '\0';
-
-    /* no strndup() on windows */
-    strncpy(item, beginItem, itemSize);
-    return item;
-}
-
-static int mwReadPref(MWProjectPrefs* pref, const char* prefConfig)
-{
-    char* item = NULL;
-    char* endP = NULL;
-    double d = 0.0;
-    int i = 0;
-    int rc = 0;
-
-    item = matchTagName(prefConfig, pref->name);
-    if (!item)
-    {
-        return 1;
-    }
-
-    errno = 0;
-    switch (pref->type)
-    {
-        case MW_PREF_DOUBLE:
-            d = strtod(item, &endP);
-            if (item == endP || errno != 0)
-            {
-                rc = 1;
-                mwPerror("Error parsing preference double from item '%s'", item);
-            }
-            else
-            {
-                pref->found = TRUE;
-                *(double*) pref->value = d;
-            }
-            break;
-
-        case MW_PREF_BOOL:
-        case MW_PREF_INT:
-            i = (int) strtol(item, &endP, 10);
-            if (item == endP || errno != 0)
-            {
-                rc = 1;
-                mwPerror("Error parsing preference int or bool from item '%s'", item);
-            }
-            else
-            {
-                pref->found = TRUE;
-                *(int*) pref->value = i;
-            }
-            break;
-
-        case MW_PREF_STRING:
-        case MW_PREF_NONE:
-        default:
-            mw_panic("Implement me\n");
-    }
-
-    free(item);
-
-    return rc;
-}
-
-int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
-{
-    int rc = 0;
-    MWProjectPrefs* p = prefs;
-
-    if (!p || !prefConfig)
-        return 1;
-
-    while (p->name)
-    {
-        rc |= mwReadPref(p, prefConfig);
-        ++p;
-    }
-
-    return rc;
-}
 
