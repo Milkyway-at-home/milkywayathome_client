@@ -64,6 +64,8 @@
   #error SSE2 not defined
 #endif
 
+#define Vneg(x) _mm_sub_pd(_mm_setzero_pd(), (x))
+
 
 static inline __m128d _mm_rcp_pd(__m128d x)
 {

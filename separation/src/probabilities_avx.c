@@ -63,22 +63,7 @@
 #include "probabilities.h"
 #include "probabilities_intrin.h"
 
-
-static inline __m256d _mm256_fsqrt_pd(__m256d y)  // accurate to 1 ulp, i.e the last bit of the double precision number
-{
-    // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
-    __m256d x, res;
-    ssp_m256 tmp;
-    const __m256d C0  = _mm256_set1_pd(0.75);
-    const __m256d C1  = _mm256_set1_pd(0.0625);
-
-    tmp.m128[0] = _mm256_cvtpd_ps(y);
-    tmp.f = _mm256_rsqrt_ps(tmp.f);
-    x = _mm256_cvtps_pd(tmp.m128[0]); // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
-    x = _mm256_mul_pd(x, _mm256_sub_pd(DTHREE256, _mm256_mul_pd(y, _mm256_mul_pd(x,x)))); // first Newton iteration (44bit accurate)
-    res = _mm256_mul_pd(x, y);  // do final iteration directly on sqrt(y) and not on the inverse
-    return (_mm256_mul_pd(res,_mm256_sub_pd(C0, _mm256_mul_pd(C1, _mm256_mul_pd(res , x)))));
-}
+#define Vneg(x) _mm256_sub_pd(_mm256_setzero_pd(), (x))
 
 #if 0
 static inline __m256d gmx_mm256_exp_pd(__m256d x)
@@ -101,39 +86,47 @@ static inline __m256d gmx_mm256_exp_pd(__m256d x)
     const __m256d CF1       = _mm256_set1_pd(10.284755658866532);
 
     __m256d valuemask;
-    __m128i iexppart;
     __m256d fexppart;
     __m256d intpart;
     __m256d z, z2;
     __m256d factB, factC, factD, factE, factF;
 
+    //__m128i iexppart;
     union
     {
-        __m256d d;
         __m128i i128[2];
+        __m128d d128[2];
+        __m256d d;
+        __m256 m;
+        __m256i i;
     } iexppart;
 
     z          = _mm256_mul_pd(x, argscale);
-    iexppart.d = _mm256_cvtpd_epi32(z);
+    iexppart.i128[0] = _mm256_cvtpd_epi32(z);
 
-    /* This reduces latency and speeds up the code by roughly 5% when supported */
-    intpart   = _mm256_round_pd(z, 0);
+    intpart = _mm256_round_pd(z, 0);
 
-    /* The two lowest elements of iexppart now contains 32-bit numbers with a correctly biased exponent.
+
+    /* The four lowest elements of iexppart now contains 32-bit numbers with a correctly biased exponent.
      * To be able to shift it into the exponent for a double precision number we first need to
      * shuffle so that the lower half contains the first element, and the upper half the second.
      * This should really be done as a zero-extension, but since the next instructions will shift
      * the registers left by 52 bits it doesn't matter what we put there - it will be shifted out.
      * (thus we just use element 2 from iexppart).
      */
-    //iexppart  = _mm256_shuffle_epi32(iexppart, _MM_SHUFFLE(2, 1, 2, 0));
-    // FIXME: AVX shuffle?
-    iexppart.i128[0]  = _mm_shuffle_epi32(iexppart.i[0], _MM_SHUFFLE(2, 1, 2, 0));
-    iexppart.i128[1]  = _mm_shuffle_epi32(iexppart.i[1], _MM_SHUFFLE(2, 1, 2, 0));
+
+  #ifdef __AVX2__
+    // untested since I don't think anything exists with this yet
+    iexppart.m = _mm256_shuffle_epi32(iexppart.m, _MM_SHUFFLE(2, 1, 2, 0));
+  #else
+    iexppart.m = _mm256_shuffle_ps(iexppart.m, iexppart.m, _MM_SHUFFLE(2, 1, 2, 0));
+  #endif
+
 
     /* Do the shift operation on the 64-bit registers */
     iexppart.i128[0]  = _mm_add_epi32(iexppart.i128[0], expbase);
     iexppart.i128[1]  = _mm_slli_epi64(iexppart.i128[1], 52);
+
 
     valuemask = _mm256_cmpgt_pd(x, arglimit);
 
@@ -167,6 +160,22 @@ static inline __m256d gmx_mm256_exp_pd(__m256d x)
 
     return  z;
 }
+#else
+
+static inline __m256d gmx_mm256_exp_pd(__m256d x)
+{
+    union
+    {
+        __m256d d;
+        __m128d d128[2];
+    } tmp;
+
+    tmp.d = x;
+    tmp.d128[0] = gmx_mm_exp_pd(tmp.d128[0]);
+    tmp.d128[1] = gmx_mm_exp_pd(tmp.d128[1]);
+    return tmp.d;
+}
+
 #endif
 
 static real probabilities_avx(const AstronomyParameters* ap,
@@ -206,6 +215,8 @@ static real probabilities_avx(const AstronomyParameters* ap,
         QI = _mm256_load_pd(&qw_r3_N[i]);
 
         xyz0.d = _mm256_sub_pd(_mm256_mul_pd(RI, COSBL), SUNR0);
+        //xyz0.d = _mm256_fmadd_pd(RI, COSBL, NSUNR0);
+
         _mm256_store_pd(&xs[i], xyz0.d);
 
         xyz1.d = _mm256_mul_pd(RI, SINCOSBL);
@@ -216,16 +227,12 @@ static real probabilities_avx(const AstronomyParameters* ap,
 
         _mm256_store_pd(&zs[i], xyz2.d);
 
-
         xyz0.d = _mm256_mul_pd(xyz0.d, xyz0.d);
         xyz1.d = _mm256_mul_pd(xyz1.d, xyz1.d);
         tmp0.d = _mm256_mul_pd(tmp0.d, tmp0.d);
 
         tmp1.d = _mm256_add_pd(xyz0.d, _mm256_add_pd(xyz1.d, tmp0.d));
 
-        // I don't see any noticeable difference in speed using
-        // _mm256_fsqrt_pd() vs. _mm256_sqrt_pd()
-        //PROD.d = _mm256_fsqrt_pd(tmp1.d);
         PROD.d = _mm256_sqrt_pd(tmp1.d);
         tmp2.d = _mm256_add_pd(PROD.d, R0);
 
@@ -256,11 +263,11 @@ static real probabilities_avx(const AstronomyParameters* ap,
             psgt[j] = xyz_norm * sc[i].sigma_sq2_inv;
         }
 
-        for (k = 0; k < convolve; k += 2)
+        for (k = 0; k < convolve; k += 4)
         {
             /* Other maths from SSE2 one when those are figured out */
             #pragma message("Using GMX Polynomal EXP")
-            _mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), gmx_mm_exp_pd(Vneg(_mm_load_pd(&psgt[k])))));
+            _mm256_store_pd(&psgf[k], _mm256_mul_pd(_mm256_load_pd(&qw_r3_N[k]), gmx_mm256_exp_pd(Vneg(_mm256_load_pd(&psgt[k])))));
 		}
 
         streamTmps[i] = 0.0;

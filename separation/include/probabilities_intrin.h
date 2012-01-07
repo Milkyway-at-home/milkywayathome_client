@@ -187,9 +187,6 @@ static inline void initExpTable(void)
 //#define LOG2ME      (_mm_set_pd(1.44269504089, 1.44269504089))
 
 
-#define Vneg(x) _mm_sub_pd(_mm_setzero_pd(), (x))
-
-
 static inline __m128d gmx_mm_exp_pd(__m128d x)
 {
     const __m128d argscale = _mm_set1_pd(1.442695040888963387);
