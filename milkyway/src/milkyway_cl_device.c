@@ -633,37 +633,42 @@ void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
     }
 }
 
-cl_platform_id* mwGetAllPlatformIDs(cl_uint* n_platforms_out)
+cl_platform_id* mwGetAllPlatformIDs(cl_uint* nPlatformsOut)
 {
-    cl_uint n_platform = 0;
-    cl_platform_id* ids;
+    cl_uint nPlatform = 0;
+    cl_uint nPlatformActual = 0;
+    cl_platform_id* ids = NULL;
     cl_int err;
 
-    err = clGetPlatformIDs(0, NULL, &n_platform);
+    err = clGetPlatformIDs(0, NULL, &nPlatform);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error getting number of platform");
         return NULL;
     }
 
-    if (n_platform == 0)
+    if (nPlatform == 0)
     {
         mw_printf("No CL platforms found\n");
         return NULL;
     }
 
-    ids = mwMalloc(sizeof(cl_platform_id) * n_platform);
-    err = clGetPlatformIDs(n_platform, ids, NULL);
-    if (err != CL_SUCCESS)
+    ids = mwMalloc(nPlatform * sizeof(cl_platform_id));
+    err = clGetPlatformIDs(nPlatform, ids, &nPlatformActual);
+    if ((err != CL_SUCCESS) || (nPlatformActual != nPlatform))
     {
-        mwPerrorCL(err, "Error getting platform IDs");
+        mwPerrorCL(err,
+                   "Error getting platform IDs or inconsistent platform count (expected %u, actual %u)\n",
+                   nPlatform,
+                   nPlatformActual
+            );
         free(ids);
         return NULL;
     }
 
-    mw_printf("Found %u platform%s\n", n_platform, n_platform > 1 ? "s" : "");
+    mw_printf("Found %u platform%s\n", nPlatform, nPlatform > 1 ? "s" : "");
 
-    *n_platforms_out = n_platform;
+    *nPlatformsOut = nPlatform;
     return ids;
 }
 
