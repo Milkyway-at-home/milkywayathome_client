@@ -1,22 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * Copyright (c) 2011 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lualib.h>
@@ -29,6 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
+#include "nbody_lua_misc.h"
+
 
 
 static const MWEnumAssociation criterionOptions[] =
@@ -79,15 +80,14 @@ criterion_t readCriterion(lua_State* luaSt, const char* name)
 static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
-    static real freqOutf = 0.0;
     static const char* criterionName = NULL;
+    double nStepf = 0.0;
 
     static const MWNamedArg argTable[] =
         {
             { "timestep",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep    },
             { "timeEvolve",  LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve  },
-            { "freqOut",     LUA_TNUMBER,  NULL, FALSE, &freqOutf        },
-            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &ctx.theta       },
+            { "theta",       LUA_TNUMBER,  NULL, FALSE, &ctx.theta       },
             { "eps2",        LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2        },
             { "treeRSize",   LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize   },
             { "sunGCDist",   LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist   },
@@ -99,7 +99,6 @@ static int createNBodyCtx(lua_State* luaSt)
         };
 
     criterionName = NULL;
-    freqOutf = 0.0;
     ctx = defaultNBodyCtx;
 
     if (lua_gettop(luaSt) != 1)
@@ -107,12 +106,34 @@ static int createNBodyCtx(lua_State* luaSt)
 
     handleNamedArgumentTable(luaSt, argTable, 1);
 
-    ctx.freqOut = (unsigned int) freqOutf;
-
     /* FIXME: Hacky handling of enum. Will result in not good error
      * messages as well as not fitting in. */
     if (criterionName) /* Not required */
+    {
         ctx.criterion = readCriterion(luaSt, criterionName);
+    }
+
+    if ((ctx.criterion != Exact) && (ctx.theta < 0.0))
+    {
+        return luaL_argerror(luaSt, 1, "Theta argument required for criterion != 'Exact'");
+    }
+    else if (ctx.criterion == Exact)
+    {
+        /* These don't mean anything here */
+        ctx.theta = 0.0;
+        ctx.useQuad = FALSE;
+    }
+
+    nStepf = mw_ceil(ctx.timeEvolve / ctx.timestep);
+    if (nStepf >= (double) UINT_MAX)
+    {
+        luaL_error(luaSt,
+                   "Number of timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
+                   nStepf,
+                   ctx.timeEvolve, ctx.timestep);
+    }
+
+    ctx.nStep = (unsigned int) nStepf;
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;
@@ -129,6 +150,19 @@ static int eqNBodyCtx(lua_State* luaSt)
     return 1;
 }
 
+static int addPotential(lua_State* luaSt)
+{
+    NBodyCtx* ctx;
+
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 1, "Expected named 2 arguments");
+
+    ctx = checkNBodyCtx(luaSt, 1);
+    ctx->pot = *checkPotential(luaSt, 2);
+
+    return 0;
+}
+
 static const luaL_reg metaMethodsNBodyCtx[] =
 {
     { "__tostring", toStringNBodyCtx },
@@ -139,6 +173,7 @@ static const luaL_reg metaMethodsNBodyCtx[] =
 static const luaL_reg methodsNBodyCtx[] =
 {
     { "create", createNBodyCtx },
+    { "addPotential", addPotential },
     { NULL, NULL }
 };
 
@@ -146,7 +181,6 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 {
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)  },
-    { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)     },
     { "theta",           getNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)   },
@@ -155,7 +189,6 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
-    { "potential",       getPotential,  offsetof(NBodyCtx, pot)         },
     { NULL, NULL, 0 }
 };
 
@@ -163,7 +196,6 @@ static const Xet_reg_pre settersNBodyCtx[] =
 {
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)  },
-    { "freqOut",         setNumber,     offsetof(NBodyCtx, freqOut)     },
     { "theta",           setNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)   },
@@ -172,7 +204,6 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
-    { "potential",       setPotential,  offsetof(NBodyCtx, pot)         },
     { NULL, NULL, 0 }
 };
 

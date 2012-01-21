@@ -1,24 +1,35 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
+ * Copyright (c) 2011 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-This file is part of Milkway@Home.
+#ifndef USE_SSL_TESTS
+  #define USE_SSL_TESTS 0
+  #warning USE_SSL_TESTS not defined
+#endif
 
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+#if USE_SSL_TESTS
+  #include <openssl/evp.h>
+  #include <openssl/sha.h>
+#endif
 
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <openssl/evp.h>
-#include <openssl/sha.h>
+#if !USE_SSL_TESTS
+#define SHA_DIGEST_LENGTH 20
+#endif
 
 #include "milkyway_util.h"
 #include "nbody_priv.h"
@@ -61,6 +72,7 @@ typedef union
     unsigned char md[SHA_DIGEST_LENGTH];
 } MWHash;
 
+
 #define EMPTY_BODY_HASH { .mdi = { 0x0, 0x0, 0x0, 0x0, 0x0 } }
 
 
@@ -69,6 +81,7 @@ static void showHash(char* buf, const MWHash* hash)
     sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
 }
 
+#if USE_SSL_TESTS
 static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
 {
     int rc = 1;
@@ -104,9 +117,73 @@ static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, in
     }
 
     if (rc == 0)
-        return warn1("Error updating hash of type\n");
+    {
+        mw_printf("Error updating hash of type\n");
+        return 1;
+    }
 
     return 0;
+}
+
+static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest* t)
+{
+    int rc = 0;
+
+    if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
+    {
+        mw_printf("Initializing hash digest failed\n");
+        return 1;
+    }
+
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.theta,       sizeof(t->ctx.theta));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.treeRSize,   sizeof(t->ctx.treeRSize));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.criterion,   sizeof(t->ctx.criterion));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.useQuad,     sizeof(t->ctx.useQuad));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.allowIncest, sizeof(t->ctx.allowIncest));
+
+    rc |= !EVP_DigestUpdate(hashCtx, &t->seed,            sizeof(t->seed));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->nSteps,          sizeof(t->nSteps));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->nbody,           sizeof(t->nbody));
+    rc |= !EVP_DigestUpdate(hashCtx, t->modelName,        strlen(t->modelName));
+    rc |= !EVP_DigestUpdate(hashCtx, t->potentialName,    strlen(t->potentialName));
+
+    rc |= !EVP_DigestUpdate(hashCtx, &t->doublePrec,      sizeof(t->doublePrec));
+
+    if (rc)
+    {
+        mw_printf("Error updating hashing for NBodyTest\n");
+        return 1;
+    }
+
+    if (!EVP_DigestFinal_ex(hashCtx, hash->md, NULL))
+    {
+        mw_printf("Error finalizing hash for NBodyTest\n");
+        return 1;
+    }
+
+    if (!EVP_MD_CTX_cleanup(hashCtx))
+    {
+        mw_printf("Error cleaning up hash context for NBodyCtxTest\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+int hashNBodyTest(MWHash* hash, NBodyTest* test)
+{
+    EVP_MD_CTX hashCtx;
+    int failed = 0;
+
+    EVP_MD_CTX_init(&hashCtx);
+    failed = hashNBodyTestCore(&hashCtx, hash, test);
+    if (!EVP_MD_CTX_cleanup(&hashCtx))
+    {
+        mw_printf("Error cleaning up hash context\n");
+        return 1;
+    }
+
+    return failed;
 }
 
 static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
@@ -158,52 +235,6 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
     return 1;
 }
 
-static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest* t)
-{
-    int rc = 0;
-
-    if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
-        return warn1("Initializing hash digest failed\n");
-
-    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.theta,       sizeof(t->ctx.theta));
-    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.treeRSize,   sizeof(t->ctx.treeRSize));
-    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.criterion,   sizeof(t->ctx.criterion));
-    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.useQuad,     sizeof(t->ctx.useQuad));
-    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.allowIncest, sizeof(t->ctx.allowIncest));
-
-    rc |= !EVP_DigestUpdate(hashCtx, &t->seed,            sizeof(t->seed));
-    rc |= !EVP_DigestUpdate(hashCtx, &t->nSteps,          sizeof(t->nSteps));
-    rc |= !EVP_DigestUpdate(hashCtx, &t->nbody,           sizeof(t->nbody));
-    rc |= !EVP_DigestUpdate(hashCtx, t->modelName,        strlen(t->modelName));
-    rc |= !EVP_DigestUpdate(hashCtx, t->potentialName,    strlen(t->potentialName));
-
-    rc |= !EVP_DigestUpdate(hashCtx, &t->doublePrec,      sizeof(t->doublePrec));
-
-    if (rc)
-        return warn1("Error updating hashing for NBodyTest\n");
-
-    if (!EVP_DigestFinal_ex(hashCtx, hash->md, NULL))
-        return warn1("Error finalizing hash for NBodyTest\n");
-
-    if (!EVP_MD_CTX_cleanup(hashCtx))
-        return warn1("Error cleaning up hash context for NBodyCtxTest\n");
-
-    return 0;
-}
-
-int hashNBodyTest(MWHash* hash, NBodyTest* test)
-{
-    EVP_MD_CTX hashCtx;
-    int failed = 0;
-
-    EVP_MD_CTX_init(&hashCtx);
-    failed = hashNBodyTestCore(&hashCtx, hash, test);
-    if (!EVP_MD_CTX_cleanup(&hashCtx))
-        return warn1("Error cleaning up hash context\n");
-
-    return failed;
-}
-
 /* Return the hash of NBodyCtxTest table to Lua */
 static int hashNBodyTestTable(lua_State* luaSt)
 {
@@ -220,23 +251,12 @@ static int hashNBodyTestTable(lua_State* luaSt)
     return 1;
 }
 
-static int statusIsFatal(lua_State* luaSt)
-{
-    NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
-    lua_pushboolean(luaSt, nbodyStatusIsFatal(rc));
-    return 1;
-}
-
-static void registerNBodyTestFunctions(lua_State* luaSt)
-{
-    lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
-    lua_register(luaSt, "statusIsFatal", statusIsFatal);
-}
 
 /* Hash of just the bodies masses, positions and velocities */
-static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies, unsigned int nbody)
+static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies, int nbody)
 {
-    unsigned int i, mdLen;
+    int i;
+    unsigned int mdLen;
     const Body* b;
     struct
     {
@@ -247,10 +267,16 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     } hashableBody;
 
     if (nbody == 0)
-        return warn1("Can't hash 0 bodies\n");
+    {
+        mw_printf("Can't hash 0 bodies\n");
+        return 1;
+    }
 
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
-        return warn1("Initializing hash digest failed\n");
+    {
+        mw_printf("Initializing hash digest failed\n");
+        return 1;
+    }
 
     /* Prevent random garbage from getting hashed. The struct will be
      * padded and won't be the same size as 2 * sizeof(mwvector) +
@@ -267,27 +293,56 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
         hashableBody.type = Type(b);
 
         if (!EVP_DigestUpdate(hashCtx, &hashableBody, sizeof(hashableBody)))
-            return warn1("Error updating hash for body %u\n", i);
+        {
+            mw_printf("Error updating hash for body %u\n", i);
+            return 1;
+        }
     }
 
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, &mdLen))
-        return warn1("Error finalizing hash\n");
+    {
+        mw_printf("Error finalizing hash\n");
+        return 1;
+    }
 
     assert(mdLen == SHA_DIGEST_LENGTH);
 
     return 0;
 }
 
-static void nbodyTestInit()
+#endif /* USE_SSL_TESTS */
+
+static int statusIsFatal(lua_State* luaSt)
 {
+    NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
+    lua_pushboolean(luaSt, nbStatusIsFatal(rc));
+    return 1;
+}
+
+static void registerNBodyTestFunctions(lua_State* luaSt)
+{
+  #if USE_SSL_TESTS
+    lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
+  #endif
+
+    lua_register(luaSt, "statusIsFatal", statusIsFatal);
+}
+
+static void nbodyTestInit(void)
+{
+  #if USE_SSL_TESTS
     OpenSSL_add_all_digests();
+  #endif
 }
 
-static void nbodyTestCleanup()
+static void nbodyTestCleanup(void)
 {
+  #if USE_SSL_TESTS
     EVP_cleanup();
+  #endif
 }
 
+#if USE_SSL_TESTS
 int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
 {
     EVP_MD_CTX hashCtx;
@@ -296,7 +351,10 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     EVP_MD_CTX_init(&hashCtx);
     failed = hashBodiesCore(&hashCtx, hash, bodies, nbody);
     if (!EVP_MD_CTX_cleanup(&hashCtx))
-        return warn1("Error cleaning up hash context\n");
+    {
+        mw_printf("Error cleaning up hash context\n");
+        return 1;
+    }
 
     return failed;
 }
@@ -373,7 +431,7 @@ static int installHashFunctions(lua_State* luaSt)
 
     return 0;
 }
-
+#endif
 
 /* Create a context with everything unset, useful for testing but
  * undesirable for actual work. */
@@ -398,7 +456,7 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     int rc;
     lua_State* luaSt;
 
-    luaSt = nbodyLuaOpen(TRUE);
+    luaSt = nbLuaOpen(TRUE);
     if (!luaSt)
         return 1;
 
@@ -407,14 +465,23 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
      * to not include useless / and or less safe versions of
      * functions. */
     registerNBodyState(luaSt);
+
+  #if USE_SSL_TESTS
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
     registerNBodyCtxTestMethods(luaSt);
+  #endif
+
     //registerFindRCrit(luaSt);
+
+    /* This way we can have different behaviour if using a script as a test */
+    lua_pushboolean(luaSt, TRUE);
+    lua_setglobal(luaSt, "NBODY_TESTING");
+
 
     rc = dofileWithArgs(luaSt, file, args, nArgs);
     if (rc)
-        mw_lua_pcall_warn(luaSt, "Error evaluating script '%s'\n", file);
+        mw_lua_perror(luaSt, "Error evaluating script '%s'\n", file);
 
     lua_close(luaSt);
 
@@ -427,6 +494,11 @@ int main(int argc, const char* argv[])
     const char* testScript;
 
     testScript = argc > 1 ? argv[1] : NULL;
+    if (!testScript)
+    {
+        mw_printf("No test script for test driver\n");
+        return 1;
+    }
 
     nbodyTestInit();
 

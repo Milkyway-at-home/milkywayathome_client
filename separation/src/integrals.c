@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Boleslaw
- * Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
- * Rensselaer Polytechnic Institute.
- * Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
  *
  *  This file is part of Milkway@Home.
  *
@@ -18,7 +19,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #include "evaluation_state.h"
@@ -28,6 +28,7 @@
 #include "milkyway_util.h"
 #include "calculated_constants.h"
 #include "evaluation.h"
+#include "probabilities_dispatch.h"
 
 #include <time.h>
 
@@ -38,7 +39,8 @@ static RConsts* initRPoints(const AstronomyParameters* ap,
                             real* RESTRICT rPoints,
                             real* RESTRICT qw_r3_N)
 {
-    unsigned int i, j, idx;
+    unsigned int i, idx;
+    int j;
     RPoints* rPts;
     RConsts* rc;
 
@@ -64,36 +66,18 @@ double _milkywaySeparationGlobalProgress = 0.0;
 #endif
 
 
-static inline real progress(const EvaluationState* es,
-                            const IntegralArea* ia,
-                            real total_calc_probs)
+static real progress(const EvaluationState* es, const IntegralArea* ia, real totalCalcProbs)
 {
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
-    unsigned int i_prog =  (es->nu_step * ia->mu_steps * ia->r_steps)
-                         + (es->mu_step * ia->r_steps); /* + es->r_step */
+    unsigned int i_prog =  ((uint64_t) es->nu_step * ia->mu_steps * ia->r_steps)
+                        + ((uint64_t) es->mu_step * ia->r_steps); /* + es->r_step */
 
-    return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
+    return (real)(i_prog + es->current_calc_probs) / totalCalcProbs;
 }
 
 
-#if BOINC_APPLICATION
-
-static inline void doBoincCheckpoint(const EvaluationState* es,
-                                     const IntegralArea* ia,
-                                     real total_calc_probs)
-{
-    if (boinc_time_to_checkpoint())
-    {
-        if (writeCheckpoint(es))
-            fail("Write checkpoint failed\n");
-        boinc_checkpoint_completed();
-    }
-
-    boinc_fraction_done(progress(es, ia, total_calc_probs));
-}
-
-#elif MILKYWAY_IPHONE_APP
+#if MILKYWAY_IPHONE_APP
 
 static inline void doBoincCheckpoint(const EvaluationState* es,
                                      const IntegralArea* ia,
@@ -107,7 +91,7 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
     {
         lastCheckpoint = now;
         if (writeCheckpoint(es))
-            fail("Write checkpoint failed\n");
+            mw_fail("Write checkpoint failed\n");
     }
 
     _milkywaySeparationGlobalProgress = progress(es, ia, total_calc_probs);
@@ -115,14 +99,29 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 
 #else /* Plain */
 
-#define doBoincCheckpoint(es, ia, total_calc_probs)
+static inline void doBoincCheckpoint(EvaluationState* es,
+                                     const IntegralArea* ia,
+                                     real total_calc_probs)
+{
+    if (mw_time_to_checkpoint())
+    {
+        if (writeCheckpoint(es))
+        {
+            mw_fail("Write checkpoint failed\n");
+        }
+
+        mw_checkpoint_completed();
+    }
+
+    mw_fraction_done(progress(es, ia, total_calc_probs));
+}
 
 #endif /* BOINC_APPLICATION */
 
 HOT
 static inline void sumProbs(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     KAHAN_ADD(es->bgSum, es->bgTmp);
     for (i = 0; i < es->numberStreams; ++i)
@@ -232,7 +231,7 @@ static void nuSum(const AstronomyParameters* ap,
 
 void separationIntegralApplyCorrection(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     es->cut->bgIntegral = es->bgSum.sum + es->bgSum.correction;
     for (i  = 0; i < es->numberStreams; ++i)
@@ -246,17 +245,20 @@ int integrate(const AstronomyParameters* ap,
               const StreamConstants* sc,
               const StreamGauss sg,
               EvaluationState* es,
-              const CLRequest* clr)
+              const CLRequest* clr,
+              const CLInfo* _ci)
 {
     RConsts* rc;
     real* RESTRICT rPoints;
     real* RESTRICT qw_r3_N;
 
+    (void) clr, (void) _ci;
+
     if (ap->q == 0.0)
     {
         /* if q is 0, there is no probability */
         /* Short circuit the entire integral rather than add up -1 many times. */
-        warn("q is 0.0\n");
+        mw_printf("q is 0.0\n");
         es->cut->bgIntegral = -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
         return 1;
     }

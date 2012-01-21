@@ -24,14 +24,28 @@ project(milkyway)
 include(SpecialLibs)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
-include(StaticBOINC)
+include(MWLink)
+include(CheckSSE2)
+include(GetGitRevisionDescription)
 
+get_git_head_revision(GIT_REFSPEC MILKYWAY_GIT_COMMIT_ID)
+git_describe(MILKYWAY_GIT_DESCRIBE)
+
+check_include_files(unistd.h HAVE_UNISTD_H)
+check_include_files(windows.h HAVE_WINDOWS_H)
+check_include_files(direct.h HAVE_DIRECT_H)
+check_include_files(fcntl.h HAVE_FCNTL_H)
+check_include_files(inttypes.h HAVE_INTTYPES_H)
+check_include_files(stdint.h HAVE_STDINT_H)
+check_include_files(malloc.h HAVE_MALLOC_H)
 check_function_exists(asprintf HAVE_ASPRINTF)
-check_include_files(tgmath.h HAVE_TGMATH_H)
-if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
-  message(FATAL_ERROR "Float requires tgmath.h")
-endif()
-
+check_include_files(float.h HAVE_FLOAT_H)
+check_include_files(fpu_control.h HAVE_FPU_CONTROL_H)
+check_include_files(sys/resource.h HAVE_SYS_RESOURCE_H)
+check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
+check_include_files(sys/types.h HAVE_SYS_TYPES_H)
+check_include_files(sys/stat.h HAVE_SYS_STAT_H)
+check_include_files(sys/time.h HAVE_SYS_TIME_H)
 
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "libmilkyway headers")
 include_directories(${MILKYWAY_INCLUDE_DIR})
@@ -43,13 +57,44 @@ if(${MILKYWAY_OPENCL} MATCHES "ON")
   include_directories(${OPENCL_INCLUDE_DIRS})
 endif()
 
+set(CMAKE_REQUIRED_LIBRARIES m)
 check_function_exists(exp10 HAVE_EXP10)
 check_function_exists(exp2 HAVE_EXP2)
 check_function_exists(sincos HAVE_SINCOS)
+check_function_exists(fmax HAVE_FMAX)
+check_function_exists(fmin HAVE_FMIN)
+set(CMAKE_REQUIRED_LIBRARIES )
 
-configure_file (
+
+set(CMAKE_REQUIRED_INCLUDES "malloc.h")
+check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
+check_function_exists(_aligned_malloc HAVE__ALIGNED_MALLOC)
+check_function_exists(__mingw_aligned_malloc HAVE___MINGW_ALIGNED_MALLOC)
+set(CMAKE_REQUIRED_INCLUDES )
+
+set(CMAKE_REQUIRED_LIBRARIES rt)
+check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+set(CMAKE_REQUIRED_LIBRARIES )
+
+set(CMAKE_REQUIRED_INCLUDES "sys/time.h")
+check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
+set(CMAKE_REQUIRED_INCLUDES )
+
+
+set(CMAKE_REQUIRED_INCLUDES "mach/mach_time.h")
+check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)
+set(CMAKE_REQUIRED_INCLUDES )
+
+
+
+configure_file(
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"
   "${PROJECT_INCLUDE_DIR}/milkyway_config.h")
+
+configure_file(
+  "${MILKYWAY_INCLUDE_DIR}/milkyway_git_version.h.in"
+  "${PROJECT_INCLUDE_DIR}/milkyway_git_version.h")
+
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
@@ -57,9 +102,13 @@ include_directories(${MILKYWAY_INCLUDE_DIR})
 # is individual for separation vs. nbody. Math here won't be compiled
 # with crlibm, leading to unexpected results
 set(mw_lib_src src/milkyway_util.c
-               src/mw_boinc_util.c
-               src/milkyway_cpp_util.cc
-               src/milkyway_show.c)
+               src/milkyway_alloc.c
+               src/milkyway_rename.c
+               src/milkyway_boinc_util.cc
+               src/milkyway_show.c
+               src/milkyway_cpuid.c
+               src/milkyway_timing.c)
+
 
 set(milkyway_lua_src src/milkyway_lua_marshal.c
                      src/milkyway_lua_util.c
@@ -68,24 +117,27 @@ set(milkyway_lua_src src/milkyway_lua_marshal.c
                      src/milkyway_lua_dsfmt.c
                      src/milkyway_lua_types.c)
 
-set(mw_cl_lib_src src/mw_cl_show_types.c
-                  src/mw_cl_device.c
-                  src/mw_cl_util.c
-                  src/mw_cl_program.c
-                  src/mw_cl_setup.c)
+set(mw_cl_lib_src src/milkyway_cl_show_types.c
+                  src/milkyway_cl_device.c
+                  src/milkyway_cl_util.c
+                  src/milkyway_cl_program.c
+                  src/milkyway_cl_setup.c)
 
 set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_extra.h
                    include/milkyway_math.h
-                   include/milkyway_math_functions.h
+                   include/milkyway_math_double.h
+                   include/milkyway_math_float.h
+                   include/milkyway_math_supplemental.h
                    include/milkyway_util.h
-                   include/mw_boinc_util.h
-                   include/milkyway_cpp_util.h
+                   include/milkyway_alloc.h
+                   include/milkyway_boinc_util.h
+                   include/milkyway_rename.h
                    include/milkyway_vectors.h
-                   include/milkyway_vector_types.h
-                   include/real.h
                    include/milkyway_show.h
-                   include/mw_asprintf.h)
+                   include/milkyway_cpuid.h
+                   include/milkyway_timing.h
+                   include/milkyway_asprintf.h)
 
 
 set(milkyway_lua_headers include/milkyway_lua.h
@@ -98,48 +150,63 @@ set(milkyway_lua_headers include/milkyway_lua.h
 
 set(mw_cl_lib_headers include/milkyway_cl.h
                       include/mw_cl.h
-                      include/mw_cl_types.h
-                      include/mw_cl_show_types.h
-                      include/mw_cl_util.h
-                      include/mw_cl_device.h
-                      include/mw_cl_program.h
-                      include/mw_cl_setup.h)
+                      include/milkyway_cl_types.h
+                      include/milkyway_cl_show_types.h
+                      include/milkyway_cl_util.h
+                      include/milkyway_cl_device.h
+                      include/milkyway_cl_program.h
+                      include/milkyway_cl_setup.h)
 
 if(WIN32 AND NOT HAVE_ASPRINTF)
-    list(APPEND mw_lib_src src/mw_asprintf.c)
+    list(APPEND mw_lib_src src/milkyway_asprintf.c)
 endif()
 
-if(MILKYWAY_OPENCL)
-  list(APPEND mw_lib_src ${mw_cl_lib_src})
-  list(APPEND mw_lib_headers ${mw_cl_lib_headers})
-endif()
+
 
 add_library(milkyway_lua STATIC ${milkyway_lua_src} ${milkyway_lua_headers})
 set_target_properties(milkyway_lua PROPERTIES
                         COMPILE_DEFINITIONS "MILKYWAY_LUA_COMPILATION")
+
 target_link_libraries(milkyway_lua milkyway dsfmt)
 
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
 target_link_libraries(milkyway dsfmt)
+if(BOINC_APPLICATION)
+  target_link_libraries(milkyway ${BOINC_LIBRARIES})
+endif()
+set_target_properties(milkyway PROPERTIES
+                        COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")
+
+# install(TARGETS milkyway milkyway_lua
+#         ARCHIVE       DESTINATION lib
+#         PUBLIC_HEADER DESTINATION include)
+
+
+if(MILKYWAY_OPENCL)
+  add_definitions("-DCL_USE_DEPRECATED_OPENCL_1_1_APIS=1")   # For now stick to 1.1
+  add_library(milkyway_cl STATIC ${mw_cl_lib_src} ${mw_cl_lib_headers})
+  target_link_libraries(milkyway_cl milkyway)
+  set_target_properties(milkyway_cl PROPERTIES
+                          COMPILE_DEFINITIONS "MILKYWAY_CL_COMPILATION")
+
+
+# install(TARGETS milkyway_cl
+#         ARCHIVE       DESTINATION lib
+#         PUBLIC_HEADER DESTINATION include)
+endif()
+
+
 
 if(WIN32)
   target_link_libraries(milkyway winmm)
 endif()
 
-# No math should happen here, but just in case. Clang defaults to
-# using SSE stuffs
-if(NOT MSVC AND SYSTEM_IS_X86_32)
-  set(milkyway_flags "${DISABLE_SSE2_FLAGS}")
+if(HAVE_LIBRT)
+  target_link_libraries(milkyway rt)
 endif()
 
-set_target_properties(milkyway PROPERTIES
-                      COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION"
-                      COMPILE_FLAGS "${milkyway_flags}")
-
-
-
-install(TARGETS milkyway
-        ARCHIVE       DESTINATION lib
-        PUBLIC_HEADER DESTINATION include)
-
+maybe_disable_ssen(milkyway milkyway_lua)
+if(MILKYWAY_OPENCL)
+    maybe_disable_ssen(milkyway_cl)
+endif()
 

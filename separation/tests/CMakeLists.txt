@@ -17,16 +17,26 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include(MaybeDlCheck)
+add_custom_command(OUTPUT "stars.tar.bz2"
+                     COMMAND ${CMAKE_COMMAND}
+                       -DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
+                       -DCMAKE_FILES_DIRECTORY=${CMAKE_FILES_DIRECTORY}
+                       -DCMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                       -DNAME="stars"
+                       -DTARNAME="stars.tar.bz2"
+                       -DMD5_FILE="9832cf1dd6e1e11083f9594fd4bf657b"
+                       -DURL="http://milkyway.cs.rpi.edu/milkyway/download/stars.tar.bz2"
+                       -P "${MILKYWAYATHOME_CLIENT_CMAKE_MODULES}/DownloadStars.cmake")
 
-maybe_dl_check("stars" "9832cf1dd6e1e11083f9594fd4bf657b"
-                       "http://milkyway.cs.rpi.edu/milkyway/download/stars.tar.bz2"
-                       "stars.tar.bz2")
 
-# TODO: Test different paths
+# TODO: Test different paths, such as no intrinsics etc.
 add_test(NAME tests
-           COMMAND ${LUA_INTERPRETER} "SeparationTests.lua"
-                                      "${EXECUTABLE_OUTPUT_PATH}/${separation_base_bin_name}"
-                                      "")
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND $<TARGET_FILE:lua> "${PROJECT_SOURCE_DIR}/tests/SeparationTests.lua"
+                                       $<TARGET_FILE:milkyway_separation>
+                                       "${PROJECT_SOURCE_DIR}/tests"
+                                       "")
 
+add_custom_target(test_data DEPENDS "stars.tar.bz2")
+# FIXME: How to add dependency on tests of test_data?
 

@@ -19,12 +19,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#include <string.h>
-#include <stdio.h>
 #include "nbody_types.h"
 #include "milkyway_util.h"
 #include "nbody_show.h"
-#include "mw_asprintf.h"
 
 /* A bunch of boilerplate for debug printing */
 
@@ -109,22 +106,113 @@ const char* showNBodyStatus(NBodyStatus x)
 {
     switch (x)
     {
-        case NBODY_TREE_INCEST_NONFATAL:
-            return "NBODY_TREE_INCEST_NONFATAL";
         case NBODY_SUCCESS:
             return "NBODY_SUCCESS";
         case NBODY_ERROR:
             return "NBODY_ERROR";
+        case NBODY_ASSERTION_FAILURE:
+            return "NBODY_ASSERTION_FAILURE";
         case NBODY_TREE_STRUCTURE_ERROR:
             return "NBODY_TREE_STRUCTURE_ERROR";
-        case NBODY_TREE_INCEST_FATAL:
-            return "NBODY_TREE_INCEST_FATAL";
         case NBODY_IO_ERROR:
             return "NBODY_IO_ERROR";
         case NBODY_CHECKPOINT_ERROR:
             return "NBODY_CHECKPOINT_ERROR";
+        case NBODY_CL_ERROR:
+            return "NBODY_CL_ERROR";
+        case NBODY_CAPABILITY_ERROR:
+            return "NBODY_CAPABILITY_ERROR";
+        case NBODY_CONSISTENCY_ERROR:
+            return "NBODY_CONSISTENCY_ERROR";
+        case NBODY_UNIMPLEMENTED:
+            return "NBODY_UNIMPLEMENTED";
+        case NBODY_UNSUPPORTED:
+            return "NBODY_UNSUPPORTED";
+        case NBODY_USER_ERROR:
+            return "NBODY_USER_ERROR";
+        case NBODY_PARAM_FILE_ERROR:
+            return "NBODY_PARAM_FILE_ERROR";
+        case NBODY_LUA_POTENTIAL_ERROR:
+            return "NBODY_LUA_POTENTIAL_ERROR";
+        case NBODY_LIKELIHOOD_ERROR:
+            return "NBODY_LIKELIHOOD_ERROR";
+        case NBODY_MAX_DEPTH_ERROR:
+            return "NBODY_MAX_DEPTH_ERROR";
+        case NBODY_CELL_OVERFLOW_ERROR:
+            return "NBODY_CELL_OVERFLOW_ERROR";
+        case NBODY_RESERVED_ERROR_1:
+            return "NBODY_RESERVED_ERROR_1";
+        case NBODY_RESERVED_ERROR_2:
+            return "NBODY_RESERVED_ERROR_2";
+        case NBODY_RESERVED_ERROR_3:
+            return "NBODY_RESERVED_ERROR_3";
+        case NBODY_RESERVED_ERROR_4:
+            return "NBODY_RESERVED_ERROR_4";
+        case NBODY_RESERVED_ERROR_5:
+            return "NBODY_RESERVED_ERROR_5";
+        case NBODY_RESERVED_ERROR_6:
+            return "NBODY_RESERVED_ERROR_6";
+
+        case NBODY_TREE_INCEST_NONFATAL:
+            return "NBODY_TREE_INCEST_NONFATAL";
+        case NBODY_TREE_INCEST_FATAL:
+            return "NBODY_TREE_INCEST_FATAL";
+        case NBODY_RESERVED_WARNING_1:
+            return "NBODY_RESERVED_WARNING_1";
+        case NBODY_RESERVED_WARNING_2:
+            return "NBODY_RESERVED_WARNING_2";
+        case NBODY_RESERVED_WARNING_3:
+            return "NBODY_RESERVED_WARNING_3";
+        case NBODY_RESERVED_WARNING_4:
+            return "NBODY_RESERVED_WARNING_4";
+        case NBODY_RESERVED_WARNING_5:
+            return "NBODY_RESERVED_WARNING_5";
+        case NBODY_RESERVED_WARNING_6:
+            return "NBODY_RESERVED_WARNING_6";
+        case NBODY_RESERVED_WARNING_7:
+            return "NBODY_RESERVED_WARNING_7";
+
         default:
-            return "Invalid NBodyStatus";
+            return "Unknown NBodyStatus";
+    }
+}
+
+const char* showNBodyKernelError(NBodyKernelError x)
+{
+    if ((int) x > 0)
+    {
+        return "Exceeded maximum depth";
+    }
+
+    switch (x)
+    {
+        case NBODY_KERNEL_OK:
+            return "NBODY_KERNEL_OK";
+        case NBODY_KERNEL_CELL_OVERFLOW:
+            return "NBODY_KERNEL_CELL_OVERFLOW";
+        case NBODY_KERNEL_TREE_INCEST:
+            return "NBODY_KERNEL_CELL_TREE_INCEST";
+        case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
+            return "NBODY_KERNEL_TREE_STRUCTURE_ERROR";
+        case NBODY_KERNEL_ERROR_OTHER:
+            return "NBODY_KERNEL_ERROR_OTHER";
+        default:
+            return "Unknown NBodyKernelError";
+    }
+}
+
+const char* showExternalPotentialType(ExternalPotentialType x)
+{
+    switch (x)
+    {
+        case EXTERNAL_POTENTIAL_DEFAULT:
+            return "Milkyway@Home N-body potential";
+        case EXTERNAL_POTENTIAL_NONE:
+            return "None";
+        case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+            return "Lua";
+        default:
+            return "Unknown ExternalPotentialType";
     }
 }
 
@@ -145,7 +233,7 @@ char* showSpherical(const Spherical* s)
                      s->mass,
                      s->scale))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -182,7 +270,7 @@ char* showHalo(const Halo* h)
                      h->c3,
                      h->triaxAngle))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -207,10 +295,75 @@ char* showDisk(const Disk* d)
                      d->scaleLength,
                      d->scaleHeight))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
+}
+
+char* showCell(const NBodyCell* c)
+{
+    char* buf;
+    char* posBuf;
+
+    if (!c)
+        return NULL;
+
+
+    posBuf = showVector(Pos(c));
+
+    if (0 > asprintf(&buf,
+                     "NBodyCell = {\n"
+                     "  cellnode = {\n"
+                     "    pos  = %s\n"
+                     "    next = %p\n"
+                     "    mass = %f\n"
+                     "    type = %d\n"
+                     "  }\n"
+                     "  rcrit2   = %f\n"
+                     "  more     = %p\n"
+                     "  stuff    = {\n"
+                     "    .quad = {\n"
+                     "      .xx = %f, .xy = %f, .xz = %f,\n"
+                     "      .yy = %f, .yz = %f,\n"
+                     "      .zz = %f\n"
+                     "    },\n"
+                     "\n"
+                     "    .subp = {\n"
+                     "      %p, %p, %p, %p,\n"
+                     "      %p, %p, %p, %p\n"
+                     "    }\n"
+                     "  }\n"
+                     "}\n",
+                     posBuf,
+                     (void*) Next(c),
+                     Mass(c),
+                     Type(c),
+
+                     Rcrit2(c),
+                     (void*) More(c),
+
+                     Quad(c).xx, Quad(c).xy, Quad(c).xz,
+                     Quad(c).yy, Quad(c).yz,
+                     Quad(c).zz,
+
+                     (void*) Subp(c)[0], (void*) Subp(c)[1], (void*) Subp(c)[2], (void*) Subp(c)[3],
+                     (void*) Subp(c)[5], (void*) Subp(c)[5], (void*) Subp(c)[6], (void*) Subp(c)[7]
+            ))
+    {
+        mw_fail("asprintf() failed\n");
+    }
+
+    free(posBuf);
+
+    return buf;
+}
+
+void printCell(const NBodyCell* c)
+{
+    char* buf = showCell(c);
+    puts(buf);
+    free(buf);
 }
 
 char* showBody(const Body* p)
@@ -227,10 +380,10 @@ char* showBody(const Body* p)
 
     if (0 > asprintf(&buf,
                      "body { \n"
-                     "      mass   = %g\n"
-                     "      pos    = %s\n"
-                     "      vel    = %s\n"
-                     "      ignore = %s\n"
+                     "      mass     = %g\n"
+                     "      position = %s\n"
+                     "      velocity = %s\n"
+                     "      ignore   = %s\n"
                      "    };\n",
                      Mass(p),
                      pos,
@@ -238,7 +391,7 @@ char* showBody(const Body* p)
                      showBool(ignoreBody(p))))
 
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     free(vel);
@@ -275,9 +428,8 @@ char* showPotential(const Potential* p)
                   diskBuf,
                   haloBuf,
                   p->rings);
-
     if (rc < 0)
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
 
     free(sphBuf);
     free(diskBuf);
@@ -296,36 +448,41 @@ char* showNBodyCtx(const NBodyCtx* ctx)
         return NULL;
 
     potBuf = showPotential(&ctx->pot);
+    if (!potBuf)
+        return NULL;
 
     if (0 > asprintf(&buf,
                      "ctx = { \n"
-                     "  pot = %s\n"
-                     "  timeEvolve      = %g\n"
-                     "  timestep        = %g\n"
-                     "  sunGCDist       = %g\n"
+                     "  eps2            = %f\n"
+                     "  theta           = %f\n"
+                     "  timestep        = %f\n"
+                     "  timeEvolve      = %f\n"
+                     "  treeRSize       = %f\n"
+                     "  sunGCDist       = %f\n"
                      "  criterion       = %s\n"
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
-                     "  treeRSize       = %g\n"
-                     "  theta           = %g\n"
-                     "  eps2            = %g\n"
-                     "  checkpointT     = %u\n"
-                     "  freqOut         = %u\n"
+                     "  checkpointT     = %d\n"
+                     "  nStep           = %u\n"
+                     "  potentialType   = %s\n"
+                     "  pot = %s\n"
                      "};\n",
-                     potBuf,
-                     ctx->timeEvolve,
+                     ctx->eps2,
+                     ctx->theta,
                      ctx->timestep,
+                     ctx->timeEvolve,
+                     ctx->treeRSize,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
-                     ctx->treeRSize,
-                     ctx->theta,
-                     ctx->eps2,
                      (int) ctx->checkpointT,
-                     ctx->freqOut))
+                     ctx->nStep,
+                     showExternalPotentialType(ctx->potentialType),
+                     potBuf
+            ))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     free(potBuf);
@@ -362,7 +519,7 @@ char* showHistogramParams(const HistogramParams* hp)
                      hp->center))
 
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -403,9 +560,9 @@ void printPotential(const Potential* p)
     free(buf);
 }
 
-void printBodies(const Body* bs, unsigned int n)
+void printBodies(const Body* bs, int n)
 {
-    unsigned int i;
+    int i;
 
     for (i = 0; i < n; ++i)
         printBody(&bs[i]);
@@ -419,16 +576,16 @@ char* showNBodyTree(const NBodyTree* t)
                      "  Tree %p = {\n"
                      "    root     = %p\n"
                      "    rsize    = %g\n"
-                     "    cellused = %u\n"
-                     "    maxlevel = %u\n"
+                     "    cellUsed = %u\n"
+                     "    maxDepth = %u\n"
                      "  };\n",
                      t,
                      t->root,
                      t->rsize,
-                     t->cellused,
-                     t->maxlevel))
+                     t->cellUsed,
+                     t->maxDepth))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -451,27 +608,26 @@ char* showNBodyState(const NBodyState* st)
     if (0 > asprintf(&buf,
                      "NBodyState %p = {\n"
                      "  tree           = %s\n"
-                     "  freecell       = %p\n"
+                     "  freeCell       = %p\n"
                      "  lastCheckpoint = %d\n"
-                     "  tnow           = %.15g\n"
+                     "  step           = %u\n"
                      "  nbody          = %u\n"
                      "  bodytab        = %p\n"
                      "  acctab         = %p\n"
                      "  treeIncest     = %s\n"
-                     "  outFile        = %p\n"
                      "};\n",
                      st,
                      treeBuf,
-                     st->freecell,
+                     st->freeCell,
                      (int) st->lastCheckpoint,
-                     st->tnow,
+                     st->step,
                      st->nbody,
                      st->bodytab,
                      st->acctab,
-                     showBool(st->treeIncest),
-                     st->outFile))
+                     showBool(st->treeIncest)
+            ))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     free(treeBuf);
@@ -485,5 +641,32 @@ void printNBodyState(const NBodyState* st)
     char* buf = showNBodyState(st);
     puts(buf);
     free(buf);
+}
+
+const char* showNBodyLikelihoodMethod(NBodyLikelihoodMethod x)
+{
+    switch (x)
+    {
+        case NBODY_INVALID_METHOD:
+            return "InvalidMethod";
+        case NBODY_EMD:
+            return "EMD";
+        case NBODY_ORIG_CHISQ:
+            return "Original";
+        case NBODY_ORIG_ALT:
+            return "AltOriginal";
+        case NBODY_CHISQ_ALT:
+            return "ChisqAlt";
+        case NBODY_POISSON:
+            return "Poisson";
+        case NBODY_KOLMOGOROV:
+            return "Kolmogorov";
+        case NBODY_KULLBACK_LEIBLER:
+            return "KullbackLeibler";
+        case NBODY_SAHA:
+            return "Saha";
+        default:
+            return "Invalid NBodyLikelihoodMethod";
+    }
 }
 

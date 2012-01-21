@@ -22,9 +22,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile);
-void launchVisualizer(NBodyState* st, const char* visArgs);
-void updateDisplayedBodies(NBodyState* st);
+int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx);
+void nbLaunchVisualizer(NBodyState* st, const char* visArgs);
+void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st);
 
 
 #endif /* _NBODY_SHMEM_H_ */

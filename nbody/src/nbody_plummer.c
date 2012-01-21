@@ -106,22 +106,24 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-static int generatePlummerCore(lua_State* luaSt,
+static int nbGeneratePlummerCore(lua_State* luaSt,
 
-                               dsfmt_t* prng,
-                               unsigned int nbody,
-                               real mass,
+                                 dsfmt_t* prng,
+                                 unsigned int nbody,
+                                 real mass,
 
-                               mwbool ignore,
+                                 mwbool ignore,
 
-                               mwvector rShift,
-                               mwvector vShift,
-                               real radiusScale)
+                                 mwvector rShift,
+                                 mwvector vShift,
+                                 real radiusScale)
 {
     unsigned int i;
     int table;
     Body b;
     real r, velScale;
+
+    memset(&b, 0, sizeof(b));
 
     velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
 
@@ -145,7 +147,7 @@ static int generatePlummerCore(lua_State* luaSt,
     return 1;
 }
 
-int generatePlummer(lua_State* luaSt)
+int nbGeneratePlummer(lua_State* luaSt)
 {
     static dsfmt_t* prng;
     static const mwvector* position = NULL;
@@ -170,12 +172,12 @@ int generatePlummer(lua_State* luaSt)
 
     handleNamedArgumentTable(luaSt, argTable, 1);
 
-    return generatePlummerCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
-                               *position, *velocity, radiusScale);
+    return nbGeneratePlummerCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
+                                 *position, *velocity, radiusScale);
 }
 
 void registerGeneratePlummer(lua_State* luaSt)
 {
-    lua_register(luaSt, "generatePlummer", generatePlummer);
+    lua_register(luaSt, "generatePlummer", nbGeneratePlummer);
 }
 

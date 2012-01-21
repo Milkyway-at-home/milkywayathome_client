@@ -18,25 +18,72 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 project(milkywayathome_client)
-
 enable_testing()
 
+if(NOT MSVC)
+  # Use the separate generator for MSVC
+  # FIXME: This doesn't really work. The tests that cmake runs before anything else will detect 64bitness
+  option(BUILD_32 "32 bit build" OFF)
+endif()
+
+if(BUILD_32)
+  if(APPLE)
+    # TODO: If using this, it seems only the Apple gcc/llvm-gcc works
+    set(CMAKE_OSX_ARCHITECTURES i386)
+  endif()
+
+  set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_C_FLAGS}")
+endif()
+
+
+
 # Find custom cmake modules
-set(CMAKE_MODULE_PATH "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
+set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
 set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
 
+include(CMakeDependentOption)
+include(CheckLibraryExists)
+include(CompilerID)
+
+if(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS=1 -DWIN32_LEAN_AND_MEAN=1 -DVC_EXTRALEAN=1")
+endif()
+if(CXX_COMPILER_IS_SUN)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -features=zla")
+endif()
+
+
 include(MinGWPaths)
-include(StaticBOINC)
+include(MWLink)
 include(PrintInfo)
-include(DownloadCrlibm)
 include(CheckCFlag)
 include(MSVCFlags)
 include(PreferStatic)
 include(SpecialLibs)
 include(CMakeDependentOption)
+include(CheckFunctionExists)
 include(Profiling)
+include(BOINCPaths)
+
+#These must be after CheckCFlags is included
+
+if(HAVE_FLAG_STATIC_LIBGCC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
+endif()
+
+if(HAVE_FLAG_PTHREAD)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()
+
+
+check_function_exists(stpcpy HAVE_STPCPY)
+check_library_exists(rt shm_open "" HAVE_LIBRT)
 
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
@@ -55,12 +102,6 @@ endif()
 option(SEPARATION "Build separation" ON)
 option(NBODY "Build nbody" ON)
 
-if(MSVC)
-  set(NBODY OFF)
-  message("NBody doesn't work with MSVC, disabling")
-endif()
-
-
 # Normal options
 option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
@@ -68,14 +109,20 @@ option(BOINC_APPLICATION
 option(BOINC_RELEASE
        "Build with all options for making an actual release" OFF)
 
+cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
+  "BOINC_APPLICATION" OFF)
+mark_as_advanced(INSTALL_BOINC)
+
+
+
 option(DOUBLEPREC
        "Build with double precision" ON)
 
-option(OPENCL_NVIDIA "Using Nvidia OpenCL")
-mark_as_advanced(OPENCL_NVIDIA)
+option(NVIDIA_OPENCL "Using Nvidia OpenCL" OFF)
+mark_as_advanced(NVIDIA_OPENCL)
 
-option(OPENCL_ATI "Using ATI OpenCL")
-mark_as_advanced(OPENCL_ATI)
+option(AMD_OPENCL "Using AMD OpenCL" OFF)
+mark_as_advanced(AMD_OPENCL)
 
 
 
@@ -87,22 +134,13 @@ option(BOINC_RELEASE_NAMES
        "Use BOINC platform binary names" OFF)
 mark_as_advanced(BOINC_RELEASE_NAMES)
 
-option(DOWNLOAD_CRLIBM
-       "Download crlibm and install to thirdparty" OFF)
-mark_as_advanced(DOWNLOAD_CRLIBM)
-
+# -fno-errno-math
 
 # Find libraries installed to this prefix. This way we can just dump
 # dependencies here on windows where everything is painful.
 set(MILKYWAY_ROOT ${PROJECT_BINARY_DIR})
 list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
 
-# Stuff which the build will download and use from there.
-set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
-
-if(DOWNLOAD_CRLIBM)
-  download_build_crlibm()
-endif()
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
@@ -129,7 +167,6 @@ if(BOINC_RELEASE)
 endif()
 
 
-
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -141,47 +178,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
 endif()
 
-
-if(APPLE AND BOINC_APPLICATION)
-  if(BOINC_RELEASE)
-    # We don't want to bother compiling twice until we need the universal binary for releases
-    #set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
-    #set(CMAKE_OSX_ARCHITECTURES x86_64)
-  endif()
-endif()
-
-option(BOINC_APP_GRAPHICS
-       "BOINC app graphics" OFF)
-
-option(SEPARATION_OPENCL
-        "Build the OpenCL separation" OFF)
-
-option(NBODY_OPENCL
-        "Build the OpenCL nbody" OFF)
-
-option(MILKYWAY_OPENCL
-        "Build the OpenCL nbody" OFF)
-mark_as_advanced(MILKYWAY_OPENCL)
-
-#FIXME: Be able to build one with / without openl
-if(NBODY_OPENCL OR SEPARATION_OPENCL)
-  set(MILKYWAY_OPENCL ON)
-endif()
-
-if(SEPARATION_CAL)
-  set(MILKYWAY_CAL ON)
-endif()
-
 option(NBODY
         "Build the n-body code" ON)
-
-option(NBODY_OPENMP
-         "Use OpenMP" ON)
-
-option(NBODY_OPENCL
-         "Use OpenCL" OFF)
-
-option(NBODY_GL "Lots of pixels" OFF)
 
 cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
                          "DOUBLEPREC" ON)
@@ -214,11 +212,17 @@ set(gcc_warnings "-Wall"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
+               #  "-Wsuggest-attribute=pure"
+               #  "-Wsuggest-attribute=const"
+               #  "-Wsuggest-attribute=noreturn"
+
                # "-Wstrict-overflow=5"
                # "-Wmissing-declarations"
                # "-Wunreachable-code"
                )
-
+add_flag_if_supported("-Wno-psabi")
+add_flag_if_supported("-std=gnu99")
+add_flag_if_supported("-xc99")
 # set(clang_analyzer "--analyze"
 #                    -Xanalyzer -analyzer-eagerly-assume
 #                    -Xanalyzer -analyzer-check-dead-stores
@@ -234,18 +238,18 @@ set(gcc_warnings "-Wall"
 #                    -Xanalyzer -analyzer-no-purge-dead)
 
 
-
-
 set(gcc_extra_flags "-fno-common -funswitch-loops ")
 set(gcc_only_extra_flags "-freg-struct-return ")
+
 
 if(SYSTEM_IS_X86)
   list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
 endif()
 
-if(NOT MSVC)
-  set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
-endif()
+
+# ICC does bad things by default
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SAFE_MATH_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SAFE_MATH_FLAGS}")
 
 #Set math assumptions that we can make. We don't ever use the error
 #checking, or the other rounding modes.
@@ -254,18 +258,6 @@ set(extra_gcc_math_flags "-fno-rounding-math"
 
 if(NOT DOUBLEPREC)
   list(APPEND gcc_extra_flags "-fsingle-precision-constant")
-endif()
-
-if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
-  set(C_COMPILER_IS_CLANG 1)
-endif()
-
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  set(CXX_COMPILER_IS_CLANG 1)
-endif()
-
-if(CXX_COMPILER_IS_CLANG OR C_COMPILER_IS_CLANG)
-  set(COMPILER_IS_CLANG 1)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
@@ -311,20 +303,22 @@ if(CXX_COMPILER_IS_CLANG)
   set(CMAKE_CXX_FLAGS "${shut_up_unknown_flags} ${CMAKE_CXX_FLAGS}")
 endif()
 
-print_separator()
-print_build_info()
-print_build_options()
-print_separator()
-
+if(C_COMPILER_IS_PATHCC)
+  # C99 inline apparently not supported and without this there are billions of warnings about it
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline")
+endif()
 
 if(NOT SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
 if(WIN32)
+  set(windows_version 0x0500) # Windows 2000
   add_definitions(-D_WINDOWS)
-  add_definitions(-D_WIN32_WINDOWS=0x0500)
-  add_definitions(-DWIN32_WINNT=0x0500)
+  add_definitions(-D_WIN32_WINDOWS=${windows_version})
+  add_definitions(-D_WIN32_WINNT=${windows_version})
+  add_definitions(-DWIN32_WINNT=${windows_version})
+  add_definitions(-DWINVER=${windows_version})
 endif()
 
 # locally installed headers, and generated *_config.h
@@ -332,55 +326,69 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 
 
 
-
-# Look for GPU things first. This way we can continue normally if not found.
-find_package(CAL)
-find_package(CAL++)
 find_package(OpenCL)
 find_package(OpenMP)
-find_package_static(Crlibm)
-find_package_static(Fdlibm)
-find_package_static(BOINC)
-find_package(Boost)
 find_package(OpenGL)
 find_Package(GLFW)
+find_package(GLUT)
+find_package(Curses)
+find_package(OpenSSL)
 
 
-find_package_static(Popt REQUIRED)
-include_directories(${POPT_INCLUDE_DIR})
+cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
+                                         "OPENCL_FOUND" OFF)
 
-if(APPLE)
-  set(NEED_POPT_DEPS 1)
-elseif(MSYS)
-  # Seem to be necessary if you use the prebuilt ones
-  #set(NEED_POPT_DEPS 1)
-else()
-  set(NEED_POPT_DEPS 0)
-endif()
-
-if(NEED_POPT_DEPS)
-    #These are only dependencies of popt needed for static linking
-  find_package_static(Libintl REQUIRED)
-  find_package_static(Libiconv REQUIRED)
+cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
+                                    "OPENCL_FOUND" OFF)
+if(NBODY_OPENCL OR SEPARATION_OPENCL)
+  set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
 endif()
 
 
+cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
+                                    "OPENMP_FOUND" OFF)
 
-if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)
-  message(WARNING "N-body Crlibm requested, but Crlibm not found. Disabling N-body.")
-  set(NBODY OFF)
-endif()
+cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
+                                "OPENGL_FOUND;OPENGL_GLU_FOUND;GLUT_FOUND" OFF)
 
 
-if(BOINC_APPLICATION)
-  include_directories(${BOINC_INCLUDE_DIR})
-endif()
+print_separator()
+print_build_info()
+print_build_options()
+print_separator()
 
+
+add_subdirectory(tools)
+add_subdirectory(popt)
 add_subdirectory(lua)
-include_directories(${LUA_INCLUDE_DIR})
+
+if(SEPARATION_OPENCL)
+  add_subdirectory(libelf)
+endif()
+
+if(NBODY_GL AND FALSE)
+  #TODO: use it
+  add_subdirectory(openpa)
+endif()
+
 
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")
+
+if(BOINC_APPLICATION)
+  if(EXISTS ${PROJECT_SOURCE_DIR}/boinc/boinc/api/boinc_api.cpp)  # The submodule is there
+    message(STATUS "Using BOINC from submodule")
+    add_subdirectory(boinc)
+  else()
+    message(STATUS "Trying to find BOINC")
+    find_package_static(BOINC REQUIRED)
+  endif()
+
+  include_directories(${BOINC_INCLUDE_DIR})
+endif()
+
+include_directories(${POPT_INCLUDE_DIR})
+include_directories(${LUA_INCLUDE_DIR})
 add_subdirectory(milkyway)
 
 if(SEPARATION)
@@ -388,19 +396,26 @@ if(SEPARATION)
 endif()
 
 if(NBODY)
+  if(NBODY_CRLIBM)
+    set(CRLIBM_QUIET_BUILD TRUE)
+    add_subdirectory(crlibm)
+    set(CRLIBM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/crlibm)
+    set(CRLIBM_LIBRARY crlibm)
+  endif()
   add_subdirectory(nbody)
 endif()
 
+if(${CMAKE_VERSION} VERSION_GREATER "2.8.0" OR ${CMAKE_VERSION} VERSION_EQUAL "2.8.0")
+  find_package(Git)
+endif()
 
-find_package(Git)
 find_program(XZ_COMMAND xz)
 
-macro(make_release_tarball targetname releasename)
-  add_custom_target(${targetname} COMMAND ${GIT_EXECUTABLE} archive --prefix="${releasename}/" --format=tar HEAD | ${XZ_COMMAND} -9 > "${releasename}.tar.xz")
-endmacro()
-
-
 if(GIT_FOUND AND XZ_COMMAND)
+  macro(make_release_tarball targetname releasename)
+    add_custom_target(${targetname} COMMAND ${GIT_EXECUTABLE} archive --prefix="${releasename}/" --format=tar HEAD | ${XZ_COMMAND} -9 > "${releasename}.tar.xz")
+  endmacro()
+
   make_release_tarball("nbody_release" "milkyway_nbody_${nbody_VERSION}")
   make_release_tarball("separation_release" "milkyway_separation_${separation_VERSION}")
 endif()
@@ -410,4 +425,30 @@ if(0)
   add_subdirectory(simulation EXCLUDE_FROM_ALL)
 endif()
 
+# Getting OUTPUT_NAME property seems to not be working
+get_target_property(SEPARATION_BIN_NAME milkyway_separation LOCATION)
+get_target_property(NBODY_BIN_NAME milkyway_nbody LOCATION)
+get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)
+
+get_filename_component(SEPARATION_BIN_NAME ${SEPARATION_BIN_NAME} NAME)
+get_filename_component(NBODY_BIN_NAME ${NBODY_BIN_NAME} NAME)
+get_filename_component(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} NAME)
+
+add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/tools/app_info.xml"
+                    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/tools"
+                    COMMAND ${LUA_INTERPRETER} "${PROJECT_SOURCE_DIR}/tools/GenerateAppInfo.lua"
+                                               "${SEPARATION_BIN_NAME}"
+                                               "${NBODY_BIN_NAME}"
+                                               "${NBODY_GRAPHICS_BIN_NAME}")
+
+
+
+add_custom_target(app_info DEPENDS "${PROJECT_BINARY_DIR}/tools/app_info.xml")
+
+if(INSTALL_BOINC)
+  # FIXME:
+  # Need to rename and install libraries, e.g. libgomp
+  # Need to chown to boinc user
+  install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+endif()
 

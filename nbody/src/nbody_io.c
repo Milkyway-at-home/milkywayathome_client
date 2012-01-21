@@ -22,84 +22,91 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
+#include "nbody_curses.h"
 
-int initOutput(NBodyState* st, const NBodyFlags* nbf)
+static void nbPrintBodyOutputHeader(FILE* f, int cartesian)
 {
-    st->outFile = nbf->outFileName ? mwOpenResolved(nbf->outFileName, "w") : DEFAULT_OUTPUT_FILE;
-    if (st->outFile == NULL)
-        return warn1("initOutput: cannot open output file %s\n", nbf->outFileName);
-
-    return FALSE;
-}
-
-/* Low-level input and output operations. */
-
-static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
-{
-    fprintf(str,
-            " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n",
-            X(vec1), Y(vec1), Z(vec1),
-            X(vec2), Y(vec2), Z(vec2));
+    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s\n",
+            cartesian ? "x" : "l",
+            cartesian ? "y" : "b",
+            cartesian ? "z" : "r",
+            "v_x",
+            "v_y",
+            "v_z"
+        );
 }
 
 /* output: Print bodies */
-static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
+static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
     Body* p;
-    mwvector lbR;
+    mwvector lbr;
     const Body* endp = st->bodytab + st->nbody;
+
+    nbPrintBodyOutputHeader(f, nbf->outputCartesian);
 
     for (p = st->bodytab; p < endp; p++)
     {
-        fprintf(f, "%d ", ignoreBody(p));  /* Print if model it belongs to is ignored */
-        if (nbf->outputCartesian)     /* Probably useful for making movies and such */
-            out_2vectors(f, Pos(p), Vel(p));
+        fprintf(f, "%8d,", ignoreBody(p));  /* Print if model it belongs to is ignored */
+        if (nbf->outputCartesian)
+        {
+            fprintf(f,
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)));
+        }
         else
         {
-            lbR = cartesianToLbr(Pos(p), ctx->sunGCDist);
-            out_2vectors(f, lbR, Vel(p));
+            lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
+            fprintf(f,
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    L(lbr), B(lbr), R(lbr),
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)));
         }
     }
 
     if (fflush(f))
     {
-        perror("Body output flush");
+        mwPerror("Body output flush");
         return TRUE;
     }
 
     return FALSE;
 }
 
-int outputBodyPositionBin(NBodyState* st)
+int nbWriteBodies(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
-    Body* p;
-    const Body* endp = st->bodytab + st->nbody;
-
-    for (p = st->bodytab; p < endp; p++)
-        fwrite(&Pos(p), sizeof(mwvector), 1, st->outFile);
-
-    if (fflush(st->outFile))
-    {
-        perror("Body output flush");
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq)
-{
+    FILE* f;
     int rc = 0;
 
-    /* Printing out the bodies will food the server. */
-    if (nbf->printBodies)
+    if (!nbf->outFileName)
     {
-        mw_boinc_print(st->outFile, "<bodies>\n");
-        rc = outputBodies(st->outFile, ctx, st, nbf);
-        mw_boinc_print(st->outFile, "</bodies>\n");
+        return 1;
     }
 
-    fprintf(st->outFile, "<search_likelihood>%.15g</search_likelihood>\n", chisq);
+    f = mwOpenResolved(nbf->outFileName, nbf->outputBinary ? "wb" : "w");
+    if (!f)
+    {
+        mw_printf("Failed to open output file '%s'\n", nbf->outFileName);
+        return 1;
+    }
+
+    if (nbf->outputBinary)
+    {
+        mw_printf("Binary output unimplemented\n");
+        return 1;
+    }
+    else
+    {
+        mw_boinc_print(f, "<bodies>\n");
+        rc = nbOutputBodies(f, ctx, st, nbf);
+        mw_boinc_print(f, "</bodies>\n");
+    }
+
+    if (fclose(f) < 0)
+    {
+        mwPerror("Error closing output file '%s'", nbf->outFileName);
+    }
 
     return rc;
 }

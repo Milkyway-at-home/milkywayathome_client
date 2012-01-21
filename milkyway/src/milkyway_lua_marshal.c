@@ -1,25 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -27,23 +23,30 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua_marshal.h"
 #include "milkyway_util.h"
 
-
-
-/* Check if global function name exists.  Error if it doesn't or if
-   it's the wrong type. If OK, puts on stack and returns its index. */
-int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name)
+/*
+  Check if global function exists.
+   If symbol exists and is a function, put it on the stack and return 0.
+   Return > 0 if wrong type
+   Return < 0 if does not exist
+*/
+int mw_lua_getglobalfunction(lua_State* luaSt, const char* name)
 {
     lua_getglobal(luaSt, name);
     if (lua_isnil(luaSt, -1))
-        return luaL_error(luaSt, "Didn't find required global '%s'", name);
-
-    if (!lua_isfunction(luaSt, -1))
     {
-        return luaL_error(luaSt, "Expected required global '%s' to be %s, got %s",
-                          name, lua_typename(luaSt, LUA_TFUNCTION), luaL_typename(luaSt, -1));
+        mw_printf("Didn't find required global function '%s'\n", name);
+        return -1;
     }
-
-    return lua_gettop(luaSt);
+    else if (!lua_isfunction(luaSt, -1))
+    {
+        mw_printf("Expected required global '%s' to be %s, got %s\n",
+                  name, lua_typename(luaSt, LUA_TFUNCTION), luaL_typename(luaSt, -1));
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 int mw_lua_checkboolean(lua_State* luaSt, int idx)
@@ -86,7 +89,9 @@ int mw_lua_checkluaclosure(lua_State* luaSt, int idx)
 {
     /* LUA_TFUNCTION can refer to a cclosure or a Lua closure */
     if (!lua_isfunction(luaSt, idx) || lua_iscfunction(luaSt, idx))
+    {
         luaL_typerror(luaSt, idx, "Lua closure");
+    }
 
     /* Copy since luaL_ref pops and no other lua_check* functions change the stack */
     lua_pushvalue(luaSt, -1);
@@ -120,7 +125,7 @@ static int mw_lua_equal_userdata_name(lua_State* luaSt, int idx, const char* typ
     lua_getfield(luaSt, LUA_REGISTRYINDEX, typeName);  /* get correct metatable */
     if (!lua_getmetatable(luaSt, idx))
     {
-        warn("Failed to get metatable from index %d\n", idx);
+        mw_printf("Failed to get metatable from index %d\n", idx);
         lua_pop(luaSt, 1);
         return 0;
     }
@@ -151,23 +156,27 @@ void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName)
  * getting what we want with within C side stuff.
 
  This is for printing an error when manually checking values returned
- to C stuff. Returns 1 if type problem, 0 otherwise and prints
- appropriate error */
+ to C stuff. Returns 1 if type problem, 0 otherwise and places appropriate error on stack */
 int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* typeName)
 {
     int type;
 
     type = lua_type(luaSt, idx);
     if (   type == expectedType  /* got userdata of wrong type */
-        && type == LUA_TUSERDATA
+        && expectedType == LUA_TUSERDATA
         && !mw_lua_equal_userdata_name(luaSt, idx, typeName))
     {
         /* TODO: Get typename of wong userdata type, which is kind of the point of checking for this */
-        return warn1("Type error: userdata %s expected, got other userdata\n", typeName);
+        lua_pushfstring(luaSt, "Type error: userdata %s expected, got other userdata", typeName);
+        return 1;
     }
     else if (type != expectedType) /* Anything else is wrong. */
     {
-        return warn1("Type error: %s expected, got %s\n", typeName, lua_typename(luaSt, type));
+        lua_pushfstring(luaSt,
+                        "Type error: %s expected, got %s",
+                        lua_typename(luaSt, expectedType),
+                        luaL_typename(luaSt, idx));
+        return 1;
     }
     else
     {
@@ -344,19 +353,21 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)
     return 1;
 }
 
-static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const char* badStr)
+static void checkEnumErrorStr(char* errBuf, size_t errBufSize, const MWEnumAssociation* p, const char* badStr)
 {
     const MWEnumAssociation* nextP;
-    char errBuf[2048] = "Expected enum value where options are: ";
+    static const char errStart[] = "Expected enum value where options are: ";
     char badOpt[1024];
     size_t badSize, enumLen, errLen;
+    size_t remSize; /* Remaining size in buffer */
 
-    errLen = strlen(errBuf);
+    strcpy(errBuf, errStart);
+    errLen = sizeof(errStart) - 1;
     while (p->enumName)
     {
         nextP = &p[1];
         enumLen = strlen(p->enumName);
-        if (errLen + enumLen + 6 > sizeof(errBuf))  /* max possible */
+        if (errLen + enumLen + 6 > errBufSize)  /* max possible */
             mw_panic("Enum options too large for error string buffer!\n");
 
         errLen += enumLen;
@@ -376,21 +387,21 @@ static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const ch
 
     /* If there's extra space, might as well say what the bad option was */
     badSize = snprintf(badOpt, sizeof(badOpt), " Invalid option '%s'", badStr);
-    if (   (badSize != sizeof(badOpt))
-        && (badSize < (sizeof(errBuf) - errLen + 3)))
+    remSize = sizeof(errBuf) - errLen - 1;
+    if ((badSize != sizeof(badOpt)) && (badSize < remSize))
     {
-        strncat(errBuf, badOpt, sizeof(errBuf));
+        strncat(errBuf, badOpt, remSize);
     }
-
-    return luaL_argerror(luaSt, 1, errBuf);
 }
 
-int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
+static int findEnumEntry(const MWEnumAssociation* table, const char* str)
 {
-    const char* str;
     const MWEnumAssociation* p = table;
 
-    str = luaL_checklstring(luaSt, idx, NULL);
+    if (!str)
+    {
+        return InvalidEnum;
+    }
 
     while (p->enumName)
     {
@@ -399,14 +410,48 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
         ++p;
     }
 
-    if (!p->enumName)
-    {
-        checkEnumError(luaSt, table, str);
-        return InvalidEnum;
-    }
-
     return p->enumVal;
 }
+
+/* Check for the expected enum value at idx. Put error string on stack */
+int expectEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
+{
+    int entry;
+    const char* checkStr;
+    char errBuf[4096];
+
+    checkStr = lua_tostring(luaSt, idx);
+    entry = findEnumEntry(table, checkStr);
+    if (entry != InvalidEnum)
+    {
+        return entry;
+    }
+
+    checkEnumErrorStr(errBuf, sizeof(errBuf), table, checkStr);
+    mw_printf("%s\n", errBuf);
+    lua_pop(luaSt, 1);
+    return InvalidEnum;
+}
+
+/* Check for the expected enum value at idx. Error if invalid value */
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
+{
+    int entry;
+    const char* str;
+    char errBuf[4096];
+
+    str = luaL_checklstring(luaSt, idx, NULL);
+    entry = findEnumEntry(table, str);
+    if (entry != InvalidEnum)
+    {
+        return entry;
+    }
+
+    checkEnumErrorStr(errBuf, sizeof(errBuf), table, str);
+    luaL_argerror(luaSt, 1, errBuf);
+    return InvalidEnum;
+}
+
 
 int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* name)
 {
@@ -743,9 +788,11 @@ int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
     lp = lua_newuserdata(luaSt, typeSize);
     if (!lp)
     {
-        warn("Creating userdata '%s' failed\n", typeName);
+        mw_printf("Creating userdata '%s' failed\n", typeName);
         return 0;
     }
+
+    assert((uintptr_t) lp % MW_LUA_ALIGN == 0); /* This must be true for dSFMT intrinsics stuff to work */
 
     luaL_getmetatable(luaSt, typeName);
     lua_setmetatable(luaSt, -2);

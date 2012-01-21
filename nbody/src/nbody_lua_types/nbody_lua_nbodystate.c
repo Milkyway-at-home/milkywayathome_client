@@ -1,22 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * Copyright (c) 2011 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lualib.h>
@@ -29,9 +28,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_nbodyctx.h"
 #include "nbody_lua_potential.h"
 #include "nbody_lua_type_marshal.h"
-#include "nbody_step.h"
 #include "nbody_defaults.h"
 #include "nbody_checkpoint.h"
+#include "nbody_lua_misc.h"
+#include "nbody_grav.h"
+#include "nbody.h"
 
 
 NBodyState* checkNBodyState(lua_State* luaSt, int idx)
@@ -60,15 +61,39 @@ static int stepNBodyState(lua_State* luaSt)
     NBodyState* st;
     NBodyCtx ctx;
 
-    if (lua_gettop(luaSt) != 3)
-        return luaL_argerror(luaSt, 3, "Expected 3 arguments");
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 2, "Expected 2 arguments");
 
     st = checkNBodyState(luaSt, 1);
     ctx = *checkNBodyCtx(luaSt, 2);
-    ctx.pot = *checkPotential(luaSt, 3);
 
-    rc = stepSystem(&ctx, st);
+    rc = nbStepSystem(&ctx, st);
     lua_pushstring(luaSt, showNBodyStatus(rc));
+    return 1;
+}
+
+static int luaRunSystem(lua_State* luaSt)
+{
+    NBodyStatus rc;
+    NBodyState* st;
+    NBodyCtx ctx;
+
+    if (lua_gettop(luaSt) != 3)
+    {
+        return luaL_argerror(luaSt, 3, "Expected 3 arguments");
+    }
+
+    st = checkNBodyState(luaSt, 1);
+    ctx = *checkNBodyCtx(luaSt, 2);
+
+    if (nbGetPotentialTyped(luaSt, &ctx, 3, NULL))
+    {
+        return luaL_argerror(luaSt, 3, "Expected potential as argument 3\n");
+    }
+
+    rc = nbRunSystem(&ctx, st);
+    lua_pushstring(luaSt, showNBodyStatus(rc));
+
     return 1;
 }
 
@@ -84,18 +109,25 @@ static int createNBodyState(lua_State* luaSt)
 {
     Body* bodies;
     NBodyCtx ctx;
-    unsigned int nbody;
+    int nbody;
     NBodyState st = EMPTY_NBODYSTATE;
 
     ctx = *checkNBodyCtx(luaSt, 1);
-    ctx.pot = *checkPotential(luaSt, 2);
-    bodies = readModels(luaSt, lua_gettop(luaSt) - 2, &nbody);
+    bodies = readModels(luaSt, lua_gettop(luaSt) - 1, &nbody);
     if (!bodies)
-        luaL_argerror(luaSt, 3, "Expected model tables");
+        return luaL_argerror(luaSt, 2, "Expected model tables");
 
     setInitialNBodyState(&st, &ctx, bodies, nbody);
-    pushNBodyState(luaSt, &st);
 
+    /* Run the first pseudostep to fill accelerations */
+    if (nbStatusIsFatal(nbGravMap(&ctx, &st)))
+    {
+        destroyNBodyState(&st);
+        lua_pushnil(luaSt);
+        return 1;
+    }
+
+    pushNBodyState(luaSt, &st);
     return 1;
 }
 
@@ -116,23 +148,25 @@ static int luaWriteCheckpoint(lua_State* luaSt)
 {
     NBodyState* st;
     const NBodyCtx* ctx;
-    const char* tmpFile;
+    char tmpPath[256];
+    int pid;
+    int failed;
 
     st = checkNBodyState(luaSt, 1);
     ctx = checkNBodyCtx(luaSt, 2);
 
     assert(st->checkpointResolved == NULL);
 
+    pid = (int) getpid();
+    snprintf(tmpPath, sizeof(tmpPath), "nbody_checkpoint_tmp_%d", pid);
+
     st->checkpointResolved = strdup(luaL_optstring(luaSt, 3, DEFAULT_CHECKPOINT_FILE));
-    tmpFile = luaL_optstring(luaSt, 4, CHECKPOINT_TMP_FILE);
 
-    if (writeCheckpointWithTmpFile(ctx, st, tmpFile))
-        luaL_error(luaSt, "Error writing checkpoint");
-
+    failed = nbWriteCheckpointWithTmpFile(ctx, st, luaL_optstring(luaSt, 4, tmpPath));
     free(st->checkpointResolved);
     st->checkpointResolved = NULL;
 
-    return 0;
+    return failed ? luaL_error(luaSt, "Error writing checkpoint") : 0;
 }
 
 static int luaCloneNBodyState(lua_State* luaSt)
@@ -151,13 +185,23 @@ static int luaReadCheckpoint(lua_State* luaSt)
 {
     NBodyCtx ctx = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_NBODYSTATE;
+    int failed;
 
     st.checkpointResolved = strdup(luaL_optstring(luaSt, 1, DEFAULT_CHECKPOINT_FILE));
-    if (readCheckpoint(&ctx, &st))
-        luaL_error(luaSt, "Error reading checkpoint '%s'", st.checkpointResolved);
-
+    failed = nbReadCheckpoint(&ctx, &st);
     free(st.checkpointResolved);
+    if (failed)
+    {
+        return luaL_error(luaSt, "Error reading checkpoint '%s'", st.checkpointResolved);
+    }
+
     st.checkpointResolved = NULL;
+
+    /* Run the prestep so the accelerations are ready for the resumed state */
+    if (nbStatusIsFatal(nbGravMap(&ctx, &st)))
+    {
+        return luaL_error(luaSt, "Error running prestep from checkpoint");
+    }
 
     pushNBodyCtx(luaSt, &ctx);
     pushNBodyState(luaSt, &st);
@@ -197,6 +241,7 @@ static const luaL_reg methodsNBodyState[] =
 {
     { "create",          createNBodyState     },
     { "step",            stepNBodyState       },
+    { "runSystem",       luaRunSystem         },
     { "sortBodies",      sortBodiesNBodyState },
     { "clone",           luaCloneNBodyState   },
     { "writeCheckpoint", luaWriteCheckpoint   },

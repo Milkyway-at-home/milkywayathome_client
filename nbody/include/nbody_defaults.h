@@ -27,9 +27,9 @@ extern "C" {
 #endif
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
-#define CHECKPOINT_TMP_FILE     "nbody_checkpoint_tmp"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 
+#define DEFAULT_LIKELIHOOD_METHOD NBODY_ORIG_CHISQ
 
 /* 15 minutes */
 #define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
@@ -41,7 +41,6 @@ extern "C" {
 
 #define DEFAULT_USE_QUADRUPOLE_MOMENTS TRUE
 #define DEFAULT_ALLOW_INCEST FALSE
-#define DEFAULT_OUTPUT_FREQUENCY 0
 #define DEFAULT_QUIET_ERRORS FALSE
 
 #define histogramPhi 128.79
@@ -51,6 +50,8 @@ extern "C" {
 #define histogramEndRaw ((real) 50.0)
 #define histogramBinSize ((real) 2.9411764705882355)
 #define histogramCenter ((real) 0.0)
+
+#define N_ORBIT_TRACE_POINTS 50
 
 
 extern const NBodyCtx defaultNBodyCtx;

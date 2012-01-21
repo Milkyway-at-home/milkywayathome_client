@@ -21,32 +21,45 @@
 #ifndef _NBODY_GL_H_
 #define _NBODY_GL_H_
 
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glfw.h>
+#ifndef __APPLE__
+  #include <GL/gl.h>
+  #include <GL/glu.h>
+#else
+  #include <OpenGL/gl.h>
+  #include <OpenGL/glu.h>
+#endif /* __APPLE__ */
+
+#include <GL/glfw3.h>
+
 
 #include "nbody_graphics.h"
 
 typedef struct
 {
     int fullscreen;
+    int plainFullscreen;
     int width;
     int height;
 
     int monochrome;
     int notUseGLPoints;
+    int originCenter;
+    int noFloat;
 
-    /* pid_t pid */
-    /* char* nbody bin */
+    int pid;
+    char* file;
+    int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
+int nbglLoadStaticSceneFromFile(const char* filename);
 
-int connectSharedScene();
+int connectSharedScene(int instanceId);
+int checkConnectedVersion(void);
 int nbodyGLSetup(const VisArgs* args);
-void nbodyGLCleanup();
-int nbodyGraphicsLoop();
+int nbodyGraphicsLoop(void);
+void nbodyGLCleanup(void);
 
 #ifndef _WIN32
 int nbodyInitShmemKey(const char* progName);

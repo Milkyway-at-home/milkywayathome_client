@@ -1,21 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #if !defined(_MILKYWAY_LUA_H_INSIDE_) && !defined(MILKYWAY_LUA_COMPILATION)
   #error "Only milkyway_lua.h can be included directly."
@@ -29,6 +29,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
+
+/* All Lua allocations will be aligned to this */
+#define MW_LUA_ALIGN 16
+
+
 
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
@@ -54,7 +59,7 @@ typedef struct
     int enumVal;
 } MWEnumAssociation;
 
-#define END_MW_ENUM_ASSOCIATION { NULL, -1 }
+#define END_MW_ENUM_ASSOCIATION { NULL, InvalidEnum }
 
 typedef struct
 {
@@ -68,9 +73,6 @@ typedef struct
 #define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL }
 
 #define mw_lua_assert_top_type(luaSt, t) assert(lua_type((luaSt), -1) == (t))
-
-/* Print the error from pcall assumed to be the top of the stack */
-#define mw_lua_pcall_warn(luaSt, msg, ...) fprintf(stderr, msg ": %s \n", ##__VA_ARGS__, lua_tostring(luaSt, -1))
 
 int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable);
 
@@ -113,10 +115,12 @@ int registerStruct(lua_State* luaSt,
                    const luaL_reg* regMethods);
 
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
-int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
 int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* name);
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
+int expectEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
 
-int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name);
+
+int mw_lua_getglobalfunction(lua_State* luaSt, const char* name);
 
 int mw_lua_checkboolean(lua_State* luaSt, int idx);
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);

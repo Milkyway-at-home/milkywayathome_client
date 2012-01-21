@@ -1,0 +1,335 @@
+#ifndef BOINC_CONFIG_H
+#define BOINC_CONFIG_H
+
+/* Version defines are now in version.h */
+#include "version.h"
+
+#ifdef __APPLE__
+  /* Needed for socklen_t */
+  #include <sys/types.h>
+  #include <sys/socket.h>
+#endif /* __APPLE__ */
+
+
+/* Directory where BOINC executables will be installed */
+#define BOINC_EXECPREFIX "${CMAKE_INSTALL_PREFIX}/bin"
+
+/* Directory where BOINC libraries will be installed */
+#define BOINC_LIBDIR "${CMAKE_INSTALL_PREFIX}/lib"
+
+/* Directory tree where BOINC will be installed */
+#define BOINC_PREFIX "${CMAKE_INSTALL_PREFIX}"
+
+#cmakedefine01 HAVE_SOCKLEN_T
+
+/* Define to 1 if you have the `alloca' function. */
+#cmakedefine01 HAVE_ALLOCA
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix). */
+#cmakedefine01 HAVE_ALLOCA_H
+
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#cmakedefine01 HAVE_ARPA_INET_H
+
+/* Define to 1 if you have the `daemon' function. */
+#cmakedefine01 HAVE_DAEMON
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#cmakedefine01 HAVE_DIRENT_H
+
+/* Define to 1 if you have the <errno.h> header file. */
+#cmakedefine01 HAVE_ERRNO_H
+
+/* Define to 1 if you have the `ether_ntoa' function. */
+#cmakedefine01 HAVE_ETHER_NTOA
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#cmakedefine01 HAVE_FCNTL_H
+
+/* Define to 1 if you have the `getutent' function. */
+#cmakedefine01 HAVE_GETUTENT
+
+/* Define to 1 if you have the <glaux.h> header file. */
+#cmakedefine01 HAVE_GLAUX_H
+
+/* Define to 1 if you have the <GLUT/glut.h> header file. */
+#cmakedefine01 HAVE_GLUT_GLUT_H
+
+/* Define to 1 if you have the <glut.h> header file. */
+#cmakedefine01 HAVE_GLUT_H
+
+/* Define to 1 if you have the <glu.h> header file. */
+#cmakedefine01 HAVE_GLU_H
+
+/* Define to 1 if you have the <GL/glaux.h> header file. */
+#cmakedefine01 HAVE_GL_GLAUX_H
+
+/* Define to 1 if you have the <GL/glut.h> header file. */
+#cmakedefine01 HAVE_GL_GLUT_H
+
+/* Define to 1 if you have the <GL/glu.h> header file. */
+#cmakedefine01 HAVE_GL_GLU_H
+
+/* Define to 1 if you have the <GL/gl.h> header file. */
+#cmakedefine01 HAVE_GL_GL_H
+
+/* Define to 1 if you have the <gl.h> header file. */
+#cmakedefine01 HAVE_GL_H
+
+/* Define to 1 if you have the <ieeefp.h> header file. */
+ #cmakedefine01 HAVE_IEEEFP_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine01 HAVE_INTTYPES_H
+
+/* Define to 1 if you have the pthread library */
+#cmakedefine01 HAVE_LIBPTHREAD
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#cmakedefine01 HAVE_MALLOC_H
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#cmakedefine01 HAVE_NETDB_H
+
+/* Define to 1 if you have the <netinet/ether.h> header file. */
+#cmakedefine01 HAVE_NETINET_ETHER_H
+
+/* Define to 1 if you have the <netinet/if_ether.h> header file. */
+#cmakedefine01 HAVE_NETINET_IF_ETHER_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#cmakedefine01 HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the <netinet/tcp.h> header file. */
+#cmakedefine01 HAVE_NETINET_TCP_H
+
+/* Define to 1 if you have the <net/if.h> header file. */
+#cmakedefine01 HAVE_NET_IF_H
+
+/* Define to 1 if you have the <OpenGL/glaux.h> header file. */
+#cmakedefine01 HAVE_OPENGL_GLAUX_H
+
+/* Define to 1 if you have the <OpenGL/glut.h> header file. */
+#cmakedefine01 HAVE_OPENGL_GLUT_H
+
+/* Define to 1 if you have the <OpenGL/glu.h> header file. */
+#cmakedefine01 HAVE_OPENGL_GLU_H
+
+/* Define to 1 if you have the <OpenGL/gl.h> header file. */
+#cmakedefine01 HAVE_OPENGL_GL_H
+
+/* Define to 1 if you have the <procfs.h> header file. */
+#cmakedefine01 HAVE_PROCFS_H
+
+#cmakedefine01 HAVE__PROC_SELF_PSINFO
+
+/* Define if you have POSIX threads libraries and header files. */
+#cmakedefine01 HAVE_PTHREAD
+
+
+
+/* Define to 1 if you have the `res_init' function. */
+#cmakedefine01 HAVE_RES_INIT
+
+/* Define to 1 if you have the `sched_setscheduler' function. */
+#cmakedefine01 HAVE_SCHED_SETSCHEDULER
+
+/* Define to 1 if you have the `setenv' function. */
+#cmakedefine01 HAVE_SETENV
+
+
+/* Define to 1 if you have the `setpriority' function. */
+#cmakedefine01 HAVE_SETPRIORITY
+
+/* Define to 1 if you have the `setutent' function. */
+#cmakedefine01 HAVE_SETUTENT
+
+/* Define to 1 if you have the `sigaction' function. */
+#cmakedefine01 HAVE_SIGACTION
+
+/* Define to 1 if you have the <signal.h> header file. */
+#cmakedefine01 HAVE_SIGNAL_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine01 HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine01 HAVE_STDLIB_H
+
+/* Define to 1 if max is in namespace std:: */
+#cmakedefine01 HAVE_STD_MAX
+
+/* Define to 1 if min is in namespace std:: */
+#cmakedefine01 HAVE_STD_MIN
+
+/* Define to 1 if transform is in namespace std:: */
+#cmakedefine01 HAVE_STD_TRANSFORM
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#cmakedefine01 HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strcasestr' function. */
+#cmakedefine01 HAVE_STRCASESTR
+
+/* Define to 1 if you have the `strdup' function. */
+#cmakedefine01 HAVE_STRDUP
+
+/* Define to 1 if you have the `strdupa' function. */
+#cmakedefine01 HAVE_STRDUPA
+
+/* Define to 1 if you have the <strings.h> header file. */
+#cmakedefine01 HAVE_STRINGS_H
+
+
+/* Define to 1 if you have the `strlcat' function. */
+#cmakedefine01 HAVE_STRLCAT
+
+/* Define to 1 if you have the `strlcpy' function. */
+#cmakedefine01 HAVE_STRLCPY
+
+/* Define to 1 if the system has the type `struct ether_addr'. */
+#cmakedefine01 HAVE_STRUCT_ETHER_ADDR
+
+/* Define to 1 if the system has the type `struct ifconf'. */
+#cmakedefine01 HAVE_STRUCT_IFCONF
+
+/* Define to 1 if the system has the type `struct ifreq'. */
+#cmakedefine01 HAVE_STRUCT_IFREQ
+
+/* Define to 1 if the system has the type `struct lifconf'. */
+#cmakedefine01 HAVE_STRUCT_LIFCONF
+
+/* Define to 1 if `tm_zone' is a member of `struct tm'. */
+#cmakedefine01 HAVE_STRUCT_TM_TM_ZONE
+
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#cmakedefine01 HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/ipc.h> header file. */
+#cmakedefine01 HAVE_SYS_IPC_H
+
+/* Define to 1 if you have the <sys/mount.h> header file. */
+#cmakedefine01 HAVE_SYS_MOUNT_H
+
+/* Define to 1 if you have the <sys/msg.h> header file. */
+#cmakedefine01 HAVE_SYS_MSG_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#cmakedefine01 HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#cmakedefine01 HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#cmakedefine01 HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have the <sys/shm.h> header file. */
+#cmakedefine01 HAVE_SYS_SHM_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#cmakedefine01 HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#cmakedefine01 HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/statfs.h> header file. */
+#cmakedefine01 HAVE_SYS_STATFS_H
+
+/* Define to 1 if you have the <sys/statvfs.h> header file. */
+#cmakedefine01 HAVE_SYS_STATVFS_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine01 HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/swap.h> header file. */
+#cmakedefine01 HAVE_SYS_SWAP_H
+
+/* Define to 1 if you have the <sys/sysctl.h> header file. */
+#cmakedefine01 HAVE_SYS_SYSCTL_H
+
+/* Define to 1 if you have the <sys/systeminfo.h> header file. */
+#cmakedefine01 HAVE_SYS_SYSTEMINFO_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#cmakedefine01 HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine01 HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/un.h> header file. */
+#cmakedefine01 HAVE_SYS_UN_H
+
+/* Define to 1 if you have the <sys/utsname.h> header file. */
+#cmakedefine01 HAVE_SYS_UTSNAME_H
+
+/* Define to 1 if you have the <sys/vmmeter.h> header file. */
+#cmakedefine01 HAVE_SYS_VMMETER_H
+
+/* Define to 1 if you have the <sys/wait.h> header file. */
+#cmakedefine01 HAVE_SYS_WAIT_H
+
+/* Define to 1 if you don't have `tm_zone' but do have the external array
+   `tzname'. */
+#cmakedefine01 HAVE_TZNAME
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine01 HAVE_UNISTD_H
+
+/* Define to 1 if you have the <utmp.h> header file. */
+#cmakedefine01 HAVE_UTMP_H
+
+
+/* Define to 1 if you have xss library */
+#cmakedefine01 HAVE_XSS
+
+/* Define to 1 if /proc/meminfo exists */
+#cmakedefine01 HAVE__PROC_MEMINFO
+
+/* Define to 1 if /proc/self/psinfo exists */
+#cmakedefine01 HAVE__PROC_SELF_PSINFO
+
+/* Define to 1 if /proc/self/stat exists */
+#cmakedefine01 HAVE__PROC_SELF_STAT
+
+
+/* Platform identification used to identify applications for this BOINC core
+   client */
+#define HOSTTYPE "${CANONICAL_SYSTEM_NAME}"
+
+/* Alternate identification used to identify applications for this BOINC core
+   client */
+#cmakedefine01 HOSTTYPEALT
+
+/* "Define to 1 if largefile support causes missing symbols in C++" */
+#cmakedefine01 LARGEFILE_BREAKS_CXX
+
+/* Define to 1 to use windows sockets */
+#cmakedefine01 USE_WINSOCK
+
+/* utmp file location */
+#cmakedefine01 UTMP_LOCATION
+
+/* Define to prevent redefinition of INT32 in jconfig.h */
+#cmakedefine01 XMD_H
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#cmakedefine01 _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#cmakedefine01 _LARGE_FILES
+
+#if HAVE_SOCKLEN_T
+typedef socklen_t BOINC_SOCKLEN_T;
+#endif
+
+
+
+
+#ifndef HAVE_RES_INIT
+#define res_init() (0)
+#endif
+
+#endif /* BOINC_CONFIG_H */
+

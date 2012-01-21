@@ -22,13 +22,11 @@ require "ResultSets"
 argv = {...}
 
 binName = argv[1]
-extraFlags = argv[2] -- Extra flags to pass, such as choosing which SSE path to use
-testName = argv[3]
+testDir = argv[2]
+extraFlags = argv[3] -- Extra flags to pass, such as choosing which SSE path to use
+testName = argv[4]
 
 assert(binName, "Binary name not set")
-
-
-
 
 function os.readProcess(bin, ...)
    local args, cmd
@@ -162,19 +160,21 @@ end
 function runTest(test, checkResults)
    assert(test, "No test found!")
    local output
+   local path = testDir .. "/" .. test.file
+   local starsPath = testDir .. "/" .. test.stars
 
    if test.parameters ~= nil then
       output = os.readProcess(binName,
                               extraFlags,
                               "-i", -- FIXME: Avoid stale checkpoints a better way?
                               "-g",
-                              "-a", test.file,
-                              "-s", test.stars,
+                              "-a", path,
+                              "-s", starsPath,
                               "-np", #test.parameters,
                               "-p", table.concat(test.parameters, " ")
                            )
    else
-      output = os.readProcess(binName, extraFlags, "-i", "-g", "-a", test.file, "-s", test.stars)
+      output = os.readProcess(binName, extraFlags, "-i", "-g", "-a", path, "-s", starsPath)
    end
 
    print(output)
@@ -206,6 +206,5 @@ for name, test in pairs(testSet) do
 end
 
 os.exit(rc)
-
 
 

@@ -227,7 +227,7 @@ SamplePotentials.randomHalo = function(prng)
       prng = DSFMT.create()
    end
 
-   local type = round(prng:random(0, 2))
+   local type = floor(prng:random(0, 3))
 
    if type == 0 then
       return Halo.logarithmic{
@@ -259,7 +259,7 @@ SamplePotentials.randomDisk = function(prng)
       prng = DSFMT.create()
    end
 
-   local type = round(prng:random(0, 1))
+   local type = floor(prng:random(0, 2))
 
    if type == 0 then
       return Disk.miyamotoNagai{

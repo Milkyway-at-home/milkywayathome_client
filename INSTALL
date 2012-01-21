@@ -1,318 +1,195 @@
 
-Linux:
+Building the target doc, e.g. "make doc" should build PDF
+documentation if texinfo is found.
 
-1. Install dependencies
+--------------------------------------------------------------------------------
+Dependencies:
+  Everything can be built independently of BOINC for separate use
 
-   Ubuntu / Debian:
+  separation: Only BOINC if necessary
+       For CAL: CAL++, CAL, Boost
+       For OpenCL: OpenCL from AMD APP SDK or Nvidia CUDA SDK
 
-    (Note: apt-get build-dep boinc-app-milkyway for Debian. I'm not sure it's actually helpful anyway)
+  nbody:
+    OpenSSL: Optional, only used for tests
+    GLUT, OpenGL: Optional, for building graphics
 
-    # Make sure the necessary build tools are installed
-    $ apt-get build-essential
-    $ apt-get install libpopt-dev cmake autoconf automake libtool git-core subversion diffutils patch
-    $ apt-get build-dep boinc-app-milkyway boinc-client boinc-manager boinc-dev
+--------------------------------------------------------------------------------
+Dependency Installation Notes:
 
-  Other Distributions: Install equivalent packages.
+    Linux:
+        Ubuntu / Debian:
+              - Make sure the necessary build tools are installed
 
-  Arch: Most/all? dependencies can be installed by installing the
-        boinc package.
+              $ apt-get build-essential
+              $ apt-get install cmake git-core diffutils patch libssl-dev freeglut3-dev
 
-     $ pacman -S boinc
+          Other Distributions: Install equivalent packages.
 
-2. Checkout BOINC
+    OS X:
+                - Install Xcode and the Apple developer tools. This may involve joining some sort of cult.
+                - Install macports
 
- $ svn co http://boinc.berkeley.edu/svn/trunk/boinc
+                $ port install cmake git-core
 
-3. Build BOINC
+                To build as 32 bit, there are 2 options.
 
-  I had a little bit trouble getting this to build, but it's easiest
-  to only compile the libraries which are all we need.
+                If using Apple GCC,
+               - To build as 32 bit, or as a universal binary (no PPC), build with
+                  -DBUILD_OSX_32=ON or -DBUILD_OSX_UNIVERSAL=ON
+                 - 32 bit OS X  build may require Apple GCC 4.0 and  the 10.4u SDK
 
-  3.1 Run their silly wrapper script around autools which shouldn't
-  exist:
+               -If using Macports GCC, make sure you've installed the
+                +universal variant. Then build normally with the addition of -DCMAKE_C_FLAG="-m32" -DCMAKE_CXX_FLAGS="-m32" This however won't work on 10.4
 
-    cd to the boinc checkout
 
-    $ ./_autosetup
+    Windows:
+        - Visual Studio 2010 should work for Separation, but not N-body
+        - MinGW: Try using TDM-GCC http://tdm-gcc.tdragon.net/
+      - build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason
+          helps find things with MinGW
 
-    If this fails complaining about a missing libtoolize, edit
-    _autosetup and remove/comment out the block checking for
-    libtoolize.
 
-  3.2 Run standard autoconf stuff, enabling only the libraries. The
-      enabling debugging is optional, but for this purpose recommended.
+        Install OpenSSL for Win64:
+          - Install MSVC++ redistributables:
+               http://www.microsoft.com/downloads/details.aspx?familyid=bd2a6171-e2d6-4230-b809-9a8d7548c1b6
+          - Install OpenSSL itself:
+               http://www.slproweb.com/download/Win64OpenSSL-1_0_0d.exe
 
-    $ ./configure --disable-client --disable-server --enable-optimize
+          - Copy these: DLLs from their default install location
+               C:\OpenSSL-Win64\libeay32.dll
+               C:\OpenSSL-Win64\ssleay32.dll
+               to milkywayathome_client\lib directory to avoid finding
+               the 32 bit libraries.
+
+          - For MSVC 32 bit, either use VS 2008 or at least install
+            it, and set the platform toolset to v90 for all targets
+            (for now at least it can't be set from cmake) or else it
+            won't run on Windows 2000 (anything before XP SP2)
+
+     FreeBSD:
+       - Building 32 bit is sort of broken on 64 bit, so in addition
+            to -m32, you need to add -B/usr/lib32 to your flags
+     - /proc must be mounted for Lua to work which seems to not happen
+          by default
+     - Undefined reference from BOINC stuff on 32 bit I'm too lasy to figure out now
+
+
+BOINC:
+    If building from git, you can build BOINC along with everything else
+    using a submodule:
+
+    $ git checkout <tag of desired version>
+       e.g. $ git checkout separation_0.80
+     $ git submodule init
+     $ git submodule update
+
+     - Without a submodule, dropping a copy of the BOINC source at
+     milkywayathome_client/boinc/boinc should also include BOINC in the
+     build.
+
+     - If BOINC isn't found there, it will try to find the BOINC libraries
+     installed on the system or dumped in include and lib in the binary directory
+
+--------------------------------------------------------------------------------
+Using Build Options:
+  Build options are passed to cmake with -D on the command line, or
+  are check boxes if using the GUI
+
+   Example options:
+    $ cmake . -DBOINC_APPLICATION=OFF -DCMAKE_C_COMPILER=clang
+
+ Using -i argument with cmake will walk you through various build options
+
+--------------------------------------------------------------------------------
+Build Options:
+
+Common ON/OFF options:
+    BOINC_APPLICATION: Build with BOINC or not. More convenient to not
+                                        use BOINC for general use, testing. Not useful for most people
+    BOINC_RELEASE_NAMES: Use the long names BOINC uses which include version and system information
+
+Build Options:
+  CMAKE_BUILD_TYPE = one of Release, RelWithDebInfo, MinSizeRel, or Profile
+                                      defaults to Release
+             Some of the libraries the build handles (popt, lua, and BOINC) default to MinSizeRel unless debugging
+
+Common system options:
+  CMAKE_C_FLAGS, CMAKE_CXX_FLAGS - compiler flags
+  CMAKE_C_COMPILER, CMAKE_CXX_COMPILER - specify compiler
+    - note that if you want to change the compiler, you must delete CMakeCache.txt
+
+--------------------------------------------------------------------------------
+
+Building:
+  Linux:
+    $ cmake /path/to/source
     $ make
-    $ sudo make install
 
+  OS X:
+    Same as Linux. Alternatively, Xcode projects could be built, but I have never tried or tested it
 
-4. Compile the milkyway client
- 4.1 Check it out
+  Windows/MinGW (TDM-GCC)
+     $ cmake /path/to/source -G "MinGW Makefiles"
+     $ mingw32-make
 
-   $ git clone git://github.com/Milkyway-at-home/milkywayathome_client.git
-
-   Or if you have your SSH and github tokens etc. set up,
-
-   $ git clone git@github.com:Milkyway-at-home/milkywayathome_client.git
-
-  4.2 Use cmake to generate makefiles
-
-      Navigate to the git checkout, and run
-
-      $ cmake .
-
-  4.3 Compile
-
+  Windows/MinGW (MSYS, most likely with MinGW home installer"
+     $ cmake /path/to/source -G "MSYS Makefiles"
      $ make
 
-  Note if you need to change the compiler, and some other settings in
-  cmake, you must delete CMakeCache.txt.
+     To build 32 bit version, add -m32 to the CFLAGS when
+     building. Add -DCMAKE_C_FLAGS="-m32" -DCMAKE_CXX_FLAGS="-m32" to the cmake build line.
 
-  4.4 The client should now be build with an executable in bin/ and a
-      library in lib/
-
-Note: If you do try to build the client, and you have a recent
-GNOME/Gtk/Glib/GIO install, you need the latest development version of
-wxWidgets installed.
-
---------------------------------------------------------------------------------
-
-OS X:
-
-1. Install Xcode and the Apple developer tools. This may involve joining some sort of cult.
-2. Install macports
-3. Install dependencies by running:
-
-  $ port install cmake popt git-core autoconf automake
-
-4. Continue from step 3 of the Linux instructions.
-
---------------------------------------------------------------------------------
-
-Windows:
-
-Be prepared for pain.
-
-1. Visual Studio 2010 works for the separation, but not the N-body.
-
-2. Your best bet for all dependencies is to somehow get binaries and
-   headers, and install them to the prefix of your checkout. i.e. put
-   libraries in milkywayathome_client/lib and headers in milkywayathome_client/include.
-
-2.
-
-  MinGW:
-
-    Install with the latest mingw-get-inst installer
-      http://sourceforge.net/projects/mingw/files/Automated%20MinGW%20Installer/mingw-get-inst/
-
-    Start the MinGW MSYS shell, and run $ mingw-get update
-    Install stuff with mingw-get install <packagename>
+  Windows/Visual Studio
+     1. Use the cmake gui to generate VS projects
+     2. Open the generated sln and build the project
 
 
-
-3. Install the BOINC libraries
-
-  3.1 Get svn working somehow in some sort of shell. Maybe use
-       TortoiseSVN or whatever if all else fails.
-       $ svn co http://boinc.berkeley.edu/svn/trunk/boinc
-
-
-  3.3 Compile the BOINC libraries
-
-      Go to the lib subdirectory of the your boinc source checkout.
-
-      $ cd boinc/lib
-
-      Compile them.
-
-      $ make -f Makefile.mingw
-
-      Assuming there were no errors, install them
-
-      $ make -f Makefile.mingw install
-
-      Now you should have the BOINC libraries installed.
-
-4. Compile the milkyway client
-
-  4.1 If you installed git from
-
-    Checking out from the read-only URL:
-
-    $ git clone git://github.com/arsenm/milkywayathome_client.git
-
-    Or if you have your SSH and github tokens etc. set up,
-
-    $ git clone git@github.com:arsenm/milkywayathome_client.git
-
-  4.2 Use cmake to generate makefiles
-
-      Navigate to the git checkout, and run
-
-      $ cmake . -G "MSYS Makefiles"
-
-  4.3 Compile
-
-     $ make
-
-  Note if you need to change the compiler, and some other settings in
-  cmake, you must delete CMakeCache.txt.
-
-  4.4 The client should now be build with an exe in bin/ and a
-      library in lib/
 
 
 --------------------------------------------------------------------------------
 
 
-Nbody:
+For building Linux binaries with against an old glibc for
+compatability, install an old system in a chroot, but it's easier to
+build using new tools (gcc, cmake etc.) outside of the chroot.
 
-You must install Lua.
+To do this install a chroot (mostly following these instructions
+https://help.ubuntu.com/community/DebootstrapChroot for Hardy
 
-Building Lua as a static library prevents dynamic module loading on Windows,
-which we don't need and we almost don't want it to work anyway. It's
-also a good idea to build your own Lua on Windows (32 bit) just to be
-sure all math is SSE2.
+To go even older, something is broken with debootstrap but you can get
+cdebootstrap to work. You will need to edit
+/usr/share/cdebootstrap/suites and copy one of the Ubuntu lines and
+add the name of the old one you are trying to.
+I had issues getting one installe older than breezy.
 
+For building with very old glibcs, add -fgnu89-inline to CMAKE_C_FLAGS
+to avoid multiple definitions (this is necessary with breezy)
 
-Install "Lua for Windows" http://code.google.com/p/luaforwindows/
-This is primarily to get a standalone Lua interpreter installed which
-some of the tests use. Additionally it can be used for a 32-bit build,
-but that would also require shipping the DLL.
+# cdebootstrap --flavour=build --arch=i386 breezy /srv/chroot/breezy_i386 http://old-releases.ubuntu.com/ubuntu/
 
+Make sure that gcc-multilib and g++-multilib are installed on the host
+system. Inside the chroot install libssl-dev and freeglut3-dev, then do
 
+  $ mkdir build_i386; cd build_i386
+  $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386 \
+                                           -DCMAKE_C_COMPILER=/usr/bin/gcc  \
+                                           -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+                                           -DCMAKE_AR=/usr/bin/ar  \
+                                           -DCMAKE_RANLIB=/usr/bin/ranlib \
+                                           -DCMAKE_C_FLAGS="-m32 --sysroot=/srv/chroot/hardy_i386/"  \
+                                           -DCMAKE_CXX_FLAGS="-m32 --sysroot=/srv/chroot/hardy_i386/"
+   $  make
 
-Build Crlibm from: git://github.com/Milkyway-at-home/crlibm.git
-
-
-
-OpenSSL is used by the N-body, but only for tests.
-
-MSYS/Mingw32:
-
-  $ cmake . -G "MSYS Makefiles"
+for 64 bit
+  $ mkdir build_amd64; cd build_amd64
+  $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64 \
+                                           -DCMAKE_C_COMPILER=/usr/bin/gcc  \
+                                           -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+                                           -DCMAKE_AR=/usr/bin/ar  \
+                                           -DCMAKE_RANLIB=/usr/bin/ranlib \
+                                           -DCMAKE_C_FLAGS="-m64 --sysroot=/srv/chroot/hardy_amd64/"  \
+                                           -DCMAKE_CXX_FLAGS="-m64 --sysroot=/srv/chroot/hardy_amd64/"
   $ make
-
-
-MinGW64:
-  Install OpenSSL for Win64:
-    - Install MSVC++ redistributables:
-       http://www.microsoft.com/downloads/details.aspx?familyid=bd2a6171-e2d6-4230-b809-9a8d7548c1b6
-    - Install OpenSSL itself:
-      http://www.slproweb.com/download/Win64OpenSSL-1_0_0d.exe
-
-    - Copy these: DLLs from their default install location
-        C:\OpenSSL-Win64\libeay32.dll
-        C:\OpenSSL-Win64\ssleay32.dll
-      to milkywayathome_client/lib directory to avoid finding the 32 bit libraries.
-
-
-  $ cmake . -G "MinGW Makefiles"
-  $ mingw32-make
-
-
---------------------------------------------------------------------------------
-
-New MinGW directions to install everything:
-
-To build 32 bit version, add -m32 to the CFLAGS when building
-anything. For the builds using cmake, add -DCMAKE_C_FLAGS="-m32"
--DCMAKE_CXX_FLAGS="-m32" to the cmake build line.
-
-1. Install TDM GCC, the 64 bit full version.
-2. Install SlikSVN
-3. Install msys-git
-
-Make sure all the installers add themselves to the PATH.
-
-4. Start the MinGW64 shell
-
-5. Get milkywayathome_client
-    > git clone git://github.com/Milkyway-at-home/milkywayathome_client.git
-
-6. Decide if you're going to do an in or out of source build. If
-    you're doing an in source build, PATH_TO_MILKYWAY_BUILD_OUTPUT will be
-    the same as where your checkout is. Otherwise it's wherever you're building.
-
-6.Get BOINC:
-    > svn co http://boinc.berkeley.edu/svn/tags/<some version here>
-     or if necessary (right now you need trunk for mingw build to work)
-    > svn co http://boinc.berkeley.edu/svn/trunk/boinc
-
-7. Build BOINC
-    > cd boinc\lib
-    > mingw32-make -f Makefile.mingw
-
-8. Install BOINC somewhere useful.
-
-  If you're feeling inspired to do something useful, you can fix "make
-  install" for BOINC with the MinGW makefile. It can be made to work
-  with MSYS, but these directions aren't using it.
-
-  Actually much better, replace the 5 or so build systems which BOINC
-  currently has with a single cmake one.
-
-  There are 3 static libraries you need:
-    boinc\lib\libboinc.a
-    boinc\lib\libboinc_api.a
-    boinc\lib\libboinc_graphics2.a
-
-    Copy the librariesto ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/lib
-    Copy the headers to ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/include/boinc
-
-    The headers should be the ones listed in Makefile.mingw as install
-    headers. If you're lazy like me you can just copy all of the
-    headers in boinc\lib and in boinc\api
-
-
-9. Get POPT:
-    My fork should build with MinGW32/MinGW64 and MSVC
-        > git clone git://github.com/arsenm/POPT.git
-        > cmake ${PATH_TO_POPT} -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=${PATH_TO_MILKYWAY_BUILD_OUTPUT}
-        > mingw32-make
-        > mingw32-make install
-
-10. Get Lua.
-     Notes:
-         a. If you want to do a 32 bit build, add the -m32 to MYCFLAGS in ${LUA_SRC_DIR}/src/Makefile
-
-         b. If want static liblua.a to not need to ship a separate DLL, (and losing the ability to load packages which we
-             don't need) you need to change ${LUA_SRC_DIR}/src/Makefile to not build as a DLL.
-
-   > mingw32-make mingw
-
-    Again make install doesn't really work, so manually copy stuff again:
-    Copy src/liblua.a (and maybe ALSO lua51.dll depending on what you did) to ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/lib
-    Copy these headers from src/ to ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/include
-        lauxlib.h
-        lua.h
-        luaconf.h
-        lualib.h
-
-
-11. Get crlibm
-    > git clone git://github.com/Milkyway-at-home/crlibm.git
-    > cd crlibm
-    > cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=${PATH_TO_MILKYWAY_BUILD_OUTPUT}
-    > mingw32-make
-    > mingw32-make install
-
-12. Try building it
-      > cd ${PATH_TO_MILKYWAY_BUILD_OUTPUT}
-      > cmake -G "MinGW Makefiles" ${PATH_TO_MILKYWAY_SOURCE}
-
-      For an in source build that would probably be
-      > cmake -G "MinGW Makefiles" .
-      > mingw32-make
-
-13. If you want to build CAL++ separation, you will also need CAL and CAL++. CAL should be included with the AMD APP/Stream SDK. You should checkout CAL++ from
-
-   > svn co https://calpp.svn.sourceforge.net/svnroot/calpp calpp
-
-14. CAL++ depends on Boost, so now you need that. I'll come up with instructions once I figure this out. Right now it looks like it will be easier to get CAL stuff working with MSVC.
-
-
 
 

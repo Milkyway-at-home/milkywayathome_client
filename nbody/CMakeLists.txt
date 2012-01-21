@@ -1,19 +1,19 @@
-# Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
+# Copyright 2010-2011 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
-
+#
 # This file is part of Milkway@Home.
-
+#
 # Milkyway@Home is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # Milkyway@Home is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -23,24 +23,22 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 0
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 51
+set(nbody_VERSION_MINOR 89
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
 
 include(MaybeDlCheck)
-include(StaticBOINC)
+include(MWLink)
 include(SpecialLibs)
 include(PrintInfo)
-include(CheckFunctionExists)
 include(CheckSSE2)
+include(BOINCPaths)
 include(CMakeDependentOption)
 
-cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
-                                      "NOT NBODY_OPENCL" OFF)
-mark_as_advanced(NBODY_STATIC)
+cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
+                                       "NOT BOINC_APPLICATION;CURSES_FOUND" OFF)
 
-maybe_static(${NBODY_STATIC})
 
 if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLFW_FOUND)
   set(NBODY_GL ON CACHE INTERNAL "Build N-body graphics")
@@ -48,12 +46,21 @@ endif()
 
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
-  include_directories(${GLFW_INCLUDE_PATH})
+  include_directories(${GLFW_INCLUDE_DIR})
 endif()
+
+cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
+                                      "NOT NBODY_OPENCL;NOT ENABLE_CURSES" OFF)
+mark_as_advanced(NBODY_STATIC)
+maybe_static(${NBODY_STATIC})
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 include_directories(${DSFMT_INCLUDE_DIR})
+
+if(ENABLE_CURSES)
+  include_directories(${CURSES_INCLUDE_DIR})
+endif()
 
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
@@ -76,17 +83,6 @@ if(NOT DOUBLEPREC AND NBODY_CRLIBM)
   set(NBODY_CRLIBM OFF)
 endif()
 
-if(NBODY_OPENCL)
-  if(NOT OPENCL_FOUND)
-    message(WARNING "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
-    set(NBODY_OPENCL OFF)
-  else()
-    include_directories(${OPENCL_DIRECTORIES})
-  endif()
-endif()
-
-# Handle downloading, extracting and building dSFMT
-
 print_separator()
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
@@ -95,6 +91,18 @@ message("   Enable crlibm:     ${NBODY_CRLIBM}")
 message("  ----")
 print_libs()
 print_separator()
+
+if(NBODY_OPENCL)
+  set(nbody_inline_src "${LIBRARY_OUTPUT_PATH}/nbody_kernels_inline.c")
+  add_custom_command(
+    OUTPUT "${nbody_inline_src}"
+    COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+    COMMENT "Inlining N-body kernel source")
+  add_library(nbody_kernels STATIC ${nbody_inline_src})
+endif()
 
 if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
   message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
@@ -114,32 +122,35 @@ set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/")
 set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_grav.c
                   ${NBODY_SRC_DIR}/nbody_io.c
+                  ${NBODY_SRC_DIR}/nbody_curses.c
                   ${NBODY_SRC_DIR}/nbody_types.c
                   ${NBODY_SRC_DIR}/nbody_tree.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
                   ${NBODY_SRC_DIR}/nbody_potential.c
-                  ${NBODY_SRC_DIR}/nbody_simulation.c
+                  ${NBODY_SRC_DIR}/nbody.c
+                  ${NBODY_SRC_DIR}/nbody_plain.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
-                  ${NBODY_SRC_DIR}/nbody_step.c
                   ${NBODY_SRC_DIR}/nbody_show.c
                   ${NBODY_SRC_DIR}/nbody_checkpoint.c
                   ${NBODY_SRC_DIR}/nbody_defaults.c
                   ${NBODY_SRC_DIR}/nbody_coordinates.c
                   ${NBODY_SRC_DIR}/nbody_shmem.c
-                  ${NBODY_SRC_DIR}/nbody_util.c)
-
+                  ${NBODY_SRC_DIR}/nbody_util.c
+                  ${NBODY_SRC_DIR}/nbody_emd.c)
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
                       ${NBODY_INCLUDE_DIR}/nbody_config.h.in
                       ${NBODY_INCLUDE_DIR}/nbody_io.h
+                      ${NBODY_INCLUDE_DIR}/nbody_curses.h
                       ${NBODY_INCLUDE_DIR}/nbody_tree.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
+                      ${NBODY_INCLUDE_DIR}/nbody_plain.h
                       ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
@@ -148,11 +159,22 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_coordinates.h
                       ${NBODY_INCLUDE_DIR}/nbody_shmem.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h
-                      ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_graphics.h
+                      ${NBODY_INCLUDE_DIR}/nbody_emd.h)
+
+
+
+if(NBODY_OPENCL)
+  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/nbody_cl.c)
+  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_cl.h)
+endif()
+
 
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_models.c
+                  ${NBODY_SRC_DIR}/nbody_lua_util.c
+                  ${NBODY_SRC_DIR}/nbody_lua_misc.c
 
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
@@ -171,6 +193,8 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_util.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_misc.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
 
@@ -188,7 +212,9 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
 add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
 set_target_properties(nbody_lua PROPERTIES
                         COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
-
+if(SYSTEM_IS_X86)
+  enable_sse2(nbody_lua)
+endif()
 
 
 #TODO: The tests dSFMT has
@@ -217,49 +243,44 @@ set_target_properties(nbody_lua PROPERTIES
 # hardware.
 #
 
-set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
-
 set(nbody_link_libs )
 
 if(NBODY_OPENCL)
-  # set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
-  # list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/gravmap_opencl.c")
-
-  # list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
-  # set_source_files_properties("${c_kernel_dir}/cl_gravmap.c"
-  #                             PROPERTIES GENERATED TRUE)
-
-  # list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
+  include_directories(${OPENCL_INCLUDE_DIRS})
+  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES} nbody_kernels)
 endif()
 
-add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
-
-
-if(DOWNLOAD_CRLIBM)
-  add_dependencies(nbody_simulation crlibm_build)
-  set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
-  set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
-else()
-  if(BOINC_RELEASE AND NOT CRLIBM_FOUND)
-    message(FATAL "Trying to release without crlibm")
-  endif()
+if(ENABLE_CURSES)
+  list(APPEND nbody_link_libs ${CURSES_LIBRARIES})
 endif()
 
-set(nbody_exe_link_libs nbody_simulation
+if(HAVE_LIBRT)
+  list(APPEND nbody_link_libs rt)
+endif()
+
+
+add_library(nbody STATIC ${nbody_lib_src} ${nbody_lib_headers})
+if(SYSTEM_IS_X86)
+  enable_sse2(nbody)
+endif()
+
+
+
+set(nbody_exe_link_libs nbody
                         nbody_lua
                         milkyway_lua
-                        nbody_simulation
+                        nbody
                         milkyway
 
                         ${POPT_LIBRARY}
                         ${LUA_LIBRARIES}
-                        m
                         ${OS_SPECIFIC_LIBS}
                         ${nbody_link_libs})
 
-if(BOINC_APPLICATION)
-  list(INSERT nbody_exe_link_libs 5 ${BOINC_LIBRARIES})
+if(NBODY_OPENCL)
+  list(INSERT nbody_exe_link_libs 5 milkyway_cl)
 endif()
+
 
 
 if(NBODY_CRLIBM)
@@ -267,16 +288,47 @@ if(NBODY_CRLIBM)
   list(APPEND nbody_exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
-if(NEED_POPT_DEPS)
-  # Popt dependencies for static linking For some reason, on OS X /
-  # windows you need these dependencies but not Linux.
-  list(APPEND nbody_exe_link_libs ${LIBICONV_LIBRARY}
-                                  ${LIBINTL_LIBRARY})
-endif()
-
 if(NOT HAVE_SSE2 AND SYSTEM_IS_x86)
   message(FATAL_ERROR "SSE2 is required for x86 systems")
 endif()
+
+add_executable(milkyway_nbody ${NBODY_SRC_DIR}/main.c)
+milkyway_link(milkyway_nbody ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
+
+if(NBODY_GL AND WIN32 AND NOT BOINC_APPLICATION)
+  message(FATAL "N-body visualizer unsupported on Windows without BOINC")
+endif()
+if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
+  message(FATAL "BOINC graphics library not found")
+endif()
+
+if(NBODY_GL)
+  include_directories(${OPENGL_INCLUDE_DIR})
+  include_directories(${GLFW_INCLUDE_DIR})
+
+  set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.c
+                            ${NBODY_SRC_DIR}/nbody_gl_util.c
+                            ${NBODY_SRC_DIR}/graphics_main.c)
+  set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_util.h
+                                ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
+
+  find_library(COCOA_LIB Cocoa)
+#  find_library(CG_LIB CoreGraphics)
+  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB})
+  if(BOINC_APPLICATION)
+    list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
+  endif()
+  if(HAVE_LIBRT)
+    list(APPEND vis_link_libs rt)
+  endif()
+
+  list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
+
+  add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})
+  target_link_libraries(milkyway_nbody_graphics ${vis_link_libs})
+endif()
+
 
 if(BOINC_RELEASE_NAMES)
   if(NBODY_OPENMP)
@@ -288,60 +340,51 @@ if(BOINC_RELEASE_NAMES)
   endif()
 
   get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
-  set(nbody_bin_name "${BOINC_BIN_NAME}")
+  set_target_properties(milkyway_nbody
+                          PROPERTIES
+						    OUTPUT_NAME ${BOINC_BIN_NAME})
 
-  get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
-  set(nbody_graphics_bin_name "${BOINC_BIN_NAME}")
+  if(NBODY_GL)
+    get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
+    set_target_properties(milkyway_nbody_graphics
+                            PROPERTIES
+                              OUTPUT_NAME ${BOINC_BIN_NAME})
+  endif()
+endif()
+
+if(INSTALL_BOINC)
+  install_boinc(milkyway_nbody)
 else()
-  set(nbody_bin_name "milkyway_nbody")
-  set(nbody_graphics_bin_name "milkyway_nbody_graphics")
+    install(TARGETS milkyway_nbody
+            RUNTIME DESTINATION bin)
+endif()
+
+get_target_property(NBODY_BIN_NAME milkyway_nbody LOCATION)
+get_filename_component(NBODY_BIN_NAME ${NBODY_BIN_NAME} NAME)
+
+if(SYSTEM_IS_X86)
+  enable_sse2(milkyway_nbody)
+endif()
+
+
+if(NBODY_GL)
+  if(INSTALL_BOINC)
+    install_boinc(milkyway_nbody_graphics)
+  else()
+    install(TARGETS milkyway_nbody_graphics
+              RUNTIME DESTINATION bin)
+  endif()
+
+  get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)
+  get_filename_component(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} NAME)
+
+  set_target_properties(milkyway_nbody_graphics PROPERTIES
+                          COMPILE_FLAGS "${FAST_MATH_FLAGS}")
 endif()
 
 configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
-
-add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
-
-milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
-
-if(NBODY_GL AND WIN32 AND NOT BOINC_APPLICATION)
-  message(FATAL "N-body visualizer unsupported on Windows without BOINC")
-endif()
-if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
-  message(FATAL "BOINC graphics library not found")
-endif()
-
-if(NBODY_GL)
-  set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.c
-                            ${NBODY_SRC_DIR}/graphics_main.c)
-  set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
-                                ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
-
-  find_library(COCOA_LIB Cocoa)
-#  find_library(CG_LIB CoreGraphics)
-  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES} ${COCOA_LIB})
-  if(BOINC_APPLICATION)
-    list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
-  endif()
-
-  if(NEED_POPT_DEPS)
-    list(APPEND vis_link_libs ${LIBICONV_LIBRARY} ${LIBINTL_LIBRARY})
-  endif()
-  list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
-
-  add_executable(${nbody_graphics_bin_name} ${nbody_screensaver_src} ${nbody_screensaver_headers})
-  target_link_libraries(${nbody_graphics_bin_name} ${vis_link_libs})
-endif()
-
-
-install(TARGETS ${nbody_bin_name} nbody_simulation nbody_lua
-          RUNTIME       DESTINATION bin
-          ARCHIVE       DESTINATION lib
-          PUBLIC_HEADER DESTINATION include)
-
-find_package(OpenSSL)
-message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
 
 if(NOT OPENSSL_FOUND)
   message(WARNING "OpenSSL not found, not using N-body tests")
@@ -349,4 +392,6 @@ else()
   add_subdirectory(tests EXCLUDE_FROM_ALL)
 endif()
 
+
+add_subdirectory(doc EXCLUDE_FROM_ALL)
 

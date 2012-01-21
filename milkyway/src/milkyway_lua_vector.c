@@ -1,21 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -28,6 +28,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 mwvector* checkVector(lua_State* luaSt, int idx)
 {
     return (mwvector*) mw_checknamedudata(luaSt, idx, MWVECTOR_TYPE);
+}
+
+mwvector* toVector(lua_State* luaSt, int idx)
+{
+    return (mwvector*) mw_tonamedudata(luaSt, idx, MWVECTOR_TYPE);
+}
+
+mwvector* expectVector(lua_State* luaSt, int idx)
+{
+    return (mwvector*) expectType(luaSt, idx, MWVECTOR_TYPE);
 }
 
 int pushVector(lua_State* luaSt, mwvector vIn)
@@ -71,7 +81,7 @@ static int lengthVector(lua_State* luaSt)
     return 1;
 }
 
-static const mwvector _emptyVector = EMPTY_MWVECTOR;
+static const mwvector _zeroVector = ZERO_VECTOR;
 
 static int createVector(lua_State* luaSt)
 {
@@ -83,7 +93,7 @@ static int createVector(lua_State* luaSt)
     switch (n)
     {
         case 0:
-            pushVector(luaSt, _emptyVector);
+            pushVector(luaSt, _zeroVector);
             return 1;
 
         case 3:

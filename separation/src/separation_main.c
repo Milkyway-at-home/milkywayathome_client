@@ -1,28 +1,31 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
-Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "separation.h"
 #include "separation_lua.h"
 #include "milkyway_util.h"
-#include "milkyway_cpp_util.h"
+#include "milkyway_boinc_util.h"
+#include "milkyway_git_version.h"
 #include "io_util.h"
 #include <popt.h>
 
@@ -30,18 +33,101 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
 #define DEFAULT_STAR_POINTS "stars.txt"
 
+#if NVIDIA_OPENCL
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "NVIDIA Corporation"
+#elif AMD_OPENCL
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Advanced Micro Devices, Inc."
+#elif defined(__APPLE__)
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Apple"
+#else
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR ""
+#endif
+
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
 
+const char* separationCommitID = MILKYWAY_GIT_COMMIT_ID;
+const char* separationCommitDescribe = MILKYWAY_GIT_DESCRIBE;
 
-static void printVersion(int boincTag)
+static void printCopyright()
+{
+    mw_printf(
+        "Milkyway@Home Separation client %d.%d\n\n"
+        "Copyright (c) 2008-2011 Travis Desell, Nathan Cole, Boleslaw Szymanski\n"
+        "Copyright (c) 2008-2011 Heidi Newberg, Carlos Varela, Malik Magdon-Ismail\n"
+        "Copyright (c) 2008-2011 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010-2011 Matthew Arsenault\n"
+        "Copyright (c) 1991-2000 University of Groningen, The Netherlands.\n"
+        "Copyright (c) 2001-2009 The GROMACS Development Team\n"
+        "\n"
+        "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+        "This is free software: you are free to change and redistribute it.\n"
+        "There is NO WARRANTY, to the extent permitted by law.\n"
+        "\n"
+        " Incorporates works covered by the following copyright and\n"
+        " permission notices:\n"
+        "\n"
+        "Copyright (C) 2007, 2008 Mutsuo Saito, Makoto Matsumoto and Hiroshima University\n"
+        "Copyright (c) 2010, Naoaki Okazaki\n"
+        "\n"
+        " Redistribution and use in source and binary forms, with or without\n"
+        " modification, are permitted provided that the following conditions are met:\n"
+        "     * Redistributions of source code must retain the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer.\n"
+        "     * Redistributions in binary form must reproduce the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer in the\n"
+        "       documentation and/or other materials provided with the distribution.\n"
+        "     * Neither the names of the authors nor the names of its contributors\n"
+        "       may be used to endorse or promote products derived from this\n"
+        "       software without specific prior written permission.\n"
+        "\n"
+        " THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        " \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        " LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        " A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER\n"
+        " OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+        " EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,\n"
+        " PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\n"
+        " PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\n"
+        " LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+        " NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"
+        " SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+        "\n"
+        "\n"
+        "Copyright (C) 1994-2008 Lua.org, PUC-Rio.\n"
+        "\n"
+        " Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+        " of this software and associated documentation files (the \"Software\"), to deal\n"
+        " in the Software without restriction, including without limitation the rights\n"
+        " to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+        " copies of the Software, and to permit persons to whom the Software is\n"
+        " furnished to do so, subject to the following conditions:\n"
+        "\n"
+        " The above copyright notice and this permission notice shall be included in\n"
+        " all copies or substantial portions of the Software.\n"
+        "\n"
+        " THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+        " IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+        " FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE\n"
+        " AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+        " LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+        " OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n"
+        " THE SOFTWARE.\n"
+        "\n",
+        SEPARATION_VERSION_MAJOR,
+        SEPARATION_VERSION_MINOR
+        );
+}
+
+
+static void printVersion(int boincTag, int verbose)
 {
     char versionStr[2048];
 
     snprintf(versionStr, sizeof(versionStr), "%s %u.%u %s %s %s%s%s%s",
-             SEPARATION_APP_NAME,
+             SEPARATION_PROJECT_NAME,
              SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
-             SEPARATION_SYSTEM_NAME,
+             MILKYWAY_SYSTEM_NAME,
              ARCH_STRING,
              PRECSTRING,
              DENORMAL_STRING,
@@ -49,12 +135,19 @@ static void printVersion(int boincTag)
              SEPARATION_SPECIAL_LIBM_STR);
 
     if (boincTag)
-        warn("<search_application> %s </search_application>\n", versionStr);
+    {
+        mw_printf("<search_application> %s </search_application>\n", versionStr);
+    }
     else
     {
-        warn("%s %s\n",
-             versionStr,
-             BOINC_APPLICATION ? "BOINC" : "");
+        mw_printf("%s %s\n",
+                  versionStr,
+                  BOINC_APPLICATION ? "BOINC" : "");
+    }
+
+    if (verbose)
+    {
+        mw_printf("Commit %s\n", MILKYWAY_GIT_COMMIT_ID);
     }
 }
 
@@ -65,225 +158,284 @@ static void freeSeparationFlags(SeparationFlags* sf)
     free(sf->separation_outfile);
     free(sf->forwardedArgs);
     free(sf->numArgs);
+    free(sf->preferredPlatformVendor);
 }
 
 /* Use hardcoded names if files not specified */
 static void setDefaultFiles(SeparationFlags* sf)
 {
-    stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
-    stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
+    mwStringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
+    mwStringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
+    mwStringDefault(sf->preferredPlatformVendor, DEFAULT_PREFERRED_PLATFORM_VENDOR);
 }
 
-static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
+static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->forceNoIntrinsics = sf->forceNoIntrinsics;
     clr->forceX87 = sf->forceX87;
     clr->forceSSE2 = sf->forceSSE2;
     clr->forceSSE3 = sf->forceSSE3;
+    clr->forceSSE41 = sf->forceSSE41;
+    clr->forceAVX = sf->forceAVX;
     clr->verbose = sf->verbose;
-}
-
-#if SEPARATION_OPENCL
-
-static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
-{
-    clr->platform = sf->usePlatform;
-    clr->devNum = sf->useDevNumber;
     clr->nonResponsive = sf->nonResponsive;
-    clr->numChunk = sf->numChunk;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
-    setCommonFlags(clr, sf);
-}
 
-#elif SEPARATION_CAL
-
-static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
-{
     clr->devNum = sf->useDevNumber;
-    clr->responsivenessFactor = sf->responsivenessFactor;
+    clr->platform = sf->usePlatform;
+    clr->preferredPlatformVendor = sf->preferredPlatformVendor;
+
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
-    clr->pollingMode = sf->pollingMode;
-    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
 
-    setCommonFlags(clr, sf);
+    clr->forceNoILKernel = sf->forceNoILKernel;
+    clr->forceNoOpenCL = sf->forceNoOpenCL;
 }
 
+#if BOINC_APPLICATION
+
+/* If someone has mixed Windows and non-Windows they can set for each*/
+#ifdef _WIN32
+  #define GPU_PRIORITY_SETTING "gpu_process_priority"
 #else
+  #define GPU_PRIORITY_SETTING "gpu_process_nice"
+#endif /* _WIN32 */
 
-static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
+/* If using BOINC try reading a few of the settings from the project
+ * preferences. If command line arguments are used, those will
+ * override the preferences. The command line arguments will also
+ * still work without BOINC */
+static void separationReadPreferences(SeparationFlags* sf)
 {
-    setCommonFlags(clr, sf);
+    static struct
+    {
+        double gpuTargetFrequency;
+        int gpuNonResponsive;
+        int gpuProcessPriority;
+        int gpuDisableCheckpoint;
+    } prefs;
+
+    static MWProjectPrefs sepPrefs[] =
+        {
+            { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
+            { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
+            { GPU_PRIORITY_SETTING,   MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
+            { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
+            END_MW_PROJECT_PREFS
+        };
+
+    prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
+    prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
+    prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
+    prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
+
+    if (mwGetAppInitData())
+    {
+        mw_printf("Error reading app init data. Project preferences will not be used\n");
+    }
+    else
+    {
+        mwReadProjectPrefs(sepPrefs, mwGetProjectPrefs());
+    }
+
+    /* Any successfully found setting will be used; otherwise it will get the default */
+    sf->targetFrequency = prefs.gpuTargetFrequency;
+    sf->nonResponsive = prefs.gpuNonResponsive;
+    sf->processPriority = prefs.gpuProcessPriority;
+    sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
 }
 
-#endif /* SEFPARATION_OPENCL */
+#endif /* BOINC_APPLICATION */
 
 
-/* Returns the newly allocated array of parameters */
+/* Read project preferences and command line arguments */
 static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 {
     poptContext context;
     int argRead;
+    static int version = FALSE;
+    static int copyright = FALSE;
     static unsigned int numParams = 0;
-    static int server_params = 0;
-    static const char** rest;
+    static int serverParams = 0;
+    static const char** rest = NULL;
     static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
 
     static const struct poptOption options[] =
-    {
         {
-            "astronomy-parameter-file", 'a',
-            POPT_ARG_STRING, &sf.ap_file,
-            0, "Astronomy parameter file", NULL
-        },
+            {
+                "astronomy-parameter-file", 'a',
+                POPT_ARG_STRING, &sf.ap_file,
+                0, "Astronomy parameter file", NULL
+            },
 
-        {
-            "star-points-file", 's',
-            POPT_ARG_STRING, &sf.star_points_file,
-            0, "Star points files", NULL
-        },
+            {
+                "star-points-file", 's',
+                POPT_ARG_STRING, &sf.star_points_file,
+                0, "Star points files", NULL
+            },
 
-        {
-            "output", 'o',
-            POPT_ARG_STRING, &sf.separation_outfile,
-            0, "Output file for separation (enables separation)", NULL
-        },
+            {
+                "output", 'o',
+                POPT_ARG_STRING, &sf.separation_outfile,
+                0, "Output file for separation (enables separation)", NULL
+            },
 
-        {
-            "seed", 'e',
-            POPT_ARG_INT, &sf.separationSeed,
-            SEED_ARGUMENT, "Seed for random number generator", NULL
-        },
+            {
+                "seed", 'e',
+                POPT_ARG_INT, &sf.separationSeed,
+                SEED_ARGUMENT, "Seed for random number generator", NULL
+            },
 
-        {
-            "ignore-checkpoint", 'i',
-            POPT_ARG_NONE, &sf.ignoreCheckpoint,
-            0, "Ignore the checkpoint file", NULL
-        },
+            {
+                "ignore-checkpoint", 'i',
+                POPT_ARG_NONE, &sf.ignoreCheckpoint,
+                0, "Ignore the checkpoint file", NULL
+            },
 
-        {
-            "cleanup-checkpoint", 'c',
-            POPT_ARG_NONE, &sf.cleanupCheckpoint,
-            0, "Delete checkpoint on successful", NULL
-        },
+            {
+                "cleanup-checkpoint", 'c',
+                POPT_ARG_NONE, &sf.cleanupCheckpoint,
+                0, "Delete checkpoint on successful", NULL
+            },
 
-        {
-            "debug-boinc", 'g',
-            POPT_ARG_NONE, &sf.debugBOINC,
-            0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
-        },
+            {
+                "debug-boinc", 'g',
+                POPT_ARG_NONE, &sf.debugBOINC,
+                0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
+            },
 
-        {
-            "process-priority", 'b',
-            POPT_ARG_INT, &sf.processPriority,
-         #ifndef _WIN32
-            PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
-         #else
-            PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
-         #endif /* _WIN32 */
-        },
+            {
+                "process-priority", 'b',
+                POPT_ARG_INT, &sf.processPriority,
+              #ifndef _WIN32
+                PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
+              #else
+                PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
+              #endif /* _WIN32 */
+            },
 
-      #if SEPARATION_OPENCL || SEPARATION_CAL
-        {
-            "device", 'd',
-            POPT_ARG_INT, &sf.useDevNumber,
-            0, "Device number passed by boinc to use", NULL
-        },
+            {
+                "device", 'd',
+                POPT_ARG_INT, &sf.useDevNumber,
+                0, "Device number passed by BOINC to use", NULL
+            },
 
-        {
-            "num-chunk", 'u',
-            POPT_ARG_INT, &sf.numChunk,
-            0, "Manually set number of chunks per GPU iteration", NULL
-        },
+            {
+                "non-responsive", 'r',
+                POPT_ARG_NONE, &sf.nonResponsive,
+                0, "Do not care about display responsiveness (use with caution)", NULL
+            },
 
-        {
-            "responsiveness-factor", 'r',
-            POPT_ARG_DOUBLE, &sf.responsivenessFactor,
-            0, "Responsiveness factor for GPU", NULL
-        },
+            {
+                "gpu-target-frequency", 'q',
+                POPT_ARG_DOUBLE, &sf.targetFrequency,
+                0, "Target frequency for GPU tasks" , NULL
+            },
 
-        {
-            "gpu-target-frequency", 'q',
-            POPT_ARG_DOUBLE, &sf.targetFrequency,
-            0, "Target frequency for GPU tasks" , NULL
-        },
+            {
+                "gpu-disable-checkpointing", 'k',
+                POPT_ARG_NONE, &sf.disableGPUCheckpointing,
+                0, "Disable checkpointing with GPUs" , NULL
+            },
 
-        {
-            "gpu-polling-mode", 'm',
-            POPT_ARG_INT, &sf.pollingMode,
-            0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
-        },
+            {
+                "platform", 'l',
+                POPT_ARG_INT, &sf.usePlatform,
+                0, "CL platform index to use", NULL
+            },
 
-        {
-            "gpu-disable-checkpointing", 'k',
-            POPT_ARG_NONE, &sf.disableGPUCheckpointing,
-            0, "Disable checkpointing with GPUs" , NULL
-        },
+            {
+                "platform-vendor", '\0',
+                POPT_ARG_STRING, &sf.preferredPlatformVendor,
+                0, "CL Platform vendor name to try to use", NULL
+            },
 
-      #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
+            {
+                "verbose", '\0',
+                POPT_ARG_NONE, &sf.verbose,
+                0, "Print some extra debugging information", NULL
+            },
 
-      #if SEPARATION_OPENCL
-        {
-            "platform", 'l',
-            POPT_ARG_INT, &sf.usePlatform,
-            0, "CL Platform to use", NULL
-        },
+            {
+                "force-no-opencl", '\0',
+                POPT_ARG_NONE, &sf.forceNoOpenCL,
+                0, "Use regular CPU path instead of OpenCL if available", NULL
+            },
 
-        {
-            "verbose", '\0',
-            POPT_ARG_NONE, &sf.verbose,
-            0, "Print some extra debugging information", NULL
-        },
+            {
+                "force-no-il-kernel", '\0',
+                POPT_ARG_NONE, &sf.forceNoILKernel,
+                0, "Do not use AMD IL replacement kernels if available", NULL
+            },
 
-      #endif /* SEPARATION_OPENCL */
+            {
+                "force-no-intrinsics", '\0',
+                POPT_ARG_NONE, &sf.forceNoIntrinsics,
+                0, "Use old default path", NULL
+            },
 
-        {
-            "force-no-intrinsics", '\0',
-            POPT_ARG_NONE, &sf.forceNoIntrinsics,
-            0, "Use old default path", NULL
-        },
+            {
+                "force-x87", '\0',
+                POPT_ARG_NONE, &sf.forceX87,
+                0, "Force to use x87 path (ignored if x86_64)", NULL
+            },
 
-        {
-            "force-x87", '\0',
-            POPT_ARG_NONE, &sf.forceX87,
-            0, "Force to use x87 path (ignored if x86_64)", NULL
-        },
+            {
+                "force-sse2", '\0',
+                POPT_ARG_NONE, &sf.forceSSE2,
+                0, "Force to use SSE2 path", NULL
+            },
 
-        {
-            "force-sse2", '\0',
-            POPT_ARG_NONE, &sf.forceSSE2,
-            0, "Force to use SSE2 path", NULL
-        },
+            {
+                "force-sse3", '\0',
+                POPT_ARG_NONE, &sf.forceSSE3,
+                0, "Force to use SSE3 path", NULL
+            },
 
-        {
-            "force-sse3", '\0',
-            POPT_ARG_NONE, &sf.forceSSE3,
-            0, "Force to use SSE3 path", NULL
-        },
+            {
+                "force-sse4.1", '\0',
+                POPT_ARG_NONE, &sf.forceSSE41,
+                0, "Force to use SSE4.1 path", NULL
+            },
 
-        {
-            "version", 'v',
-            POPT_ARG_NONE, &sf.printVersion,
-            0, "Print version information", NULL
-        },
+            {
+                "force-avx", '\0',
+                POPT_ARG_NONE, &sf.forceAVX,
+                0, "Force to use AVX path", NULL
+            },
 
-        {
-            "p", 'p',
-            POPT_ARG_NONE, &server_params,
-            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
-        },
+            {
+                "p", 'p',
+                POPT_ARG_NONE, &serverParams,
+                0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+            },
 
-        {
-            "np", '\0',
-            POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
-            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
-        },
+            {
+                "np", '\0',
+                POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
+                0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+            },
 
-        POPT_AUTOHELP
-        POPT_TABLEEND
-    };
+            {
+                "version", 'v',
+                POPT_ARG_NONE, &version,
+                0, "Print version information", NULL
+            },
+
+            {
+                "copyright", '\0',
+                POPT_ARG_NONE, &copyright,
+                0, "Print copyright information and exit", NULL
+            },
+
+            POPT_AUTOHELP
+            POPT_TABLEEND
+        };
+
+  #if BOINC_APPLICATION
+    separationReadPreferences(&sf);
+  #endif /* BOINC_APPLICATION */
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
-
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);
@@ -294,20 +446,28 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     argRead = mwReadArguments(context);
     if (argRead < 0)
     {
-        poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
         freeSeparationFlags(&sf);
         exit(EXIT_FAILURE);
     }
 
-    if (sf.printVersion)
+    if (version)
     {
-        printVersion(FALSE);
+        printVersion(FALSE, sf.verbose);
+    }
+
+    if (copyright)
+    {
+        printCopyright();
+    }
+
+    if (version || copyright)
+    {
         exit(EXIT_SUCCESS);
     }
 
-    sf.setSeed = argRead & SEED_ARGUMENT; /* Check if these flags were used */
-    sf.setPriority = argRead & PRIORITY_ARGUMENT;
+    sf.setSeed = !!(argRead & SEED_ARGUMENT); /* Check if these flags were used */
+    sf.setPriority = !!(argRead & PRIORITY_ARGUMENT);
 
     sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
     if (sf.do_separation)
@@ -319,8 +479,8 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 
     poptFreeContext(context);
     setDefaultFiles(&sf);
-
     *sfOut = sf;
+
     return 0;
 }
 
@@ -335,14 +495,14 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
     /* Try the new file first. If that doesn't work, try the old one. */
     if (!ias)
     {
-        warn("Error reading astronomy parameters from file '%s'\n"
-             "  Trying old parameters file\n", sf->ap_file);
+        mw_printf("Error reading astronomy parameters from file '%s'\n"
+                  "  Trying old parameters file\n", sf->ap_file);
         ias = readParameters(sf->ap_file, ap, bgp, streams);
     }
 
     if (!ias)
     {
-        warn("Failed to read parameters file\n");
+        mw_printf("Failed to read parameters file\n");
         return NULL;
     }
 
@@ -369,8 +529,7 @@ static int worker(const SeparationFlags* sf)
 
     memset(&ap, 0, sizeof(ap));
 
-    getCLReqFromFlags(&clr, sf);
-
+    setCLReqFlags(&clr, sf);
     ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)
         return 1;
@@ -387,7 +546,7 @@ static int worker(const SeparationFlags* sf)
     sc = getStreamConstants(&ap, &streams);
     if (!sc)
     {
-        warn("Failed to get stream constants\n");
+        mw_printf("Failed to get stream constants\n");
         mwFreeA(ias);
         freeStreams(&streams);
         return 1;
@@ -398,7 +557,7 @@ static int worker(const SeparationFlags* sf)
     rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
                   &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
     if (rc)
-        warn("Failed to calculate likelihood\n");
+        mw_printf("Failed to calculate likelihood\n");
 
     printSeparationResults(results, ap.number_streams);
 
@@ -413,17 +572,16 @@ static int worker(const SeparationFlags* sf)
 static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
 {
     int rc;
-    MWInitType initType = 0;
+    MWInitType initType = MW_PLAIN;
 
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();
   #endif
 
+    mwFixFPUPrecision();
+
     if (debugBOINC)
         initType |= MW_DEBUG;
-
-    if (SEPARATION_CAL)
-        initType |= MW_CAL;
 
     if (SEPARATION_OPENCL)
         initType |= MW_OPENCL;
@@ -432,31 +590,28 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
     if (rc)
         return rc;
 
+    if (BOINC_APPLICATION && mwIsFirstRun())
+    {
+        /* Print the version, but only once for the workunit */
+        printVersion(TRUE, FALSE);
+    }
+
     /* For GPU versions, default to using a higher process priority if not set */
-  #if SEPARATION_OPENCL || SEPARATION_CAL
-    if (!setPriority && mwSetProcessPriority(DEFAULT_GPU_PRIORITY))
-        return 1;
-  #endif
 
     /* If a  priority was specified, use that */
-    if (setPriority && mwSetProcessPriority(priority))
-        return 1;
+    if (setPriority)
+    {
+        mwSetProcessPriority(priority);
+    }
+    else if (SEPARATION_OPENCL)
+    {
+        mwSetProcessPriority(DEFAULT_GPU_PRIORITY);
+    }
 
-  #if (SEPARATION_CAL || SEPARATION_OPENCL) && defined(_WIN32)
+  #if (SEPARATION_OPENCL) && defined(_WIN32)
     /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
-    if (mwSetTimerMinResolution())
-        return 1;
-  #endif /* SEPARATION_CAL && defined(_WIN32) */
-
-    return 0;
-}
-
-
-static int separationSpecialCleanup()
-{
-  #if SEPARATION_CAL && defined(_WIN32)
-    mwResetTimerResolution();
-  #endif /* SEPARATION_CAL && defined(_WIN32) */
+    mwSetTimerMinResolution();
+  #endif /* defined(_WIN32) */
 
     return 0;
 }
@@ -470,19 +625,27 @@ int main(int argc, const char* argv[])
 {
     int rc;
     SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
-    const char** argvCopy;
+    const char** argvCopy = NULL;
 
   #ifdef NDEBUG
     mwDisableErrorBoxes();
   #endif /* NDEBUG */
 
     argvCopy = mwFixArgv(argc, argv);
-    rc = parseParameters(argc, argvCopy, &sf);
+    rc = parseParameters(argc, argvCopy ? argvCopy : argv, &sf);
     if (rc)
     {
-        warn("Failed to parse parameters\n");
+        if (BOINC_APPLICATION)
+        {
+            freeSeparationFlags(&sf);
+            mwBoincInit(MW_PLAIN);
+            parseParameters(argc, argvCopy, &sf);
+            printVersion(TRUE, FALSE);
+        }
+
+        mw_printf("Failed to parse parameters\n");
         free(argvCopy);
-        exit(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
     rc = separationInit(sf.debugBOINC, sf.processPriority, sf.setPriority);
@@ -502,12 +665,10 @@ int main(int argc, const char* argv[])
     }
   #endif
 
-  #if BOINC_APPLICATION
-    printVersion(TRUE);
-    mw_finish(rc);
-  #endif
-
-    separationSpecialCleanup();
+    if (BOINC_APPLICATION && mwIsFirstRun())
+    {
+        mw_finish(rc);
+    }
 
     return rc;
 }

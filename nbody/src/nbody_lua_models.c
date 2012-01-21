@@ -1,21 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -98,53 +98,84 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
     return 1;
 }
 
-
-static int luaLbrToCartesian(lua_State* luaSt)
+void registerPredefinedModelGenerators(lua_State* luaSt)
 {
-    mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
-    real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
-    const NBodyCtx* ctx = NULL;
-    mwvector v;
+    int table;
 
-    if (lua_gettop(luaSt) > 4)
-        luaL_argerror(luaSt, 4, "Expected 1, 2, 3 or 4 arguments");
+    registerGeneratePlummer(luaSt);
 
-    ctx = checkNBodyCtx(luaSt, 1);
-    v = *checkVector(luaSt, 2);
+    /* Create a table of predefined models, so we can use them like
+     * predefinedModels.plummer() etc. */
+    lua_newtable(luaSt);
+    table = lua_gettop(luaSt);
 
-    /* ctx = toNBodyCtx(luaSt, 2);
-       sunGCDist = ctx != NULL ? ctx->sunGCDist : luaL_optnumber(luaSt, 2, DEFAULT_SUN_GC_DISTANCE);
+    setModelTableItem(luaSt, table, nbGeneratePlummer, "plummer");
+
+    /*
+      setModelTableItem(luaSt, table, generateKing, "king");
+      setModelTableItem(luaSt, table, generateDehnen, "dehnen");
     */
 
-    sunGCDist = ctx->sunGCDist;
+    lua_setglobal(luaSt, "predefinedModels");
+}
 
-    useGalacticCoordinates = mw_lua_optboolean(luaSt, 3, FALSE);
-    useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
+static real nbCalculateTimestep(real mass, real r0)
+{
+    return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
+}
 
-    if (!useGalacticCoordinates)
-        v = useRadians ? lbrToCartesian_rad(v, sunGCDist) : lbrToCartesian(v, sunGCDist);
+static int luaCalculateTimestep(lua_State* luaSt)
+{
+    real mass, r0;
 
-    pushVector(luaSt, v);
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+
+    mass = luaL_checknumber(luaSt, 1);
+    r0 = luaL_checknumber(luaSt, 2);
+
+    lua_pushnumber(luaSt, nbCalculateTimestep(mass, r0));
+    return 1;
+}
+
+static real nbCalculateEps2(real nbody, real r0)
+{
+    real eps = r0 / (10.0 * mw_sqrt(nbody));
+    return sqr(eps);
+}
+
+static int luaCalculateEps2(lua_State* luaSt)
+{
+    int nbody;
+    real r0;
+
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+
+    nbody = (int) luaL_checkinteger(luaSt, 1);
+    r0 = luaL_checknumber(luaSt, 2);
+
+    lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, r0));
 
     return 1;
 }
 
-
 static int luaReverseOrbit(lua_State* luaSt)
 {
     mwvector finalPos, finalVel;
-    static real dt, tstop;
+    static real dt = 0.0;
+    static real tstop = 0.0;
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
 
     static const MWNamedArg argTable[] =
         {
-            { "potential",         LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
-            { "position",          LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
-            { "velocity",          LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
-            { "tstop",             LUA_TNUMBER,   NULL,           TRUE, &tstop },
-            { "dt",                LUA_TNUMBER,   NULL,           TRUE, &dt    },
+            { "potential", LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
+            { "position",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
+            { "velocity",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
+            { "tstop",     LUA_TNUMBER,   NULL,           TRUE, &tstop },
+            { "dt",        LUA_TNUMBER,   NULL,           TRUE, &dt    },
             END_MW_NAMED_ARG
         };
 
@@ -170,82 +201,18 @@ static int luaReverseOrbit(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    reverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
+    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
     return 2;
 }
 
-
-void registerPredefinedModelGenerators(lua_State* luaSt)
-{
-    int table;
-
-    registerGeneratePlummer(luaSt);
-
-    /* Create a table of predefined models, so we can use them like
-     * predefinedModels.plummer() etc. */
-    lua_newtable(luaSt);
-    table = lua_gettop(luaSt);
-
-    setModelTableItem(luaSt, table, generatePlummer, "plummer");
-
-    /*
-      setModelTableItem(luaSt, table, generateKing, "king");
-      setModelTableItem(luaSt, table, generateDehnen, "dehnen");
-    */
-
-    lua_setglobal(luaSt, "predefinedModels");
-}
-
-static real calculateTimestep(real mass, real r0)
-{
-    return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
-}
-
-static int luaCalculateTimestep(lua_State* luaSt)
-{
-    real mass, r0;
-
-    if (lua_gettop(luaSt) != 2)
-        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
-
-    mass = luaL_checknumber(luaSt, 1);
-    r0 = luaL_checknumber(luaSt, 2);
-
-    lua_pushnumber(luaSt, calculateTimestep(mass, r0));
-    return 1;
-}
-
-static real calculateEps2(real nbody, real r0)
-{
-    real eps = r0 / (10.0 * mw_sqrt(nbody));
-    return sqr(eps);
-}
-
-static int luaCalculateEps2(lua_State* luaSt)
-{
-    int nbody;
-    real r0;
-
-    if (lua_gettop(luaSt) != 2)
-        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
-
-    nbody = luaL_checkinteger(luaSt, 1);
-    r0 = luaL_checknumber(luaSt, 2);
-
-    lua_pushnumber(luaSt, calculateEps2((real) nbody, r0));
-
-    return 1;
-}
-
-void registerModelUtilityFunctions(lua_State* luaSt)
+void registerModelFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "plummerTimestepIntegral", luaPlummerTimestepIntegral);
     lua_register(luaSt, "reverseOrbit", luaReverseOrbit);
     lua_register(luaSt, "calculateEps2", luaCalculateEps2);
     lua_register(luaSt, "calculateTimestep", luaCalculateTimestep);
-    lua_register(luaSt, "lbrToCartesian", luaLbrToCartesian);
 }
 

@@ -1,29 +1,42 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _SEPARATION_TYPES_H_
 #define _SEPARATION_TYPES_H_
 
 #include "separation_config.h"
 #include "milkyway_math.h"
-#include "separation_kernel_types.h"
+#include "milkyway_util.h"
+
+#if SEPARATION_OPENCL
+  #include "milkyway_cl.h"
+#else
+/* FIXME */
+typedef int CLInfo;
+#endif
+
+
+#include <stdint.h>
 
 
 #ifdef __cplusplus
@@ -97,7 +110,7 @@ typedef struct
 {
     StreamParameters* parameters;
     real sumExpWeights;
-    unsigned int number_streams;
+    int number_streams;
 } Streams;
 
 #define EMPTY_STREAMS { NULL, 0.0, 0 }
@@ -122,6 +135,27 @@ typedef struct
     real rPrime;
 } RPrime;
 
+typedef struct
+{
+    real irv_reff_xr_rp3;
+    real gPrime;
+} RConsts;
+
+
+typedef struct
+{
+    real r_point;
+    real qw_r3_N;
+} RPoints;
+
+typedef struct
+{
+    real lCosBCos;
+    real lSinBCos;
+    real bSin;
+    real _pad;
+} LBTrig;
+
 
 
 
@@ -136,6 +170,129 @@ typedef struct
 
     real* streamLikelihoods;
 } SeparationResults;
+
+
+
+
+
+#ifdef __OPENCL_VERSION__
+
+
+typedef struct
+{
+    real x, y, z, w;
+} mwvector;
+
+#define X(v) ((v).x)
+#define Y(v) ((v).y)
+#define Z(v) ((v).z)
+#define W(v) ((v).w)
+#endif /* __OPENCL_VERSION__ */
+
+
+
+
+typedef struct MW_ALIGN_TYPE_V(128)
+{
+    mwvector a;
+    mwvector c;
+    real sigma_sq2_inv;
+    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
+} StreamConstants;
+
+
+
+/* Parameter related types */
+
+typedef struct MW_ALIGN_TYPE_V(128)
+{
+    real r_min, r_max, r_step_size;
+    real nu_min, nu_max, nu_step_size;
+    real mu_min, mu_max, mu_step_size;
+    unsigned int r_steps, nu_steps, mu_steps;
+} IntegralArea;
+
+
+/* Kitchen sink of constants, etc. */
+typedef struct MW_ALIGN_TYPE_V(128)
+{
+    /* Constants determined by other parameters */
+    real m_sun_r0;
+    real q_inv;
+    real q_inv_sqr;  /* 1 / q^2 */
+    real r0;
+
+    int convolve;
+    int number_streams;
+    int fast_h_prob;
+    int aux_bg_profile;
+
+    real alpha;
+    real delta;
+    real alpha_delta3;
+    real bg_a, bg_b, bg_c;
+
+    int wedge;
+    real sun_r0;
+    real q;
+    real coeff;
+
+    real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
+    int number_integrals;
+
+    real exp_background_weight;
+} AstronomyParameters;
+
+typedef struct MW_ALIGN_TYPE_V(16)
+{
+    real sum;
+    real correction;
+} Kahan;
+
+#define ZERO_KAHAN { 0.0, 0.0 }
+
+#define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
+
+
+
+/* Completed integral state */
+typedef struct
+{
+    real bgIntegral;       /* Background integral */
+    real* streamIntegrals;
+} Cut;
+
+typedef struct
+{
+    /* State for integral calculation. */
+    Cut* cuts;
+    Cut* cut;                        /* es->cuts[es->currentCut] */
+    unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
+    Kahan bgSum;
+    Kahan* streamSums;
+
+    real bgTmp;
+    real* streamTmps;
+
+    unsigned int lastCheckpointNuStep; /* Nu step of last checkpointed (only used by GPU) */
+    uint64_t current_calc_probs; /* progress of completed cuts */
+
+    int currentCut;
+
+    int numberCuts;
+    int numberStreams;
+} EvaluationState;
+
+
+
+
+typedef int (*IntegrationFunc) (const AstronomyParameters* ap,
+                                const IntegralArea* ia,
+                                const StreamConstants* sc,
+                                const StreamGauss sg,
+                                EvaluationState* es,
+                                const CLRequest* clr,
+                                const CLInfo* ci);
 
 
 #ifdef __cplusplus

@@ -31,6 +31,8 @@ const char* showSphericalT(spherical_t);
 const char* showDiskT(disk_t);
 const char* showHaloT(halo_t);
 const char* showNBodyStatus(NBodyStatus);
+const char* showNBodyKernelError(NBodyKernelError);
+const char* showNBodyLikelihoodMethod(NBodyLikelihoodMethod);
 
 char* showSpherical(const Spherical*);
 char* showHalo(const Halo*);
@@ -39,6 +41,8 @@ char* showDisk(const Disk*);
 void printDisk(const Disk*);
 char* showPotential(const Potential*);
 void printPotential(const Potential*);
+
+const char* showExternalPotentialType(ExternalPotentialType x);
 
 char* showNBodyCtx(const NBodyCtx*);
 void printNBodyCtx(const NBodyCtx*);
@@ -49,14 +53,16 @@ void printHistogramParams(const HistogramParams*);
 char* showBody(const Body* p);
 void printBody(const Body* p);
 
-void printBodies(const Body* bs, unsigned int n);
+char* showCell(const NBodyCell* c);
+void printCell(const NBodyCell* c);
+
+void printBodies(const Body* bs, int n);
 
 char* showNBodyState(const NBodyState*);
 void printNBodyState(const NBodyState*);
 
 char* showNBodyTree(const NBodyTree*);
 void printNBodyTree(const NBodyTree*);
-
 
 #endif /* _NBODY_SHOW_H_ */
 

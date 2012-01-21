@@ -19,24 +19,16 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _WIN32
-  #include <sys/stat.h>
-  #include <sys/mman.h>
-  #include <unistd.h>
-#else
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
-#endif /* _WIN32 */
-
 #include "nbody_priv.h"
 #include "nbody_tree.h"
 
 #include <lua.h>
 #include <lauxlib.h>
 #include "nbody_lua_types.h"
+#include "milkyway_util.h"
 
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wfloat-equal".
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 
 
@@ -59,12 +51,22 @@ static int subIndex(Body* p, NBodyCell* q)
     return ind;
 }
 
+static inline void nbIncAddNBodyQuadMatrix(NBodyQuadMatrix* RESTRICT a, NBodyQuadMatrix* RESTRICT b)
+{
+    a->xx += b->xx;
+    a->xy += b->xy;
+    a->xz += b->xz;
+
+    a->yy += b->yy;
+    a->yz += b->yz;
+
+    a->zz += b->zz;
+}
+
 /* hackQuad: descend tree, evaluating quadrupole moments.  Note that this
  * routine is coded so that the Subp() and Quad() components of a cell can
  * share the same memory locations.
  */
-
-/* TODO: Incremental matrix operations */
 static void hackQuad(NBodyCell* p)
 {
     unsigned int ndesc, i;
@@ -72,32 +74,49 @@ static void hackQuad(NBodyCell* p)
     NBodyNode* q;
     mwvector dr;
     real drsq;
-    mwmatrix drdr, Idrsq, tmpm;
+    NBodyQuadMatrix quad = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     ndesc = 0;                                  /* count occupied subnodes  */
     for (i = 0; i < NSUB; ++i)                  /* loop over all subnodes   */
     {
         if (Subp(p)[i] != NULL)                 /* if this one's occupied   */
+        {
             desc[ndesc++] = Subp(p)[i];         /* copy it to safety        */
+        }
     }
 
-    mw_set_matrix_zero(Quad(p));                /* init quadrupole moment   */
     for (i = 0; i < ndesc; ++i)                 /* loop over real subnodes  */
     {
         q = desc[i];                            /* access each one in turn  */
         if (isCell(q))                          /* if it's also a cell      */
-            hackQuad((NBodyCell*) q);                /* then process it first    */
+        {
+            hackQuad((NBodyCell*) q);           /* then process it first    */
+        }
+
         dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
-        mw_outv(drdr, dr, dr);                  /* form outer prod. of dr   */
-        drsq = mw_sqrv(dr);                     /* and dot prod. dr * dr    */
-        mw_set_matrix_identity(Idrsq);          /* init unit matrix         */
-        mw_incmulms(Idrsq, drsq);               /* and scale by dr * dr     */
-        mw_mulms(tmpm, drdr, 3.0);              /* scale drdr by 3          */
-        mw_incsubm(tmpm, Idrsq);                /* now form quad. moment    */
-        mw_incmulms(tmpm, Mass(q));             /* from cm of subnode       */
-        if (isCell(q))                          /* if subnode is cell       */
-            mw_incaddm(tmpm, Quad(q));          /* then include its moment  */
-        mw_incaddm(Quad(p), tmpm);              /* increment moment of cell */
+        drsq = mw_sqrv(dr);                     /* and dot prod. (dr . dr)  */
+
+        /* Outer product scaled by 3, then subtract drsq off the
+         * diagonal to form quad moment*/
+        {
+            real m = Mass(q);   /* from CM of subnode */
+
+            quad.xx = m * (3.0 * (X(dr) * X(dr)) - drsq);
+            quad.xy = m * (3.0 * (X(dr) * Y(dr)));
+            quad.xz = m * (3.0 * (X(dr) * Z(dr)));
+
+            quad.yy = m * (3.0 * (Y(dr) * Y(dr)) - drsq);
+            quad.yz = m * (3.0 * (Y(dr) * Z(dr)));
+
+            quad.zz = m * (3.0 * (Z(dr) * Z(dr)) - drsq);
+        }
+
+        if (isCell(q)) /* if subnode is cell       */
+        {
+            nbIncAddNBodyQuadMatrix(&quad, &Quad(q));     /* then include its moment  */
+        }
+
+        nbIncAddNBodyQuadMatrix(&Quad(p), &quad); /* increment moment of cell */
     }
 }
 
@@ -130,42 +149,46 @@ static void threadTree(NBodyNode* p, NBodyNode* n)
  * and expand root cell to fit. The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
-static void expandBox(NBodyTree* t, const Body* btab, unsigned int nbody)
+static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 {
     real xyzmax;
     const Body* p;
-
     const NBodyCell* root = t->root;
+
+    assert(t->rsize > 0.0);
 
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
     {
-        xyzmax = mw_max(xyzmax, mw_abs(X(Pos(p)) - X(Pos(root))));
-        xyzmax = mw_max(xyzmax, mw_abs(Y(Pos(p)) - Y(Pos(root))));
-        xyzmax = mw_max(xyzmax, mw_abs(Z(Pos(p)) - Z(Pos(root))));
+        xyzmax = mw_fmax(xyzmax, mw_abs(X(Pos(p)) - X(Pos(root))));
+        xyzmax = mw_fmax(xyzmax, mw_abs(Y(Pos(p)) - Y(Pos(root))));
+        xyzmax = mw_fmax(xyzmax, mw_abs(Z(Pos(p)) - Z(Pos(root))));
     }
 
     while (t->rsize < 2.0 * xyzmax)
+    {
         t->rsize *= 2.0;
+    }
 }
 
 /* makecell: return pointer to free cell. */
 static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
 {
     NBodyCell* c;
-    size_t i;
 
-    if (st->freecell == NULL)                  /* no free cells left? */
-        c = (NBodyCell*) mwMalloc(sizeof(*c)); /* allocate a new one */
-    else                                       /* use existing free cell */
+    if (st->freeCell == NULL)                   /* no free cells left? */
     {
-        c = (NBodyCell*) st->freecell;             /* take one on front */
-        st->freecell = Next(c);               /* go on to next one */
+        c = (NBodyCell*) mwMallocA(sizeof(*c)); /* allocate a new one */
+    }
+    else                                        /* use existing free cell */
+    {
+        c = (NBodyCell*) st->freeCell;          /* take one on front */
+        st->freeCell = Next(c);                 /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
-    for (i = 0; i < NSUB; i++)                  /* loop over subcells */
-        Subp(c)[i] = NULL;                      /* and empty each one */
-    t->cellused++;                              /* count one more cell */
+    More(c) = NULL;
+    memset(&c->stuff, 0, sizeof(c->stuff));     /* empty sub cells */
+    t->cellUsed++;                              /* count one more cell */
     return c;
 }
 
@@ -178,16 +201,18 @@ static void newTree(NBodyState* st, NBodyTree* t)
     {
         if (isCell(p))                      /* found cell to free? */
         {
-            Next(p) = st->freecell;         /* link to front of */
-            st->freecell = p;               /* ...existing list */
+            Next(p) = st->freeCell;         /* link to front of */
+            st->freeCell = p;               /* ...existing list */
             p = More(p);                    /* scan down tree */
         }
         else                                /* skip over bodies */
+        {
             p = Next(p);                    /* go on to next */
+        }
     }
 
-    t->cellused = 0;   /* init count of cells, levels */
-    t->maxlevel = 0;
+    t->cellUsed = 0;   /* init count of cells, levels */
+    t->maxDepth = 0;
 
     t->root = makeCell(st, t);    /* allocate the root cell */
     mw_zerov(Pos(t->root));                          /* initialize the midpoint */
@@ -224,6 +249,16 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
     lev = 0;                                    /* count levels descended */
     while (Subp(q)[qind] != NULL)               /* loop descending tree */
     {
+        if (qsize <= REAL_EPSILON)
+        {
+            if (!t->structureError)
+            {
+                mw_printf("qsize (= %.15f) <= epsilon at level %u (initial root = %.15f)\n", qsize, lev, t->rsize);
+                t->structureError = TRUE; /* FIXME: Not quite the same as the other structure error */
+            }
+            return;
+        }
+
         if (isBody(Subp(q)[qind]))              /* reached a "leaf"? */
         {
             c = makeCell(st, t);               /* allocate new cell */
@@ -239,7 +274,7 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
         ++lev;                            /* count another level */
     }
     Subp(q)[qind] = (NBodyNode*) p;            /* found place, store p */
-    t->maxlevel = MAX(t->maxlevel, lev);  /* remember maximum level */
+    t->maxDepth = MAX(t->maxDepth, lev);  /* remember maximum level */
 }
 
 ALWAYS_INLINE
@@ -247,7 +282,7 @@ static inline real bmax2Inc(real cmPos, real pPos, real psize)
 {
     real dmin;
     dmin = cmPos - (pPos - 0.5 * psize);         /* dist from 1st corner */
-    return sqr(mw_max(dmin, psize - dmin));      /* sum max distance^2 */
+    return sqr(mw_fmax(dmin, psize - dmin));      /* sum max distance^2 */
 }
 
 ALWAYS_INLINE
@@ -270,37 +305,40 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
 {
     real rc, bmax2;
 
+    if (mw_unlikely(ctx->theta == 0.0))
+    {
+        /* Do an exact force calculation by always opening cells */
+        rc = 2.0 * treeRSize;
+        return sqr(rc);
+    }
+
+    /* return square of radius */
     switch (ctx->criterion)
     {
         case NewCriterion:
-            rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             /* use size plus offset */
-            break;
+            rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
+            return sqr(rc);
 
         case SW93:                           /* use S&W's criterion? */
             /* compute max distance^2 */
             bmax2 = calcSW93MaxDist2(p, cmpos, psize);
-            rc = mw_sqrt(bmax2) / ctx->theta;      /* using max dist from cm */
-            break;
+            return bmax2 / sqr(ctx->theta);      /* using max dist from cm */
 
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */
-            break;
-
-        case Exact:                       /* exact force calculation? */
-            rc = 2.0 * treeRSize;         /* always open cells */
-            break;
+            return sqr(rc);
 
         case InvalidCriterion:
+        case Exact: /* Uses separate path */
         default:
             rc = 0.0; /* Stop clang static analysis warning */
-            fail("Bad criterion: %d\n", ctx->criterion);
+            mw_fail("Invalid criterion: %s (%d)\n", showCriterionT(ctx->criterion), ctx->criterion);
+	    return 0.0;
     }
-
-    return sqr(rc);          /* store square of radius */
 }
 
-static inline void checkTreeDim(NBodyTree* tree, const real pPos, const real cmPos, const real halfPsize)
+static inline void checkTreeDim(NBodyTree* tree, real pPos, real cmPos, real halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
     if (   cmPos < pPos - halfPsize       /* if out of bounds */
@@ -312,18 +350,18 @@ static inline void checkTreeDim(NBodyTree* tree, const real pPos, const real cmP
              * already. The error will be caught later and this
              * otherwise could print a lot of noise */
             tree->structureError = TRUE;
-            warn("hackCofM: tree structure error.\n"
-                 "    cmPos out of bounds\n"
-                 "    Pos(p)           = %.15e\n"
-                 "    tpsize/2          = %.15e\n"
-                 "    Pos(p) + psize/2 = %.15e\n"
-                 "    cmpos            = %.15e\n"
-                 "    Pos(p) - psize/2 = %.15e\n",
-                 pPos,
-                 halfPsize,
-                 pPos + halfPsize,
-                 cmPos,
-                 pPos - halfPsize);
+            mw_printf("hackCofM: tree structure error.\n"
+                      "    cmPos out of bounds\n"
+                      "    Pos(p)           = %.15e\n"
+                      "    psize/2          = %.15e\n"
+                      "    Pos(p) + psize/2 = %.15e\n"
+                      "    cmpos            = %.15e\n"
+                      "    Pos(p) - psize/2 = %.15e\n",
+                      pPos,
+                      halfPsize,
+                      pPos + halfPsize,
+                      cmPos,
+                      pPos - halfPsize);
         }
     }
 }
@@ -371,7 +409,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real ps
     }
     else                                        /* but if no mass inside    */
     {
-        warn("Found massless cell\n"); /* Debugging */
+        mw_printf("Found massless cell\n"); /* Debugging */
         cmpos = Pos(p);                /* use geo. center for now  */
     }
 
@@ -398,6 +436,11 @@ NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
         if (Mass(p) != 0.0)                  /* exclude test particles */
             loadBody(st, t, p);              /* and insert into tree */
     }
+
+    /* Check if tree structure error occured */
+    if (st->tree.structureError)
+        return NBODY_TREE_STRUCTURE_ERROR;
+
 
     hackCofM(ctx, &st->tree, t->root, t->rsize);   /* find c-of-m coordinates */
 

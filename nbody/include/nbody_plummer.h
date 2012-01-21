@@ -23,8 +23,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <lua.h>
 
-int generatePlummer(lua_State* luaSt);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int nbGeneratePlummer(lua_State* luaSt);
 void registerGeneratePlummer(lua_State* luaSt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_PLUMMER_H_ */
 

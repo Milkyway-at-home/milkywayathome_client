@@ -109,7 +109,7 @@ static int luaAcceleration(lua_State* luaSt)
     pot = checkPotential(luaSt, 1);
     r = checkVector(luaSt, 2);
 
-    pushVector(luaSt, acceleration(pot, *r));
+    pushVector(luaSt, nbExtAcceleration(pot, *r));
     return 1;
 }
 

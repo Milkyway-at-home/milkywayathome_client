@@ -25,13 +25,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
-void reverseOrbit(mwvector* finalPos,
-                  mwvector* finalVel,
-                  const Potential* pot,
-                  mwvector pos,
-                  mwvector vel,
-                  real tstop,
-                  real dt)
+void nbReverseOrbit(mwvector* finalPos,
+                    mwvector* finalVel,
+                    const Potential* pot,
+                    mwvector pos,
+                    mwvector vel,
+                    real tstop,
+                    real dt)
 {
     mwvector acc, v, x;
     real t;
@@ -42,7 +42,7 @@ void reverseOrbit(mwvector* finalPos,
     mw_incnegv(v);
 
     // Get the initial acceleration
-    acc = acceleration(pot, x);
+    acc = nbExtAcceleration(pot, x);
 
     // Loop through time
     for (t = 0; t <= tstop; t += dt)
@@ -52,7 +52,7 @@ void reverseOrbit(mwvector* finalPos,
         mw_incaddv_s(x, v, dt);
 
         // Compute the new acceleration
-        acc = acceleration(pot, x);
+        acc = nbExtAcceleration(pot, x);
     }
 
     /* Report the final values (don't forget to reverse the velocities) */

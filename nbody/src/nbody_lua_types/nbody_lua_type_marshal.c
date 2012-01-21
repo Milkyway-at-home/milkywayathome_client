@@ -35,7 +35,7 @@ static int totalBodies(lua_State* luaSt, int nModels)
     {
         if (expectTable(luaSt, i))
         {
-            warn("Error reading body table\n");
+            mw_lua_perror(luaSt, "Error reading body table");
             return 0;
         }
 
@@ -56,7 +56,7 @@ static int readBodyArray(lua_State* luaSt, int table, Body* bodies, int n)
         b = expectBody(luaSt, lua_gettop(luaSt));
         if (!b)
         {
-            warn("Error reading body %d\n", i);
+            mw_lua_perror(luaSt, "Error reading body %d", i);
             break;
         }
 
@@ -68,7 +68,7 @@ static int readBodyArray(lua_State* luaSt, int table, Body* bodies, int n)
 }
 
 /* Read returned table of model components. Pops the n arguments */
-Body* readModels(lua_State* luaSt, int nModels, unsigned int* nOut)
+Body* readModels(lua_State* luaSt, int nModels, int* nOut)
 {
     int i, n, totalN, top;
     Body* allBodies;
@@ -77,11 +77,11 @@ Body* readModels(lua_State* luaSt, int nModels, unsigned int* nOut)
     totalN = totalBodies(luaSt, nModels);
     if (totalN == 0)
     {
-        warn("Didn't get any bodies\n");
+        mw_printf("Didn't get any bodies\n");
         return NULL;
     }
 
-    bodies = allBodies = (Body*) mwMallocA(totalN * sizeof(Body));
+    bodies = allBodies = (Body*) mwCallocA(totalN, sizeof(Body));
 
     for (i = 0; i < nModels; ++i)
     {
@@ -90,7 +90,7 @@ Body* readModels(lua_State* luaSt, int nModels, unsigned int* nOut)
 
         if (readBodyArray(luaSt, top, bodies, n))
         {
-            warn("Error reading body array %d\n", i);
+            mw_printf("Error reading body array %d\n", i);
             free(allBodies);
             allBodies = NULL;
             totalN = 0;
@@ -104,9 +104,8 @@ Body* readModels(lua_State* luaSt, int nModels, unsigned int* nOut)
     lua_pop(luaSt, nModels - i);  /* No more body tables if error */
 
     if (nOut)
-        *nOut = (unsigned int) totalN;
+        *nOut = totalN;
 
     return allBodies;
 }
-
 

@@ -1,21 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
@@ -43,24 +43,25 @@ static Streams* _streams = NULL;
 static BackgroundParameters* _bg = NULL;
 
 static IntegralArea* _ias = NULL;
-static unsigned int _nCut = 0;
+static int _nCut = 0;
 
 static const SeparationConstant constants[] =
 {
-    { "sun_r0",   TRUE, &_sun_r0   },
-    { "convolve", TRUE, &_convolve },
+    { "sun_r0",   TRUE,  &_sun_r0   },
+    { "convolve", TRUE,  &_convolve },
     { "wedge",    FALSE, &_wedge   },
     { NULL, FALSE, NULL }
 };
 
 /* Calculate total probability calculations for checkpointing */
-static unsigned int findTotalCalcProbs(const IntegralArea* cuts, unsigned int nCut)
+static uint64_t findTotalCalcProbs(const IntegralArea* cuts, int nCut)
 {
-    unsigned int i, total_calc_probs = 0;
+    int i;
+    uint64_t total_calc_probs = 0;
 
     for (i = 0; i < nCut; ++i)
     {
-        total_calc_probs += cuts[i].mu_steps * cuts[i].nu_steps * cuts[i].r_steps;
+        total_calc_probs += (uint64_t) cuts[i].mu_steps * cuts[i].nu_steps * cuts[i].r_steps;
     }
 
     return total_calc_probs;
@@ -72,7 +73,7 @@ static void setAPConstants(AstronomyParameters* ap)
     ap->number_streams = _streams->number_streams;
     ap->number_integrals = _nCut;
 
-    ap->convolve = (unsigned int) _convolve;
+    ap->convolve = (int) _convolve;
     ap->sun_r0 = _sun_r0;
 
     ap->wedge = (int) _wedge;
@@ -103,11 +104,28 @@ static int pushConstants(lua_State* luaSt)
     return 0;
 }
 
+static int tryEvaluateScript(lua_State* luaSt, const char* script, const SeparationFlags* sf)
+{
+    if (script[0] == '\0')
+    {
+        mw_printf("Parameter file '%s' is empty\n", sf->ap_file);
+        return 1;
+    }
+
+    if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->nForwardedArgs))
+    {
+        mw_lua_perror(luaSt, "Error loading Lua script '%s'", sf->ap_file);
+        return 1;
+    }
+
+    return 0;
+}
 
 /* Open a lua_State, bind run information such as server arguments and
  * BOINC status, and evaluate input script. */
 static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
 {
+    int failed;
     char* script;
     lua_State* luaSt;
 
@@ -118,25 +136,26 @@ static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
     script = mwReadFileResolved(sf->ap_file);
     if (!script)
     {
-        perror("Opening Lua script");
+        mwPerror("Opening Lua script '%s'", sf->ap_file);
         lua_close(luaSt);
         return NULL;
     }
 
-    if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->nForwardedArgs))
-    {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", sf->ap_file);
-        lua_close(luaSt);
-        luaSt = NULL;
-    }
-
+    failed = tryEvaluateScript(luaSt, script, sf);
     free(script);
+
+    if (failed)
+    {
+        lua_close(luaSt);
+        return NULL;
+    }
 
     return luaSt;
 }
 
 static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
 {
+    uint64_t r, mu, nu;
     static IntegralArea ia;
     static real nuStepsf, muStepsf, rStepsf;
     static const MWNamedArg iaArgTable[] =
@@ -160,6 +179,24 @@ static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
     ia.nu_steps = (unsigned int) nuStepsf;
     ia.mu_steps = (unsigned int) muStepsf;
     ia.r_steps = (unsigned int) rStepsf;
+
+    r = (uint64_t) ia.r_steps;
+    mu = (uint64_t) ia.mu_steps;
+    nu = (uint64_t) ia.nu_steps;
+
+    if (nu == 0 || mu == 0 || r == 0)
+    {
+        mw_printf("Integral size { %u, %u, %u } cannot be 0\n", nu, mu, r);
+        return 1;
+    }
+
+    if ((r > UINT64_MAX / mu) || ((r * mu) > UINT64_MAX / nu))
+    {
+        mw_printf("Integral size { %u, %u, %u } will overflow progress calculation\n",
+                  ia.nu_steps, ia.mu_steps, ia.r_steps);
+        return 1;
+    }
+
     calcIntegralStepSizes(&ia);
 
     *iaOut = ia;
@@ -209,7 +246,7 @@ static int evaluateStreams(lua_State* luaSt)
     }
 
     _streams->number_streams = n;
-    _streams->parameters = mwMallocA(n * sizeof(StreamParameters));
+    _streams->parameters = mwMalloc(n * sizeof(StreamParameters));
 
     for (i = 0; i < n; ++i)
     {
@@ -254,18 +291,21 @@ static int evaluateIntegralAreas(lua_State* luaSt)
 
 static int evaluateConstants(lua_State* luaSt)
 {
-    const SeparationConstant* p = constants;
+    const SeparationConstant* c = constants;
 
-    while (p->name)
+    while (c->name)
     {
-        lua_getglobal(luaSt, p->name);
+        lua_getglobal(luaSt, c->name);
         if (mw_lua_typecheck(luaSt, -1, LUA_TNUMBER, NULL))
         {
-            return luaL_error(luaSt, "Expected constant '%s' to be a number\n", p->name);
+            return luaL_error(luaSt,
+                              "constant '%s': %s",
+                              c->name,
+                              lua_tostring(luaSt, -1));
         }
 
-        *p->value = lua_tonumber(luaSt, -1);
-        ++p;
+        *c->value = lua_tonumber(luaSt, -1);
+        ++c;
     }
 
     return 0;
@@ -318,7 +358,7 @@ static int evaluateGlobalName(lua_State* luaSt, lua_CFunction func, const char* 
     lua_pushcfunction(luaSt, func);
     if (lua_pcall(luaSt, 0, 0, 0))
     {
-        mw_lua_pcall_warn(luaSt, "Error evaluating '%s'", name);
+        mw_lua_perror(luaSt, "Error evaluating %s", name);
         return 1;
     }
 
@@ -416,10 +456,10 @@ lua_State* separationLuaOpen(mwbool debug)
 {
     lua_State* luaSt;
 
-    luaSt = lua_open();
+    luaSt = mw_lua_newstate();
     if (!luaSt)
     {
-        warn("Failed to get Lua state\n");
+        mw_printf("Failed to get Lua state\n");
         return NULL;
     }
 

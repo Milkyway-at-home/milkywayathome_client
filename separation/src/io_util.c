@@ -1,23 +1,24 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "io_util.h"
 #include "milkyway_util.h"
@@ -79,7 +80,7 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
         rc = fscanf(file, READ_DOUBLE_ARRAY_READ_STR, &arr[i]);
         if (rc != 1)
         {
-            warn("Error reading into %s\n", array_name);
+            mw_printf("Error reading into %s\n", array_name);
             free(arr);
             return NULL;
         }
@@ -109,7 +110,7 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
     {
         if (fscanf(file, "%d", &arr[i]) != 1)
         {
-            warn("Error reading into %s\n", array_name);
+            mw_printf("Error reading into %s\n", array_name);
             free(arr);
             return NULL;
         }
@@ -225,22 +226,30 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 {
     unsigned int i;
 
+    mw_begin_critical_section();
+
+    fflush(stdout);
+
     /* Print integrals */
-    warn("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
-    warn("<stream_integral> ");
+    mw_printf("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
+    mw_printf("<stream_integral> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15f ", results->streamIntegrals[i]);
-    warn("</stream_integral>\n");
+        mw_printf(" %.15f ", results->streamIntegrals[i]);
+    mw_printf("</stream_integral>\n");
 
     /* Print individual likelihoods */
-    warn("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
-    warn("<stream_only_likelihood> ");
+    mw_printf("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
+    mw_printf("<stream_only_likelihood> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15f ", results->streamLikelihoods[i]);
-    warn("</stream_only_likelihood>\n");
+        mw_printf(" %.15f ", results->streamLikelihoods[i]);
+    mw_printf("</stream_only_likelihood>\n");
 
     /* Print overall likelihood */
-    warn("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+    mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+
+    fflush(stderr);
+
+    mw_end_critical_section();
 }
 
 /* FIXME: Kill this with fire when we switch to JSON everything for separation */
@@ -249,6 +258,7 @@ static SeparationResults* freadReferenceResults(FILE* f, unsigned int nStream)
     SeparationResults* r;
     char buf[256] = "";
     unsigned int i;
+    double tmp;
 
     r = newSeparationResults(nStream);
 
@@ -256,22 +266,27 @@ static SeparationResults* freadReferenceResults(FILE* f, unsigned int nStream)
     while (buf[0] == '#' || buf[0] == ' ' || !strncmp(buf, "", sizeof(buf)))
         fgets(buf, sizeof(buf), f);
 
-    if (sscanf(buf, "likelihood: %lf\n", &r->likelihood) != 1)
+    if (sscanf(buf, "likelihood: %lf\n", &tmp) != 1)
         goto fail_read;
+    r->likelihood = tmp;
 
-    if (fscanf(f, "background_integral: %lf\n", &r->backgroundIntegral) != 1)
+    if (fscanf(f, "background_integral: %lf\n", &tmp) != 1)
         goto fail_read;
+    tmp = r->backgroundIntegral;
 
-    if (fscanf(f, "background_likelihood: %lf\n", &r->backgroundLikelihood) != 1)
+    if (fscanf(f, "background_likelihood: %lf\n", &tmp) != 1)
         goto fail_read;
+    tmp = r->backgroundLikelihood;
 
     for (i = 0; i < nStream; ++i)
     {
-        if (fscanf(f, "stream_integral: %lf\n", &r->streamIntegrals[i]) != 1)
+        if (fscanf(f, "stream_integral: %lf\n", &tmp) != 1)
             goto fail_read;
+        r->streamIntegrals[i] = tmp;
 
-        if (fscanf(f, "stream_likelihood: %lf\n", &r->streamLikelihoods[i]) != 1)
+        if (fscanf(f, "stream_likelihood: %lf\n", &tmp) != 1)
             goto fail_read;
+        r->streamLikelihoods[i] = tmp;
     }
 
     return r;
@@ -289,7 +304,7 @@ SeparationResults* readReferenceResults(const char* refFile, unsigned int nStrea
     f = fopen(refFile, "r");
     if (!f)
     {
-        perror("Opening reference results");
+        mwPerror("Opening reference results '%s'", refFile);
         return NULL;
     }
 

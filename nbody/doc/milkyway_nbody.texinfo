@@ -1,0 +1,965 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename milkyway.info
+@settitle Milkyway N-Body Manual 1.0
+@documentencoding UTF-8
+@c %**end of header
+
+
+@copying
+
+@author{} Matt Arsenault
+@today{}
+Copyright @copyright{} 2011 Rensselaer Polytechnic Institute
+@end copying
+
+
+@titlepage
+@title Milkyway N-Body Manual
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@c Output the table of contents at the beginning.
+@contents
+
+
+
+@ifnottex
+@node Top
+@top Short Sample
+
+This is a short sample Texinfo file.
+@end ifnottex
+
+@menu
+* First Chapter::    The first chapter is the
+                       only chapter in this sample.
+* Index::            Complete index.
+@end menu
+
+
+@node Building
+@chapter Building
+@cindex build
+@cindex cmake
+
+@section
+
+Milkyway N-Body uses CMake.
+From the command line,
+
+@code{$ cmake /path/to/milkywayathome_client -DBUILD_OPTION=Value}
+
+@code{$ make}
+
+Alternatively cmake-gui can be used. For more information refer to the
+CMake documentation.
+
+
+@section Optional Dependencies
+@table @samp
+@item OpenSSL
+Used for some tests
+@item GLUT, OpenGL
+Used for visualizer / screensaver
+@item ncurses
+Used for optional progress reporting
+@item OpenCL
+GPU version
+@item OpenMP
+Multithreaded version
+@item BOINC
+BOINC libraries
+@end table
+
+@section Build Options
+@cindex cmake
+@cindex build
+Build options can be passed to cmake on the command line with
+-D@var{option name}=@var{value} or checked if using cmake-gui
+
+@multitable @columnfractions .3 .15 .55
+@headitem Option @tab Default @tab Description
+@item CMAKE_BUILD_TYPE
+@tab ``Release''
+@tab Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Profile.
+@item BOINC_APPLICATION
+@tab ON
+@tab Build with BOINC.
+@item DOUBLEPREC
+@tab ON
+@tab Use double precision
+@item NBODY_OPENMP
+@tab ON*
+@tab Use OpenMP for threading (* OFF if not supported by compiler)
+@item NBODY_OPENCL
+@tab OFF
+@tab Build with OpenCL
+@item NBODY_CRLIBM
+@tab ON
+@tab Use crlibm for math functions
+@item NBODY_GL
+@tab OFF
+@tab Build visualizer/screensaver
+@item ENABLE_CURSES
+@tab ON*
+@tab Build with NCurses for progress reporting. On if available and not @var{BOINC_APPLICATION}
+@item NBODY_STATIC
+@tab OFF
+@tab Build as a static binary
+@end multitable
+
+
+@node Basic Usage
+@chapter Basic Usage
+
+@cindex usage, basic
+
+@section Invocation
+
+Milkyway N-Body is controlled through various command line
+arguments. For more detail @xref{Arguments}.
+
+The @samp{--input-file} argument is always necessary and is the
+primary way to control simulations. The input file is a Lua script
+which sets the parameters and inital system for the simulation.
+
+The @samp{--output-file} specifies a file to write the final body
+positions and velocities to. The positions will by default be in lbr
+coordinates. The @samp{--output-cartesian} option can switch this to
+galactic coordinates.
+
+To calculate a likelihood, an input histogram may be specified with
+@samp{--histogram-file}. If the @samp{--histoout-file} argument is
+given, a generated histogram will be written to the given file.
+
+Arguments not used by the main application are forwarded to the Lua
+input script.  Seed bound to ``argSeed''. This way you can easily
+script batches of simulations while changing any parameter you would
+like.
+
+@section Input File Description
+An input file consists of a Lua script which optionally handles
+arguments passed to it, and must contain several functions to define a
+simulation. Various utility functions and types are defined for
+convenience. These functions set up the initial bodies, specify
+parameters for the simulation such as timestep size and run time, and
+specify an external potential to apply. This allows for running
+totally arbitrary configurations of particles.
+
+@xref{Required Functions} for which functions are required.
+
+@xref{Utility Functions} for information on other tools.
+
+@xref{Custom Lua Types} for information on types.
+
+
+
+@section Running
+@subsection Checking Progress
+If built with @code{ENABLE_CURSES}, the @samp{--progress} flag will
+continuously update the terminal with some progress
+information. Progress can also be viewed from the visualizer. See @xref{Graphics}
+
+@subsection Checkpointing
+If running as a BOINC application, checkpointing will occur according
+to BOINC preferences.
+
+Without BOINC, checkpointing will occur every 15 minutes by
+default. The checkpoint interval can be controlled with the
+@samp{--checkpoint-interval} option, which takes the checkpointing
+interval in seconds.
+
+By default checkpoints will be written to a file called
+@samp{nbody_checkpoint}. The @samp{--checkpoint} can be used to use a
+different file. This can also be used to resume a simulation from an
+arbitrary checkpoint file.
+
+If you do not want to resume from a checkpoint, the
+@samp{--ignore-checkpoint} will ensure a fresh new simulation will be run.
+
+On the end of the simulation, the checkpoint file will be
+deleted. This behaviour can be surpressed with the
+@samp{--no-clean-checkpoint} flag.
+
+
+
+
+@node Graphics
+@subsection Graphics
+A simple N-Body visualizer is available from
+@code{milkyway_nbody_graphics}. Invoking the main program with the
+@samp{--visualizer} option will launch the visualizer along with the
+simulation. @samp{--visualizer-args} flag is available for passing
+additional options to the visualizer launched this way.
+
+The graphics program can be separately launched to view any number of
+currently running simulations.
+
+N-body simulations running with graphics support create a shared
+memory segment called ``milkyway_nbody_#'' where # starts at 0 and
+goes up. The # will be the instance ID which you can refer to the
+simulation by. Launching the graphics with @samp{--instance-id} flag
+will choose which simulation to view.
+
+Various mouse and keyboard controls exist for the simulation. You can
+get help with these by pressing the 'h' or '?' key.
+
+If run with the @samp{--fullscreen}, the graphics will behave more
+appropriately for a screensaver.
+
+
+@node Algorithmic Considerations
+@chapter Algorithmic Considerations
+@cindex algorithmic considerations
+@cindex algorithm
+@cindex Barnes-Hut
+
+Milkyway N-Body uses the Barnes-Hut algorithm, or optionally can use
+the direct summation.
+
+@node{Opening Criteria}
+@unnumberedsec Opening Criteria
+@multitable @columnfractions .2 .8
+@headitem Name @tab Description
+
+@item @code{"BH86"}
+@tab Use classic Barnes-Hut opening angle
+
+@item @code{"SW93"}
+@tab Use sum squares criterion from S&W '93 paper
+
+@item @code{"NewCriterion"}
+@tab Barnes newer opening criterion using the center of mass offset
+
+@item @code{"Exact"}
+@tab Use @math{O(n^2)} direct N-body calculation
+@end multitable
+
+
+@node Potential Descriptions
+@chapter Potential Descriptions
+@cindex external potentials
+@cindex potential
+@cindex model
+Description of available galaxy potential models with parameter
+descriptions. For usage, @xref{Potential}
+
+@table @dfn
+@item Spherical Models
+@cindex spherical
+
+@table @dfn
+@item Sphere with scale length:
+@cindex spherical
+
+@comment Why doesn't \frac work?
+@tex
+$$\phi = - G M_{sphere} / (r + r_0)$$
+@end tex
+@table @code
+@item @math{M_{sphere}}
+total mass
+@item @math{r0}
+scale length
+@end table
+@end table
+
+@item Disk Models
+@cindex disk
+@cindex Miyamoto-Nagai disk
+
+@anchor {Miyamoto-Nagai disk}
+@table @dfn
+@item	Miyamoto-Nagai Disk
+@tex
+$$\phi = -G M_{disk} / \sqrt{X_{gc}^2 + Y_{gc}^2 + (a + \sqrt{Z_{gc}^2 + b^2})^2}$$
+@end tex
+@table @code
+@item @math{M_{disk}}
+total mass
+@item @math{a}
+scale length
+@item @math{b}
+scale height
+@end table
+
+@anchor {Exponential disk}
+@item	Exponential Disk
+@tex
+$$\phi = -G M_{disk} ((1-\exp(-r/b])/r)$$
+@end tex
+@tex
+$$r \equiv \sqrt{X_{gc}^2 + Y_{gc}^2 + Z_{gc}^2}$$
+@end tex
+@table @code
+@item @math{M_{disk}}
+total mass
+@item @math{b}
+scale length
+@end table
+@end table
+
+@item Halo Models
+@cindex halo
+@cindex logarithmic halo
+@table @dfn
+@anchor {Logarithmic halo}
+@item Logarithmic Halo
+@tex
+$$\phi = v_{halo}^2 \ln(X_{gc}^2 + Y_{gc}^2 + (Z_{gc}^2/q^2) + d^2)$$
+@end tex
+@table @code
+@item @math{v_{halo}}
+halo speed (contains total halo mass)
+@item @math{q}
+Z axis flattening
+@item @math{d}
+scale length
+@end table
+
+@cindex NFW halo
+@anchor {NFW halo}
+@item  NFW halo
+@tex
+$$\phi = -(((a v_{cmax}^2)/0.216) \log(1+(r/a)))/r$$
+@end tex
+
+@table @code
+@item @math{v_{cmax}}
+halo speed (contains total halo mass)
+@item @math{q}
+scale length
+@end table
+
+@cindex Triaxial halo
+@anchor {Triaxial halo}
+@item Triaxial Halo
+@tex
+$$\phi = v_{halo}^2 \ln(C_1 X_{gc}^2 + C_2 Y_{gc}^2 + C_3 X_{gc} Y_{gc} + (Z_{gc}/q_z)^2 + r_{halo}^2)$$
+@end tex
+@tex
+$$C_1 \equiv (cos^2\phi/q_1^2) + (\sin^2\phi/q_2^2)$$
+@end tex
+@tex
+$$C_2 \equiv (cos^2\phi/q_2^2) + (\sin^2\phi/q_1^2)$$
+@end tex
+@tex
+$$C_3 \equiv 2\sin\phi \cos\phi ((1/q_1^2) - (1/q_2^2))$$
+@end tex
+
+@table @code
+@item @math{v_{halo}}
+halo speed (contains total halo mass)
+@item @math{q_1}
+flattening in direction 1
+@item @math{q_2}
+flattening in direction 2 (Usually held at 1 to eliminate degeneracy)
+@item @math{q_z}
+Z axis flattening
+@item @math{r_{halo}}
+scale length
+@item @math{φ}
+triaxiality angle
+@end table
+
+@end table
+@end table
+
+
+@node Required Functions
+@chapter Required Functions
+@cindex usage
+
+An N-Body simulation is set up by writing several small functions in
+the input Lua script. This allows for a totally arbitrary initial
+distribution of particles and flexible calculations for any parameters.
+
+@deffn required function makeContext ()
+Returns the context for controlling the simulation. This configures
+basic items such as timestep size and evolution time.
+@xref{NBodyCtx}
+@end deffn
+
+@deffn required function makeBodies (context, potential)
+Takes the NBodyCtx for the simulation, and the Potential if used
+Return an arbitrary number of table of bodies which will run in the simulation.
+@xref{Body}
+@end deffn
+
+@deffn required function makePotential ()
+Returns the external potential to apply to the simulation.
+Options are one of the following:
+
+@itemize @bullet
+@item
+nil. A generic N-body simulation with no external potential.
+
+@item
+A galaxy external potential defined by the Potential type. @xref{Potential}
+
+@item
+A Lua function which takes 3 arguments (x, y, z) positions in standard
+galactic coordinates and returns 3 numbers for the (x, y, z)
+components of the acceleration. Invalid to use when running with OpenCL.
+@end itemize
+@end deffn
+
+@deffn optional function makeHistogram ()
+Parameters for a milkyway histogram if generating it.
+@xref{HistogramParams}
+@end deffn
+
+
+@node Custom Lua Types
+@chapter Lua Userdata Types
+
+@cindex types, Lua
+
+Items marked with a * are optional and will use a default value if omitted.
+@cindex index entry, another
+
+@node NBodyCtx
+@unnumberedsec NBodyCtx
+
+@deftp NBodyCtx NBodyCtx
+Simulation context controlling simulation parameters such as timesteps.
+@end deftp
+
+@deftypeivar NBodyCtx number timestep
+@end deftypeivar
+@deftypeivar NBodyCtx number timeEvolve
+@end deftypeivar
+@deftypeivar NBodyCtx number theta
+@end deftypeivar
+@deftypeivar NBodyCtx number eps2
+@end deftypeivar
+@deftypeivar NBodyCtx number treeRSize
+@end deftypeivar
+@deftypeivar NBodyCtx number sunGCDist
+@end deftypeivar
+@deftypeivar NBodyCtx stringenum criterion
+@end deftypeivar
+@deftypeivar NBodyCtx boolean useQuad
+@end deftypeivar
+@deftypeivar NBodyCtx boolean allowIncest
+@end deftypeivar
+@deftypeivar NBodyCtx boolean quietErrors
+@end deftypeivar
+
+
+@defmethod NBodyCtx create(argTable)
+Create a new NBodyCtx with parameters given by arg table.
+This is to use fake named arguments.
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{timestep}
+@tab @code{number}
+@tab Size of timesteps to use in gigayears
+@item @code{timeEvolve}
+@tab @code{number}
+@tab Time to run simulation in gigayears
+@item @code{theta}
+@tab @code{number}
+@tab Barnes-Hut opening angle (ignored with "Exact" criterion")
+@item @code{eps2}
+@tab @code{number}
+@tab @math{\epsilon^2} in kiloparsecs@math{^2} (Softening parameter)
+@item @code{treeRSize}*
+@tab @code{number}
+@tab Initial size guess of tree root cell
+@item @code{sunGCDist}*
+@tab @code{number}
+@tab Distance from galactic center to Earth in kiloparsecs
+@item @code{criterion}
+@tab @code{string enum}
+@tab Select formula for calculating critical radius. For options, @xref{Opening Criteria}
+@item @code{useQuad}*
+@tab @code{boolean}
+@tab Use quadrupole moments for body-cell force calculations
+@item @code{allowIncest}*
+@tab @code{boolean}
+@tab Treat tree incest as fatal.
+Incest is when a particle does not encounter itself while calculating forces on it
+@item @code{quietErrors}*
+@tab @code{boolean}
+@tab Silence printing of certain errors, such as tree incest.
+     Most useful when treating incest as non-fatal.
+@end multitable
+@end defmethod
+
+@node Body
+@unnumberedsec Body
+
+@deftp Body Body
+Userdata representing a particle
+@end deftp
+
+@deftypeivar Body number mass
+Mass of particle in units of @math{1/(222288.47 M_{sun})}
+@end deftypeivar
+
+@deftypeivar Body Vector position
+Position of particle in standard galactic coordinates in kiloparsecs
+@end deftypeivar
+
+@deftypeivar Body Vector velocity
+Velocity of particle in kiloparsecs / gigayear
+@end deftypeivar
+
+@deftypeivar Body boolean ignore
+Exclude particle from likelihood calculations (e.g. true if dark matter particle)
+@end deftypeivar
+
+
+@defmethod Body create(argTable)
+Create a new Body with given parameters given by arg table. This is to use fake named arguments.
+
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{mass}
+@tab @code{number}
+@tab Mass of body in units of @math{1/(222288.47 M_{sun})}. This is to get G =
+1 with distances in kiloparsecs and time in gigayears
+@item @code{position}
+@tab @code{Vector}
+@tab Postion of body in Cartesian, standard galactic coordinates
+@item @code{velocity}
+@tab @code{Vector}
+@tab Velocity of body in kiloparsecs / gigayear
+@item @code{ignore}*
+@tab @code{boolean}
+@tab Ignore body if doing a likelihood calculation (e.g. dark matter particle = true)
+@end multitable
+@end defmethod
+
+@node Potential
+@unnumberedsec Potential
+@deftp Potential Potential
+Userdata representing a static Milkyway potential
+@end deftp
+
+@defmethod Potential create(argTable)
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{spherical}
+@tab @code{Spherical}
+@tab Spherical bulge component of galaxy potential
+@item @code{halo}
+@tab @code{Halo}
+@tab Halo component of galaxy potential
+@item @code{disk}
+@tab @code{Disk}
+@tab Disk component of galaxy potential
+@end multitable
+@end defmethod
+
+@node Spherical
+@unnumberedsec Spherical
+@deftp Spherical Spherical
+Userdata containing parameters describing galaxy's bulge
+@end deftp
+
+@deftypeivar Spherical stringenum type
+Type of bulge
+@end deftypeivar
+
+@deftypeivar Spherical number mass
+Bulge mass
+@end deftypeivar
+
+@deftypeivar Spherical number scale
+Bulge scale length
+@end deftypeivar
+
+@defmethod Spherical create
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{mass}
+@tab @code{number}
+@tab Mass of bulge
+@item @code{scaleLength}
+@tab @code{number}
+@tab Scale length @math{a} of bulge
+@end multitable
+@end defmethod
+
+@node Disk
+@unnumberedsec Disk
+@deftp Disk Disk
+Userdata containing parameters describing galaxy's disk
+@end deftp
+
+@defmethod Disk miyamotoNagai()
+Create a Disk userdata with Miyamoto-Nagai disk model parameters. @xref{Miyamoto-Nagai disk}
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{mass}
+@tab @code{number}
+@tab Mass of disk
+@item @code{scaleLength}
+@tab @code{number}
+@tab Scale length @math{a}
+@item @code{scaleHeight}
+@tab @code{number}
+@tab Scale height @math{b}
+@end multitable
+@end defmethod
+
+
+@defmethod Disk exponential()
+Create a Disk userdata with Exponential disk parameters. @xref{Exponential disk}
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{mass}
+@tab @code{number}
+@tab Mass of disk
+@item @code{scaleLength}
+@tab @code{number}
+@tab Scale length @math{b}
+@end multitable
+@end defmethod
+
+
+@node Halo
+@unnumberedsec Halo
+@deftp Disk Disk
+Usedata containing parameters describing galaxy's halo
+@end deftp
+
+@defmethod Halo logarithmic()
+Create a Halo userdata describing a logarithmic halo.
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{vhalo}
+@tab @code{number}
+@tab Halo speed (contains total halo mass)
+@item @code{scaleLength}
+@tab @code{number}
+@tab Scale length @math{d} of halo
+@item @code{flattenZ}
+@tab @code{number}
+@tab Z-axis flattening
+@end multitable
+@end defmethod
+
+
+@defmethod Halo nfw()
+Create a Halo userdata describing an NFW halo. @xref{NFW halo}
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{vhalo}
+@tab @code{number}
+@tab Halo speed (contains total halo mass)
+@item @code{scaleLength}
+@tab @code{number}
+@tab Scale length @math{d} of halo
+@end multitable
+@end defmethod
+
+
+@defmethod Halo triaxial()
+Create a Halo userdata describing a Triaxial halo. @xref{Triaxial halo}
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{vhalo}
+@tab @code{number}
+@tab Halo speed (contains total halo mass)
+@item @code{scaleLength}
+@tab @code{number}
+@tab Scale length @math{r_{halo}} of halo
+@item @code{flattenX}
+@tab @code{number}
+@tab Flattening in direction 1
+@item @code{flattenY}
+@tab @code{number}
+@tab Flattening in direction 2
+@item @code{flattenZ}
+@tab @code{number}
+@tab Z-Axis flattening
+@item @code{triaxAngle}
+@tab @code{number}
+@tab Triaxiality angle @math{φ}
+@end multitable
+@end defmethod
+
+
+@node DSFMT
+@unnumberedsec DSFMT
+@cindex DSFMT
+@cindex PRNG
+@cindex random
+@cindex seed
+
+@deftp DSFMT DSFMT
+Pseudorandom number generator state.
+@end deftp
+
+@defmethod DSFMT create([@var{seed}=time(NULL)])
+Create a new DSFMT pseudorandom number generator. If omitted (or nil),
+it will use a time seed.
+@end defmethod
+
+@defmethod DSFMT random()
+Return a new random number between 0.0 and 1.0
+@end defmethod
+
+@node Vector
+@unnumberedsec Vector
+@cindex Vector
+@deftp Vector Vector
+Userdata describing a 3 component vector
+@end deftp
+
+@deftypeivar Vector number x
+X-component of vector
+@end deftypeivar
+
+@deftypeivar Vector number y
+Y-component of vector
+@end deftypeivar
+
+@deftypeivar Vector number z
+Z-component of vector
+@end deftypeivar
+
+@defmethod Vector create(@var{x}, @var{y}, @var{z})
+Create a new vector with components x, y, z
+@end defmethod
+
+@defmethod Vector abs()
+Returns the absolute value of the vector
+@end defmethod
+
+@defmethod Vector length()
+Returns the length of the vector
+@end defmethod
+
+@defmethod Vector cross(@var{a}, @var{b})
+Returns the cross product of vectors @var{a} and @var{b}
+@end defmethod
+
+@defmethod Vector dist(@var{a}, @var{b})
+Returns the distance between vectors @var{a} and @var{b}
+@end defmethod
+
+
+
+
+@node HistogramParams
+@unnumberedsec HistogramParams
+@cindex histogram
+@cindex HistogramParams
+@deftp HistogramParams HistogramParams
+Used to specify histogram parameters for binning along a stream in
+Lambda. Currently not that generally useful.
+@end deftp
+
+@defmethod HistogramParams create()
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{phi}
+@tab @code{number}
+@tab  @math{φ}
+@item @code{theta}
+@tab @code{number}
+@tab @math{θ}
+@item @code{startRaw}
+@tab @code{number}
+@tab Lambda to try start bins if creating a milkyway histogram
+@item @code{startRaw}
+@tab @code{number}
+@tab Lambda to try ending bins if creating a milkyway histogram
+@item @code{center}
+@tab @code{number}
+@tab Center of histogram in lambda
+@item @code{binSize}
+@tab @code{number}
+@tab Bin size in lambda in degrees
+@end multitable
+@end defmethod
+
+
+@node Utility Functions
+@chapter Utility Functions
+
+@cindex utilities
+
+Miscellaneous useful functions for coordinate conversions, model
+creation, etc.
+
+@section Predefined models
+
+@unnumberedsubsec predefinedModels.generatePlummer()
+Returns a table of bodies in a Plummer sphere distribution.
+@multitable @columnfractions .15 .15 .7
+@headitem Argument @tab Type @tab Description
+@item @code{nbody}
+@tab @code{number}
+@tab Number of bodies to put in the Plummer sphere
+@item @code{mass}
+@tab @code{number}
+@tab Total mass of Plummer sphere. Will be evenly distributed among
+particles in model.
+@item @code{scaleRadius}
+@tab @code{number}
+@tab Scale radius for Plummer sphere
+@item @code{position}
+@tab @code{Vector}
+@tab Initial position for center of Plummer sphere
+@item @code{velocity}
+@tab @code{Vector}
+@tab Initial velocity for center of Plummer sphere
+@item @code{ignore}*
+@tab @code{bool}
+@tab The bodies in this model will be tagged to be ignored in
+likelihood calculations. i.e. this is a dark matter model.
+@item @code{prng}
+@tab @code{DSFMT}
+@tab Random number generator to use
+
+@end multitable
+
+
+@section Utility functions
+@deffn utility function plummerTimestepIntegral(@var{smalla}, @var{biga}, @var{Md}, [@var{step}=1.0-e5])
+Calculate a timestep for two Plummer spheres where @var{smalla} is the
+smaller scale radius, @var{biga} is the larger scale radius, @var{Md}
+is the enclosed mass of the big sphere within the smaller's radius,
+and the optional argument @var{step} is the radial integral step size.
+@end deffn
+
+@deffn utility function reverseOrbit(potential, position, velocity, tstop, dt)
+Do a reverse orbit in a Milkyway potential from a particle.
+@end deffn
+
+@deffn utility function calculateEps2(@var{n}, @var{r0})
+Calculates the softening parameter squared for a Plummer sphere using
+the formula
+@tex
+$$\epsilon^2$$
+@end tex
+@tex
+$$\epsilon \equiv r_0 / (10 \sqrt{n});$$
+@end tex
+where @math{r_0} is the scale length and @math{n} is the number of bodies.
+@end deffn
+
+
+@deffn utility function calculateTimestep(@var{mass}, @var{r0})
+Calculate a timestep for a Plummer sphere using the formula
+@tex
+$$(1/10)^2 * \sqrt{(4\pi/3) r_0^3} / m$$
+@end tex
+where @math{r_0} is the scale lengt hand @math{m} is the mass.
+@end deffn
+
+@deffn utility function lbrToCartesian(@var{ctx}, @var{position}, [@var{useRadians}=false])
+Takes an @ref{NBodyCtx} and a position and converts it to
+galactic coordinates. Optional argument indicates that the l and b in
+the input vector are in radians.
+@end deffn
+
+@deffn utility function solarMassToMassUnits(@var{mass})
+Convert a mass in solar masses to one in simulation units.
+@end deffn
+
+@deffn utility function massUnitsToSolarMass(@var{mass})
+Convert a mass in solar masses to one in simulation units.
+@end deffn
+
+@deffn utility function lyToKiloparsecs(@var{length})
+Convert a distance in lightyears to kiloparsecs
+@end deffn
+
+@deffn utility function mToKiloparsecs(@var{length})
+Convert a distance in meters to kiloparsecs
+@end deffn
+
+
+@node Milkyway N-Body Invocation
+@appendix Command Line Arguments for Milkyway N-Body Invocation
+@cindex command line arguments
+@cindex arguments (command line)
+@cindex options (command line)
+@cindex switches (command line)
+@cindex startup (command line arguments)
+@cindex invocation (command line arguments)
+
+Milkyway N-Body uses various command line switches to control the
+simulation and output. Extra arguments are forwarded on to the Lua
+input file. All arguments accept long form (two dashes,
+e.g. --argument-name) and most accept short form as well (one dash,
+e.g. -a).
+
+@node Arguments
+@appendixsec Arguments
+
+  Additional information and argumments can be obtained from running with the @var{--help} argument.
+
+@table @samp
+@item -f @var{file}
+@itemx --input-file=@var{file}
+@cindex lua, input, command-line argument
+Use the @var{file} as the primary input Lua script
+
+@item -h @var{file}
+@itemx --histogram-file=@var{file}
+@cindex histogram, input, command-line argument
+Use the @var{file} as input histogram to match
+
+@item -z @var{file}
+@itemx --histoout-file=@var{file}
+@cindex histogram, output, command-line argument
+Write a result histogram to file @var{file}
+
+@item -o @var{file}
+@itemx --output-file=@var{file}
+@cindex output, command-line argument
+Write resulting body status to file @var{file}
+
+@item -x
+@itemx --output-cartesian
+@cindex output, command-line argument, coordinates
+Write body positions to output in standard galactic coordinates
+instead of the default lbr.
+
+@item -v
+@itemx --verify-file
+@cindex input, command-line argument, BOINC
+Only verify that everything is valid with the input file for testing
+workunits. Tests for errors and prints some information about the
+context. Do not actually run a simulation.
+
+@item -n @var{nthread}
+@itemx --nthreads @var{nthread}
+@cindex command-line argument, OpenMP, threads
+Select uses @var{nthread} threads to run standard simulation with. Ignored if
+built without OpenMP support.
+
+@item -e @var{seed}
+@itemx --seed @var{seed}
+@cindex command-line argument, random, seed
+Passes the random number seed @var{seed} to input Lua script
+
+@item --verbose
+@cindex command-line argument, debug
+Print more detailed information than normally would happen. Combined
+with --version, will print commit ID
+
+
+
+@end table
+
+
+@node Index
+@unnumbered Index
+
+@printindex cp
+
+@bye
+

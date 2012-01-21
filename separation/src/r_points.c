@@ -1,26 +1,27 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
-Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "separation_types.h"
-#include "milkyway_cl.h"
 #include "milkyway_extra.h"
 #include "r_points.h"
 
@@ -60,7 +61,7 @@ real calcReffXrRp3(real coords, real gPrime)
     return reff_xr_rp3;
 }
 
-real calcG(const real coords)
+real calcG(real coords)
 {
     return 5.0 * (mw_log10(1000.0 * coords) - 1.0) + absm;
 }
@@ -68,8 +69,8 @@ real calcG(const real coords)
 static inline RPoints calc_r_point(real dx, real qgaus_W, real gPrime, real coeff)
 {
     RPoints r_pt;
-
-    real g, exponent, r3, N, stddev_l, stddev_r, stddev_i, A;
+    real g, exponent, r3, N;
+    //real stddev_l, stddev_r, stddev_i, A;
 
     g = gPrime + dx;
 
@@ -154,7 +155,8 @@ RPoints* precalculateRPts(const AstronomyParameters* ap,
                           RConsts** rc_out,
                           int transpose)
 {
-    unsigned int i, j, idx;
+    unsigned int i, idx;
+    int j;
     RPoints* r_pts;
     RPrime rp;
     RConsts* rc;

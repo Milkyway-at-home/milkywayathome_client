@@ -553,7 +553,14 @@ union luai_Cast { double l_d; long l_l; };
 ** aligned in 16-byte boundaries, then you should add long double in the
 ** union.) Probably you do not need to change this.
 */
-#define LUAI_USER_ALIGNMENT_T	union { double u; void *s; long l; }
+
+/* We rely on allocations aligned properly for intrinsics. 32 is sufficient for AVX */
+#ifdef _MSC_VER
+#define LUAI_USER_ALIGNMENT_T	__declspec(align(32)) union { double u; void *s; long l; }
+#else
+#define LUAI_USER_ALIGNMENT_T	union { double u; void *s; long l; } __attribute__((aligned(32)))
+#endif
+
 
 
 /*

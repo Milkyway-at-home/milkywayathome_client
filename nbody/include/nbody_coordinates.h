@@ -22,6 +22,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _NBODY_COORDINATES_H_
 
 #include "milkyway_math.h"
+#include "nbody_types.h"
+
+typedef struct
+{
+    real cosphi;
+    real sinphi;
+    real sinpsi;
+    real cospsi;
+    real costh;
+    real sinth;
+} NBHistTrig;
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +44,8 @@ mwvector cartesianToLbr_rad(mwvector r, real sunGCDist);
 mwvector lbrToCartesian(mwvector lbr, real sunGCDist);
 mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist);
 
+void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp);
+real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real runGCDist);
 
 #ifdef __cplusplus
 }

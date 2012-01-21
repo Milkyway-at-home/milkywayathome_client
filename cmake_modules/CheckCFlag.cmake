@@ -19,10 +19,9 @@
 #
 
 include(CheckCCompilerFlag)
+include(CompilerID)
 
 function(add_flag_if_supported flagname)
-  message("Checking for flag ${flagname}")
-
   check_c_compiler_flag("${flagname}" HAVE_FLAG_${flagname})
 
   if(${HAVE_FLAG_${flagname}})
@@ -35,4 +34,46 @@ function(append_supported_flags flags)
     add_flag_if_supported(${flag})
   endforeach()
 endfunction()
+
+check_c_compiler_flag("-fp-model fast" HAVE_FP_MODEL_FAST)
+if(HAVE_FP_MODEL_FAST)
+  set(FAST_MATH_FLAGS "-fp-model fast")
+endif()
+
+if(MSVC)
+  set(FAST_MATH_FLAGS "/fp:fast")
+  set(SAFE_MATH_FLAGS "/fp:precise")
+endif()
+
+check_c_compiler_flag("-ffast-math" HAVE_F_FAST_MATH)
+if(HAVE_F_FAST_MATH)
+  set(FAST_MATH_FLAGS "-ffast-math")
+endif()
+
+
+
+check_c_compiler_flag("-fp-model precise" HAVE_FP_MODEL_PRECISE)
+if(HAVE_FP_MODEL_PRECISE)
+  set(SAFE_MATH_FLAGS "-fp-model precise")
+endif()
+
+check_c_compiler_flag("-fno-unsafe-math-optimizations" HAVE_F_NO_UNSAFE_MATH_OPTIMIZATIONS)
+if(HAVE_F_NO_UNSAFE_MATH_OPTIMIZATIONS)
+  set(SAFE_MATH_FLAGS "-fno-unsafe-math-optimizations")
+endif()
+
+
+#check_c_compiler_flag("-march=em64t" HAVE_MARCH_EM64T)
+#check_c_compiler_flag("-march=anyx86" HAVE_MARCH_ANYX86)
+#check_c_compiler_flag("-mtune=generic" HAVE_MTUNE_GENERIC)
+
+check_c_compiler_flag("-static-libstdc++" HAVE_FLAG_STATIC_LIBSTDCPP)
+check_c_compiler_flag("-static-libgcc" HAVE_FLAG_STATIC_LIBGCC)
+
+if(CXX_COMPILER_IS_SUN)
+  # This one incorrectly passes the test and then goes to ld which errors
+  set(HAVE_FLAG_PTHREAD FALSE)
+else()
+  check_c_compiler_flag("-pthread" HAVE_FLAG_PTHREAD)
+endif()
 

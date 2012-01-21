@@ -1,23 +1,25 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,10 +93,10 @@ void prob_ok_init(uint32_t seed, int setSeed)
 
 /* FIXME: WTF? */
 /* FIXME: lack of else leads to possibility of returned garbage */
-/* determines if star with prob p should be separrated into stream */
+/* determines if star with prob p should be separated into stream */
 int prob_ok(StreamStats* ss, int n)
 {
-    int ok;
+    int s_ok = 0;
     real r;
     real step1, step2, step3;
 
@@ -104,30 +106,30 @@ int prob_ok(StreamStats* ss, int n)
     {
         case 1:
             if (r > ss[0].sprob)
-                ok = 0;
+                s_ok = 0;
             else
-                ok = 1;
+                s_ok = 1;
             break;
         case 2:
             step1 = ss[0].sprob + ss[1].sprob;
             if (r > step1)
-                ok = 0;
+                s_ok = 0;
             else if (r < ss[0].sprob)
-                ok = 1;
+                s_ok = 1;
             else if (r > ss[0].sprob && r <= step1)
-                ok = 2;
+                s_ok = 2;
             break;
         case 3:
             step1 = ss[0].sprob + ss[1].sprob;
             step2 = ss[0].sprob + ss[1].sprob + ss[2].sprob;
             if (r > step2)
-                ok = 0;
+                s_ok = 0;
             else if (r < ss[0].sprob)
-                ok = 1;
+                s_ok = 1;
             else if (r > ss[0].sprob && r <= step1)
-                ok = 2;
+                s_ok = 2;
             else if (r > step1 && r <= step2)
-                ok = 3;
+                s_ok = 3;
             /* CHECKME: else? */
             break;
         case 4:
@@ -135,21 +137,21 @@ int prob_ok(StreamStats* ss, int n)
             step2 = ss[0].sprob + ss[1].sprob + ss[2].sprob;
             step3 = ss[0].sprob + ss[1].sprob + ss[2].sprob + ss[3].sprob;
             if (r > step3)
-                ok = 0;
+                s_ok = 0;
             else if (r <= ss[0].sprob)
-                ok = 1;
+                s_ok = 1;
             else if (r > ss[0].sprob && r <= step1)
-                ok = 2;
+                s_ok = 2;
             else if (r > step1 && r <= step2)
-                ok = 3;
+                s_ok = 3;
             else if (r > step2 && r <= step3)
-                ok = 4;
+                s_ok = 4;
             break;
         default:
-            fail("ERROR:  Too many streams to separate using current code; "
-                 "please update the switch statement in prob_ok to handle %d streams", n);
+            mw_panic("Too many streams (%d > %d) to separate using current code\n", n, 4);
     }
-    return ok;
+
+    return s_ok;
 }
 
 SeparationResults* newSeparationResults(unsigned int numberStreams)
@@ -197,7 +199,7 @@ int checkSeparationResults(const SeparationResults* results, unsigned int number
     }
 
     if (rc)
-        warn("Non-finite result\n");
+        mw_printf("Non-finite result\n");
 
     return rc;
 }

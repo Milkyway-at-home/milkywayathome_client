@@ -1,0 +1,4 @@
+[submodule "boinc/boinc"]
+	path = boinc/boinc
+	url = git://github.com/Milkyway-at-home/BOINC.git
+	ignore = dirty
