@@ -517,7 +517,7 @@ int mwSetProcessPriority(MWPriority priority)
 /*  From crlibm */
 unsigned long long mwFixFPUPrecision(void)
 {
-#if MW_IS_X86
+#if MW_IS_X86_32
 
   #if defined(_MSC_VER) || defined(__MINGW32__)
   unsigned int oldcw, cw;

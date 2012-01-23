@@ -89,7 +89,7 @@ extern "C" {
   #define mw_remove(x) remove((x))
   #define mw_begin_critical_section()
   #define mw_end_critical_section()
-  #define mw_fraction_done(x)
+  #define mw_fraction_done(x) ((void) (x))
   #define mw_time_to_checkpoint() (FALSE)
   #define mw_checkpoint_completed()
   #define mw_is_standalone() (TRUE)

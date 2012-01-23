@@ -200,7 +200,7 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
             uavComment = strstr((const char*) data->d_buf, ";uavid:");
             if (!uavComment || (sscanf(uavComment, ";uavid:%d\n", &uavId) != 1))
             {
-                mw_printf("Error reading uavid from IL comment");
+                mw_printf("Error reading uavid from IL comment\n");
                 uavId = -1;
             }
 

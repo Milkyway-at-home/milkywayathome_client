@@ -225,7 +225,6 @@ static inline void reportProgress(const AstronomyParameters* ap,
     {
         printf("Step %u: %fms\n", step, dt);
     }
-
 }
 
 static cl_int checkpointCL(CLInfo* ci, SeparationCLMem* cm, const IntegralArea* ia, EvaluationState* es)

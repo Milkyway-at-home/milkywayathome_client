@@ -176,7 +176,7 @@ if(SYSTEM_IS_X86)
     # MSVC doesn't generate SSE3 itself, and doesn't define this
     set(SSE3_FLAGS "${SSE2_FLAGS}")
     set(SSE41_FLAGS "${SSE3_FLAGS}")
-    set(AVX_FLAGS "/arch:AVX ${SSE41_FLAGS}")
+    set(AVX_FLAGS "/arch:AVX")
   endif()
 
   if(NEED_SSE_DEFINES)
@@ -187,10 +187,10 @@ if(SYSTEM_IS_X86)
     str_append(SSE41_FLAGS "-D__SSE4_1__=1")
     str_append(AVX_FLAGS "-D__AVX__=1")
 
-    str_append(AVX_FLAGS ${SSE2_FLAGS})
-    str_append(AVX_FLAGS ${SSE3_FLAGS})
-    str_append(AVX_FLAGS ${SSE4_FLAGS})
-    str_append(AVX_FLAGS ${SSE41_FLAGS})
+    # want the defines but not /arch:SSE2
+    str_append(AVX_FLAGS "-D__SSE4_1__=1")
+    str_append(AVX_FLAGS "-D__SSE3__=1")
+    str_append(AVX_FLAGS "-D__SSE2__=1")
   endif()
 endif()
 
@@ -310,7 +310,6 @@ function(enable_avx target)
   set_target_properties(${target}
                           PROPERTIES
                             COMPILE_FLAGS "${comp_flags} ${AVX_FLAGS}")
-  get_target_property(new_comp_flags ${target} COMPILE_FLAGS)
 endfunction()
 
 
