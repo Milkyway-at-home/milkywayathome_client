@@ -71,7 +71,8 @@ cl_bool mwComputeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor);
 cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 cl_bool mwHasNvidiaCompilerFlags(const DevInfo* di);
 cl_bool mwDeviceVendorIsNvidia(const DevInfo* di);
-
+cl_bool mwNvidiaDriverVersionGreaterEqual(const DevInfo* di, cl_uint minMajor, cl_uint minMinor);
+cl_bool mwNvidiaInlinePTXAvailable(cl_platform_id platform);
 
 #ifdef __cplusplus
 }

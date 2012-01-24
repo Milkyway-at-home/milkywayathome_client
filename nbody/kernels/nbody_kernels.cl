@@ -63,8 +63,6 @@
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 
 
-
-
 /* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
 typedef enum
 {
@@ -1110,9 +1108,38 @@ __kernel void NBODY_KERNEL(quadMoments)
     }
 }
 
+#if HAVE_INLINE_PTX
+inline int warpAcceptsCellPTX(real rSq, real rCritSq)
+{
+    unsigned int result;
 
-/* OpenCL is missing thread voting functions.
-   This should be equivalent roughtly to CUDA's __all() with the conditions
+  #if DOUBLEPREC
+    asm("{\n\t"
+        ".reg .pred cond, out;\n\t"
+        "setp.ge.f64 cond, %1, %2;\n\t"
+        "vote.all.pred out, cond;\n\t"
+        "selp.u32 %0, 1, 0, out;\n\t"
+        "}\n\t"
+        : "=r"(result)
+        : "d"(rSq), "d"(rCritSq));
+  #else
+    asm("{\n\t"
+        ".reg .pred cond, out;\n\t"
+        "setp.ge.f32 cond, %1, %2;\n\t"
+        "vote.all.pred out, cond;\n\t"
+        "selp.u32 %0, 1, 0, out;\n\t"
+        "}\n\t"
+        : "=r"(result)
+        : "f"(rSq), "f"(rCritSq));
+  #endif /* DOUBLEPREC */
+
+    return result;
+}
+#endif /* HAVE_INLINE_PTX */
+
+
+/* OpenCL is missing thread voting functions (so is AMD hardware as far as I can tell)
+ * This should be equivalent roughtly to CUDA's __all() with the conditions
  * A barrier should be unnecessary here since
  * all the threads in a wavefront should be
  * forced to run simulatenously. This is not
@@ -1120,9 +1147,8 @@ __kernel void NBODY_KERNEL(quadMoments)
  * wavefront.
  * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
  */
-inline int forceAllPredicate(__local volatile int allBlock[THREADS6], int warpId, int cond)
+inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6], int warpId, int cond)
 {
-
     allBlock[get_local_id(0)] = cond;
 
     /* Relies on underlying wavefronts (not whole workgroup)
@@ -1134,20 +1160,21 @@ inline int forceAllPredicate(__local volatile int allBlock[THREADS6], int warpId
     }
 
     /* For exact, this could always just return false */
-
     return predicate;
 }
+
+#if HAVE_INLINE_PTX
+/* Need to do this horror to avoid wasting __local if we can use the real warp vote */
+#define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellPTX(rSq, dq)
+#else
+#define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellSurvey(allBlock, base, (rSq) >= (dq))
+#endif
 
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
     __local real rootCritRadius;
-
-    /* Used by the fake thread voting function.
-       We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
-     */
-    __local volatile int allBlock[THREADS6];
 
     __local volatile int ch[THREADS6 / WARPSIZE];
     __local volatile real nx[THREADS6 / WARPSIZE], ny[THREADS6 / WARPSIZE], nz[THREADS6 / WARPSIZE];
@@ -1173,6 +1200,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
   #endif /* USE_QUAD */
 
 
+  #if !HAVE_INLINE_PTX
+    /* Used by the fake thread voting function.
+       We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
+    */
+    __local volatile int allBlock[THREADS6];
 
     /* Excess threads will "die", however their slots in the
      * fake warp vote are still counted, but not set,
@@ -1183,6 +1215,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
      * communication should happen on wavefront/warp level
      */
     allBlock[get_local_id(0)] = 1;
+  #endif /* !HAVE_INLINE_PTX */
 
 
     if (get_local_id(0) == 0)
@@ -1323,7 +1356,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real rSq = mad(dz, dz, mad(dy, dy, dx * dx));  /* Compute distance squared */
 
                         /* Check if all threads agree that cell is far enough away (or is a body) */
-                        if (isBody(n) || forceAllPredicate(allBlock, base, rSq >= dq[depth]))
+                        if (isBody(n) || warpAcceptsCell(allBlock, base, rSq, dq[depth]))
                         {
                             rSq += EPS2;
                             real r = sqrt(rSq);   /* Compute distance with softening */
@@ -1451,8 +1484,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
             }
 
 
+          #if !HAVE_INLINE_PTX
             /* In case this thread is done with bodies and others in the wavefront aren't */
             allBlock[get_local_id(0)] = 1;
+          #endif /* !HAVE_INLINE_PTX */
         }
     }
 

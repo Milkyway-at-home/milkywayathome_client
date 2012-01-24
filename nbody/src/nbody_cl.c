@@ -526,28 +526,28 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-D TRIAXIAL_HALO=%d "
 
                  /* Spherical constants */
-                 "-DSPHERICAL_MASS=%a "
-                 "-DSPHERICAL_SCALE=%a "
+                 "-D SPHERICAL_MASS=%a "
+                 "-D SPHERICAL_SCALE=%a "
 
                  /* Disk constants */
-                 "-DDISK_MASS=%a "
-                 "-DDISK_SCALE_LENGTH=%a "
-                 "-DDISK_SCALE_HEIGHT=%a "
+                 "-D DISK_MASS=%a "
+                 "-D DISK_SCALE_LENGTH=%a "
+                 "-D DISK_SCALE_HEIGHT=%a "
 
                  /* Halo constants */
-                 "-DHALO_VHALO=%a "
-                 "-DHALO_SCALE_LENGTH=%a "
-                 "-DHALO_FLATTEN_Z=%a "
-                 "-DHALO_FLATTEN_Y=%a "
-                 "-DHALO_FLATTEN_X=%a "
-                 "-DHALO_TRIAX_ANGLE=%a "
-                 "-DHALO_C1=%a "
-                 "-DHALO_C2=%a "
-                 "-DHALO_C3=%a "
+                 "-D HALO_VHALO=%a "
+                 "-D HALO_SCALE_LENGTH=%a "
+                 "-D HALO_FLATTEN_Z=%a "
+                 "-D HALO_FLATTEN_Y=%a "
+                 "-D HALO_FLATTEN_X=%a "
+                 "-D HALO_TRIAX_ANGLE=%a "
+                 "-D HALO_C1=%a "
+                 "-D HALO_C2=%a "
+                 "-D HALO_C3=%a "
 
                  "%s "
                  "%s "
-                 ,
+                 "-D HAVE_INLINE_PTX=%d ",
                  DOUBLEPREC,
 
                  st->nbody,
@@ -611,7 +611,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Misc. other stuff */
                  mwHasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",
-                 nbMaybeNvMaxRegCount(di, ctx)
+                 nbMaybeNvMaxRegCount(di, ctx),
+                 mwNvidiaInlinePTXAvailable(st->ci->plat)
             ) < 1)
     {
         mw_printf("Error getting compile flags\n");

@@ -750,3 +750,57 @@ cl_bool mwPlatformSupportsAMDOfflineDevices(const CLInfo* ci)
     return (strstr(exts, "cl_amd_offline_devices") != NULL);
 }
 
+cl_bool mwNvidiaDriverVersionGreaterEqual(const DevInfo* di, cl_uint minMajor, cl_uint minMinor)
+{
+    cl_uint minor = 0;
+    cl_uint major = 0;
+
+    if (!mwIsNvidiaGPUDevice(di) || (sscanf(di->driver, "%u.%u", &major, &minor) != 2))
+    {
+        return CL_FALSE;
+    }
+
+    return (major > minMajor) || (major == minMajor && minor >= minMinor);
+}
+
+cl_bool mwNvidiaInlinePTXAvailable(cl_platform_id platform)
+{
+    cl_int err;
+    size_t readSize = 0;
+    char version[128];
+    char name[128];
+    cl_uint clMajor = 0, clMinor = 0;
+    cl_uint cudaMajor = 0, cudaMinor = 0, cudaPatchLevel;
+
+    err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
+                            sizeof(name), name, &readSize);
+    if (err != CL_SUCCESS || readSize >= sizeof(name))
+    {
+        return CL_FALSE;
+    }
+
+    err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
+                            sizeof(version), version, &readSize);
+    if (err != CL_SUCCESS || readSize >= sizeof(version))
+    {
+        return CL_FALSE;
+    }
+
+    if (strcmp(name, "NVIDIA CUDA"))
+    {
+        return CL_FALSE;
+    }
+
+    /* Inline PTX was a CUDA 4 feature. Should probably test for this in a better way */
+    if (  strcmp(name, "NVIDIA CUDA")
+        || (sscanf(version,
+                   "OpenCL %u.%u CUDA %u.%u.%u",
+                   &clMinor, &clMajor,
+                   &cudaMajor, &cudaMinor, &cudaPatchLevel) != 5))
+    {
+        return CL_FALSE;
+    }
+
+    return (cudaMajor >= 4);
+}
+
