@@ -1180,7 +1180,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real nx[THREADS6 / WARPSIZE], ny[THREADS6 / WARPSIZE], nz[THREADS6 / WARPSIZE];
     __local volatile real nm[THREADS6 / WARPSIZE];
 
-    /* "Stack" things */
+    /* Stack things */
     __local volatile int pos[MAXDEPTH * THREADS6 / WARPSIZE], node[MAXDEPTH * THREADS6 / WARPSIZE];
     __local volatile real dq[MAXDEPTH * THREADS6 / WARPSIZE];
 
@@ -1324,16 +1324,18 @@ __kernel void NBODY_KERNEL(forceCalculation)
             bool skipSelf = false;
             while (depth >= j)
             {
+                int curPos;
+
                 /* Stack is not empty */
-                while (pos[depth] < NSUB)
+                while ((curPos = pos[depth]) < NSUB)
                 {
                     int n;
                     /* Node on top of stack has more children to process */
                     if (get_local_id(0) == sbase)
                     {
                         /* I'm the first thread in the warp */
-                        n = _child[NSUB * node[depth] + pos[depth]]; /* Load child pointer */
-                        pos[depth]++;
+                        n = _child[NSUB * node[depth] + curPos]; /* Load child pointer */
+                        pos[depth] = curPos + 1;
                         ch[base] = n; /* Cache child pointer */
                         if (n >= 0)
                         {
