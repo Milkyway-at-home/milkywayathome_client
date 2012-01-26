@@ -53,10 +53,12 @@ typedef float4 real4;
 #define sqr(x) ((x) * (x))
 
 #define USE_CUSTOM_SQRT 1
-#define USE_CUSTOM_DIVISION 1
 
-#if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
+
+#if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__Tahiti__) && !defined(__CPU__)
   #define USE_CUSTOM_DIVISION 1
+#else
+  #define USE_CUSTOM_DIVISION 0
 #endif
 
 
