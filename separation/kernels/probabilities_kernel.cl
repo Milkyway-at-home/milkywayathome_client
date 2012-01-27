@@ -21,19 +21,48 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef DOUBLEPREC
   #error DOUBLEPREC not defined
 #endif
 
+#if DOUBLEPREC
+  #if defined(cl_khr_fp64)
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #elif defined(cl_amd_fp64)
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #else
+    #error No double extension available
+  #endif /* defined(cl_khr_fp64) */
 
-#ifdef cl_khr_fp64
-  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#elif cl_amd_fp64
-  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-#else
-  #error No double extension available
-#endif /* cl_amd_fp64 */
+  #if defined(__AMD__) || defined(__GPU__)
+    /* Older AMD versions did not define __AMD__ but did define __GPU__ */
+    #if defined(__ATI_RV770__) || defined(__Cypress__) || defined(__Cayman__)
+      #define USE_CUSTOM_DIVISION 1
+      #define USE_CUSTOM_SQRT 1
+    #elif defined(__Tahiti__)
+    /* Using the default division is a bit faster, but using ddiv is
+     * slower than the custom division in the IL kernel?  */
+      #define USE_CUSTOM_DIVISION 0
+
+      /* This is just barely faster */
+      #define USE_CUSTOM_SQRT 1
+    #else
+      /* Using neither is a safe fallback */
+      #define USE_CUSTOM_DIVISION 0
+      #define USE_CUSTOM_SQRT 0
+    #endif
+  #elif defined(__CPU__)
+    /* AMD OpenCL's CPU implementation */
+    #define USE_CUSTOM_DIVISION 0
+    #define USE_CUSTOM_SQRT 0
+  #else /* Not AMD OpenCL */
+    /* I can't find anything about things Nvidia defines and reasonable
+     * guesses don't work, so do what's best for Nvidia */
+    #define USE_CUSTOM_DIVISION 1
+    #define USE_CUSTOM_SQRT 1
+  #endif /* defined(__AMD__) || defined(__GPU__) */
+#endif /* DOUBLEPREC */
+
 
 #define MAX_CONVOLVE 256
 
@@ -52,18 +81,8 @@ typedef float4 real4;
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x) ((x) * (x))
 
-#define USE_CUSTOM_SQRT 1
 
-
-#if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__Tahiti__) && !defined(__CPU__)
-  #define USE_CUSTOM_DIVISION 1
-#else
-  #define USE_CUSTOM_DIVISION 0
-#endif
-
-
-#if USE_CUSTOM_DIVISION && DOUBLEPREC
-
+#if USE_CUSTOM_DIVISION
 double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
@@ -84,7 +103,7 @@ double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the
   #define mw_div(a, b) ((a) / (b))
 #endif /* USE_CUSTOM_DIVISION && DOUBLEPREC */
 
-#if USE_CUSTOM_SQRT && DOUBLEPREC
+#if USE_CUSTOM_SQRT
 
 double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
