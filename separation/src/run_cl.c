@@ -33,34 +33,29 @@
 #include "integrals.h"
 
 static void sumStreamResults(real* streamResults,
-                             const real* mappedResults,
-                             const cl_uint mu_steps,
-                             const cl_uint r_steps,
-                             const cl_uint number_streams)
+                             const Kahan* mappedResults,
+                             cl_uint mu_steps,
+                             cl_uint r_steps,
+                             cl_uint number_streams)
 {
-    cl_uint i, j, k, idx;
-    Kahan* streamSums;
+    cl_uint stream, mu, r;
 
-    streamSums = (Kahan*) mwCallocA(number_streams, sizeof(Kahan));
-
-    for (i = 0; i < mu_steps; ++i)
+    for (stream = 0; stream < number_streams; ++stream)
     {
-        for (j = 0; j < r_steps; ++j)
+        const Kahan* offset = &mappedResults[stream * r_steps * mu_steps];
+        Kahan total = ZERO_KAHAN;
+
+        for (mu = 0; mu < mu_steps; ++mu)
         {
-            idx = (i * r_steps * number_streams) + (j * number_streams);
-            for (k = 0; k < number_streams; ++k)
+            for (r = 0; r < r_steps; ++r)
             {
-                KAHAN_ADD(streamSums[k], mappedResults[idx + k]);
+                KAHAN_ADD(total, offset[r_steps * mu + r].sum);
             }
         }
+
+        streamResults[stream] = total.sum + total.correction;
     }
 
-    for (i = 0; i < number_streams; ++i)
-    {
-        streamResults[i] = streamSums[i].sum + streamSums[i].correction;
-    }
-
-    mwFreeA(streamSums);
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
@@ -87,7 +82,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 /* The mu and r steps for a nu step were done in parallel. After that
  * we need to add the result to the running total + correction from
  * all the nu steps */
-static real sumBgResults(const real* bgResults,
+static real sumBgResults(const Kahan* bgResults,
                          const cl_uint mu_steps,
                          const cl_uint r_steps)
 {
@@ -98,7 +93,7 @@ static real sumBgResults(const real* bgResults,
     {
         for (j = 0; j < r_steps; ++j)
         {
-            KAHAN_ADD(bg_prob, bgResults[r_steps * i + j]);
+            KAHAN_ADD(bg_prob, bgResults[r_steps * i + j].sum);
         }
     }
 
@@ -135,11 +130,11 @@ static cl_int readKernelResults(CLInfo* ci,
                                 const cl_uint number_streams)
 {
     cl_int err;
-    const real* bgResults;
-    const real* streamsTmp;
+    const Kahan* bgResults;
+    const Kahan* streamsTmp;
     size_t resultSize, streamsSize;
 
-    resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
+    resultSize = 2 * sizeof(real) * ia->mu_steps * ia->r_steps;
     bgResults = mapIntegralResults(ci, cm, resultSize);
     if (!bgResults)
     {
@@ -156,7 +151,7 @@ static cl_int readKernelResults(CLInfo* ci,
         return err;
     }
 
-    streamsSize = sizeof(real) * ia->mu_steps * ia->r_steps * number_streams;
+    streamsSize = 2 * sizeof(real) * ia->mu_steps * ia->r_steps * number_streams;
     streamsTmp = mapStreamsResults(ci, cm, streamsSize);
     if (!streamsTmp)
     {

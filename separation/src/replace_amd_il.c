@@ -133,9 +133,6 @@ static char* getILSrc(int nStream, MWCALtargetEnum target, cl_int uavGuess, size
         }
     }
 
-
-    mw_printf("ilSrc = '%s'\n", ilSrc);
-
     return ilSrc;
 }
 
@@ -185,11 +182,12 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
             return 1;
         }
 
+        /*
         if (strstr(name, ".rodata") != NULL)
         {
             Elf_Data* data = elf_getdata(scn, NULL);
 
-            /*
+
             FILE* f = fopen("rodata_section.bin", "wb");
             if (f)
             {
@@ -207,7 +205,7 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
 
             data->d_buf = r770RO;
             data->d_size = roSize;
-            */
+
 
             if (!elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY))
             {
@@ -227,7 +225,9 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
                 return 1;
             }
         }
-        else if (strstr(name, ".amdil") != NULL)
+        */
+
+        if (strstr(name, ".amdil") != NULL)
         {
             int uavId;
             const char* uavComment;
@@ -242,7 +242,10 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
 
             if (verbose)
             {
-                mw_printf("Replacing section data of type %d, off %d align "ZU"\n", data->d_type, (int) data->d_off, data->d_align);
+                mw_printf("Replacing section data of type %d, off %d align "ZU"\n",
+                          data->d_type,
+                          (int) data->d_off,
+                          data->d_align);
             }
 
 

@@ -355,7 +355,6 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     return CL_TRUE;
 }
 
-/* TODO: Should probably check for likelihood also */
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
 {
     cl_int i;
@@ -396,7 +395,6 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 
     return 1000.0 * devFactor * flopsPerIter / flops;
 }
-
 
 static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
 {

@@ -245,13 +245,32 @@ static cl_int createAPBuffer(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+static cl_int createSummarizationBuffer(CLInfo* ci, SeparationCLMem* cm, const AstronomyParameters* ap, const IntegralArea* ia)
+{
+    cl_int err;
+    //size_t nElement = mwDivRoundup(ia->mu_steps, 32) * (ap->number_streams + 1);
+    size_t nElement = ia->r_steps * (ap->number_streams + 1);
+    size_t size = nElement * sizeof(real);
+
+    mw_printf("Summarization buffer has %zu items\n", nElement);
+
+    cm->summarizationBuf = clCreateBuffer(ci->clctx, CL_MEM_WRITE_ONLY, size, NULL, &err);
+    if (!cm->summarizationBuf)
+    {
+        mwPerrorCL(err, "Failed to create summarization buffer of size "ZU, size);
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
     sizes->nStream = ap->number_streams;
 
     /* globals */
-    sizes->outBg = sizeof(real) * ia->mu_steps * ia->r_steps;
-    sizes->outStreams = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
+    sizes->outBg = 2 * sizeof(real) * ia->mu_steps * ia->r_steps;
+    sizes->outStreams = 2 * sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
 
     sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
     sizes->lTrig = sizeof(LTrigPair) * ia->mu_steps * ia->nu_steps;
@@ -303,36 +322,36 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->sg_dx);
 }
 
-const real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
+const Kahan* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
 {
     cl_int err;
-    real* mapOutBg;
+    const Kahan* mapOutBg;
 
-    mapOutBg = (real*) clEnqueueMapBuffer(ci->queue,
-                                          cm->outBg,
-                                          CL_TRUE, CL_MAP_READ,
-                                          0, resultsSize,
-                                          0, NULL,
-                                          NULL,
-                                          &err);
+    mapOutBg = (const Kahan*) clEnqueueMapBuffer(ci->queue,
+                                                 cm->outBg,
+                                                 CL_TRUE, CL_MAP_READ,
+                                                 0, resultsSize,
+                                                 0, NULL,
+                                                 NULL,
+                                                 &err);
     if (err != CL_SUCCESS)
         mwPerrorCL(err, "Error mapping integral result buffer");
 
     return mapOutBg;
 }
 
-const real* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize)
+const Kahan* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize)
 {
     cl_int err;
-    real* mapOutStreams;
+    const Kahan* mapOutStreams;
 
-    mapOutStreams = (real*) clEnqueueMapBuffer(ci->queue,
-                                               cm->outStreams,
-                                               CL_TRUE, CL_MAP_READ,
-                                               0, streamsResultsSize,
-                                               0, NULL,
-                                               NULL,
-                                               &err);
+    mapOutStreams = (const Kahan*) clEnqueueMapBuffer(ci->queue,
+                                                      cm->outStreams,
+                                                      CL_TRUE, CL_MAP_READ,
+                                                      0, streamsResultsSize,
+                                                      0, NULL,
+                                                      NULL,
+                                                      &err);
     if (err != CL_SUCCESS)
         mwPerrorCL(err, "Error mapping stream result buffer");
 

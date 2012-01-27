@@ -148,22 +148,13 @@ inline real mw_fmin(real a, real b)
 
 #define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
-#define KAHAN_ADD(k, item)                              \
-    {                                                   \
-        real _tmp = (k).sum;                            \
-        (k).sum += item;                                \
-        (k).correction += (item) - ((k).sum - _tmp);    \
-    }
-
-#if 0
 #define KAHAN_ADD(k, item)                          \
     {                                               \
         real _y = (item) - (k).correction;          \
-        real _t = (k).sum + (_y);                   \
-        (k).correction = (_t - (k).sum) - (_y);     \
+        real _t = (k).sum + _y;                     \
+        (k).correction = (_t - (k).sum) - _y;       \
         (k).sum = _t;                               \
     }
-#endif
 
 /* other useful nonstandard constants */
 

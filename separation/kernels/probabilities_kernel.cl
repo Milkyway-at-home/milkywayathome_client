@@ -141,10 +141,18 @@ typedef struct
 
 
 
+inline real2 kahanSum(real2 running, real term)
+{
+    real correctedNextTerm = term + running.y;
+    real newSum = running.x + correctedNextTerm;
+    running.y = correctedNextTerm - (newSum - running.x);
+    running.x = newSum;
+    return running;
+}
 
 /* Be careful of changing the arguments. It will most likely break the IL kernel */
-__kernel void probabilities(__global real* restrict bgOut,
-                            __global real* restrict streamsOut,
+__kernel void probabilities(__global real2* restrict bgOut,
+                            __global real2* restrict streamsOut,
 
                             __global const real2* restrict rConsts,
                             __global const real2* restrict rPts,
@@ -172,12 +180,23 @@ __kernel void probabilities(__global real* restrict bgOut,
     if (r_step >= r_steps || mu_step >= mu_steps) /* Avoid out of bounds from roundup */
         return;
 
+    size_t idx = mu_step * r_steps + r_step; /* Index into output buffers */
 
     size_t trigIdx = nu_step * mu_steps + mu_step;
     real2 lTrig = lTrigBuf[trigIdx];
     real bSin = bSinBuf[trigIdx];
     real2 rc = rConsts[r_step];
 
+
+    real2 bgTmp;
+    real2 streamTmp[NSTREAM];
+
+    bgTmp = bgOut[idx];
+    #pragma unroll NSTREAM
+    for (int j = 0; j < NSTREAM; ++j)
+    {
+        streamTmp[j] = streamsOut[j * mu_steps * r_steps + idx];
+    }
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
@@ -241,15 +260,27 @@ __kernel void probabilities(__global real* restrict bgOut,
     }
 
     real V_reff_xr_rp3 = nu_id * rc.x;
-    size_t idx = mu_step * r_steps + r_step; /* Index into output buffers */
 
     bg_prob *= V_reff_xr_rp3;
-    bgOut[idx] += bg_prob;
-
     #pragma unroll NSTREAM
     for (int j = 0; j < NSTREAM; ++j)
     {
-        streamsOut[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
+        st_probs[j] *= V_reff_xr_rp3;
+    }
+
+    bgTmp = kahanSum(bgTmp, bg_prob);
+    #pragma unroll NSTREAM
+    for (int j = 0; j < NSTREAM; ++j)
+    {
+        streamTmp[j] = kahanSum(streamTmp[j], st_probs[j]);
+    }
+
+
+    bgOut[idx] = bgTmp;
+    #pragma unroll NSTREAM
+    for (int j = 0; j < NSTREAM; ++j)
+    {
+        streamsOut[j * mu_steps * r_steps + idx] = streamTmp[j];
     }
 }
 
