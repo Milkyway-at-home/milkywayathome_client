@@ -38,7 +38,7 @@ typedef struct
 {
     const char* name;
     MWCALtargetEnum target;
-    cl_uint vliw;
+    cl_uint aluPerCU; /* Needed for calculating estimated peak flops */
     cl_uint doubleFrac;
     cl_uint wavefrontSize;
 } AMDGPUData;
@@ -49,55 +49,46 @@ static const AMDGPUData invalidAMDGPUData = { "Invalid", MW_CAL_TARGET_INVALID, 
 /* Table of more detailed info we want that OpenCL won't give us */
 static const AMDGPUData amdGPUData[] =
 {
-    /* I found these names from strings on amdocl.dll/libamdocl64.so
-       There are a bunch more extra ones in fglrx.ko (e.g. "Hemlock"),
-       but I don't think they're relevant.
-     */
-
-    /* R600 */
-    { "ATI RV670",  MW_CAL_TARGET_670,      5, 0, 64 },
-    { "ATI RV630",  MW_CAL_TARGET_630,      5, 0, 32 },
-    { "ATI RV610",  MW_CAL_TARGET_610,      5, 0, 32 },
-    { "ATI RV600",  MW_CAL_TARGET_600,      5, 0, 16 },
+     /* R600 */
+    { "ATI RV670",  MW_CAL_TARGET_670,      16 * 5, 0, 64 },
+    { "ATI RV630",  MW_CAL_TARGET_630,      16 * 5, 0, 32 },
+    { "ATI RV610",  MW_CAL_TARGET_610,      16 * 5, 0, 32 },
+    { "ATI RV600",  MW_CAL_TARGET_600,      16 * 5, 0, 16 },
 
     /* R700 */
-    { "ATI RV770",  MW_CAL_TARGET_770,      5, 5, 64 },
-    { "ATI RV730",  MW_CAL_TARGET_730,      5, 0, 32 },
-    { "ATI RV710",  MW_CAL_TARGET_710,      5, 0, 16 },
+    { "ATI RV770",  MW_CAL_TARGET_770,      16 * 5, 5, 64 },
+    { "ATI RV730",  MW_CAL_TARGET_730,      16 * 5, 0, 32 },
+    { "ATI RV710",  MW_CAL_TARGET_710,      16 * 5, 0, 16 },
 
     /* Evergreen */
-    { "Cypress",    MW_CAL_TARGET_CYPRESS,  5, 5, 64 },
-    { "Juniper",    MW_CAL_TARGET_JUNIPER,  5, 0, 64 },
-    { "Redwood",    MW_CAL_TARGET_REDWOOD,  5, 0, 64 },
-    { "Cedar",      MW_CAL_TARGET_CEDAR,    5, 0, 32 },
+    { "Cypress",    MW_CAL_TARGET_CYPRESS,  16 * 5, 5, 64 },
+    { "Juniper",    MW_CAL_TARGET_JUNIPER,  16 * 5, 0, 64 },
+    { "Redwood",    MW_CAL_TARGET_REDWOOD,  16 * 5, 0, 64 },
+    { "Cedar",      MW_CAL_TARGET_CEDAR,    16 * 5, 0, 32 },
 
     /* Northern Islands */
-    { "Cayman",     MW_CAL_TARGET_CAYMAN,   4, 4, 64 },
-    { "Barts",      MW_CAL_TARGET_BARTS,    5, 0, 64 },
-    { "Turks",      MW_CAL_TARGET_TURKS,    5, 0, 64 },
-    { "Caicos",     MW_CAL_TARGET_CAICOS,   5, 0, 64 },
-
+    { "Cayman",     MW_CAL_TARGET_CAYMAN,   16 * 4, 4, 64 },
+    { "Barts",      MW_CAL_TARGET_BARTS,    16 * 5, 0, 64 },
+    { "Turks",      MW_CAL_TARGET_TURKS,    16 * 5, 0, 64 },
+    { "Caicos",     MW_CAL_TARGET_CAICOS,   16 * 5, 0, 64 },
 
     /* Southern Islands */
-    /*
-      Not actually out yet, so not really sure
-    { "Tahiti",     MW_CAL_TARGET_TAHITI,   4, 4, 64 },
-    { "Thames",     MW_CAL_TARGET_THAMES,   5, 0, 64 },
-    { "Lombok",     MW_CAL_TARGET_LOMBOK,   5, 0, 64 },
-    */
+    { "Tahiti",     MW_CAL_TARGET_TAHITI,   4 * 16, 4, 64 },
+    { "Thames",     MW_CAL_TARGET_THAMES,   16 * 4, 4, 64 },
+    { "Lombok",     MW_CAL_TARGET_LOMBOK,   16 * 4, 4, 64 },
 
 #if 0
     /* These are there, but I don't know about them */
-    { "WinterPark",                        , 5, 0, 64 },
-    { "BeaverCreek",                       , 5, 0, 64 },
-    { "Loveland",                          , 5, 0, 64 },
+    { "WinterPark",                        16 * 5, 0, 64 },
+    { "BeaverCreek",                       16 * 5, 0, 64 },
+    { "Loveland",                          16 * 5, 0, 64 },
 
-    { "Lions",                             , 5, 0, 64 },
-    { "Tigers",                            , 5, 0, 64 },
-    { "Bears",                             , 5, 0, 64 },
+    { "Lions",                             16 * 5, 0, 64 },
+    { "Tigers",                            16 * 5, 0, 64 },
+    { "Bears",                             16 * 5, 0, 64 },
 #endif
 
-    { NULL,          MW_CAL_TARGET_INVALID, 5, 0, 64 }
+    { NULL,          MW_CAL_TARGET_INVALID, 4 * 16, 0, 64 }
 };
 
 cl_int mwUAVIdFromMWCALtargetEnum(MWCALtargetEnum x)
@@ -124,16 +115,13 @@ static const AMDGPUData* mwLookupAMDGPUInfo(const DevInfo* di)
 
 cl_double mwAMDEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
-    cl_uint vliw = di->vliw;
-    cl_uint doubleFrac = di->doubleFrac;
     cl_ulong flops, flopsFloat, flopsDouble;
     cl_double gflops;
 
-    flopsFloat = 2 * (di->maxCompUnits * vliw * 16) * (cl_ulong) di->clockFreq * 1000000;
-    flopsDouble = flopsFloat / doubleFrac;
+    flopsFloat = 2 * (di->maxCompUnits * di->aluPerCU) * (cl_ulong) di->clockFreq * 1000000;
+    flopsDouble = flopsFloat / di->doubleFrac;
 
-    mw_printf("Estimated AMD GPU (VLIW%d) GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
-              vliw,
+    mw_printf("Estimated AMD GPU GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
               1.0e-9 * (cl_double) flopsFloat,
               1.0e-9 * (cl_double) flopsDouble);
 
@@ -227,13 +215,10 @@ static cl_uint mwCUDACoresPerComputeUnit(const DevInfo* di)
 cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
     cl_ulong flopsFloat, flopsDouble, flops;
-    cl_uint doubleRat = mwCUDAEstimateDoubleFrac(di);
-    cl_uint corePerCU = mwCUDACoresPerComputeUnit(di);
-    cl_uint numCUDACores = di->maxCompUnits * corePerCU;
     cl_double gflops;
 
-    flopsFloat = 2 * numCUDACores * (cl_ulong) di->clockFreq * 1000000;
-    flopsDouble = flopsFloat / doubleRat;
+    flopsFloat = 2 * di->maxCompUnits * di->aluPerCU * (cl_ulong) di->clockFreq * 1000000;
+    flopsDouble = flopsFloat / di->doubleFrac;
 
     mw_printf("Estimated Nvidia GPU GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
               1.0e-9 * (cl_double) flopsFloat, 1.0e-9 * (cl_double) flopsDouble);
@@ -423,7 +408,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 
     if (mwIsNvidiaGPUDevice(di))
     {
-        di->vliw = 1;
+        di->aluPerCU = mwCUDACoresPerComputeUnit(di);
         di->doubleFrac = mwCUDAEstimateDoubleFrac(di);
         di->calTarget = MW_CAL_TARGET_INVALID;
 
@@ -441,7 +426,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
     {
         amdData = mwLookupAMDGPUInfo(di);
 
-        di->vliw       = amdData->vliw;
+        di->aluPerCU   = amdData->aluPerCU;
         di->doubleFrac = amdData->doubleFrac;
         di->calTarget  = amdData->target;
         di->warpSize   = amdData->wavefrontSize;
@@ -493,7 +478,7 @@ void mwPrintDevInfo(const DevInfo* di)
               "Min type align size: %u\n"
               "Timer resolution:    "ZU" ns\n"
               "Warp size:           %u\n"
-              "VLIW:                %u\n"
+              "ALU per CU:          %u\n"
               "Double extension:    %s\n"
               "Double fraction:     1/%u\n"
               "FP config:     float  | double\n"
@@ -533,7 +518,7 @@ void mwPrintDevInfo(const DevInfo* di)
               di->minAlignSize,
               di->timerRes,
               di->warpSize,
-              di->vliw,
+              di->aluPerCU,
               showMWDoubleExts(di->doubleExts),
               di->doubleFrac,
               showCLBool(mwDeviceHasDenormals(di, CL_FALSE)), showCLBool(mwDeviceHasDenormals(di, CL_TRUE)),

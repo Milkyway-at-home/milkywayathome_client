@@ -394,6 +394,13 @@ const char* showMWCALtargetEnum(const MWCALtargetEnum x)
         case MW_CAL_TARGET_CAICOS:
             return "MW_CAL_TARGET_CAICOS";
 
+        case MW_CAL_TARGET_TAHITI:
+            return "MW_CAL_TARGET_TAHITI";
+        case MW_CAL_TARGET_THAMES:
+            return "MW_CAL_TARGET_THAMES";
+        case MW_CAL_TARGET_LOMBOK:
+            return "MW_CAL_TARGET_LOMBOK";
+
         default:
             return "Invalid MWCALtargetEnum";
     }

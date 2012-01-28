@@ -281,10 +281,10 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     err |= clSetKernelArg(_separationKernel, 7, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(_separationKernel, 8, sizeof(cl_mem), &cm->sg_dx);
 
-    err |= clSetKernelArg(_separationKernel, 9,  sizeof(runSizes->extra), &runSizes->extra);
-    err |= clSetKernelArg(_separationKernel, 10, sizeof(runSizes->r), &runSizes->r);
-    err |= clSetKernelArg(_separationKernel, 11, sizeof(runSizes->mu), &runSizes->mu);
-    err |= clSetKernelArg(_separationKernel, 12, sizeof(runSizes->nu), &runSizes->nu);
+    err |= clSetKernelArg(_separationKernel, 9,  sizeof(cl_uint), &runSizes->extra);
+    err |= clSetKernelArg(_separationKernel, 10, sizeof(cl_uint), &runSizes->r);
+    err |= clSetKernelArg(_separationKernel, 11, sizeof(cl_uint), &runSizes->mu);
+    err |= clSetKernelArg(_separationKernel, 12, sizeof(cl_uint), &runSizes->nu);
 
     if (err != CL_SUCCESS)
     {
@@ -355,7 +355,6 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     return CL_TRUE;
 }
 
-/* TODO: Should probably check for likelihood also */
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
 {
     cl_int i;
@@ -396,7 +395,6 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 
     return 1000.0 * devFactor * flopsPerIter / flops;
 }
-
 
 static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
 {

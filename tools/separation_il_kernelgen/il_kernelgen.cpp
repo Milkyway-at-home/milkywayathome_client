@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <cal/cal_il_math.hpp>
 #include <fstream>
 
-#define USE_KAHAN 0
+#define USE_KAHAN 1
 
 /* Create a flexible kernel that can handle 0 .. IL_MAX_STREAMS, but is ~10% slower (at 3 streams) */
 #define FLEXIBLE_KERNEL 0
@@ -122,13 +122,13 @@ static double1 exp_custom(double1 x)
     return result;
 }
 
-static double2 kahanAdd(double2 kSum, double1 x)
+static double2 kahanAdd(double2 running, double1 term)
 {
-    double1 y = x - kSum.y();
-    double2 tc;
-    tc.x() = kSum.x() + y;
-    tc.y() = (tc.x() - kSum.x()) - y;
-    return tc;
+    double1 correctedNextTerm = term + running.y();
+    double1 newSum = running.x() + correctedNextTerm;
+    running.y() = correctedNextTerm - (newSum - running.x());
+    running.x() = newSum;
+    return running;
 }
 
 /* warning: sizeof(double2) etc. will not work as expected! */
@@ -215,10 +215,34 @@ static void createSeparationKernelCore(CALuint maxStreams, CALuint uavid)
 
         uint1 lTrigIdx = sizeOfDouble2 * trigIdx + lTrigBase;
         uint1 bSinIdx = sizeOfDouble1 * trigIdx + bSinBase;
+        uint1 idx = muStep * rSteps + rStep;
 
         emit_comment("Read Trig");
         const double2 lTrig = lTrigBuf[lTrigIdx];
         const double1 bSin = bTrigBuf[bSinIdx];
+
+        emit_comment("read old values");
+
+        SumType bgRead = bgOut[SIZEOF_SUM_TYPE * idx + bgOutBase];
+        std::vector<SumType> streamRead;
+        uint1 block = rSteps * muSteps;
+        for (j = 0; j < maxStreams; ++j)
+        {
+            SumType val = SumType(0.0);
+
+          #if FLEXIBLE_KERNEL
+            il_if (nStream > uint1(j))
+          #endif
+            {
+                val = streamsOut[SIZEOF_SUM_TYPE * (idx + uint1(j) * block) + streamsOutBase];
+            }
+          #if FLEXIBLE_KERNEL
+            il_endif
+          #endif
+
+            streamRead.push_back(val);
+        }
+
 
         il_whileloop
         {
@@ -301,34 +325,12 @@ static void createSeparationKernelCore(CALuint maxStreams, CALuint uavid)
         }
         il_endloop
 
-        uint1 idx = muStep * rSteps + rStep;
         double1 V_reff_xr_rp3 = nuId * rConsts[sizeOfDouble2 * rStep + rConstsBase].x();
-
-        emit_comment("read old values");
-
-        SumType bgRead = bgOut[SIZEOF_SUM_TYPE * idx + bgOutBase];
-        std::vector<SumType> streamRead;
-        for (j = 0; j < maxStreams; ++j)
-        {
-            SumType val = SumType(0.0);
-
-          #if FLEXIBLE_KERNEL
-            il_if (nStream > uint1(j))
-          #endif
-            {
-                val = streamsOut[SIZEOF_SUM_TYPE * (nStream * idx + uint1(j)) + streamsOutBase];
-            }
-          #if FLEXIBLE_KERNEL
-            il_endif
-          #endif
-
-            streamRead.push_back(val);
-        }
 
       #if USE_KAHAN
         emit_comment("multiply V_reff_xr_rp3 with Kahan summation");
-        bg_int *= V_reff_xr_rp3
-        bgOut = kahanAdd(bgRead, bg_int);
+        bg_int *= V_reff_xr_rp3;
+        bgRead = kahanAdd(bgRead, bg_int);
         for (j = 0; j < maxStreams; ++j)
         {
           #if FLEXIBLE_KERNEL
@@ -336,7 +338,7 @@ static void createSeparationKernelCore(CALuint maxStreams, CALuint uavid)
           #endif
             {
                 streamIntegrals[j] *= V_reff_xr_rp3;
-                streamIntegrajs[j] = kahanAdd(streamRead[j], streamIntegrals[j]);
+                streamRead[j] = kahanAdd(streamRead[j], streamIntegrals[j]);
             }
           #if FLEXIBLE_KERNEL
             il_endif
@@ -352,7 +354,7 @@ static void createSeparationKernelCore(CALuint maxStreams, CALuint uavid)
       #endif /* USE_KAHAN */
 
         emit_comment("Output");
-        bgOut[SIZEOF_SUM_TYPE * idx + bgOutBase] = bg_int;
+        bgOut[SIZEOF_SUM_TYPE * idx + bgOutBase] = bgRead;
 
         for (j = 0; j < maxStreams; ++j)
         {
@@ -360,7 +362,7 @@ static void createSeparationKernelCore(CALuint maxStreams, CALuint uavid)
             il_if (nStream > uint1(j))
           #endif
             {
-                streamsOut[SIZEOF_SUM_TYPE * (nStream * idx + uint1(j)) + streamsOutBase] = streamIntegrals[j];
+                streamsOut[SIZEOF_SUM_TYPE * (idx + uint1(j) * block) + streamsOutBase] = streamRead[j];
             }
           #if FLEXIBLE_KERNEL
             il_endif
@@ -383,7 +385,7 @@ static int separationKernelHeader(std::stringstream& code, CALuint maxStreams)
   //code << format("dcl_max_thread_per_group %i\n") % 256;  // Only on Evergreen and later
     code << format("dcl_num_thread_per_group %i\n") % 64;  // R7XX and later
     code << format("; %i stream kernel\n") % maxStreams;
-    code << "dcl_cb cb0[10]  ; Constant buffer that holds ABI data\n";
+    code << "dcl_cb cb0[15]  ; Constant buffer that holds ABI data\n";
     code << "dcl_cb cb1[15]  ; Kernel arguments\n";
     code << "dcl_cb cb2[72]  ; I'm guessing the math constants AMD uses\n";
     code << "dcl_cb cb3[8]   ; ap constants\n";

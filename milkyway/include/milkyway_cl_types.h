@@ -72,7 +72,11 @@ typedef enum MWCALtargetEnum {
     MW_CAL_TARGET_BARTS     = 17,     /**< BARTS GPU ISA */
 
     MW_CAL_TARGET_TURKS     = 18,
-    MW_CAL_TARGET_CAICOS    = 19
+    MW_CAL_TARGET_CAICOS    = 19,
+
+    MW_CAL_TARGET_TAHITI    = 20,
+    MW_CAL_TARGET_THAMES    = 21,
+    MW_CAL_TARGET_LOMBOK    = 22
 } MWCALtargetEnum;
 
 typedef struct
@@ -113,7 +117,7 @@ typedef struct
     MWCALtargetEnum calTarget;       /* AMD Only */
 
     cl_uint doubleFrac; /* Estimated speed of doubles relative to float */
-    cl_uint vliw;
+    cl_uint aluPerCU;
 
     size_t maxWorkItemSizes[3];
     MWDoubleExts doubleExts;

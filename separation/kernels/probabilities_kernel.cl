@@ -21,19 +21,48 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef DOUBLEPREC
   #error DOUBLEPREC not defined
 #endif
 
+#if DOUBLEPREC
+  #if defined(cl_khr_fp64)
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #elif defined(cl_amd_fp64)
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #else
+    #error No double extension available
+  #endif /* defined(cl_khr_fp64) */
 
-#ifdef cl_khr_fp64
-  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#elif cl_amd_fp64
-  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-#else
-  #error No double extension available
-#endif /* cl_amd_fp64 */
+  #if defined(__AMD__) || defined(__GPU__)
+    /* Older AMD versions did not define __AMD__ but did define __GPU__ */
+    #if defined(__ATI_RV770__) || defined(__Cypress__) || defined(__Cayman__)
+      #define USE_CUSTOM_DIVISION 1
+      #define USE_CUSTOM_SQRT 1
+    #elif defined(__Tahiti__)
+    /* Using the default division is a bit faster, but using ddiv is
+     * slower than the custom division in the IL kernel?  */
+      #define USE_CUSTOM_DIVISION 0
+
+      /* This is just barely faster */
+      #define USE_CUSTOM_SQRT 1
+    #else
+      /* Using neither is a safe fallback */
+      #define USE_CUSTOM_DIVISION 0
+      #define USE_CUSTOM_SQRT 0
+    #endif
+  #elif defined(__CPU__)
+    /* AMD OpenCL's CPU implementation */
+    #define USE_CUSTOM_DIVISION 0
+    #define USE_CUSTOM_SQRT 0
+  #else /* Not AMD OpenCL */
+    /* I can't find anything about things Nvidia defines and reasonable
+     * guesses don't work, so do what's best for Nvidia */
+    #define USE_CUSTOM_DIVISION 1
+    #define USE_CUSTOM_SQRT 1
+  #endif /* defined(__AMD__) || defined(__GPU__) */
+#endif /* DOUBLEPREC */
+
 
 #define MAX_CONVOLVE 256
 
@@ -52,16 +81,8 @@ typedef float4 real4;
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x) ((x) * (x))
 
-#define USE_CUSTOM_SQRT 1
-#define USE_CUSTOM_DIVISION 1
 
-#if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
-  #define USE_CUSTOM_DIVISION 1
-#endif
-
-
-#if USE_CUSTOM_DIVISION && DOUBLEPREC
-
+#if USE_CUSTOM_DIVISION
 double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
@@ -82,7 +103,7 @@ double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the
   #define mw_div(a, b) ((a) / (b))
 #endif /* USE_CUSTOM_DIVISION && DOUBLEPREC */
 
-#if USE_CUSTOM_SQRT && DOUBLEPREC
+#if USE_CUSTOM_SQRT
 
 double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
@@ -120,10 +141,18 @@ typedef struct
 
 
 
+inline real2 kahanSum(real2 running, real term)
+{
+    real correctedNextTerm = term + running.y;
+    real newSum = running.x + correctedNextTerm;
+    running.y = correctedNextTerm - (newSum - running.x);
+    running.x = newSum;
+    return running;
+}
 
 /* Be careful of changing the arguments. It will most likely break the IL kernel */
-__kernel void probabilities(__global real* restrict bgOut,
-                            __global real* restrict streamsOut,
+__kernel void probabilities(__global real2* restrict bgOut,
+                            __global real2* restrict streamsOut,
 
                             __global const real2* restrict rConsts,
                             __global const real2* restrict rPts,
@@ -151,12 +180,23 @@ __kernel void probabilities(__global real* restrict bgOut,
     if (r_step >= r_steps || mu_step >= mu_steps) /* Avoid out of bounds from roundup */
         return;
 
+    size_t idx = mu_step * r_steps + r_step; /* Index into output buffers */
 
     size_t trigIdx = nu_step * mu_steps + mu_step;
     real2 lTrig = lTrigBuf[trigIdx];
     real bSin = bSinBuf[trigIdx];
     real2 rc = rConsts[r_step];
 
+
+    real2 bgTmp;
+    real2 streamTmp[NSTREAM];
+
+    bgTmp = bgOut[idx];
+    #pragma unroll NSTREAM
+    for (int j = 0; j < NSTREAM; ++j)
+    {
+        streamTmp[j] = streamsOut[j * mu_steps * r_steps + idx];
+    }
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
@@ -220,15 +260,27 @@ __kernel void probabilities(__global real* restrict bgOut,
     }
 
     real V_reff_xr_rp3 = nu_id * rc.x;
-    size_t idx = mu_step * r_steps + r_step; /* Index into output buffers */
 
     bg_prob *= V_reff_xr_rp3;
-    bgOut[idx] += bg_prob;
-
     #pragma unroll NSTREAM
     for (int j = 0; j < NSTREAM; ++j)
     {
-        streamsOut[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
+        st_probs[j] *= V_reff_xr_rp3;
+    }
+
+    bgTmp = kahanSum(bgTmp, bg_prob);
+    #pragma unroll NSTREAM
+    for (int j = 0; j < NSTREAM; ++j)
+    {
+        streamTmp[j] = kahanSum(streamTmp[j], st_probs[j]);
+    }
+
+
+    bgOut[idx] = bgTmp;
+    #pragma unroll NSTREAM
+    for (int j = 0; j < NSTREAM; ++j)
+    {
+        streamsOut[j * mu_steps * r_steps + idx] = streamTmp[j];
     }
 }
 

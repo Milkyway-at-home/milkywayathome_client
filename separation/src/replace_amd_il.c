@@ -116,14 +116,19 @@ static char* getILSrc(int nStream, MWCALtargetEnum target, cl_int uavGuess, size
                but then when it silently fails / runs instantly.
                There is probably a better way of dealing with this.
 
+               We could probably avoid this and a lot of this othero
+               junk if we reverse engineered the .rodata section, but
+               I'm too lazy to do that.
+
                Remove this declaration by finding the line and overwriting with spaces.
             */
             dclPos = strstr(ilSrc, "dcl_arena_uav_id(8)\n");
-            assert(dclPos != NULL);
-
-            while (*dclPos != '\n')
+            if (dclPos)
             {
-                *dclPos++ = ' ';
+                while (*dclPos != '\n')
+                {
+                    *dclPos++ = ' ';
+                }
             }
         }
     }
@@ -177,6 +182,51 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
             return 1;
         }
 
+        /*
+        if (strstr(name, ".rodata") != NULL)
+        {
+            Elf_Data* data = elf_getdata(scn, NULL);
+
+
+            FILE* f = fopen("rodata_section.bin", "wb");
+            if (f)
+            {
+                fwrite(data->d_buf, 1, data->d_size, f);
+                fclose(f);
+            }
+            else
+            {
+                perror("Failed to open file");
+            }
+
+            size_t roSize;
+            char* r770RO = mwReadFileWithSize("rodata_section_RV770.bin", &roSize);
+            assert(r770RO);
+
+            data->d_buf = r770RO;
+            data->d_size = roSize;
+
+
+            if (!elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY))
+            {
+                mw_printf("elf_flagdata() failed: %s\n", elf_errmsg(-1));
+                return 1;
+            }
+
+            if (!elf_flagscn(scn, ELF_C_SET, ELF_F_DIRTY))
+            {
+                mw_printf("elf_flagscn() failed: %s\n", elf_errmsg(-1));
+                return 1;
+            }
+
+            if (elf_update(e, ELF_C_NULL) < 0)
+            {
+                mw_printf("elf_update(NULL) failed: %s\n", elf_errmsg(-1));
+                return 1;
+            }
+        }
+        */
+
         if (strstr(name, ".amdil") != NULL)
         {
             int uavId;
@@ -192,7 +242,10 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
 
             if (verbose)
             {
-                mw_printf("Replacing section data of type %d, off %d align "ZU"\n", data->d_type, (int) data->d_off, data->d_align);
+                mw_printf("Replacing section data of type %d, off %d align "ZU"\n",
+                          data->d_type,
+                          (int) data->d_off,
+                          data->d_align);
             }
 
 
@@ -227,11 +280,13 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
             }
 
             /* Don't let libelf rearrange the sections when writing. Not sure if necessary. */
+            /*
             if (!elf_flagelf(e, ELF_C_SET, ELF_F_LAYOUT))
             {
                 mw_printf("elf_flagelf() failed: %s\n", elf_errmsg(-1));
                 return 1;
             }
+            */
 
             if (elf_update(e, ELF_C_NULL) < 0)
             {
@@ -421,6 +476,8 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, int nStr
         free(newBin);
         return NULL;
     }
+
+    mw_remove(tmpBinFile);
 
     return newBin;
 }
