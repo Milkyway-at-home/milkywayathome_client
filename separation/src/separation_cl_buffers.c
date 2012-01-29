@@ -23,6 +23,27 @@
 #include "r_points.h"
 #include "calculated_constants.h"
 
+static cl_int createSummarizationBuffers(CLInfo* ci,
+                                         SeparationCLMem* cm,
+                                         const SeparationSizes* sizes)
+{
+    cm->summarizationBufs[0] = mwCreateZeroReadWriteBuffer(ci, sizes->summarizationBufs[0]);
+    if (!cm->summarizationBufs[0])
+    {
+        mw_printf("Error creating summarizaton buffer of size "ZU"\n", sizes->summarizationBufs[0]);
+        return MW_CL_ERROR;
+    }
+
+    cm->summarizationBufs[1] = mwCreateZeroReadWriteBuffer(ci, sizes->summarizationBufs[1]);
+    if (!cm->summarizationBufs[1])
+    {
+        mw_printf("Error creating summarizaton buffer of size "ZU"\n", sizes->summarizationBufs[1]);
+        return MW_CL_ERROR;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_int createOutBgBuffer(CLInfo* ci,
                                 SeparationCLMem* cm,
                                 const SeparationSizes* sizes)
@@ -245,30 +266,15 @@ static cl_int createAPBuffer(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-static cl_int createSummarizationBuffer(CLInfo* ci, SeparationCLMem* cm, const AstronomyParameters* ap, const IntegralArea* ia)
-{
-    cl_int err;
-    //size_t nElement = mwDivRoundup(ia->mu_steps, 32) * (ap->number_streams + 1);
-    size_t nElement = ia->r_steps * (ap->number_streams + 1);
-    size_t size = nElement * sizeof(real);
-
-    mw_printf("Summarization buffer has %zu items\n", nElement);
-
-    cm->summarizationBuf = clCreateBuffer(ci->clctx, CL_MEM_WRITE_ONLY, size, NULL, &err);
-    if (!cm->summarizationBuf)
-    {
-        mwPerrorCL(err, "Failed to create summarization buffer of size "ZU, size);
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
+    assert(_summarizationWorkgroupSize != 0);
+
     sizes->nStream = ap->number_streams;
 
     /* globals */
+    sizes->summarizationBufs[0] = 2 * sizeof(real) * mwDivRoundup(ia->mu_steps * ia->r_steps, _summarizationWorkgroupSize);
+    sizes->summarizationBufs[1] = sizes->summarizationBufs[0]; /* Could make it smaller I guess */
     sizes->outBg = 2 * sizeof(real) * ia->mu_steps * ia->r_steps;
     sizes->outStreams = 2 * sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
 
@@ -295,6 +301,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
     cl_int err = CL_SUCCESS;
     cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
+    err |= createSummarizationBuffers(ci, cm, sizes);
     err |= createOutBgBuffer(ci, cm, sizes);
     err |= createOutStreamsBuffer(ci, cm, sizes);
 
@@ -309,6 +316,8 @@ cl_int createSeparationBuffers(CLInfo* ci,
 
 void releaseSeparationBuffers(SeparationCLMem* cm)
 {
+    clReleaseMemObject(cm->summarizationBufs[0]);
+    clReleaseMemObject(cm->summarizationBufs[1]);
     clReleaseMemObject(cm->outStreams);
     clReleaseMemObject(cm->outBg);
 
@@ -320,41 +329,5 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->sg_dx);
-}
-
-const Kahan* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
-{
-    cl_int err;
-    const Kahan* mapOutBg;
-
-    mapOutBg = (const Kahan*) clEnqueueMapBuffer(ci->queue,
-                                                 cm->outBg,
-                                                 CL_TRUE, CL_MAP_READ,
-                                                 0, resultsSize,
-                                                 0, NULL,
-                                                 NULL,
-                                                 &err);
-    if (err != CL_SUCCESS)
-        mwPerrorCL(err, "Error mapping integral result buffer");
-
-    return mapOutBg;
-}
-
-const Kahan* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize)
-{
-    cl_int err;
-    const Kahan* mapOutStreams;
-
-    mapOutStreams = (const Kahan*) clEnqueueMapBuffer(ci->queue,
-                                                      cm->outStreams,
-                                                      CL_TRUE, CL_MAP_READ,
-                                                      0, streamsResultsSize,
-                                                      0, NULL,
-                                                      NULL,
-                                                      &err);
-    if (err != CL_SUCCESS)
-        mwPerrorCL(err, "Error mapping stream result buffer");
-
-    return mapOutStreams;
 }
 

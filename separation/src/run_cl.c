@@ -32,31 +32,146 @@
 #include "r_points.h"
 #include "integrals.h"
 
-static void sumStreamResults(real* streamResults,
-                             const Kahan* mappedResults,
-                             cl_uint mu_steps,
-                             cl_uint r_steps,
-                             cl_uint number_streams)
+
+static void swapBuffers(cl_mem bufs[2])
 {
-    cl_uint stream, mu, r;
+    cl_mem tmp = bufs[0];
+    bufs[0] = bufs[1];
+    bufs[1] = tmp;
+}
 
-    for (stream = 0; stream < number_streams; ++stream)
+static cl_int runSummarization(CLInfo* ci,
+                               SeparationCLMem* cm,
+                               const IntegralArea* ia,
+                               cl_uint which,
+                               real* resultOut)
+{
+    cl_int err = CL_SUCCESS;
+    cl_mem buf;
+    cl_uint offset;
+    size_t global[1];
+    size_t local[1];
+    real result[2] = { -1.0, -1.0 };
+    cl_uint nElements = ia->r_steps * ia->mu_steps;
+    cl_mem sumBufs[2] = { cm->summarizationBufs[0], cm->summarizationBufs[1] };
+
+    if (which == 0)
     {
-        const Kahan* offset = &mappedResults[stream * r_steps * mu_steps];
-        Kahan total = ZERO_KAHAN;
-
-        for (mu = 0; mu < mu_steps; ++mu)
-        {
-            for (r = 0; r < r_steps; ++r)
-            {
-                KAHAN_ADD(total, offset[r_steps * mu + r].sum);
-            }
-        }
-
-        streamResults[stream] = total.sum + total.correction;
+        buf = cm->outBg;
+        offset = 0;
+    }
+    else
+    {
+        buf = cm->outStreams;
+        offset = (which - 1) * nElements;
     }
 
+
+    /* First call reads from an offset into one of the output buffers */
+    err |= clSetKernelArg(_summarizationKernel, 0, sizeof(cl_mem), &sumBufs[0]);
+    err |= clSetKernelArg(_summarizationKernel, 1, sizeof(cl_mem), &buf);
+    err |= clSetKernelArg(_summarizationKernel, 2, sizeof(cl_uint), &nElements);
+    err |= clSetKernelArg(_summarizationKernel, 3, sizeof(cl_uint), &offset);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error setting summarization kernel arguments");
+        return err;
+    }
+
+    local[0] = _summarizationWorkgroupSize;
+    global[0] = mwNextMultiple(local[0], nElements);
+
+    err = clEnqueueNDRangeKernel(ci->queue, _summarizationKernel, 1,
+                                 NULL, global, local,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error enqueuing summarization kernel");
+        return err;
+    }
+
+    /* Why is this necessary? It seems to frequently break on the 7970 and nowhere else without it */
+    err = clFinish(ci->queue);
+    //err = clFlush(ci->queue);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error finishing summarization kernel");
+        return err;
+    }
+
+    /* Later calls swap between summarization buffers without an offset */
+    nElements = (cl_uint) mwDivRoundup(global[0], local[0]);
+    offset = 0;
+    err |= clSetKernelArg(_summarizationKernel, 3, sizeof(cl_uint), &offset);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error setting summarization kernel offset argument");
+        return err;
+    }
+
+    while (nElements > 1)
+    {
+        /* Swap old summarization buffer to the input and shrink the range */
+        swapBuffers(sumBufs);
+
+        global[0] = mwNextMultiple(local[0], nElements);
+
+        err |= clSetKernelArg(_summarizationKernel, 0, sizeof(cl_mem), &sumBufs[0]);
+        err |= clSetKernelArg(_summarizationKernel, 1, sizeof(cl_mem), &sumBufs[1]);
+        err |= clSetKernelArg(_summarizationKernel, 2, sizeof(cl_uint), &nElements);
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error setting summarization kernel arguments");
+            return err;
+        }
+
+        err = clEnqueueBarrier(ci->queue);
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error enqueuing summarization barrier");
+            return err;
+        }
+
+        err = clEnqueueNDRangeKernel(ci->queue, _summarizationKernel, 1,
+                                     NULL, global, local,
+                                     0, NULL, NULL);
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error enqueuing summarization kernel");
+            return err;
+        }
+
+        err = clFinish(ci->queue);
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error finishing summarization kernel");
+            return err;
+        }
+
+        nElements = mwDivRoundup(global[0], local[0]);
+    }
+
+
+    err = clEnqueueBarrier(ci->queue);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error enqueuing summarization barrier");
+        return err;
+    }
+
+    err = clEnqueueReadBuffer(ci->queue, sumBufs[0], CL_TRUE,
+                              0, 2 * sizeof(real), result,
+                              0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error reading summarization result buffer\n");
+        return err;
+    }
+
+    *resultOut = result[0];
+    return CL_SUCCESS;
 }
+
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
                                     const size_t offset[1],
@@ -77,27 +192,6 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     }
 
     return CL_SUCCESS;
-}
-
-/* The mu and r steps for a nu step were done in parallel. After that
- * we need to add the result to the running total + correction from
- * all the nu steps */
-static real sumBgResults(const Kahan* bgResults,
-                         const cl_uint mu_steps,
-                         const cl_uint r_steps)
-{
-    cl_uint i, j;
-    Kahan bg_prob = ZERO_KAHAN;
-
-    for (i = 0; i < mu_steps; ++i)
-    {
-        for (j = 0; j < r_steps; ++j)
-        {
-            KAHAN_ADD(bg_prob, bgResults[r_steps * i + j].sum);
-        }
-    }
-
-    return bg_prob.sum + bg_prob.correction;
 }
 
 static cl_int setNuKernelArgs(const IntegralArea* ia, cl_uint nu_step)
@@ -130,43 +224,29 @@ static cl_int readKernelResults(CLInfo* ci,
                                 const cl_uint number_streams)
 {
     cl_int err;
-    const Kahan* bgResults;
-    const Kahan* streamsTmp;
-    size_t resultSize, streamsSize;
+    cl_uint i;
 
-    resultSize = 2 * sizeof(real) * ia->mu_steps * ia->r_steps;
-    bgResults = mapIntegralResults(ci, cm, resultSize);
-    if (!bgResults)
+    MWHighResTime start, end, diff;
+
+
+    mwGetHighResTime_RealTime(&start);
+    err = runSummarization(ci, cm, ia, 0, &es->bgTmp);
+    for (i = 1; err == CL_SUCCESS && i <= number_streams; ++i)
     {
-        mw_printf("Failed to map integral results\n");
-        return MW_CL_ERROR;
+        err = runSummarization(ci, cm, ia, i, &es->streamTmps[i - 1]);
     }
 
-    es->bgTmp = sumBgResults(bgResults, ia->mu_steps, ia->r_steps);
-
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, (void*) bgResults, 0, NULL, NULL);
+    mwGetHighResTime_RealTime(&end);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL(err, "Failed to unmap results buffer");
         return err;
     }
 
-    streamsSize = 2 * sizeof(real) * ia->mu_steps * ia->r_steps * number_streams;
-    streamsTmp = mapStreamsResults(ci, cm, streamsSize);
-    if (!streamsTmp)
-    {
-        mw_printf("Failed to map stream results\n");
-        return MW_CL_ERROR;
-    }
+    diff = mwDiffMWHighResTime(&end, &start);
 
-    sumStreamResults(es->streamTmps, streamsTmp, ia->mu_steps, ia->r_steps, number_streams);
-
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, (void*) streamsTmp, 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Failed to unmap streams buffer");
-        return err;
-    }
+    mw_printf("Summarization time %lu %lu\n",
+              diff.sec,
+              diff.nSec);
 
     return CL_SUCCESS;
 }
@@ -329,7 +409,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
 
     releaseSeparationBuffers(&cm);
 
-    separationIntegralApplyCorrection(es);
+    separationIntegralGetSums(es);
 
     return err;
 }

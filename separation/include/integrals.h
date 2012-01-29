@@ -43,7 +43,7 @@ int integrate(const AstronomyParameters* ap,
               const CLRequest* clr,
               const CLInfo* _ci); /* Unused */
 
-void separationIntegralApplyCorrection(EvaluationState* es);
+void separationIntegralGetSums(EvaluationState* es);
 
 #ifdef __cplusplus
 }

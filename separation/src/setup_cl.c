@@ -36,28 +36,25 @@
 extern const unsigned char probabilities_kernel_cl[];
 extern const size_t probabilities_kernel_cl_len;
 
+//extern const unsigned char summarization_kernel_cl[];
+//extern const size_t summarization_kernel_cl_len;
+
 
 cl_kernel _separationKernel = NULL;
+cl_kernel _summarizationKernel = NULL;
 
-static cl_int createSeparationKernel(const CLInfo* ci)
-{
-    cl_int err;
+//size_t _summarizationWorkgroupSize = 0;
+size_t _summarizationWorkgroupSize = 256;
 
-    _separationKernel = clCreateKernel(ci->prog, "mu_sum_kernel", &err);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error creating kernel '%s'", "mu_sum_kernel");
-    }
-
-    return err;
-}
-
-cl_int releaseSeparationKernel()
+cl_int releaseSeparationKernel(void)
 {
     cl_int err = CL_SUCCESS;
 
     if (_separationKernel)
         err = clReleaseKernel(_separationKernel);
+
+    if (_summarizationKernel)
+        err |= clReleaseKernel(_summarizationKernel);
 
     return err;
 }

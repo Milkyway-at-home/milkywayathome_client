@@ -139,7 +139,57 @@ typedef struct
     real _pad;
 } SC;
 
+inline real2 kahanReduction(real2 in, real2 inout)
+{
+    real corrected_next_term, new_sum;
 
+    corrected_next_term = in.x + (in.y + inout.y);
+    new_sum = inout.x + corrected_next_term;
+    inout.y = corrected_next_term - (new_sum - inout.x);
+    inout.x = new_sum;
+
+    return inout;
+}
+
+/* It's not really important if this kernel is fast */
+__kernel void summarization(__global real2* restrict results,
+                            __global const real2* restrict buffer,
+
+                            const uint nElements,
+                            const uint bufferOffset)
+
+{
+    __local real2 sdata[1024];
+
+    uint gid = get_global_id(0);
+    uint lid = get_local_id(0);
+
+
+    /*
+    if (gid == 0)
+    {
+        printf("Something to make this different what %u %u\n", nElements, bufferOffset);
+    }
+    */
+
+    sdata[lid] = (gid < nElements) ? buffer[bufferOffset + gid] : 0.0;
+    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+
+    for (int offset = get_local_size(0) / 2; offset > 0; offset >>= 1)
+    {
+        if (lid < offset)
+        {
+            sdata[lid] = kahanReduction(sdata[lid + offset], sdata[lid]);
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (lid == 0)
+    {
+        results[get_group_id(0)] = sdata[0];
+    }
+}
 
 inline real2 kahanSum(real2 running, real term)
 {
@@ -260,17 +310,18 @@ __kernel void probabilities(__global real2* restrict bgOut,
     }
 
     real V_reff_xr_rp3 = nu_id * rc.x;
+    uint nElement = mu_steps * r_steps;
 
     bg_prob *= V_reff_xr_rp3;
     #pragma unroll NSTREAM
-    for (int j = 0; j < NSTREAM; ++j)
+    for (uint j = 0; j < NSTREAM; ++j)
     {
         st_probs[j] *= V_reff_xr_rp3;
     }
 
     bgTmp = kahanSum(bgTmp, bg_prob);
     #pragma unroll NSTREAM
-    for (int j = 0; j < NSTREAM; ++j)
+    for (uint j = 0; j < NSTREAM; ++j)
     {
         streamTmp[j] = kahanSum(streamTmp[j], st_probs[j]);
     }
@@ -278,7 +329,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
 
     bgOut[idx] = bgTmp;
     #pragma unroll NSTREAM
-    for (int j = 0; j < NSTREAM; ++j)
+    for (uint j = 0; j < NSTREAM; ++j)
     {
         streamsOut[j * mu_steps * r_steps + idx] = streamTmp[j];
     }

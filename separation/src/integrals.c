@@ -229,13 +229,14 @@ static void nuSum(const AstronomyParameters* ap,
     es->nu_step = 0;
 }
 
-void separationIntegralApplyCorrection(EvaluationState* es)
+void separationIntegralGetSums(EvaluationState* es)
 {
     int i;
 
-    es->cut->bgIntegral = es->bgSum.sum + es->bgSum.correction;
+    /* Take the final sums */
+    es->cut->bgIntegral = es->bgSum.sum;
     for (i  = 0; i < es->numberStreams; ++i)
-        es->cut->streamIntegrals[i] = es->streamSums[i].sum + es->streamSums[i].correction;
+        es->cut->streamIntegrals[i] = es->streamSums[i].sum;
 }
 
 
@@ -268,7 +269,7 @@ int integrate(const AstronomyParameters* ap,
     rc = initRPoints(ap, ia, sg, rPoints, qw_r3_N);
 
     nuSum(ap, ia, sc, rc, sg.dx, rPoints, qw_r3_N, es);
-    separationIntegralApplyCorrection(es);
+    separationIntegralGetSums(es);
 
     mwFreeA(rc);
     mwFreeA(rPoints);

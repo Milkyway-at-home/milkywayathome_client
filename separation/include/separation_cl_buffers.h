@@ -43,10 +43,6 @@ void releaseSeparationBuffers(SeparationCLMem* cm);
 
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia);
 
-const Kahan* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize);
-
-const Kahan* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize);
-
 
 #ifdef __cplusplus
 }

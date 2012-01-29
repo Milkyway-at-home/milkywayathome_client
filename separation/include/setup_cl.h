@@ -32,6 +32,7 @@ extern "C" {
 
 typedef struct
 {
+    size_t summarizationBufs[2];
     size_t outBg;
     size_t outStreams;
 
@@ -64,6 +65,7 @@ typedef struct
 /* The various buffers needed by the integrate function. */
 typedef struct
 {
+    cl_mem summarizationBufs[2];
     cl_mem outBg;
     cl_mem outStreams;  /* stream_probs */
 
@@ -78,7 +80,7 @@ typedef struct
     cl_mem sg_dx;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { { NULL, NULL }, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 cl_int setupSeparationCL(CLInfo* ci,
                          const AstronomyParameters* ap,
@@ -87,7 +89,6 @@ cl_int setupSeparationCL(CLInfo* ci,
 
 
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias);
-
 cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes);
 
 cl_bool findRunSizes(RunSizes* sizes,
@@ -100,6 +101,8 @@ cl_bool findRunSizes(RunSizes* sizes,
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);
 
 extern cl_kernel _separationKernel;
+extern cl_kernel _summarizationKernel;
+extern size_t _summarizationWorkgroupSize;
 
 cl_int releaseSeparationKernel(void);
 
