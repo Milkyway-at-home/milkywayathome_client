@@ -194,7 +194,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[4] = 256;
         ws->threads[5] = 384;
         ws->threads[6] = 512;
-        ws->threads[7] = 512;
+        ws->threads[7] = 448;
     }
     else if (mwMinComputeCapabilityCheck(di, 2, 0))
     {
