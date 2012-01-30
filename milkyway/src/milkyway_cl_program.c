@@ -24,14 +24,14 @@
 #include "milkyway_cl.h"
 #include "milkyway_cl_program.h"
 
-static char* mwGetBuildLog(CLInfo* ci)
+static char* mwGetBuildLog(cl_program program, cl_device_id device)
 {
     cl_int err;
     size_t logSize, readSize;
     char* buildLog;
 
-    err = clGetProgramBuildInfo(ci->prog,
-                                ci->dev,
+    err = clGetProgramBuildInfo(program,
+                                device,
                                 CL_PROGRAM_BUILD_LOG,
                                 0,
                                 NULL,
@@ -42,10 +42,10 @@ static char* mwGetBuildLog(CLInfo* ci)
         return NULL;
     }
 
-    buildLog = mwCalloc(sizeof(char), logSize + 1);
+    buildLog = mwCalloc(logSize + 1, sizeof(char));
 
-    err = clGetProgramBuildInfo(ci->prog,
-                                ci->dev,
+    err = clGetProgramBuildInfo(program,
+                                device,
                                 CL_PROGRAM_BUILD_LOG,
                                 logSize,
                                 buildLog,
@@ -58,16 +58,18 @@ static char* mwGetBuildLog(CLInfo* ci)
     }
 
     if (readSize != logSize)
+    {
         mw_printf("Failed to read complete build log\n");
+    }
 
     return buildLog;
 }
 
-static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
+static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
 {
     cl_int infoErr;
     cl_build_status status;
-    CLInfo* ci;
+    cl_device_id* device;
     char* buildLog;
 
     if (!user_data)
@@ -76,12 +78,10 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
         return;
     }
 
-    ci = (CLInfo*) user_data;
+    device = (cl_device_id*) user_data;
 
-    assert(ci->prog == prog);
-
-    infoErr = clGetProgramBuildInfo(prog,
-                                    ci->dev,
+    infoErr = clGetProgramBuildInfo(program,
+                                    *device,
                                     CL_PROGRAM_BUILD_STATUS,
                                     sizeof(status),
                                     &status,
@@ -95,31 +95,33 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
         mw_printf("Build status: %s\n", showCLBuildStatus(status));
     }
 
-    buildLog = mwGetBuildLog(ci);
+    buildLog = mwGetBuildLog(program, *device);
 
     mw_printf("Build log: \n%s\n", buildLog);
     free(buildLog);
 }
 
 /* Build program and create kernel */
-cl_int mwBuildProgram(CLInfo* ci, const char* options)
+cl_int mwBuildProgram(cl_program program, cl_device_id device, const char* options)
 {
     cl_int err = CL_SUCCESS;
 
-    err = clBuildProgram(ci->prog, 1, &ci->dev, options, milkywayBuildCB, ci);
+    err = clBuildProgram(program, 1, &device, options, milkywayBuildCB, &device);
     if (err != CL_SUCCESS)
+    {
         mwPerrorCL(err, "clBuildProgram: Build failure");
+    }
 
     return err;
 }
 
-unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
+unsigned char* mwGetProgramBinary(cl_program program, size_t* binSizeOut)
 {
     cl_int err;
     size_t binSize = 0;
     unsigned char* bin = NULL;
 
-    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
+    err = clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to get program binary size");
@@ -133,7 +135,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     }
 
     bin = (unsigned char*) mwCalloc(binSize + 1, 1);
-    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, sizeof(bin), &bin, NULL);
+    err = clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(bin), &bin, NULL);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error getting program binary");
@@ -143,18 +145,21 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     }
 
     if (binSizeOut)
+    {
         *binSizeOut = binSize;
+    }
+
     return bin;
 }
 
-int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
+int mwSaveProgramBinaryToFile(cl_program program, const char* filename)
 {
     size_t binSize;
     unsigned char* bin;
     FILE* f;
     int rc = 0;
 
-    bin = mwGetProgramBinary(ci, &binSize);
+    bin = mwGetProgramBinary(program, &binSize);
     f = mw_fopen(filename, "wb");
     if (!f)
     {
@@ -178,77 +183,78 @@ int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
     return rc;
 }
 
-
-
-cl_int mwSetProgramFromBin(CLInfo* ci,const unsigned char* bin, size_t binSize)
+cl_program mwCreateProgramFromBin(CLInfo* ci, const unsigned char* bin, size_t binSize)
 {
     cl_int err;
     cl_int binStatus;
+    cl_program program;
 
-    ci->prog = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
+    program = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
     mwPerrorCL(err, "Binary status");
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to create program from binary");
-        return err;
+        return NULL;
     }
 
     if (binStatus != CL_SUCCESS)
     {
         mwPerrorCL(err, "Reading binary failed");
-        return binStatus;
+        return NULL;
     }
 
-    err = mwBuildProgram(ci, NULL);
+    err = mwBuildProgram(program, ci->dev, NULL);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error building program from binary");
-        return err;
+        clReleaseProgram(program);
+        return NULL;
     }
 
-    return CL_SUCCESS;
+    return program;
 }
 
-cl_int mwSetProgramFromSrc(CLInfo* ci,
-                           cl_uint srcCount,
-                           const char** src,
-                           const size_t* lengths,
-                           const char* compileDefs)
+cl_program mwCreateProgramFromSrc(CLInfo* ci,
+                                  cl_uint srcCount,
+                                  const char** src,
+                                  const size_t* lengths,
+                                  const char* compileDefs)
 {
     cl_int err;
+    cl_program program;
 
-    ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, lengths, &err);
+    program = clCreateProgramWithSource(ci->clctx, srcCount, src, lengths, &err);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error creating program");
-        return err;
+        return NULL;
     }
 
-    err = mwBuildProgram(ci, compileDefs);
+    err = mwBuildProgram(program, ci->dev, compileDefs);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error building program from source");
-        return err;
+        clReleaseProgram(program);
+        return NULL;
     }
 
-    clUnloadCompiler();
-
-    return CL_SUCCESS;
+    return program;
 }
 
 
-cl_int mwCreateKernel(cl_kernel* kern, CLInfo* ci, const char* name)
+cl_kernel mwCreateKernel(cl_program program, const char* name)
 {
     cl_int err = CL_SUCCESS;
+    cl_kernel kernel;
 
-    *kern = clCreateKernel(ci->prog, name, &err);
+    kernel = clCreateKernel(program, name, &err);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to create kernel '%s'", name);
-        return err;
+        return NULL;
     }
 
-    return err;
+    return kernel;
 }
 
 

@@ -406,30 +406,6 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
     return err;
 }
 
-cl_int nbCreateKernels(NBodyState* st)
-{
-    cl_int err = CL_SUCCESS;
-    NBodyKernels* kernels = st->kernels;
-    CLInfo* ci = st->ci;
-
-    err |= mwCreateKernel(&kernels->boundingBox, ci, "boundingBox");
-    err |= mwCreateKernel(&kernels->buildTree, ci, "buildTree");
-    err |= mwCreateKernel(&kernels->summarization, ci, "summarization");
-    err |= mwCreateKernel(&kernels->quadMoments, ci, "quadMoments");
-    err |= mwCreateKernel(&kernels->sort, ci, "sort");
-    err |= mwCreateKernel(&kernels->forceCalculation, ci, "forceCalculation");
-    err |= mwCreateKernel(&kernels->integration, ci, "integration");
-
-    err |= mwCreateKernel(&kernels->forceCalculation_Exact, ci, "forceCalculation_Exact");
-
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error creating kernels");
-    }
-
-    return err;
-}
-
 static cl_int clReleaseKernel_quiet(cl_kernel kern)
 {
     return kern ? clReleaseKernel(kern) : CL_SUCCESS;
@@ -622,25 +598,50 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
     return buf;
 }
 
-cl_int nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
+static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
+{
+    kernels->boundingBox = mwCreateKernel(program, "boundingBox");
+    kernels->buildTree = mwCreateKernel(program, "buildTree");
+    kernels->summarization = mwCreateKernel(program, "summarization");
+    kernels->quadMoments = mwCreateKernel(program, "quadMoments");
+    kernels->sort = mwCreateKernel(program, "sort");
+    kernels->forceCalculation = mwCreateKernel(program, "forceCalculation");
+    kernels->integration = mwCreateKernel(program, "integration");
+    kernels->forceCalculation_Exact = mwCreateKernel(program, "forceCalculation_Exact");
+
+    return (   kernels->boundingBox
+            && kernels->buildTree
+            && kernels->summarization
+            && kernels->quadMoments
+            && kernels->sort
+            && kernels->forceCalculation
+            && kernels->integration
+            && kernels->forceCalculation_Exact);
+}
+
+cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 {
     CLInfo* ci = st->ci;
-    cl_int err = CL_SUCCESS;
+    cl_bool failed;
     char* compileFlags = NULL;
+    cl_program program;
     const char* src = (const char*) nbody_kernels_cl;
     size_t srcLen = nbody_kernels_cl_len;
 
     compileFlags = nbGetCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);
-    err = mwSetProgramFromSrc(ci, 1, &src, &srcLen, compileFlags);
-    if (err != CL_SUCCESS)
+
+    program = mwCreateProgramFromSrc(ci, 1, &src, &srcLen, compileFlags);
+    free(compileFlags);
+    if (!program)
     {
-        mw_printf("Failed build flags: %s\n", compileFlags);
+        return CL_TRUE;
     }
 
-    free(compileFlags);
+    failed = nbCreateKernels(program, st->kernels);
+    clReleaseProgram(program);
 
-    return err;
+    return failed;
 }
 
 /* Return CL_FALSE if device isn't capable of running this */

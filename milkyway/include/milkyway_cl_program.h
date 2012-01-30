@@ -31,18 +31,18 @@
 extern "C" {
 #endif
 
-unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
-int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename);
+unsigned char* mwGetProgramBinary(cl_program program, size_t* binSizeOut);
+int mwSaveProgramBinaryToFile(cl_program program, const char* filename);
 
-cl_int mwSetProgramFromBin(CLInfo* ci, const unsigned char* bin, size_t binSize);
-cl_int mwSetProgramFromSrc(CLInfo* ci,
-                           cl_uint srcCount,
-                           const char** src,
-                           const size_t* lengths,
-                           const char* compileDefs);
-cl_int mwBuildProgram(CLInfo* ci, const char* options);
+cl_program mwCreateProgramFromBin(CLInfo* ci, const unsigned char* bin, size_t binSize);
+cl_program mwCreateProgramFromSrc(CLInfo* ci,
+                                  cl_uint srcCount,
+                                  const char** src,
+                                  const size_t* lengths,
+                                  const char* compileDefs);
+cl_int mwBuildProgram(cl_program program, cl_device_id device, const char* options);
 
-cl_int mwCreateKernel(cl_kernel* kern, CLInfo* ci, const char* name);
+cl_kernel mwCreateKernel(cl_program program, const char* name);
 
 #ifdef __cplusplus
 }

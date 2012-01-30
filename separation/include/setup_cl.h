@@ -89,7 +89,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 
 
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias);
-cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes);
+cl_int separationSetKernelArgs(SeparationCLMem* cm, const RunSizes* runSizes);
 
 cl_bool findRunSizes(RunSizes* sizes,
                      const CLInfo* ci,

@@ -33,11 +33,16 @@
   #include <direct.h>
 #endif /* _WIN32 */
 
+
+static cl_program integrationProgram = NULL;
+static cl_program summarizationProgram = NULL;
+
+
 extern const unsigned char probabilities_kernel_cl[];
 extern const size_t probabilities_kernel_cl_len;
 
-//extern const unsigned char summarization_kernel_cl[];
-//extern const size_t summarization_kernel_cl_len;
+extern const unsigned char summarization_kernel_cl[];
+extern const size_t summarization_kernel_cl_len;
 
 
 cl_kernel _separationKernel = NULL;
@@ -56,10 +61,16 @@ cl_int releaseSeparationKernel(void)
     if (_summarizationKernel)
         err |= clReleaseKernel(_summarizationKernel);
 
+    if (integrationProgram)
+        err |= clReleaseProgram(integrationProgram);
+
+    if (integrationProgram)
+        err |= clReleaseProgram(summarizationProgram);
+
     return err;
 }
 
-static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool verbose)
+static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia)
 {
     mw_printf("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
               "Iteration area: "LLU"\n"
@@ -246,7 +257,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 
     sizes->global[0] = sizes->chunkSize;
 
-    printRunSizes(sizes, ia, clr->verbose);
+    printRunSizes(sizes, ia);
 
     if (sizes->effectiveArea < sizes->area)
     {
@@ -259,7 +270,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 
 
 /* Only sets the constant arguments, not the outputs which we double buffer */
-cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes)
+cl_int separationSetKernelArgs(SeparationCLMem* cm, const RunSizes* runSizes)
 {
     cl_int err = CL_SUCCESS;
 
@@ -393,25 +404,18 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
     return 1000.0 * devFactor * flopsPerIter / flops;
 }
 
-static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
+static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap)
 {
     unsigned char* bin;
     unsigned char* modBin;
     size_t binSize = 0;
     size_t modBinSize = 0;
-    cl_int err;
+    cl_program tmpProgram;
 
-    bin = mwGetProgramBinary(ci, &binSize);
+    bin = mwGetProgramBinary(integrationProgram, &binSize);
     if (!bin)
     {
         return MW_CL_ERROR;
-    }
-
-    err = clReleaseProgram(ci->prog);
-    if (err != CL_SUCCESS)
-    {
-        free(bin);
-        return err;
     }
 
     modBin = getModifiedAMDBinary(bin, binSize, ap->number_streams, ci->di.calTarget, &modBinSize);
@@ -423,13 +427,16 @@ static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, 
         return MW_CL_ERROR;
     }
 
-    err = mwSetProgramFromBin(ci, modBin, modBinSize);
+    tmpProgram = mwCreateProgramFromBin(ci, modBin, modBinSize);
     free(modBin);
-    if (err != CL_SUCCESS)
+    if (!tmpProgram)
     {
-        mwPerrorCL(err, "Error creating program from binary");
-        return err;
+        return MW_CL_ERROR;
     }
+
+    /* Now that the IL program is OK replace the compiled one */
+    clReleaseProgram(integrationProgram);
+    integrationProgram = tmpProgram;
 
     return CL_SUCCESS;
 }
@@ -446,14 +453,11 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
     const DevInfo* di = &ci->di;
     static const cl_int maxILKernelStreams = 4;
 
-    if (!DOUBLEPREC)
+    if (!DOUBLEPREC || clr->forceNoILKernel)
         return CL_FALSE;
 
-      if (clr->forceNoILKernel)
-          return CL_FALSE;
-
     /* Supporting these unused options with the IL kernel is too much work */
-    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile)
+    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile || ap->number_streams == 0)
         return CL_FALSE;
 
     /* Make sure an acceptable device */
@@ -470,6 +474,10 @@ cl_int setupSeparationCL(CLInfo* ci,
     cl_int err;
     const char* kernSrc = (const char*) probabilities_kernel_cl;
     size_t kernSrcLen = probabilities_kernel_cl_len;
+
+    const char* summarizationKernSrc = (const char*) summarization_kernel_cl;
+    size_t summarizationKernSrcLen = summarization_kernel_cl_len;
+
 
     err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)
@@ -494,32 +502,38 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
-    err = mwSetProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
-    if (err != CL_SUCCESS)
+    integrationProgram = mwCreateProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
+    if (!integrationProgram)
     {
-        mwPerrorCL(err, "Error creating program from source");
+        mw_printf("Error creating integral program from source\n");
+        goto setup_exit;
+    }
+
+    summarizationProgram = mwCreateProgramFromSrc(ci, 1, &summarizationKernSrc, &summarizationKernSrcLen, compileFlags);
+    if (!summarizationProgram)
+    {
+        mw_printf("Error creating summarization program from source\n");
         goto setup_exit;
     }
 
     if (useILKernel)
     {
         mw_printf("Using AMD IL kernel\n");
-        err = setProgramFromILKernel(ci, ap, clr);
+        err = setProgramFromILKernel(ci, ap);
         if (err != CL_SUCCESS)
         {
-            /* Recompiles again but I don't really care. */
             mw_printf("Failed to create IL kernel. Falling back to source kernel\n");
-            err = mwSetProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
-            if (err != CL_SUCCESS)
-            {
-                mwPerrorCL(err, "Error creating program from source");
-            }
         }
     }
 
     if (err == CL_SUCCESS)
     {
-        err = mwCreateKernel(&_separationKernel, ci, "probabilities");
+        _separationKernel = mwCreateKernel(integrationProgram, "probabilities");
+        _summarizationKernel = mwCreateKernel(summarizationProgram, "summarization");
+        if (!_separationKernel || !_summarizationKernel)
+        {
+            return MW_CL_ERROR;
+        }
     }
 
 setup_exit:

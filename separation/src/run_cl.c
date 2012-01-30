@@ -125,12 +125,14 @@ static cl_int runSummarization(CLInfo* ci,
             return err;
         }
 
+        /*
         err = clEnqueueBarrier(ci->queue);
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error enqueuing summarization barrier");
             return err;
         }
+        */
 
         err = clEnqueueNDRangeKernel(ci->queue, _summarizationKernel, 1,
                                      NULL, global, local,
@@ -221,37 +223,21 @@ static cl_int readKernelResults(CLInfo* ci,
                                 SeparationCLMem* cm,
                                 EvaluationState* es,
                                 const IntegralArea* ia,
-                                const cl_uint number_streams)
+                                cl_uint number_streams)
 {
-    cl_int err;
+    cl_int err = CL_SUCCESS;
     cl_uint i;
 
-    MWHighResTime start, end, diff;
-
-
-    mwGetHighResTime_RealTime(&start);
     err = runSummarization(ci, cm, ia, 0, &es->bgTmp);
     for (i = 1; err == CL_SUCCESS && i <= number_streams; ++i)
     {
         err = runSummarization(ci, cm, ia, i, &es->streamTmps[i - 1]);
     }
 
-    mwGetHighResTime_RealTime(&end);
-    if (err != CL_SUCCESS)
-    {
-        return err;
-    }
-
-    diff = mwDiffMWHighResTime(&end, &start);
-
-    mw_printf("Summarization time %lu %lu\n",
-              diff.sec,
-              diff.nSec);
-
-    return CL_SUCCESS;
+    return err;
 }
 
-static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runSizes, const cl_uint nu_step)
+static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runSizes, cl_uint nu_step)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
@@ -398,7 +384,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
         return err;
     }
 
-    err = separationSetKernelArgs(ci, &cm, &runSizes);
+    err = separationSetKernelArgs(&cm, &runSizes);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to set integral kernel arguments");

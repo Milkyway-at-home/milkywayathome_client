@@ -231,12 +231,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
 
     st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);
 
-    err = nbLoadKernels(ctx, st);
-    if (err != CL_SUCCESS)
-        return NBODY_CL_ERROR;
-
-    err = nbCreateKernels(st);
-    if (err != CL_SUCCESS)
+    if (nbLoadKernels(ctx, st))
         return NBODY_CL_ERROR;
 
     err = nbCreateBuffers(ctx, st);

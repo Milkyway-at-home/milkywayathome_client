@@ -221,8 +221,6 @@ cl_int mwDestroyCLInfo(CLInfo* ci)
         err |= clReleaseCommandQueue(ci->queue);
     if (ci->bufQueue)
         err |= clReleaseCommandQueue(ci->bufQueue);
-    if (ci->prog)
-        err |= clReleaseProgram(ci->prog);
     if (ci->clctx)
         err |= clReleaseContext(ci->clctx);
 

@@ -175,7 +175,8 @@ if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND lib_source_file_list ${cl_source_list})
   list(APPEND separation_headers ${separation_cl_headers})
-  set(separation_inline_src "${LIBRARY_OUTPUT_PATH}/separation_kernels_inline.c")
+  set(separation_inline_src "${LIBRARY_OUTPUT_PATH}/separation_kernel_inline.c")
+
   add_custom_command(
     OUTPUT "${separation_inline_src}"
     COMMAND $<TARGET_FILE:xxd> -i "probabilities_kernel.cl" ${separation_inline_src}
@@ -183,7 +184,18 @@ if(SEPARATION_OPENCL)
     DEPENDS "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
     MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
     COMMENT "Inlining separation kernel source")
-  add_library(separation_kernels STATIC ${separation_inline_src})
+
+  set(summarization_inline_src "${LIBRARY_OUTPUT_PATH}/summarization_kernel_inline.c")
+  add_custom_command(
+    OUTPUT "${summarization_inline_src}"
+    COMMAND $<TARGET_FILE:xxd> -i "summarization_kernel.cl" ${summarization_inline_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
+    COMMENT "Inlining summarization kernel source")
+
+  set(kernel_srcs ${separation_inline_src} ${summarization_inline_src})
+  add_library(separation_kernels STATIC ${kernel_srcs})
   list(APPEND separation_link_libs separation_kernels)
 endif()
 
