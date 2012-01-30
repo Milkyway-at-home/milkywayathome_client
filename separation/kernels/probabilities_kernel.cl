@@ -258,7 +258,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
     }
 
     real V_reff_xr_rp3 = nu_id * rc.x;
-    uint nElement = mu_steps * r_steps;
+    //uint nElement = mu_steps * r_steps;
 
     bg_prob *= V_reff_xr_rp3;
     #pragma unroll NSTREAM

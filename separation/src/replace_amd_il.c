@@ -279,14 +279,16 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
                 return 1;
             }
 
-            /* Don't let libelf rearrange the sections when writing. Not sure if necessary. */
-            /*
+            /* Don't let libelf rearrange the sections when writing.
+
+               clBuildProgram() crashes on Windows if you don't do
+               this with some(?) Catalyst versions
+             */
             if (!elf_flagelf(e, ELF_C_SET, ELF_F_LAYOUT))
             {
                 mw_printf("elf_flagelf() failed: %s\n", elf_errmsg(-1));
                 return 1;
             }
-            */
 
             if (elf_update(e, ELF_C_NULL) < 0)
             {

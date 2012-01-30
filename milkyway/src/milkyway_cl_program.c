@@ -69,7 +69,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
 {
     cl_int infoErr;
     cl_build_status status;
-    cl_device_id* device;
+    cl_device_id device;
     char* buildLog;
 
     if (!user_data)
@@ -78,10 +78,10 @@ static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
         return;
     }
 
-    device = (cl_device_id*) user_data;
+    device = (cl_device_id) user_data;
 
     infoErr = clGetProgramBuildInfo(program,
-                                    *device,
+                                    device,
                                     CL_PROGRAM_BUILD_STATUS,
                                     sizeof(status),
                                     &status,
@@ -95,7 +95,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
         mw_printf("Build status: %s\n", showCLBuildStatus(status));
     }
 
-    buildLog = mwGetBuildLog(program, *device);
+    buildLog = mwGetBuildLog(program, device);
 
     mw_printf("Build log: \n%s\n", buildLog);
     free(buildLog);
@@ -106,7 +106,7 @@ cl_int mwBuildProgram(cl_program program, cl_device_id device, const char* optio
 {
     cl_int err = CL_SUCCESS;
 
-    err = clBuildProgram(program, 1, &device, options, milkywayBuildCB, &device);
+    err = clBuildProgram(program, 1, &device, options, milkywayBuildCB, device);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "clBuildProgram: Build failure");
