@@ -186,7 +186,7 @@ static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
 
     if (nu == 0 || mu == 0 || r == 0)
     {
-        mw_printf("Integral size { %u, %u, %u } cannot be 0\n", nu, mu, r);
+        mw_printf("Integral size { %u, %u, %u } cannot be 0\n", ia.nu_steps, ia.mu_steps, ia.r_steps);
         return 1;
     }
 

@@ -82,42 +82,50 @@ typedef float4 real4;
 #define sqr(x) ((x) * (x))
 
 
-#if USE_CUSTOM_DIVISION
-double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the double precision number
+#if DOUBLEPREC
+double mw_div_custom(double a, double b)
 {
+    // accurate to 1 ulp, i.e the last bit of the double precision number
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
-
     // 22bit estimate of reciprocal, limits range to float range, but spares the exponent extraction
+
     double y = (double)(1.0f / convert_float_rtn(b));
     double c = mad(-b, y, 1.0);
     y = mad(y, c, y);         // first Newton iteration => 44bit accurate
     double r = a * y;         // second iteration works directly on a/b, so it is effectively
-    c = mad(-b, r, a);  // a Newton-Markstein iteration without guaranteed round to nearest
+    c = mad(-b, r, a);        // a Newton-Markstein iteration without guaranteed round to nearest
 
-    return mad(y, c, r); // should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
-}                      // on a GT200 should be round to nearest most of the time, albeit not guaranteed
-                       // one would have to add a second Newton iteration before the Markstein rounding step,
-                       // but one looses the gained half bit of precision in the following additions, so the added effort doesn't make sense
+    return mad(y, c, r);
+    // should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
+    // on a GT200 should be round to nearest most of the time, albeit not guaranteed
+    // one would have to add a second Newton iteration before the Markstein rounding step,
+    // but one looses the gained half bit of precision in the following additions, so the added effort doesn't make sense
+}
 
-#else
-  #define mw_div(a, b) ((a) / (b))
-#endif /* USE_CUSTOM_DIVISION && DOUBLEPREC */
-
-#if USE_CUSTOM_SQRT
-
-double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
+double mw_sqrt_custom(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
     // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
     double x = (double)rsqrt((float)y);
-    x = x * mad(-y, x * x, 3.0);  // first Newton iteration (44bit accurate)
+    x = x * mad(-y, x * x, 3.0);         // first Newton iteration (44bit accurate)
     double res = x * y;                  // do final iteration directly on sqrt(y) and not on the inverse
     return res * mad(-0.0625, res * x, 0.75);
-}   // same precision as division (1 ulp)
+    // same precision as division (1 ulp)
+}
+#endif /* DOUBLEPREC */
 
+
+#if USE_CUSTOM_DIVISION
+  #define mw_div(a, b) mw_div_custom((a), (b))
+#else
+  #define mw_div(a, b) ((a) / (b))
+#endif /* USE_CUSTOM_DIVISION */
+
+#if USE_CUSTOM_SQRT
+  #define mw_fsqrt mw_sqrt_custom
 #else
   #define mw_fsqrt sqrt
-#endif /* USE_CUSTOM_SQRT && DOUBLEPREC */
+#endif /* USE_CUSTOM_SQRT */
 
 
 inline real aux_prob(real r_in_mag)
