@@ -189,6 +189,8 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
 
     clr->forceNoILKernel = sf->forceNoILKernel;
     clr->forceNoOpenCL = sf->forceNoOpenCL;
+
+    clr->enableProfiling = FALSE;
 }
 
 #if BOINC_APPLICATION
@@ -528,6 +530,7 @@ static int worker(const SeparationFlags* sf)
     CLRequest clr;
 
     memset(&ap, 0, sizeof(ap));
+    memset(&clr, 0, sizeof(clr));
 
     setCLReqFlags(&clr, sf);
     ias = prepareParameters(sf, &ap, &bgp, &streams);
