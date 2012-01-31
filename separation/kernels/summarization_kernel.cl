@@ -63,7 +63,7 @@ __kernel void summarization(__global real2* restrict results,
                             const uint bufferOffset)
 
 {
-    __local real2 sdata[1024];
+    __local real2 sdata[128];
 
     uint gid = get_global_id(0);
     uint lid = get_local_id(0);

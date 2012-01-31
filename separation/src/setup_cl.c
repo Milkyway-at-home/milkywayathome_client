@@ -48,8 +48,7 @@ extern const size_t summarization_kernel_cl_len;
 cl_kernel _separationKernel = NULL;
 cl_kernel _summarizationKernel = NULL;
 
-//size_t _summarizationWorkgroupSize = 0;
-size_t _summarizationWorkgroupSize = 256;
+size_t _summarizationWorkgroupSize = 0;
 
 cl_int releaseSeparationKernel(void)
 {
@@ -306,7 +305,7 @@ cl_int separationSetKernelArgs(SeparationCLMem* cm, const RunSizes* runSizes)
 #define NUM_CONST_BUF_ARGS 5
 
 /* Check that the device has the necessary resources */
-static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes* sizes)
+static cl_bool separationCheckCutMemory(const DevInfo* di, const SeparationSizes* sizes)
 {
     size_t totalConstBuf;
     size_t totalGlobalConst;
@@ -363,27 +362,30 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     return CL_TRUE;
 }
 
-cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
+static cl_bool separationCheckDevMemory(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
 {
     cl_int i;
     SeparationSizes sizes;
 
-  #if DOUBLEPREC
-    if (!mwSupportsDoubles(di))
-    {
-        mw_printf("Device doesn't support double precision\n");
-        return CL_FALSE;
-    }
-  #endif /* DOUBLEPREC */
-
     for (i = 0; i < ap->number_integrals; ++i)
     {
         calculateSizes(&sizes, ap, &ias[i]);
-        if (!separationCheckDevMemory(di, &sizes))
+        if (!separationCheckCutMemory(di, &sizes))
         {
             mw_printf("Capability check failed for cut %u\n", i);
             return CL_FALSE;
         }
+    }
+
+    return CL_TRUE;
+}
+
+static cl_bool separationCheckDevCapabilities(const DevInfo* di)
+{
+    if (DOUBLEPREC && !mwSupportsDoubles(di))
+    {
+        mw_printf("Device doesn't support double precision\n");
+        return CL_FALSE;
     }
 
     return CL_TRUE;
@@ -464,6 +466,54 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
     return (mwIsAMDGPUDevice(di) && isILKernelTarget(di) && mwPlatformSupportsAMDOfflineDevices(ci));
 }
 
+/* Return CL_TRUE on error */
+static cl_bool setSummarizationWorkgroupSize(const CLInfo* ci)
+{
+    size_t maxGroupSize;
+    size_t groupSize;
+    size_t nextMultiple;
+    cl_int err;
+
+    err = clGetKernelWorkGroupInfo(_summarizationKernel,
+                                   ci->dev,
+                                   CL_KERNEL_WORK_GROUP_SIZE,
+                                   sizeof(maxGroupSize), &maxGroupSize,
+                                   NULL);
+    if (err != CL_SUCCESS)
+    {
+        return CL_TRUE;
+    }
+
+    if (maxGroupSize == 1)
+    {
+        /* Seems to be a problem on OS X CPU implementation */
+        mw_printf("Workgroup size of 1 for summarization is not acceptable\n");
+        return CL_TRUE;
+    }
+
+    /* OpenCL 1.1 has CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE
+     * which we probably should be using if available  */
+
+    nextMultiple = mwNextMultiple(64, ci->di.warpSize);
+    if (nextMultiple <= maxGroupSize)
+    {
+        groupSize = nextMultiple;
+    }
+    else
+    {
+        groupSize = maxGroupSize;
+    }
+
+    if (groupSize > 128) /* Just in case */
+    {
+        groupSize = 128;
+    }
+
+    _summarizationWorkgroupSize = groupSize;
+
+    return CL_FALSE;
+}
+
 cl_int setupSeparationCL(CLInfo* ci,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,
@@ -471,7 +521,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 {
     char* compileFlags;
     cl_bool useILKernel;
-    cl_int err;
+    cl_int err = MW_CL_ERROR;
     const char* kernSrc = (const char*) probabilities_kernel_cl;
     size_t kernSrcLen = probabilities_kernel_cl_len;
 
@@ -486,9 +536,8 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
-    if (!separationCheckDevCapabilities(&ci->di, ap, ias))
+    if (!separationCheckDevCapabilities(&ci->di))
     {
-        mw_printf("Device failed capability check\n");
         return MW_CL_ERROR;
     }
 
@@ -497,8 +546,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     if (!compileFlags)
     {
         mw_printf("Failed to get CL compiler flags\n");
-        err = MW_CL_ERROR;
-        goto setup_exit;
+        return MW_CL_ERROR;
     }
 
     mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
@@ -506,6 +554,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     if (!integrationProgram)
     {
         mw_printf("Error creating integral program from source\n");
+        err = MW_CL_ERROR;
         goto setup_exit;
     }
 
@@ -513,6 +562,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     if (!summarizationProgram)
     {
         mw_printf("Error creating summarization program from source\n");
+        err = MW_CL_ERROR;
         goto setup_exit;
     }
 
@@ -530,11 +580,15 @@ cl_int setupSeparationCL(CLInfo* ci,
     {
         _separationKernel = mwCreateKernel(integrationProgram, "probabilities");
         _summarizationKernel = mwCreateKernel(summarizationProgram, "summarization");
-        if (!_separationKernel || !_summarizationKernel)
+        if (   !_separationKernel
+            || !_summarizationKernel
+            || setSummarizationWorkgroupSize(ci)
+            || !separationCheckDevMemory(&ci->di, ap, ias))
         {
-            return MW_CL_ERROR;
+            err = MW_CL_ERROR;
         }
     }
+
 
 setup_exit:
     free(compileFlags);
