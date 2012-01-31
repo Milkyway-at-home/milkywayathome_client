@@ -156,6 +156,18 @@ inline real mw_fmin(real a, real b)
         (k).sum = _t;                               \
     }
 
+/* inOut += in with 2 Kahan sums correctly combining their error terms */
+#define KAHAN_REDUCTION(inOut, in)                                             \
+    {                                                                          \
+        real correctedNextTerm, newSum;                                        \
+                                                                               \
+        correctedNextTerm = (in).sum + ((in).correction + (inOut).correction); \
+        newSum = (inOut).sum + correctedNextTerm;                              \
+        (inOut).correction = correctedNextTerm - (newSum - (inOut).sum);       \
+        (inOut).sum = newSum;                                                  \
+    }
+
+
 /* other useful nonstandard constants */
 
 /* (4 * pi) / 3 */

@@ -36,8 +36,7 @@ void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc);
 void clearEvaluationStateTmpSums(EvaluationState* es);
 void printEvaluationState(const EvaluationState* es);
 
-void addTmpSums(EvaluationState* es);
-
+void addTmpCheckpointSums(EvaluationState* es);
 int writeCheckpoint(EvaluationState* es);
 int readCheckpoint(EvaluationState* es);
 int resolveCheckpoint(void);

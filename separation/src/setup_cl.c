@@ -1,6 +1,6 @@
 /*
- *  Copyright (c) 2010-2011 Matthew Arsenault
- *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2012 Matthew Arsenault
+ *  Copyright (c) 2010-2012 Rensselaer Polytechnic Institute
  *
  *  This file is part of Milkway@Home.
  *

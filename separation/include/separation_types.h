@@ -271,6 +271,12 @@ typedef struct
     Kahan bgSum;
     Kahan* streamSums;
 
+    /* Temporaries used for OpenCL checkpointing */
+    Kahan bgSumCheckpoint;
+    Kahan* streamSumsCheckpoint;
+
+
+    /* Used for disgusting purposes */
     real bgTmp;
     real* streamTmps;
 

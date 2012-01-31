@@ -43,16 +43,16 @@ typedef float4 real4;
 #endif /* DOUBLEPREC */
 
 
-inline real2 kahanReduction(real2 in, real2 inout)
+inline real2 kahanReduction(real2 inOut, real2 in)
 {
-    real corrected_next_term, new_sum;
+    real correctedNextTerm, newSum;
 
-    corrected_next_term = in.x + (in.y + inout.y);
-    new_sum = inout.x + corrected_next_term;
-    inout.y = corrected_next_term - (new_sum - inout.x);
-    inout.x = new_sum;
+    correctedNextTerm = in.x + (in.y + inOut.y);
+    newSum = inOut.x + correctedNextTerm;
+    inOut.y = correctedNextTerm - (newSum - inOut.x);
+    inOut.x = newSum;
 
-    return inout;
+    return inOut;
 }
 
 /* It's not really important if this kernel is fast */
@@ -75,7 +75,7 @@ __kernel void summarization(__global real2* restrict results,
     {
         if (lid < offset)
         {
-            sdata[lid] = kahanReduction(sdata[lid + offset], sdata[lid]);
+            sdata[lid] = kahanReduction(sdata[lid], sdata[lid + offset]);
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);

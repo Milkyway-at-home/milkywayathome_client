@@ -1,6 +1,6 @@
 /*
- *  Copyright (c) 2010-2011 Matthew Arsenault
- *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2012 Matthew Arsenault
+ *  Copyright (c) 2010-2012 Rensselaer Polytechnic Institute
  *
  *  This file is part of Milkway@Home.
  *
@@ -32,7 +32,6 @@
 #include "r_points.h"
 #include "integrals.h"
 
-
 static void swapBuffers(cl_mem bufs[2])
 {
     cl_mem tmp = bufs[0];
@@ -44,7 +43,7 @@ static cl_int runSummarization(CLInfo* ci,
                                SeparationCLMem* cm,
                                const IntegralArea* ia,
                                cl_uint which,
-                               real* resultOut)
+                               Kahan* resultOut)
 {
     cl_int err = CL_SUCCESS;
     cl_mem buf;
@@ -166,11 +165,13 @@ static cl_int runSummarization(CLInfo* ci,
                               0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL(err, "Error reading summarization result buffer\n");
+        mwPerrorCL(err, "Error reading summarization result buffer");
         return err;
     }
 
-    *resultOut = result[0];
+    resultOut->sum = result[0];
+    resultOut->correction = result[1];
+
     return CL_SUCCESS;
 }
 
@@ -219,19 +220,15 @@ static cl_int setNuKernelArgs(const IntegralArea* ia, cl_uint nu_step)
     return CL_SUCCESS;
 }
 
-static cl_int readKernelResults(CLInfo* ci,
-                                SeparationCLMem* cm,
-                                EvaluationState* es,
-                                const IntegralArea* ia,
-                                cl_uint number_streams)
+static cl_int readKernelResults(CLInfo* ci, SeparationCLMem* cm, EvaluationState* es, const IntegralArea* ia)
 {
     cl_int err = CL_SUCCESS;
     cl_uint i;
 
-    err = runSummarization(ci, cm, ia, 0, &es->bgTmp);
-    for (i = 1; err == CL_SUCCESS && i <= number_streams; ++i)
+    err = runSummarization(ci, cm, ia, 0, &es->bgSumCheckpoint);
+    for (i = 0; err == CL_SUCCESS && i < es->numberStreams; ++i)
     {
-        err = runSummarization(ci, cm, ia, i, &es->streamTmps[i - 1]);
+        err = runSummarization(ci, cm, ia, i + 1, &es->streamSumsCheckpoint[i]);
     }
 
     return err;
@@ -292,7 +289,7 @@ static cl_int checkpointCL(CLInfo* ci, SeparationCLMem* cm, const IntegralArea* 
 {
     cl_int err;
 
-    err = readKernelResults(ci, cm, es, ia, es->numberStreams);
+    err = readKernelResults(ci, cm, es, ia);
     if (err != CL_SUCCESS)
         return err;
 
@@ -345,11 +342,12 @@ static cl_int runIntegral(CLInfo* ci,
 
     if (err == CL_SUCCESS)
     {
-        err = readKernelResults(ci, cm, es, ia, ap->number_streams);
+        err = readKernelResults(ci, cm, es, ia);
         if (err != CL_SUCCESS)
             mw_printf("Failed to read final kernel results\n");
 
-        addTmpSums(es); /* Add final episode to running totals */
+        /* Add final episode to running totals */
+        addTmpCheckpointSums(es);
     }
 
     return err;

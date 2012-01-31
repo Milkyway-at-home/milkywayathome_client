@@ -48,8 +48,12 @@ static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
     es->streamSums = (Kahan*) mwCallocA(ap->number_streams, sizeof(Kahan));
     es->streamTmps = (real*) mwCallocA(ap->number_streams, sizeof(real));
 
+    es->streamSumsCheckpoint = (Kahan*) mwCallocA(ap->number_streams, sizeof(Kahan));
+
     for (i = 0; i < ap->number_integrals; i++)
+    {
         initializeCut(&es->cuts[i], ap->number_streams);
+    }
 }
 
 EvaluationState* newEvaluationState(const AstronomyParameters* ap)
@@ -70,7 +74,9 @@ void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc)
 
     *esDest = *esSrc;
     for (i = 0; i < esSrc->numberCuts; ++i)
+    {
         esDest->cuts[i] = esSrc->cuts[i];
+    }
 }
 
 static void freeCut(Cut* i)
@@ -83,10 +89,14 @@ void freeEvaluationState(EvaluationState* es)
     int i;
 
     for (i = 0; i < es->numberCuts; ++i)
+    {
         freeCut(&es->cuts[i]);
+    }
+
     mwFreeA(es->cuts);
     mwFreeA(es->streamSums);
     mwFreeA(es->streamTmps);
+    mwFreeA(es->streamSumsCheckpoint);
     mwFreeA(es);
 }
 
@@ -96,7 +106,9 @@ void clearEvaluationStateTmpSums(EvaluationState* es)
 
     CLEAR_KAHAN(es->bgSum);
     for (i = 0; i < es->numberStreams; ++i)
+    {
         CLEAR_KAHAN(es->streamSums[i]);
+    }
 }
 
 void printEvaluationState(const EvaluationState* es)
@@ -136,6 +148,23 @@ void printEvaluationState(const EvaluationState* es)
     printf("\n");
 }
 
+void addTmpCheckpointSums(EvaluationState* es)
+{
+    int i;
+
+    /* Add the GPU temporary results from previous episodes */
+    KAHAN_REDUCTION(es->bgSum, es->bgSumCheckpoint);
+
+    for (i = 0; i < es->numberStreams; ++i)
+    {
+        KAHAN_REDUCTION(es->streamSums[i], es->streamSumsCheckpoint[i]);
+    }
+
+    memset(&es->bgSumCheckpoint, 0, sizeof(Kahan));
+    memset(es->streamSumsCheckpoint, 0, es->numberStreams * sizeof(Kahan));
+}
+
+
 static const char checkpoint_header[] = "separation_checkpoint";
 static const char checkpoint_tail[] = "end_checkpoint";
 
@@ -155,16 +184,12 @@ static const SeparationVersionHeader versionHeader =
 
 static int versionMismatch(const SeparationVersionHeader* v)
 {
-    if (   v->major != SEPARATION_VERSION_MAJOR
-        || v->minor != SEPARATION_VERSION_MINOR
-        || v->cl    != SEPARATION_OPENCL
-        || v->cal   != FALSE)
+    if (v->major != SEPARATION_VERSION_MAJOR || v->minor != SEPARATION_VERSION_MINOR)
     {
         mw_printf("Checkpoint version does not match:\n"
-                  "  Expected %d.%d, OpenCL = %d, CAL++ = 0,\n"
-                  "  Got %d.%d, OpenCL = %d, CAL++ = %d\n",
-                  SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL,
-                  v->major, v->minor, v->cl, v->cal);
+                  "  Expected %d.%d, got %d.%d, \n",
+                  SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
+                  v->major, v->minor);
         return 1;
     }
 
@@ -191,13 +216,13 @@ static int readState(FILE* f, EvaluationState* es)
     fread(&es->currentCut, sizeof(es->currentCut), 1, f);
     fread(&es->nu_step, sizeof(es->nu_step), 1, f);
     fread(&es->mu_step, sizeof(es->mu_step), 1, f);
-    fread(&es->lastCheckpointNuStep, sizeof(es->lastCheckpointNuStep), 1, f);
 
     fread(&es->bgSum, sizeof(es->bgSum), 1, f);
     fread(es->streamSums, sizeof(es->streamSums[0]), es->numberStreams, f);
 
-    fread(&es->bgTmp, sizeof(es->bgTmp), 1, f);
-    fread(es->streamTmps, sizeof(es->streamTmps[0]), es->numberStreams, f);
+    fread(&es->lastCheckpointNuStep, sizeof(es->lastCheckpointNuStep), 1, f);
+    fread(&es->bgSumCheckpoint, sizeof(es->bgSumCheckpoint), 1, f);
+    fread(es->streamSumsCheckpoint, sizeof(es->streamSumsCheckpoint[0]), es->numberStreams, f);
 
     for (c = es->cuts; c < es->cuts + es->numberCuts; ++c)
     {
@@ -213,25 +238,6 @@ static int readState(FILE* f, EvaluationState* es)
     }
 
     return 0;
-}
-
-
-/* The GPU checkpointing saves the sum of all resumes in the real integral.
-   The temporary area holds the checkpointed sum of the last episode.
-   Update the real integral from the results of the last episode.
-*/
-void addTmpSums(EvaluationState* es)
-{
-    int i;
-
-    KAHAN_ADD(es->bgSum, es->bgTmp);
-    for (i = 0; i < es->numberStreams; ++i)
-    {
-        KAHAN_ADD(es->streamSums[i], es->streamTmps[i]);
-    }
-
-    es->bgTmp = 0.0;
-    memset(es->streamTmps, 0, sizeof(es->streamTmps[0]) * es->numberStreams);
 }
 
 int readCheckpoint(EvaluationState* es)
@@ -252,9 +258,7 @@ int readCheckpoint(EvaluationState* es)
 
     fclose(f);
 
-    /* The GPU checkpoint saved the last checkpoint results in temporaries.
-       Add to the total from previous episodes. */
-    addTmpSums(es);
+    addTmpCheckpointSums(es);
 
     return rc;
 }
@@ -270,14 +274,13 @@ static inline void writeState(FILE* f, const EvaluationState* es)
     fwrite(&es->currentCut, sizeof(es->currentCut), 1, f);
     fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
     fwrite(&es->mu_step, sizeof(es->mu_step), 1, f);
-    fwrite(&es->lastCheckpointNuStep, sizeof(es->lastCheckpointNuStep), 1, f);
 
     fwrite(&es->bgSum, sizeof(es->bgSum), 1, f);
     fwrite(es->streamSums, sizeof(es->streamSums[0]), es->numberStreams, f);
 
-    /* Really only needs to be saved for GPU checkpointing */
-    fwrite(&es->bgTmp, sizeof(es->bgTmp), 1, f);
-    fwrite(es->streamTmps, sizeof(es->streamTmps[0]), es->numberStreams, f);
+    fwrite(&es->lastCheckpointNuStep, sizeof(es->lastCheckpointNuStep), 1, f);
+    fwrite(&es->bgSumCheckpoint, sizeof(es->bgSumCheckpoint), 1, f);
+    fwrite(es->streamSumsCheckpoint, sizeof(es->streamSumsCheckpoint[0]), es->numberStreams, f);
 
     for (c = es->cuts; c < endc; ++c)
     {
