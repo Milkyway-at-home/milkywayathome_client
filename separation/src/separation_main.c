@@ -194,9 +194,7 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->enableProfiling = FALSE;
 }
 
-#if BOINC_APPLICATION
-
-/* If someone has mixed Windows and non-Windows they can set for each*/
+/* If someone has mixed Windows and non-Windows they can set for each */
 #ifdef _WIN32
   #define GPU_PRIORITY_SETTING "gpu_process_priority"
 #else
@@ -246,9 +244,6 @@ static void separationReadPreferences(SeparationFlags* sf)
     sf->processPriority = prefs.gpuProcessPriority;
     sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
 }
-
-#endif /* BOINC_APPLICATION */
-
 
 /* Read project preferences and command line arguments */
 static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
@@ -440,9 +435,10 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             POPT_TABLEEND
         };
 
-  #if BOINC_APPLICATION
-    separationReadPreferences(&sf);
-  #endif /* BOINC_APPLICATION */
+    if (BOINC_APPLICATION)
+    {
+        separationReadPreferences(&sf);
+    }
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
     if (!context)

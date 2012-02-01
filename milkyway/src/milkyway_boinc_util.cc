@@ -178,7 +178,6 @@ int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
     MIOFILE xmlPrefsFile;
     XML_PARSER parser(&xmlPrefsFile);
 
-
     if (!prefs || !prefConfig)
         return 1;
 
@@ -189,10 +188,6 @@ int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
         mw_printf("Missing project_preferences start tag\n");
         return 1;
     }
-
-    /* Skip ahead to the project specific preferences */
-    while (!parser.get_tag() && !parser.match_tag("project_specific"));
-
 
     while (!parser.get_tag())
     {
@@ -205,7 +200,7 @@ int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
             continue;
         }
 
-        if (parser.match_tag("/project_specific"))
+        if (parser.match_tag("/project_preferences"))
         {
             return 0;
         }
