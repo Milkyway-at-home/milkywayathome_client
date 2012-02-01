@@ -327,15 +327,15 @@ const char* showMWDoubleExts(const MWDoubleExts x)
 
     if (x & MW_CL_KHR_FP64)  /* Preferred extension */
     {
-        return "MW_CL_KHR_FP64";
+        return "cl_khr_fp64";
     }
     else if (x & MW_CL_AMD_FP64)
     {
-        return "MW_CL_AMD_FP64";
+        return "cl_amd_fp64";
     }
     else
     {
-        return "MW_NONE_DOUBLE";
+        return "(none)";
     }
 
     mw_unreachable();

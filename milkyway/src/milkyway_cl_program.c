@@ -67,37 +67,27 @@ static char* mwGetBuildLog(cl_program program, cl_device_id device)
 
 static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
 {
-    cl_int infoErr;
-    cl_build_status status;
     cl_device_id device;
     char* buildLog;
 
     if (!user_data)
     {
-        mw_printf("milkywayBuildCB got null user_data\n");
         return;
     }
 
     device = (cl_device_id) user_data;
 
-    infoErr = clGetProgramBuildInfo(program,
-                                    device,
-                                    CL_PROGRAM_BUILD_STATUS,
-                                    sizeof(status),
-                                    &status,
-                                    NULL);
-    if (infoErr != CL_SUCCESS)
-    {
-        mwPerrorCL(infoErr, "Get build status failed");
-    }
-    else
-    {
-        mw_printf("Build status: %s\n", showCLBuildStatus(status));
-    }
-
     buildLog = mwGetBuildLog(program, device);
+    if (buildLog && strcmp(buildLog, ""))
+    {
+        mw_printf("Build log:\n"
+                  "--------------------------------------------------------------------------------\n"
+                  "%s"
+                  "--------------------------------------------------------------------------------\n",
+                  buildLog
+            );
+    }
 
-    mw_printf("Build log: \n%s\n", buildLog);
     free(buildLog);
 }
 

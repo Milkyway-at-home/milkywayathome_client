@@ -204,8 +204,7 @@ cl_bool findRunSizes(RunSizes* sizes,
         cl_uint nBlockPerChunk = 1;
         sizes->nChunkEstimate = findNChunk(ap, ia, di, clr);
 
-        /* If specified and acceptable, use a user specified factor for the
-         * number of blocks to use. Otherwise, make a guess appropriate for the hardware. */
+        /* Make a guess appropriate for the hardware. */
 
         /* m * b ~= area / n   */
         nBlockPerChunk = sizes->area / (sizes->nChunkEstimate * blockSize);
@@ -227,7 +226,9 @@ cl_bool findRunSizes(RunSizes* sizes,
         sizes->extra = sizes->effectiveArea - sizes->area;
     }
 
-    mw_printf("Using a block size of "ZU" with a n-block/chunk factor of "ZU"\n",
+    mw_printf("Using a target frequency of %.1f\n"
+              "Using a block size of "ZU" with "ZU" blocks/chunk\n",
+              clr->targetFrequency,
               blockSize,
               sizes->chunkSize / blockSize);
 
@@ -549,7 +550,11 @@ cl_int setupSeparationCL(CLInfo* ci,
         return MW_CL_ERROR;
     }
 
-    mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
+    if (clr->verbose)
+    {
+        mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
+    }
+
     integrationProgram = mwCreateProgramFromSrc(ci, 1, &kernSrc, &kernSrcLen, compileFlags);
     if (!integrationProgram)
     {
