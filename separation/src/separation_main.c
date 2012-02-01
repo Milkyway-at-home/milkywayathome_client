@@ -669,13 +669,11 @@ int main(int argc, const char* argv[])
 
     freeSeparationFlags(&sf);
 
-  #if !SEPARATION_OPENCL
     if (!sf.ignoreCheckpoint && sf.cleanupCheckpoint && rc == 0)
     {
         mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         mw_remove(CHECKPOINT_FILE);
     }
-  #endif
 
     if (BOINC_APPLICATION && mwIsFirstRun())
     {

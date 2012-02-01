@@ -276,7 +276,9 @@ if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
   endif()
 
   if(HAVE_AVX)
-    add_library(separation_core_avx STATIC src/probabilities_avx.c ${core_headers})
+    # The real AVX one isn't done. The SSE* one is faster by building it with AVX
+    #add_library(separation_core_avx STATIC src/probabilities_avx.c ${core_headers})
+    add_library(separation_core_avx STATIC src/probabilities_sse2.c ${core_headers})
     enable_avx(separation_core_avx)
     list(APPEND separation_core_libs separation_core_avx)
   endif()
