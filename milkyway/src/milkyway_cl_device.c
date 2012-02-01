@@ -535,7 +535,6 @@ void mwPrintDevInfoShort(const DevInfo* di)
               "Driver version:      %s\n"
               "Version:             %s\n"
               "Compute capability:  %u.%u\n"
-              "Image support:       %s\n"
               "Max compute units:   %u\n"
               "Clock frequency:     %u Mhz\n"
               "Global mem size:     "LLU"\n"
@@ -548,7 +547,6 @@ void mwPrintDevInfoShort(const DevInfo* di)
               di->driver,
               di->version,
               di->computeCapabilityMajor, di->computeCapabilityMinor,
-              showCLBool(di->imgSupport),
               di->maxCompUnits,
               di->clockFreq,
               di->memSize,
