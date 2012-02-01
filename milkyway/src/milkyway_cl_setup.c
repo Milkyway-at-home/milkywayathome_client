@@ -209,6 +209,23 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
         }
     }
 
+    if (clr->pollingMode == 0)
+    {
+        /* With the default, we will try to use clWaitForEvents()
+         * unless we know the driver is bad and busy waits, in which
+         * case we will do it manually.
+         */
+
+        if (mwDriverHasHighCPUWaitIssue(ci))
+        {
+            ci->pollingMode = MW_DEFAULT_POLLING_PERIOD;
+        }
+    }
+    else
+    {
+        ci->pollingMode = clr->pollingMode;
+    }
+
     return mwCreateCtxQueue(ci, CL_FALSE, clr->enableProfiling);
 }
 

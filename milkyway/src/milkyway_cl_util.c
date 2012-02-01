@@ -18,15 +18,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 
 #include "milkyway_util.h"
 #include "milkyway_cl_show_types.h"
 #include "milkyway_cl_util.h"
+#include "milkyway_cl_device.h"
 #include "milkyway_cl_setup.h"
 
 void mwPerrorCL(cl_int err, const char* fmt, ...)
@@ -274,16 +271,16 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
    versions of both the Nvidia and AMD drivers developed an issue
    where clWaitForEvents/clFinish would cause 100% CPU usage.
 */
-cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_int pollingMode, cl_uint initialWait)
+cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_uint initialWait)
 {
     cl_int err;
     cl_int execStatus;
+    cl_int pollingMode = ci->pollingMode;
 
-    if (pollingMode == 0)
+    if (pollingMode <= 0)
     {
         return clWaitForEvents(1, &ev);
     }
-
 
     err = clFlush(ci->queue);  /* If we don't flush the queue the event probably won't ever run */
     if (err != CL_SUCCESS)
@@ -293,7 +290,6 @@ cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_int pollingMode, cl_uint ini
 
     do
     {
-
         err = clGetEventInfo(ev,
                              CL_EVENT_COMMAND_EXECUTION_STATUS,
                              sizeof(cl_int),
@@ -302,14 +298,42 @@ cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_int pollingMode, cl_uint ini
         if (err != CL_SUCCESS)
             return err;
 
-        if (pollingMode > 0) /* Busy wait if < 0 */
-        {
-            mwMilliSleep(pollingMode);
-        }
+        mwMilliSleep(pollingMode);
     }
     while (execStatus != CL_COMPLETE);
 
-
     return CL_SUCCESS;
+}
+
+cl_bool mwDriverHasHighCPUWaitIssue(CLInfo* ci)
+{
+    const DevInfo* di = &ci->di;
+    int major = 0, minor = 0, patchLevel = 0;
+
+    if (mwIsNvidiaGPUDevice(di))
+    {
+        if (sscanf(di->driver, "%u.%u", &major, &minor) != 2)
+        {
+            return CL_FALSE;
+        }
+
+        /* Issue started around 270.xx and hasn't been fixed yet. */
+        return (major >= 270);
+    }
+    else if (mwIsAMDGPUDevice(di))
+    {
+        /* Sometimes it has other stuff like (VM) after. Not sure what that means. */
+        if (sscanf(di->driver, "CAL %d.%d.%d", &major, &minor, &patchLevel) != 3)
+        {
+            return CL_FALSE;
+        }
+
+        /* I think it happened in 11.7 and 11.8 */
+        return (major == 1 && minor == 4 && patchLevel >= 1457 && patchLevel < 1546);
+    }
+    else
+    {
+        return CL_FALSE;
+    }
 }
 

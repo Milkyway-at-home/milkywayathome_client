@@ -56,6 +56,8 @@ typedef struct
     size_t nChunkEstimate;  /* Target number of chunks to use */
     size_t nChunk;          /* Number of chunks to divide each iteration into */
     cl_uint extra;          /* Extra area added */
+    cl_uint initialWait;    /* If manually polling for kernel completion how long to initially wait */
+
     cl_uint r, mu, nu;
     cl_ulong area;
     cl_ulong effectiveArea;

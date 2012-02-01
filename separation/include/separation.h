@@ -73,6 +73,7 @@ typedef struct
     int magicFactor;
     int nonResponsive;
     double targetFrequency;
+    int pollingMode;
     int disableGPUCheckpointing;
 
     MWPriority processPriority;
@@ -101,6 +102,7 @@ typedef struct
 
 #define DEFAULT_NON_RESPONSIVE FALSE
 #define DEFAULT_TARGET_FREQUENCY 60.0
+#define DEFAULT_POLLING_MODE 0
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING FALSE
 #define DEFAULT_DISABLE_OPENCL FALSE
 #define DEFAULT_DISABLE_IL_KERNEL FALSE
@@ -110,6 +112,7 @@ typedef struct
                                  0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
                                  UINT_MAX, 0, 0, DEFAULT_NON_RESPONSIVE,       \
                                  DEFAULT_TARGET_FREQUENCY,                     \
+                                 DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
                                  0, FALSE,                                     \
                                  DEFAULT_DISABLE_OPENCL,                       \

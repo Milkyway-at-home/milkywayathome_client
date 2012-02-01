@@ -24,11 +24,17 @@
 #include "milkyway_cl_setup.h"
 #include "milkyway_cl_types.h"
 
+/* After initial wait when using mwCLWaitForEvent() how long (in ms)
+ * should it sleep before trying again
+ */
+#define MW_DEFAULT_POLLING_PERIOD 3
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_int pollingMode, cl_uint initialWait);
+cl_bool mwDriverHasHighCPUWaitIssue(CLInfo* ci);
+cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_uint initialWait);
 
 cl_int mwGetWorkGroupInfo(cl_kernel kern, const CLInfo* ci, WGInfo* wgi);
 void mwPrintWorkGroupInfo(const WGInfo* wgi);

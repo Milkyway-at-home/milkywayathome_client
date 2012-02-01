@@ -186,6 +186,7 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->preferredPlatformVendor = sf->preferredPlatformVendor;
 
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
+    clr->pollingMode = sf->pollingMode;
 
     clr->forceNoILKernel = sf->forceNoILKernel;
     clr->forceNoOpenCL = sf->forceNoOpenCL;
@@ -334,6 +335,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
+                "gpu-polling-mode", 'm',
+                POPT_ARG_INT, &sf.pollingMode,
+                0, "Interval for polling GPU (0 (default) use clWaitForEvents() unless driver known bad. < 0, Always use clWaitForEvents(), > 1 sets interval polling in ms)" , NULL
+            },
+
+            {
                 "gpu-disable-checkpointing", 'k',
                 POPT_ARG_NONE, &sf.disableGPUCheckpointing,
                 0, "Disable checkpointing with GPUs" , NULL
@@ -438,6 +445,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
   #endif /* BOINC_APPLICATION */
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
+    if (!context)
+    {
+        mw_printf("Failed to get popt context\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);

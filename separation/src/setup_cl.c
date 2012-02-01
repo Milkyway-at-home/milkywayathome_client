@@ -77,14 +77,17 @@ static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia)
               "Num chunks:     "ZU"\n"
               "Chunk size:     "ZU"\n"
               "Added area:     %u\n"
-              "Effective area: "LLU"\n",
+              "Effective area: "LLU"\n"
+              "Initial wait:   %u ms\n",
               ia->nu_steps, ia->mu_steps, ia->r_steps,
               sizes->area,
               sizes->nChunkEstimate,
               sizes->nChunk,
               sizes->chunkSize,
               sizes->extra,
-              sizes->effectiveArea);
+              sizes->effectiveArea,
+              sizes->initialWait
+        );
 }
 
 static cl_double estimateWUGFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
@@ -110,7 +113,8 @@ static cl_double estimateWUGFLOPsPerIter(const AstronomyParameters* ap, const In
 static cl_uint findNChunk(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const DevInfo* di,
-                          const CLRequest* clr)
+                          const CLRequest* clr,
+                          cl_uint* initialWaitTime)
 {
     cl_double gflops = mwDeviceEstimateGFLOPs(di, DOUBLEPREC);
     cl_double effFlops = GPU_EFFICIENCY_ESTIMATE * (cl_double) gflops;
@@ -121,6 +125,12 @@ static cl_uint findNChunk(const AstronomyParameters* ap,
     cl_double timePerIter = 1000.0 / clr->targetFrequency;
 
     cl_uint nChunk = (cl_uint) (estIterTime / timePerIter);
+
+    if (initialWaitTime)
+    {
+        /* Sleep for 50% of estimated time before polling */
+        *initialWaitTime = (cl_uint) (0.5 * estIterTime / nChunk);
+    }
 
     return nChunk == 0 ? 1 : nChunk;
 }
@@ -202,7 +212,7 @@ cl_bool findRunSizes(RunSizes* sizes,
     blockSize = nWavefrontPerCU * di->warpSize * di->maxCompUnits;
     {
         cl_uint nBlockPerChunk = 1;
-        sizes->nChunkEstimate = findNChunk(ap, ia, di, clr);
+        sizes->nChunkEstimate = findNChunk(ap, ia, di, clr, &sizes->initialWait);
 
         /* Make a guess appropriate for the hardware. */
 

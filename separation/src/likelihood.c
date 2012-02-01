@@ -368,6 +368,8 @@ int likelihood(SeparationResults* results,
     int rc = 0;
     double t1, t2;
 
+    mw_printf("Running likelihood with %u stars\n", sp->number_stars);
+
     if (do_separation)
     {
         f = mw_fopen(separation_outfile, "w+");

@@ -176,21 +176,27 @@ static cl_int runSummarization(CLInfo* ci,
 }
 
 
-static cl_int enqueueIntegralKernel(CLInfo* ci,
-                                    const size_t offset[1],
-                                    const size_t global[1],
-                                    const size_t local[1])
+static cl_int runIntegralKernel(CLInfo* ci, const RunSizes* runSizes, const size_t offset[1])
 {
     cl_int err;
+    cl_event ev;
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  _separationKernel,
                                  1,
-                                 offset, global, local,
-                                 0, NULL, NULL);
+                                 offset, runSizes->global, runSizes->local,
+                                 0, NULL, &ev);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error enqueueing integral kernel execution");
+        return err;
+    }
+
+    /* Give the screen a chance to redraw */
+    err = mwCLWaitForEvent(ci, ev, runSizes->initialWait);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Failed to wait for integral event");
         return err;
     }
 
@@ -223,7 +229,7 @@ static cl_int setNuKernelArgs(const IntegralArea* ia, cl_uint nu_step)
 static cl_int readKernelResults(CLInfo* ci, SeparationCLMem* cm, EvaluationState* es, const IntegralArea* ia)
 {
     cl_int err = CL_SUCCESS;
-    cl_uint i;
+    cl_int i;
 
     err = runSummarization(ci, cm, ia, 0, &es->bgSumCheckpoint);
     for (i = 0; err == CL_SUCCESS && i < es->numberStreams; ++i)
@@ -250,17 +256,8 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     offset[0] = 0;
     for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
-
         mw_begin_critical_section();
-        err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
-        if (err == CL_SUCCESS)
-        {
-            /* Give the screen a chance to redraw */
-            err = clFinish(ci->queue);
-            if (err != CL_SUCCESS)
-                mwPerrorCL(err, "Failed to finish");
-        }
-
+        err = runIntegralKernel(ci, runSizes, offset);
         mw_end_critical_section();
 
         offset[0] += runSizes->global[0];
