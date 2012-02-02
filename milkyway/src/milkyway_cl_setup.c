@@ -119,7 +119,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     cl_uint nDev = 0;
     cl_platform_id* ids;
     cl_device_id* devs;
-    cl_uint platformChoice;
+    cl_uint platformChoice = 0;
 
     ids = mwGetAllPlatformIDs(&nPlatform);
     if (!ids)
@@ -136,7 +136,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     {
         platformChoice = clr->platform;
     }
-    else if (strcmp(clr->preferredPlatformVendor, "")) /* Didn't specify platform by index, try picking one by name */
+    else if (clr->preferredPlatformVendor && strcmp(clr->preferredPlatformVendor, "")) /* Didn't specify platform by index, try picking one by name */
     {
         platformChoice = choosePlatform(clr->preferredPlatformVendor, ids, nPlatform);
     }
@@ -157,22 +157,20 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     devs = mwGetAllDevices(ci->plat, &nDev);
     if (!devs)
     {
-        mw_printf("Error getting devices\n");
         free(ids);
         return MW_CL_ERROR;
     }
 
     err = mwSelectDevice(ci, devs, clr, nDev);
+    free(ids);
+    free(devs);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to select a device");
-        err = -1;
+        return err;
     }
 
-    free(ids);
-    free(devs);
-
-    return err;
+    return CL_SUCCESS;
 }
 
 
@@ -246,5 +244,47 @@ cl_int mwDestroyCLInfo(CLInfo* ci)
         mwPerrorCL(err, "Error cleaning up CLInfo");
 
     return err;
+}
+
+/* Guess the platform we should be trying to use based on the retarded
+ * boinc plan class name from the program name */
+const char* mwGuessPreferredPlatform(const char* progName)
+{
+    static const char* nvidiaPlatformVendorString = "NVIDIA Corporation";
+    static const char* amdPlatformVendorString = "Advanced Micro Devices, Inc.";
+    static const char* applePlatformVendorString = "Apple";
+    const char* planClass = NULL;
+
+    if (!progName)
+    {
+        return NULL;
+    }
+
+  #ifdef __APPLE__
+    return applePlatformVendorString;
+  #endif
+
+    planClass = strstr(progName, "__");
+    if (!planClass)
+    {
+        return NULL;
+    }
+
+    planClass += 2;
+
+    if (!strcmp(planClass, "opencl_amd") || !strcmp(planClass, "amd_opencl"))
+    {
+        return amdPlatformVendorString;
+    }
+    else if (   !strcmp(planClass, "opencl_nvidia")
+             || !strcmp(planClass, "nvidia_opencl")
+             || !strcmp(planClass, "cuda_opencl"))
+    {
+        return nvidiaPlatformVendorString;
+    }
+    else
+    {
+        return NULL;
+    }
 }
 

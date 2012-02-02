@@ -27,7 +27,7 @@
   #include <parse.h>
 #endif
 
-#ifndef _WIN32
+#if HAVE_SYS_TIME_H
   #include <sys/time.h>
 #endif
 
@@ -36,7 +36,7 @@
 #endif
 
 #include <errno.h>
-#include <string.h>
+#include <limits.h>
 
 #include "milkyway_util.h"
 #include "milkyway_alloc.h"
@@ -67,6 +67,36 @@ int mwIsFirstRun(void)
 const char* mwGetProjectPrefs(void)
 {
     return mwAppInitData.project_preferences;
+}
+
+/* OpenCL stuff needs 6.13.7+ */
+static bool mwBoincHasOpenCLData(void)
+{
+    const APP_INIT_DATA& aid = mwAppInitData;
+
+    if (aid.major_version > 6)
+        return true;
+
+    if (aid.major_version == 6)
+        return (aid.minor_version > 13 || (aid.minor_version == 13 && aid.release >= 1));
+
+    return false;
+}
+
+int mwGetBoincOpenCLDeviceIndex(void)
+{
+    if (!mwAppInitDataReady || !mwBoincHasOpenCLData())
+        return INT_MIN;
+
+    return mwAppInitData.gpu_opencl_dev_index;
+}
+
+const char* mwGetBoincOpenCLPlatformVendor(void)
+{
+    if (!mwAppInitDataReady || !mwBoincHasOpenCLData())
+        return NULL;
+
+    return mwAppInitData.gpu_type;
 }
 
 static const int debugOptions = BOINC_DIAG_DUMPCALLSTACKENABLED
@@ -310,7 +340,15 @@ int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
     return 0;
 }
 
+int mwGetBoincOpenCLDeviceIndex(void)
+{
+    return INT_MIN;
+}
+
+const char* mwGetBoincOpenCLPlatformVendor(void)
+{
+    return NULL;
+}
+
 #endif /* BOINC_APPLICATION */
-
-
 

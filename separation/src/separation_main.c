@@ -2,8 +2,8 @@
  *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
  *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
  *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
- *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
- *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2008-2012 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2012 Matthew Arsenault
  *
  *  This file is part of Milkway@Home.
  *
@@ -33,16 +33,6 @@
 #define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
 #define DEFAULT_STAR_POINTS "stars.txt"
 
-#if NVIDIA_OPENCL
-  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "NVIDIA Corporation"
-#elif AMD_OPENCL
-  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Advanced Micro Devices, Inc."
-#elif defined(__APPLE__)
-  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Apple"
-#else
-  #define DEFAULT_PREFERRED_PLATFORM_VENDOR ""
-#endif
-
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
 
@@ -55,8 +45,8 @@ static void printCopyright()
         "Milkyway@Home Separation client %d.%d\n\n"
         "Copyright (c) 2008-2011 Travis Desell, Nathan Cole, Boleslaw Szymanski\n"
         "Copyright (c) 2008-2011 Heidi Newberg, Carlos Varela, Malik Magdon-Ismail\n"
-        "Copyright (c) 2008-2011 Rensselaer Polytechnic Institute.\n"
-        "Copyright (c) 2010-2011 Matthew Arsenault\n"
+        "Copyright (c) 2008-2012 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010-2012 Matthew Arsenault\n"
         "Copyright (c) 1991-2000 University of Groningen, The Netherlands.\n"
         "Copyright (c) 2001-2009 The GROMACS Development Team\n"
         "\n"
@@ -162,11 +152,21 @@ static void freeSeparationFlags(SeparationFlags* sf)
 }
 
 /* Use hardcoded names if files not specified */
-static void setDefaultFiles(SeparationFlags* sf)
+static void setDefaults(SeparationFlags* sf, const char* progName)
 {
+    const char* platformGuess;
+
     mwStringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
     mwStringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
-    mwStringDefault(sf->preferredPlatformVendor, DEFAULT_PREFERRED_PLATFORM_VENDOR);
+
+    if (!sf->preferredPlatformVendor)
+    {
+        platformGuess = mwGuessPreferredPlatform(progName);
+        if (platformGuess)
+        {
+            sf->preferredPlatformVendor = strdup(platformGuess);
+        }
+    }
 }
 
 static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
@@ -489,7 +489,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     sf.numArgs = mwReadRestArgs(rest, sf.nForwardedArgs); /* Temporary */
 
     poptFreeContext(context);
-    setDefaultFiles(&sf);
+    setDefaults(&sf, argv[0]);
     *sfOut = sf;
 
     return 0;

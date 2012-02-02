@@ -113,6 +113,8 @@ int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig);
 int mwIsFirstRun(void);
 const char* mwGetProjectPrefs(void);
 
+int mwGetBoincOpenCLDeviceIndex(void);
+const char* mwGetBoincOpenCLPlatformVendor(void);
 
 
 #if BOINC_APPLICATION

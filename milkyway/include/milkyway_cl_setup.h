@@ -33,6 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+const char* mwGuessPreferredPlatform(const char* progName);
 cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr);
 cl_int mwDestroyCLInfo(CLInfo* ci);
 
