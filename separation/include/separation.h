@@ -68,8 +68,8 @@ typedef struct
     int separationSeed;
     int cleanupCheckpoint;
     int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
-    unsigned int usePlatform;
-    unsigned int useDevNumber;  /* Choose CL platform and device */
+    int usePlatform;
+    int useDevNumber;  /* Choose CL platform and device */
     int magicFactor;
     int nonResponsive;
     double targetFrequency;
@@ -77,7 +77,6 @@ typedef struct
     int disableGPUCheckpointing;
 
     MWPriority processPriority;
-    int setPriority;
 
     int forceNoOpenCL;
     int forceNoILKernel;
@@ -107,19 +106,6 @@ typedef struct
 #define DEFAULT_DISABLE_OPENCL FALSE
 #define DEFAULT_DISABLE_IL_KERNEL FALSE
 
-
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
-                                 0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
-                                 UINT_MAX, 0, 0, DEFAULT_NON_RESPONSIVE,       \
-                                 DEFAULT_TARGET_FREQUENCY,                     \
-                                 DEFAULT_POLLING_MODE,                         \
-                                 DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
-                                 0, FALSE,                                     \
-                                 DEFAULT_DISABLE_OPENCL,                       \
-                                 DEFAULT_DISABLE_IL_KERNEL,                    \
-                                 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
-                                 FALSE                                         \
-                               }
 
 #ifdef __cplusplus
 }

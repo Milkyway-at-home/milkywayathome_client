@@ -34,7 +34,6 @@
 #define DEFAULT_STAR_POINTS "stars.txt"
 
 #define SEED_ARGUMENT (1 << 1)
-#define PRIORITY_ARGUMENT (1 << 2)
 
 const char* separationCommitID = MILKYWAY_GIT_COMMIT_ID;
 const char* separationCommitDescribe = MILKYWAY_GIT_DESCRIBE;
@@ -151,7 +150,7 @@ static void freeSeparationFlags(SeparationFlags* sf)
     free(sf->preferredPlatformVendor);
 }
 
-/* Use hardcoded names if files not specified */
+/* Use hardcoded names if files not specified for compatability */
 static void setDefaults(SeparationFlags* sf, const char* progName)
 {
     const char* platformGuess;
@@ -194,32 +193,27 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->enableProfiling = FALSE;
 }
 
-/* If someone has mixed Windows and non-Windows they can set for each */
-#ifdef _WIN32
-  #define GPU_PRIORITY_SETTING "gpu_process_priority"
-#else
-  #define GPU_PRIORITY_SETTING "gpu_process_nice"
-#endif /* _WIN32 */
+typedef struct
+{
+    double gpuTargetFrequency;
+    int gpuNonResponsive;
+    int gpuProcessPriority;
+    int gpuDisableCheckpoint;
+} SeparationPrefs;
+
 
 /* If using BOINC try reading a few of the settings from the project
  * preferences. If command line arguments are used, those will
  * override the preferences. The command line arguments will also
  * still work without BOINC */
-static void separationReadPreferences(SeparationFlags* sf)
+static void separationReadPreferences(SeparationPrefs* prefsOut)
 {
-    static struct
-    {
-        double gpuTargetFrequency;
-        int gpuNonResponsive;
-        int gpuProcessPriority;
-        int gpuDisableCheckpoint;
-    } prefs;
-
+    static SeparationPrefs prefs;
     static MWProjectPrefs sepPrefs[] =
         {
             { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
             { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
-            { GPU_PRIORITY_SETTING,   MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
+            { "gpu_process_priority", MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
             { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
             END_MW_PROJECT_PREFS
         };
@@ -229,20 +223,86 @@ static void separationReadPreferences(SeparationFlags* sf)
     prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
     prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
 
-    if (mwGetAppInitData())
+    if (BOINC_APPLICATION)
     {
-        mw_printf("Error reading app init data. Project preferences will not be used\n");
-    }
-    else
-    {
-        mwReadProjectPrefs(sepPrefs, mwGetProjectPrefs());
+        if (mwGetAppInitData())
+        {
+            mw_printf("Error reading app init data. Project preferences will not be used\n");
+        }
+        else
+        {
+            mwReadProjectPrefs(sepPrefs, mwGetProjectPrefs());
+        }
     }
 
-    /* Any successfully found setting will be used; otherwise it will get the default */
-    sf->targetFrequency = prefs.gpuTargetFrequency;
-    sf->nonResponsive = prefs.gpuNonResponsive;
-    sf->processPriority = prefs.gpuProcessPriority;
-    sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
+    *prefsOut = prefs;
+}
+
+static void setInitialFlags(SeparationFlags* sf)
+{
+    memset(sf, 0, sizeof(*sf));
+
+    /* Preferences or BOINC settings */
+    sf->useDevNumber = -1;
+    sf->targetFrequency = -1.0;
+    sf->processPriority = MW_PRIORITY_INVALID;
+    sf->nonResponsive = -1;
+
+    sf->usePlatform = -1;
+
+    sf->nonResponsive = DEFAULT_NON_RESPONSIVE;
+    sf->pollingMode = DEFAULT_POLLING_MODE;
+    sf->disableGPUCheckpointing = DEFAULT_DISABLE_GPU_CHECKPOINTING;
+    sf->forceNoOpenCL = DEFAULT_DISABLE_OPENCL;
+    sf->forceNoILKernel = DEFAULT_DISABLE_IL_KERNEL;
+}
+
+/* Set any flags based on project preferences that weren't specified
+ * on the command line.
+ *
+ * This is a bit convoluted since we need to boinc_init before we read
+ * the preferences, but that needs to be delayed until after argument
+ * reading in case we want to disable output redirection, and then we
+ * still want the command line to supersede the project prefs / the
+ * device specified by app_init_data
+ */
+static void setFlagsFromPreferences(SeparationFlags* flags, const SeparationPrefs* prefs)
+{
+    if (flags->useDevNumber < 0)
+    {
+        /* Try to use BOINC's suggestion from app_init_data stuff;
+           We might not get it so just use the first device. */
+        flags->useDevNumber = mwGetBoincOpenCLDeviceIndex();
+        if (flags->useDevNumber < 0)
+        {
+            flags->useDevNumber = 0;
+        }
+    }
+
+    if (!flags->preferredPlatformVendor)
+    {
+        const char* vendor = mwGetBoincOpenCLPlatformVendor();
+        flags->preferredPlatformVendor = vendor ? strdup(vendor) : NULL;
+    }
+
+    if (flags->targetFrequency <= 0.0)
+    {
+        flags->targetFrequency = prefs->gpuTargetFrequency;
+    }
+
+    if (flags->nonResponsive < 0)
+    {
+        flags->nonResponsive = prefs->gpuNonResponsive;
+    }
+
+    if (flags->processPriority == MW_PRIORITY_INVALID)
+    {
+        /* For GPU versions, default to using a higher process priority if not set */
+        if (SEPARATION_OPENCL && !flags->forceNoOpenCL)
+        {
+            flags->processPriority = prefs->gpuProcessPriority;
+        }
+    }
 }
 
 /* Read project preferences and command line arguments */
@@ -255,7 +315,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     static unsigned int numParams = 0;
     static int serverParams = 0;
     static const char** rest = NULL;
-    static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
+    static SeparationFlags sf;
 
     static const struct poptOption options[] =
         {
@@ -304,11 +364,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             {
                 "process-priority", 'b',
                 POPT_ARG_INT, &sf.processPriority,
-              #ifndef _WIN32
-                PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
-              #else
-                PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
-              #endif /* _WIN32 */
+                0, "Set process priority. Set priority 0 (lowest) to 4 (highest)", NULL
             },
 
             {
@@ -435,10 +491,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             POPT_TABLEEND
         };
 
-    if (BOINC_APPLICATION)
-    {
-        separationReadPreferences(&sf);
-    }
+    setInitialFlags(&sf);
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
     if (!context)
@@ -478,7 +531,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     }
 
     sf.setSeed = !!(argRead & SEED_ARGUMENT); /* Check if these flags were used */
-    sf.setPriority = !!(argRead & PRIORITY_ARGUMENT);
 
     sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
     if (sf.do_separation)
@@ -581,7 +633,7 @@ static int worker(const SeparationFlags* sf)
     return rc;
 }
 
-static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
+static int separationInit(int debugBOINC)
 {
     int rc;
     MWInitType initType = MW_PLAIN;
@@ -608,18 +660,6 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
         printVersion(TRUE, FALSE);
     }
 
-    /* For GPU versions, default to using a higher process priority if not set */
-
-    /* If a  priority was specified, use that */
-    if (setPriority)
-    {
-        mwSetProcessPriority(priority);
-    }
-    else if (SEPARATION_OPENCL)
-    {
-        mwSetProcessPriority(DEFAULT_GPU_PRIORITY);
-    }
-
   #if (SEPARATION_OPENCL) && defined(_WIN32)
     /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
     mwSetTimerMinResolution();
@@ -636,7 +676,8 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
 int main(int argc, const char* argv[])
 {
     int rc;
-    SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
+    SeparationFlags sf;
+    SeparationPrefs preferences;
     const char** argvCopy = NULL;
 
   #ifdef NDEBUG
@@ -660,10 +701,15 @@ int main(int argc, const char* argv[])
         mw_finish(EXIT_FAILURE);
     }
 
-    rc = separationInit(sf.debugBOINC, sf.processPriority, sf.setPriority);
+
+    rc = separationInit(sf.debugBOINC);
     free(argvCopy);
     if (rc)
         return rc;
+
+    separationReadPreferences(&preferences);
+    setFlagsFromPreferences(&sf, &preferences);
+    mwSetProcessPriority(sf.processPriority);
 
     rc = worker(&sf);
 

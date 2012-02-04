@@ -466,6 +466,7 @@ static DWORD mwPriorityToPriorityClass(MWPriority x)
             return ABOVE_NORMAL_PRIORITY_CLASS;
         case MW_PRIORITY_HIGH:
             return HIGH_PRIORITY_CLASS;
+        case MW_PRIORITY_INVALID:
         default:
             mw_printf("Invalid priority: %d. Using default.\n", (int) x);
             return mwPriorityToPriorityClass(MW_PRIORITY_DEFAULT);
@@ -500,11 +501,34 @@ int mwSetProcessPriority(MWPriority priority)
 }
 #else
 
+static int mwPriorityToNice(MWPriority priority)
+{
+    /* Setting below 0 requires root so this isn't really useful? */
+    switch (priority)
+    {
+        case MW_PRIORITY_IDLE:
+            return 19;
+        case MW_PRIORITY_BELOW_NORMAL:
+            return 12;
+        case MW_PRIORITY_NORMAL:
+            return 0;
+        case MW_PRIORITY_ABOVE_NORMAL:
+            return -12;
+        case MW_PRIORITY_HIGH:
+            return -19;
+        case MW_PRIORITY_INVALID:
+        default:
+            mw_printf("Invalid priority: %d. Using default.\n", (int) priority);
+            return mwPriorityToNice(MW_PRIORITY_DEFAULT);
+    }
+}
+
 int mwSetProcessPriority(MWPriority priority)
 {
-    if (setpriority(PRIO_PROCESS, getpid(), priority))
+    int value = mwPriorityToNice(priority);
+    if (setpriority(PRIO_PROCESS, getpid(), value))
     {
-        mwPerror("Setting process priority to %d", priority);
+        mwPerror("Setting process priority to %d", value);
         return 1;
     }
 

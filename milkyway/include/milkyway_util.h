@@ -145,18 +145,10 @@ int mwWriteFile(const char* filename, const char* str);
 
 size_t mwCountLinesInFile(FILE* f);
 
-#ifndef _WIN32
-
-/* Just use nice value */
-typedef int MWPriority;
-
-#define MW_PRIORITY_DEFAULT 0
-
-#else
-
 /* The numbers these correspond to aren't usable */
 typedef enum
 {
+    MW_PRIORITY_INVALID      = -1,
     MW_PRIORITY_IDLE         = 0,
     MW_PRIORITY_BELOW_NORMAL = 1,
     MW_PRIORITY_NORMAL       = 2,
@@ -166,7 +158,6 @@ typedef enum
 
 #define MW_PRIORITY_DEFAULT MW_PRIORITY_NORMAL
 
-#endif /* _WIN32 */
 
 int mwSetProcessPriority(MWPriority priority);
 
