@@ -35,6 +35,7 @@ void freeEvaluationState(EvaluationState* es);
 void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc);
 void clearEvaluationStateTmpSums(EvaluationState* es);
 void printEvaluationState(const EvaluationState* es);
+int integralsAreDone(const EvaluationState* es);
 
 void addTmpCheckpointSums(EvaluationState* es);
 int writeCheckpoint(EvaluationState* es);

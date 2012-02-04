@@ -102,23 +102,28 @@ static void cleanStreamIntegrals(real* stream_integrals,
     }
 }
 
-static void finalCheckpoint(EvaluationState* es)
+static int finalCheckpoint(EvaluationState* es)
 {
+    int rc;
+
     mw_begin_critical_section();
-    if (writeCheckpoint(es))
+    rc = writeCheckpoint(es);
+    if (rc)
     {
-        mw_fail("Failed to write final checkpoint\n");
+        mw_printf("Failed to write final checkpoint\n");
     }
     mw_end_critical_section();
+
+    return rc;
 }
 
-static void calculateIntegrals(const AstronomyParameters* ap,
-                               const IntegralArea* ias,
-                               const StreamConstants* sc,
-                               const StreamGauss sg,
-                               EvaluationState* es,
-                               const CLRequest* clr,
-                               CLInfo* ci)
+static int calculateIntegrals(const AstronomyParameters* ap,
+                              const IntegralArea* ias,
+                              const StreamConstants* sc,
+                              const StreamGauss sg,
+                              EvaluationState* es,
+                              const CLRequest* clr,
+                              CLInfo* ci)
 {
     const IntegralArea* ia;
     double t1, t2;
@@ -149,11 +154,16 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         mw_printf("Integral %u time = %f s\n", es->currentCut, t2 - t1);
 
         if (rc || isnan(es->cut->bgIntegral))
-            mw_fail("Failed to calculate integral %u\n", es->currentCut);
+        {
+            mw_printf("Failed to calculate integral %u\n", es->currentCut);
+            return 1;
+        }
 
         cleanStreamIntegrals(es->cut->streamIntegrals, sc, ap->number_streams);
         clearEvaluationStateTmpSums(es);
     }
+
+    return 0;
 }
 
 int evaluate(SeparationResults* results,
@@ -161,7 +171,7 @@ int evaluate(SeparationResults* results,
              const IntegralArea* ias,
              const Streams* streams,
              const StreamConstants* sc,
-             const char* star_points_file,
+             const char* starPointsFile,
              const CLRequest* clr,
              int do_separation,
              int ignoreCheckpoint,
@@ -171,6 +181,7 @@ int evaluate(SeparationResults* results,
     EvaluationState* es;
     StreamGauss sg;
     CLInfo ci;
+    int done = FALSE;
     StarPoints sp = EMPTY_STAR_POINTS;
     memset(&ci, 0, sizeof(ci));
 
@@ -182,52 +193,74 @@ int evaluate(SeparationResults* results,
 
   #if SEPARATION_GRAPHICS
     if (separationInitSharedEvaluationState(es))
+    {
         mw_printf("Failed to initialize shared evaluation state\n");
+    }
   #endif /* SEPARATION_GRAPHICS */
+
+    rc = resolveCheckpoint();
+    if (rc)
+    {
+        goto error;
+    }
 
     if (!ignoreCheckpoint)
     {
-        if (resolveCheckpoint())
-            mw_fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
+        rc = maybeResume(es);
+        if (rc)
+        {
+            goto error;
+        }
 
-        if (maybeResume(es))
-            mw_fail("Failed to resume checkpoint\n");
+        done = integralsAreDone(es);
     }
 
   #if SEPARATION_OPENCL
-    if (!clr->forceNoOpenCL)
+    if (!clr->forceNoOpenCL && !done)
     {
-        if (setupSeparationCL(&ci, ap, ias, clr) != CL_SUCCESS)
-            mw_fail("Failed to setup CL\n");
+        rc = setupSeparationCL(&ci, ap, ias, clr);
+        if (rc)
+        {
+            goto error;
+        }
     }
   #endif /* SEPARATION_OPENCL */
 
-    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
-
-    if (!ignoreCheckpoint)
+    if (!done)
     {
-        finalCheckpoint(es);
+        rc = calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
+        if (rc)
+        {
+            goto error;
+        }
+
+        rc = finalCheckpoint(es);
+        if (rc)
+        {
+            goto error;
+        }
     }
 
     getFinalIntegrals(results, es, ap->number_streams, ap->number_integrals);
+
+    rc = readStarPoints(&sp, starPointsFile);
+    if (rc)
+    {
+        goto error;
+    }
+
+
+    rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
+    rc |= checkSeparationResults(results, ap->number_streams);
+
+
+error:
     freeEvaluationState(es);
-
-    if (readStarPoints(&sp, star_points_file))
-    {
-        rc = 1;
-        mw_printf("Failed to read star points file\n");
-    }
-    else
-    {
-        rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
-        rc |= checkSeparationResults(results, ap->number_streams);
-    }
-
     freeStarPoints(&sp);
     freeStreamGauss(sg);
 
   #if SEPARATION_OPENCL
-    if (!clr->forceNoOpenCL)
+    if (!clr->forceNoOpenCL && !done)
     {
         mwDestroyCLInfo(&ci);
     }

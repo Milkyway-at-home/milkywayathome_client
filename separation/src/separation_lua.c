@@ -492,9 +492,9 @@ IntegralArea* setupSeparation(AstronomyParameters* ap,
     _streams = streams;
 
     rc |= evaluateGlobalName(luaSt, evaluateConstants, CONSTANTS_NAME);
-    rc |= evaluateGlobalName(luaSt, evaluateIntegralAreas, AREAS_NAME);
     rc |= evaluateGlobalName(luaSt, evaluateBackground, BACKGROUND_NAME);
     rc |= evaluateGlobalName(luaSt, evaluateStreams, STREAMS_NAME);
+    rc |= evaluateGlobalName(luaSt, evaluateIntegralAreas, AREAS_NAME);
 
     lua_close(luaSt);
 

@@ -28,6 +28,11 @@
 
 static char resolvedCheckpointPath[4096];
 
+int integralsAreDone(const EvaluationState* es)
+{
+    return (es->currentCut >= es->numberCuts);
+}
+
 
 void initializeCut(Cut* integral, unsigned int number_streams)
 {

@@ -721,11 +721,8 @@ int main(int argc, const char* argv[])
         mw_remove(CHECKPOINT_FILE);
     }
 
-    if (BOINC_APPLICATION && mwIsFirstRun())
-    {
-        mw_finish(rc);
-    }
 
+    mw_finish(rc);
     return rc;
 }
 
