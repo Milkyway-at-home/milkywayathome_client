@@ -337,6 +337,7 @@ int mw_file_exists(const char* file)
 
 int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
 {
+    (void) prefs, (void) prefConfig;
     return 0;
 }
 
@@ -351,4 +352,46 @@ const char* mwGetBoincOpenCLPlatformVendor(void)
 }
 
 #endif /* BOINC_APPLICATION */
+
+/* Guess the platform we should be trying to use based on the retarded
+ * boinc plan class name from the program name */
+const char* mwGuessPreferredPlatform(const char* progName)
+{
+    static const char* nvidiaPlatformVendorString = "NVIDIA Corporation";
+    static const char* amdPlatformVendorString = "Advanced Micro Devices, Inc.";
+    static const char* applePlatformVendorString = "Apple";
+    const char* planClass = NULL;
+
+    if (!progName)
+    {
+        return NULL;
+    }
+
+  #ifdef __APPLE__
+    return applePlatformVendorString;
+  #endif
+
+    planClass = strstr(progName, "__");
+    if (!planClass)
+    {
+        return NULL;
+    }
+
+    planClass += 2;
+
+    if (!strcmp(planClass, "opencl_amd") || !strcmp(planClass, "amd_opencl"))
+    {
+        return amdPlatformVendorString;
+    }
+    else if (   !strcmp(planClass, "opencl_nvidia")
+             || !strcmp(planClass, "nvidia_opencl")
+             || !strcmp(planClass, "cuda_opencl"))
+    {
+        return nvidiaPlatformVendorString;
+    }
+    else
+    {
+        return NULL;
+    }
+}
 

@@ -109,6 +109,8 @@ int mw_file_exists(const char* file);
 /* Things for checkinb BOINC status */
 int mwGetAppInitData(void);
 int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig);
+const char* mwGuessPreferredPlatform(const char* progName);
+
 
 int mwIsFirstRun(void);
 const char* mwGetProjectPrefs(void);
