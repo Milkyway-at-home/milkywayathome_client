@@ -389,6 +389,11 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     };
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
+    if (!context)
+    {
+        mw_printf("Failed to get popt context\n");
+        exit(EXIT_FAILURE);
+    }
 
     if (argc < 2)
     {
