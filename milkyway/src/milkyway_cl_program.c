@@ -82,7 +82,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
     {
         mw_printf("Build log:\n"
                   "--------------------------------------------------------------------------------\n"
-                  "%s"
+                  "%s\n"
                   "--------------------------------------------------------------------------------\n",
                   buildLog
             );

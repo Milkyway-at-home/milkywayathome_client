@@ -7,7 +7,7 @@ Dependencies:
   Everything can be built independently of BOINC for separate use
 
   separation: Only BOINC if necessary
-       For CAL: CAL++, CAL, Boost
+       Recommend using BOINC from submodule
        For OpenCL: OpenCL from AMD APP SDK or Nvidia CUDA SDK
 
   nbody:
@@ -35,8 +35,8 @@ Dependency Installation Notes:
                 To build as 32 bit, there are 2 options.
 
                 If using Apple GCC,
-               - To build as 32 bit, or as a universal binary (no PPC), build with
-                  -DBUILD_OSX_32=ON or -DBUILD_OSX_UNIVERSAL=ON
+                - To build as 32 bit, or as a universal binary (no PPC), build with
+                  -DCMAKE_C_FLAGS="-m32" -DCMAKE_CXX_FLAGS="-m32"
                  - 32 bit OS X  build may require Apple GCC 4.0 and  the 10.4u SDK
 
                -If using Macports GCC, make sure you've installed the
