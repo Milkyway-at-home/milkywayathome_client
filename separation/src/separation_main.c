@@ -151,21 +151,10 @@ static void freeSeparationFlags(SeparationFlags* sf)
 }
 
 /* Use hardcoded names if files not specified for compatability */
-static void setDefaults(SeparationFlags* sf, const char* progName)
+static void setDefaults(SeparationFlags* sf)
 {
-    const char* platformGuess;
-
     mwStringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
     mwStringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
-
-    if (!sf->preferredPlatformVendor)
-    {
-        platformGuess = mwGuessPreferredPlatform(progName);
-        if (platformGuess)
-        {
-            sf->preferredPlatformVendor = strdup(platformGuess);
-        }
-    }
 }
 
 static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
@@ -266,7 +255,7 @@ static void setInitialFlags(SeparationFlags* sf)
  * still want the command line to supersede the project prefs / the
  * device specified by app_init_data
  */
-static void setFlagsFromPreferences(SeparationFlags* flags, const SeparationPrefs* prefs)
+static void setFlagsFromPreferences(SeparationFlags* flags, const SeparationPrefs* prefs, const char* progName)
 {
     if (flags->useDevNumber < 0)
     {
@@ -282,6 +271,13 @@ static void setFlagsFromPreferences(SeparationFlags* flags, const SeparationPref
     if (!flags->preferredPlatformVendor)
     {
         const char* vendor = mwGetBoincOpenCLPlatformVendor();
+
+        if (!vendor)
+        {
+            /* If BOINC doesn't tell us, guess based on the binary name */
+            vendor = mwGuessPreferredPlatform(progName);
+        }
+
         flags->preferredPlatformVendor = vendor ? strdup(vendor) : NULL;
     }
 
@@ -541,7 +537,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     sf.numArgs = mwReadRestArgs(rest, sf.nForwardedArgs); /* Temporary */
 
     poptFreeContext(context);
-    setDefaults(&sf, argv[0]);
+    setDefaults(&sf);
     *sfOut = sf;
 
     return 0;
@@ -708,7 +704,7 @@ int main(int argc, const char* argv[])
         return rc;
 
     separationReadPreferences(&preferences);
-    setFlagsFromPreferences(&sf, &preferences);
+    setFlagsFromPreferences(&sf, &preferences, argv[0]);
     mwSetProcessPriority(sf.processPriority);
 
     rc = worker(&sf);
