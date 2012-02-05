@@ -491,11 +491,18 @@ static int nbSetNumThreads(int numThreads)
 {
   #ifdef _OPENMP
     int nProc = omp_get_num_procs();
+    int nBoinc = mwGetBoincNumCPU();
 
     if (nProc <= 0) /* It's happened before... */
     {
         mw_printf("Number of processors %d is crazy\n", nProc);
         return 1;
+    }
+
+    /* If command line argument not given, and BOINC gives us a value use that */
+    if (numThreads <= 0 && nBoinc > 0)
+    {
+        numThreads = nBoinc;
     }
 
     if (numThreads != 0)

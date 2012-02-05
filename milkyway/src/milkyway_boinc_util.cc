@@ -69,6 +69,14 @@ const char* mwGetProjectPrefs(void)
     return mwAppInitData.project_preferences;
 }
 
+int mwGetBoincNumCPU(void)
+{
+    if (!mwAppInitDataReady)
+        return 0;
+
+    return (int) mwAppInitData.ncpus;
+}
+
 /* OpenCL stuff needs 6.13.7+ */
 static bool mwBoincHasOpenCLData(void)
 {
@@ -302,6 +310,11 @@ int mwIsFirstRun(void)
 const char* mwGetProjectPrefs(void)
 {
     return NULL;
+}
+
+int mwGetBoincNumCPU(void)
+{
+    return 0;
 }
 
 int mwBoincInit(MWInitType type)

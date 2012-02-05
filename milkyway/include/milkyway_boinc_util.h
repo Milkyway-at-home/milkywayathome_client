@@ -115,6 +115,7 @@ const char* mwGuessPreferredPlatform(const char* progName);
 int mwIsFirstRun(void);
 const char* mwGetProjectPrefs(void);
 
+int mwGetBoincNumCPU(void);
 int mwGetBoincOpenCLDeviceIndex(void);
 const char* mwGetBoincOpenCLPlatformVendor(void);
 
