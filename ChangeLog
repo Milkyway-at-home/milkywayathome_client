@@ -1,12 +1,19 @@
 
 separation 1.0:
 	- CAL version removed.
-	- Added IL injection for AMD GPUs
+	- Added IL injection for AMD GPUs (Only R770, Cypress, Cayman)
 	- AVX detection, and --force-avx argument
-	- Redid chunking yet again
 	- Added --force-no-opencl argument
 	- Added --force-no-il-kernel argument
+	- Project preferences work for GPU target frequency
+	- Increase default target frequency to 60
 	- Kernel source is now always inlined
+	- Fix Kahan summation on CPU
+	- Add Kahan summation GPU
+	- Use GPU for summarization of GPU results
+	- Use BOINC app_init_data OpenCL device index if available
+	- Workaround for high CPU usage with recent Nvidia drivers
+	- Redid chunking yet again
 
 
 nbody 0.80:
