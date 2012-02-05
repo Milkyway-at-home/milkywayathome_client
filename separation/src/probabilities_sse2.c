@@ -292,6 +292,8 @@ static real probabilities_intrinsics(const AstronomyParameters* ap,
     __m128d RI, QI;
     ssp_m128 xyz0, xyz1, xyz2, tmp0, tmp1, PROD, PBXV, BGP;
 
+    (void) gPrime, (void) sg_dx;
+
     BGP.d = _mm_setzero_pd();
 
     convolve = ap->convolve;

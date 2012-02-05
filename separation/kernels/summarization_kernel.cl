@@ -66,7 +66,7 @@ __kernel void summarization(__global real2* restrict results,
     __local real2 sdata[128];
 
     uint gid = get_global_id(0);
-    uint lid = get_local_id(0);
+    int lid = get_local_id(0);
 
     sdata[lid] = (gid < nElements) ? buffer[bufferOffset + gid] : 0.0;
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);

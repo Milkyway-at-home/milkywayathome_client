@@ -153,11 +153,6 @@ static double nbPoissonTerm(double f, double y)
     }
 }
 
-static double nbLog2(double x)
-{
-    return log(x) / M_LN2;
-}
-
 static double nbKullbackLeiblerTerm(double h, double k)
 {
     /* Symmetrized version. (Jeffrey divergence?) */
