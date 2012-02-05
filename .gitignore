@@ -93,3 +93,6 @@ replace_amd_il
 *.bin
 *.out
 *.ps
+*.plist
+*.bak
+build_iphone
