@@ -450,7 +450,43 @@ void mwDisableErrorBoxes(void)
 }
 
 
-#ifdef _WIN32
+#if HAVE_SYS_RESOURCE_H
+
+static int mwPriorityToNice(MWPriority priority)
+{
+    /* Setting below 0 requires root so this isn't really useful? */
+    switch (priority)
+    {
+        case MW_PRIORITY_IDLE:
+            return 19;
+        case MW_PRIORITY_BELOW_NORMAL:
+            return 12;
+        case MW_PRIORITY_NORMAL:
+            return 0;
+        case MW_PRIORITY_ABOVE_NORMAL:
+            return -12;
+        case MW_PRIORITY_HIGH:
+            return -19;
+        case MW_PRIORITY_INVALID:
+        default:
+            mw_printf("Invalid priority: %d. Using default.\n", (int) priority);
+            return mwPriorityToNice(MW_PRIORITY_DEFAULT);
+    }
+}
+
+int mwSetProcessPriority(MWPriority priority)
+{
+    int value = mwPriorityToNice(priority);
+    if (setpriority(PRIO_PROCESS, getpid(), value))
+    {
+        mwPerror("Setting process priority to %d", value);
+        return 1;
+    }
+
+    return 0;
+}
+
+#elif defined(_WIN32)
 
 static DWORD mwPriorityToPriorityClass(MWPriority x)
 {
@@ -499,43 +535,17 @@ int mwSetProcessPriority(MWPriority priority)
 
     return 0;
 }
-#else
 
-static int mwPriorityToNice(MWPriority priority)
-{
-    /* Setting below 0 requires root so this isn't really useful? */
-    switch (priority)
-    {
-        case MW_PRIORITY_IDLE:
-            return 19;
-        case MW_PRIORITY_BELOW_NORMAL:
-            return 12;
-        case MW_PRIORITY_NORMAL:
-            return 0;
-        case MW_PRIORITY_ABOVE_NORMAL:
-            return -12;
-        case MW_PRIORITY_HIGH:
-            return -19;
-        case MW_PRIORITY_INVALID:
-        default:
-            mw_printf("Invalid priority: %d. Using default.\n", (int) priority);
-            return mwPriorityToNice(MW_PRIORITY_DEFAULT);
-    }
-}
+#else
 
 int mwSetProcessPriority(MWPriority priority)
 {
-    int value = mwPriorityToNice(priority);
-    if (setpriority(PRIO_PROCESS, getpid(), value))
-    {
-        mwPerror("Setting process priority to %d", value);
-        return 1;
-    }
-
-    return 0;
+    (void) priority;
+    mw_printf("Setting priority unsupported on this system\n");
+    return 1;
 }
 
-#endif /* _WIN32 */
+#endif /* HAVE_SYS_RESOURCE_H */
 
 
 /*  From crlibm */
