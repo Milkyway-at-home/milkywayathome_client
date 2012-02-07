@@ -220,6 +220,10 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
         {
             ci->pollingMode = MW_POLL_SLEEP_CL_WAIT_FOR_EVENTS;
         }
+        else
+        {
+            ci->pollingMode = MW_POLL_CL_WAIT_FOR_EVENTS;
+        }
     }
     else
     {

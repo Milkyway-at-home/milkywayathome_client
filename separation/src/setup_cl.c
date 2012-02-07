@@ -135,6 +135,29 @@ static cl_uint findNChunk(const AstronomyParameters* ap,
     return nChunk == 0 ? 1 : nChunk;
 }
 
+static void printPollMode(const CLInfo* ci, const RunSizes* sizes)
+{
+    cl_int mode = ci->pollingMode;
+
+    if (mode == MW_POLL_CL_WAIT_FOR_EVENTS)
+    {
+        mw_printf("Using clWaitForEvents() for polling (mode %d)\n", mode);
+    }
+    else if (mode == MW_POLL_SLEEP_CL_WAIT_FOR_EVENTS)
+    {
+        mw_printf("Using clWaitForEvents() for polling with initial wait of %u ms (mode %d)\n",
+                  sizes->initialWait,
+                  mode
+            );
+    }
+    else
+    {
+        mw_printf("Using manual polling with initial wait of %u ms (mode %d)\n",
+                  sizes->initialWait,
+                  mode);
+    }
+}
+
 /* Returns CL_TRUE on error */
 cl_bool findRunSizes(RunSizes* sizes,
                      const CLInfo* ci,
@@ -240,7 +263,9 @@ cl_bool findRunSizes(RunSizes* sizes,
               "Using a block size of "ZU" with "ZU" blocks/chunk\n",
               clr->targetFrequency,
               blockSize,
-              sizes->chunkSize / blockSize);
+              sizes->chunkSize / blockSize
+        );
+    printPollMode(ci, sizes);
 
     sizes->chunkSize = sizes->effectiveArea / sizes->nChunk;
 
