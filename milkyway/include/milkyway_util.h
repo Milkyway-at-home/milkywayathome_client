@@ -90,9 +90,14 @@ typedef struct
 
 #if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */
- #define mw_debug(msg, ...) fprintf(stderr, "%s():%d: ", FUNC_NAME, __LINE__); \
-                             fprintf(stderr, msg, __VA_ARGS__);
- #define mw_debugmsg(msg) puts(msg)
+  #define mw_debug(msg, ...)                                        \
+    do                                                              \
+    {                                                               \
+        fprintf(stderr, "%s():%d: ", FUNC_NAME, __LINE__);          \
+        fprintf(stderr, msg, __VA_ARGS__);                          \
+    } while (0)
+
+  #define mw_debugmsg(msg) puts(msg)
 #else
   #define mw_debug(msg, ...) ((void) 0)
   #define mw_debugmsg(msg, ...) ((void) 0)
@@ -110,25 +115,28 @@ void mwPerrorW32(const char* fmt, ...);
 
 /* Controlled, but lazy failure */
 #define mw_fail(...)                                \
+    do                                              \
     {                                               \
         fprintf(stderr, __VA_ARGS__);               \
         mw_finish(EXIT_FAILURE);                    \
-    }
+    } while (0)
 
 /* Failure related to a known code limitation */
 #define mw_panic(msg, ...)                                              \
+    do                                                                  \
     {                                                                   \
         fprintf(stderr, "PANIC: in function '%s' %s(%d): " msg,         \
                 FUNC_NAME, __FILE__, __LINE__, ##__VA_ARGS__);          \
         mw_finish(EXIT_FAILURE);                                        \
-    }
+    } while (0)
 
 #define mw_unreachable()                                                               \
+    do                                                                                 \
     {                                                                                  \
         fprintf(stderr, "PANIC: Unreachable point reached in function '%s' %s(%d)\n",  \
                 FUNC_NAME, __FILE__, __LINE__);                                        \
         mw_finish(EXIT_FAILURE);                                                       \
-    }
+    } while (0)
 
 
 
@@ -171,11 +179,12 @@ void mwLocalTime(char* buf, size_t bufSize);
 void mwLocalTimeFull(char* buf, size_t bufSize);
 
 #define mw_report(msg, ...)                                 \
+    do                                                      \
     {                                                       \
         char _buf[256];                                     \
         mwLocalTime(_buf, sizeof(_buf));                    \
         fprintf(stdout, "%s: " msg, _buf, ##__VA_ARGS__);   \
-    }
+    } while (0)
 
 #ifndef _WIN32
   #define mw_win_perror perror
