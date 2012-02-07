@@ -170,7 +170,7 @@ cl_bool findRunSizes(RunSizes* sizes,
     cl_int err;
     size_t nWavefrontPerCU;
     size_t blockSize; /* Size chunks should be multiples of */
-    cl_bool forceOneChunk = clr->nonResponsive || di->nonOutput;
+    cl_bool forceOneChunk = clr->nonResponsive || di->nonOutput || di->hasGraphicsQOS;
 
     /* I assume this is how this works for 1D limit */
     const cl_ulong maxWorkDim = (cl_ulong) di->maxWorkItemSizes[0] * di->maxWorkItemSizes[1] * di->maxWorkItemSizes[2];

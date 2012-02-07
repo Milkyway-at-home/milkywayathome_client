@@ -322,6 +322,20 @@ cl_bool mwDeviceHasRTN(const DevInfo* di, cl_bool doublePrec)
     return !!(config & CL_FP_ROUND_TO_NEAREST);
 }
 
+static cl_bool mwDeviceIsNonOutput(const DevInfo* di)
+{
+    /* TODO: Correct way to test for Tesla type things?
+       Is there a way we can find if a GPU is connected to a display in general?
+     */
+    return ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
+}
+
+static cl_bool mwDeviceHasGraphicsQOS(const DevInfo* di)
+{
+    /* Tahiti has the capability but it hasn't been enabled in current drivers yet */
+    return CL_FALSE;
+}
+
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 {
     const AMDGPUData* amdData;
@@ -400,10 +414,8 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
         }
     }
 
-    /* TODO: Correct way to test for Tesla type things?
-       Is there a way we can find if a GPU is connected to a display in general?
-     */
-    di->nonOutput = ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
+    di->nonOutput = mwDeviceIsNonOutput(di);
+    di->hasGraphicsQOS = mwDeviceHasGraphicsQOS(di);
 
 
     if (mwIsNvidiaGPUDevice(di))

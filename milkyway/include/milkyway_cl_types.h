@@ -108,6 +108,7 @@ typedef struct
     cl_bool errCorrect;
     cl_bool imgSupport;
     cl_bool nonOutput;  /* A check for this should maybe be in OpenCL. Something like a Tesla GPU without video output */
+    cl_bool hasGraphicsQOS;
     char devName[128];
     char vendor[128];
     char version[128];
