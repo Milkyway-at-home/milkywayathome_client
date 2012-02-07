@@ -72,9 +72,9 @@ typedef struct
 
     int nonResponsive;    /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     double targetFrequency;
+    double gpuWaitFactor;
     int pollingMode;
     int enableCheckpointing;
-    double gpuWaitFactor;
 
     int forceNoOpenCL;
     int forceNoILKernel;

@@ -128,8 +128,8 @@ static cl_uint findNChunk(const AstronomyParameters* ap,
 
     if (initialWaitTime)
     {
-        /* Sleep for 50% of estimated time before polling */
-        *initialWaitTime = (cl_uint) (0.5 * estIterTime / nChunk);
+        /* Sleep for (wait factor) * estimated time before polling */
+        *initialWaitTime = (cl_uint) (clr->gpuWaitFactor * estIterTime / nChunk);
     }
 
     return nChunk == 0 ? 1 : nChunk;

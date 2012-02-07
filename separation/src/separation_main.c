@@ -173,7 +173,8 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->platform = sf->usePlatform;
     clr->preferredPlatformVendor = sf->preferredPlatformVendor;
 
-    clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
+    clr->targetFrequency = (sf->targetFrequency <= 0.01) ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
+    clr->gpuWaitFactor = (sf->waitFactor <= 0.01 || sf->waitFactor > 10.0) ? DEFAULT_WAIT_FACTOR : sf->waitFactor;
     clr->pollingMode = sf->pollingMode;
 
     clr->forceNoILKernel = sf->forceNoILKernel;
@@ -185,6 +186,7 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
 typedef struct
 {
     double gpuTargetFrequency;
+    double gpuWaitFactor;
     int gpuNonResponsive;
     int gpuProcessPriority;
     int gpuDisableCheckpoint;
@@ -201,6 +203,7 @@ static void separationReadPreferences(SeparationPrefs* prefsOut)
     static MWProjectPrefs sepPrefs[] =
         {
             { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
+            { "gpu_wait_factor",      MW_PREF_DOUBLE, FALSE, &prefs.gpuWaitFactor        },
             { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
             { "gpu_process_priority", MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
             { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
@@ -208,6 +211,7 @@ static void separationReadPreferences(SeparationPrefs* prefsOut)
         };
 
     prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
+    prefs.gpuWaitFactor        = DEFAULT_WAIT_FACTOR;
     prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
     prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
     prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
@@ -382,9 +386,15 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
+                "gpu-wait-factor", 'w',
+                POPT_ARG_DOUBLE, &sf.waitFactor,
+                0, "Wait correction factor when using high CPU workarounds" , NULL
+            },
+
+            {
                 "gpu-polling-mode", 'm',
                 POPT_ARG_INT, &sf.pollingMode,
-                0, "Interval for polling GPU (0 (default) use clWaitForEvents() unless driver known bad. < 0, Always use clWaitForEvents(), > 1 sets interval polling in ms)" , NULL
+                0, "Interval for polling GPU: (-2 (default): Use mode -1 unless working around high CPU driver issue.  -1: use clWaitForEvents(). 0: Use clWaitForEvents() with initial wait, >= 1: sets manual interval polling in ms)" , NULL
             },
 
             {

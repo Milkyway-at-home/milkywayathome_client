@@ -121,6 +121,8 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     cl_device_id* devs;
     cl_uint platformChoice = 0;
 
+    memset(ci, 0, sizeof(*ci));
+
     ids = mwGetAllPlatformIDs(&nPlatform);
     if (!ids)
         return MW_CL_ERROR;
@@ -207,7 +209,7 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
         }
     }
 
-    if (clr->pollingMode == 0)
+    if (clr->pollingMode <= MW_POLL_WORKAROUND_CL_WAIT_FOR_EVENTS)
     {
         /* With the default, we will try to use clWaitForEvents()
          * unless we know the driver is bad and busy waits, in which
@@ -216,7 +218,7 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
 
         if (mwDriverHasHighCPUWaitIssue(ci))
         {
-            ci->pollingMode = MW_DEFAULT_POLLING_PERIOD;
+            ci->pollingMode = MW_POLL_SLEEP_CL_WAIT_FOR_EVENTS;
         }
     }
     else

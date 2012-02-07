@@ -48,6 +48,7 @@ extern "C" {
 #include "separation_utils.h"
 
 #if SEPARATION_OPENCL
+  #include "milkyway_cl_util.h"
   #include "run_cl.h"
 #endif /* SEPARATION_OPENCL */
 
@@ -73,6 +74,7 @@ typedef struct
     int magicFactor;
     int nonResponsive;
     double targetFrequency;
+    double waitFactor;  /* When using high CPU CL workarounds, factor for initial wait */
     int pollingMode;
     int disableGPUCheckpointing;
 
@@ -92,16 +94,11 @@ typedef struct
     int verbose;
 } SeparationFlags;
 
-/* Process priority to use for GPU version */
-#ifndef _WIN32
-  #define DEFAULT_GPU_PRIORITY 0
-#else
-  #define DEFAULT_GPU_PRIORITY MW_PRIORITY_NORMAL
-#endif /* _WIN32 */
-
+#define DEFAULT_GPU_PRIORITY MW_PRIORITY_NORMAL
 #define DEFAULT_NON_RESPONSIVE FALSE
 #define DEFAULT_TARGET_FREQUENCY 60.0
-#define DEFAULT_POLLING_MODE 0
+#define DEFAULT_WAIT_FACTOR 0.75
+#define DEFAULT_POLLING_MODE MW_POLL_WORKAROUND_CL_WAIT_FOR_EVENTS
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING FALSE
 #define DEFAULT_DISABLE_OPENCL FALSE
 #define DEFAULT_DISABLE_IL_KERNEL FALSE

@@ -274,35 +274,47 @@ cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf)
 cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_uint initialWait)
 {
     cl_int err;
-    cl_int execStatus;
     cl_int pollingMode = ci->pollingMode;
 
-    if (pollingMode <= 0)
+    if (pollingMode <= MW_POLL_CL_WAIT_FOR_EVENTS)
     {
         return clWaitForEvents(1, &ev);
     }
-
-    err = clFlush(ci->queue);  /* If we don't flush the queue the event probably won't ever run */
-    if (err != CL_SUCCESS)
-        return err;
-
-    mwMilliSleep(initialWait);  /* Sleep for initial estimate before polling */
-
-    do
+    else if (pollingMode == MW_POLL_SLEEP_CL_WAIT_FOR_EVENTS)
     {
-        err = clGetEventInfo(ev,
-                             CL_EVENT_COMMAND_EXECUTION_STATUS,
-                             sizeof(cl_int),
-                             &execStatus,
-                             NULL);
+        err = clFlush(ci->queue);
         if (err != CL_SUCCESS)
             return err;
 
-        mwMilliSleep(pollingMode);
+        mwMilliSleep(initialWait);
+        return clWaitForEvents(1, &ev);
     }
-    while (execStatus != CL_COMPLETE);
+    else  /* Manually poll for pollingMode milliseconds */
+    {
+        cl_int execStatus;
 
-    return CL_SUCCESS;
+        err = clFlush(ci->queue);  /* Make sure the task is submitted before we wait for it */
+        if (err != CL_SUCCESS)
+            return err;
+
+        mwMilliSleep(initialWait);
+
+        do
+        {
+            err = clGetEventInfo(ev,
+                                 CL_EVENT_COMMAND_EXECUTION_STATUS,
+                                 sizeof(cl_int),
+                                 &execStatus,
+                                 NULL);
+            if (err != CL_SUCCESS)
+                return err;
+
+            mwMilliSleep(pollingMode);
+        }
+        while (execStatus != CL_COMPLETE);
+
+        return CL_SUCCESS;
+    }
 }
 
 cl_bool mwDriverHasHighCPUWaitIssue(CLInfo* ci)
