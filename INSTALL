@@ -44,10 +44,15 @@ Dependency Installation Notes:
 
 
     Windows:
-        - Visual Studio 2010 should work for Separation, but not N-body
+        - Visual Studio 2010 should work for Separation, but not will
+           not work with N-body with crlibm. It should build without crlibm however.
+
         - MinGW: Try using TDM-GCC http://tdm-gcc.tdragon.net/
       - build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason
           helps find things with MinGW
+
+       -If you are trying to build a 32-bit version which will work on  Windows 2000 you must configure with the option
+        MSVC32_AVX_WORKAROUND enabled, and then manually set the platform toolset to each target in VS to v90.
 
 
         Install OpenSSL for Win64:

@@ -31,7 +31,7 @@ ProbabilityFunc probabilityFunc = NULL;
 
 
 /* MSVC can't do weak imports. Using dlsym()/GetProcAddress() etc. would be better */
-#if !HAVE_AVX || !DOUBLEPREC
+#if !HAVE_AVX || !DOUBLEPREC || defined(MSVC32_AVX_WORKAROUND)
   #define initProbabilities_AVX NULL
 #endif
 

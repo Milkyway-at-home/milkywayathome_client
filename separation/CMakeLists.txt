@@ -83,6 +83,9 @@ cmake_dependent_option(SEPARATION_STATIC "Build separation as fully static binar
 mark_as_advanced(SEPARATION_STATIC)
 maybe_static(${SEPARATION_STATIC})
 
+cmake_dependent_option(MSVC32_AVX_WORKAROUND
+                       "Disable AVX build in case trying to build for Windows x86 with VS2008" ON
+                       "SYSTEM_IS_X86_32;NOT SEPARATION_OPENCL;MSVC" OFF)
 
 if(NOT WIN32)
   set(SEPARATION_LIBM_LIBRARY m)
@@ -275,12 +278,16 @@ if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
     list(APPEND separation_core_libs separation_core_sse41)
   endif()
 
-  if(HAVE_AVX)
+  if(HAVE_AVX AND NOT MSVC32_AVX_WORKAROUND)
     # The real AVX one isn't done. The SSE* one is faster by building it with AVX
     #add_library(separation_core_avx STATIC src/probabilities_avx.c ${core_headers})
     add_library(separation_core_avx STATIC src/probabilities_sse2.c ${core_headers})
     enable_avx(separation_core_avx)
     list(APPEND separation_core_libs separation_core_avx)
+  endif()
+
+  if(MSVC32_AVX_WORKAROUND)
+    add_definitions("-DMSVC32_AVX_WORKAROUND=1")
   endif()
 endif()
 
