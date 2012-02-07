@@ -116,7 +116,7 @@ static void nbPrintVersion(int boincTag, int verbose)
     char versionStr[2048];
 
     snprintf(versionStr, sizeof(versionStr),
-             "%s %u.%u %s %s %s %s %s, %s",
+             "%s %u.%02u %s %s %s %s %s, %s",
              NBODY_PROJECT_NAME,
              NBODY_VERSION_MAJOR, NBODY_VERSION_MINOR,
              MILKYWAY_SYSTEM_NAME,
