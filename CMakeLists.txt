@@ -335,10 +335,10 @@ find_package(OpenSSL)
 
 
 cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
-                                         "OPENCL_FOUND" OFF)
+                                         "OPENCL_FOUND;NOT APPLE" OFF)
 
 cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
-                                    "OPENCL_FOUND" OFF)
+                                    "OPENCL_FOUND;NOT APPLE" OFF)
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
 endif()
