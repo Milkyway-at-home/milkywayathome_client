@@ -715,7 +715,11 @@ int main(int argc, const char* argv[])
 
     separationReadPreferences(&preferences);
     setFlagsFromPreferences(&sf, &preferences, argv[0]);
-    mwSetProcessPriority(sf.processPriority);
+
+    if (sf.processPriority != MW_PRIORITY_INVALID)
+    {
+        mwSetProcessPriority(sf.processPriority);
+    }
 
     rc = worker(&sf);
 
@@ -726,7 +730,6 @@ int main(int argc, const char* argv[])
         mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         mw_remove(CHECKPOINT_FILE);
     }
-
 
     mw_finish(rc);
     return rc;
