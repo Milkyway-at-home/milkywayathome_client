@@ -150,7 +150,7 @@ static int replaceAMDILSection(Elf* e, int nStream, MWCALtargetEnum target)
 {
     Elf_Scn* scn = NULL;
     size_t shstrndx = 0;
-    static const int verbose = 1;
+    static const int verbose = 0;
     static const int verboseDebug = 0;
 
     /* Get section index of section containing the string table of section names */
