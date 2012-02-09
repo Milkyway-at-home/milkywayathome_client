@@ -71,7 +71,8 @@ include(BOINCPaths)
 
 #These must be after CheckCFlags is included
 
-if(HAVE_FLAG_STATIC_LIBGCC)
+#TODO: Make sure to use Apple GCC for releases
+if(HAVE_FLAG_STATIC_LIBGCC AND NOT APPLE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
 endif()
@@ -333,12 +334,18 @@ find_package(GLUT)
 find_package(Curses)
 find_package(OpenSSL)
 
+if(APPLE)
+  cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" OFF
+                                         "OPENCL_FOUND" OFF)
+else()
+    cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
+                                         "OPENCL_FOUND" OFF)
+endif()
 
-cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
-                                         "OPENCL_FOUND;NOT APPLE" OFF)
 
 cmake_dependent_option(NBODY_OPENCL "Build nbody with OpenCL" OFF
-                                    "OPENCL_FOUND;NOT APPLE" OFF)
+                                     "OPENCL_FOUND" OFF)
+
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
 endif()
