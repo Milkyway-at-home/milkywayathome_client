@@ -672,6 +672,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
     cl_int err;
     cl_device_id* devs;
     cl_uint numDev;
+    cl_device_type type = BOINC_APPLICATION ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_ALL;
 
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDev);
     if (err != CL_SUCCESS)

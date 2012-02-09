@@ -336,10 +336,10 @@ find_package(OpenSSL)
 
 if(APPLE)
   cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" OFF
-                                         "OPENCL_FOUND" OFF)
+                                            "OPENCL_FOUND" OFF)
 else()
     cmake_dependent_option(SEPARATION_OPENCL "Build separation with OpenCL" ON
-                                         "OPENCL_FOUND" OFF)
+                                             "OPENCL_FOUND" OFF)
 endif()
 
 

@@ -394,7 +394,6 @@ const char* mwGuessPreferredPlatform(const char* progName)
 {
     const char* planClass = NULL;
 
-    mw_printf("Guessing for prog '%s'\n", progName);
     if (!progName)
     {
         return NULL;
@@ -411,7 +410,6 @@ const char* mwGuessPreferredPlatform(const char* progName)
     }
 
     planClass += 2;
-        mw_printf("plan class is '%s'\n", planClass);
     if (strstr(planClass, "opencl_amd") || strstr(planClass, "amd_opencl"))
     {
         return amdPlatformVendorString;
