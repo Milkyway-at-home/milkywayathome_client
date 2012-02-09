@@ -42,6 +42,10 @@
 #include "milkyway_alloc.h"
 #include "milkyway_boinc_util.h"
 
+static const char* nvidiaPlatformVendorString = "NVIDIA Corporation";
+static const char* amdPlatformVendorString = "Advanced Micro Devices, Inc.";
+static const char* applePlatformVendorString = "Apple";
+
 
 /* Work around areas broken in the BOINC libraries which make you use
  * C++ */
@@ -53,7 +57,9 @@ static int mwAppInitDataReady = FALSE;
 
 int mwGetAppInitData(void)
 {
-    return (mwAppInitDataReady = boinc_get_init_data(mwAppInitData));
+    int rc = boinc_get_init_data(mwAppInitData);
+    mwAppInitDataReady = (rc == 0);
+    return rc;
 }
 
 int mwIsFirstRun(void)
@@ -101,10 +107,26 @@ int mwGetBoincOpenCLDeviceIndex(void)
 
 const char* mwGetBoincOpenCLPlatformVendor(void)
 {
-    if (!mwAppInitDataReady || !mwBoincHasOpenCLData())
+    const char* type = mwAppInitData.gpu_type;
+
+    if (!mwAppInitDataReady)
         return NULL;
 
-    return mwAppInitData.gpu_type;
+    if (strstr(type, GPU_TYPE_ATI) || strstr(type, "AMD"))
+    {
+        return amdPlatformVendorString;
+    }
+    else if (   strstr(type, GPU_TYPE_NVIDIA)
+             || strstr(type, "Nvidia")
+             || strstr(type, "CUDA")
+             || strstr(type, "cuda"))
+    {
+        return nvidiaPlatformVendorString;
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 static const int debugOptions = BOINC_DIAG_DUMPCALLSTACKENABLED
@@ -370,11 +392,9 @@ const char* mwGetBoincOpenCLPlatformVendor(void)
  * boinc plan class name from the program name */
 const char* mwGuessPreferredPlatform(const char* progName)
 {
-    static const char* nvidiaPlatformVendorString = "NVIDIA Corporation";
-    static const char* amdPlatformVendorString = "Advanced Micro Devices, Inc.";
-    static const char* applePlatformVendorString = "Apple";
     const char* planClass = NULL;
 
+    mw_printf("Guessing for prog '%s'\n", progName);
     if (!progName)
     {
         return NULL;
@@ -391,14 +411,14 @@ const char* mwGuessPreferredPlatform(const char* progName)
     }
 
     planClass += 2;
-
-    if (!strcmp(planClass, "opencl_amd") || !strcmp(planClass, "amd_opencl"))
+        mw_printf("plan class is '%s'\n", planClass);
+    if (strstr(planClass, "opencl_amd") || strstr(planClass, "amd_opencl"))
     {
         return amdPlatformVendorString;
     }
-    else if (   !strcmp(planClass, "opencl_nvidia")
-             || !strcmp(planClass, "nvidia_opencl")
-             || !strcmp(planClass, "cuda_opencl"))
+    else if (   strstr(planClass, "opencl_nvidia")
+             || strstr(planClass, "nvidia_opencl")
+             || strstr(planClass, "cuda_opencl"))
     {
         return nvidiaPlatformVendorString;
     }

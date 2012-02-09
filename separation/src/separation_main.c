@@ -275,11 +275,18 @@ static void setFlagsFromPreferences(SeparationFlags* flags, const SeparationPref
     if (!flags->preferredPlatformVendor)
     {
         const char* vendor = mwGetBoincOpenCLPlatformVendor();
-
-        if (!vendor)
+        if (vendor)
+        {
+            mw_printf("BOINC GPU type suggests using OpenCL vendor '%s'\n", vendor);
+        }
+        else
         {
             /* If BOINC doesn't tell us, guess based on the binary name */
             vendor = mwGuessPreferredPlatform(progName);
+            if (vendor)
+            {
+                mw_printf("Guessing preferred OpenCL vendor '%s'\n", vendor);
+            }
         }
 
         flags->preferredPlatformVendor = vendor ? strdup(vendor) : NULL;
