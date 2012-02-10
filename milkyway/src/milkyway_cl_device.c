@@ -671,10 +671,14 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
 {
     cl_int err;
     cl_device_id* devs;
-    cl_uint numDev;
+    cl_uint numDev = 0;
     cl_device_type type = BOINC_APPLICATION ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_ALL;
+    /*
+      We may want to use CPUs for debugging, but the index BOINC gives
+      you seems to only use GPUs.
+     */
 
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDev);
+    err = clGetDeviceIDs(platform, type, 0, NULL, &numDev);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to find number of devices");
@@ -689,11 +693,12 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
 
     mw_printf("Found %u CL device%s\n", numDev, numDev > 1 ? "s" : "");
 
-    devs = (cl_device_id*) mwMalloc(sizeof(cl_device_id) * numDev);
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
+    devs = (cl_device_id*) mwMalloc(numDev * sizeof(cl_device_id));
+    err = clGetDeviceIDs(platform, type, numDev, devs, &numDev);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to get device IDs");
+        free(devs);
         return NULL;
     }
 
