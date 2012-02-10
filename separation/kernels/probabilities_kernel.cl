@@ -251,9 +251,9 @@ __kernel void probabilities(__global real2* restrict bgOut,
             dotted = mad(sc[j].y_a, ys, dotted);
             dotted = mad(sc[j].z_a, zs, dotted);
 
-            xs = mad(dotted, -sc[j].x_a, xs);
-            ys = mad(dotted, -sc[j].y_a, ys);
-            zs = mad(dotted, -sc[j].z_a, zs);
+            xs = mad(dotted, (real) -sc[j].x_a, xs);
+            ys = mad(dotted, (real) -sc[j].y_a, ys);
+            zs = mad(dotted, (real) -sc[j].z_a, zs);
 
             real sqrv = xs * xs;
             sqrv = mad(ys, ys, sqrv);
