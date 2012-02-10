@@ -57,7 +57,13 @@ static int mwAppInitDataReady = FALSE;
 
 int mwGetAppInitData(void)
 {
-    int rc = boinc_get_init_data(mwAppInitData);
+    int rc;
+
+    /* Just in case */
+    mwAppInitData.gpu_opencl_dev_index = -1;
+    memset(mwAppInitData.gpu_type, 0, sizeof(mwAppInitData.gpu_type));
+
+    rc = boinc_get_init_data(mwAppInitData);
     mwAppInitDataReady = (rc == 0);
     return rc;
 }
@@ -83,23 +89,9 @@ int mwGetBoincNumCPU(void)
     return (int) mwAppInitData.ncpus;
 }
 
-/* OpenCL stuff needs 6.13.7+ */
-static bool mwBoincHasOpenCLData(void)
-{
-    const APP_INIT_DATA& aid = mwAppInitData;
-
-    if (aid.major_version > 6)
-        return true;
-
-    if (aid.major_version == 6)
-        return (aid.minor_version > 13 || (aid.minor_version == 13 && aid.release >= 1));
-
-    return false;
-}
-
 int mwGetBoincOpenCLDeviceIndex(void)
 {
-    if (!mwAppInitDataReady || !mwBoincHasOpenCLData())
+    if (!mwAppInitDataReady)
         return INT_MIN;
 
     return mwAppInitData.gpu_opencl_dev_index;
