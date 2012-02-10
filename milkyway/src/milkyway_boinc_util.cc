@@ -410,7 +410,15 @@ const char* mwGuessPreferredPlatform(const char* progName)
     }
 
     planClass += 2;
-    if (strstr(planClass, "opencl_amd") || strstr(planClass, "amd_opencl"))
+
+    /* On Windows the progName will end in .exe, so check for prefixes.
+       Check a bunch of reasonableish names
+     */
+    if (   strstr(planClass, "opencl_amd")
+        || strstr(planClass, "opencl_amd_ati")
+        || strstr(planClass, "opencl_ati")
+        || strstr(planClass, "amd_opencl")
+        || strstr(planClass, "ati_opencl"))
     {
         return amdPlatformVendorString;
     }
