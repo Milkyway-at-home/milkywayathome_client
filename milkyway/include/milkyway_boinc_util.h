@@ -82,6 +82,8 @@ extern "C" {
   #define mw_time_to_checkpoint() boinc_time_to_checkpoint()
   #define mw_checkpoint_completed() boinc_checkpoint_completed()
   #define mw_is_standalone() boinc_is_standalone()
+  #define mw_status_quit_request() (boinc_status.quit_request)
+  #define mw_status_abort_request() (boinc_status.abort_request)
 #else
   #define mw_boinc_print(f, msg, ...)
   #define mw_finish(x) exit(x)
@@ -93,6 +95,8 @@ extern "C" {
   #define mw_time_to_checkpoint() (FALSE)
   #define mw_checkpoint_completed()
   #define mw_is_standalone() (TRUE)
+  #define mw_status_quit_request() (0)
+  #define mw_status_abort_request() (0)
 #endif /* BOINC_APPLICATION */
 
 

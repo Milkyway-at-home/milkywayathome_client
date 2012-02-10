@@ -226,16 +226,32 @@ static cl_int setNuKernelArgs(const IntegralArea* ia, cl_uint nu_step)
     return CL_SUCCESS;
 }
 
+static void checkQuitRequest()
+{
+    if (mw_status_quit_request() || mw_status_abort_request())
+    {
+        mw_end_critical_section();
+        exit(0);
+    }
+}
+
+
 static cl_int readKernelResults(CLInfo* ci, SeparationCLMem* cm, EvaluationState* es, const IntegralArea* ia)
 {
     cl_int err = CL_SUCCESS;
     cl_int i;
 
+    mw_begin_critical_section();
     err = runSummarization(ci, cm, ia, 0, &es->bgSumCheckpoint);
+    checkQuitRequest();
+
     for (i = 0; err == CL_SUCCESS && i < es->numberStreams; ++i)
     {
         err = runSummarization(ci, cm, ia, i + 1, &es->streamSumsCheckpoint[i]);
+        checkQuitRequest();
     }
+
+    mw_end_critical_section();
 
     return err;
 }
@@ -258,8 +274,8 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     {
         mw_begin_critical_section();
         err = runIntegralKernel(ci, runSizes, offset);
+        checkQuitRequest();         /* Kernel has finished by now */
         mw_end_critical_section();
-
         offset[0] += runSizes->global[0];
     }
 
