@@ -227,10 +227,10 @@ cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     gflops = 1.0e-9 * (cl_double) flops;
 
 
-    if (gflops <= 50.0)
+    if (gflops <= 10.0)
     {
-        mw_printf("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 50.0);
-        gflops = 50.0;
+        mw_printf("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 10.0);
+        gflops = 10.0;
     }
 
     return gflops;

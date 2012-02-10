@@ -112,11 +112,12 @@ const char* mwGetBoincOpenCLPlatformVendor(void)
     if (!mwAppInitDataReady)
         return NULL;
 
-    if (strstr(type, GPU_TYPE_ATI) || strstr(type, "AMD"))
+    if (strstr(type, GPU_TYPE_ATI) || strstr(type, "AMD") || strstr(type, "ati")
     {
         return amdPlatformVendorString;
     }
     else if (   strstr(type, GPU_TYPE_NVIDIA)
+             || strstr(type, "nvidia")
              || strstr(type, "Nvidia")
              || strstr(type, "CUDA")
              || strstr(type, "cuda"))
