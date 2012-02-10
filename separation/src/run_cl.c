@@ -235,7 +235,6 @@ static void checkQuitRequest()
     }
 }
 
-
 static cl_int readKernelResults(CLInfo* ci, SeparationCLMem* cm, EvaluationState* es, const IntegralArea* ia)
 {
     cl_int err = CL_SUCCESS;
@@ -269,15 +268,17 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
         return err;
     }
 
+    mw_begin_critical_section();
+
     offset[0] = 0;
     for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
-        mw_begin_critical_section();
         err = runIntegralKernel(ci, runSizes, offset);
         checkQuitRequest();         /* Kernel has finished by now */
-        mw_end_critical_section();
         offset[0] += runSizes->global[0];
     }
+
+    mw_end_critical_section();
 
     return err;
 }
