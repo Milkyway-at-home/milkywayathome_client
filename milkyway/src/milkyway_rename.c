@@ -132,7 +132,7 @@ static int mw_rename_w32_atomic(const char* oldf, const char* newf)
     return 0;
 }
 
-static int mw_rename_w32(const char* oldf, const char* newf)
+static int mw_rename_w32(const char* oldf, const char* newf, int fallback)
 {
     /* It turns out that rename() does exist although it doesn't behave
     properly and errors if the destination file already exists which is
@@ -143,7 +143,7 @@ static int mw_rename_w32(const char* oldf, const char* newf)
         initW32TransactionalFunctions();
     }
 
-    if (transactionFuncsOK)
+    if (transactionFuncsOK && !fallback)
     {
         return mw_rename_w32_atomic(oldf, newf);
     }
@@ -157,29 +157,29 @@ static int mw_rename_w32(const char* oldf, const char* newf)
 
 /* Temporary stuff until patch BOINC */
 #if BOINC_APPLICATION
-static int mw_boinc_rename_aux(const char* oldf, const char* newf)
+static int mw_boinc_rename_aux(const char* oldf, const char* newf, int fallback)
 {
-#ifdef _WIN32
-    return mw_rename_w32(oldf, newf);
-#else
+  #ifdef _WIN32
+    return mw_rename_w32(oldf, newf, fallback);
+  #else
     return rename(oldf, newf);
-#endif
+  #endif
 }
 
 /* Pretty much boinc_rename() mangled a bit to fit here temporarily */
-static int mw_boinc_rename(const char* old, const char* newf)
+static int mw_boinc_rename(const char* old, const char* newf, int fallback)
 {
     int retval;
     const double fileRetryInterval = 5;
 
-    retval = mw_boinc_rename_aux(old, newf);
+    retval = mw_boinc_rename_aux(old, newf, fallback);
     if (retval)
     {
         double start = mwGetTime();
         do
         {
             mw_boinc_sleep(2.0 * (double) rand() / (double) RAND_MAX);
-            retval = mw_boinc_rename_aux(old, newf);
+            retval = mw_boinc_rename_aux(old, newf, fallback);
             if (!retval)
                 break;
         }
@@ -201,7 +201,18 @@ int mw_rename(const char* oldf, const char* newf)
   #ifndef _WIN32
     return rename(oldf, newf);
   #else
-    return mw_rename_w32(oldf, newf);
+    if (mw_rename_w32(oldf, newf, FALSE) && transactionFuncsOK)
+    {
+        /* If the move with transactions failed for some reason,
+           try again but without transactions */
+        if (mw_rename_w32(oldf, newf, TRUE))
+        {
+            /* If this still fails, try a simple rename */
+            return rename(oldf, newf);
+        }
+    }
+
+    return 0;
   #endif /* _WIN32 */
 }
 
