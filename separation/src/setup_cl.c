@@ -247,7 +247,8 @@ cl_bool findRunSizes(RunSizes* sizes,
         sizes->chunkSize = nBlockPerChunk * blockSize;
     }
 
-    sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
+    //sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
+    sizes->effectiveArea = di->warpSize * mwDivRoundup(sizes->area, di->warpSize);
     sizes->nChunk = forceOneChunk ? 1 : mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
     sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
 
