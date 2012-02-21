@@ -234,10 +234,10 @@ int evaluate(SeparationResults* results,
             goto error;
         }
 
-        rc = finalCheckpoint(es);
-        if (rc)
+        if (finalCheckpoint(es))
         {
-            goto error;
+            /* If writing the final checkpoint failed just keep going */
+            deleteCheckpoint();
         }
     }
 

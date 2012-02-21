@@ -354,6 +354,11 @@ int writeCheckpoint(EvaluationState* es)
     return 0;
 }
 
+int deleteCheckpoint(void)
+{
+    mw_remove(resolvedCheckpointPath);
+}
+
 int maybeResume(EvaluationState* es)
 {
     if (mw_file_exists(resolvedCheckpointPath))
