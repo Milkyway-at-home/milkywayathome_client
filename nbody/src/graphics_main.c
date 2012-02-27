@@ -42,7 +42,6 @@ static void freeVisArgs(VisArgs* args)
     args->file = NULL;
 }
 
-
 static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
 {
     poptContext context;
@@ -154,15 +153,97 @@ static int nbodyGraphicsInit()
     return 0;
 }
 
-int main(int argc, char* argv[])
+static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
+{
+    FILE* f;
+    size_t lnCount; /* ~= nbody */
+    size_t line = 0;
+    int nbody = 0;
+    char lnBuf[4096];
+    int rc = 0;
+    int ignore;
+    double x, y, z;
+    double vx, vy, vz;
+    double lambda;
+    FloatPos* r;
+    scene_t* scene = NULL;
+
+    f = fopen(filename, "r");
+    if (!f)
+    {
+        mwPerror("Failed to open file '%s'", filename);
+        return NULL;
+    }
+
+    lnCount = mwCountLinesInFile(f);
+    if (lnCount == 0)
+    {
+        mw_printf("Error counting lines from file '%s'\n", filename);
+        fclose(f);
+        return NULL;
+    }
+
+    scene = mwCalloc(sizeof(scene_t) + lnCount * sizeof(FloatPos), sizeof(char));
+    r = scene->rTrace;
+
+    /* Skip the 1st line with the # comment */
+    fgets(lnBuf, sizeof(lnBuf), f);
+
+    while (rc != EOF)
+    {
+        ++line;
+        rc = fscanf(f,
+                    "%d , %lf , %lf , %lf , %lf , %lf , %lf ",
+                    &ignore,
+                    &x, &y, &z,
+                    &vx, &vy, &vz);
+        if (rc == 7)
+        {
+            ++nbody;
+            /* May or may not be there */
+            rc = fscanf(f, " , %lf \n", &lambda);
+            if (rc != 1)
+            {
+                fscanf(f, " \n");
+            }
+            assert(line < lnCount);
+
+            r[line].x = (float) x;
+            r[line].y = (float) y;
+            r[line].z = (float) z;
+        }
+        else if (rc != EOF)
+        {
+            mw_printf("Error reading '%s' at line "ZU"\n", filename, line);
+        }
+    }
+
+    if (rc != EOF)
+    {
+        fclose(f);
+        free(scene);
+        return NULL;
+    }
+
+    scene->nbody = nbody;
+
+    if (fclose(f))
+    {
+        mwPerror("Failed to close file '%s'", filename);
+    }
+
+    return scene;
+}
+
+
+int main(int argc, const char* argv[])
 {
     int rc;
     VisArgs flags;
+    scene_t* scene = NULL;
 
     if (nbodyGraphicsInit())
         return 1;
-
-    glfwInit();
 
     if (handleVisArguments(argc, (const char**) argv, &flags))
     {
@@ -172,37 +253,38 @@ int main(int argc, char* argv[])
 
     if (!flags.file)
     {
-        if (connectSharedScene(flags.instanceId))
+        scene = nbConnectSharedScene(flags.instanceId);
+        if (!scene)
         {
             freeVisArgs(&flags);
             return 1;
         }
 
-        if (checkConnectedVersion())
+        if (nbCheckConnectedVersion(scene))
         {
             freeVisArgs(&flags);
             return 1;
         }
+
+        nbodyGraphicsSetOn(&scene->attached);
     }
     else
     {
-        if (nbglLoadStaticSceneFromFile(flags.file))
+        scene = nbglLoadStaticSceneFromFile(flags.file);
+        if (scene)
         {
             freeVisArgs(&flags);
             return 1;
         }
     }
 
-    rc = nbodyGLSetup(&flags);
-    if (rc)
+    rc = nbRunGraphics(scene, &flags);
+
+    if (flags.file)
     {
-        mw_printf("Failed to setup nbody graphics\n");
-        freeVisArgs(&flags);
-        mw_finish(rc);
+        free(scene);
     }
 
-    rc = nbodyGraphicsLoop();
-    glfwTerminate();
     freeVisArgs(&flags);
     mw_finish(rc);
 

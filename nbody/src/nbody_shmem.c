@@ -49,7 +49,7 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
     st->scene->nbody = st->nbody;
     st->scene->info.timeEvolve = (float) ctx->timeEvolve;
-    st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
+    st->scene->hasGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 }
 
 #if USE_SHMEM
@@ -303,7 +303,6 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     {
         cmPos = Pos(st->tree.root);
 
-        scene->usleepcount += scene->usleepdt;
         scene->info.currentTime = (float) st->step * ctx->timestep;
         scene->rootCenterOfMass[0] = (float) X(cmPos);
         scene->rootCenterOfMass[1] = (float) Y(cmPos);
@@ -324,12 +323,9 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
         }
     }
 
-    /* Read data if not paused. No copying when no screensaver attached */
-    if (scene->attached && scene->usleepcount >= scene->dt && (!scene->paused || scene->step))
+    /* No copying when no screensaver attached */
+    if (scene->attached)
     {
-        scene->usleepcount = 0.0;
-        scene->step = FALSE;
-
       #ifdef _OPENMP
         #pragma omp parallel for private(i, b) schedule(static)
       #endif
@@ -341,11 +337,7 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
             r[i].z = (float) Z(Pos(b));
             r[i].ignore = ignoreBody(b);
         }
-
-        nbodyGraphicsSetOff(&scene->attached);
     }
-
-    scene->changed = TRUE;
 }
 
 

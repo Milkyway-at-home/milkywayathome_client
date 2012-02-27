@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2012 Matthew Arsenault
  *
  * This file is part of Milkway@Home.
  *
@@ -21,18 +20,11 @@
 #ifndef _NBODY_GL_H_
 #define _NBODY_GL_H_
 
-#ifndef __APPLE__
-  #include <GL/gl.h>
-  #include <GL/glu.h>
-#else
-  #include <OpenGL/gl.h>
-  #include <OpenGL/glu.h>
-#endif /* __APPLE__ */
-
-#include <GL/glfw3.h>
-
-
 #include "nbody_graphics.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -53,16 +45,12 @@ typedef struct
 
 #define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
-int nbglLoadStaticSceneFromFile(const char* filename);
+int nbRunGraphics(const scene_t* scene, const VisArgs* args);
+scene_t* nbConnectSharedScene(int instanceId);
+int nbCheckConnectedVersion(const scene_t* scene);
 
-int connectSharedScene(int instanceId);
-int checkConnectedVersion(void);
-int nbodyGLSetup(const VisArgs* args);
-int nbodyGraphicsLoop(void);
-void nbodyGLCleanup(void);
-
-#ifndef _WIN32
-int nbodyInitShmemKey(const char* progName);
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _NBODY_GL_H_ */

@@ -21,6 +21,8 @@
 #ifndef _NBODY_GRAPHICS_H_
 #define _NBODY_GRAPHICS_H_
 
+#include <stdint.h>
+
 #define MAX_DRAW_TRACE_POINTS 256
 
 /* "mw_nbody" */
@@ -29,7 +31,7 @@
 typedef struct
 {
     float x, y, z;
-    int ignore;
+    int32_t ignore;
 } FloatPos;
 
 /* Mostly for progress information */
@@ -59,14 +61,7 @@ typedef struct
     int nbodyMinorVersion;
 
     int nbody;
-    int drawGalaxy;
-    int cmCentered; /* Center on the center of mass. Otherwise, on galactic center */
-
-    int floatMode;
-    float r;       /* Distance from center point. Maps to OpenGL z axis so often negative */
-    float xrot;
-    float yrot;
-    float starsize;
+    int hasGalaxy;
 
     /* Terrible way of checking that a screensaver is attached.  It
        avoids copying all of the bodies if it isn't running. Also only
@@ -80,26 +75,6 @@ typedef struct
   #else
     volatile LONG attached;
   #endif /* _MSC_VER */
-
-    int fullscreen;
-    int screensaverMode;
-    int monochromatic;
-    int drawAxes;
-    int drawOrbitTrace;
-    int drawHelp;
-    int drawInfo;
-    int drawParticles;
-    int useGLPoints;
-
-    int ntri;
-    int paused;
-    int step;
-    NBodyMouseMode mouseMode;
-    int changed;
-    double t;
-    double dt;
-    double usleepcount;
-    double usleepdt;
 
     float rootCenterOfMass[3];     /* Center of mass of the system  */
     float startingPositionHint[3];
