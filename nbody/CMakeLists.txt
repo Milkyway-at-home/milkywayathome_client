@@ -124,6 +124,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_nfw.c
+                  ${NBODY_SRC_DIR}/nbody_hernq.c
                   ${NBODY_SRC_DIR}/nbody_show.c
                   ${NBODY_SRC_DIR}/nbody_checkpoint.c
                   ${NBODY_SRC_DIR}/nbody_defaults.c
@@ -143,6 +144,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
+                      ${NBODY_INCLUDE_DIR}/nbody_hernq.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
                       ${NBODY_INCLUDE_DIR}/nbody_plain.h
                       ${NBODY_INCLUDE_DIR}/nbody_show.h

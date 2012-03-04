@@ -23,26 +23,26 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
-#include "nbody_nfw.h"
+#include "nbody_hernq.h"
 
-static inline real mass_inside_radius(real radius, real rho_0, real R_S){
+static inline real mass_inside_radius(real radius, real radius_scale, real a, real mass){
     //Returns that mass inside a certain radius
     
-    //Leading Constant
-    real mass = 4 * M_PI * rho_0 * cube(radius);
+    radius = radius / radius_scale;
+    
     //Integration terms
-    mass *= ( mw_log((R_S + radius) / R_S) - radius / (R_S + radius));
+    mass = mass * radius * radius / ((a+radius) * (a+radius)) ;
     return mass;
 
 }
 
-static inline real next_radius(real start_radius, real goal_mass, real rho_0, real R_S){
+static inline real next_radius(real start_radius, real goal_mass, real radius, real a, real mass){
     // This is a scary function which returns the next radius limit
     // Do not use this code on client computers. It is slow inneficient
     // and well just dirty.
 
     for (real test_radius = start_radius; 1; test_radius += (real)0.0001){
-        if (mass_inside_radius(test_radius, rho_0, R_S) >= goal_mass)
+        if (mass_inside_radius(test_radius, radius, a, mass) >= goal_mass)
             return test_radius;
     }
 }
@@ -66,7 +66,7 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-static inline real NFWRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
+static inline real HernqRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
 {
     real rnd;
 
@@ -77,7 +77,7 @@ static inline real NFWRandomR(dsfmt_t* dsfmtState, real startradius, real endrad
     return (endradius - startradius) * rnd + startradius;
 }
 
-static inline real NFWSelectFromG(dsfmt_t* dsfmtState)
+static inline real HernqSelectFromG(dsfmt_t* dsfmtState)
 {
     real x, y;
 
@@ -91,16 +91,16 @@ static inline real NFWSelectFromG(dsfmt_t* dsfmtState)
     return x;
 }
 
-static inline real NFWCalculateV(real r, real rho_0, real R_S)
+static inline real HernqCalculateV(real r, real radius, real a, real mass)
 {
     real v;
-    real mass = mass_inside_radius(r, rho_0, R_S);
+    mass = mass_inside_radius(r, radius, a, mass);
     v = mw_sqrt( /*G!!!*/ mass / r);
 
     return v;
 }
 
-static inline mwvector NFWBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
+static inline mwvector HernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
 {
     mwvector pos;
 
@@ -110,23 +110,23 @@ static inline mwvector NFWBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, rea
     return pos;
 }
 
-static inline mwvector NFWBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real rho_0, real R_S)
+static inline mwvector HernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real radius, real a, real mass)
 {
     mwvector vel;
     real v;
 
-    v = NFWCalculateV(r, rho_0, R_S);
+    v = HernqCalculateV(r, radius, a, mass);
     vel = pickShell(dsfmtState, v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);              /* move the velocity */
 
     return vel;
 }
 
-/* generateNFW: generate NFW model initial conditions 
+/* generateHernq: generate Hernquist model initial conditions 
  * Extremely hacky. If you actually want to use this
  * talk to Colin Rice before you do anything. Seriously.
  */
-static int nbGenerateNFWCore(lua_State* luaSt,
+static int nbGenerateHernqCore(lua_State* luaSt,
 
                                  dsfmt_t* prng,
                                  unsigned int nbody,
@@ -136,8 +136,8 @@ static int nbGenerateNFWCore(lua_State* luaSt,
 
                                  mwvector rShift,
                                  mwvector vShift,
-                                 real rho_0,
-                                 real R_S)
+                                 real radius_scale,
+                                 real a)
 {
     unsigned int i;
     int table;
@@ -161,16 +161,16 @@ static int nbGenerateNFWCore(lua_State* luaSt,
 
     for (i = 0; i < nbody; ++i)
     {
-        real endradius = next_radius(radius, totalMass + massEpsilon, rho_0, R_S);
+        real endradius = next_radius(radius, totalMass + massEpsilon, radius, a, mass);
         
         
-        r = NFWRandomR(prng, radius, endradius);
+        r = HernqRandomR(prng, radius, endradius);
         
         radius = endradius;
         totalMass += massEpsilon;
 
-        b.bodynode.pos = NFWBodyPosition(prng, rShift, 1, r);
-        b.vel = NFWBodyVelocity(prng, vShift, r, rho_0, R_S);
+        b.bodynode.pos = HernqBodyPosition(prng, rShift, 1, r);
+        b.vel = HernqBodyVelocity(prng, vShift, r, radius_scale, a, mass);
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
@@ -179,21 +179,21 @@ static int nbGenerateNFWCore(lua_State* luaSt,
     return 1;
 }
 
-int nbGenerateNFW(lua_State* luaSt)
+int nbGenerateHernq(lua_State* luaSt)
 {
     static dsfmt_t* prng;
     static const mwvector* position = NULL;
     static const mwvector* velocity = NULL;
     static mwbool ignore;
-    static real mass = 0.0, nbodyf = 0.0, rho_0 = 0.0, R_S = 0.0;
+    static real mass = 0.0, nbodyf = 0.0, radius = 0.0, a = 0.0;
 
     static const MWNamedArg argTable[] =
         {
             { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
             { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
-            { "rho_0",        LUA_TNUMBER,   NULL,          TRUE,     &rho_0 
+            { "radius",        LUA_TNUMBER,   NULL,          TRUE,     &radius 
              },
-            { "R_S",          LUA_TNUMBER,   NULL,          TRUE,     &R_S
+            { "a",          LUA_TNUMBER,   NULL,          TRUE,     &a
              },
             { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
             { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity    },
@@ -207,12 +207,12 @@ int nbGenerateNFW(lua_State* luaSt)
 
     handleNamedArgumentTable(luaSt, argTable, 1);
 
-    return nbGenerateNFWCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
-                                 *position, *velocity, rho_0, R_S);
+    return nbGenerateHernqCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
+                                 *position, *velocity, radius, a);
 }
 
-void registerGenerateNFW(lua_State* luaSt)
+void registerGenerateHernq(lua_State* luaSt)
 {
-    lua_register(luaSt, "generateNFW", nbGenerateNFW);
+    lua_register(luaSt, "generateHernq", nbGenerateHernq);
 }
 
