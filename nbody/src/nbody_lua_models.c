@@ -29,6 +29,7 @@
 #include "nbody_lua_types.h"
 #include "milkyway_lua.h"
 #include "nbody_plummer.h"
+#include "nbody_nfw.h"
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
@@ -103,6 +104,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     int table;
 
     registerGeneratePlummer(luaSt);
+    registerGenerateNFW(luaSt);
 
     /* Create a table of predefined models, so we can use them like
      * predefinedModels.plummer() etc. */
@@ -110,6 +112,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     table = lua_gettop(luaSt);
 
     setModelTableItem(luaSt, table, nbGeneratePlummer, "plummer");
+    setModelTableItem(luaSt, table, nbGenerateNFW, "nfw");
 
     /*
       setModelTableItem(luaSt, table, generateKing, "king");
