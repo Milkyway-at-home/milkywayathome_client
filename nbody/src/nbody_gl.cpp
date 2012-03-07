@@ -29,12 +29,13 @@
 
 #pragma GCC diagnostic pop
 
-
 #include "nbody_graphics.h"
 #include "nbody_gl.h"
 #include "nbody_config.h"
 #include "milkyway_util.h"
 
+#include <freetype-gl.h>
+#include <vertex-buffer.h>
 
 #include <assert.h>
 
@@ -66,15 +67,141 @@
 #include <glutil/glutil.h>
 
 
-#include "galaxy_model.h"
+extern "C" unsigned char main_vertex_glsl[];
+extern "C" size_t main_vertex_glsl_len;
 
+extern "C" unsigned char main_fragment_glsl[];
+extern "C" size_t main_fragment_glsl_len;
+
+
+extern "C" unsigned char galaxy_vertex_glsl[];
+extern "C" size_t galaxy_vertex_glsl_len;
+
+extern "C" unsigned char galaxy_fragment_glsl[];
+extern "C" size_t galaxy_fragment_glsl_len;
+
+
+extern "C" unsigned char text_vertex_glsl[];
+extern "C" size_t text_vertex_glsl_len;
+
+extern "C" unsigned char text_fragment_glsl[];
+extern "C" size_t text_fragment_glsl_len;
+
+
+static void nbglGetProgramLog(GLuint program, const char* name)
+{
+    GLint logLength = 0;
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
+    if (logLength > 0)
+    {
+        GLint newlen;
+        GLchar* log = new GLchar[logLength + 1];
+        glGetProgramInfoLog(program, logLength, &newlen, log);
+        fprintf(stderr,
+                "Linker output (%s):\n"
+                "--------------------------------------------------------------------------------\n"
+                "%s\n"
+                "--------------------------------------------------------------------------------\n",
+                name,
+                log);
+
+        delete[] log;
+    }
+
+	GLint status = GL_FALSE;
+	glGetProgramiv(program, GL_LINK_STATUS, &status);
+	if (!status)
+	{
+        throw std::runtime_error("Linking shader program failed");
+	}
+}
+
+static const char* showShaderType(GLenum type)
+{
+    switch (type)
+    {
+        case GL_VERTEX_SHADER:
+            return "Vertex shader";
+        case GL_FRAGMENT_SHADER:
+            return "Fragment shader";
+        default:
+            return "<bad shader type>";
+    }
+}
+
+static GLuint createShaderFromSrc(const char* src, GLint len, GLenum type)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &src, &len);
+    glCompileShader(shader);
+
+    GLint logLength = 0;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+    if (logLength > 0)
+    {
+        GLchar* logBuf = new GLchar[logLength + 1];
+        glGetShaderInfoLog(shader, logLength, NULL, logBuf);
+
+        fprintf(stderr,
+                "Shader compile log '%s':\n"
+                "--------------------------------------------------------------------------------\n"
+                "%s\n"
+                "--------------------------------------------------------------------------------\n",
+                showShaderType(type),
+                logBuf);
+
+        delete[] logBuf;
+    }
+
+    GLint status = GL_FALSE;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (!status)
+    {
+        throw std::runtime_error("Error compiling shader");
+    }
+
+    return shader;
+}
+
+static GLuint nbglCreateProgram(const char* name,
+                                const char* vertSrc,
+                                const char* fragSrc,
+                                GLint vertSrcLen,
+                                GLint fragSrcLen)
+{
+    GLuint vertexShader = createShaderFromSrc(vertSrc, (GLint) vertSrcLen, GL_VERTEX_SHADER);
+    GLuint pixelShader = createShaderFromSrc(fragSrc, (GLint) fragSrcLen, GL_FRAGMENT_SHADER);
+
+    GLuint program = glCreateProgram();
+
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, pixelShader);
+
+    glLinkProgram(program);
+
+    glDetachShader(program, vertexShader);
+    glDetachShader(program, pixelShader);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(pixelShader);
+
+    nbglGetProgramLog(program, name);
+
+    return program;
+}
+
+
+//#define AXES_LENGTH 0.66f
+//#define AXES_LENGTH 1.0f
 #define AXES_LENGTH 10.0f
 
 
 static const float zNear = 0.01f;
 static const float zFar = 1000.0f;
 
-static glm::mat4 cameraToClipMatrix;
+static glm::mat4 cameraToClipMatrix(1.0f);
+
+static glm::mat4 textCameraToClipMatrix(1.0f);
 
 static glutil::ViewData initialViewData =
 {
@@ -102,11 +229,15 @@ static void errorHandler(int errorCode, const char* msg)
 static void resizeHandler(GLFWwindow window, int w, int h)
 {
     std::cout << "Resize " << w << " " << h << std::endl;
+    float wf = (float) w;
+    float hf = (float) h;
+    float aspectRatio = wf / hf;
     glutil::MatrixStack persMatrix;
-    persMatrix.Perspective(90.0f, (float) w / (float) h, zNear, zFar);
+    persMatrix.Perspective(90.0f, aspectRatio, zNear, zFar);
     cameraToClipMatrix = persMatrix.Top();
 
-    //cameraToClipMatrix = glm::perspective(90.0f, 1.0f, zNear, zFar);
+    textCameraToClipMatrix = glm::ortho(0.0f, wf, -hf, 0.0f);
+    textCameraToClipMatrix = glm::translate(textCameraToClipMatrix, glm::vec3(0.0f, -30.0f, 0.0f));
 
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
 }
@@ -205,6 +336,253 @@ struct Color
     GLfloat r, g, b;
 };
 
+struct NBodyVertex
+{
+    GLfloat x, y, z;
+
+    NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
+    NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
+};
+
+
+class NBodyText
+{
+private:
+    texture_font_t* font;
+    texture_atlas_t* atlas;
+    vertex_buffer_t* textBuffer;
+
+    glm::mat4 textDisplayMatrix;
+
+
+    struct TextProgramData
+    {
+        GLuint program;
+
+        GLint positionLoc;
+        GLint texCoordLoc;
+        GLint texPositionLoc;
+
+        GLint textTextureLoc;
+
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } textProgram;
+
+public:
+    void drawText(const char* text, size_t n);
+    void loadFont();
+    void loadShader();
+
+    NBodyText();
+    ~NBodyText();
+};
+
+void NBodyText::loadShader()
+{
+    this->textProgram.program = nbglCreateProgram("text program",
+                                                  (const char*) text_vertex_glsl,
+                                                  (const char*) text_fragment_glsl,
+                                                  (GLint) text_vertex_glsl_len,
+                                                  (GLint) text_fragment_glsl_len);
+    printf("Load text shaders %d\n", glGetError());
+
+    this->textProgram.positionLoc = glGetAttribLocation(this->textProgram.program, "position");
+    this->textProgram.textTextureLoc = glGetUniformLocation(this->textProgram.program, "textTexture");
+    this->textProgram.texPositionLoc = glGetAttribLocation(this->textProgram.program, "texPosition");
+
+    this->textProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->textProgram.program, "modelToCameraMatrix");
+    this->textProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->textProgram.program, "cameraToClipMatrix");
+
+    glEnableVertexAttribArray(this->textProgram.positionLoc);
+    glEnableVertexAttribArray(this->textProgram.texPositionLoc);
+}
+
+NBodyText::NBodyText()
+{
+    this->atlas = NULL;
+    this->font = NULL;
+    this->textBuffer = NULL;
+
+    this->textDisplayMatrix = glm::mat4(1.0f);
+    //this->textDisplayMatrix.scale();
+
+}
+
+NBodyText::~NBodyText()
+{
+    if (this->textProgram.program != 0)
+        glDeleteProgram(this->textProgram.program);
+
+    texture_font_delete(this->font);
+}
+
+
+typedef struct
+{
+    float x, y, z;    // position
+    float s, t;       // texture
+    float r, g, b, a; // color
+} vertex_t;
+
+static void add_text(vertex_buffer_t* buffer,
+                     texture_font_t* font,
+                     const wchar_t* text,
+                     vec4* color,
+                     vec2* pen)
+{
+    float r = color->red, g = color->green, b = color->blue, a = color->alpha;
+
+    float left = pen->x;
+
+    //for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < wcslen(text); ++i)
+    {
+        if (text[i] == L'\n')
+        {
+            pen->x = left;
+            pen->y -= (font->linegap + font->height);
+            continue;
+        }
+
+        texture_glyph_t* glyph = texture_font_get_glyph(font, text[i]);
+        if (glyph)
+        {
+            int kerning = 0;
+            if (i > 0)
+            {
+                kerning = texture_glyph_get_kerning(glyph, text[i - 1]);
+            }
+
+            pen->x += kerning;
+#if 0
+            int x0  = (int) (pen->x + glyph->offset_x);
+            int y0  = (int) (pen->y + glyph->offset_y);
+            int x1  = (int) (x0 + glyph->width) ;
+            int y1  = (int) (y0 - glyph->height);
+#else
+            float x0  = pen->x + glyph->offset_x;
+            float y0  = pen->y + glyph->offset_y;
+            float x1  = x0 + glyph->width;
+            float y1  = y0 - glyph->height;
+#endif
+
+            float s0 = glyph->s0;
+            float t0 = glyph->t0;
+            float s1 = glyph->s1;
+            float t1 = glyph->t1;
+            GLuint index = buffer->vertices->size;
+
+            GLuint indices[] =
+                {
+                    index, index + 1, index + 2,
+                    index, index + 2, index + 3
+                };
+
+            vertex_t vertices[] =
+                {
+                    { x0, y0, 0.0f,  s0, t0,  r, g, b, a },
+                    { x0, y1, 0.0f,  s0, t1,  r, g, b, a },
+                    { x1, y1, 0.0f,  s1, t1,  r, g, b, a },
+                    { x1, y0, 0.0f,  s1, t0,  r, g, b, a }
+                };
+
+            for (int l = 0; l < 4; ++l)
+            {
+                printf("arst[%d] %f %f .. s = %f %f\n", l, vertices[l].x, vertices[l].y,
+                       vertices[l].s, vertices[l].t
+                    );
+            }
+
+            vertex_buffer_push_back_indices(buffer, indices, 6);
+            vertex_buffer_push_back_vertices(buffer, vertices, 4);
+            pen->x += glyph->advance_x;
+        }
+    }
+}
+
+void NBodyText::drawText(const char* text, size_t n)
+{
+    vec4 x11green;
+
+    static bool firstCall = true;
+
+    x11green.r = 0.0f;
+    x11green.g = 1.0f;
+    x11green.b = 0.0f;
+    x11green.a = 0.5f;
+
+    vec2 pen;
+
+//    pen.x = -50.0f;
+    pen.x = 0.0f;
+    pen.y = 0.0f;
+
+    if (firstCall)
+    {
+        add_text(this->textBuffer,
+                 this->font,
+                 L"arstarst\nasdf aoeu",
+                 &x11green,
+                 &pen);
+
+        firstCall = false;
+    }
+
+    glUseProgram(this->textProgram.program);
+    glBindBuffer(GL_ARRAY_BUFFER, this->textBuffer->vertices_id);
+    glVertexAttribPointer(this->textProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
+    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (3 * sizeof(GLfloat)));
+
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->textBuffer->indices_id);
+    //glVertexAttribPointer(this->textProgram.positionLoc, 2, GL_UNSIGNED_INT, FALSE, 0, 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, this->atlas->id);
+    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
+    //glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_DST_COLOR, GL_ONE);
+    //glBlendFunc(GL_SRC_COLOR, GL_ONE);
+//    glBlendFunc(GL_ONE, GL_ONE);
+    //glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA);
+    glUniform1i(this->textProgram.textTextureLoc, 0);
+    //glBindSampler(0, 0);
+
+    glUniformMatrix4fv(this->textProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(textCameraToClipMatrix));
+    //glUniformMatrix4fv(this->textProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+
+    //glEnable(GL_COLOR_MATERIAL);
+    //glEnable(GL_BLEND);
+    //float alpha = 0.5f;
+    //glBlendColor(1.0f - alpha, 1.0f - alpha, 1.0f - alpha, 1.0f);
+
+    /*
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    */
+
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+    //vertex_buffer_render(this->textBuffer, GL_TRIANGLES, "vtc");
+    vertex_buffer_render(this->textBuffer, GL_TRIANGLES, "" /* "vtc" */);
+    //vertex_buffer_render(this->textBuffer, GL_POINTS, "" /* "vtc" */);
+
+    printf("vertex_buffer_render %d\n", glGetError());
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+}
+
+class GalaxyModel;
+
 class NBodyGraphics
 {
 private:
@@ -221,12 +599,6 @@ private:
         GLuint acceleration;
         GLuint color;
     } particleBuffers;
-
-    struct GalaxyModelBuffers
-    {
-        GLuint mesh;
-        GLuint colors;
-    } galaxyModelBuffers;
     */
 
     struct MainProgramData
@@ -240,17 +612,6 @@ private:
         GLint cameraToClipMatrixLoc;
     } mainProgram;
 
-    struct GalaxyProgramData
-    {
-        GLuint program;
-
-        GLint positionLoc;
-        GLint modelToCameraMatrixLoc;
-        GLint cameraToClipMatrixLoc;
-    } galaxyProgram;
-
-
-
     GLuint positionBuffer;
     GLuint velocityBuffer;
     GLuint accelerationBuffer;
@@ -258,9 +619,6 @@ private:
 
     GLuint axesBuffer;
     GLuint axesColorBuffer;
-
-    GLuint galaxyModelBuffer;
-
 
     bool running;
 
@@ -279,12 +637,14 @@ private:
         bool monochromatic;
     } drawOptions;
 
-    GLuint createShaderFromSrc(const char* shaderSrc, GLint len, GLenum type);
+    GalaxyModel* galaxyModel;
+
+    NBodyText text;
+
     void loadShaders();
     void createBuffers();
     void createPositionBuffer();
     void createAxesBuffers();
-    void createGalaxyBuffer();
 
 public:
     NBodyGraphics(const scene_t* scene);
@@ -294,9 +654,9 @@ public:
     void prepareContext();
     void populateBuffers();
 
+    void loadModel(GalaxyModel& model);
     void loadColors();
     void drawAxes();
-    void drawGalaxy();
     void drawBodies();
 
     void mainLoop();
@@ -314,19 +674,12 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->colorBuffer = 0;
     this->axesBuffer = 0;
     this->axesColorBuffer = 0;
-    this->galaxyModelBuffer = 0;
 
     this->mainProgram.program = 0;
     this->mainProgram.positionLoc = -1;
     this->mainProgram.colorLoc = -1;
     this->mainProgram.modelToCameraMatrixLoc = -1;
     this->mainProgram.cameraToClipMatrixLoc = -1;
-
-    this->galaxyProgram.program = 0;
-    this->galaxyProgram.positionLoc = -1;
-    this->galaxyProgram.modelToCameraMatrixLoc = -1;
-    this->galaxyProgram.cameraToClipMatrixLoc = -1;
-
 
     this->running = false;
 
@@ -341,14 +694,16 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->drawOptions.cmCentered = false;
     this->drawOptions.drawHelp = false;
     this->drawOptions.monochromatic = false;
+
+    this->galaxyModel = NULL;
 }
 
 NBodyGraphics::~NBodyGraphics()
 {
-    GLuint buffers[7];
+    GLuint buffers[6];
 
-    glDeleteProgram(this->mainProgram.program);
-    glDeleteProgram(this->galaxyProgram.program);
+    if (this->mainProgram.program != 0)
+        glDeleteProgram(this->mainProgram.program);
 
     buffers[0] = this->positionBuffer;
     buffers[1] = this->velocityBuffer;
@@ -356,146 +711,185 @@ NBodyGraphics::~NBodyGraphics()
     buffers[3] = this->colorBuffer;
     buffers[4] = this->axesBuffer;
     buffers[5] = this->axesColorBuffer;
-    buffers[6] = this->galaxyModelBuffer;
 
-    glDeleteBuffers(7, buffers);
+    glDeleteBuffers(6, buffers);
 }
 
-static const char* showShaderType(GLenum type)
+class GalaxyModel
 {
-    switch (type)
+private:
+    NBodyVertex* points;
+    Color* colors;
+    GLuint nPoints;
+    GLuint count;
+
+    GLuint buffer;
+    GLuint colorBuffer;
+
+    double bulgeScale;
+    double diskScale;
+    double totalHeight;
+
+    double totalDiameter;
+    GLint radialSlices;
+    GLint axialSlices;
+    double axialSliceSize;
+    double diameterSlice;
+
+
+    struct GalaxyProgramData
     {
-        case GL_VERTEX_SHADER:
-            return "Vertex shader";
-        case GL_FRAGMENT_SHADER:
-            return "Fragment shader";
-        default:
-            return "<bad shader type>";
-    }
-}
+        GLuint program;
 
-void NBodyGraphics::createGalaxyBuffer()
-{
-    glBindBuffer(GL_ARRAY_BUFFER, this->galaxyModelBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(galaxy), (const GLfloat*) galaxy, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
+        GLint positionLoc;
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } programData;
 
-static GLuint createShaderFromSrc(const char* src, GLint len, GLenum type)
-{
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, &len);
-    glCompileShader(shader);
+    NBodyText text;
 
-    GLint logLength = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-    if (logLength > 0)
+    void makePoint(NBodyVertex& point, bool neg, double r, double theta);
+    void generateSegment(bool neg);
+    void generateJoiningSegment();
+
+public:
+    void generateModel();
+
+    size_t size() const
     {
-        GLchar* logBuf = new GLchar[logLength + 1];
-        glGetShaderInfoLog(shader, logLength, NULL, logBuf);
-
-        fprintf(stderr,
-                "Shader compile log '%s':\n"
-                "--------------------------------------------------------------------------------\n"
-                "%s\n"
-                "--------------------------------------------------------------------------------\n",
-                showShaderType(type),
-                logBuf);
-
-        delete[] logBuf;
-    }
-
-    GLint status = GL_FALSE;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (!status)
-    {
-        throw std::runtime_error("Error compiling shader");
+        return this->nPoints * sizeof(NBodyVertex);
     }
 
-    return shader;
-}
-
-static void nbglGetProgramLog(GLuint program, const char* name)
-{
-    GLint logLength = 0;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
-    if (logLength > 0)
+    size_t colorSize() const
     {
-        GLchar* log = new GLchar[logLength + 1];
-        glGetShaderInfoLog(program, logLength, NULL, log);
-        fprintf(stderr,
-                "Linker output (%s):\n"
-                "--------------------------------------------------------------------------------\n"
-                "%s\n"
-                "--------------------------------------------------------------------------------\n",
-                name,
-                log);
-
-        delete[] log;
+        return this->nPoints * sizeof(Color);
     }
 
-	GLint status = GL_FALSE;
-	glGetProgramiv(program, GL_LINK_STATUS, &status);
-	if (!status)
-	{
-        throw std::runtime_error("Linking shader program failed");
-	}
-}
+    void draw(const glutil::MatrixStack& modelMatrix) const
+    {
+        glUseProgram(this->programData.program);
 
-extern "C" unsigned char vertex_glsl[];
-extern "C" size_t vertex_glsl_len;
+        glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
+        glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
-extern "C" unsigned char fragment_glsl[];
-extern "C" size_t fragment_glsl_len;
+        glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
+        glVertexAttribPointer(this->programData.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glUseProgram(0);
+    }
+
+    void loadShaders()
+    {
+        this->programData.program = nbglCreateProgram("galaxy program",
+                                                      (const char*) galaxy_vertex_glsl,
+                                                      (const char*) galaxy_fragment_glsl,
+                                                      (GLint) galaxy_vertex_glsl_len,
+                                                      (GLint) galaxy_fragment_glsl_len);
+
+        this->programData.positionLoc = glGetAttribLocation(this->programData.program, "position");
+        this->programData.modelToCameraMatrixLoc = glGetUniformLocation(this->programData.program, "modelToCameraMatrix");
+        this->programData.cameraToClipMatrixLoc = glGetUniformLocation(this->programData.program, "cameraToClipMatrix");
+
+        glEnableVertexAttribArray(this->programData.positionLoc);
+    }
+
+    void bufferData()
+    {
+        assert(this->nPoints != 0);
+
+        glGenBuffers(1, &this->buffer);
+        glGenBuffers(1, &this->colorBuffer);
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
+        glBufferData(GL_ARRAY_BUFFER, this->size(), (const GLfloat*) this->points, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
+        glBufferData(GL_ARRAY_BUFFER, this->colorSize(), (const GLfloat*) this->colors, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    GalaxyModel()
+    {
+        this->points = NULL;
+        this->colors = NULL;
+        this->nPoints = 0;
+        this->count = 0;
+
+        this->buffer = 0;
+        this->colorBuffer = 0;
 
 
-extern "C" unsigned char galaxy_vertex_glsl[];
-extern "C" size_t galaxy_vertex_glsl_len;
+        this->bulgeScale = 0.7;
+        this->diskScale = 4.0;
+        this->totalHeight = 2.0 * this->bulgeScale;
 
-extern "C" unsigned char galaxy_fragment_glsl[];
-extern "C" size_t galaxy_fragment_glsl_len;
+        this->totalDiameter = 33.0;
 
+        this->radialSlices = 50;
+        GLuint nDiameterSlices = 2 * this->radialSlices + 1;
+        this->diameterSlice = this->totalDiameter / (double) nDiameterSlices;
 
-static GLuint nbglCreateProgram(const char* name,
-                                const char* vertSrc,
-                                const char* fragSrc,
-                                GLint vertSrcLen,
-                                GLint fragSrcLen)
+        this->axialSlices = 50;
+        this->axialSliceSize = M_2PI / (double) this->axialSlices;
+
+        this->programData.program = 0;
+        this->programData.positionLoc = -1;
+        this->programData.modelToCameraMatrixLoc = -1;
+        this->programData.cameraToClipMatrixLoc = -1;
+    }
+
+    ~GalaxyModel()
+    {
+        if (this->programData.program != 0)
+            glDeleteProgram(this->programData.program);
+
+        glDeleteBuffers(1, &this->buffer);
+        glDeleteBuffers(1, &this->colorBuffer);
+
+        delete[] this->points;
+        delete[] this->colors;
+    }
+};
+
+void NBodyText::loadFont()
 {
-    GLuint vertexShader = createShaderFromSrc(vertSrc, (GLint) vertSrcLen, GL_VERTEX_SHADER);
-    GLuint pixelShader = createShaderFromSrc(fragSrc, (GLint) fragSrcLen, GL_FRAGMENT_SHADER);
+    this->atlas = texture_atlas_new(512, 512, 3);
+    //this->atlas = texture_atlas_new(128, 128, 3);
+    //this->atlas = texture_atlas_new(1024, 1024, 3);
+    //this->atlas = texture_atlas_new(10, 10, 3);
+    assert(this->atlas);
+    //this->font = texture_font_new(atlas, "../freetype-gl/Vera.ttf", 0.0f);
+    this->font = texture_font_new(atlas, "/Users/matt/src/milkywayathome_client/freetype-gl/Vera.ttf", 27.0f);
+    assert(this->font);
+    //this->textBuffer = vertex_buffer_new("v3i:t2f:c4f");
+    this->textBuffer = vertex_buffer_new("v3f:t2f:c4f");
+    assert(this->textBuffer);
 
-    GLuint program = glCreateProgram();
-
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, pixelShader);
-
-    glLinkProgram(program);
-
-    glDetachShader(program, vertexShader);
-    glDetachShader(program, pixelShader);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(pixelShader);
-
-    nbglGetProgramLog(program, name);
-
-    return program;
+    texture_font_load_glyphs(this->font,
+                             L" !\"#$%&'()*+,-./0123456789:;<=>?"
+                             L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+                             L"`abcdefghijklmnopqrstuvwxyz{|}~"
+                             L" ");
+    printf("Glyphs loaded %d\n", glGetError());
 }
-
 void NBodyGraphics::loadShaders()
 {
     this->mainProgram.program = nbglCreateProgram("main program",
-                                                  (const char*) vertex_glsl,
-                                                  (const char*) fragment_glsl,
-                                                  (GLint) vertex_glsl_len,
-                                                  (GLint) fragment_glsl_len);
+                                                  (const char*) main_vertex_glsl,
+                                                  (const char*) main_fragment_glsl,
+                                                  (GLint) main_vertex_glsl_len,
+                                                  (GLint) main_fragment_glsl_len);
 
-    this->galaxyProgram.program = nbglCreateProgram("galaxy program",
-                                                    (const char*) galaxy_vertex_glsl,
-                                                    (const char*) galaxy_fragment_glsl,
-                                                    (GLint) galaxy_vertex_glsl_len,
-                                                    (GLint) galaxy_fragment_glsl_len);
+    this->mainProgram.positionLoc = glGetAttribLocation(this->mainProgram.program, "position");
+    this->mainProgram.colorLoc = glGetAttribLocation(this->mainProgram.program, "inputColor");
+    this->mainProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->mainProgram.program, "modelToCameraMatrix");
+    this->mainProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->mainProgram.program, "cameraToClipMatrix");
+
+    glEnableVertexAttribArray(this->mainProgram.positionLoc);
+    glEnableVertexAttribArray(this->mainProgram.colorLoc);
 }
 
 void NBodyGraphics::createAxesBuffers()
@@ -512,12 +906,12 @@ void NBodyGraphics::createAxesBuffers()
 
     static const GLfloat colors[6][4] =
         {
-            { 1.0f, 0.0f, 0.0f, 0.5f },
-            { 1.0f, 0.0f, 0.0f, 0.5f },
-            { 0.0f, 1.0f, 0.0f, 0.5f },
-            { 0.0f, 1.0f, 0.0f, 0.5f },
-            { 0.0f, 0.0f, 1.0f, 0.5f },
-            { 0.0f, 0.0f, 1.0f, 0.5f }
+            { 1.0f, 0.0f, 0.0f, 0.75f },
+            { 1.0f, 0.0f, 0.0f, 0.75f },
+            { 0.0f, 1.0f, 0.0f, 0.75f },
+            { 0.0f, 1.0f, 0.0f, 0.75f },
+            { 0.0f, 0.0f, 1.0f, 0.75f },
+            { 0.0f, 0.0f, 1.0f, 0.75f }
         };
 
     glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
@@ -542,17 +936,6 @@ void NBodyGraphics::drawAxes()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void NBodyGraphics::drawGalaxy()
-{
-    glBindBuffer(GL_ARRAY_BUFFER, this->galaxyModelBuffer);
-    glVertexAttribPointer(this->galaxyProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
-    //glVertexPointer(3, GL_FLOAT, sizeof(vertexData), &galaxy[0].vertex);
-    //glNormalPointer(GL_FLOAT, sizeof(vertexData), &galaxy[0].normal);
-
-    glDrawArrays(GL_TRIANGLES, 0, sizeof(galaxy) / (6 * sizeof(GLfloat)));
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
 void NBodyGraphics::drawBodies()
 {
     const GLfloat* positions = (const GLfloat*) this->scene->rTrace;
@@ -568,17 +951,19 @@ void NBodyGraphics::drawBodies()
     glVertexAttribPointer(this->mainProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     glDrawArrays(GL_POINTS, 0, nbody);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void NBodyGraphics::createBuffers()
 {
-    GLuint buffers[7];
+    GLuint buffers[6];
 
     glGenVertexArrays(1, &this->vao);
     glBindVertexArray(this->vao);
 
-    glGenBuffers(7, buffers);
+    glGenBuffers(6, buffers);
 
     this->positionBuffer = buffers[0];
     this->velocityBuffer = buffers[1];
@@ -586,7 +971,6 @@ void NBodyGraphics::createBuffers()
     this->colorBuffer = buffers[3];
     this->axesBuffer = buffers[4];
     this->axesColorBuffer = buffers[5];
-    this->galaxyModelBuffer = buffers[6];
 }
 
 void NBodyGraphics::createPositionBuffer()
@@ -603,7 +987,14 @@ void NBodyGraphics::populateBuffers()
 {
     this->createPositionBuffer();
     this->createAxesBuffers();
-    this->createGalaxyBuffer();
+}
+
+void NBodyGraphics::loadModel(GalaxyModel& model)
+{
+    model.generateModel();
+    model.bufferData();
+    model.loadShaders();
+    this->galaxyModel = &model;
 }
 
 void NBodyGraphics::loadColors()
@@ -617,7 +1008,6 @@ void NBodyGraphics::loadColors()
 
     for (GLint i = 0; i < nbody; ++i)
     {
-
         /*
         if (r[i].ignore)
         {
@@ -666,24 +1056,25 @@ void NBodyGraphics::loadColors()
 
 void NBodyGraphics::prepareContext()
 {
-    this->loadShaders();
     this->createBuffers();
+    printf("main buffers created %d\n", glGetError());
 
-    this->mainProgram.positionLoc = glGetAttribLocation(this->mainProgram.program, "position");
-    this->mainProgram.colorLoc = glGetAttribLocation(this->mainProgram.program, "inputColor");
-    this->mainProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->mainProgram.program, "modelToCameraMatrix");
-    this->mainProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->mainProgram.program, "cameraToClipMatrix");
+    this->loadShaders();
 
-    glEnableVertexAttribArray(this->mainProgram.positionLoc);
-    glEnableVertexAttribArray(this->mainProgram.colorLoc);
+    printf("main shader loaded %d\n", glGetError());
+
+    this->text.loadShader();
+    printf("text shader loaded %d\n", glGetError());
+
+    printf("Enable tex2d pre %d\n", glGetError());
+    //glEnable(GL_TEXTURE_2D);
+    printf("Enable tex2d %d\n", glGetError());
 
 
+    this->text.loadFont();
+    printf("text fotn loaded %d\n", glGetError());
 
-    this->galaxyProgram.positionLoc = glGetAttribLocation(this->galaxyProgram.program, "position");
-    this->galaxyProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->galaxyProgram.program, "modelToCameraMatrix");
-    this->galaxyProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->galaxyProgram.program, "cameraToClipMatrix");
-    glEnableVertexAttribArray(this->galaxyProgram.positionLoc);
-
+    printf("loadedup %d\n", glGetError());
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
@@ -691,29 +1082,46 @@ void NBodyGraphics::prepareContext()
     glDepthFunc(GL_LESS);
     //glEnable(GL_DEPTH_TEST | GL_BLEND | GL_ALPHA_TEST | GL_POINT_SMOOTH | GL_VERTEX_PROGRAM_POINT_SIZE);
     //glEnable(GL_DEPTH_TEST | GL_BLEND | GL_ALPHA_TEST | GL_POINT_SMOOTH);
-    glEnable(GL_DEPTH_TEST | GL_BLEND | GL_ALPHA_TEST);
+    glEnable(GL_DEPTH_TEST);
+    printf("firstenable %d\n", glGetError());
+
+
+    glEnable(GL_BLEND);
+    printf("firstenable %d\n", glGetError());
+
+
+    //glEnable(GL_ALPHA_TEST);
+    printf("firstenable %d\n", glGetError());
+
 
     glPointSize(3.0f);
 
     // allow changing point size from within shader
     // as well as smoothing them to look more spherical
     //glEnable(GL_POINT_SMOOTH | GL_VERTEX_PROGRAM_POINT_SIZE);
-    glEnable(GL_POINT_SMOOTH);
+    //glEnable(GL_POINT_SMOOTH);
     //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    //printf("pointsmooth %d\n", glGetError());
+
     glEnable(GL_POINT_SPRITE);
+    printf("point sprite %d\n", glGetError());
 
     glEnableClientState(GL_VERTEX_ARRAY);
+    printf("vert state %d\n", glGetError());
     glEnableClientState(GL_COLOR_ARRAY);
+    printf("color state %d\n", glGetError());
     glEnableClientState(GL_NORMAL_ARRAY);
+    printf("normal state %d\n", glGetError());
 
-    glEnable(GL_POINT_SPRITE_ARB);
+    //glEnable(GL_POINT_SPRITE);
+    //printf("NO %d\n", glGetError());
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CW);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+    //glFrontFace(GL_CW);
 
     float maxSmoothPointSize[2];
-    glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, (float *)&maxSmoothPointSize);
+    glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, (GLfloat*) &maxSmoothPointSize);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -723,6 +1131,13 @@ void NBodyGraphics::prepareContext()
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LEQUAL);
     glDepthRange(0.0f, 1.0f);
+    printf("depth range %d\n", glGetError());
+
+    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
+    //glEnable(GL_BLEND);
+
+    ///glEnable(GL_COLOR_MATERIAL);
+    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
 }
 
 static void requestGL32()
@@ -763,18 +1178,27 @@ void NBodyGraphics::mainLoop()
     while (this->running)
     {
         glfwPollEvents();
-
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClearDepth(1.0);
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        glUseProgram(this->mainProgram.program);
 
         glutil::MatrixStack modelMatrix;
         modelMatrix.SetMatrix(viewPole.CalcMatrix());
 
+
+        //glm::mat4(1.0f);
+        //modelMatrix.SetMatrix(iden);
+
         //std::cout << viewPole.GetView().orient[0] << std::endl;
 		//modelMatrix.Scale(glm::vec3(0.05f, 0.05, 0.05f));
 		//modelMatrix.Translate(glm::vec3(0.0f, 0.5f, 0.0f));
+        if (this->galaxyModel)
+        {
+            this->galaxyModel->draw(modelMatrix);
+        }
+
+        glUseProgram(this->mainProgram.program);
 
         glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
         glUniformMatrix4fv(this->mainProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
@@ -791,14 +1215,9 @@ void NBodyGraphics::mainLoop()
 
         if (true)
         {
-            glUseProgram(this->galaxyProgram.program);
-
-            glUniformMatrix4fv(this->galaxyProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
-            glUniformMatrix4fv(this->galaxyProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
-
-
-            this->drawGalaxy();
+            this->text.drawText("lol text", 9);
         }
+
 
         glUseProgram(0);
         glfwSwapBuffers();
@@ -865,8 +1284,7 @@ scene_t* nbConnectSharedScene(int instanceId)
 
 #else
 
-/* Returns TRUE if connection succeeds */
-static int nbAttemptConnectSharedScene(void)
+static scene_t* nbAttemptConnectSharedScene(void)
 {
     scene_t* scene = (scene_t*) mw_graphics_get_shmem(NBODY_BIN_NAME);
     if (!scene)
@@ -902,6 +1320,110 @@ scene_t* nbConnectSharedScene(int instanceId)
 
 #endif /* !BOINC_APPLICATION */
 
+static double derivDiskShapeFunction(double r)
+{
+    return (1.0/4.0) * 4.0 * exp((-1.0/4.0) * std::fabs(r));
+}
+
+static double diskShapeFunction(double r)
+{
+    return 4.0 * exp((-1.0/4.0) * std::fabs(r));
+}
+
+void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta)
+{
+    double z;
+
+    point.x = std::fabs(r) * cos(theta);
+    point.y = std::fabs(r) * sin(theta);
+
+    //if (std::fabs(r) < this->bulgeScale)
+    if (false)
+    {
+        z = sqrt(sqr(this->bulgeScale) - 2.0 * sqr(r));
+    }
+    else
+    {
+        z = diskShapeFunction(r);
+    }
+
+    point.z = neg ? -z : z;
+}
+
+// generate top or bottom half of galaxy model
+void GalaxyModel::generateSegment(bool neg)
+{
+    for (GLint i = this->radialSlices; i >= -this->radialSlices; --i)
+    {
+        double r = i * this->diameterSlice;
+        double r1 = (i + 1) * this->diameterSlice;
+        double theta;
+
+        // wrap around an additional point to close the circle at 0
+        for (GLint j = 0; j < this->axialSlices + 1; ++j)
+        {
+            theta = this->axialSliceSize * (double) j;
+
+            makePoint(this->points[this->count++], neg, r, theta);
+            makePoint(this->points[this->count++], neg, r1, theta);
+        }
+    }
+}
+
+// create section that tapers to 0 at the edge to join the upper and lower half
+void GalaxyModel::generateJoiningSegment()
+{
+    double r = this->radialSlices * this->diameterSlice;
+
+    // approximate slope of last segment at tip and continue a bit further
+    double slope = derivDiskShapeFunction(r);
+    double r1 = 1.1 * (slope * r + r);
+
+    for (GLint j = 0; j < this->axialSlices + 1; ++j)
+    {
+        double theta = this->axialSliceSize * (double) j;
+
+        makePoint(this->points[this->count++], true, r, theta);
+        this->points[this->count++] = NBodyVertex(r1 * cos(theta), r1 * sin(theta), 0.0f);
+    }
+
+    for (GLint j = 0; j < this->axialSlices + 1; ++j)
+    {
+        double theta = this->axialSliceSize * (double) j;
+
+        this->points[this->count++] = NBodyVertex(r1 * cos(theta), r1 * sin(theta), 0.0f);
+        makePoint(this->points[this->count++], false, r, theta);
+    }
+}
+
+void GalaxyModel::generateModel()
+{
+    GLuint segmentPoints = 2 * (2 * this->radialSlices + 1) * (this->axialSlices + 1);
+    GLuint joinPoints = 2 * (this->axialSlices + 1);
+    this->nPoints = 2 * (segmentPoints + joinPoints);
+
+    this->points = new NBodyVertex[this->nPoints];
+    this->colors = new Color[this->nPoints];
+    this->count = 0;
+
+    generateSegment(true);
+    generateJoiningSegment();
+    generateSegment(false);
+
+#if 0
+    for (GLint i = 0; i < nPoints; ++i)
+    {
+        printf("%f %f %f\n",
+               this->points[i].x,
+               this->points[i].y,
+               this->points[i].z
+            );
+    }
+#endif
+
+    assert(this->count == this->nPoints);
+}
+
 int nbCheckConnectedVersion(const scene_t* scene)
 {
     if (   scene->nbodyMajorVersion != NBODY_VERSION_MAJOR
@@ -921,7 +1443,6 @@ int nbCheckConnectedVersion(const scene_t* scene)
 int nbRunGraphics(const scene_t* scene, const VisArgs* args)
 {
     NBodyGraphics graphicsContext(scene);
-    int rc = 0;
 
     glfwInit();
 
@@ -933,16 +1454,19 @@ int nbRunGraphics(const scene_t* scene, const VisArgs* args)
         graphicsContext.populateBuffers();
         graphicsContext.loadColors();
 
+        GalaxyModel model;
+        graphicsContext.loadModel(model);
         graphicsContext.mainLoop();
     }
     catch (const std::exception& e)
     {
         std::cerr << "Exception: " << e.what() << std::endl;
-        rc = 1;
+        glfwTerminate();
+        return 1;
     }
 
     glfwTerminate();
 
-    return rc;
+    return 0;
 }
 
