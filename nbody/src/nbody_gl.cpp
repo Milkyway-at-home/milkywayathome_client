@@ -703,6 +703,7 @@ private:
     GLuint nPoints;
     GLuint count;
 
+    GLuint vao;
     GLuint buffer;
     GLuint colorBuffer;
 
@@ -748,15 +749,14 @@ public:
     void draw(const glutil::MatrixStack& modelMatrix) const
     {
         glUseProgram(this->programData.program);
+        glBindVertexArray(this->vao);
 
         glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
         glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
-        glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
-        glVertexAttribPointer(this->programData.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
+        glBindVertexArray(0);
         glUseProgram(0);
     }
 
@@ -771,8 +771,21 @@ public:
         this->programData.positionLoc = glGetAttribLocation(this->programData.program, "position");
         this->programData.modelToCameraMatrixLoc = glGetUniformLocation(this->programData.program, "modelToCameraMatrix");
         this->programData.cameraToClipMatrixLoc = glGetUniformLocation(this->programData.program, "cameraToClipMatrix");
+    }
 
+    void prepareVAO()
+    {
+        glGenVertexArrays(1, &this->vao);
+
+        glBindVertexArray(this->vao);
         glEnableVertexAttribArray(this->programData.positionLoc);
+        glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
+        glVertexAttribPointer(this->programData.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        //glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
+        //glVertexAttribPointer(this->programData.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glBindVertexArray(0);
     }
 
     void bufferData()
@@ -798,6 +811,7 @@ public:
         this->nPoints = 0;
         this->count = 0;
 
+        this->vao = 0;
         this->buffer = 0;
         this->colorBuffer = 0;
 
@@ -825,6 +839,8 @@ public:
     {
         if (this->programData.program != 0)
             glDeleteProgram(this->programData.program);
+
+        glDeleteVertexArrays(1, &this->vao);
 
         glDeleteBuffers(1, &this->buffer);
         glDeleteBuffers(1, &this->colorBuffer);
@@ -1027,6 +1043,7 @@ void NBodyGraphics::loadModel(GalaxyModel& model)
     model.generateModel();
     model.bufferData();
     model.loadShaders();
+    model.prepareVAO();
     this->galaxyModel = &model;
 }
 
@@ -1218,8 +1235,6 @@ void NBodyGraphics::mainLoop()
         glutil::MatrixStack modelMatrix;
         modelMatrix.SetMatrix(viewPole.CalcMatrix());
 
-        glBindVertexArray(this->vao);
-
         //glm::mat4(1.0f);
         //modelMatrix.SetMatrix(iden);
 
@@ -1231,6 +1246,7 @@ void NBodyGraphics::mainLoop()
             this->galaxyModel->draw(modelMatrix);
         }
 
+        glBindVertexArray(this->vao);
         glUseProgram(this->mainProgram.program);
 
         glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
