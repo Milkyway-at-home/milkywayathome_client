@@ -152,7 +152,8 @@ private:
     const scene_t* scene;
     GLFWwindow window;
 
-    GLuint vao;
+    GLuint particleVAO;
+    GLuint axesVAO;
 
     /*
     struct ParticleBuffers
@@ -191,6 +192,7 @@ private:
 
     void loadShaders();
     void createBuffers();
+    void prepareVAOs();
     void createPositionBuffer();
     void createAxesBuffers();
 
@@ -209,6 +211,8 @@ public:
         bool cmCentered;
         bool drawHelp;
         bool monochromatic;
+
+        float pointSize;
     } drawOptions;
 
 
@@ -371,12 +375,11 @@ static glutil::ViewPole viewPole = glutil::ViewPole(initialViewData, viewScale, 
 
 static void errorHandler(int errorCode, const char* msg)
 {
-    std::cerr << "Error: " << msg << std::endl;
+    fprintf(stderr, "GLFW error (%d): %s\n", errorCode, msg);
 }
 
 static void resizeHandler(GLFWwindow window, int w, int h)
 {
-    std::cout << "Resize " << w << " " << h << std::endl;
     float wf = (float) w;
     float hf = (float) h;
     float aspectRatio = wf / hf;
@@ -407,12 +410,12 @@ static int closeHandler(GLFWwindow window)
     return 0;
 }
 
+/*
 static void refreshHandler(GLFWwindow window)
 {
     std::cout << "Refresh" << std::endl;
 }
 
-/*
 static void focusHandler(GLFWwindow window, int focus)
 {
     std::cout << "Focus: " << focus << std::endl;
@@ -507,7 +510,7 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
 
     glfwSetWindowSizeCallback(resizeHandler);
     glfwSetWindowCloseCallback(closeHandler);
-    glfwSetWindowRefreshCallback(refreshHandler);
+    //glfwSetWindowRefreshCallback(refreshHandler);
     //glfwSetWindowFocusCallback(focusHandler);
 
     glfwSetKeyCallback(keyHandler);
@@ -687,6 +690,7 @@ void NBodyText::drawProgressText(const scene_t* scene)
              100.0f * scene->info.currentTime / scene->info.timeEvolve
         );
 
+    vertex_buffer_clear(this->textBuffer);
     add_text(this->textBuffer,
              this->font,
              buf,
@@ -716,7 +720,8 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
 {
     this->window = NULL;
     this->scene = scene;
-    this->vao = 0;
+    this->particleVAO = 0;
+    this->axesVAO = 0;
 
     this->positionBuffer = 0;
     this->velocityBuffer = 0;
@@ -763,7 +768,9 @@ NBodyGraphics::~NBodyGraphics()
     buffers[5] = this->axesColorBuffer;
 
     glDeleteBuffers(6, buffers);
-    glDeleteVertexArrays(1, &this->vao);
+
+    glDeleteVertexArrays(1, &this->particleVAO);
+    glDeleteVertexArrays(1, &this->axesVAO);
 }
 
 class GalaxyModel
@@ -820,12 +827,10 @@ public:
     void draw(const glutil::MatrixStack& modelMatrix) const
     {
         glUseProgram(this->programData.program);
-        glBindVertexArray(this->vao);
-
         glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
         glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
-
+        glBindVertexArray(this->vao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
         glBindVertexArray(0);
         glUseProgram(0);
@@ -1012,9 +1017,36 @@ void NBodyGraphics::loadShaders()
     this->mainProgram.colorLoc = glGetAttribLocation(this->mainProgram.program, "inputColor");
     this->mainProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->mainProgram.program, "modelToCameraMatrix");
     this->mainProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->mainProgram.program, "cameraToClipMatrix");
+}
 
+void NBodyGraphics::prepareVAOs()
+{
+    glGenVertexArrays(1, &this->particleVAO);
+    glBindVertexArray(this->particleVAO);
     glEnableVertexAttribArray(this->mainProgram.positionLoc);
     glEnableVertexAttribArray(this->mainProgram.colorLoc);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
+    /* 4th component is not included */
+    glVertexAttribPointer(this->mainProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
+    glVertexAttribPointer(this->mainProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glGenVertexArrays(1, &this->axesVAO);
+    glBindVertexArray(this->axesVAO);
+    glEnableVertexAttribArray(this->mainProgram.positionLoc);
+    glEnableVertexAttribArray(this->mainProgram.colorLoc);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
+    glVertexAttribPointer(this->mainProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->axesColorBuffer);
+    glVertexAttribPointer(this->mainProgram.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+    glBindVertexArray(0);
 }
 
 void NBodyGraphics::createAxesBuffers()
@@ -1050,15 +1082,11 @@ void NBodyGraphics::createAxesBuffers()
 
 void NBodyGraphics::drawAxes()
 {
-    glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
-    glVertexAttribPointer(this->mainProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->axesColorBuffer);
-    glVertexAttribPointer(this->mainProgram.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
+    glBindVertexArray(this->axesVAO);
     glDrawArrays(GL_LINES, 0, 6);
+    glBindVertexArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void NBodyGraphics::drawBodies()
@@ -1068,25 +1096,16 @@ void NBodyGraphics::drawBodies()
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), positions);
-
-    /* 4th component is not included */
-    glVertexAttribPointer(this->mainProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
-    glVertexAttribPointer(this->mainProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindVertexArray(this->particleVAO);
 
     glDrawArrays(GL_POINTS, 0, nbody);
-
+    glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void NBodyGraphics::createBuffers()
 {
     GLuint buffers[6];
-
-    glGenVertexArrays(1, &this->vao);
-    glBindVertexArray(this->vao);
 
     glGenBuffers(6, buffers);
 
@@ -1183,20 +1202,10 @@ void NBodyGraphics::loadColors()
 void NBodyGraphics::prepareContext()
 {
     this->createBuffers();
-    printf("main buffers created %d\n", glGetError());
-
     this->loadShaders();
-
-    printf("main shader loaded %d\n", glGetError());
+    this->prepareVAOs();
 
     this->text.loadShader();
-    printf("text shader loaded %d\n", glGetError());
-
-    printf("Enable tex2d pre %d\n", glGetError());
-    //glEnable(GL_TEXTURE_2D);
-    printf("Enable tex2d %d\n", glGetError());
-
-
     this->text.loadFont();
     this->text.prepareConstantText(this->scene);
     this->text.prepareTextVAOs();
@@ -1204,42 +1213,13 @@ void NBodyGraphics::prepareContext()
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
 
-    glDepthFunc(GL_LESS);
-    //glEnable(GL_DEPTH_TEST | GL_BLEND | GL_ALPHA_TEST | GL_POINT_SMOOTH | GL_VERTEX_PROGRAM_POINT_SIZE);
-    //glEnable(GL_DEPTH_TEST | GL_BLEND | GL_ALPHA_TEST | GL_POINT_SMOOTH);
-    glEnable(GL_DEPTH_TEST);
-    printf("firstenable %d\n", glGetError());
-
-
-    glEnable(GL_BLEND);
-    printf("firstenable %d\n", glGetError());
-
-
-    //glEnable(GL_ALPHA_TEST);
-    printf("firstenable %d\n", glGetError());
-
-
     glPointSize(3.0f);
 
     // allow changing point size from within shader
     // as well as smoothing them to look more spherical
-    //glEnable(GL_POINT_SMOOTH | GL_VERTEX_PROGRAM_POINT_SIZE);
     //glEnable(GL_POINT_SMOOTH);
     //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     //printf("pointsmooth %d\n", glGetError());
-
-    glEnable(GL_POINT_SPRITE);
-    printf("point sprite %d\n", glGetError());
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    printf("vert state %d\n", glGetError());
-    glEnableClientState(GL_COLOR_ARRAY);
-    printf("color state %d\n", glGetError());
-    glEnableClientState(GL_NORMAL_ARRAY);
-    printf("normal state %d\n", glGetError());
-
-    //glEnable(GL_POINT_SPRITE);
-    //printf("NO %d\n", glGetError());
 
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
@@ -1247,16 +1227,18 @@ void NBodyGraphics::prepareContext()
 
     float maxSmoothPointSize[2];
     glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, (GLfloat*) &maxSmoothPointSize);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glShadeModel(GL_SMOOTH);
+    printf("point size range %f %f\n", maxSmoothPointSize[0], maxSmoothPointSize[1]);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
     glDepthFunc(GL_LEQUAL);
     glDepthRange(0.0f, 1.0f);
-    printf("depth range %d\n", glGetError());
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+    //glEnable(GL_ALPHA_TEST);
+
 
     //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
     //glEnable(GL_BLEND);
@@ -1306,18 +1288,11 @@ void NBodyGraphics::display()
     glutil::MatrixStack modelMatrix;
     modelMatrix.SetMatrix(viewPole.CalcMatrix());
 
-    //glm::mat4(1.0f);
-    //modelMatrix.SetMatrix(iden);
-
-    //std::cout << viewPole.GetView().orient[0] << std::endl;
-    //modelMatrix.Scale(glm::vec3(0.05f, 0.05, 0.05f));
-    //modelMatrix.Translate(glm::vec3(0.0f, 0.5f, 0.0f));
     if (this->galaxyModel)
     {
         this->galaxyModel->draw(modelMatrix);
     }
 
-    glBindVertexArray(this->vao);
     glUseProgram(this->mainProgram.program);
 
     glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
