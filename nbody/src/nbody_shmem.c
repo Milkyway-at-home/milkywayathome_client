@@ -70,7 +70,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
         ++instanceId;
 
         if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
-            mw_panic("Buffer too small for scared memory name\n");
+            mw_panic("Buffer too small for shared memory name\n");
 
         shmId = shm_open(name, O_CREAT | O_RDWR | O_EXCL, mode); /* Try to open exclusively */
         if (shmId < 0 && errno != EEXIST) /* Only failed if */
@@ -324,7 +324,7 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     }
 
     /* No copying when no screensaver attached */
-    if (scene->attached)
+    if (OPA_load_int(&scene->attachedCount) > 0)
     {
       #ifdef _OPENMP
         #pragma omp parallel for private(i, b) schedule(static)
@@ -339,5 +339,4 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
         }
     }
 }
-
 

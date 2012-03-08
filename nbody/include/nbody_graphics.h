@@ -22,6 +22,7 @@
 #define _NBODY_GRAPHICS_H_
 
 #include <stdint.h>
+#include <opa_primitives.h>
 
 #define MAX_DRAW_TRACE_POINTS 256
 
@@ -70,11 +71,8 @@ typedef struct
        where you can end up with multiple at a time which could
        potentially break, but it shouldn't matter that much.
      */
-  #ifndef _MSC_VER
-    volatile int attached;
-  #else
-    volatile LONG attached;
-  #endif /* _MSC_VER */
+    OPA_int_t attachedCount;
+
 
     float rootCenterOfMass[3];     /* Center of mass of the system  */
     float startingPositionHint[3];

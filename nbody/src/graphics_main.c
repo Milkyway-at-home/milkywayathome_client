@@ -1,25 +1,27 @@
 /*
-Copyright (C) 2011 Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2011-2012 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "nbody_gl.h"
 #include "nbody_graphics.h"
 #include "milkyway_util.h"
+
+#include <signal.h>
 
 static const VisArgs defaultVisArgs =
 {
@@ -235,6 +237,40 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
     return scene;
 }
 
+static scene_t* g_scene = NULL;
+
+static void cleanupAttachedCount(void)
+{
+    printf("Cleanup\n");
+
+    if (g_scene)
+    {
+        printf("Decrement\n");
+        OPA_decr_int(&g_scene->attachedCount);
+        g_scene = NULL;
+    }
+}
+
+static void sigHandler(int sig)
+{
+    cleanupAttachedCount();
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
+
+static void installExitHandlers()
+{
+    /* TODO: Use sigaction() if available instead */
+    signal(SIGINT, sigHandler);
+    signal(SIGQUIT, sigHandler);
+    signal(SIGINT, sigHandler);
+	signal(SIGABRT, sigHandler);
+	signal(SIGFPE, sigHandler);
+	signal(SIGKILL, sigHandler);
+	signal(SIGSEGV, sigHandler);
+	signal(SIGUSR1, sigHandler);
+    atexit(cleanupAttachedCount);
+}
 
 int main(int argc, const char* argv[])
 {
@@ -266,7 +302,9 @@ int main(int argc, const char* argv[])
             return 1;
         }
 
-        nbodyGraphicsSetOn(&scene->attached);
+        installExitHandlers();
+        OPA_incr_int(&scene->attachedCount);
+        g_scene = scene;
     }
     else
     {

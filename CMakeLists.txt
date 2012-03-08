@@ -366,8 +366,7 @@ if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
 endif()
 
-if(NBODY_GL AND FALSE)
-  #TODO: use it
+if(NBODY_GL)
   add_subdirectory(openpa)
 endif()
 

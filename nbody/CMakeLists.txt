@@ -315,7 +315,7 @@ if(NBODY_GL)
 
   find_library(COCOA_LIB Cocoa)
 #  find_library(CG_LIB CoreGraphics)
-  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB})
+  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB} ${OPA_LIBRARY})
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
   endif()
