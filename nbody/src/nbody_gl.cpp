@@ -88,6 +88,148 @@ extern "C" unsigned char text_fragment_glsl[];
 extern "C" size_t text_fragment_glsl_len;
 
 
+class GalaxyModel;
+
+struct Color
+{
+    GLfloat r, g, b;
+};
+
+struct NBodyVertex
+{
+    GLfloat x, y, z;
+
+    NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
+    NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
+};
+
+
+class NBodyText
+{
+private:
+    texture_font_t* font;
+    texture_atlas_t* atlas;
+
+    /* Text which will remain constant */
+    vertex_buffer_t* constTextBuffer;
+
+    /* Buffer of text which may change every frame */
+    vertex_buffer_t* textBuffer;
+
+    vec2 penEndConst;
+
+    GLuint constTextVAO;
+    GLuint textVAO;
+
+    struct TextProgramData
+    {
+        GLuint program;
+
+        GLint positionLoc;
+        GLint texCoordLoc;
+        GLint texPositionLoc;
+
+        GLint textTextureLoc;
+
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } textProgram;
+
+public:
+    void prepareConstantText(const scene_t* scene);
+    void prepareTextVAOs();
+    void drawText(const char* text, size_t n);
+    void loadFont();
+    void loadShader();
+
+    NBodyText();
+    ~NBodyText();
+};
+
+class NBodyGraphics
+{
+private:
+    const scene_t* scene;
+    GLFWwindow window;
+
+    GLuint vao;
+
+    /*
+    struct ParticleBuffers
+    {
+        GLuint position;
+        GLuint velocity;
+        GLuint acceleration;
+        GLuint color;
+    } particleBuffers;
+    */
+
+    struct MainProgramData
+    {
+        GLuint program;
+
+        GLint positionLoc;
+        GLint colorLoc;
+
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } mainProgram;
+
+    GLuint positionBuffer;
+    GLuint velocityBuffer;
+    GLuint accelerationBuffer;
+    GLuint colorBuffer;
+
+    GLuint axesBuffer;
+    GLuint axesColorBuffer;
+
+    bool running;
+
+    struct DrawOptions
+    {
+        bool fullscreen;
+        bool screensaverMode;
+        bool pause;
+        bool drawOrbitTrace;
+        bool drawInfo;
+        bool drawAxes;
+        bool drawParticles;
+        bool floatMode;
+        bool cmCentered;
+        bool drawHelp;
+        bool monochromatic;
+    } drawOptions;
+
+    GalaxyModel* galaxyModel;
+
+    NBodyText text;
+
+    void loadShaders();
+    void createBuffers();
+    void createPositionBuffer();
+    void createAxesBuffers();
+
+public:
+    NBodyGraphics(const scene_t* scene);
+    ~NBodyGraphics();
+
+    void prepareWindow(bool fullscreen);
+    void prepareContext();
+    void populateBuffers();
+
+    void loadModel(GalaxyModel& model);
+    void loadColors();
+    void drawAxes();
+    void drawBodies();
+
+    void display();
+    void mainLoop();
+};
+
+// For access from callbacks
+static NBodyGraphics* globalGraphicsContext = NULL;
+
+
 static void nbglGetProgramLog(GLuint program, const char* name)
 {
     GLint logLength = 0;
@@ -241,6 +383,12 @@ static void resizeHandler(GLFWwindow window, int w, int h)
     textCameraToClipMatrix = glm::translate(textCameraToClipMatrix, glm::vec3(0.0f, -fontHeight, 0.0f));
 
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
+
+    if (globalGraphicsContext)
+    {
+        globalGraphicsContext->display();
+        glfwSwapBuffers();
+    }
 }
 
 static int closeHandler(GLFWwindow window)
@@ -316,7 +464,7 @@ static void keyHandler(GLFWwindow window, int x, int y)
     std::cout << "Key press " << x << " " << y << std::endl;
 }
 
-static void nbglSetHandlers()
+static void nbglSetHandlers(NBodyGraphics* graphicsContext)
 {
     glfwSetErrorCallback(errorHandler);
 
@@ -330,63 +478,10 @@ static void nbglSetHandlers()
     glfwSetMouseButtonCallback(mouseButtonHandler);
     glfwSetMousePosCallback(mousePosHandler);
     glfwSetScrollCallback(scrollHandler);
+
+    globalGraphicsContext = graphicsContext;
 }
 
-struct Color
-{
-    GLfloat r, g, b;
-};
-
-struct NBodyVertex
-{
-    GLfloat x, y, z;
-
-    NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
-    NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
-};
-
-
-class NBodyText
-{
-private:
-    texture_font_t* font;
-    texture_atlas_t* atlas;
-
-    /* Text which will remain constant */
-    vertex_buffer_t* constTextBuffer;
-
-    /* Buffer of text which may change every frame */
-    vertex_buffer_t* textBuffer;
-
-    vec2 penEndConst;
-
-    GLuint constTextVAO;
-    GLuint textVAO;
-
-    struct TextProgramData
-    {
-        GLuint program;
-
-        GLint positionLoc;
-        GLint texCoordLoc;
-        GLint texPositionLoc;
-
-        GLint textTextureLoc;
-
-        GLint modelToCameraMatrixLoc;
-        GLint cameraToClipMatrixLoc;
-    } textProgram;
-
-public:
-    void prepareConstantText(const scene_t* scene);
-    void prepareTextVAOs();
-    void drawText(const char* text, size_t n);
-    void loadFont();
-    void loadShader();
-
-    NBodyText();
-    ~NBodyText();
-};
 
 void NBodyText::loadShader()
 {
@@ -559,87 +654,6 @@ void NBodyText::drawText(const char* text, size_t n)
     glUseProgram(0);
     glBindVertexArray(0);
 }
-
-class GalaxyModel;
-
-class NBodyGraphics
-{
-private:
-    const scene_t* scene;
-    GLFWwindow window;
-
-    GLuint vao;
-
-    /*
-    struct ParticleBuffers
-    {
-        GLuint position;
-        GLuint velocity;
-        GLuint acceleration;
-        GLuint color;
-    } particleBuffers;
-    */
-
-    struct MainProgramData
-    {
-        GLuint program;
-
-        GLint positionLoc;
-        GLint colorLoc;
-
-        GLint modelToCameraMatrixLoc;
-        GLint cameraToClipMatrixLoc;
-    } mainProgram;
-
-    GLuint positionBuffer;
-    GLuint velocityBuffer;
-    GLuint accelerationBuffer;
-    GLuint colorBuffer;
-
-    GLuint axesBuffer;
-    GLuint axesColorBuffer;
-
-    bool running;
-
-    struct DrawOptions
-    {
-        bool fullscreen;
-        bool screensaverMode;
-        bool pause;
-        bool drawOrbitTrace;
-        bool drawInfo;
-        bool drawAxes;
-        bool drawParticles;
-        bool floatMode;
-        bool cmCentered;
-        bool drawHelp;
-        bool monochromatic;
-    } drawOptions;
-
-    GalaxyModel* galaxyModel;
-
-    NBodyText text;
-
-    void loadShaders();
-    void createBuffers();
-    void createPositionBuffer();
-    void createAxesBuffers();
-
-public:
-    NBodyGraphics(const scene_t* scene);
-    ~NBodyGraphics();
-
-    void prepareWindow(bool fullscreen);
-    void prepareContext();
-    void populateBuffers();
-
-    void loadModel(GalaxyModel& model);
-    void loadColors();
-    void drawAxes();
-    void drawBodies();
-
-    void mainLoop();
-};
 
 NBodyGraphics::NBodyGraphics(const scene_t* scene)
 {
@@ -1220,6 +1234,52 @@ void NBodyGraphics::prepareWindow(bool fullscreen)
     }
 }
 
+void NBodyGraphics::display()
+{
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClearDepth(1.0);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    glutil::MatrixStack modelMatrix;
+    modelMatrix.SetMatrix(viewPole.CalcMatrix());
+
+    //glm::mat4(1.0f);
+    //modelMatrix.SetMatrix(iden);
+
+    //std::cout << viewPole.GetView().orient[0] << std::endl;
+    //modelMatrix.Scale(glm::vec3(0.05f, 0.05, 0.05f));
+    //modelMatrix.Translate(glm::vec3(0.0f, 0.5f, 0.0f));
+    if (this->galaxyModel)
+    {
+        this->galaxyModel->draw(modelMatrix);
+    }
+
+    glBindVertexArray(this->vao);
+    glUseProgram(this->mainProgram.program);
+
+    glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
+    glUniformMatrix4fv(this->mainProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+
+    if (this->drawOptions.drawAxes)
+    {
+        this->drawAxes();
+    }
+
+    if (this->drawOptions.drawParticles)
+    {
+        this->drawBodies();
+    }
+
+    if (true)
+    {
+        this->text.drawText("lol text", 9);
+    }
+
+
+    glUseProgram(0);
+}
+
 void NBodyGraphics::mainLoop()
 {
     this->running = true;
@@ -1227,48 +1287,7 @@ void NBodyGraphics::mainLoop()
     while (this->running)
     {
         glfwPollEvents();
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-        glClearDepth(1.0);
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-        glutil::MatrixStack modelMatrix;
-        modelMatrix.SetMatrix(viewPole.CalcMatrix());
-
-        //glm::mat4(1.0f);
-        //modelMatrix.SetMatrix(iden);
-
-        //std::cout << viewPole.GetView().orient[0] << std::endl;
-		//modelMatrix.Scale(glm::vec3(0.05f, 0.05, 0.05f));
-		//modelMatrix.Translate(glm::vec3(0.0f, 0.5f, 0.0f));
-        if (this->galaxyModel)
-        {
-            this->galaxyModel->draw(modelMatrix);
-        }
-
-        glBindVertexArray(this->vao);
-        glUseProgram(this->mainProgram.program);
-
-        glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
-        glUniformMatrix4fv(this->mainProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
-
-        if (this->drawOptions.drawAxes)
-        {
-            this->drawAxes();
-        }
-
-        if (this->drawOptions.drawParticles)
-        {
-            this->drawBodies();
-        }
-
-        if (true)
-        {
-            this->text.drawText("lol text", 9);
-        }
-
-
-        glUseProgram(0);
+        this->display();
         glfwSwapBuffers();
     }
 }
@@ -1499,7 +1518,7 @@ int nbRunGraphics(const scene_t* scene, const VisArgs* args)
     {
         graphicsContext.prepareWindow(false);
         graphicsContext.prepareContext();
-        nbglSetHandlers();
+        nbglSetHandlers(&graphicsContext);
         graphicsContext.populateBuffers();
         graphicsContext.loadColors();
 
@@ -1514,6 +1533,7 @@ int nbRunGraphics(const scene_t* scene, const VisArgs* args)
         return 1;
     }
 
+    globalGraphicsContext = NULL;
     glfwTerminate();
 
     return 0;
