@@ -138,7 +138,7 @@ private:
 public:
     void prepareConstantText(const scene_t* scene);
     void prepareTextVAOs();
-    void drawText(const char* text, size_t n);
+    void drawProgressText(const scene_t* scene);
     void loadFont();
     void loadShader();
 
@@ -185,6 +185,17 @@ private:
 
     bool running;
 
+    GalaxyModel* galaxyModel;
+
+    NBodyText text;
+
+    void loadShaders();
+    void createBuffers();
+    void createPositionBuffer();
+    void createAxesBuffers();
+
+public:
+
     struct DrawOptions
     {
         bool fullscreen;
@@ -200,16 +211,7 @@ private:
         bool monochromatic;
     } drawOptions;
 
-    GalaxyModel* galaxyModel;
 
-    NBodyText text;
-
-    void loadShaders();
-    void createBuffers();
-    void createPositionBuffer();
-    void createAxesBuffers();
-
-public:
     NBodyGraphics(const scene_t* scene);
     ~NBodyGraphics();
 
@@ -224,6 +226,10 @@ public:
 
     void display();
     void mainLoop();
+    void stop()
+    {
+        this->running = false;
+    }
 };
 
 // For access from callbacks
@@ -378,7 +384,7 @@ static void resizeHandler(GLFWwindow window, int w, int h)
     persMatrix.Perspective(90.0f, aspectRatio, zNear, zFar);
     cameraToClipMatrix = persMatrix.Top();
 
-    const float fontHeight = 14.0f; // FIXME: hardcoded font height
+    const float fontHeight = 12.0f; // FIXME: hardcoded font height
     textCameraToClipMatrix = glm::ortho(0.0f, wf, -hf, 0.0f);
     textCameraToClipMatrix = glm::translate(textCameraToClipMatrix, glm::vec3(0.0f, -fontHeight, 0.0f));
 
@@ -393,7 +399,11 @@ static void resizeHandler(GLFWwindow window, int w, int h)
 
 static int closeHandler(GLFWwindow window)
 {
-    std::cout << "Close " << std::endl;
+    if (globalGraphicsContext)
+    {
+        globalGraphicsContext->stop();
+    }
+
     return 0;
 }
 
@@ -402,10 +412,12 @@ static void refreshHandler(GLFWwindow window)
     std::cout << "Refresh" << std::endl;
 }
 
+/*
 static void focusHandler(GLFWwindow window, int focus)
 {
     std::cout << "Focus: " << focus << std::endl;
 }
+*/
 
 static int getGLFWModifiers(GLFWwindow window)
 {
@@ -459,9 +471,34 @@ static void scrollHandler(GLFWwindow window, int x, int y)
     viewPole.MouseWheel(direction, modifiers, glm::ivec2(x, y));
 }
 
-static void keyHandler(GLFWwindow window, int x, int y)
+static void keyHandler(GLFWwindow window, int key, int pressed)
 {
-    std::cout << "Key press " << x << " " << y << std::endl;
+    if (!pressed) // release
+        return;
+
+    NBodyGraphics* ctx = globalGraphicsContext;
+    if (!ctx)
+        return;
+
+    NBodyGraphics::DrawOptions& opts = ctx->drawOptions;
+
+    switch (key)
+    {
+        case GLFW_KEY_A:
+            opts.drawAxes = !opts.drawAxes;
+            break;
+
+        case GLFW_KEY_I:
+            opts.drawInfo = !opts.drawInfo;
+            break;
+
+        case GLFW_KEY_Q:
+            ctx->stop();
+            break;
+
+        default:
+            return;
+    }
 }
 
 static void nbglSetHandlers(NBodyGraphics* graphicsContext)
@@ -471,7 +508,7 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
     glfwSetWindowSizeCallback(resizeHandler);
     glfwSetWindowCloseCallback(closeHandler);
     glfwSetWindowRefreshCallback(refreshHandler);
-    glfwSetWindowFocusCallback(focusHandler);
+    //glfwSetWindowFocusCallback(focusHandler);
 
     glfwSetKeyCallback(keyHandler);
     //glfwSetKeyCallback(charHandler);
@@ -525,9 +562,20 @@ NBodyText::~NBodyText()
     glDeleteVertexArrays(1, &this->constTextVAO);
     glDeleteVertexArrays(1, &this->textVAO);
 
-    texture_font_delete(this->font);
-    vertex_buffer_delete(this->constTextBuffer);
-    vertex_buffer_delete(this->textBuffer);
+    if (this->font)
+    {
+        texture_font_delete(this->font);
+    }
+
+    if (this->constTextBuffer)
+    {
+        vertex_buffer_delete(this->constTextBuffer);
+    }
+
+    if (this->textBuffer)
+    {
+        vertex_buffer_delete(this->textBuffer);
+    }
 }
 
 
@@ -625,14 +673,23 @@ static const vec4 x11green = { 0.0f, 1.0f, 0.0f, 0.5f };
 
 
 
-void NBodyText::drawText(const char* text, size_t n)
+void NBodyText::drawProgressText(const scene_t* scene)
 {
+    wchar_t buf[1024];
+
     /* Start right after the constant portion */
     vec2 pen = this->penEndConst;
 
+    swprintf(buf, sizeof(buf),
+             L"Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
+             scene->info.currentTime,
+             scene->info.timeEvolve,
+             100.0f * scene->info.currentTime / scene->info.timeEvolve
+        );
+
     add_text(this->textBuffer,
              this->font,
-             L"arstarst\nasdf aoeu",
+             buf,
              &x11green,
              &pen);
 
@@ -649,7 +706,7 @@ void NBodyText::drawText(const char* text, size_t n)
     glBindVertexArray(this->textVAO);
     vertex_buffer_render(this->textBuffer, GL_TRIANGLES, "" /* "vtc" */);
 
-    printf("vertex_buffer_render %d\n", glGetError());
+    assert(glGetError() == GL_NO_ERROR);
 
     glUseProgram(0);
     glBindVertexArray(0);
@@ -867,13 +924,18 @@ public:
 void NBodyText::prepareConstantText(const scene_t* scene)
 {
     vec2 pen;
+    wchar_t buf[1024];
 
     pen.x = 0.0f;
     pen.y = 0.0f;
 
+    swprintf(buf, sizeof(buf),
+             L"N-body simulation (%d particles)\n",
+             scene->nbody);
+
     add_text(this->constTextBuffer,
              this->font,
-             L"I am quite constant\nSo constant\n",
+             buf,
              &x11green,
              &pen);
 
@@ -916,7 +978,7 @@ void NBodyText::loadFont()
     }
 
     const char* fontPath = "/Users/matt/src/milkywayathome_client/freetype-gl/Vera.ttf";
-    const float fontSize = 14.0f;
+    const float fontSize = 12.0f;
     this->font = texture_font_new(atlas, fontPath, fontSize);
     if (!this->font)
     {
@@ -1136,7 +1198,7 @@ void NBodyGraphics::prepareContext()
 
 
     this->text.loadFont();
-    this->text.prepareConstantText(NULL);
+    this->text.prepareConstantText(this->scene);
     this->text.prepareTextVAOs();
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -1273,7 +1335,7 @@ void NBodyGraphics::display()
 
     if (true)
     {
-        this->text.drawText("lol text", 9);
+        this->text.drawProgressText(this->scene);
     }
 
 
@@ -1510,6 +1572,12 @@ int nbCheckConnectedVersion(const scene_t* scene)
 
 int nbRunGraphics(const scene_t* scene, const VisArgs* args)
 {
+
+    if (!scene)
+    {
+        return 1;
+    }
+
     NBodyGraphics graphicsContext(scene);
 
     glfwInit();
