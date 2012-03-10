@@ -236,6 +236,7 @@ class GalaxyModel;
 struct Color
 {
     GLfloat r, g, b;
+    GLfloat ignore;
 };
 
 struct NBodyVertex
@@ -1309,10 +1310,10 @@ void NBodyGraphics::prepareColoredVAO(GLuint& vao, GLuint color)
 
     glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
     /* 4th component is not included */
-    glVertexAttribPointer(this->particleTextureProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+    glVertexAttribPointer(this->particleTextureProgram.positionLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, color);
-    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindVertexArray(0);
 }
@@ -1482,6 +1483,7 @@ void NBodyGraphics::loadModel(GalaxyModel& model)
 void NBodyGraphics::loadColors()
 {
     GLint nbody = this->scene->nbody;
+    const FloatPos* r = this->scene->rTrace;
 
     /* assign random particle colors */
     srand((unsigned int) time(NULL));
@@ -1491,13 +1493,13 @@ void NBodyGraphics::loadColors()
     for (GLint i = 0; i < nbody; ++i)
     {
         color[i].r = color[i].g = color[i].b = 1.0f;
+        color[i].ignore = 1.0f;
     }
 
     // create a white buffer now
     // TODO: There is probably a better way to set a buffer to all 1
     glBindBuffer(GL_ARRAY_BUFFER, this->whiteBuffer);
-    glBufferData(GL_ARRAY_BUFFER, 3 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
-    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
 
     for (GLint i = 0; i < nbody; ++i)
     {
@@ -1534,16 +1536,19 @@ void NBodyGraphics::loadColors()
             scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (std::min(2.0, 1.0 / B) - 1.0);
         }
 
-        //color[i].ignore = color[i].ignore;
         color[i].r = (GLfloat) R * scale;
         color[i].g = (GLfloat) G * scale;
         color[i].b = (GLfloat) B * scale;
+
+        // TODO: Doesn't do anything yet?
+        //color[i].ignore = r[i].ignore ? 0.5f : 1.0f;
+        color[i].ignore = 1.0f;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
-	glBufferData(GL_ARRAY_BUFFER, 3 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
-    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     delete[] color;
 }
 
