@@ -19,7 +19,7 @@ void main()
     gl_Position = cameraToClipMatrix * cameraPos;
 
     // gl_Point.size is gone?
-    float pointSize = 8.0f;
+    float pointSize = 100.0f;
     gl_PointSize = pointSizeOut = max(1.0f, pointSize / (1.0f - cameraPos.z));
     color = vec4(inputColor, 1.0f);
 }

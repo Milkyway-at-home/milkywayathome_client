@@ -11,7 +11,7 @@ out vec2 texCoord;
 
 void main()
 {
-    gl_Position = cameraToClipMatrix * vec4(position, 1.0);
+    gl_Position = cameraToClipMatrix * vec4(position, 1.0f);
     texCoord = texPosition;
 }
 

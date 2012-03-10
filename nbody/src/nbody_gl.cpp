@@ -69,11 +69,18 @@
 #include "nbody_particle_texture.h"
 
 
-extern "C" unsigned char main_vertex_glsl[];
-extern "C" size_t main_vertex_glsl_len;
+extern "C" unsigned char particle_texture_vertex_glsl[];
+extern "C" size_t particle_texture_vertex_glsl_len;
 
-extern "C" unsigned char main_fragment_glsl[];
-extern "C" size_t main_fragment_glsl_len;
+extern "C" unsigned char particle_texture_fragment_glsl[];
+extern "C" size_t particle_texture_fragment_glsl_len;
+
+
+extern "C" unsigned char axes_vertex_glsl[];
+extern "C" size_t axes_vertex_glsl_len;
+
+extern "C" unsigned char axes_fragment_glsl[];
+extern "C" size_t axes_fragment_glsl_len;
 
 
 extern "C" unsigned char galaxy_vertex_glsl[];
@@ -90,150 +97,31 @@ extern "C" unsigned char text_fragment_glsl[];
 extern "C" size_t text_fragment_glsl_len;
 
 
-class GalaxyModel;
+static const float zNear = 0.01f;
+static const float zFar = 1000.0f;
 
-struct Color
+static glm::mat4 cameraToClipMatrix(1.0f);
+
+static glm::mat4 textCameraToClipMatrix(1.0f);
+
+static glutil::ViewData initialViewData =
 {
-    GLfloat r, g, b;
+	glm::vec3(0.0f, 0.0f, 0.0f),  // center position
+    glm::fquat(1.0f, 0.0f, 0.0f, 0.0f), // view direction
+	30.0f,  // radius
+	0.0f    // spin rotation of up axis
 };
 
-struct NBodyVertex
+static glutil::ViewScale viewScale =
 {
-    GLfloat x, y, z;
-
-    NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
-    NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
+	0.05f, 100.0f, // min, max view radius
+	0.5f, 0.1f,   // radius deltas
+    4.0f, 1.0f,
+	90.0f / 250.0f // rotation scale
 };
 
+static glutil::ViewPole viewPole = glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN);
 
-class NBodyText
-{
-private:
-    texture_font_t* font;
-    texture_atlas_t* atlas;
-
-    /* Text which will remain constant */
-    vertex_buffer_t* constTextBuffer;
-
-    /* Buffer of text which may change every frame */
-    vertex_buffer_t* textBuffer;
-
-    vec2 penEndConst;
-
-    GLuint constTextVAO;
-    GLuint textVAO;
-
-    struct TextProgramData
-    {
-        GLuint program;
-
-        GLint positionLoc;
-        GLint texCoordLoc;
-        GLint texPositionLoc;
-
-        GLint textTextureLoc;
-
-        GLint modelToCameraMatrixLoc;
-        GLint cameraToClipMatrixLoc;
-    } textProgram;
-
-public:
-    void prepareConstantText(const scene_t* scene);
-    void prepareTextVAOs();
-    void drawProgressText(const scene_t* scene);
-    void loadFont();
-    void loadShader();
-
-    NBodyText();
-    ~NBodyText();
-};
-
-class NBodyGraphics
-{
-private:
-    const scene_t* scene;
-    GLFWwindow window;
-
-    GLuint particleVAO;
-    GLuint axesVAO;
-
-    struct MainProgramData
-    {
-        GLuint program;
-
-        GLint positionLoc;
-        GLint colorLoc;
-
-        GLint modelToCameraMatrixLoc;
-        GLint cameraToClipMatrixLoc;
-
-        GLint particleTextureLoc;
-    } mainProgram;
-
-    GLuint positionBuffer;
-    GLuint velocityBuffer;
-    GLuint accelerationBuffer;
-    GLuint colorBuffer;
-
-    GLuint axesBuffer;
-    GLuint axesColorBuffer;
-    GLuint particleTexture;
-
-
-    bool running;
-
-    GalaxyModel* galaxyModel;
-
-    NBodyText text;
-
-    void loadShaders();
-    void createBuffers();
-    void prepareVAOs();
-    void createPositionBuffer();
-    void createAxesBuffers();
-
-public:
-
-    struct DrawOptions
-    {
-        bool fullscreen;
-        bool screensaverMode;
-        bool paused;
-        bool drawOrbitTrace;
-        bool drawInfo;
-        bool drawAxes;
-        bool drawParticles;
-        bool floatMode;
-        bool cmCentered;
-        bool drawHelp;
-        bool monochromatic;
-
-        float pointSize;
-    } drawOptions;
-
-
-    NBodyGraphics(const scene_t* scene);
-    ~NBodyGraphics();
-
-    void prepareContext();
-    void populateBuffers();
-
-    void loadModel(GalaxyModel& model);
-    void loadColors();
-    void drawAxes();
-    void drawBodies();
-    void readSceneData();
-
-    void display();
-    void mainLoop();
-    void stop()
-    {
-        this->running = false;
-    }
-};
-
-// For access from callbacks
-static NBodyGraphics* globalGraphicsContext = NULL;
 
 
 static void nbglGetProgramLog(GLuint program, const char* name)
@@ -339,35 +227,301 @@ static GLuint nbglCreateProgram(const char* name,
 }
 
 
-//#define AXES_LENGTH 0.66f
-//#define AXES_LENGTH 1.0f
+
+class GalaxyModel;
+
+struct Color
+{
+    GLfloat r, g, b;
+};
+
+struct NBodyVertex
+{
+    GLfloat x, y, z;
+
+    NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
+    NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
+};
+
+
+class NBodyText
+{
+private:
+    texture_font_t* font;
+    texture_atlas_t* atlas;
+
+    /* Text which will remain constant */
+    vertex_buffer_t* constTextBuffer;
+
+    /* Buffer of text which may change every frame */
+    vertex_buffer_t* textBuffer;
+
+    vec2 penEndConst;
+
+    GLuint constTextVAO;
+    GLuint textVAO;
+
+    struct TextProgramData
+    {
+        GLuint program;
+
+        GLint positionLoc;
+        GLint texCoordLoc;
+        GLint texPositionLoc;
+
+        GLint textTextureLoc;
+
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } textProgram;
+
+public:
+    void prepareConstantText(const scene_t* scene);
+    void prepareTextVAOs();
+    void drawProgressText(const scene_t* scene);
+    void loadFont();
+    void loadShader();
+
+    NBodyText();
+    ~NBodyText();
+};
+
+class NBodyAxes
+{
+private:
+    GLuint axesVAO;
+    GLuint axesBuffer;
+    GLuint axesColorBuffer;
+
+    struct AxesProgramData
+    {
+        GLuint program;
+        GLint positionLoc;
+        GLint colorLoc;
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } axesProgramData;
+
+public:
+    void draw(const glm::mat4& modelMatrix);
+    void loadShader();
+    void createBuffers();
+    void prepareVAO();
+
+    NBodyAxes();
+    ~NBodyAxes();
+};
+
+NBodyAxes::NBodyAxes()
+{
+    this->axesVAO = 0;
+    this->axesBuffer = 0;
+    this->axesColorBuffer = 0;
+
+    this->axesProgramData.program = 0;
+    this->axesProgramData.positionLoc = -1;
+    this->axesProgramData.colorLoc = -1;
+    this->axesProgramData.modelToCameraMatrixLoc = -1;
+    this->axesProgramData.cameraToClipMatrixLoc = -1;
+}
+
+NBodyAxes::~NBodyAxes()
+{
+    if (!this->axesProgramData.program)
+        glDeleteProgram(this->axesProgramData.program);
+
+    glDeleteBuffers(1, &this->axesBuffer);
+    glDeleteBuffers(1, &this->axesColorBuffer);
+    glDeleteVertexArrays(1, &this->axesVAO);
+}
+
+void NBodyAxes::draw(const glm::mat4& modelMatrix)
+{
+    glUseProgram(this->axesProgramData.program);
+    glUniformMatrix4fv(this->axesProgramData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(this->axesProgramData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+
+    glBindVertexArray(this->axesVAO);
+    glDrawArrays(GL_LINES, 0, 6);
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+void NBodyAxes::loadShader()
+{
+    this->axesProgramData.program = nbglCreateProgram("axes program",
+                                                      (const char*) axes_vertex_glsl,
+                                                      (const char*) axes_fragment_glsl,
+                                                      (GLint) axes_vertex_glsl_len,
+                                                      (GLint) axes_fragment_glsl_len);
+
+    GLuint program = this->axesProgramData.program;
+
+    this->axesProgramData.positionLoc = glGetAttribLocation(program, "position");
+    this->axesProgramData.colorLoc = glGetAttribLocation(program, "inputColor");
+    this->axesProgramData.modelToCameraMatrixLoc = glGetUniformLocation(program, "modelToCameraMatrix");
+    this->axesProgramData.cameraToClipMatrixLoc = glGetUniformLocation(program, "cameraToClipMatrix");
+}
+
 #define AXES_LENGTH 10.0f
 
-
-static const float zNear = 0.01f;
-static const float zFar = 1000.0f;
-
-static glm::mat4 cameraToClipMatrix(1.0f);
-
-static glm::mat4 textCameraToClipMatrix(1.0f);
-
-static glutil::ViewData initialViewData =
+void NBodyAxes::createBuffers()
 {
-	glm::vec3(0.0f, 0.0f, 0.0f),  // center position
-    glm::fquat(1.0f, 0.0f, 0.0f, 0.0f), // view direction
-	30.0f,  // radius
-	0.0f    // spin rotation of up axis
+    static const GLfloat axes[6][4] =
+        {
+            { 0.0f,        0.0f,        0.0f,        1.0f },
+            { AXES_LENGTH, 0.0f,        0.0f,        1.0f },
+            { 0.0f,        0.0f,        0.0f,        1.0f },
+            { 0.0f,        AXES_LENGTH, 0.0f,        1.0f },
+            { 0.0f,        0.0f,        0.0f,        1.0f },
+            { 0.0f,        0.0f,        AXES_LENGTH, 1.0f }
+        };
+
+    static const GLfloat colors[6][4] =
+        {
+            { 1.0f, 0.0f, 0.0f, 0.75f },
+            { 1.0f, 0.0f, 0.0f, 0.75f },
+            { 0.0f, 1.0f, 0.0f, 0.75f },
+            { 0.0f, 1.0f, 0.0f, 0.75f },
+            { 0.0f, 0.0f, 1.0f, 0.75f },
+            { 0.0f, 0.0f, 1.0f, 0.75f }
+        };
+
+    glGenBuffers(1, &this->axesBuffer);
+    glGenBuffers(1, &this->axesColorBuffer);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(axes), (const GLfloat*) axes, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->axesColorBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), (const GLfloat*) colors, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void NBodyAxes::prepareVAO()
+{
+    glGenVertexArrays(1, &this->axesVAO);
+    glBindVertexArray(this->axesVAO);
+    glEnableVertexAttribArray(this->axesProgramData.positionLoc);
+    glEnableVertexAttribArray(this->axesProgramData.colorLoc);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
+    glVertexAttribPointer(this->axesProgramData.positionLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->axesColorBuffer);
+    glVertexAttribPointer(this->axesProgramData.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindVertexArray(0);
+}
+
+class NBodyGraphics
+{
+private:
+    const scene_t* scene;
+    GLFWwindow window;
+
+    GLuint particleVAO;
+    GLuint axesVAO;
+
+    enum DrawMode
+    {
+        POINTS,
+        MONOCHROME_POINTS,
+        TEXTURED_SPRITES
+    } drawMode;
+
+    struct ParticleTextureProgramData
+    {
+        GLuint program;
+
+        GLint positionLoc;
+        GLint colorLoc;
+
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+
+        GLint particleTextureLoc;
+    } particleTextureProgram;
+
+    struct ParticlePointProgramData
+    {
+        GLuint program;
+
+        GLint positionLoc;
+        GLint colorLoc;
+
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+
+        GLint particleTextureLoc;
+    } particlePointProgram;
+
+
+
+    GLuint positionBuffer;
+    GLuint velocityBuffer;
+    GLuint accelerationBuffer;
+    GLuint colorBuffer;
+    GLuint particleTexture;
+
+    bool running;
+
+    GalaxyModel* galaxyModel;
+
+    NBodyText text;
+    NBodyAxes axes;
+
+    void loadShaders();
+    void createBuffers();
+    void prepareVAOs();
+    void createPositionBuffer();
+
+public:
+
+    struct DrawOptions
+    {
+        bool fullscreen;
+        bool screensaverMode;
+        bool paused;
+        bool drawOrbitTrace;
+        bool drawInfo;
+        bool drawAxes;
+        bool drawParticles;
+        bool floatMode;
+        bool cmCentered;
+        bool drawHelp;
+        bool monochromatic;
+
+        float pointSize;
+    } drawOptions;
+
+
+    NBodyGraphics(const scene_t* scene);
+    ~NBodyGraphics();
+
+    void prepareContext();
+    void populateBuffers();
+
+    void loadModel(GalaxyModel& model);
+    void loadColors();
+    void drawAxes();
+    void drawBodies(const glm::mat4& modelMatrix);
+    void readSceneData();
+
+    void display();
+    void mainLoop();
+    void stop()
+    {
+        this->running = false;
+    }
 };
 
-static glutil::ViewScale viewScale =
-{
-	0.05f, 100.0f, // min, max view radius
-	0.5f, 0.1f,   // radius deltas
-    4.0f, 1.0f,
-	90.0f / 250.0f // rotation scale
-};
 
-static glutil::ViewPole viewPole = glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN);
+// For access from callbacks
+static NBodyGraphics* globalGraphicsContext = NULL;
+
+
 
 static void errorHandler(int errorCode, const char* msg)
 {
@@ -557,12 +711,8 @@ void NBodyText::loadShader()
     this->textProgram.positionLoc = glGetAttribLocation(this->textProgram.program, "position");
     this->textProgram.textTextureLoc = glGetUniformLocation(this->textProgram.program, "textTexture");
     this->textProgram.texPositionLoc = glGetAttribLocation(this->textProgram.program, "texPosition");
-
     this->textProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->textProgram.program, "modelToCameraMatrix");
     this->textProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->textProgram.program, "cameraToClipMatrix");
-
-    glEnableVertexAttribArray(this->textProgram.positionLoc);
-    glEnableVertexAttribArray(this->textProgram.texPositionLoc);
 }
 
 NBodyText::NBodyText()
@@ -749,17 +899,15 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->velocityBuffer = 0;
     this->accelerationBuffer = 0;
     this->colorBuffer = 0;
-    this->axesBuffer = 0;
-    this->axesColorBuffer = 0;
 
     this->particleTexture = 0;
 
-    this->mainProgram.program = 0;
-    this->mainProgram.positionLoc = -1;
-    this->mainProgram.colorLoc = -1;
-    this->mainProgram.modelToCameraMatrixLoc = -1;
-    this->mainProgram.cameraToClipMatrixLoc = -1;
-    this->mainProgram.particleTextureLoc = -1;
+    this->particleTextureProgram.program = 0;
+    this->particleTextureProgram.positionLoc = -1;
+    this->particleTextureProgram.colorLoc = -1;
+    this->particleTextureProgram.modelToCameraMatrixLoc = -1;
+    this->particleTextureProgram.cameraToClipMatrixLoc = -1;
+    this->particleTextureProgram.particleTextureLoc = -1;
 
     this->running = false;
 
@@ -780,23 +928,19 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
 
 NBodyGraphics::~NBodyGraphics()
 {
-    GLuint buffers[6];
+    GLuint buffers[4];
 
-    if (this->mainProgram.program != 0)
-        glDeleteProgram(this->mainProgram.program);
+    if (this->particleTextureProgram.program != 0)
+        glDeleteProgram(this->particleTextureProgram.program);
 
     buffers[0] = this->positionBuffer;
     buffers[1] = this->velocityBuffer;
     buffers[2] = this->accelerationBuffer;
     buffers[3] = this->colorBuffer;
-    buffers[4] = this->axesBuffer;
-    buffers[5] = this->axesColorBuffer;
 
-    glDeleteBuffers(6, buffers);
+    glDeleteBuffers(4, buffers);
 
     glDeleteVertexArrays(1, &this->particleVAO);
-    glDeleteVertexArrays(1, &this->axesVAO);
-
     glDeleteTextures(1, &this->particleTexture);
 }
 
@@ -851,10 +995,10 @@ public:
         return this->nPoints * sizeof(Color);
     }
 
-    void draw(const glutil::MatrixStack& modelMatrix) const
+    void draw(const glm::mat4& modelMatrix) const
     {
         glUseProgram(this->programData.program);
-        glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
+        glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
         glBindVertexArray(this->vao);
@@ -1034,87 +1178,36 @@ void NBodyText::loadFont()
 
 void NBodyGraphics::loadShaders()
 {
-    this->mainProgram.program = nbglCreateProgram("main program",
-                                                  (const char*) main_vertex_glsl,
-                                                  (const char*) main_fragment_glsl,
-                                                  (GLint) main_vertex_glsl_len,
-                                                  (GLint) main_fragment_glsl_len);
+    this->particleTextureProgram.program = nbglCreateProgram("particle texture program",
+                                                             (const char*) particle_texture_vertex_glsl,
+                                                             (const char*) particle_texture_fragment_glsl,
+                                                             (GLint) particle_texture_vertex_glsl_len,
+                                                             (GLint) particle_texture_fragment_glsl_len);
 
-    this->mainProgram.positionLoc = glGetAttribLocation(this->mainProgram.program, "position");
-    this->mainProgram.colorLoc = glGetAttribLocation(this->mainProgram.program, "inputColor");
-    this->mainProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->mainProgram.program, "modelToCameraMatrix");
-    this->mainProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->mainProgram.program, "cameraToClipMatrix");
-    this->mainProgram.particleTextureLoc = glGetUniformLocation(this->mainProgram.program, "particleTexture");
+    GLuint program = this->particleTextureProgram.program;
+
+    this->particleTextureProgram.positionLoc = glGetAttribLocation(program, "position");
+    this->particleTextureProgram.colorLoc = glGetAttribLocation(program, "inputColor");
+    this->particleTextureProgram.modelToCameraMatrixLoc = glGetUniformLocation(program, "modelToCameraMatrix");
+    this->particleTextureProgram.cameraToClipMatrixLoc = glGetUniformLocation(program, "cameraToClipMatrix");
+    this->particleTextureProgram.particleTextureLoc = glGetUniformLocation(program, "particleTexture");
 }
 
 void NBodyGraphics::prepareVAOs()
 {
     glGenVertexArrays(1, &this->particleVAO);
     glBindVertexArray(this->particleVAO);
-    glEnableVertexAttribArray(this->mainProgram.positionLoc);
-    glEnableVertexAttribArray(this->mainProgram.colorLoc);
+    glEnableVertexAttribArray(this->particleTextureProgram.positionLoc);
+    glEnableVertexAttribArray(this->particleTextureProgram.colorLoc);
 
     glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
     /* 4th component is not included */
-    glVertexAttribPointer(this->mainProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-
+    glVertexAttribPointer(this->particleTextureProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
-    glVertexAttribPointer(this->mainProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glGenVertexArrays(1, &this->axesVAO);
-    glBindVertexArray(this->axesVAO);
-    glEnableVertexAttribArray(this->mainProgram.positionLoc);
-    glEnableVertexAttribArray(this->mainProgram.colorLoc);
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
-    glVertexAttribPointer(this->mainProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->axesColorBuffer);
-    glVertexAttribPointer(this->mainProgram.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
+    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindVertexArray(0);
-}
-
-void NBodyGraphics::createAxesBuffers()
-{
-    static const GLfloat axes[6][3] =
-        {
-            { 0.0f,        0.0f,        0.0f        },
-            { AXES_LENGTH, 0.0f,        0.0f        },
-            { 0.0f,        0.0f,        0.0f        },
-            { 0.0f,        AXES_LENGTH, 0.0f        },
-            { 0.0f,        0.0f,        0.0f        },
-            { 0.0f,        0.0f,        AXES_LENGTH }
-        };
-
-    static const GLfloat colors[6][4] =
-        {
-            { 1.0f, 0.0f, 0.0f, 0.75f },
-            { 1.0f, 0.0f, 0.0f, 0.75f },
-            { 0.0f, 1.0f, 0.0f, 0.75f },
-            { 0.0f, 1.0f, 0.0f, 0.75f },
-            { 0.0f, 0.0f, 1.0f, 0.75f },
-            { 0.0f, 0.0f, 1.0f, 0.75f }
-        };
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->axesBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(axes), (const GLfloat*) axes, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, this->axesColorBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), (const GLfloat*) colors, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void NBodyGraphics::drawAxes()
-{
-    glBindVertexArray(this->axesVAO);
-    glDrawArrays(GL_LINES, 0, 6);
-    glBindVertexArray(0);
-
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void NBodyGraphics::readSceneData()
@@ -1138,26 +1231,27 @@ void NBodyGraphics::readSceneData()
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), positions);
 }
 
-void NBodyGraphics::drawBodies()
+void NBodyGraphics::drawBodies(const glm::mat4& modelMatrix)
 {
-    assert(this->particleTexture != 0);
-    assert(this->mainProgram.particleTextureLoc != -1);
+    glUseProgram(this->particleTextureProgram.program);
+    glUniformMatrix4fv(this->particleTextureProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(this->particleTextureProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, this->particleTexture);
-    glUniform1i(this->mainProgram.particleTextureLoc, 1);
+    glUniform1i(this->particleTextureProgram.particleTextureLoc, 1);
 
     glBindVertexArray(this->particleVAO);
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
     //glBlendFunc(GL_ONE, GL_ONE);
     //float alpha = 0.5f;
     //glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA);
     //glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-
-    //glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); // invert color
 
     //glBlendColor(1.0f - alpha, 1.0f - alpha, 1.0f - alpha, 1.0f);
 
@@ -1180,23 +1274,19 @@ void NBodyGraphics::drawBodies()
 
 
     glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    assert(glGetError() == 0);
+    glUseProgram(0);
 }
 
 void NBodyGraphics::createBuffers()
 {
-    GLuint buffers[6];
+    GLuint buffers[4];
 
-    glGenBuffers(6, buffers);
+    glGenBuffers(4, buffers);
 
     this->positionBuffer = buffers[0];
     this->velocityBuffer = buffers[1];
     this->accelerationBuffer = buffers[2];
     this->colorBuffer = buffers[3];
-    this->axesBuffer = buffers[4];
-    this->axesColorBuffer = buffers[5];
 }
 
 void NBodyGraphics::createPositionBuffer()
@@ -1212,7 +1302,6 @@ void NBodyGraphics::createPositionBuffer()
 void NBodyGraphics::populateBuffers()
 {
     this->createPositionBuffer();
-    this->createAxesBuffers();
 
     this->particleTexture = createParticleTexture(32);
 }
@@ -1278,7 +1367,7 @@ void NBodyGraphics::loadColors()
 
     glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
 	glBufferData(GL_ARRAY_BUFFER, 3 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
-    glVertexAttribPointer(this->mainProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     delete[] color;
 }
@@ -1293,6 +1382,10 @@ void NBodyGraphics::prepareContext()
     this->text.loadFont();
     this->text.prepareConstantText(this->scene);
     this->text.prepareTextVAOs();
+
+    this->axes.loadShader();
+    this->axes.createBuffers();
+    this->axes.prepareVAO();
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
@@ -1369,38 +1462,30 @@ static GLFWwindow nbglPrepareWindow(bool fullscreen)
 
 void NBodyGraphics::display()
 {
+    const glm::mat4 modelMatrix = viewPole.CalcMatrix();
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClearDepth(1.0);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-    glutil::MatrixStack modelMatrix;
-    modelMatrix.SetMatrix(viewPole.CalcMatrix());
 
     if (this->galaxyModel)
     {
         this->galaxyModel->draw(modelMatrix);
     }
 
-    glUseProgram(this->mainProgram.program);
-    glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
-    glUniformMatrix4fv(this->mainProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
-
     if (this->drawOptions.drawAxes)
     {
-        this->drawAxes();
+        this->axes.draw(modelMatrix);
     }
 
     if (this->drawOptions.drawParticles)
     {
-        this->drawBodies();
+        this->drawBodies(modelMatrix);
     }
 
     if (this->drawOptions.drawInfo)
     {
         this->text.drawProgressText(this->scene);
     }
-
-    glUseProgram(0);
 }
 
 void NBodyGraphics::mainLoop()
