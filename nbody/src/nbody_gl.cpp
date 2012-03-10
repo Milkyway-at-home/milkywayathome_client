@@ -211,6 +211,13 @@ struct NBodyVertex
     NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
 };
 
+struct SceneData
+{
+    float currentTime;
+    float timeEvolve;
+    glm::vec3 centerOfMassView;
+};
+
 
 class NBodyText
 {
@@ -246,7 +253,7 @@ private:
 public:
     void prepareConstantText(const scene_t* scene);
     void prepareTextVAOs();
-    void drawProgressText(const scene_t* scene);
+    void drawProgressText(const SceneData& sceneData);
     void loadFont();
     void loadShader();
 
@@ -419,8 +426,6 @@ private:
         GLint pointSizeLoc;
     } particlePointProgram;
 
-
-
     GLuint positionBuffer;
     GLuint velocityBuffer;
     GLuint accelerationBuffer;
@@ -445,6 +450,9 @@ private:
 
 
 public:
+
+    SceneData sceneData;
+
     enum DrawMode
     {
         POINTS,
@@ -887,7 +895,7 @@ static const vec4 x11green = { 0.0f, 1.0f, 0.0f, 0.5f };
 
 
 
-void NBodyText::drawProgressText(const scene_t* scene)
+void NBodyText::drawProgressText(const SceneData& sceneData)
 {
     wchar_t buf[1024];
 
@@ -896,9 +904,9 @@ void NBodyText::drawProgressText(const scene_t* scene)
 
     swprintf(buf, sizeof(buf),
              L"Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
-             scene->info.currentTime,
-             scene->info.timeEvolve,
-             100.0f * scene->info.currentTime / scene->info.timeEvolve
+             sceneData.currentTime,
+             sceneData.timeEvolve,
+             100.0f * sceneData.currentTime / sceneData.timeEvolve
         );
 
     vertex_buffer_clear(this->textBuffer);
@@ -1290,8 +1298,16 @@ void NBodyGraphics::prepareVAOs()
 
 void NBodyGraphics::readSceneData()
 {
-    const GLfloat* positions = (const GLfloat*) this->scene->rTrace;
-    GLint nbody = this->scene->nbody;
+    const scene_t* scene = this->scene;
+    const GLfloat* positions = (const GLfloat*) scene->rTrace;
+    GLint nbody = scene->nbody;
+
+    this->sceneData.currentTime = scene->info.currentTime;
+    this->sceneData.timeEvolve = scene->info.timeEvolve;
+
+    this->sceneData.centerOfMassView = glm::vec3(-scene->rootCenterOfMass[0],
+                                                 -scene->rootCenterOfMass[1],
+                                                 -scene->rootCenterOfMass[2]);
 
     /*
     if (OPA_load_int(&this->scene->useSecondBuffer))
@@ -1602,7 +1618,13 @@ static GLFWwindow nbglPrepareWindow(bool fullscreen)
 
 void NBodyGraphics::display()
 {
-    const glm::mat4 modelMatrix = viewPole.CalcMatrix();
+    glm::mat4 modelMatrix = viewPole.CalcMatrix();
+
+    if (this->drawOptions.cmCentered)
+    {
+        modelMatrix = glm::translate(modelMatrix, this->sceneData.centerOfMassView);
+    }
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClearDepth(1.0);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -1624,7 +1646,7 @@ void NBodyGraphics::display()
 
     if (this->drawOptions.drawInfo)
     {
-        this->text.drawProgressText(this->scene);
+        this->text.drawProgressText(this->sceneData);
     }
 }
 
