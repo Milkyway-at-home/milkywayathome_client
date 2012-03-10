@@ -66,6 +66,8 @@
 //#include <glload/gl_3_3.h>
 #include <glutil/glutil.h>
 
+#include "nbody_particle_texture.h"
+
 
 extern "C" unsigned char main_vertex_glsl[];
 extern "C" size_t main_vertex_glsl_len;
@@ -155,16 +157,6 @@ private:
     GLuint particleVAO;
     GLuint axesVAO;
 
-    /*
-    struct ParticleBuffers
-    {
-        GLuint position;
-        GLuint velocity;
-        GLuint acceleration;
-        GLuint color;
-    } particleBuffers;
-    */
-
     struct MainProgramData
     {
         GLuint program;
@@ -174,6 +166,8 @@ private:
 
         GLint modelToCameraMatrixLoc;
         GLint cameraToClipMatrixLoc;
+
+        GLint particleTextureLoc;
     } mainProgram;
 
     GLuint positionBuffer;
@@ -183,6 +177,8 @@ private:
 
     GLuint axesBuffer;
     GLuint axesColorBuffer;
+    GLuint particleTexture;
+
 
     bool running;
 
@@ -202,7 +198,7 @@ public:
     {
         bool fullscreen;
         bool screensaverMode;
-        bool pause;
+        bool paused;
         bool drawOrbitTrace;
         bool drawInfo;
         bool drawAxes;
@@ -219,7 +215,6 @@ public:
     NBodyGraphics(const scene_t* scene);
     ~NBodyGraphics();
 
-    void prepareWindow(bool fullscreen);
     void prepareContext();
     void populateBuffers();
 
@@ -227,6 +222,7 @@ public:
     void loadColors();
     void drawAxes();
     void drawBodies();
+    void readSceneData();
 
     void display();
     void mainLoop();
@@ -410,18 +406,6 @@ static int closeHandler(GLFWwindow window)
     return 0;
 }
 
-/*
-static void refreshHandler(GLFWwindow window)
-{
-    std::cout << "Refresh" << std::endl;
-}
-
-static void focusHandler(GLFWwindow window, int focus)
-{
-    std::cout << "Focus: " << focus << std::endl;
-}
-*/
-
 static int getGLFWModifiers(GLFWwindow window)
 {
     int modifiers = 0;
@@ -499,6 +483,47 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             ctx->stop();
             break;
 
+        case GLFW_KEY_B:
+            /*
+            scene->starsize *= 1.1;
+            if (scene->starsize > 100.0)
+            {
+                scene->starsize = 100.0;
+            }
+            */
+            break;
+
+        case GLFW_KEY_S:
+            /*
+            scene->starsize *= 0.9;
+            if (scene->starsize < 1.0e-3)
+            {
+                scene->starsize = 1.0e-3;
+            }
+            */
+            break;
+
+        case GLFW_KEY_H:
+      //case '?':
+            //scene->drawHelp = !scene->drawHelp;
+            break;
+
+        case GLFW_KEY_O: /* Toggle camera following CM or on milkyway center */
+            //scene->cmCentered = !scene->cmCentered;
+            break;
+
+        case GLFW_KEY_R: /* Toggle floating */
+            //scene->floatMode = !scene->floatMode;
+            break;
+
+        case GLFW_KEY_P:
+            ctx->drawOptions.paused = !ctx->drawOptions.paused;
+            break;
+
+        case GLFW_KEY_C:
+            //scene->monochromatic = !scene->monochromatic;
+            break;
+
         default:
             return;
     }
@@ -510,8 +535,6 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
 
     glfwSetWindowSizeCallback(resizeHandler);
     glfwSetWindowCloseCallback(closeHandler);
-    //glfwSetWindowRefreshCallback(refreshHandler);
-    //glfwSetWindowFocusCallback(focusHandler);
 
     glfwSetKeyCallback(keyHandler);
     //glfwSetKeyCallback(charHandler);
@@ -530,7 +553,6 @@ void NBodyText::loadShader()
                                                   (const char*) text_fragment_glsl,
                                                   (GLint) text_vertex_glsl_len,
                                                   (GLint) text_fragment_glsl_len);
-    printf("Load text shaders %d\n", glGetError());
 
     this->textProgram.positionLoc = glGetAttribLocation(this->textProgram.program, "position");
     this->textProgram.textTextureLoc = glGetUniformLocation(this->textProgram.program, "textTexture");
@@ -730,19 +752,22 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->axesBuffer = 0;
     this->axesColorBuffer = 0;
 
+    this->particleTexture = 0;
+
     this->mainProgram.program = 0;
     this->mainProgram.positionLoc = -1;
     this->mainProgram.colorLoc = -1;
     this->mainProgram.modelToCameraMatrixLoc = -1;
     this->mainProgram.cameraToClipMatrixLoc = -1;
+    this->mainProgram.particleTextureLoc = -1;
 
     this->running = false;
 
     this->drawOptions.fullscreen = false;
     this->drawOptions.screensaverMode = false;
-    this->drawOptions.pause = false;
-    this->drawOptions.drawOrbitTrace = false;
-    this->drawOptions.drawInfo = false;
+    this->drawOptions.paused = false;
+    this->drawOptions.drawOrbitTrace = true;
+    this->drawOptions.drawInfo = true;
     this->drawOptions.drawAxes = true;
     this->drawOptions.drawParticles = true;
     this->drawOptions.floatMode = false;
@@ -771,6 +796,8 @@ NBodyGraphics::~NBodyGraphics()
 
     glDeleteVertexArrays(1, &this->particleVAO);
     glDeleteVertexArrays(1, &this->axesVAO);
+
+    glDeleteTextures(1, &this->particleTexture);
 }
 
 class GalaxyModel
@@ -1017,6 +1044,7 @@ void NBodyGraphics::loadShaders()
     this->mainProgram.colorLoc = glGetAttribLocation(this->mainProgram.program, "inputColor");
     this->mainProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->mainProgram.program, "modelToCameraMatrix");
     this->mainProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->mainProgram.program, "cameraToClipMatrix");
+    this->mainProgram.particleTextureLoc = glGetUniformLocation(this->mainProgram.program, "particleTexture");
 }
 
 void NBodyGraphics::prepareVAOs()
@@ -1089,18 +1117,72 @@ void NBodyGraphics::drawAxes()
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void NBodyGraphics::drawBodies()
+void NBodyGraphics::readSceneData()
 {
     const GLfloat* positions = (const GLfloat*) this->scene->rTrace;
     GLint nbody = this->scene->nbody;
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
+    /*
+    if (OPA_load_int(&this->scene->useSecondBuffer))
+    {
+        printf("Using second buffer\n");
+        positions += nbody;
+    }
+    else
+    {
+        printf("Using first buffer\n");
+    }
+    */
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), positions);
+}
+
+void NBodyGraphics::drawBodies()
+{
+    assert(this->particleTexture != 0);
+    assert(this->mainProgram.particleTextureLoc != -1);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, this->particleTexture);
+    glUniform1i(this->mainProgram.particleTextureLoc, 1);
+
     glBindVertexArray(this->particleVAO);
 
-    glDrawArrays(GL_POINTS, 0, nbody);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    //glBlendFunc(GL_ONE, GL_ONE);
+    //float alpha = 0.5f;
+    //glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
+
+    //glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); // invert color
+
+    //glBlendColor(1.0f - alpha, 1.0f - alpha, 1.0f - alpha, 1.0f);
+
+    //glDepthMask(GL_FALSE);
+
+    //printf("Pre arst %d\n", glGetError());
+    //glEnable(GL_POINT_SPRITE);
+    //printf("enable point sprite %d\n", glGetError());
+    //glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+    //printf("tex envi %d\n", glGetError());
+
+    glDrawArrays(GL_POINTS, 0, this->scene->nbody);
+
+
+    //glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
+    //glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+
     glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    assert(glGetError() == 0);
 }
 
 void NBodyGraphics::createBuffers()
@@ -1131,6 +1213,8 @@ void NBodyGraphics::populateBuffers()
 {
     this->createPositionBuffer();
     this->createAxesBuffers();
+
+    this->particleTexture = createParticleTexture(32);
 }
 
 void NBodyGraphics::loadModel(GalaxyModel& model)
@@ -1213,13 +1297,21 @@ void NBodyGraphics::prepareContext()
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
 
-    glPointSize(3.0f);
+
+    glEnable(GL_MULTISAMPLE);
+
 
     // allow changing point size from within shader
     // as well as smoothing them to look more spherical
     //glEnable(GL_POINT_SMOOTH);
     //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-    //printf("pointsmooth %d\n", glGetError());
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    printf("pointsmooth %d\n", glGetError());
+
+    //glPointSize(3.0f);
+    glPointSize(10.0f);
+    printf("Pointsize %d\n", glGetError());
+
 
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
@@ -1232,6 +1324,7 @@ void NBodyGraphics::prepareContext()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthRange(0.0f, 1.0f);
+
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1261,7 +1354,7 @@ static void requestGL32()
   #endif
 }
 
-void NBodyGraphics::prepareWindow(bool fullscreen)
+static GLFWwindow nbglPrepareWindow(bool fullscreen)
 {
     GLFWvidmode vidMode;
     glfwGetDesktopMode(&vidMode);
@@ -1271,17 +1364,12 @@ void NBodyGraphics::prepareWindow(bool fullscreen)
     int height = vidMode.height / 2;
 
     requestGL32();
-    this->window = glfwOpenWindow(width, height, winMode, "Milkyway@Home N-body", NULL);
-    if (!this->window)
-    {
-        throw std::runtime_error("Failed to open window");
-    }
+    return glfwOpenWindow(width, height, winMode, "Milkyway@Home N-body", NULL);
 }
 
 void NBodyGraphics::display()
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClearDepth(1.0);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -1294,7 +1382,6 @@ void NBodyGraphics::display()
     }
 
     glUseProgram(this->mainProgram.program);
-
     glUniformMatrix4fv(this->mainProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix.Top()));
     glUniformMatrix4fv(this->mainProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
@@ -1308,11 +1395,10 @@ void NBodyGraphics::display()
         this->drawBodies();
     }
 
-    if (true)
+    if (this->drawOptions.drawInfo)
     {
         this->text.drawProgressText(this->scene);
     }
-
 
     glUseProgram(0);
 }
@@ -1323,9 +1409,24 @@ void NBodyGraphics::mainLoop()
 
     while (this->running)
     {
+        double t1 = glfwGetTime();
+
         glfwPollEvents();
+        if (!this->drawOptions.paused)
+        {
+            this->readSceneData();
+        }
         this->display();
         glfwSwapBuffers();
+
+        double t2 = glfwGetTime();
+
+        double dt = t2 - t1;
+        dt = dt - (1.0 / 60.0);
+        if ((int) dt > 0)
+        {
+            mwMilliSleep((int) dt);
+        }
     }
 }
 
@@ -1376,6 +1477,18 @@ scene_t* nbConnectSharedScene(int instanceId)
     if (scene == MAP_FAILED)
     {
         mwPerror("mmap: Failed to mmap shared memory");
+        if (shm_unlink(name) < 0)
+        {
+            mwPerror("Unlink shared memory");
+        }
+
+        return NULL;
+    }
+
+    if (   sb.st_size < sizeof(scene_t)
+         || sb.st_size < (sizeof(scene_t) + 2 * scene->nbody * sizeof(FloatPos)))
+    {
+        mw_printf("Shared memory segment is impossibly small ("ZU")\n", (size_t) sb.st_size);
         if (shm_unlink(name) < 0)
         {
             mwPerror("Unlink shared memory");
@@ -1547,19 +1660,31 @@ int nbCheckConnectedVersion(const scene_t* scene)
 
 int nbRunGraphics(const scene_t* scene, const VisArgs* args)
 {
-
     if (!scene)
     {
+        mw_printf("No scene to display\n");
         return 1;
     }
 
-    NBodyGraphics graphicsContext(scene);
+    if (!glfwInit())
+    {
+        mw_printf("Failed to initialize GLFW\n");
+        return 1;
+    }
 
-    glfwInit();
+    GLFWwindow window = nbglPrepareWindow(false);
+    if (!window)
+    {
+        mw_printf("Failed to open window: %s\n", glfwErrorString(glfwGetError()));
+        return 1;
+    }
+
+
+    // GL context needs to be open or else destructors will crash
+    NBodyGraphics graphicsContext(scene);
 
     try
     {
-        graphicsContext.prepareWindow(false);
         graphicsContext.prepareContext();
         nbglSetHandlers(&graphicsContext);
         graphicsContext.populateBuffers();

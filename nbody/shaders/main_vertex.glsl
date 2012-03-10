@@ -1,8 +1,7 @@
 
 #version 150
 
-//uniform mat4 viewMatrix;
-//uniform mat4 projMatrix;
+//uniform sampler2D particleTexture;
 
 uniform mat4 cameraToClipMatrix;
 uniform mat4 modelToCameraMatrix;
@@ -10,16 +9,18 @@ uniform mat4 modelToCameraMatrix;
 in vec3 position;
 in vec3 inputColor;
 
-//smooth out vec3 color;
-flat out vec3 color;
+flat out vec4 color;
+
+out float pointSizeOut;
 
 void main()
 {
-    //gl_Position = projMatrix * viewMatrix * position;
-    //gl_PointSize = 10.0f;
-    //gl_Position = vec4(position, 1.0f);
+    vec4 cameraPos = modelToCameraMatrix * vec4(position, 1.0f);
+    gl_Position = cameraToClipMatrix * cameraPos;
 
-    gl_Position = cameraToClipMatrix * (modelToCameraMatrix * vec4(position, 1.0f));
-    color = inputColor;
+    // gl_Point.size is gone?
+    float pointSize = 8.0f;
+    gl_PointSize = pointSizeOut = max(1.0f, pointSize / (1.0f - cameraPos.z));
+    color = vec4(inputColor, 1.0f);
 }
 
