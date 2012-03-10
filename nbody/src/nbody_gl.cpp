@@ -45,12 +45,7 @@
 
 #include <iostream>
 #include <cmath>
-#include <fstream>
-#include <sstream>
-#include <streambuf>
-#include <ios>
 #include <stdexcept>
-#include <stack>
 
 #if !BOINC_APPLICATION
   #include <sys/mman.h>
@@ -60,45 +55,14 @@
 #endif /* !BOINC_APPLICATION */
 
 #define GLFW_INCLUDE_GL3 1
-//#define GLFW_NO_GLU 1
+#define GLFW_NO_GLU 1
 #include <GL/glfw3.h>
 
 //#include <glload/gl_3_3.h>
 #include <glutil/glutil.h>
 
 #include "nbody_particle_texture.h"
-
-
-extern "C" unsigned char particle_vertex_glsl[];
-extern "C" size_t particle_vertex_glsl_len;
-
-extern "C" unsigned char particle_texture_fragment_glsl[];
-extern "C" size_t particle_texture_fragment_glsl_len;
-
-extern "C" unsigned char particle_point_fragment_glsl[];
-extern "C" size_t particle_point_fragment_glsl_len;
-
-
-extern "C" unsigned char axes_vertex_glsl[];
-extern "C" size_t axes_vertex_glsl_len;
-
-extern "C" unsigned char axes_fragment_glsl[];
-extern "C" size_t axes_fragment_glsl_len;
-
-
-extern "C" unsigned char galaxy_vertex_glsl[];
-extern "C" size_t galaxy_vertex_glsl_len;
-
-extern "C" unsigned char galaxy_fragment_glsl[];
-extern "C" size_t galaxy_fragment_glsl_len;
-
-
-extern "C" unsigned char text_vertex_glsl[];
-extern "C" size_t text_vertex_glsl_len;
-
-extern "C" unsigned char text_fragment_glsl[];
-extern "C" size_t text_fragment_glsl_len;
-
+#include "nbody_shaders.h"
 
 static const float zNear = 0.01f;
 static const float zFar = 1000.0f;
