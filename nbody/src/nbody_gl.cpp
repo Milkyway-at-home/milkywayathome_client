@@ -69,11 +69,14 @@
 #include "nbody_particle_texture.h"
 
 
-extern "C" unsigned char particle_texture_vertex_glsl[];
-extern "C" size_t particle_texture_vertex_glsl_len;
+extern "C" unsigned char particle_vertex_glsl[];
+extern "C" size_t particle_vertex_glsl_len;
 
 extern "C" unsigned char particle_texture_fragment_glsl[];
 extern "C" size_t particle_texture_fragment_glsl_len;
+
+extern "C" unsigned char particle_point_fragment_glsl[];
+extern "C" size_t particle_point_fragment_glsl_len;
 
 
 extern "C" unsigned char axes_vertex_glsl[];
@@ -130,9 +133,8 @@ static void nbglGetProgramLog(GLuint program, const char* name)
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
     if (logLength > 0)
     {
-        GLint newlen;
         GLchar* log = new GLchar[logLength + 1];
-        glGetProgramInfoLog(program, logLength, &newlen, log);
+        glGetProgramInfoLog(program, logLength, NULL, log);
         fprintf(stderr,
                 "Linker output (%s):\n"
                 "--------------------------------------------------------------------------------\n"
@@ -165,7 +167,7 @@ static const char* showShaderType(GLenum type)
     }
 }
 
-static GLuint createShaderFromSrc(const char* src, GLint len, GLenum type)
+static GLuint nbglCreateShaderFromSrc(const char* name, const char* src, GLint len, GLenum type)
 {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &src, &len);
@@ -179,10 +181,11 @@ static GLuint createShaderFromSrc(const char* src, GLint len, GLenum type)
         glGetShaderInfoLog(shader, logLength, NULL, logBuf);
 
         fprintf(stderr,
-                "Shader compile log '%s':\n"
+                "Shader compile log '%s' (%s):\n"
                 "--------------------------------------------------------------------------------\n"
                 "%s\n"
                 "--------------------------------------------------------------------------------\n",
+                name,
                 showShaderType(type),
                 logBuf);
 
@@ -205,8 +208,8 @@ static GLuint nbglCreateProgram(const char* name,
                                 GLint vertSrcLen,
                                 GLint fragSrcLen)
 {
-    GLuint vertexShader = createShaderFromSrc(vertSrc, (GLint) vertSrcLen, GL_VERTEX_SHADER);
-    GLuint pixelShader = createShaderFromSrc(fragSrc, (GLint) fragSrcLen, GL_FRAGMENT_SHADER);
+    GLuint vertexShader = nbglCreateShaderFromSrc(name, vertSrc, (GLint) vertSrcLen, GL_VERTEX_SHADER);
+    GLuint pixelShader = nbglCreateShaderFromSrc(name, fragSrc, (GLint) fragSrcLen, GL_FRAGMENT_SHADER);
 
     GLuint program = glCreateProgram();
 
@@ -422,14 +425,7 @@ private:
     GLFWwindow window;
 
     GLuint particleVAO;
-    GLuint axesVAO;
-
-    enum DrawMode
-    {
-        POINTS,
-        MONOCHROME_POINTS,
-        TEXTURED_SPRITES
-    } drawMode;
+    GLuint whiteParticleVAO;
 
     struct ParticleTextureProgramData
     {
@@ -442,6 +438,7 @@ private:
         GLint cameraToClipMatrixLoc;
 
         GLint particleTextureLoc;
+        GLint pointSizeLoc;
     } particleTextureProgram;
 
     struct ParticlePointProgramData
@@ -454,7 +451,7 @@ private:
         GLint modelToCameraMatrixLoc;
         GLint cameraToClipMatrixLoc;
 
-        GLint particleTextureLoc;
+        GLint pointSizeLoc;
     } particlePointProgram;
 
 
@@ -463,6 +460,7 @@ private:
     GLuint velocityBuffer;
     GLuint accelerationBuffer;
     GLuint colorBuffer;
+    GLuint whiteBuffer;
     GLuint particleTexture;
 
     bool running;
@@ -474,10 +472,19 @@ private:
 
     void loadShaders();
     void createBuffers();
+    void prepareColoredVAO(GLuint& vao, GLuint color);
     void prepareVAOs();
     void createPositionBuffer();
+    void drawParticlesTextured(const glm::mat4& modelMatrix);
+    void drawParticlesPoints(const glm::mat4& modelMatrix);
+
 
 public:
+    enum DrawMode
+    {
+        POINTS,
+        TEXTURED_SPRITES
+    };
 
     struct DrawOptions
     {
@@ -493,9 +500,12 @@ public:
         bool drawHelp;
         bool monochromatic;
 
-        float pointSize;
-    } drawOptions;
+        // Keep a separate point size for each draw mode
+        float texturedSpritePointSize;
+        float pointPointSize;
 
+        DrawMode drawMode;
+    } drawOptions;
 
     NBodyGraphics(const scene_t* scene);
     ~NBodyGraphics();
@@ -506,7 +516,7 @@ public:
     void loadModel(GalaxyModel& model);
     void loadColors();
     void drawAxes();
-    void drawBodies(const glm::mat4& modelMatrix);
+    void drawParticles(const glm::mat4& modelMatrix);
     void readSceneData();
 
     void display();
@@ -514,6 +524,75 @@ public:
     void stop()
     {
         this->running = false;
+    }
+
+    void toggleDrawMode()
+    {
+        if (this->drawOptions.drawMode == POINTS)
+        {
+            this->drawOptions.drawMode = TEXTURED_SPRITES;
+        }
+        else
+        {
+            this->drawOptions.drawMode = POINTS;
+        }
+    }
+
+    void increasePointSize()
+    {
+        if (this->drawOptions.drawMode == TEXTURED_SPRITES)
+        {
+            float size = this->drawOptions.texturedSpritePointSize;
+            size *= 1.05f;
+            if (size > 1000.0f)
+            {
+                size = 1000.0f;
+            }
+
+            this->drawOptions.texturedSpritePointSize = size;
+            printf("Increase %f\n", size);
+        }
+        else
+        {
+            float size = this->drawOptions.pointPointSize;
+            size *= 1.05f;
+            if (size > 200.0f)
+            {
+                size = 200.0f;
+            }
+
+            this->drawOptions.pointPointSize = size;
+            printf("Increase %f\n", size);
+        }
+    }
+
+    void decreasePointSize()
+    {
+        if (this->drawOptions.drawMode == TEXTURED_SPRITES)
+        {
+            float size = this->drawOptions.texturedSpritePointSize;
+            size *= 0.95f;
+            if (size < 1.0e-3f)
+            {
+                size = 1.0e-3f;
+            }
+
+            this->drawOptions.texturedSpritePointSize = size;
+            printf("Decrease %f\n", size);
+        }
+        else
+        {
+            float size = this->drawOptions.pointPointSize;
+
+            size *= 0.95f;
+            if (size < 1.0e-3f)
+            {
+                size = 1.0e-3f;
+            }
+
+            this->drawOptions.pointPointSize = size;
+            printf("Decrease %f\n", size);
+        }
     }
 };
 
@@ -638,23 +717,18 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             break;
 
         case GLFW_KEY_B:
-            /*
-            scene->starsize *= 1.1;
-            if (scene->starsize > 100.0)
-            {
-                scene->starsize = 100.0;
-            }
-            */
+            ctx->increasePointSize();
             break;
 
         case GLFW_KEY_S:
-            /*
-            scene->starsize *= 0.9;
-            if (scene->starsize < 1.0e-3)
-            {
-                scene->starsize = 1.0e-3;
-            }
-            */
+            ctx->decreasePointSize();
+            break;
+
+        case GLFW_KEY_L:
+            ctx->toggleDrawMode();
+            break;
+
+        case GLFW_KEY_N:
             break;
 
         case GLFW_KEY_H:
@@ -663,11 +737,11 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             break;
 
         case GLFW_KEY_O: /* Toggle camera following CM or on milkyway center */
-            //scene->cmCentered = !scene->cmCentered;
+            ctx->drawOptions.cmCentered = !ctx->drawOptions.cmCentered;
             break;
 
         case GLFW_KEY_R: /* Toggle floating */
-            //scene->floatMode = !scene->floatMode;
+            ctx->drawOptions.floatMode = !ctx->drawOptions.floatMode;
             break;
 
         case GLFW_KEY_P:
@@ -675,7 +749,7 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             break;
 
         case GLFW_KEY_C:
-            //scene->monochromatic = !scene->monochromatic;
+            ctx->drawOptions.monochromatic = !ctx->drawOptions.monochromatic;
             break;
 
         default:
@@ -893,7 +967,7 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->window = NULL;
     this->scene = scene;
     this->particleVAO = 0;
-    this->axesVAO = 0;
+    this->whiteParticleVAO = 0;
 
     this->positionBuffer = 0;
     this->velocityBuffer = 0;
@@ -908,6 +982,13 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->particleTextureProgram.modelToCameraMatrixLoc = -1;
     this->particleTextureProgram.cameraToClipMatrixLoc = -1;
     this->particleTextureProgram.particleTextureLoc = -1;
+    this->particleTextureProgram.pointSizeLoc = -1;
+
+    this->particlePointProgram.program = 0;
+    this->particlePointProgram.positionLoc = -1;
+    this->particlePointProgram.colorLoc = -1;
+    this->particlePointProgram.modelToCameraMatrixLoc = -1;
+    this->particlePointProgram.pointSizeLoc = -1;
 
     this->running = false;
 
@@ -923,24 +1004,33 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->drawOptions.drawHelp = false;
     this->drawOptions.monochromatic = false;
 
+    this->drawOptions.pointPointSize = 5.0f;
+    this->drawOptions.texturedSpritePointSize = 250.0f;
+    this->drawOptions.drawMode = TEXTURED_SPRITES;
+
     this->galaxyModel = NULL;
 }
 
 NBodyGraphics::~NBodyGraphics()
 {
-    GLuint buffers[4];
+    GLuint buffers[5];
 
     if (this->particleTextureProgram.program != 0)
         glDeleteProgram(this->particleTextureProgram.program);
+
+    if (this->particlePointProgram.program != 0)
+        glDeleteProgram(this->particlePointProgram.program);
 
     buffers[0] = this->positionBuffer;
     buffers[1] = this->velocityBuffer;
     buffers[2] = this->accelerationBuffer;
     buffers[3] = this->colorBuffer;
+    buffers[4] = this->whiteBuffer;
 
-    glDeleteBuffers(4, buffers);
+    glDeleteBuffers(5, buffers);
 
     glDeleteVertexArrays(1, &this->particleVAO);
+    glDeleteVertexArrays(1, &this->whiteParticleVAO);
     glDeleteTextures(1, &this->particleTexture);
 }
 
@@ -1179,24 +1269,41 @@ void NBodyText::loadFont()
 void NBodyGraphics::loadShaders()
 {
     this->particleTextureProgram.program = nbglCreateProgram("particle texture program",
-                                                             (const char*) particle_texture_vertex_glsl,
+                                                             (const char*) particle_vertex_glsl,
                                                              (const char*) particle_texture_fragment_glsl,
-                                                             (GLint) particle_texture_vertex_glsl_len,
+                                                             (GLint) particle_vertex_glsl_len,
                                                              (GLint) particle_texture_fragment_glsl_len);
 
-    GLuint program = this->particleTextureProgram.program;
+    GLuint tprogram = this->particleTextureProgram.program;
 
-    this->particleTextureProgram.positionLoc = glGetAttribLocation(program, "position");
-    this->particleTextureProgram.colorLoc = glGetAttribLocation(program, "inputColor");
-    this->particleTextureProgram.modelToCameraMatrixLoc = glGetUniformLocation(program, "modelToCameraMatrix");
-    this->particleTextureProgram.cameraToClipMatrixLoc = glGetUniformLocation(program, "cameraToClipMatrix");
-    this->particleTextureProgram.particleTextureLoc = glGetUniformLocation(program, "particleTexture");
+    this->particleTextureProgram.positionLoc = glGetAttribLocation(tprogram, "position");
+    this->particleTextureProgram.colorLoc = glGetAttribLocation(tprogram, "inputColor");
+    this->particleTextureProgram.modelToCameraMatrixLoc = glGetUniformLocation(tprogram, "modelToCameraMatrix");
+    this->particleTextureProgram.cameraToClipMatrixLoc = glGetUniformLocation(tprogram, "cameraToClipMatrix");
+    this->particleTextureProgram.particleTextureLoc = glGetUniformLocation(tprogram, "particleTexture");
+    this->particleTextureProgram.pointSizeLoc = glGetUniformLocation(tprogram, "pointSize");
+
+
+    this->particlePointProgram.program = nbglCreateProgram("particle point program",
+                                                           (const char*) particle_vertex_glsl,
+                                                           (const char*) particle_point_fragment_glsl,
+                                                           (GLint) particle_vertex_glsl_len,
+                                                           (GLint) particle_point_fragment_glsl_len);
+
+    GLuint pprogram = this->particlePointProgram.program;
+
+    this->particlePointProgram.positionLoc = glGetAttribLocation(pprogram, "position");
+    this->particlePointProgram.colorLoc = glGetAttribLocation(pprogram, "inputColor");
+    this->particlePointProgram.modelToCameraMatrixLoc = glGetUniformLocation(pprogram, "modelToCameraMatrix");
+    this->particlePointProgram.cameraToClipMatrixLoc = glGetUniformLocation(pprogram, "cameraToClipMatrix");
+    this->particlePointProgram.pointSizeLoc = glGetUniformLocation(pprogram, "pointSize");
 }
 
-void NBodyGraphics::prepareVAOs()
+// create the VAO for the monochrome vs. not scene
+void NBodyGraphics::prepareColoredVAO(GLuint& vao, GLuint color)
 {
-    glGenVertexArrays(1, &this->particleVAO);
-    glBindVertexArray(this->particleVAO);
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
     glEnableVertexAttribArray(this->particleTextureProgram.positionLoc);
     glEnableVertexAttribArray(this->particleTextureProgram.colorLoc);
 
@@ -1204,10 +1311,16 @@ void NBodyGraphics::prepareVAOs()
     /* 4th component is not included */
     glVertexAttribPointer(this->particleTextureProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, color);
     glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindVertexArray(0);
+}
+
+void NBodyGraphics::prepareVAOs()
+{
+    this->prepareColoredVAO(this->particleVAO, this->colorBuffer);
+    this->prepareColoredVAO(this->whiteParticleVAO, this->whiteBuffer);
 }
 
 void NBodyGraphics::readSceneData()
@@ -1231,8 +1344,9 @@ void NBodyGraphics::readSceneData()
     glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), positions);
 }
 
-void NBodyGraphics::drawBodies(const glm::mat4& modelMatrix)
+void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
 {
+    glPointSize(this->drawOptions.texturedSpritePointSize);
     glUseProgram(this->particleTextureProgram.program);
     glUniformMatrix4fv(this->particleTextureProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
     glUniformMatrix4fv(this->particleTextureProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
@@ -1241,8 +1355,16 @@ void NBodyGraphics::drawBodies(const glm::mat4& modelMatrix)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, this->particleTexture);
     glUniform1i(this->particleTextureProgram.particleTextureLoc, 1);
+    glUniform1f(this->particleTextureProgram.pointSizeLoc, this->drawOptions.texturedSpritePointSize);
 
-    glBindVertexArray(this->particleVAO);
+    if (this->drawOptions.monochromatic)
+    {
+        glBindVertexArray(this->whiteParticleVAO);
+    }
+    else
+    {
+        glBindVertexArray(this->particleVAO);
+    }
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
@@ -1272,21 +1394,63 @@ void NBodyGraphics::drawBodies(const glm::mat4& modelMatrix)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+void NBodyGraphics::drawParticlesPoints(const glm::mat4& modelMatrix)
+{
+    glPointSize(this->drawOptions.pointPointSize);
+
+    glUseProgram(this->particlePointProgram.program);
+    glUniformMatrix4fv(this->particlePointProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(this->particlePointProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+    glUniform1f(this->particlePointProgram.pointSizeLoc, this->drawOptions.pointPointSize);
+
+    if (this->drawOptions.monochromatic)
+    {
+        glBindVertexArray(this->whiteParticleVAO);
+    }
+    else
+    {
+        glBindVertexArray(this->particleVAO);
+    }
+
+    glDrawArrays(GL_POINTS, 0, this->scene->nbody);
 
     glBindVertexArray(0);
     glUseProgram(0);
 }
 
+
+void NBodyGraphics::drawParticles(const glm::mat4& modelMatrix)
+{
+    switch (this->drawOptions.drawMode)
+    {
+        case POINTS:
+            this->drawParticlesPoints(modelMatrix);
+            break;
+
+        case TEXTURED_SPRITES:
+            this->drawParticlesTextured(modelMatrix);
+            break;
+
+        default:
+            mw_panic("Invalid draw mode\n");
+    }
+}
+
 void NBodyGraphics::createBuffers()
 {
-    GLuint buffers[4];
+    GLuint buffers[5];
 
-    glGenBuffers(4, buffers);
+    glGenBuffers(5, buffers);
 
     this->positionBuffer = buffers[0];
     this->velocityBuffer = buffers[1];
     this->accelerationBuffer = buffers[2];
     this->colorBuffer = buffers[3];
+    this->whiteBuffer = buffers[4];
 }
 
 void NBodyGraphics::createPositionBuffer()
@@ -1323,6 +1487,17 @@ void NBodyGraphics::loadColors()
     srand((unsigned int) time(NULL));
 
     Color* color = new Color[nbody];
+
+    for (GLint i = 0; i < nbody; ++i)
+    {
+        color[i].r = color[i].g = color[i].b = 1.0f;
+    }
+
+    // create a white buffer now
+    // TODO: There is probably a better way to set a buffer to all 1
+    glBindBuffer(GL_ARRAY_BUFFER, this->whiteBuffer);
+    glBufferData(GL_ARRAY_BUFFER, 3 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
+    glVertexAttribPointer(this->particleTextureProgram.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     for (GLint i = 0; i < nbody; ++i)
     {
@@ -1401,10 +1576,6 @@ void NBodyGraphics::prepareContext()
     glEnable(GL_PROGRAM_POINT_SIZE);
     printf("pointsmooth %d\n", glGetError());
 
-    //glPointSize(3.0f);
-    glPointSize(10.0f);
-    printf("Pointsize %d\n", glGetError());
-
 
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
@@ -1479,7 +1650,7 @@ void NBodyGraphics::display()
 
     if (this->drawOptions.drawParticles)
     {
-        this->drawBodies(modelMatrix);
+        this->drawParticles(modelMatrix);
     }
 
     if (this->drawOptions.drawInfo)

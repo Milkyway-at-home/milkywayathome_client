@@ -6,8 +6,6 @@ uniform sampler2D particleTexture;
 flat in vec4 color;
 out vec4 outputColor;
 
-in float pointSizeOut;
-
 void main()
 {
     vec4 tex = texture(particleTexture, gl_PointCoord);
