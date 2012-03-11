@@ -64,6 +64,13 @@
 #include "nbody_particle_texture.h"
 #include "nbody_shaders.h"
 
+extern "C" const struct {
+  unsigned int 	 width;
+  unsigned int 	 height;
+  unsigned int 	 bytes_per_pixel; /* 3:RGB, 4:RGBA */
+  unsigned char	 pixel_data[1024 * 1024 * 3 + 1];
+} milkywayImage;
+
 static const float zNear = 0.01f;
 static const float zFar = 1000.0f;
 
@@ -208,7 +215,7 @@ struct NBodyVertex
     GLfloat x, y, z;
 
     NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
-    NBodyVertex(GLfloat x, GLfloat y, GLfloat z) : x(x), y(y), z(z) { }
+    NBodyVertex(GLfloat xx, GLfloat yy, GLfloat zz) : x(xx), y(yy), z(zz) { }
 };
 
 struct SceneData
@@ -312,6 +319,8 @@ NBodyAxes::~NBodyAxes()
 
 void NBodyAxes::draw(const glm::mat4& modelMatrix)
 {
+    glDisable(GL_DEPTH_TEST);
+
     glUseProgram(this->axesProgramData.program);
     glUniformMatrix4fv(this->axesProgramData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
     glUniformMatrix4fv(this->axesProgramData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
@@ -320,6 +329,7 @@ void NBodyAxes::draw(const glm::mat4& modelMatrix)
     glDrawArrays(GL_LINES, 0, 6);
     glBindVertexArray(0);
     glUseProgram(0);
+    glEnable(GL_DEPTH_TEST);
 }
 
 void NBodyAxes::loadShader()
@@ -1007,6 +1017,16 @@ NBodyGraphics::~NBodyGraphics()
     glDeleteTextures(1, &this->particleTexture);
 }
 
+static double derivDiskShapeFunction(double r)
+{
+    return (-1.0/4.0) * 4.0 * exp((-1.0/4.0) * std::fabs(r));
+}
+
+static double diskShapeFunction(double r)
+{
+    return 4.0 * exp((-1.0/4.0) * std::fabs(r));
+}
+
 class GalaxyModel
 {
 private:
@@ -1023,12 +1043,18 @@ private:
     double diskScale;
     double totalHeight;
 
+
+    // what the rounded out diameter will be
+    // after producing shape so we can sample the texture
+    float invActualDiameter;
+
     double totalDiameter;
     GLint radialSlices;
     GLint axialSlices;
     double axialSliceSize;
     double diameterSlice;
 
+    GLuint texture;
 
     struct GalaxyProgramData
     {
@@ -1037,6 +1063,8 @@ private:
         GLint positionLoc;
         GLint modelToCameraMatrixLoc;
         GLint cameraToClipMatrixLoc;
+        GLint galaxyTextureLoc;
+        GLint invGalaxyDiameterLoc;
     } programData;
 
     NBodyText text;
@@ -1064,11 +1092,39 @@ public:
         glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
+        //glBlendFunc(GL_SRC_COLOR, GL_ONE);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
+        //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
+
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, this->texture);
+        glUniform1i(this->programData.galaxyTextureLoc, 2);
+        glUniform1f(this->programData.invGalaxyDiameterLoc, this->invActualDiameter);
+
         glBindVertexArray(this->vao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
+
         glBindVertexArray(0);
         glUseProgram(0);
+
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
+
+    void loadGalaxyTexture()
+    {
+        glGenTextures(1, &this->texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, milkywayImage.width, milkywayImage.height, 0, GL_RGB, GL_UNSIGNED_BYTE, milkywayImage.pixel_data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
 
     void loadShaders()
     {
@@ -1081,6 +1137,9 @@ public:
         this->programData.positionLoc = glGetAttribLocation(this->programData.program, "position");
         this->programData.modelToCameraMatrixLoc = glGetUniformLocation(this->programData.program, "modelToCameraMatrix");
         this->programData.cameraToClipMatrixLoc = glGetUniformLocation(this->programData.program, "cameraToClipMatrix");
+
+        this->programData.galaxyTextureLoc = glGetUniformLocation(this->programData.program, "galaxyTexture");
+        this->programData.invGalaxyDiameterLoc = glGetUniformLocation(this->programData.program, "invGalaxyDiameter");
     }
 
     void prepareVAO()
@@ -1114,6 +1173,35 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    void setMilkywayModelParameters()
+    {
+        this->radialSlices = 15;
+        this->axialSlices = 50;
+        this->axialSliceSize = M_2PI / (double) this->axialSlices;
+
+        this->bulgeScale = 0.7;
+        this->diskScale = 4.0;
+        this->totalHeight = 2.0 * this->bulgeScale;
+
+        this->totalDiameter = 2.0 * 15.33;
+
+        // To get the edges to taper to 0 we need to have the last
+        // segment stick a bit further than the profile says
+        GLuint nDiameterSlices = 2 * this->radialSlices;
+
+        double sliceSize = this->totalDiameter / (double) nDiameterSlices;
+        double r = 0.5 * this->totalDiameter + sliceSize;
+
+        // approximate slope of last segment at tip and continue a bit further
+        double slope = derivDiskShapeFunction(r + sliceSize);
+        assert(slope < 0.0 && std::fabs(slope) < 1.0);
+        double r1 = (r + sliceSize) - std::fabs(slope) * (r + sliceSize);
+
+        // for texturing
+        this->invActualDiameter = 1.0f / (2.0f * (float) r1);
+        this->diameterSlice = this->totalDiameter / (double) nDiameterSlices;
+    }
+
     GalaxyModel()
     {
         this->points = NULL;
@@ -1124,20 +1212,9 @@ public:
         this->vao = 0;
         this->buffer = 0;
         this->colorBuffer = 0;
+        this->texture = 0;
 
-
-        this->bulgeScale = 0.7;
-        this->diskScale = 4.0;
-        this->totalHeight = 2.0 * this->bulgeScale;
-
-        this->totalDiameter = 33.0;
-
-        this->radialSlices = 50;
-        GLuint nDiameterSlices = 2 * this->radialSlices + 1;
-        this->diameterSlice = this->totalDiameter / (double) nDiameterSlices;
-
-        this->axialSlices = 50;
-        this->axialSliceSize = M_2PI / (double) this->axialSlices;
+        this->setMilkywayModelParameters();
 
         this->programData.program = 0;
         this->programData.positionLoc = -1;
@@ -1154,6 +1231,8 @@ public:
 
         glDeleteBuffers(1, &this->buffer);
         glDeleteBuffers(1, &this->colorBuffer);
+
+        glDeleteTextures(1, &this->texture);
 
         delete[] this->points;
         delete[] this->colors;
@@ -1360,14 +1439,12 @@ void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
 
     //glDepthMask(GL_FALSE);
 
-    //printf("Pre arst %d\n", glGetError());
     //glEnable(GL_POINT_SPRITE);
     //printf("enable point sprite %d\n", glGetError());
     //glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
     //printf("tex envi %d\n", glGetError());
 
     glDrawArrays(GL_POINTS, 0, this->scene->nbody);
-
 
     //glDisable(GL_BLEND);
     glDepthMask(GL_TRUE);
@@ -1457,6 +1534,7 @@ void NBodyGraphics::loadModel(GalaxyModel& model)
     model.bufferData();
     model.loadShaders();
     model.prepareVAO();
+    model.loadGalaxyTexture();
     this->galaxyModel = &model;
 }
 
@@ -1553,18 +1631,12 @@ void NBodyGraphics::prepareContext()
 
     glEnable(GL_MULTISAMPLE);
 
-
-    // allow changing point size from within shader
-    // as well as smoothing them to look more spherical
-    //glEnable(GL_POINT_SMOOTH);
-    //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE); // not sure what difference is between these
     glEnable(GL_PROGRAM_POINT_SIZE);
-    printf("pointsmooth %d\n", glGetError());
 
-
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
-    //glFrontFace(GL_CW);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     float maxSmoothPointSize[2];
     glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, (GLfloat*) &maxSmoothPointSize);
@@ -1574,19 +1646,13 @@ void NBodyGraphics::prepareContext()
     glDepthFunc(GL_LEQUAL);
     glDepthRange(0.0f, 1.0f);
 
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
+    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
 
     //glEnable(GL_ALPHA_TEST);
-
-
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
-    //glEnable(GL_BLEND);
-
     ///glEnable(GL_COLOR_MATERIAL);
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
 }
 
 static void requestGL32()
@@ -1595,6 +1661,8 @@ static void requestGL32()
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
     glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    glfwOpenWindowHint(GLFW_DEPTH_BITS, 24);
 
     glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 4);
 
@@ -1785,16 +1853,6 @@ scene_t* nbConnectSharedScene(int instanceId)
 
 #endif /* !BOINC_APPLICATION */
 
-static double derivDiskShapeFunction(double r)
-{
-    return (1.0/4.0) * 4.0 * exp((-1.0/4.0) * std::fabs(r));
-}
-
-static double diskShapeFunction(double r)
-{
-    return 4.0 * exp((-1.0/4.0) * std::fabs(r));
-}
-
 void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta)
 {
     double z;
@@ -1818,16 +1876,39 @@ void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta
 // generate top or bottom half of galaxy model
 void GalaxyModel::generateSegment(bool neg)
 {
-    for (GLint i = this->radialSlices; i >= -this->radialSlices; --i)
-    {
-        double r = i * this->diameterSlice;
-        double r1 = (i + 1) * this->diameterSlice;
-        double theta;
+    GLint start, end, inc;
 
-        // wrap around an additional point to close the circle at 0
+    if (neg)
+    {
+        start = this->radialSlices - 1;
+        end = -1;
+        inc = -1;
+    }
+    else
+    {
+        start = 0;
+        end = this->radialSlices;
+        inc = 1;
+    }
+
+    for (GLint i = start; i != end; i += inc)
+    {
+        double r, r1;
+
+        if (neg) // next ring is smaller
+        {
+            r1 = i * this->diameterSlice;
+            r = (std::abs(i) + 1) * this->diameterSlice;
+        }
+        else   // next ring is bigger
+        {
+            r = i * this->diameterSlice;
+            r1 = (std::abs(i) + 1) * this->diameterSlice;
+        }
+
         for (GLint j = 0; j < this->axialSlices + 1; ++j)
         {
-            theta = this->axialSliceSize * (double) j;
+            double theta = this->axialSliceSize * (double) j;
 
             makePoint(this->points[this->count++], neg, r, theta);
             makePoint(this->points[this->count++], neg, r1, theta);
@@ -1839,16 +1920,13 @@ void GalaxyModel::generateSegment(bool neg)
 void GalaxyModel::generateJoiningSegment()
 {
     double r = this->radialSlices * this->diameterSlice;
-
-    // approximate slope of last segment at tip and continue a bit further
-    double slope = derivDiskShapeFunction(r);
-    double r1 = 1.1 * (slope * r + r);
+    double r1 = 0.5 / (double) this->invActualDiameter;
 
     for (GLint j = 0; j < this->axialSlices + 1; ++j)
     {
         double theta = this->axialSliceSize * (double) j;
 
-        makePoint(this->points[this->count++], true, r, theta);
+        makePoint(this->points[this->count++], false, r, theta);
         this->points[this->count++] = NBodyVertex(r1 * cos(theta), r1 * sin(theta), 0.0f);
     }
 
@@ -1857,13 +1935,13 @@ void GalaxyModel::generateJoiningSegment()
         double theta = this->axialSliceSize * (double) j;
 
         this->points[this->count++] = NBodyVertex(r1 * cos(theta), r1 * sin(theta), 0.0f);
-        makePoint(this->points[this->count++], false, r, theta);
+        makePoint(this->points[this->count++], true, r, theta);
     }
 }
 
 void GalaxyModel::generateModel()
 {
-    GLuint segmentPoints = 2 * (2 * this->radialSlices + 1) * (this->axialSlices + 1);
+    GLuint segmentPoints = 2 * this->radialSlices * (this->axialSlices + 1);
     GLuint joinPoints = 2 * (this->axialSlices + 1);
     this->nPoints = 2 * (segmentPoints + joinPoints);
 
@@ -1871,20 +1949,9 @@ void GalaxyModel::generateModel()
     this->colors = new Color[this->nPoints];
     this->count = 0;
 
-    generateSegment(true);
-    generateJoiningSegment();
     generateSegment(false);
-
-#if 0
-    for (GLint i = 0; i < nPoints; ++i)
-    {
-        printf("%f %f %f\n",
-               this->points[i].x,
-               this->points[i].y,
-               this->points[i].z
-            );
-    }
-#endif
+    generateJoiningSegment();
+    generateSegment(true);
 
     assert(this->count == this->nPoints);
 }
@@ -1927,25 +1994,33 @@ int nbRunGraphics(const scene_t* scene, const VisArgs* args)
     }
 
 
-    // GL context needs to be open or else destructors will crash
-    NBodyGraphics graphicsContext(scene);
+    int db = glfwGetWindowParam(window, GLFW_DEPTH_BITS);
+    int ap = glfwGetWindowParam(window, GLFW_ALPHA_BITS);
+    printf("BITS %d %d\n", db, ap);
 
-    try
-    {
-        graphicsContext.prepareContext();
-        nbglSetHandlers(&graphicsContext);
-        graphicsContext.populateBuffers();
-        graphicsContext.loadColors();
 
-        GalaxyModel model;
-        graphicsContext.loadModel(model);
-        graphicsContext.mainLoop();
-    }
-    catch (const std::exception& e)
     {
-        std::cerr << "Exception: " << e.what() << std::endl;
-        glfwTerminate();
-        return 1;
+        // GL context needs to be open or else destructors will crash
+        NBodyGraphics graphicsContext(scene);
+        printVersionAndExts();
+
+        try
+        {
+            graphicsContext.prepareContext();
+            nbglSetHandlers(&graphicsContext);
+            graphicsContext.populateBuffers();
+            graphicsContext.loadColors();
+
+            GalaxyModel model;
+            graphicsContext.loadModel(model);
+            graphicsContext.mainLoop();
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Exception: " << e.what() << std::endl;
+            glfwTerminate();
+            return 1;
+        }
     }
 
     globalGraphicsContext = NULL;
