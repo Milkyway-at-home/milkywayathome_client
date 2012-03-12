@@ -926,6 +926,9 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
              &x11green,
              &pen);
 
+    // Fix black boxes appearing behind letters
+    glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA);
+
     glUseProgram(this->textProgram.program);
     glUniformMatrix4fv(this->textProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(textCameraToClipMatrix));
 
@@ -943,6 +946,8 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
 
     glUseProgram(0);
     glBindVertexArray(0);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 NBodyGraphics::NBodyGraphics(const scene_t* scene)
@@ -983,7 +988,7 @@ NBodyGraphics::NBodyGraphics(const scene_t* scene)
     this->drawOptions.drawAxes = true;
     this->drawOptions.drawParticles = true;
     this->drawOptions.floatMode = false;
-    this->drawOptions.cmCentered = false;
+    this->drawOptions.cmCentered = true;
     this->drawOptions.drawHelp = false;
     this->drawOptions.monochromatic = false;
 
