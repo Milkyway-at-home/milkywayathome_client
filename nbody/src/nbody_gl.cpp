@@ -1017,16 +1017,6 @@ NBodyGraphics::~NBodyGraphics()
     glDeleteTextures(1, &this->particleTexture);
 }
 
-static double derivDiskShapeFunction(double r)
-{
-    return (-1.0/4.0) * 4.0 * exp((-1.0/4.0) * std::fabs(r));
-}
-
-static double diskShapeFunction(double r)
-{
-    return 4.0 * exp((-1.0/4.0) * std::fabs(r));
-}
-
 class GalaxyModel
 {
 private:
@@ -1039,9 +1029,11 @@ private:
     GLuint buffer;
     GLuint colorBuffer;
 
-    double bulgeScale;
+    double smallBulgeRadius;
+    double bulgeRadius;
     double diskScale;
-    double totalHeight;
+    double diskCoeff;
+    double diskEdgeZ;
 
 
     // what the rounded out diameter will be
@@ -1071,7 +1063,8 @@ private:
 
     void makePoint(NBodyVertex& point, bool neg, double r, double theta);
     void generateSegment(bool neg);
-    void generateJoiningSegment();
+
+    double diskShapeFunction(double r);
 
 public:
     void generateModel();
@@ -1179,27 +1172,21 @@ public:
         this->axialSlices = 50;
         this->axialSliceSize = M_2PI / (double) this->axialSlices;
 
-        this->bulgeScale = 0.7;
-        this->diskScale = 4.0;
-        this->totalHeight = 2.0 * this->bulgeScale;
+        this->bulgeRadius = 0.5 * 8.308;
+        this->smallBulgeRadius = 0.7;
+
+        this->diskScale = 7.7;
+        this->diskCoeff = 2.5;
 
         this->totalDiameter = 2.0 * 15.33;
 
-        // To get the edges to taper to 0 we need to have the last
-        // segment stick a bit further than the profile says
         GLuint nDiameterSlices = 2 * this->radialSlices;
 
-        double sliceSize = this->totalDiameter / (double) nDiameterSlices;
-        double r = 0.5 * this->totalDiameter + sliceSize;
-
-        // approximate slope of last segment at tip and continue a bit further
-        double slope = derivDiskShapeFunction(r + sliceSize);
-        assert(slope < 0.0 && std::fabs(slope) < 1.0);
-        double r1 = (r + sliceSize) - std::fabs(slope) * (r + sliceSize);
-
         // for texturing
-        this->invActualDiameter = 1.0f / (2.0f * (float) r1);
+        this->invActualDiameter = 1.0f / (float) this->totalDiameter;
         this->diameterSlice = this->totalDiameter / (double) nDiameterSlices;
+
+        this->diskEdgeZ = diskShapeFunction(0.5 * this->totalDiameter);
     }
 
     GalaxyModel()
@@ -1238,6 +1225,21 @@ public:
         delete[] this->colors;
     }
 };
+
+double GalaxyModel::diskShapeFunction(double r)
+{
+    double rd = this->diskScale;
+    double a = this->diskCoeff;
+
+    double rp = std::fabs(r);
+
+    if (std::fabs(r) <= this->bulgeRadius)
+    {
+        rp += this->smallBulgeRadius;
+    }
+
+    return a * exp((-1.0 / rd) * rp);
+}
 
 void NBodyText::prepareConstantText(const scene_t* scene)
 {
@@ -1860,15 +1862,28 @@ void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta
     point.x = std::fabs(r) * cos(theta);
     point.y = std::fabs(r) * sin(theta);
 
-    //if (std::fabs(r) < this->bulgeScale)
-    if (false)
+    double gr = this->bulgeRadius;
+
+    if (std::fabs(r) <= gr && false)
     {
-        z = sqrt(sqr(this->bulgeScale) - 2.0 * sqr(r));
+        //z = 0.25 * diskShapeFunction(r) * sqrt(sqr(gr) - sqr(point.x) - sqr(point.y));
+
+        //z = 0.66f * std::fabs(sin(point.y / r));
+        //z = gr * cos(point.x / r);
+
+        //z = sqrt(sqr(gr) - sqr(point.x) - sqr(point.y));
+
+        z = sqrt(sqr(this->smallBulgeRadius) - sqr(point.x) - sqr(point.y));
+        printf("Bulge z %f, r = %f\n", neg ? -z : z, r);
     }
     else
     {
         z = diskShapeFunction(r);
+
+        printf("Disk z %f, r = %f\n", neg ? -z : z, r);
     }
+
+    z -= this->diskEdgeZ;
 
     point.z = neg ? -z : z;
 }
@@ -1916,41 +1931,16 @@ void GalaxyModel::generateSegment(bool neg)
     }
 }
 
-// create section that tapers to 0 at the edge to join the upper and lower half
-void GalaxyModel::generateJoiningSegment()
-{
-    double r = this->radialSlices * this->diameterSlice;
-    double r1 = 0.5 / (double) this->invActualDiameter;
-
-    for (GLint j = 0; j < this->axialSlices + 1; ++j)
-    {
-        double theta = this->axialSliceSize * (double) j;
-
-        makePoint(this->points[this->count++], false, r, theta);
-        this->points[this->count++] = NBodyVertex(r1 * cos(theta), r1 * sin(theta), 0.0f);
-    }
-
-    for (GLint j = 0; j < this->axialSlices + 1; ++j)
-    {
-        double theta = this->axialSliceSize * (double) j;
-
-        this->points[this->count++] = NBodyVertex(r1 * cos(theta), r1 * sin(theta), 0.0f);
-        makePoint(this->points[this->count++], true, r, theta);
-    }
-}
-
 void GalaxyModel::generateModel()
 {
     GLuint segmentPoints = 2 * this->radialSlices * (this->axialSlices + 1);
-    GLuint joinPoints = 2 * (this->axialSlices + 1);
-    this->nPoints = 2 * (segmentPoints + joinPoints);
+    this->nPoints = 2 * segmentPoints;
 
     this->points = new NBodyVertex[this->nPoints];
     this->colors = new Color[this->nPoints];
     this->count = 0;
 
     generateSegment(false);
-    generateJoiningSegment();
     generateSegment(true);
 
     assert(this->count == this->nPoints);
