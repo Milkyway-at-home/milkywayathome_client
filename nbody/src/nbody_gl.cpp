@@ -813,18 +813,15 @@ NBodyText::~NBodyText()
 
 typedef struct
 {
-    float x, y, z;    // position
-    float s, t;       // texture
-    float r, g, b, a; // color
+    float x, y;    // position
+    float s, t;    // texture
 } vertex_t;
 
 static void add_text(vertex_buffer_t* buffer,
                      texture_font_t* font,
                      const wchar_t* text,
-                     const vec4* color,
                      vec2* pen)
 {
-    float r = color->red, g = color->green, b = color->blue, a = color->alpha;
     float left = pen->x;
     const size_t n = wcslen(text);
 
@@ -867,10 +864,10 @@ static void add_text(vertex_buffer_t* buffer,
 
             vertex_t vertices[] =
                 {
-                    { x0, y0, 0.0f,  s0, t0,  r, g, b, a },
-                    { x0, y1, 0.0f,  s0, t1,  r, g, b, a },
-                    { x1, y1, 0.0f,  s1, t1,  r, g, b, a },
-                    { x1, y0, 0.0f,  s1, t0,  r, g, b, a }
+                    { x0, y0,  s0, t0 },
+                    { x0, y1,  s0, t1 },
+                    { x1, y1,  s1, t1 },
+                    { x1, y0,  s1, t0 }
                 };
 
             vertex_buffer_push_back_indices(buffer, indices, 6);
@@ -879,25 +876,6 @@ static void add_text(vertex_buffer_t* buffer,
         }
     }
 }
-
-static const vec4 x11green = { 0.0f, 1.0f, 0.0f, 0.5f };
-
-
-
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
-    //glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_DST_COLOR, GL_ONE);
-    //glBlendFunc(GL_SRC_COLOR, GL_ONE);
-//    glBlendFunc(GL_ONE, GL_ONE);
-    //glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-    //glBindSampler(0, 0);
-
-    //glEnable(GL_COLOR_MATERIAL);
-    //glEnable(GL_BLEND);
-    //float alpha = 0.5f;
-    //glBlendColor(1.0f - alpha, 1.0f - alpha, 1.0f - alpha, 1.0f);
-
-
 
 void NBodyText::drawProgressText(const SceneData& sceneData)
 {
@@ -917,7 +895,6 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
     add_text(this->textBuffer,
              this->font,
              buf,
-             &x11green,
              &pen);
 
     // Fix black boxes appearing behind letters
@@ -1256,7 +1233,6 @@ void NBodyText::prepareConstantText(const scene_t* scene)
     add_text(this->constTextBuffer,
              this->font,
              buf,
-             &x11green,
              &pen);
 
     this->penEndConst = pen;
@@ -1271,8 +1247,8 @@ void NBodyText::prepareTextVAOs()
     glBindBuffer(GL_ARRAY_BUFFER, this->constTextBuffer->vertices_id);
     glEnableVertexAttribArray(this->textProgram.positionLoc);
     glEnableVertexAttribArray(this->textProgram.texPositionLoc);
-    glVertexAttribPointer(this->textProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
-    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (3 * sizeof(GLfloat)));
+    glVertexAttribPointer(this->textProgram.positionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
+    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(GLfloat)));
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->constTextBuffer->indices_id);
 
     glGenVertexArrays(1, &this->textVAO);
@@ -1282,8 +1258,8 @@ void NBodyText::prepareTextVAOs()
     glBindBuffer(GL_ARRAY_BUFFER, this->textBuffer->vertices_id);
     glEnableVertexAttribArray(this->textProgram.positionLoc);
     glEnableVertexAttribArray(this->textProgram.texPositionLoc);
-    glVertexAttribPointer(this->textProgram.positionLoc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
-    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (3 * sizeof(GLfloat)));
+    glVertexAttribPointer(this->textProgram.positionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
+    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(GLfloat)));
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->textBuffer->indices_id);
 
     glBindVertexArray(0);
@@ -1305,8 +1281,8 @@ void NBodyText::loadFont()
         throw std::runtime_error("Failed to load font data");
     }
 
-    this->textBuffer = vertex_buffer_new("v3f:t2f:c4f");
-    this->constTextBuffer = vertex_buffer_new("v3f:t2f:c4f");
+    this->textBuffer = vertex_buffer_new("v2f:t2f");
+    this->constTextBuffer = vertex_buffer_new("v2f:t2f");
     if (!this->textBuffer || !this->constTextBuffer)
     {
         throw std::runtime_error("Failed to create text vertex buffers");
@@ -1315,8 +1291,8 @@ void NBodyText::loadFont()
     texture_font_load_glyphs(this->font,
                              L" !\"#$%&'()*+,-./0123456789:;<=>?"
                              L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                             L"`abcdefghijklmnopqrstuvwxyz{|}~"
-                             L" ");
+                             L"`abcdefghijklmnopqrstuvwxyz{|}~");
+
     printf("Glyphs loaded %d\n", glGetError());
 }
 

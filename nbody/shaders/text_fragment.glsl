@@ -9,6 +9,7 @@ in vec2 texCoord;
 
 void main()
 {
-    outputColor = texture(textTexture, texCoord);
+    // swizzle red component to alpha since GL_ALPHA removed
+    outputColor = texture(textTexture, texCoord).xxxx;
 }
 
