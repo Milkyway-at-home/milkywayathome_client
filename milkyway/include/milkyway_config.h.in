@@ -83,12 +83,14 @@
 
   #define CONST_F __attribute__((const))
   #define ALWAYS_INLINE __attribute__((always_inline))
+  #define NEVER_INLINE __attribute__((noinline))
   #define INTERNAL __attribute__((visibility("internal")))
   #define WEAK __attribute__((weak))
 #else
   #define HOT
   #define CONST_F
-  #define ALWAYS_INLINE
+  #define ALWAYS_INLINE __forceinline
+  #define NEVER_INLINE __declspec(noinline)
   #define INTERNAL
 
   /* Only sort of */
