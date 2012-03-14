@@ -249,7 +249,6 @@ private:
 
         GLint positionLoc;
         GLint texCoordLoc;
-        GLint texPositionLoc;
 
         GLint textTextureLoc;
 
@@ -767,7 +766,6 @@ void NBodyText::loadShader()
 
     this->textProgram.positionLoc = glGetAttribLocation(this->textProgram.program, "position");
     this->textProgram.textTextureLoc = glGetUniformLocation(this->textProgram.program, "textTexture");
-    this->textProgram.texPositionLoc = glGetAttribLocation(this->textProgram.program, "texPosition");
     this->textProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->textProgram.program, "modelToCameraMatrix");
     this->textProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->textProgram.program, "cameraToClipMatrix");
 }
@@ -1246,9 +1244,7 @@ void NBodyText::prepareTextVAOs()
     vertex_buffer_upload(this->constTextBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, this->constTextBuffer->vertices_id);
     glEnableVertexAttribArray(this->textProgram.positionLoc);
-    glEnableVertexAttribArray(this->textProgram.texPositionLoc);
-    glVertexAttribPointer(this->textProgram.positionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
-    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(GLfloat)));
+    glVertexAttribPointer(this->textProgram.positionLoc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->constTextBuffer->indices_id);
 
     glGenVertexArrays(1, &this->textVAO);
@@ -1257,9 +1253,7 @@ void NBodyText::prepareTextVAOs()
     vertex_buffer_upload(this->textBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, this->textBuffer->vertices_id);
     glEnableVertexAttribArray(this->textProgram.positionLoc);
-    glEnableVertexAttribArray(this->textProgram.texPositionLoc);
-    glVertexAttribPointer(this->textProgram.positionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
-    glVertexAttribPointer(this->textProgram.texPositionLoc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) (2 * sizeof(GLfloat)));
+    glVertexAttribPointer(this->textProgram.positionLoc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->textBuffer->indices_id);
 
     glBindVertexArray(0);
