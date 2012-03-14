@@ -927,7 +927,8 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
              &pen);
 
     // Fix black boxes appearing behind letters
-    glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA);
+    // also keep text looking same when things are behind it
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     glUseProgram(this->textProgram.program);
     glUniformMatrix4fv(this->textProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(textCameraToClipMatrix));
