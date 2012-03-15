@@ -36,8 +36,7 @@
 
 #include "nbody_gl_util.h"
 
-#include <freetype-gl.h>
-#include <vertex-buffer.h>
+#include "nbody_gl_text.h"
 
 #include <assert.h>
 
@@ -78,8 +77,6 @@ static const float zFar = 1000.0f;
 
 static glm::mat4 cameraToClipMatrix(1.0f);
 
-static glm::mat4 textCameraToClipMatrix(1.0f);
-
 static glutil::ViewData initialViewData =
 {
 	glm::vec3(0.0f, 0.0f, 0.0f),  // center position
@@ -113,55 +110,6 @@ struct NBodyVertex
 
     NBodyVertex() : x(0.0f), y(0.0f), z(0.0f) { }
     NBodyVertex(GLfloat xx, GLfloat yy, GLfloat zz) : x(xx), y(yy), z(zz) { }
-};
-
-struct SceneData
-{
-    float currentTime;
-    float timeEvolve;
-    glm::vec3 centerOfMassView;
-};
-
-
-class NBodyText
-{
-private:
-    texture_font_t* font;
-    texture_atlas_t* atlas;
-
-    /* Text which will remain constant */
-    vertex_buffer_t* constTextBuffer;
-
-    /* Buffer of text which may change every frame */
-    vertex_buffer_t* textBuffer;
-
-    vec2 penEndConst;
-
-    GLuint constTextVAO;
-    GLuint textVAO;
-
-    struct TextProgramData
-    {
-        GLuint program;
-
-        GLint positionLoc;
-        GLint texCoordLoc;
-
-        GLint textTextureLoc;
-
-        GLint modelToCameraMatrixLoc;
-        GLint cameraToClipMatrixLoc;
-    } textProgram;
-
-public:
-    void prepareConstantText(const scene_t* scene);
-    void prepareTextVAOs();
-    void drawProgressText(const SceneData& sceneData);
-    void loadFont();
-    void loadShader();
-
-    NBodyText();
-    ~NBodyText();
 };
 
 class NBodyAxes
@@ -479,7 +427,7 @@ public:
 // For access from callbacks
 static NBodyGraphics* globalGraphicsContext = NULL;
 
-
+extern glm::mat4 textCameraToClipMatrix;
 
 static void errorHandler(int errorCode, const char* msg)
 {
@@ -652,170 +600,6 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
     globalGraphicsContext = graphicsContext;
 }
 
-
-void NBodyText::loadShader()
-{
-    this->textProgram.program = nbglCreateProgram("text program",
-                                                  (const char*) text_vertex_glsl,
-                                                  (const char*) text_fragment_glsl,
-                                                  (GLint) text_vertex_glsl_len,
-                                                  (GLint) text_fragment_glsl_len);
-
-    this->textProgram.positionLoc = glGetAttribLocation(this->textProgram.program, "position");
-    this->textProgram.textTextureLoc = glGetUniformLocation(this->textProgram.program, "textTexture");
-    this->textProgram.modelToCameraMatrixLoc = glGetUniformLocation(this->textProgram.program, "modelToCameraMatrix");
-    this->textProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->textProgram.program, "cameraToClipMatrix");
-}
-
-NBodyText::NBodyText()
-{
-    this->atlas = NULL;
-    this->font = NULL;
-    this->textBuffer = NULL;
-    this->constTextBuffer = NULL;
-
-    this->penEndConst.x = 0.0f;
-    this->penEndConst.y = 0.0f;
-
-    this->constTextVAO = 0;
-    this->textVAO = 0;
-}
-
-NBodyText::~NBodyText()
-{
-    if (this->textProgram.program != 0)
-        glDeleteProgram(this->textProgram.program);
-
-    glDeleteVertexArrays(1, &this->constTextVAO);
-    glDeleteVertexArrays(1, &this->textVAO);
-
-    if (this->font)
-    {
-        texture_font_delete(this->font);
-    }
-
-    if (this->constTextBuffer)
-    {
-        vertex_buffer_delete(this->constTextBuffer);
-    }
-
-    if (this->textBuffer)
-    {
-        vertex_buffer_delete(this->textBuffer);
-    }
-}
-
-
-typedef struct
-{
-    float x, y;    // position
-    float s, t;    // texture
-} vertex_t;
-
-static void add_text(vertex_buffer_t* buffer,
-                     texture_font_t* font,
-                     const wchar_t* text,
-                     vec2* pen)
-{
-    float left = pen->x;
-    const size_t n = wcslen(text);
-
-    for (size_t i = 0; i < n; ++i)
-    {
-        if (text[i] == L'\n')
-        {
-            pen->x = left;
-            pen->y -= (font->linegap + font->height);
-            continue;
-        }
-
-        texture_glyph_t* glyph = texture_font_get_glyph(font, text[i]);
-        if (glyph)
-        {
-            float kerning = 0.0;
-            if (i > 0)
-            {
-                kerning = texture_glyph_get_kerning(glyph, text[i - 1]);
-            }
-
-            pen->x += kerning;
-
-            float x0 = floor(pen->x + glyph->offset_x);
-            float y0 = floor(pen->y + glyph->offset_y);
-            float x1 = floor(x0 + glyph->width) ;
-            float y1 = floor(y0 - glyph->height);
-
-            float s0 = glyph->s0;
-            float t0 = glyph->t0;
-            float s1 = glyph->s1;
-            float t1 = glyph->t1;
-            GLuint index = buffer->vertices->size;
-
-            GLuint indices[] =
-                {
-                    index, index + 1, index + 2,
-                    index, index + 2, index + 3
-                };
-
-            vertex_t vertices[] =
-                {
-                    { x0, y0,  s0, t0 },
-                    { x0, y1,  s0, t1 },
-                    { x1, y1,  s1, t1 },
-                    { x1, y0,  s1, t0 }
-                };
-
-            vertex_buffer_push_back_indices(buffer, indices, 6);
-            vertex_buffer_push_back_vertices(buffer, vertices, 4);
-            pen->x += glyph->advance_x;
-        }
-    }
-}
-
-void NBodyText::drawProgressText(const SceneData& sceneData)
-{
-    wchar_t buf[1024];
-
-    /* Start right after the constant portion */
-    vec2 pen = this->penEndConst;
-
-    swprintf(buf, sizeof(buf),
-             L"Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
-             sceneData.currentTime,
-             sceneData.timeEvolve,
-             100.0f * sceneData.currentTime / sceneData.timeEvolve
-        );
-
-    vertex_buffer_clear(this->textBuffer);
-    add_text(this->textBuffer,
-             this->font,
-             buf,
-             &pen);
-
-    // Fix black boxes appearing behind letters
-    // also keep text looking same when things are behind it
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-    glUseProgram(this->textProgram.program);
-    glUniformMatrix4fv(this->textProgram.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(textCameraToClipMatrix));
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, this->atlas->id);
-    glUniform1i(this->textProgram.textTextureLoc, 0);
-
-    glBindVertexArray(this->constTextVAO);
-    vertex_buffer_render(this->constTextBuffer, GL_TRIANGLES, "" /* "vtc" */);
-
-    glBindVertexArray(this->textVAO);
-    vertex_buffer_render(this->textBuffer, GL_TRIANGLES, "" /* "vtc" */);
-
-    assert(glGetError() == GL_NO_ERROR);
-
-    glUseProgram(0);
-    glBindVertexArray(0);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
 
 NBodyGraphics::NBodyGraphics(const scene_t* scene)
 {
@@ -1111,80 +895,6 @@ double GalaxyModel::diskShapeFunction(double r)
     }
 
     return a * exp((-1.0 / rd) * rp);
-}
-
-void NBodyText::prepareConstantText(const scene_t* scene)
-{
-    vec2 pen;
-    wchar_t buf[1024];
-
-    pen.x = 0.0f;
-    pen.y = 0.0f;
-
-    swprintf(buf, sizeof(buf),
-             L"N-body simulation (%d particles)\n",
-             scene->nbody);
-
-    add_text(this->constTextBuffer,
-             this->font,
-             buf,
-             &pen);
-
-    this->penEndConst = pen;
-}
-
-void NBodyText::prepareTextVAOs()
-{
-    glGenVertexArrays(1, &this->constTextVAO);
-    glBindVertexArray(this->constTextVAO);
-
-    vertex_buffer_upload(this->constTextBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, this->constTextBuffer->vertices_id);
-    glEnableVertexAttribArray(this->textProgram.positionLoc);
-    glVertexAttribPointer(this->textProgram.positionLoc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->constTextBuffer->indices_id);
-
-    glGenVertexArrays(1, &this->textVAO);
-    glBindVertexArray(this->textVAO);
-
-    vertex_buffer_upload(this->textBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, this->textBuffer->vertices_id);
-    glEnableVertexAttribArray(this->textProgram.positionLoc);
-    glVertexAttribPointer(this->textProgram.positionLoc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*) 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->textBuffer->indices_id);
-
-    glBindVertexArray(0);
-}
-
-void NBodyText::loadFont()
-{
-    this->atlas = texture_atlas_new(512, 512, 3);
-    if (!this->atlas)
-    {
-        throw std::runtime_error("Failed to load text atlas");
-    }
-
-    const char* fontPath = "/Users/matt/src/milkywayathome_client/freetype-gl/Vera.ttf";
-    const float fontSize = 12.0f;
-    this->font = texture_font_new(atlas, fontPath, fontSize);
-    if (!this->font)
-    {
-        throw std::runtime_error("Failed to load font data");
-    }
-
-    this->textBuffer = vertex_buffer_new("v2f:t2f");
-    this->constTextBuffer = vertex_buffer_new("v2f:t2f");
-    if (!this->textBuffer || !this->constTextBuffer)
-    {
-        throw std::runtime_error("Failed to create text vertex buffers");
-    }
-
-    texture_font_load_glyphs(this->font,
-                             L" !\"#$%&'()*+,-./0123456789:;<=>?"
-                             L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                             L"`abcdefghijklmnopqrstuvwxyz{|}~");
-
-    printf("Glyphs loaded %d\n", glGetError());
 }
 
 void NBodyGraphics::loadShaders()
@@ -1485,10 +1195,7 @@ void NBodyGraphics::prepareContext()
     this->loadShaders();
     this->prepareVAOs();
 
-    this->text.loadShader();
-    this->text.loadFont();
     this->text.prepareConstantText(this->scene);
-    this->text.prepareTextVAOs();
 
     this->axes.loadShader();
     this->axes.createBuffers();
