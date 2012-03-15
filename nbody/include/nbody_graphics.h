@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2011-2012 Matthew Arsenault
  *
  * This file is part of Milkway@Home.
  *
@@ -29,6 +28,19 @@
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 
+#ifndef NAME_MAX
+  #define NAME_MAX 255
+#endif
+
+#define NBODY_CIRC_QUEUE_SIZE 3
+
+/* Number of milliseconds to sleep if we are blocking the simulation
+ * waiting for the queue to clear */
+#define NBODY_QUEUE_SLEEP_INTERVAL 16
+
+/* Number of seconds to wait before giving up on waiting for graphics */
+#define NBODY_QUEUE_TIMEOUT 60.0
+
 typedef struct
 {
     float x, y, z;
@@ -40,18 +52,17 @@ typedef struct
 {
     float currentTime;
     float timeEvolve;
+    float rootCenterOfMass[3];     /* Center of mass of the system  */
 } SceneInfo;
 
-typedef enum
+/* This should only be used as the last element of the scene_t */
+typedef struct
 {
-    MOUSE_MODE_NONE,
-    MOUSE_MODE_MOVE,
-    MOUSE_MODE_ZOOM
-} NBodyMouseMode;
-
-#ifndef NAME_MAX
-  #define NAME_MAX 255
-#endif
+    OPA_int_t head;
+    OPA_int_t tail;
+    SceneInfo info[NBODY_CIRC_QUEUE_SIZE];
+    FloatPos bodyData[1];
+} NBodyCircularQueue;
 
 /* the scene structure */
 typedef struct
@@ -63,43 +74,24 @@ typedef struct
 
     int nbody;
     int hasGalaxy;
+    int hasInfo;
+    int staticScene;
 
-    /* Terrible way of checking that a screensaver is attached.  It
-       avoids copying all of the bodies if it isn't running. Also only
-       semi-functional way of making sure only one screensaver is
-       attached at a time to the simulation. There's a small window
-       where you can end up with multiple at a time which could
-       potentially break, but it shouldn't matter that much.
-     */
-    OPA_int_t attachedCount;
+    /* We will require exclusive access. One visualizer per running simulation */
+    OPA_int_t attachedPID;
 
+    /*
+      Optionally block the simulation while the graphics catches up.
+      This would let you create smoother visualizations etc. at the
+      expense of slowing the simulation.
+    */
+    OPA_int_t blockSimulationOnGraphics;
 
-    float rootCenterOfMass[3];     /* Center of mass of the system  */
-    float startingPositionHint[3];
-    float startingAngleHint[3];
-    SceneInfo info;
-
-    int currentTracePoint;
+    OPA_int_t currentTracePoint;
     FloatPos orbitTrace[MAX_DRAW_TRACE_POINTS];
-    FloatPos rTrace[];
+
+    NBodyCircularQueue queue;
 } scene_t;
-
-#if defined(__GNUC__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 1)
-  // #define nbodyGraphicsAtomicIncrement(x) __sync_fetch_and_add((x), 1)
-  // #define nbodyGraphicsAtomicDecrement(x) __sync_fetch_and_sub((x), 1)
-    #define nbodyGraphicsSetOn(x) __sync_fetch_and_or((x), 1)
-    #define nbodyGraphicsSetOff(x) __sync_fetch_and_and((x), 0)
-    #define nbodyGraphicsTestVal(x) __sync_add_and_fetch((x), 0)
-#elif defined(_MSC_VER)
-  // #define nbodyGraphicsAtomicIncrement(x) InterlockedIncrement((x))
-  // #define nbodyGraphicsAtomicDecrement(x) InterlockedDecrement((x))
-
-  #define nbodyGraphicsSetOn(x) InterlockedBitTestAndSet((x), 1) // 1st bit
-  #define nbodyGraphicsSetOff(x) InterlockedBitTestAndReset((x), 1)
-  #define nbodyGraphicsTestVal(x) InterlockedOr((x), 0);
-#else
-  #error Need atomics for compiler
-#endif /* defined(__GNUC__) */
 
 #endif /* _NBODY_GRAPHICS_H_ */
 

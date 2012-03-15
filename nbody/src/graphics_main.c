@@ -25,17 +25,18 @@
 
 static const VisArgs defaultVisArgs =
 {
-    /* .fullscreen      */ FALSE,
-    /* .plainFullscreen */ FALSE,
-    /* .width           */ 0,
-    /* .height          */ 0,
-    /* .monochrome      */ FALSE,
-    /* .notUseGLPoints  */ FALSE,
-    /* .originCenter    */ FALSE,
-    /* .noFloat         */ FALSE,
-    /* .pid             */ 0,
-    /* .file            */ NULL,
-    /* .instanceId      */ -1
+    /* .fullscreen       */ FALSE,
+    /* .plainFullscreen  */ FALSE,
+    /* .width            */ 0,
+    /* .height           */ 0,
+    /* .blockSimulation  */ FALSE,
+    /* .monochrome       */ FALSE,
+    /* .untexturedPoints */ FALSE,
+    /* .originCenter     */ FALSE,
+    /* .noFloat          */ FALSE,
+    /* .pid              */ 0,
+    /* .file             */ NULL,
+    /* .instanceId       */ -1
 };
 
 static void freeVisArgs(VisArgs* args)
@@ -44,7 +45,7 @@ static void freeVisArgs(VisArgs* args)
     args->file = NULL;
 }
 
-static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
+static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
 {
     poptContext context;
     int failed = FALSE;
@@ -80,15 +81,21 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
+            "block-simulation", 'b',
+            POPT_ARG_NONE, &visArgs.blockSimulation,
+            0, "Make simulation wait for graphics so every frame is drawn", NULL
+        },
+
+        {
             "monochromatic", 'm',
             POPT_ARG_NONE, &visArgs.monochrome,
             0, "All particles have same color", NULL
         },
 
         {
-            "not-use-gl-points", 'n',
-            POPT_ARG_NONE, &visArgs.notUseGLPoints,
-            0, "Use faster but possibly uglier drawing", NULL
+            "untextured-points", 't',
+            POPT_ARG_NONE, &visArgs.untexturedPoints,
+            0, "Use faster but possibly uglier drawing of points", NULL
         },
 
         {
@@ -140,7 +147,7 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
     return failed;
 }
 
-static int nbodyGraphicsInit()
+static int nbglBoincGraphicsInit()
 {
 #if BOINC_APPLICATION
     if (boinc_parse_init_data_file())
@@ -185,8 +192,13 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
         return NULL;
     }
 
-    scene = mwCalloc(sizeof(scene_t) + lnCount * sizeof(FloatPos), sizeof(char));
-    r = scene->rTrace;
+    scene = mwCalloc(sizeof(scene_t) + 1 * (lnCount * sizeof(FloatPos)), sizeof(char));
+
+    /* We don't need the buffering features so just use first buffer slot */
+    r = &scene->queue.bodyData[0];
+    scene->hasInfo = FALSE;
+    scene->staticScene = TRUE;
+
 
     /* Skip the 1st line with the # comment */
     fgets(lnBuf, sizeof(lnBuf), f);
@@ -239,37 +251,37 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
 
 static scene_t* g_scene = NULL;
 
-static void cleanupAttachedCount(void)
+static void nbglCleanupAttachedCount(void)
 {
     printf("Cleanup\n");
 
     if (g_scene)
     {
-        printf("Decrement\n");
-        OPA_decr_int(&g_scene->attachedCount);
+        printf("Release scene\n");
+        OPA_store_int(&g_scene->attachedPID, 0);
         g_scene = NULL;
     }
 }
 
-static void sigHandler(int sig)
+static void nbglSigHandler(int sig)
 {
-    cleanupAttachedCount();
+    nbglCleanupAttachedCount();
     signal(sig, SIG_DFL);
     raise(sig);
 }
 
-static void installExitHandlers()
+static void nbglInstallExitHandlers()
 {
     /* TODO: Use sigaction() if available instead */
-    signal(SIGINT, sigHandler);
-    signal(SIGQUIT, sigHandler);
-    signal(SIGINT, sigHandler);
-	signal(SIGABRT, sigHandler);
-	signal(SIGFPE, sigHandler);
-	signal(SIGKILL, sigHandler);
-	signal(SIGSEGV, sigHandler);
-	signal(SIGUSR1, sigHandler);
-    atexit(cleanupAttachedCount);
+    signal(SIGINT, nbglSigHandler);
+    signal(SIGQUIT, nbglSigHandler);
+    signal(SIGINT, nbglSigHandler);
+    signal(SIGABRT, nbglSigHandler);
+    signal(SIGFPE, nbglSigHandler);
+    signal(SIGKILL, nbglSigHandler);
+    signal(SIGSEGV, nbglSigHandler);
+    signal(SIGUSR1, nbglSigHandler);
+    atexit(nbglCleanupAttachedCount);
 }
 
 int main(int argc, const char* argv[])
@@ -278,10 +290,10 @@ int main(int argc, const char* argv[])
     VisArgs flags;
     scene_t* scene = NULL;
 
-    if (nbodyGraphicsInit())
+    if (nbglBoincGraphicsInit())
         return 1;
 
-    if (handleVisArguments(argc, (const char**) argv, &flags))
+    if (nbglHandleVisArguments(argc, (const char**) argv, &flags))
     {
         freeVisArgs(&flags);
         return 1;
@@ -289,21 +301,20 @@ int main(int argc, const char* argv[])
 
     if (!flags.file)
     {
-        scene = nbConnectSharedScene(flags.instanceId);
+        scene = nbglConnectSharedScene(flags.instanceId);
         if (!scene)
         {
             freeVisArgs(&flags);
             return 1;
         }
 
-        if (nbCheckConnectedVersion(scene))
+        if (nbglCheckConnectedVersion(scene) || nbglGetExclusiveSceneAccess(scene))
         {
             freeVisArgs(&flags);
             return 1;
         }
 
-        installExitHandlers();
-        OPA_incr_int(&scene->attachedCount);
+        nbglInstallExitHandlers();
         g_scene = scene;
     }
     else
@@ -316,7 +327,7 @@ int main(int argc, const char* argv[])
         }
     }
 
-    rc = nbRunGraphics(scene, &flags);
+    rc = nbglRunGraphics(scene, &flags);
 
     if (flags.file)
     {

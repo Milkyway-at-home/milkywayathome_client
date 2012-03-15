@@ -48,8 +48,13 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->nbodyMajorVersion = NBODY_VERSION_MAJOR;
     st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
     st->scene->nbody = st->nbody;
-    st->scene->info.timeEvolve = (float) ctx->timeEvolve;
     st->scene->hasGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
+}
+
+static size_t nbFindShmemSize(int nbody)
+{
+    size_t snapshotSize = sizeof(NBodyCircularQueue) + nbody * sizeof(FloatPos);
+    return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
 }
 
 #if USE_SHMEM
@@ -57,7 +62,7 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 /* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127*/
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
-    size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
+    size_t size = nbFindShmemSize(st->nbody);
     int shmId = -1;
     const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     void* p = NULL;
@@ -122,7 +127,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
-    size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
+    size_t size = nbFindShmemSize(st->nbody);
 
     st->scene = (scene_t*) mw_graphics_make_shmem(NBODY_BIN_NAME, (int) size);
     if (!st->scene)
@@ -286,30 +291,43 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 
 #endif /* _WIN32 */
 
-void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
+static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCtx* ctx, const NBodyState* st)
 {
+    int i;
     const Body* b;
-    int i = 0;
-    const int nbody = st->nbody;
-    scene_t* scene = st->scene;
-    FloatPos* r;
     mwvector cmPos;
+    int nbody = st->nbody;
+    SceneInfo* info = &queue->info[buffer];
+    FloatPos* r = &queue->bodyData[buffer * nbody];
 
-    if (!scene)
-        return;
-
-    r = scene->rTrace;
-    if (!st->usesExact)
+    if (st->usesExact) /* Need to find it since we don't have the tree */
+    {
+        /* TODO: This should use parallel reduction */
+        cmPos = nbCenterOfMass(st);
+    }
+    else
     {
         cmPos = Pos(st->tree.root);
+    }
 
-        scene->info.currentTime = (float) st->step * ctx->timestep;
+    info->currentTime = (float) st->step * (float) ctx->timestep;
+    info->timeEvolve = (float) ctx->timeEvolve;
+
+    // FIXME: CM when using exact
+    info->rootCenterOfMass[0] = (float) X(cmPos);
+    info->rootCenterOfMass[1] = (float) Y(cmPos);
+    info->rootCenterOfMass[2] = (float) Z(cmPos);
+
+/*
+    if (FALSE)
+    {
+        // Tell the graphics about the orbit's history
+        int i = scene->currentTracePoint;
+
         scene->rootCenterOfMass[0] = (float) X(cmPos);
         scene->rootCenterOfMass[1] = (float) Y(cmPos);
         scene->rootCenterOfMass[2] = (float) Z(cmPos);
 
-        /* Tell the graphics about the orbit's history */
-        i = scene->currentTracePoint;
         if (i < N_ORBIT_TRACE_POINTS && i < MAX_DRAW_TRACE_POINTS)
         {
             if (X(st->orbitTrace[i]) < REAL_MAX)
@@ -322,20 +340,83 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
             }
         }
     }
+*/
+
+  #ifdef _OPENMP
+    #pragma omp parallel for private(i, b) schedule(static)
+  #endif
+    for (i = 0; i < nbody; ++i)
+    {
+        b = &st->bodytab[i];
+        r[i].x = (float) X(Pos(b));
+        r[i].y = (float) Y(Pos(b));
+        r[i].z = (float) Z(Pos(b));
+        r[i].ignore = ignoreBody(b);
+    }
+}
+
+static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, const NBodyState* st)
+{
+    int head, tail, nextTail;
+    tail = OPA_load_int(&queue->tail);
+    head = OPA_load_int(&queue->head);
+
+    nextTail = (tail + 1) % NBODY_CIRC_QUEUE_SIZE;
+    if (nextTail != head)
+    {
+        nbWriteSnapshot(queue, tail, ctx, st);
+        OPA_store_int(&queue->tail, nextTail);
+        return TRUE;
+    }
+    else /* write failed, queue full */
+    {
+        return FALSE;
+    }
+}
+
+void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
+{
+    scene_t* scene = st->scene;
+
+    if (!scene)
+        return;
 
     /* No copying when no screensaver attached */
-    if (OPA_load_int(&scene->attachedCount) > 0)
+    if (OPA_load_int(&scene->attachedPID) != 0)
     {
-      #ifdef _OPENMP
-        #pragma omp parallel for private(i, b) schedule(static)
-      #endif
-        for (i = 0; i < nbody; ++i)
+        if (OPA_load_int(&scene->blockSimulationOnGraphics))
         {
-            b = &st->bodytab[i];
-            r[i].x = (float) X(Pos(b));
-            r[i].y = (float) Y(Pos(b));
-            r[i].z = (float) Z(Pos(b));
-            r[i].ignore = ignoreBody(b);
+            double startTime = mwGetTime();
+            double dt;
+            int pid;
+
+            /* FIXME: This needs to change if we allow changing
+             * whether the simulation should block
+             *
+             * FIXME: do we trust the graphics process to clean up the
+             * attachedPID?
+             */
+
+            while (   !nbPushCircularQueue(&scene->queue, ctx, st)
+                   && ((pid = OPA_load_int(&scene->attachedPID)) != 0)
+                   && (dt = mwGetTime() - startTime) < NBODY_QUEUE_TIMEOUT)
+            {
+                mwMilliSleep(NBODY_QUEUE_SLEEP_INTERVAL);
+            }
+
+            if (dt >= NBODY_QUEUE_TIMEOUT)
+            {
+                mw_printf("Blocking on graphics timed out\n");
+            }
+
+            if (pid == 0)
+            {
+                mw_printf("Graphics process quit while waiting\n");
+            }
+        }
+        else
+        {
+            nbPushCircularQueue(&scene->queue, ctx, st);
         }
     }
 }

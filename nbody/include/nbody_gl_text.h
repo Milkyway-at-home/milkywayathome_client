@@ -40,6 +40,8 @@ struct SceneData
     float currentTime;
     float timeEvolve;
     glm::vec3 centerOfMassView;
+
+    SceneData() : currentTime(0.0f), timeEvolve(0.0f), centerOfMassView(glm::vec3(0.0f, 0.0f, 0.0f)) { }
 };
 
 struct TextPen

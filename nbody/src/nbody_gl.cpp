@@ -247,7 +247,7 @@ void NBodyAxes::prepareVAO()
 class NBodyGraphics
 {
 private:
-    const scene_t* scene;
+    scene_t* scene;
     GLFWwindow window;
 
     GLuint particleVAO;
@@ -302,7 +302,6 @@ private:
     void drawParticlesTextured(const glm::mat4& modelMatrix);
     void drawParticlesPoints(const glm::mat4& modelMatrix);
 
-
 public:
 
     SceneData sceneData;
@@ -334,7 +333,7 @@ public:
         DrawMode drawMode;
     } drawOptions;
 
-    NBodyGraphics(const scene_t* scene);
+    NBodyGraphics(scene_t* scene);
     ~NBodyGraphics();
 
     void prepareContext();
@@ -344,7 +343,7 @@ public:
     void loadColors();
     void drawAxes();
     void drawParticles(const glm::mat4& modelMatrix);
-    void readSceneData();
+    bool readSceneData();
 
     void display();
     void mainLoop();
@@ -601,7 +600,7 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
 }
 
 
-NBodyGraphics::NBodyGraphics(const scene_t* scene)
+NBodyGraphics::NBodyGraphics(scene_t* scene)
 {
     this->window = NULL;
     this->scene = scene;
@@ -954,33 +953,59 @@ void NBodyGraphics::prepareVAOs()
     this->prepareColoredVAO(this->whiteParticleVAO, this->whiteBuffer);
 }
 
-void NBodyGraphics::readSceneData()
+static int nbPopCircularQueue(NBodyCircularQueue* queue, int nbody, GLuint positionBuffer, SceneData* sceneData)
 {
-    const scene_t* scene = this->scene;
-    const GLfloat* positions = (const GLfloat*) scene->rTrace;
-    GLint nbody = scene->nbody;
+    int head = OPA_load_int(&queue->head);
+    int tail = OPA_load_int(&queue->tail);
 
-    this->sceneData.currentTime = scene->info.currentTime;
-    this->sceneData.timeEvolve = scene->info.timeEvolve;
-
-    this->sceneData.centerOfMassView = glm::vec3(-scene->rootCenterOfMass[0],
-                                                 -scene->rootCenterOfMass[1],
-                                                 -scene->rootCenterOfMass[2]);
-
-    /*
-    if (OPA_load_int(&this->scene->useSecondBuffer))
+    if (head == tail)
     {
-        printf("Using second buffer\n");
-        positions += nbody;
+        return FALSE;  /* queue is empty */
     }
-    else
-    {
-        printf("Using first buffer\n");
-    }
-    */
 
-    glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), positions);
+    const SceneInfo* info = &queue->info[head];
+    const GLfloat* bodyData = (const GLfloat*) &queue->bodyData[head * nbody];
+
+    glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), bodyData);
+
+    sceneData->currentTime = info->currentTime;
+    sceneData->timeEvolve = info->timeEvolve;
+    sceneData->centerOfMassView = glm::vec3(-info->rootCenterOfMass[0],
+                                            -info->rootCenterOfMass[1],
+                                            -info->rootCenterOfMass[2]);
+
+    head = (head + 1) % NBODY_CIRC_QUEUE_SIZE;
+    OPA_store_int(&queue->head, head);
+    return TRUE;
+}
+
+bool NBodyGraphics::readSceneData()
+{
+    scene_t* scene = this->scene;
+
+#if 0
+    static unsigned int count = 0;
+    static double lastTime = 0.0;
+
+    count = (count + 1) % 25;
+
+    if (count == 0)
+    {
+        double time = glfwGetTime();
+        size_t bytes = (size_t) 4 * scene->nbody * sizeof(GLfloat) * 25;
+        double dt = time - lastTime;
+        printf("Copying %zu bytes, %f, %f MB/s\n",
+               bytes,
+               dt,
+               ((double) bytes / (1024.0 * 1024.0)) / dt
+            );
+
+        lastTime = time;
+    }
+#endif
+
+    return (bool) nbPopCircularQueue(&scene->queue, scene->nbody, this->positionBuffer,  &this->sceneData);
 }
 
 void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
@@ -1093,17 +1118,15 @@ void NBodyGraphics::createBuffers()
 void NBodyGraphics::createPositionBuffer()
 {
     GLint nbody = this->scene->nbody;
-    const GLfloat* positions = (const GLfloat*) this->scene->rTrace;
 
     glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
-	glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), positions, GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void NBodyGraphics::populateBuffers()
 {
     this->createPositionBuffer();
-
     this->particleTexture = createParticleTexture(32);
 }
 
@@ -1120,7 +1143,6 @@ void NBodyGraphics::loadModel(GalaxyModel& model)
 void NBodyGraphics::loadColors()
 {
     GLint nbody = this->scene->nbody;
-    const FloatPos* r = this->scene->rTrace;
 
     /* assign random particle colors */
     srand((unsigned int) time(NULL));
@@ -1173,18 +1195,25 @@ void NBodyGraphics::loadColors()
             scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (std::min(2.0, 1.0 / B) - 1.0);
         }
 
-        color[i].r = (GLfloat) R * scale;
-        color[i].g = (GLfloat) G * scale;
-        color[i].b = (GLfloat) B * scale;
+        if (false)
+        {
+            color[i].r = (GLfloat) R * scale;
+            color[i].g = (GLfloat) G * scale;
+            color[i].b = (GLfloat) B * scale;
+        }
+        else
+        {
+            color[i].r = (double) rand() / (double) RAND_MAX;
+            color[i].g = (double) rand() / (double) RAND_MAX;
+            color[i].b = (double) rand() / (double) RAND_MAX;
+        }
 
         // TODO: Doesn't do anything yet?
-        //color[i].ignore = r[i].ignore ? 0.5f : 1.0f;
         color[i].ignore = 1.0f;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
     glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     delete[] color;
 }
@@ -1290,6 +1319,7 @@ void NBodyGraphics::display()
 
     if (this->drawOptions.drawInfo)
     {
+        // TODO: Check we have info / aren't a static scene
         this->text.drawProgressText(this->sceneData);
     }
 }
@@ -1335,9 +1365,34 @@ static void printVersionAndExts()
     }
 }
 
+int nbglGetExclusiveSceneAccess(scene_t* scene)
+{
+    int oldPID = OPA_cas_int(&scene->attachedPID, 0, (int) getpid());
+    if (oldPID != 0)
+    {
+        mw_printf("Could not get exclusive access to simulation shared segment "
+                  "(Owned by process %d)\n",
+                  oldPID);
+
+        /* TODO: We could check if this process is actually alive in
+           case something went wrong and steal it if it is dead
+         */
+        return 1;
+    }
+
+    return 0;
+}
+
 #if !BOINC_APPLICATION
 
-scene_t* nbConnectSharedScene(int instanceId)
+/* FIXME: Duplicated in nbody_shmem.c */
+static size_t nbFindShmemSize(int nbody)
+{
+    size_t snapshotSize = sizeof(NBodyCircularQueue) + nbody * sizeof(FloatPos);
+    return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
+}
+
+scene_t* nbglConnectSharedScene(int instanceId)
 {
     int shmId;
     const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -1376,8 +1431,7 @@ scene_t* nbConnectSharedScene(int instanceId)
         return NULL;
     }
 
-    if (   sb.st_size < sizeof(scene_t)
-         || sb.st_size < (sizeof(scene_t) + 2 * scene->nbody * sizeof(FloatPos)))
+    if (sb.st_size < sizeof(scene_t) || sb.st_size < nbFindShmemSize(scene->nbody))
     {
         mw_printf("Shared memory segment is impossibly small ("ZU")\n", (size_t) sb.st_size);
         if (shm_unlink(name) < 0)
@@ -1408,7 +1462,7 @@ static scene_t* nbAttemptConnectSharedScene(void)
 #define RETRY_INTERVAL 250
 
 /* In case the main application isn't ready yet, try and wait for a while */
-scene_t* nbConnectSharedScene(int instanceId)
+scene_t* nbglConnectSharedScene(int instanceId)
 {
     int tries = 0;
 
@@ -1520,7 +1574,7 @@ void GalaxyModel::generateModel()
     assert(this->count == this->nPoints);
 }
 
-int nbCheckConnectedVersion(const scene_t* scene)
+int nbglCheckConnectedVersion(const scene_t* scene)
 {
     if (   scene->nbodyMajorVersion != NBODY_VERSION_MAJOR
         || scene->nbodyMinorVersion != NBODY_VERSION_MINOR)
@@ -1536,7 +1590,12 @@ int nbCheckConnectedVersion(const scene_t* scene)
     return 0;
 }
 
-int nbRunGraphics(const scene_t* scene, const VisArgs* args)
+static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
+{
+    OPA_store_int(&scene->blockSimulationOnGraphics, args->blockSimulation);
+}
+
+int nbglRunGraphics(scene_t* scene, const VisArgs* args)
 {
     if (!scene)
     {
@@ -1557,16 +1616,11 @@ int nbRunGraphics(const scene_t* scene, const VisArgs* args)
         return 1;
     }
 
-
-    int db = glfwGetWindowParam(window, GLFW_DEPTH_BITS);
-    int ap = glfwGetWindowParam(window, GLFW_ALPHA_BITS);
-    printf("BITS %d %d\n", db, ap);
-
+    nbglSetSceneSettings(scene, args);
 
     {
         // GL context needs to be open or else destructors will crash
         NBodyGraphics graphicsContext(scene);
-        printVersionAndExts();
 
         try
         {

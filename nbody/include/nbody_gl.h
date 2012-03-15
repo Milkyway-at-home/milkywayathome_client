@@ -32,9 +32,10 @@ typedef struct
     int plainFullscreen;
     int width;
     int height;
+    int blockSimulation;
 
     int monochrome;
-    int notUseGLPoints;
+    int untexturedPoints;
     int originCenter;
     int noFloat;
 
@@ -43,11 +44,12 @@ typedef struct
     int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
-int nbRunGraphics(const scene_t* scene, const VisArgs* args);
-scene_t* nbConnectSharedScene(int instanceId);
-int nbCheckConnectedVersion(const scene_t* scene);
+int nbglRunGraphics(scene_t* scene, const VisArgs* args);
+scene_t* nbglConnectSharedScene(int instanceId);
+int nbglGetExclusiveSceneAccess(scene_t* scene);
+int nbglCheckConnectedVersion(const scene_t* scene);
 
 #ifdef __cplusplus
 }
