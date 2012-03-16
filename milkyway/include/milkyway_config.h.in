@@ -85,11 +85,13 @@
   #define ALWAYS_INLINE __attribute__((always_inline))
   #define INTERNAL __attribute__((visibility("internal")))
   #define WEAK __attribute__((weak))
+  #define PACKED __attribute__((packed))
 #else
   #define HOT
   #define CONST_F
   #define ALWAYS_INLINE
   #define INTERNAL
+  #define PACKED
 
   /* Only sort of */
   #define WEAK __declspec(selectany)

@@ -17,32 +17,23 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_GL_UTIL_H_
-#define _NBODY_GL_UTIL_H_
+#ifndef _NBODY_GL_PRIVATE_H_
+#define _NBODY_GL_PRIVATE_H_
 
-#ifdef __APPLE__
-  #include <OpenGL/gl.h>
-#else
-  #include <GL/gl.h>
-#endif
+#include "nbody_gl_includes.h"
+
+struct SceneData
+{
+    float currentTime;
+    float timeEvolve;
+    glm::vec3 centerOfMassView;
+
+    SceneData() : currentTime(0.0f), timeEvolve(0.0f), centerOfMassView(glm::vec3(0.0f, 0.0f, 0.0f)) { }
+};
+
+extern glm::mat4 cameraToClipMatrix;
+extern glm::mat4 textCameraToClipMatrix;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GLuint nbglCreateProgram(const char* name,
-                         const char* vertSrc,
-                         const char* fragSrc,
-                         GLint vertSrcLen,
-                         GLint fragSrcLen);
-
-void nbglPrintGLVersionAndExts();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_GL_UTIL_H_ */
-
+#endif /* _NBODY_GL_PRIVATE_H_ */
 

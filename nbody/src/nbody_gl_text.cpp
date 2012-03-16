@@ -23,7 +23,7 @@
 #include <cstdio>
 
 #include "nbody_gl_text.h"
-#include "nbody_shaders.h"
+#include "nbody_gl_resources.h"
 #include "nbody_gl_util.h"
 
 glm::mat4 textCameraToClipMatrix(1.0f);
@@ -180,8 +180,7 @@ NBodyText::NBodyText()
 
 NBodyText::~NBodyText()
 {
-    if (this->textProgram.program != 0)
-        glDeleteProgram(this->textProgram.program);
+    glDeleteProgram(this->textProgram.program);
 
     delete this->varText;
     delete this->constText;

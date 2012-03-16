@@ -17,8 +17,8 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_SHADERS_H_
-#define _NBODY_SHADERS_H_
+#ifndef _NBODY_GL_RESOURCES_H_
+#define _NBODY_GL_RESOURCES_H_
 
 #ifdef __cplusplus
 #define EXTERNC extern "C"
@@ -57,7 +57,24 @@ EXTERNC size_t text_vertex_glsl_len;
 EXTERNC unsigned char text_fragment_glsl[];
 EXTERNC size_t text_fragment_glsl_len;
 
+#if 0
+EXTERNC const struct {
+  unsigned int 	 width;
+  unsigned int 	 height;
+  unsigned int 	 bytes_per_pixel; /* 3:RGB, 4:RGBA */
+  unsigned char	 pixel_data[1024 * 1024 * 3 + 1];
+} milkywayImage;
+#else
+EXTERNC const struct {
+  unsigned int 	 width;
+  unsigned int 	 height;
+  unsigned int 	 bytes_per_pixel; /* 3:RGB, 4:RGBA */
+  unsigned char	 pixel_data[1024 * 1024 * 4 + 1];
+} milkywayImage;
+#endif
+
+
 #undef EXTERNC
 
-#endif /* _NBODY_SHADERS_H_ */
+#endif /* _NBODY_GL_RESOURCES_H_ */
 

@@ -17,32 +17,36 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_GL_UTIL_H_
-#define _NBODY_GL_UTIL_H_
+#ifndef _NBODY_GL_AXES_H_
+#define _NBODY_GL_AXES_H_
 
-#ifdef __APPLE__
-  #include <OpenGL/gl.h>
-#else
-  #include <GL/gl.h>
-#endif
+#include "nbody_gl_includes.h"
 
+class NBodyAxes
+{
+private:
+    GLuint axesVAO;
+    GLuint axesBuffer;
+    GLuint axesColorBuffer;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    struct AxesProgramData
+    {
+        GLuint program;
+        GLint positionLoc;
+        GLint colorLoc;
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } axesProgramData;
 
-GLuint nbglCreateProgram(const char* name,
-                         const char* vertSrc,
-                         const char* fragSrc,
-                         GLint vertSrcLen,
-                         GLint fragSrcLen);
+public:
+    void draw(const glm::mat4& modelMatrix);
+    void loadShader();
+    void createBuffers();
+    void prepareVAO();
 
-void nbglPrintGLVersionAndExts();
+    NBodyAxes();
+    ~NBodyAxes();
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_GL_UTIL_H_ */
-
+#endif /* _NBODY_GL_AXES_H_ */
 

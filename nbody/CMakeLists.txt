@@ -302,18 +302,55 @@ if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
   message(FATAL "BOINC graphics library not found")
 endif()
 
+# Add a vertex, fragment shader pair
+macro(add_inline_shader inline_src_list name type)
+  set(inline_src "${LIBRARY_OUTPUT_PATH}/nbody_${name}_${type}_shaders_inline.c")
+  add_custom_command(
+    OUTPUT "${inline_src}"
+    COMMAND $<TARGET_FILE:xxd> -i "${name}_${type}.glsl" ${inline_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/shaders"
+    DEPENDS "${PROJECT_SOURCE_DIR}/shaders/${name}_${type}.glsl"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/shaders/${name}_${type}.glsl"
+    COMMENT "Inlining N-body GL ${type} shader source")
+
+  list(APPEND ${inline_src_list} ${inline_src})
+endmacro()
+
+include_directories(${OPA_INCLUDE_DIR})
+
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
   include_directories(${GLFW_INCLUDE_DIR})
 
-  set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.c
-                            ${NBODY_SRC_DIR}/nbody_gl_util.c
+  set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.cpp
+                            ${NBODY_SRC_DIR}/nbody_gl_util.cpp
+                            ${NBODY_SRC_DIR}/nbody_gl_text.cpp
+                            ${NBODY_SRC_DIR}/nbody_gl_axes.cpp
+                            ${NBODY_SRC_DIR}/nbody_gl_galaxy_model.cpp
+                            ${NBODY_SRC_DIR}/nbody_particle_texture.cpp
+                            ${NBODY_SRC_DIR}/milkyway.c
                             ${NBODY_SRC_DIR}/graphics_main.c)
+
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_util.h
-                                ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
+                                ${NBODY_INCLUDE_DIR}/nbody_graphics.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_text.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_axes.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_galaxy_model.h
+                                ${NBODY_INCLUDE_DIR}/nbody_particle_texture.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_resources.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_private.h)
 
-  find_library(COCOA_LIB Cocoa)
+  if(APPLE AND FALSE)
+    # Cocoa headers depend on stuff that Apple never merged back into
+    # real GCC because they are terrible
+    # So we need Apple GCC or recent clang
+    find_library(COCOA_LIB Cocoa)
+    list(APPEND nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl_osx_main.m)
+    set_source_files_properties(${NBODY_SRC_DIR}/nbody_gl_osx_main.m
+                                LANGUAGE C
+                                PROPERTIES COMPILE_FLAGS "-x objective-c")
+  endif()
 #  find_library(CG_LIB CoreGraphics)
   set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB} ${OPA_LIBRARY})
   if(BOINC_APPLICATION)
@@ -325,9 +362,29 @@ if(NBODY_GL)
 
   list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 
-  add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})
-  target_link_libraries(milkyway_nbody_graphics ${vis_link_libs})
+  set(nbody_gl_inline_srcs )
+  add_inline_shader(nbody_gl_inline_srcs "particle" "vertex")
+  add_inline_shader(nbody_gl_inline_srcs "particle_texture" "fragment")
+  add_inline_shader(nbody_gl_inline_srcs "particle_point" "fragment")
+  add_inline_shader(nbody_gl_inline_srcs "galaxy" "vertex")
+  add_inline_shader(nbody_gl_inline_srcs "galaxy" "fragment")
+  add_inline_shader(nbody_gl_inline_srcs "text" "vertex")
+  add_inline_shader(nbody_gl_inline_srcs "text" "fragment")
+  add_inline_shader(nbody_gl_inline_srcs "axes" "vertex")
+  add_inline_shader(nbody_gl_inline_srcs "axes" "fragment")
+  add_library(nbody_shaders STATIC ${nbody_gl_inline_srcs})
+
+#  set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mycompany.\${PRODUCT_NAME:identifier}")
+
+  #add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})
+#  add_executable(milkyway_nbody_graphics ${NBODY_SRC_DIR}/nbody_gl.cpp ${NBODY_SRC_DIR}/zpr.cpp)
+#  add_executable(milkyway_nbody_graphics MACOSX_BUNDLE ${NBODY_SRC_DIR}/graphics_main.c ${NBODY_SRC_DIR}/nbody_gl.cpp)
+
+#
+  add_executable(milkyway_nbody_graphics  ${nbody_screensaver_src} ${nbody_screensaver_headers} )
+  target_link_libraries(milkyway_nbody_graphics nbody_shaders /opt/local/lib/libGLEW.a ${vis_link_libs} glutil glload ${FREETYPE_GL_LIBRARY} /opt/local/lib/libfreetype.dylib)
 endif()
+
 
 
 if(BOINC_RELEASE_NAMES)
@@ -371,8 +428,8 @@ if(NBODY_GL)
   if(INSTALL_BOINC)
     install_boinc(milkyway_nbody_graphics)
   else()
-    install(TARGETS milkyway_nbody_graphics
-              RUNTIME DESTINATION bin)
+#    install(TARGETS milkyway_nbody_graphics
+#              RUNTIME DESTINATION bin)
   endif()
 
   get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)

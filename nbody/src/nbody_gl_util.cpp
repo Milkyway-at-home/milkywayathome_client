@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include "nbody_gl_util.h"
+#include "nbody_gl_includes.h"
 
 static void nbglGetProgramLog(GLuint program, const char* name)
 {
@@ -122,5 +123,21 @@ GLuint nbglCreateProgram(const char* name,
     nbglGetProgramLog(program, name);
 
     return program;
+}
+
+void nbglPrintGLVersionAndExts()
+{
+    printf("GL version:     %s\n"
+           "Shader version: %s\n"
+           "Extensions:\n",
+           glGetString(GL_VERSION),
+           glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    GLint n;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+    for (GLint i = 0; i < n; i++)
+    {
+        printf("  %s\n", glGetStringi(GL_EXTENSIONS, i));
+    }
 }
 

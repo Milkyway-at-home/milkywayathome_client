@@ -17,45 +17,34 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_GL_H_
-#define _NBODY_GL_H_
+#ifndef _NBODY_GL_INCLUDES_H_
+#define _NBODY_GL_INCLUDES_H_
 
-#include "nbody_graphics.h"
+#define GLFW_INCLUDE_GL3 1
+#define GLFW_NO_GLU 1
+#include <GL/glfw3.h>
 
-#ifdef __cplusplus
-extern "C" {
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-typedef struct
-{
-    int fullscreen;
-    int plainFullscreen;
-    int width;
-    int height;
-    int blockSimulation;
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 
-    int monochrome;
-    int untexturedPoints;
-    int originCenter;
-    int drawAxes;
-    int noFloat;
+//#include <glload/gl_3_3.h>
+#include <glutil/glutil.h>
 
-    int pid;
-    char* file;
-    int instanceId;
-} VisArgs;
-
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
-
-int nbglRunGraphics(scene_t* scene, const VisArgs* args);
-scene_t* nbglConnectSharedScene(int instanceId);
-int nbglGetExclusiveSceneAccess(scene_t* scene);
-int nbglCheckConnectedVersion(const scene_t* scene);
-
-#ifdef __cplusplus
-}
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic pop
 #endif
 
-#endif /* _NBODY_GL_H_ */
+
+#endif /* _NBODY_GL_INCLUDES_H_ */
+
 
 
