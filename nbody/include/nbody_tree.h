@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-NBodyStatus makeTree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
+NBodyStatus nbMakeTree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 
 #if 0
 void registerFindRCrit(lua_State* luaSt);
