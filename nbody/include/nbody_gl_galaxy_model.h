@@ -74,20 +74,19 @@ private:
     void generateSegment(bool neg);
     void setMilkywayModelParameters();
     double diskShapeFunction(double r);
-
-public:
     void loadGalaxyTexture();
     void loadShaders();
     void prepareVAO();
     void bufferData();
-
-    void draw(const glm::mat4& modelMatrix) const;
     void generateModel();
 
     size_t size() const
     {
         return this->nPoints * sizeof(NBodyVertex);
     }
+
+public:
+    void draw(const glm::mat4& modelMatrix) const;
 
     GalaxyModel();
     ~GalaxyModel();

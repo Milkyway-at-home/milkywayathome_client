@@ -58,8 +58,8 @@ static const float zFar = 1000.0f;
 glm::mat4 cameraToClipMatrix(1.0f);
 
 
-class NBodyGraphics;
 // For access from callbacks
+class NBodyGraphics;
 static NBodyGraphics* globalGraphicsContext = NULL;
 
 
@@ -91,7 +91,6 @@ class NBodyGraphics
 {
 private:
     scene_t* scene;
-    GLFWwindow window;
 
     GLuint particleVAO;
     GLuint whiteParticleVAO;
@@ -194,16 +193,14 @@ private:
     void createPositionBuffer();
     void drawParticlesTextured(const glm::mat4& modelMatrix);
     void drawParticlesPoints(const glm::mat4& modelMatrix);
+    void loadColors();
 
 public:
     NBodyGraphics(scene_t* scene, const VisArgs* args);
     ~NBodyGraphics();
 
     void prepareContext();
-    void populateBuffers();
 
-    void loadModel(GalaxyModel& model);
-    void loadColors();
     void drawAxes();
     void drawParticles(const glm::mat4& modelMatrix);
     bool readSceneData();
@@ -463,10 +460,8 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
     }
 }
 
-static void nbglSetHandlers(NBodyGraphics* graphicsContext)
+static void nbglSetHandlers()
 {
-    glfwSetErrorCallback(errorHandler);
-
     glfwSetWindowSizeCallback(resizeHandler);
     glfwSetWindowCloseCallback(closeHandler);
 
@@ -475,40 +470,23 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
     glfwSetMouseButtonCallback(mouseButtonHandler);
     glfwSetMousePosCallback(mousePosHandler);
     glfwSetScrollCallback(scrollHandler);
-
-    globalGraphicsContext = graphicsContext;
 }
 
-NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args) : drawOptions(args)
+NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args) : drawOptions(args),
+                                                                    sceneData(SceneData((bool) scene->staticScene))
 {
-    this->window = NULL;
     this->scene = scene;
-    this->particleVAO = 0;
-    this->whiteParticleVAO = 0;
+    this->loadShaders();
+    this->createBuffers();
+    this->prepareVAOs();
 
-    this->positionBuffer = 0;
-    this->velocityBuffer = 0;
-    this->accelerationBuffer = 0;
-    this->colorBuffer = 0;
+    this->createPositionBuffer();
+    this->loadColors();
+    this->particleTexture = createParticleTexture(32);
 
-    this->particleTexture = 0;
+    this->galaxyModel = scene->hasGalaxy ? new GalaxyModel() : NULL;
 
-    this->particleTextureProgram.program = 0;
-    this->particleTextureProgram.positionLoc = -1;
-    this->particleTextureProgram.colorLoc = -1;
-    this->particleTextureProgram.modelToCameraMatrixLoc = -1;
-    this->particleTextureProgram.cameraToClipMatrixLoc = -1;
-    this->particleTextureProgram.particleTextureLoc = -1;
-    this->particleTextureProgram.pointSizeLoc = -1;
-
-    this->particlePointProgram.program = 0;
-    this->particlePointProgram.positionLoc = -1;
-    this->particlePointProgram.colorLoc = -1;
-    this->particlePointProgram.modelToCameraMatrixLoc = -1;
-    this->particlePointProgram.pointSizeLoc = -1;
-
-    this->running = false;
-    this->galaxyModel = NULL;
+    this->running = true;
 }
 
 NBodyGraphics::~NBodyGraphics()
@@ -529,6 +507,8 @@ NBodyGraphics::~NBodyGraphics()
     glDeleteVertexArrays(1, &this->particleVAO);
     glDeleteVertexArrays(1, &this->whiteParticleVAO);
     glDeleteTextures(1, &this->particleTexture);
+
+    delete this->galaxyModel;
 }
 
 void NBodyGraphics::loadShaders()
@@ -609,7 +589,6 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue, int nbody, GLuint posit
     sceneData->centerOfMassView = glm::vec3(-info->rootCenterOfMass[0],
                                             -info->rootCenterOfMass[1],
                                             -info->rootCenterOfMass[2]);
-
     head = (head + 1) % NBODY_CIRC_QUEUE_SIZE;
     OPA_store_int(&queue->head, head);
     return TRUE;
@@ -738,22 +717,6 @@ void NBodyGraphics::createPositionBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void NBodyGraphics::populateBuffers()
-{
-    this->createPositionBuffer();
-    this->particleTexture = createParticleTexture(32);
-}
-
-void NBodyGraphics::loadModel(GalaxyModel& model)
-{
-    model.generateModel();
-    model.bufferData();
-    model.loadShaders();
-    model.prepareVAO();
-    model.loadGalaxyTexture();
-    this->galaxyModel = &model;
-}
-
 void NBodyGraphics::loadColors()
 {
     GLint nbody = this->scene->nbody;
@@ -834,19 +797,10 @@ void NBodyGraphics::loadColors()
 
 void NBodyGraphics::prepareContext()
 {
-    this->createBuffers();
-    this->loadShaders();
-    this->prepareVAOs();
-
     this->text.prepareConstantText(this->scene);
-
-    this->axes.loadShader();
-    this->axes.createBuffers();
-    this->axes.prepareVAO();
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
-
 
     glEnable(GL_MULTISAMPLE);
 
@@ -867,14 +821,9 @@ void NBodyGraphics::prepareContext()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
-
-    //glEnable(GL_ALPHA_TEST);
-    ///glEnable(GL_COLOR_MATERIAL);
 }
 
-static void requestGL32()
+static void nbglRequestGL32()
 {
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
@@ -940,8 +889,6 @@ void NBodyGraphics::display()
 
 void NBodyGraphics::mainLoop()
 {
-    this->running = true;
-
     while (this->running)
     {
         double t1 = glfwGetTime();
@@ -1112,6 +1059,8 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
+    glfwSetErrorCallback(errorHandler);
+
     if (!glfwInit())
     {
         mw_printf("Failed to initialize GLFW\n");
@@ -1121,33 +1070,27 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
     GLFWwindow window = nbglPrepareWindow(args);
     if (!window)
     {
-        mw_printf("Failed to open window: %s\n", glfwErrorString(glfwGetError()));
         return 1;
     }
 
     nbglSetSceneSettings(scene, args);
 
+    try
     {
         // GL context needs to be open or else destructors will crash
         NBodyGraphics graphicsContext(scene, args);
 
-        try
-        {
-            graphicsContext.prepareContext();
-            nbglSetHandlers(&graphicsContext);
-            graphicsContext.populateBuffers();
-            graphicsContext.loadColors();
+        graphicsContext.prepareContext();
 
-            GalaxyModel model;
-            graphicsContext.loadModel(model);
-            graphicsContext.mainLoop();
-        }
-        catch (const std::exception& e)
-        {
-            std::cerr << "Exception: " << e.what() << std::endl;
-            glfwTerminate();
-            return 1;
-        }
+        globalGraphicsContext = &graphicsContext;
+        nbglSetHandlers();
+        graphicsContext.mainLoop();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        glfwTerminate();
+        return 1;
     }
 
     globalGraphicsContext = NULL;

@@ -27,13 +27,18 @@ struct SceneData
     float currentTime;
     float timeEvolve;
     glm::vec3 centerOfMassView;
+    bool staticScene;
 
-    SceneData() : currentTime(0.0f), timeEvolve(0.0f), centerOfMassView(glm::vec3(0.0f, 0.0f, 0.0f)) { }
+
+    SceneData(bool isStatic) : currentTime(0.0f),
+                               timeEvolve(0.0f),
+                               centerOfMassView(glm::vec3(0.0f, 0.0f, 0.0f)),
+                               staticScene(isStatic) { }
 };
+
 
 extern glm::mat4 cameraToClipMatrix;
 extern glm::mat4 textCameraToClipMatrix;
-
 
 #endif /* _NBODY_GL_PRIVATE_H_ */
 

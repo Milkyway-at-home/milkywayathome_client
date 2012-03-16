@@ -24,15 +24,9 @@
 
 NBodyAxes::NBodyAxes()
 {
-    this->axesVAO = 0;
-    this->axesBuffer = 0;
-    this->axesColorBuffer = 0;
-
-    this->axesProgramData.program = 0;
-    this->axesProgramData.positionLoc = -1;
-    this->axesProgramData.colorLoc = -1;
-    this->axesProgramData.modelToCameraMatrixLoc = -1;
-    this->axesProgramData.cameraToClipMatrixLoc = -1;
+    this->loadShader();
+    this->createBuffers();
+    this->prepareVAO();
 }
 
 NBodyAxes::~NBodyAxes()
@@ -42,21 +36,6 @@ NBodyAxes::~NBodyAxes()
     glDeleteBuffers(1, &this->axesBuffer);
     glDeleteBuffers(1, &this->axesColorBuffer);
     glDeleteVertexArrays(1, &this->axesVAO);
-}
-
-void NBodyAxes::draw(const glm::mat4& modelMatrix)
-{
-    glDisable(GL_DEPTH_TEST);
-
-    glUseProgram(this->axesProgramData.program);
-    glUniformMatrix4fv(this->axesProgramData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-    glUniformMatrix4fv(this->axesProgramData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
-
-    glBindVertexArray(this->axesVAO);
-    glDrawArrays(GL_LINES, 0, 6);
-    glBindVertexArray(0);
-    glUseProgram(0);
-    glEnable(GL_DEPTH_TEST);
 }
 
 void NBodyAxes::loadShader()
@@ -127,5 +106,20 @@ void NBodyAxes::prepareVAO()
     glVertexAttribPointer(this->axesProgramData.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindVertexArray(0);
+}
+
+void NBodyAxes::draw(const glm::mat4& modelMatrix)
+{
+    glDisable(GL_DEPTH_TEST);
+
+    glUseProgram(this->axesProgramData.program);
+    glUniformMatrix4fv(this->axesProgramData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(this->axesProgramData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+
+    glBindVertexArray(this->axesVAO);
+    glDrawArrays(GL_LINES, 0, 6);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glEnable(GL_DEPTH_TEST);
 }
 

@@ -190,22 +190,6 @@ NBodyText::~NBodyText()
 
 void NBodyText::drawProgressText(const SceneData& sceneData)
 {
-    wchar_t buf[1024];
-
-    /* Start right after the constant portion */
-    TextPen pen = this->penEndConst;
-
-    swprintf(buf, sizeof(buf),
-             L"Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
-             sceneData.currentTime,
-             sceneData.timeEvolve,
-             100.0f * sceneData.currentTime / sceneData.timeEvolve
-        );
-
-    this->varText->clearText();
-    this->varText->addText(buf, pen);
-    this->varText->uploadText();
-
     // Fix black boxes appearing behind letters
     // also keep text looking same when things are behind it
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -216,8 +200,32 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, this->textTexture);
     glUniform1i(this->textProgram.textTextureLoc, 0);
-    this->constText->drawTextItem();
-    this->varText->drawTextItem();
+
+    if (sceneData.staticScene)
+    {
+        this->constText->drawTextItem();
+    }
+    else
+    {
+        wchar_t buf[256];
+
+        /* Start right after the constant portion */
+        TextPen pen = this->penEndConst;
+
+        swprintf(buf, sizeof(buf),
+                 L"Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
+                 sceneData.currentTime,
+                 sceneData.timeEvolve,
+                 100.0f * sceneData.currentTime / sceneData.timeEvolve
+            );
+
+        this->varText->clearText();
+        this->varText->addText(buf, pen);
+        this->varText->uploadText();
+
+        this->constText->drawTextItem();
+        this->varText->drawTextItem();
+    }
 
     glUseProgram(0);
     glBindVertexArray(0);
@@ -228,11 +236,20 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
 void NBodyText::prepareConstantText(const scene_t* scene)
 {
     TextPen pen;
-    wchar_t buf[1024];
+    wchar_t buf[256];
 
-    swprintf(buf, sizeof(buf),
-             L"N-body simulation (%d particles)\n",
-             scene->nbody);
+    if (scene->staticScene)
+    {
+        swprintf(buf, sizeof(buf),
+                 L"Static N-body scene (%d particles)\n",
+                 scene->nbody);
+    }
+    else
+    {
+        swprintf(buf, sizeof(buf),
+                 L"N-body simulation (%d particles)\n",
+                 scene->nbody);
+    }
 
     this->constText->addText(buf, pen);
     this->constText->uploadText();

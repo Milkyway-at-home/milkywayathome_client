@@ -25,20 +25,12 @@
 
 GalaxyModel::GalaxyModel()
 {
-    this->points = NULL;
-    this->nPoints = 0;
-    this->count = 0;
-
-    this->vao = 0;
-    this->buffer = 0;
-    this->texture = 0;
-
+    this->loadShaders();
+    this->loadGalaxyTexture();
     this->setMilkywayModelParameters();
-
-    this->programData.program = 0;
-    this->programData.positionLoc = -1;
-    this->programData.modelToCameraMatrixLoc = -1;
-    this->programData.cameraToClipMatrixLoc = -1;
+    this->generateModel();
+    this->bufferData();
+    this->prepareVAO();
 }
 
 GalaxyModel::~GalaxyModel()
@@ -49,32 +41,6 @@ GalaxyModel::~GalaxyModel()
     glDeleteTextures(1, &this->texture);
 
     delete[] this->points;
-}
-
-void GalaxyModel::draw(const glm::mat4& modelMatrix) const
-{
-    glUseProgram(this->programData.program);
-    glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-    glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
-
-    //glBlendFunc(GL_SRC_COLOR, GL_ONE);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
-
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, this->texture);
-    glUniform1i(this->programData.galaxyTextureLoc, 2);
-    glUniform1f(this->programData.invGalaxyDiameterLoc, this->invActualDiameter);
-
-    glBindVertexArray(this->vao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
-
-    glBindVertexArray(0);
-    glUseProgram(0);
-
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void GalaxyModel::loadGalaxyTexture()
@@ -172,22 +138,6 @@ double GalaxyModel::diskShapeFunction(double r)
     return a * exp((-1.0 / rd) * rp);
 }
 
-
-void GalaxyModel::generateModel()
-{
-    GLuint segmentPoints = 2 * this->radialSlices * (this->axialSlices + 1);
-    this->nPoints = 2 * segmentPoints;
-
-    this->points = new NBodyVertex[this->nPoints];
-    this->count = 0;
-
-    generateSegment(false);
-    generateSegment(true);
-
-    assert(this->count == this->nPoints);
-}
-
-
 void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta)
 {
     double z;
@@ -262,5 +212,45 @@ void GalaxyModel::generateSegment(bool neg)
             makePoint(this->points[this->count++], neg, r1, theta);
         }
     }
+}
+
+void GalaxyModel::generateModel()
+{
+    GLuint segmentPoints = 2 * this->radialSlices * (this->axialSlices + 1);
+    this->nPoints = 2 * segmentPoints;
+
+    this->points = new NBodyVertex[this->nPoints];
+    this->count = 0;
+
+    generateSegment(false);
+    generateSegment(true);
+
+    assert(this->count == this->nPoints);
+}
+
+void GalaxyModel::draw(const glm::mat4& modelMatrix) const
+{
+    glUseProgram(this->programData.program);
+    glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
+
+    //glBlendFunc(GL_SRC_COLOR, GL_ONE);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
+    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
+
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, this->texture);
+    glUniform1i(this->programData.galaxyTextureLoc, 2);
+    glUniform1f(this->programData.invGalaxyDiameterLoc, this->invActualDiameter);
+
+    glBindVertexArray(this->vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, this->nPoints);
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 

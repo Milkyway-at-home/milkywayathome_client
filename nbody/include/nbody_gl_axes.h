@@ -38,11 +38,12 @@ private:
         GLint cameraToClipMatrixLoc;
     } axesProgramData;
 
-public:
-    void draw(const glm::mat4& modelMatrix);
     void loadShader();
     void createBuffers();
     void prepareVAO();
+
+public:
+    void draw(const glm::mat4& modelMatrix);
 
     NBodyAxes();
     ~NBodyAxes();
