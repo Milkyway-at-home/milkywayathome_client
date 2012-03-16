@@ -240,7 +240,6 @@ public:
             }
 
             this->drawOptions.texturedSpritePointSize = size;
-            printf("Increase %f\n", size);
         }
         else
         {
@@ -252,7 +251,33 @@ public:
             }
 
             this->drawOptions.pointPointSize = size;
-            printf("Increase %f\n", size);
+        }
+    }
+
+    void decreasePointSize()
+    {
+        if (this->drawOptions.drawMode == TEXTURED_SPRITES)
+        {
+            float size = this->drawOptions.texturedSpritePointSize;
+            size /= 1.05f;
+            if (size < 1.0e-3f)
+            {
+                size = 1.0e-3f;
+            }
+
+            this->drawOptions.texturedSpritePointSize = size;
+        }
+        else
+        {
+            float size = this->drawOptions.pointPointSize;
+
+            size /= 1.05f;
+            if (size < 1.0e-3f)
+            {
+                size = 1.0e-3f;
+            }
+
+            this->drawOptions.pointPointSize = size;
         }
     }
 
@@ -284,35 +309,6 @@ public:
     void toggleOrigin()
     {
         this->drawOptions.cmCentered = !this->drawOptions.cmCentered;
-    }
-
-    void decreasePointSize()
-    {
-        if (this->drawOptions.drawMode == TEXTURED_SPRITES)
-        {
-            float size = this->drawOptions.texturedSpritePointSize;
-            size *= 0.95f;
-            if (size < 1.0e-3f)
-            {
-                size = 1.0e-3f;
-            }
-
-            this->drawOptions.texturedSpritePointSize = size;
-            printf("Decrease %f\n", size);
-        }
-        else
-        {
-            float size = this->drawOptions.pointPointSize;
-
-            size *= 0.95f;
-            if (size < 1.0e-3f)
-            {
-                size = 1.0e-3f;
-            }
-
-            this->drawOptions.pointPointSize = size;
-            printf("Decrease %f\n", size);
-        }
     }
 };
 
