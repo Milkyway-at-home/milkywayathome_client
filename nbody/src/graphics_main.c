@@ -33,6 +33,7 @@ static const VisArgs defaultVisArgs =
     /* .monochrome       */ FALSE,
     /* .untexturedPoints */ FALSE,
     /* .originCenter     */ FALSE,
+    /* .drawAxes         */ FALSE,
     /* .noFloat          */ FALSE,
     /* .pid              */ 0,
     /* .file             */ NULL,
@@ -102,6 +103,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "origin-center", 'o',
             POPT_ARG_NONE, &visArgs.originCenter,
             0, "Focus on the galactic center instead of system's center of mass", NULL
+        },
+
+        {
+            "show-axes", 'a',
+            POPT_ARG_NONE, &visArgs.drawAxes,
+            0, "Draw simple axes for reference", NULL
         },
 
         {

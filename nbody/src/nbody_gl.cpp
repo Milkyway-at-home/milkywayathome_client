@@ -87,7 +87,7 @@ static glutil::ViewData initialViewData =
 
 static glutil::ViewScale viewScale =
 {
-	0.05f, 100.0f, // min, max view radius
+	0.05f, 250.0f, // min, max view radius
 	0.5f, 0.1f,   // radius deltas
     4.0f, 1.0f,
 	90.0f / 250.0f // rotation scale
@@ -294,16 +294,6 @@ private:
     NBodyText text;
     NBodyAxes axes;
 
-    void loadShaders();
-    void createBuffers();
-    void prepareColoredVAO(GLuint& vao, GLuint color);
-    void prepareVAOs();
-    void createPositionBuffer();
-    void drawParticlesTextured(const glm::mat4& modelMatrix);
-    void drawParticlesPoints(const glm::mat4& modelMatrix);
-
-public:
-
     SceneData sceneData;
 
     enum DrawMode
@@ -314,26 +304,56 @@ public:
 
     struct DrawOptions
     {
-        bool fullscreen;
         bool screensaverMode;
         bool paused;
-        bool drawOrbitTrace;
-        bool drawInfo;
-        bool drawAxes;
-        bool drawParticles;
         bool floatMode;
+
         bool cmCentered;
-        bool drawHelp;
         bool monochromatic;
 
+        DrawMode drawMode;
         // Keep a separate point size for each draw mode
         float texturedSpritePointSize;
         float pointPointSize;
 
-        DrawMode drawMode;
+        bool drawOrbitTrace;
+        bool drawInfo;
+        bool drawAxes;
+        bool drawParticles;
+        bool drawHelp;
+
+        DrawOptions(const VisArgs* args)
+        {
+            this->screensaverMode = (args->fullscreen && !args->plainFullscreen);
+            this->paused = false;
+            this->floatMode = (this->screensaverMode && !args->noFloat);
+
+            this->cmCentered = !args->originCenter;
+            this->monochromatic = (bool) args->monochrome;
+
+            this->drawMode = args->untexturedPoints ? POINTS : TEXTURED_SPRITES;
+            this->texturedSpritePointSize = 250.0f;
+            this->pointPointSize = 5.0f;
+
+            this->drawOrbitTrace = false;
+            this->drawInfo = true;
+            this->drawAxes = (bool) args->drawAxes;
+            this->drawParticles = true;
+            this->drawHelp = false;
+        }
     } drawOptions;
 
-    NBodyGraphics(scene_t* scene);
+
+    void loadShaders();
+    void createBuffers();
+    void prepareColoredVAO(GLuint& vao, GLuint color);
+    void prepareVAOs();
+    void createPositionBuffer();
+    void drawParticlesTextured(const glm::mat4& modelMatrix);
+    void drawParticlesPoints(const glm::mat4& modelMatrix);
+
+public:
+    NBodyGraphics(scene_t* scene, const VisArgs* args);
     ~NBodyGraphics();
 
     void prepareContext();
@@ -347,6 +367,7 @@ public:
 
     void display();
     void mainLoop();
+
     void stop()
     {
         this->running = false;
@@ -390,6 +411,36 @@ public:
             this->drawOptions.pointPointSize = size;
             printf("Increase %f\n", size);
         }
+    }
+
+    void toggleDrawAxes()
+    {
+        this->drawOptions.drawAxes = !this->drawOptions.drawAxes;
+    }
+
+    void toggleDrawInfo()
+    {
+        this->drawOptions.drawInfo = !this->drawOptions.drawInfo;
+    }
+
+    void toggleMonochromatic()
+    {
+        this->drawOptions.monochromatic = !this->drawOptions.monochromatic;
+    }
+
+    void togglePaused()
+    {
+        this->drawOptions.paused = !this->drawOptions.paused;
+    }
+
+    void toggleFloatMode()
+    {
+        this->drawOptions.floatMode = !this->drawOptions.floatMode;
+    }
+
+    void toggleOrigin()
+    {
+        this->drawOptions.cmCentered = !this->drawOptions.cmCentered;
     }
 
     void decreasePointSize()
@@ -438,9 +489,7 @@ static void resizeHandler(GLFWwindow window, int w, int h)
     float wf = (float) w;
     float hf = (float) h;
     float aspectRatio = wf / hf;
-    glutil::MatrixStack persMatrix;
-    persMatrix.Perspective(90.0f, aspectRatio, zNear, zFar);
-    cameraToClipMatrix = persMatrix.Top();
+    cameraToClipMatrix = glm::perspective(90.0f, aspectRatio, zNear, zFar);
 
     const float fontHeight = 12.0f; // FIXME: hardcoded font height
     textCameraToClipMatrix = glm::ortho(0.0f, wf, -hf, 0.0f);
@@ -526,16 +575,14 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
     if (!ctx)
         return;
 
-    NBodyGraphics::DrawOptions& opts = ctx->drawOptions;
-
     switch (key)
     {
         case GLFW_KEY_A:
-            opts.drawAxes = !opts.drawAxes;
+            ctx->toggleDrawAxes();
             break;
 
         case GLFW_KEY_I:
-            opts.drawInfo = !opts.drawInfo;
+            ctx->toggleDrawInfo();
             break;
 
         case GLFW_KEY_Q:
@@ -563,19 +610,19 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             break;
 
         case GLFW_KEY_O: /* Toggle camera following CM or on milkyway center */
-            ctx->drawOptions.cmCentered = !ctx->drawOptions.cmCentered;
+            ctx->toggleOrigin();
             break;
 
         case GLFW_KEY_R: /* Toggle floating */
-            ctx->drawOptions.floatMode = !ctx->drawOptions.floatMode;
+            ctx->toggleFloatMode();
             break;
 
         case GLFW_KEY_P:
-            ctx->drawOptions.paused = !ctx->drawOptions.paused;
+            ctx->togglePaused();
             break;
 
         case GLFW_KEY_C:
-            ctx->drawOptions.monochromatic = !ctx->drawOptions.monochromatic;
+            ctx->toggleMonochromatic();
             break;
 
         default:
@@ -599,8 +646,7 @@ static void nbglSetHandlers(NBodyGraphics* graphicsContext)
     globalGraphicsContext = graphicsContext;
 }
 
-
-NBodyGraphics::NBodyGraphics(scene_t* scene)
+NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args) : drawOptions(args)
 {
     this->window = NULL;
     this->scene = scene;
@@ -629,23 +675,6 @@ NBodyGraphics::NBodyGraphics(scene_t* scene)
     this->particlePointProgram.pointSizeLoc = -1;
 
     this->running = false;
-
-    this->drawOptions.fullscreen = false;
-    this->drawOptions.screensaverMode = false;
-    this->drawOptions.paused = false;
-    this->drawOptions.drawOrbitTrace = true;
-    this->drawOptions.drawInfo = true;
-    this->drawOptions.drawAxes = true;
-    this->drawOptions.drawParticles = true;
-    this->drawOptions.floatMode = false;
-    this->drawOptions.cmCentered = true;
-    this->drawOptions.drawHelp = false;
-    this->drawOptions.monochromatic = false;
-
-    this->drawOptions.pointPointSize = 5.0f;
-    this->drawOptions.texturedSpritePointSize = 250.0f;
-    this->drawOptions.drawMode = TEXTURED_SPRITES;
-
     this->galaxyModel = NULL;
 }
 
@@ -983,33 +1012,12 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue, int nbody, GLuint posit
 bool NBodyGraphics::readSceneData()
 {
     scene_t* scene = this->scene;
-
-#if 0
-    static unsigned int count = 0;
-    static double lastTime = 0.0;
-
-    count = (count + 1) % 25;
-
-    if (count == 0)
-    {
-        double time = glfwGetTime();
-        size_t bytes = (size_t) 4 * scene->nbody * sizeof(GLfloat) * 25;
-        double dt = time - lastTime;
-        printf("Copying %zu bytes, %f, %f MB/s\n",
-               bytes,
-               dt,
-               ((double) bytes / (1024.0 * 1024.0)) / dt
-            );
-
-        lastTime = time;
-    }
-#endif
-
     return (bool) nbPopCircularQueue(&scene->queue, scene->nbody, this->positionBuffer,  &this->sceneData);
 }
 
 void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
 {
+    assert(glGetError() == GL_NO_ERROR);
     glPointSize(this->drawOptions.texturedSpritePointSize);
     glUseProgram(this->particleTextureProgram.program);
     glUniformMatrix4fv(this->particleTextureProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
@@ -1276,14 +1284,14 @@ static void requestGL32()
   #endif
 }
 
-static GLFWwindow nbglPrepareWindow(bool fullscreen)
+static GLFWwindow nbglPrepareWindow(const VisArgs* args)
 {
     GLFWvidmode vidMode;
     glfwGetDesktopMode(&vidMode);
-    int winMode = fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOWED;
+    int winMode = (args->fullscreen || args->plainFullscreen) ? GLFW_FULLSCREEN : GLFW_WINDOWED;
 
-    int width = vidMode.width / 2;
-    int height = vidMode.height / 2;
+    int width = args->width == 0 ? 3 * vidMode.width / 4 : args->width;
+    int height = args->height == 0 ? 3 * vidMode.height / 4 : args->height;
 
     requestGL32();
     return glfwOpenWindow(width, height, winMode, "Milkyway@Home N-body", NULL);
@@ -1609,7 +1617,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
-    GLFWwindow window = nbglPrepareWindow(false);
+    GLFWwindow window = nbglPrepareWindow(args);
     if (!window)
     {
         mw_printf("Failed to open window: %s\n", glfwErrorString(glfwGetError()));
@@ -1620,7 +1628,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
 
     {
         // GL context needs to be open or else destructors will crash
-        NBodyGraphics graphicsContext(scene);
+        NBodyGraphics graphicsContext(scene, args);
 
         try
         {
