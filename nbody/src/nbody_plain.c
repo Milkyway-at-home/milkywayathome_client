@@ -142,6 +142,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc = NBODY_SUCCESS;
 
+    nbUpdateDisplayedBodies(ctx, st);
+
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
     if (nbStatusIsFatal(rc))
         return rc;

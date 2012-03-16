@@ -186,7 +186,31 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 
     pid = fork();
     if (pid != 0)  /* Parent */
+    {
+        int status;
+        pid_t result;
+        int attached;
+
+        /* Wait until the visualizer has exited or successfully
+         * attached
+         * TODO: maybe this should timeout?
+         */
+        do
+        {
+            mwMilliSleep(10);
+
+            attached = !!OPA_load_int(&st->scene->attachedPID);
+            result = waitpid(pid, &status, WNOHANG);
+            if (result < 0)
+            {
+                perror("Error waiting for child process");
+                return;
+            }
+        }
+        while (!attached && (result == 0));
+
         return;
+    }
 
     /* Child */
 
@@ -254,6 +278,8 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
     STARTUPINFO startInfo;
     size_t visArgsLen, argvSize;
     char* buf;
+    int attached;
+    int ret;
 
     (void) st;
 
@@ -286,6 +312,14 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
         mw_printf("Error creating visualizer process: %ld\n", GetLastError());
     }
 
+    /* Wait for child to attach or exit */
+    do
+    {
+        ret = WaitForSingleObject(pInfo.hProcess, 10);
+        attached = !!OPA_load_int(st->scene->attachedPID);
+    }
+    while (!attached && (ret == WAIT_TIMEOUT));
+
     free(buf);
 }
 
@@ -300,9 +334,10 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     SceneInfo* info = &queue->info[buffer];
     FloatPos* r = &queue->bodyData[buffer * nbody];
 
-    if (st->usesExact) /* Need to find it since we don't have the tree */
+    if (!st->tree.root)
     {
-        /* TODO: This should use parallel reduction */
+        /* If we are using exact nbody or haven't constructed the tree
+         * yet we need to calculate the center of mass on our own */
         cmPos = nbCenterOfMass(st);
     }
     else
@@ -313,7 +348,6 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     info->currentTime = (float) st->step * (float) ctx->timestep;
     info->timeEvolve = (float) ctx->timeEvolve;
 
-    // FIXME: CM when using exact
     info->rootCenterOfMass[0] = (float) X(cmPos);
     info->rootCenterOfMass[1] = (float) Y(cmPos);
     info->rootCenterOfMass[2] = (float) Z(cmPos);

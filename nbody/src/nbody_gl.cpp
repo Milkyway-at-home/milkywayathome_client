@@ -1081,6 +1081,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         NBodyGraphics graphicsContext(scene, args);
 
         graphicsContext.prepareContext();
+        graphicsContext.readSceneData();
 
         globalGraphicsContext = &graphicsContext;
         nbglSetHandlers();
