@@ -107,10 +107,11 @@ void GalaxyModel::setMilkywayModelParameters()
     this->axialSliceSize = M_2PI / (double) this->axialSlices;
 
     this->bulgeRadius = 0.5 * 8.308;
-    this->smallBulgeRadius = 0.7;
+    this->bulgeHeight = 0.7;
 
     this->diskScale = 7.7;
-    this->diskCoeff = 2.5;
+    //this->diskCoeff = 2.5;
+    this->diskCoeff = 1.5 * M_E * 0.459899;
 
     this->totalDiameter = 2.0 * 15.33;
 
@@ -120,22 +121,18 @@ void GalaxyModel::setMilkywayModelParameters()
     this->invActualDiameter = 1.0f / (float) this->totalDiameter;
     this->diameterSlice = this->totalDiameter / (double) nDiameterSlices;
 
-    this->diskEdgeZ = diskShapeFunction(0.5 * this->totalDiameter);
+    this->diskEdgeZ = shapeFunction(0.5 * this->totalDiameter);
 }
 
-double GalaxyModel::diskShapeFunction(double r)
+double GalaxyModel::shapeFunction(double r)
 {
-    double rd = this->diskScale;
-    double a = this->diskCoeff;
-
     double rp = std::fabs(r);
 
-    if (std::fabs(r) <= this->bulgeRadius)
-    {
-        rp += this->smallBulgeRadius;
-    }
+    double bulge = this->bulgeHeight * exp(-7.67 * pow(rp / this->bulgeRadius, 4.0));
 
-    return a * exp((-1.0 / rd) * rp);
+    double disk = this->diskCoeff * exp((-1.0 / this->diskScale) * rp);
+
+    return bulge + disk;
 }
 
 void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta)
@@ -145,28 +142,7 @@ void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta
     point.x = std::fabs(r) * cos(theta);
     point.y = std::fabs(r) * sin(theta);
 
-    double gr = this->bulgeRadius;
-
-    if (std::fabs(r) <= gr && false)
-    {
-        //z = 0.25 * diskShapeFunction(r) * sqrt(sqr(gr) - sqr(point.x) - sqr(point.y));
-
-        //z = 0.66f * std::fabs(sin(point.y / r));
-        //z = gr * cos(point.x / r);
-
-        //z = sqrt(sqr(gr) - sqr(point.x) - sqr(point.y));
-
-        z = sqrt(sqr(this->smallBulgeRadius) - sqr(point.x) - sqr(point.y));
-        printf("Bulge z %f, r = %f\n", neg ? -z : z, r);
-    }
-    else
-    {
-        z = diskShapeFunction(r);
-
-        //printf("Disk z %f, r = %f\n", neg ? -z : z, r);
-    }
-
-    z -= this->diskEdgeZ;
+    z = shapeFunction(r) - this->diskEdgeZ;
 
     point.z = neg ? -z : z;
 }
