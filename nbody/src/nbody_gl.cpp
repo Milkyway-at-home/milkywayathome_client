@@ -206,6 +206,11 @@ public:
         this->running = false;
     }
 
+    bool isScreensaver()
+    {
+        return this->drawOptions.screensaverMode;
+    }
+
     void toggleDrawMode()
     {
         if (this->drawOptions.drawMode == POINTS)
@@ -279,6 +284,11 @@ public:
     void toggleDrawInfo()
     {
         this->drawOptions.drawInfo = !this->drawOptions.drawInfo;
+    }
+
+    void toggleHelp()
+    {
+        this->drawOptions.drawHelp = !this->drawOptions.drawHelp;
     }
 
     void toggleMonochromatic()
@@ -370,6 +380,11 @@ static glutil::MouseButtons glfwButtonToGLUtil(int button)
 
 static void mouseButtonHandler(GLFWwindow window, int button, int action)
 {
+    if (globalGraphicsContext->isScreensaver())
+    {
+        globalGraphicsContext->stop();
+    }
+
     int x, y;
     int modifiers = getGLFWModifiers(window);
     glfwGetMousePos(window, &x, &y);
@@ -378,6 +393,22 @@ static void mouseButtonHandler(GLFWwindow window, int button, int action)
 
 static void mousePosHandler(GLFWwindow window, int x, int y)
 {
+    if (globalGraphicsContext->isScreensaver())
+    {
+        int w, h;
+
+        /* In fullscreen mode the cursor seems to start at the corner
+         * and get constantly reset to the midpoint */
+        glfwGetWindowSize(window, &w, &h);
+
+        if (    (x != w / 2 || y != h / 2)  /* Not midpoint */
+             && !(x == 0 && y == 0))        /* Not corner */
+        {
+            globalGraphicsContext->stop();
+            return;
+        }
+    }
+
     viewPole.MouseMove(glm::ivec2(x, y));
 }
 
@@ -395,8 +426,11 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
         return;
 
     NBodyGraphics* ctx = globalGraphicsContext;
-    if (!ctx)
-        return;
+
+    if (ctx->isScreensaver())
+    {
+        ctx->stop();
+    }
 
     switch (key)
     {
@@ -429,7 +463,7 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
 
         case GLFW_KEY_H:
       //case '?':
-            //scene->drawHelp = !scene->drawHelp;
+            ctx->toggleHelp();
             break;
 
         case GLFW_KEY_O: /* Toggle camera following CM or on milkyway center */
@@ -816,35 +850,6 @@ void NBodyGraphics::prepareContext()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-static void nbglRequestGL32()
-{
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    glfwOpenWindowHint(GLFW_DEPTH_BITS, 24);
-
-    glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 4);
-
-  #ifndef NDEBUG
-    glfwOpenWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-  #endif
-}
-
-static GLFWwindow nbglPrepareWindow(const VisArgs* args)
-{
-    GLFWvidmode vidMode;
-    glfwGetDesktopMode(&vidMode);
-    int winMode = (args->fullscreen || args->plainFullscreen) ? GLFW_FULLSCREEN : GLFW_WINDOWED;
-
-    int width = args->width == 0 ? 3 * vidMode.width / 4 : args->width;
-    int height = args->height == 0 ? 3 * vidMode.height / 4 : args->height;
-
-    requestGL32();
-    return glfwOpenWindow(width, height, winMode, "Milkyway@Home N-body", NULL);
-}
-
 void NBodyGraphics::display()
 {
     glm::mat4 modelMatrix = viewPole.CalcMatrix();
@@ -875,7 +880,6 @@ void NBodyGraphics::display()
 
     if (this->drawOptions.drawInfo)
     {
-        // TODO: Check we have info / aren't a static scene
         this->text.drawProgressText(this->sceneData);
     }
 }
@@ -908,6 +912,46 @@ void NBodyGraphics::mainLoop()
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
 {
     OPA_store_int(&scene->blockSimulationOnGraphics, args->blockSimulation);
+}
+
+static void nbglRequestGL32()
+{
+    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    glfwOpenWindowHint(GLFW_DEPTH_BITS, 24);
+
+    glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 4);
+
+  #ifndef NDEBUG
+    glfwOpenWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+  #endif
+}
+
+static GLFWwindow nbglPrepareWindow(const VisArgs* args)
+{
+    const char* title = "Milkyway@Home N-body";
+    GLFWvidmode vidMode;
+
+    glfwGetDesktopMode(&vidMode);
+    nbglRequestGL32();
+
+    if (args->fullscreen || args->plainFullscreen)
+    {
+        int width = args->width == 0 ? vidMode.width : args->width;
+        int height = args->height == 0 ? vidMode.height : args->height;
+
+        return glfwOpenWindow(width, height, GLFW_FULLSCREEN, title, NULL);
+    }
+    else
+    {
+        int width = args->width == 0 ? 3 * vidMode.width / 4 : args->width;
+        int height = args->height == 0 ? 3 * vidMode.height / 4 : args->height;
+
+        return glfwOpenWindow(width, height, GLFW_WINDOWED, title, NULL);
+    }
 }
 
 int nbglRunGraphics(scene_t* scene, const VisArgs* args)
