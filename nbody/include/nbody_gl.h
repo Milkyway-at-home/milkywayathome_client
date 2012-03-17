@@ -48,9 +48,6 @@ typedef struct
 #define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
 int nbglRunGraphics(scene_t* scene, const VisArgs* args);
-scene_t* nbglConnectSharedScene(int instanceId);
-int nbglGetExclusiveSceneAccess(scene_t* scene);
-int nbglCheckConnectedVersion(const scene_t* scene);
 
 #ifdef __cplusplus
 }
