@@ -42,6 +42,7 @@ int writeCheckpoint(EvaluationState* es);
 int readCheckpoint(EvaluationState* es);
 int resolveCheckpoint(void);
 int maybeResume(EvaluationState* es);
+int deleteCheckpoint(void);
 int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia);
 
 #ifdef __cplusplus

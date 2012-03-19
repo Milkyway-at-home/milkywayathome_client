@@ -162,6 +162,7 @@ static int mw_boinc_rename_aux(const char* oldf, const char* newf, int fallback)
   #ifdef _WIN32
     return mw_rename_w32(oldf, newf, fallback);
   #else
+    (void) fallback;
     return rename(oldf, newf);
   #endif
 }
@@ -191,7 +192,7 @@ static int mw_boinc_rename(const char* old, const char* newf, int fallback)
 
 int mw_rename(const char* oldf, const char* newf)
 {
-    return mw_boinc_rename(oldf, newf);
+    return mw_boinc_rename(oldf, newf, FALSE);
 }
 
 #else /* !BOINC_APPLICATION */

@@ -137,7 +137,10 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_show.h
                    include/milkyway_cpuid.h
                    include/milkyway_timing.h
-                   include/milkyway_asprintf.h)
+                   include/milkyway_asprintf.h
+                   include/milkyway_simd_defs.h
+                   include/milkyway_sse2_intrin.h
+                   include/milkyway_simd.h)
 
 
 set(milkyway_lua_headers include/milkyway_lua.h
