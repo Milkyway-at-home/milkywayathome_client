@@ -25,7 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "nbody_hernq.h"
 
-static inline real mass_inside_radius(real radius, real radius_scale, real a, real mass){
+real hernqMassInsideRadius(real radius, real radius_scale, real a, real mass)
+{
     //Returns that mass inside a certain radius
     
     radius = radius / radius_scale;
@@ -36,19 +37,23 @@ static inline real mass_inside_radius(real radius, real radius_scale, real a, re
 
 }
 
-static inline real next_radius(real start_radius, real goal_mass, real radius, real a, real mass){
+real hernqNextRadius(real startRadius, real goalMass, real radius, real a, real mass)
+{
     // This is a scary function which returns the next radius limit
     // Do not use this code on client computers. It is slow inneficient
     // and well just dirty.
 
-    for (real test_radius = start_radius; 1; test_radius += (real)0.0001){
-        if (mass_inside_radius(test_radius, radius, a, mass) >= goal_mass)
+    for (real test_radius = startRadius;; test_radius += (real)0.0001)
+    {
+        if (hernqMassInsideRadius(test_radius, radius, a, mass) >= goalMass)
+        {
             return test_radius;
+        }
     }
 }
 
-/* pickshell: pick a random point on a sphere of specified radius. */
-static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
+/* hernqPickShell: pick a random point on a sphere of specified radius. */
+mwvector hernqPickShell(dsfmt_t* dsfmtState, real rad)
 {
     real rsq, rsc;
     mwvector vec;
@@ -66,7 +71,7 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-static inline real HernqRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
+real hernqRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
 {
     real rnd;
 
@@ -77,7 +82,7 @@ static inline real HernqRandomR(dsfmt_t* dsfmtState, real startradius, real endr
     return (endradius - startradius) * rnd + startradius;
 }
 
-static inline real HernqSelectFromG(dsfmt_t* dsfmtState)
+real hernqSelectFromG(dsfmt_t* dsfmtState)
 {
     real x, y;
 
@@ -91,38 +96,38 @@ static inline real HernqSelectFromG(dsfmt_t* dsfmtState)
     return x;
 }
 
-static inline real HernqCalculateV(real r, real radius, real a, real mass)
+real hernqCalculateV(real r, real radius, real a, real mass)
 {
     real v;
-    mass = mass_inside_radius(r, radius, a, mass);
+    mass = hernqMassInsideRadius(r, radius, a, mass);
     v = mw_sqrt( /*G!!!*/ mass / r);
 
     return v;
 }
 
-static inline mwvector HernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
+mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
 {
     mwvector pos;
 
-    pos = pickShell(dsfmtState, rsc * r);  /* pick scaled position */
+    pos = hernqPickShell(dsfmtState, rsc * r);  /* pick scaled position */
     mw_incaddv(pos, rshift);               /* move the position */
 
     return pos;
 }
 
-static inline mwvector HernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real radius, real a, real mass)
+mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real radius, real a, real mass)
 {
     mwvector vel;
     real v;
 
-    v = HernqCalculateV(r, radius, a, mass);
-    vel = pickShell(dsfmtState, v);   /* pick scaled velocity */
+    v = hernqCalculateV(r, radius, a, mass);
+    vel = hernqPickShell(dsfmtState, v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);              /* move the velocity */
 
     return vel;
 }
 
-/* generateHernq: generate Hernquist model initial conditions 
+/* generateHernq: generate hernquist model initial conditions 
  * Extremely hacky. If you actually want to use this
  * talk to Colin Rice before you do anything. Seriously.
  */
@@ -161,16 +166,16 @@ static int nbGenerateHernqCore(lua_State* luaSt,
 
     for (i = 0; i < nbody; ++i)
     {
-        real endradius = next_radius(radius, totalMass + massEpsilon, radius, a, mass);
+        real endradius = hernqNextRadius(radius, totalMass + massEpsilon, radius, a, mass);
         
         
-        r = HernqRandomR(prng, radius, endradius);
+        r = hernqRandomR(prng, radius, endradius);
         
         radius = endradius;
         totalMass += massEpsilon;
 
-        b.bodynode.pos = HernqBodyPosition(prng, rShift, 1, r);
-        b.vel = HernqBodyVelocity(prng, vShift, r, radius_scale, a, mass);
+        b.bodynode.pos = hernqBodyPosition(prng, rShift, 1, r);
+        b.vel = hernqBodyVelocity(prng, vShift, r, radius_scale, a, mass);
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
