@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 real nfwMassInsideRadius(real radius, real rho_0, real R_S){
     //Returns that mass inside a certain radius
-    
+
     //Leading Constant
     real mass = 4.0 * M_PI * rho_0 * cube(radius);
     //Integration terms
@@ -124,7 +124,7 @@ static inline mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, rea
     return vel;
 }
 
-/* generatenfw: generate nfw model initial conditions 
+/* generatenfw: generate nfw model initial conditions
  * Extremely hacky. If you actually want to use this
  * talk to Colin Rice before you do anything. Seriously.
  */
@@ -157,17 +157,16 @@ static int nbGenerateNFWCore(lua_State* luaSt,
     table = lua_gettop(luaSt);
 
     real radius = 0;
-    
+
     //Start with half an epsilon
     real totalMass = massEpsilon / (real)2;
 
     for (i = 0; i < nbody; ++i)
     {
         real endradius = nfwNextRadius(radius, totalMass + massEpsilon, rho_0, R_S);
-        
-        
+
         r = nfwRandomR(prng, radius, endradius);
-        
+
         radius = endradius;
         totalMass += massEpsilon;
 
@@ -193,7 +192,7 @@ int nbGenerateNFW(lua_State* luaSt)
         {
             { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
             { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
-            { "rho_0",        LUA_TNUMBER,   NULL,          TRUE,     &rho_0 
+            { "rho_0",        LUA_TNUMBER,   NULL,          TRUE,     &rho_0
              },
             { "scaledRadius",          LUA_TNUMBER,   NULL,          TRUE,     &R_S
              },

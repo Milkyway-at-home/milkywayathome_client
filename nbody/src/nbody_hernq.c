@@ -28,9 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 real hernqMassInsideRadius(real radius, real radius_scale, real a, real mass)
 {
     //Returns that mass inside a certain radius
-    
     radius = radius / radius_scale;
-    
+
     //Integration terms
     mass = mass * radius * radius / ((a+radius) * (a+radius)) ;
     return mass;
@@ -127,7 +126,7 @@ mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real ra
     return vel;
 }
 
-/* generateHernq: generate hernquist model initial conditions 
+/* generateHernq: generate hernquist model initial conditions
  * Extremely hacky. If you actually want to use this
  * talk to Colin Rice before you do anything. Seriously.
  */
@@ -160,17 +159,16 @@ static int nbGenerateHernqCore(lua_State* luaSt,
     table = lua_gettop(luaSt);
 
     real radius = 0;
-    
+
     //Start with half an epsilon
     real totalMass = massEpsilon / (real)2;
 
     for (i = 0; i < nbody; ++i)
     {
         real endradius = hernqNextRadius(radius, totalMass + massEpsilon, radius, a, mass);
-        
-        
+
         r = hernqRandomR(prng, radius, endradius);
-        
+
         radius = endradius;
         totalMass += massEpsilon;
 
@@ -196,7 +194,7 @@ int nbGenerateHernq(lua_State* luaSt)
         {
             { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
             { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
-            { "radius",        LUA_TNUMBER,   NULL,          TRUE,     &radius 
+            { "radius",        LUA_TNUMBER,   NULL,          TRUE,     &radius
              },
             { "a",          LUA_TNUMBER,   NULL,          TRUE,     &a
              },
