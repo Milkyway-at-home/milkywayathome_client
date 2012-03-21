@@ -17,33 +17,24 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nbody_gl_includes.h"
-#include "nbody_graphics.h"
-#include "nbody_gl.h"
 #include "nbody_config.h"
-#include "milkyway_util.h"
 
+#include "nbody_gl_includes.h"
+#include "nbody_gl.h"
+#include "nbody_graphics.h"
 #include "nbody_gl_util.h"
-
 #include "nbody_gl_axes.h"
 #include "nbody_gl_text.h"
+#include "nbody_gl_galaxy_model.h"
 #include "nbody_gl_private.h"
+#include "nbody_gl_includes.h"
+#include "nbody_particle_texture.h"
+#include "nbody_gl_shaders.h"
+#include "milkyway_util.h"
 
 #include <assert.h>
-
-#include <errno.h>
-#include <cstring>
-#include <cstdlib>
-
 #include <iostream>
-#include <cmath>
 #include <stdexcept>
-
-#include "nbody_gl_includes.h"
-
-#include "nbody_particle_texture.h"
-#include "nbody_gl_resources.h"
-#include "nbody_gl_galaxy_model.h"
 
 static const float zNear = 0.01f;
 static const float zFar = 1000.0f;

@@ -18,7 +18,7 @@
  */
 
 #include "nbody_gl_axes.h"
-#include "nbody_gl_resources.h"
+#include "nbody_gl_shaders.h"
 #include "nbody_gl_util.h"
 #include "nbody_gl_private.h"
 

@@ -23,7 +23,7 @@
 #include <cstdio>
 
 #include "nbody_gl_text.h"
-#include "nbody_gl_resources.h"
+#include "nbody_gl_shaders.h"
 #include "nbody_gl_util.h"
 
 glm::mat4 textCameraToClipMatrix(1.0f);

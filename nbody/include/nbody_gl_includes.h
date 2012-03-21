@@ -35,7 +35,9 @@
 
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
-
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/fast_square_root.hpp>
+#include <glm/gtx/quaternion.hpp>
 //#include <glload/gl_3_3.h>
 #include <glutil/glutil.h>
 
