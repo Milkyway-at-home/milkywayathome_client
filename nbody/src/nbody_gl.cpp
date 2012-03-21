@@ -48,28 +48,58 @@
 static const float zNear = 0.01f;
 static const float zFar = 1000.0f;
 
+static const glm::vec3 xAxis(1.0f, 0.0f, 0.0f);
+static const glm::vec3 yAxis(0.0f, 1.0f, 0.0f);
+static const glm::vec3 zAxis(0.0f, 0.0f, 1.0f);
+static const glm::mat4 identityMatrix(1.0f);
+
+static const glm::vec2 zeroVec2(0.0f, 0.0f);
+
 glm::mat4 cameraToClipMatrix(1.0f);
 
+static const float pointSizeChangeFactor = 1.05f;
 
 // For access from callbacks
 class NBodyGraphics;
 static NBodyGraphics* globalGraphicsContext = NULL;
 
 
-static glutil::ViewData initialViewData =
+static const glm::vec3 origin(0.0f, 0.0f, 0.0f);
+static const glm::fquat startOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
+
+static const float startRadius = 2.0f * 30.0f;
+
+// angular component only
+static const float startFloatSpeed = 0.2f;
+static const float minFloatSpeed = 1.0e-3f;
+static const float maxFloatSpeed = 10.0f;
+static const float floatSpeedChangeFactor = 1.1f;
+
+
+static const glutil::ViewData initialViewData =
 {
-	glm::vec3(0.0f, 0.0f, 0.0f),  // center position
-    glm::fquat(1.0f, 0.0f, 0.0f, 0.0f), // view direction
-	30.0f,  // radius
-	0.0f    // spin rotation of up axis
+    origin,  // center position
+    startOrientation, // view direction
+    startRadius,  // radius
+    0.0f    // spin rotation of up axis
 };
+
+// limits of how far you can zoom to
+static const float minViewRadius = 0.05f;
+static const float maxViewRadius = 350.0f;
+
+
+static const double minFloatTime = 3.0;
+static const double maxFloatTime = 10.0;
+
+static const float maxRadialFloatSpeed = 0.2f;
 
 static glutil::ViewScale viewScale =
 {
-	0.05f, 250.0f, // min, max view radius
-	0.5f, 0.1f,   // radius deltas
+    minViewRadius, maxViewRadius,
+    0.5f, 0.1f,    // radius deltas
     4.0f, 1.0f,
-	90.0f / 250.0f // rotation scale
+    90.0f / 250.0f // rotation scale
 };
 
 static glutil::ViewPole viewPole = glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN);
@@ -84,6 +114,7 @@ class NBodyGraphics
 {
 private:
     scene_t* scene;
+    GLFWwindow window;
 
     GLuint particleVAO;
     GLuint whiteParticleVAO;
@@ -122,14 +153,32 @@ private:
     GLuint whiteBuffer;
     GLuint particleTexture;
 
-    bool running;
-
     GalaxyModel* galaxyModel;
 
     NBodyText text;
     NBodyAxes axes;
 
     SceneData sceneData;
+
+    // state of auto rotate store
+    struct FloatState
+    {
+        glm::fquat orient;
+        glm::vec2 angleDiff;
+        double lastTime;
+        double floatTime; // time this float should last
+        float speed;
+        float radius;
+        float rSpeed;
+
+        FloatState() : orient(startOrientation),
+                       angleDiff(glm::vec2(0.0f, 0.0f)),
+                       lastTime(-FLT_MAX),
+                       floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
+                       speed(startFloatSpeed),
+                       radius(0.5f * startRadius),
+                       rSpeed(0.0f) { }
+    } floatState;
 
     enum DrawMode
     {
@@ -178,6 +227,7 @@ private:
         }
     } drawOptions;
 
+    bool running;
 
     void loadShaders();
     void createBuffers();
@@ -187,6 +237,8 @@ private:
     void drawParticlesTextured(const glm::mat4& modelMatrix);
     void drawParticlesPoints(const glm::mat4& modelMatrix);
     void loadColors();
+    void calculateModelToCameraMatrix(glm::mat4& matrix);
+    void newFloatDirection();
 
 public:
     NBodyGraphics(scene_t* scene, const VisArgs* args);
@@ -197,6 +249,7 @@ public:
     void drawAxes();
     void drawParticles(const glm::mat4& modelMatrix);
     bool readSceneData();
+    void floatMotion();
 
     void display();
     void mainLoop();
@@ -228,7 +281,7 @@ public:
         if (this->drawOptions.drawMode == TEXTURED_SPRITES)
         {
             float size = this->drawOptions.texturedSpritePointSize;
-            size *= 1.05f;
+            size *= pointSizeChangeFactor;
             if (size > 1000.0f)
             {
                 size = 1000.0f;
@@ -239,7 +292,7 @@ public:
         else
         {
             float size = this->drawOptions.pointPointSize;
-            size *= 1.05f;
+            size *= pointSizeChangeFactor;
             if (size > 200.0f)
             {
                 size = 200.0f;
@@ -254,7 +307,7 @@ public:
         if (this->drawOptions.drawMode == TEXTURED_SPRITES)
         {
             float size = this->drawOptions.texturedSpritePointSize;
-            size /= 1.05f;
+            size /= pointSizeChangeFactor;
             if (size < 1.0e-3f)
             {
                 size = 1.0e-3f;
@@ -266,7 +319,7 @@ public:
         {
             float size = this->drawOptions.pointPointSize;
 
-            size /= 1.05f;
+            size /= pointSizeChangeFactor;
             if (size < 1.0e-3f)
             {
                 size = 1.0e-3f;
@@ -304,6 +357,18 @@ public:
     void toggleFloatMode()
     {
         this->drawOptions.floatMode = !this->drawOptions.floatMode;
+    }
+
+    void increaseFloatSpeed()
+    {
+        this->floatState.speed *= floatSpeedChangeFactor;
+        this->floatState.speed = glm::clamp(this->floatState.speed, minFloatSpeed, maxFloatSpeed);
+    }
+
+    void decreaseFloatSpeed()
+    {
+        this->floatState.speed /= floatSpeedChangeFactor;
+        this->floatState.speed = glm::clamp(this->floatState.speed, minFloatSpeed, maxFloatSpeed);
     }
 
     void toggleOrigin()
@@ -351,12 +416,14 @@ static int getGLFWModifiers(GLFWwindow window)
 {
     int modifiers = 0;
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (   glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+        || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
     {
         modifiers |= glutil::MM_KEY_SHIFT;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+    if (   glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS
+        || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
     {
         modifiers |= glutil::MM_KEY_CTRL;
     }
@@ -401,8 +468,8 @@ static void mousePosHandler(GLFWwindow window, int x, int y)
          * and get constantly reset to the midpoint */
         glfwGetWindowSize(window, &w, &h);
 
-        if (    (x != w / 2 || y != h / 2)  /* Not midpoint */
-             && !(x == 0 && y == 0))        /* Not corner */
+        if (   !(x == w / 2 && y == h / 2)  /* Not midpoint */
+            && !(x == 0 && y == 0))         /* Not corner */
         {
             globalGraphicsContext->stop();
             return;
@@ -415,9 +482,7 @@ static void mousePosHandler(GLFWwindow window, int x, int y)
 static void scrollHandler(GLFWwindow window, int x, int y)
 {
     int direction = y > 0;
-    int modifiers = getGLFWModifiers(window);
-
-    viewPole.MouseWheel(direction, modifiers, glm::ivec2(x, y));
+    viewPole.MouseWheel(direction, getGLFWModifiers(window), glm::ivec2(x, y));
 }
 
 static void keyHandler(GLFWwindow window, int key, int pressed)
@@ -442,6 +507,7 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             ctx->toggleDrawInfo();
             break;
 
+        case GLFW_KEY_ESC:
         case GLFW_KEY_Q:
             ctx->stop();
             break;
@@ -462,7 +528,7 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             break;
 
         case GLFW_KEY_H:
-      //case '?':
+        case GLFW_KEY_SLASH: /* Same as question mark key */
             ctx->toggleHelp();
             break;
 
@@ -470,8 +536,16 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             ctx->toggleOrigin();
             break;
 
-        case GLFW_KEY_R: /* Toggle floating */
+        case GLFW_KEY_F: /* Toggle floating */
             ctx->toggleFloatMode();
+            break;
+
+        case GLFW_KEY_Z:
+            ctx->increaseFloatSpeed();
+            break;
+
+        case GLFW_KEY_X:
+            ctx->decreaseFloatSpeed();
             break;
 
         case GLFW_KEY_P:
@@ -499,8 +573,9 @@ static void nbglSetHandlers()
     glfwSetScrollCallback(scrollHandler);
 }
 
-NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args) : drawOptions(args),
-                                                                    sceneData(SceneData((bool) scene->staticScene))
+NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args)
+    : sceneData(SceneData((bool) scene->staticScene)),
+      drawOptions(args)
 {
     this->scene = scene;
     this->loadShaders();
@@ -740,7 +815,7 @@ void NBodyGraphics::createPositionBuffer()
     GLint nbody = this->scene->nbody;
 
     glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
-	glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), NULL, GL_STREAM_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -850,14 +925,42 @@ void NBodyGraphics::prepareContext()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void NBodyGraphics::display()
+void NBodyGraphics::calculateModelToCameraMatrix(glm::mat4& matrix)
 {
-    glm::mat4 modelMatrix = viewPole.CalcMatrix();
+    // we skip using viewPole.CalcMatrix() because
+    // we want to combine the orientation directly from the view pole
+    // with the orientation we randomly generate while floating
+
+
+    // We should only get really close or really far away if manually zooming.
+    // The float radius should be kept < the current view radius
+    // It should stay a reasonable viewing distance if left on its own
+    float effRadius = 0.5f * (viewPole.GetView().radius + this->floatState.radius);
+
+    //In this space, we are facing in the correct direction. Which means that the camera point
+    //is directly behind us by the radius number of units.
+    matrix = glm::translate(identityMatrix, glm::vec3(0.0f, 0.0f, -effRadius));
+
+    //Rotate the world to look in the right direction..
+    glm::fquat totalOrientation = this->floatState.orient * viewPole.GetView().orient;
+    glm::fquat fullRotation = glm::angleAxis(-viewPole.GetView().degSpinRotation, zAxis) * totalOrientation;
+
+    matrix *= glm::mat4_cast(fullRotation);
+
+    //Translate the world by the negation of the lookat point, placing the origin at the
+    //lookat point.
 
     if (this->drawOptions.cmCentered)
     {
-        modelMatrix = glm::translate(modelMatrix, this->sceneData.centerOfMassView);
+        matrix = glm::translate(matrix, this->sceneData.centerOfMassView);
     }
+}
+
+void NBodyGraphics::display()
+{
+    glm::mat4 modelMatrix;
+
+    this->calculateModelToCameraMatrix(modelMatrix);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClearDepth(1.0);
@@ -895,8 +998,15 @@ void NBodyGraphics::mainLoop()
         {
             this->readSceneData();
         }
+
+        if (this->drawOptions.floatMode)
+        {
+            this->floatMotion();
+        }
+
         this->display();
         glfwSwapBuffers();
+
 
         double t2 = glfwGetTime();
 
@@ -907,6 +1017,59 @@ void NBodyGraphics::mainLoop()
             mwMilliSleep((int) dt);
         }
     }
+}
+
+void NBodyGraphics::newFloatDirection()
+{
+    glm::vec2& angleDiff = this->floatState.angleDiff;
+
+    angleDiff.x = glm::linearRand(0.0f, this->floatState.speed);
+    angleDiff.y = glm::linearRand(0.0f, this->floatState.speed);
+    angleDiff = this->floatState.speed * glm::normalize(angleDiff);
+
+    this->floatState.floatTime = glm::linearRand(minFloatTime, maxFloatTime);
+
+    // make sure we are trying to move out if close
+    if (this->floatState.radius <= 2.0f * minViewRadius)
+    {
+        this->floatState.rSpeed = glm::gaussRand(0.0f, maxRadialFloatSpeed);
+    }
+    else
+    {
+        // spend some periods at the same radius
+        if (rand() > RAND_MAX / 2)
+        {
+            this->floatState.rSpeed = glm::gaussRand(-maxRadialFloatSpeed, maxRadialFloatSpeed);
+        }
+        else
+        {
+            this->floatState.rSpeed = 0.0f;
+        }
+    }
+}
+
+void NBodyGraphics::floatMotion()
+{
+    const glm::vec2& diff = this->floatState.angleDiff;
+
+    this->floatState.orient = this->floatState.orient * glm::angleAxis(diff.x, yAxis);
+    this->floatState.orient = glm::angleAxis(diff.y, xAxis) * this->floatState.orient;
+
+    this->floatState.radius += this->floatState.rSpeed;
+    this->floatState.radius = glm::clamp(this->floatState.radius,
+                                         minViewRadius,
+                                         viewPole.GetView().radius);
+
+    double t = glfwGetTime();
+
+    if (t - this->floatState.lastTime < this->floatState.floatTime)
+    {
+        return;
+    }
+
+    this->floatState.lastTime = t;
+
+    this->newFloatDirection();
 }
 
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
