@@ -329,8 +329,6 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 find_package(OpenCL)
 find_package(OpenMP)
 find_package(OpenGL)
-find_Package(GLFW)
-find_package(GLUT)
 find_package(Curses)
 find_package(OpenSSL)
 
@@ -349,7 +347,7 @@ cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
                                     "OPENMP_FOUND" OFF)
 
 cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
-                                "OPENGL_FOUND;OPENGL_GLU_FOUND;GLUT_FOUND" OFF)
+                                "OPENGL_FOUND;OPENGL_GLU_FOUND" OFF)
 
 
 print_separator()
@@ -362,6 +360,9 @@ add_subdirectory(tools)
 add_subdirectory(popt)
 add_subdirectory(lua)
 
+add_subdirectory(dSFMT)
+add_definitions("${DSFMT_FLAGS}")
+
 if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
 endif()
@@ -369,6 +370,19 @@ endif()
 add_subdirectory(openpa)
 
 if(NBODY_GL)
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glfw/CMakeLists.txt)
+    message(FATAL_ERROR "GLFW submodule is missing. Did you forget to git submodule init; git submodule update?")
+  endif()
+
+  add_subdirectory(glfw)
+  set(GLFW_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/glfw/include")
+  set(GLFW_LIBRARY libglfwStatic)
+  # TODO: We require 10.7 on OS X to use OpenGL 3.2
+  # Also The 10.7 Cocoa headers also require clang or Apple llvm-gcc If we're using
+  # macports gcc we can build glfw as an external project with the
+  # other compiler
+
+
   if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glm/CMakeLists.txt)
     message(FATAL_ERROR "GLM submodule is missing. Did you forget to git submodule init; git submodule update?")
   endif()
@@ -377,9 +391,6 @@ if(NBODY_GL)
   find_package(GLM)
 endif()
 
-
-add_subdirectory(dSFMT)
-add_definitions("${DSFMT_FLAGS}")
 
 if(BOINC_APPLICATION)
   if(EXISTS ${PROJECT_SOURCE_DIR}/boinc/boinc/api/boinc_api.cpp)  # The submodule is there

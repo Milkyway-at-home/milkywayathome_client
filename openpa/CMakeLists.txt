@@ -215,6 +215,9 @@ set(opa_headers include/opa_primitives.h
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/opa_config.h.in ${PROJECT_INCLUDE_DIR}/opa_config.h)
 
+set(OPA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "OPA headers")
+set(OPA_LIBRARY opa CACHE INTERNAL "OPA library")
+
 include_directories(${OPA_INCLUDE_DIR})
 include_directories(${PROJECT_INCLUDE_DIR})
 
@@ -223,6 +226,4 @@ add_library(opa ${opa_src} ${opa_headers})
 
 add_subdirectory(test EXCLUDE_FROM_ALL)
 
-set(OPA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "OPA headers")
-set(OPA_LIBRARY opa CACHE INTERNAL "OPA library")
 

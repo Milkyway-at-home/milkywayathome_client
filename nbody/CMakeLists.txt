@@ -356,10 +356,17 @@ if(NBODY_GL)
                                 PROPERTIES COMPILE_FLAGS "-x objective-c")
   endif()
 
-  set(vis_link_libs milkyway ${OPA_LIBRARY} ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB})
+  set(vis_link_libs milkyway ${OPA_LIBRARY} ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES})
+  if(APPLE)
+    find_library(COCOA_FRAMEWORK Cocoa)
+    find_library(IOKIT_FRAMEWORK IOKit)
+    list(APPEND vis_link_libs ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK})
+  endif()
+
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
   endif()
+
   if(HAVE_LIBRT)
     list(APPEND vis_link_libs rt)
   endif()
