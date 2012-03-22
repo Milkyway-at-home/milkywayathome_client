@@ -22,12 +22,13 @@
 #define _NBODY_GL_TEXT_H_
 
 #include "nbody_config.h"
+
 #include "nbody_gl_includes.h"
-#include <vector>
 #include "nbody_graphics.h"
 #include "nbody_gl_private.h"
-#include "Ubuntu-R.h"
+#include "Roboto_Regular_12.h"
 
+#include <vector>
 
 struct TextPen
 {
@@ -82,6 +83,7 @@ private:
     /* Text which may change every frame */
     NBodyTextItem* varText;
     NBodyTextItem* constText;
+    const texture_font_t* font;
     GLuint textTexture;
 
     TextPen penEndConst;
@@ -104,7 +106,7 @@ public:
     void prepareConstantText(const scene_t* scene);
     void drawProgressText(const SceneData& sceneData);
 
-    NBodyText();
+    NBodyText(const texture_font_t* textFont);
     ~NBodyText();
 };
 

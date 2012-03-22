@@ -552,20 +552,26 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
     }
 }
 
+static void charHandler(GLFWwindow window, int code)
+{
+    printf("CHAR %d: %c\n", code, code);
+}
+
 static void nbglSetHandlers()
 {
     glfwSetWindowSizeCallback(resizeHandler);
     glfwSetWindowCloseCallback(closeHandler);
 
     glfwSetKeyCallback(keyHandler);
-    //glfwSetKeyCallback(charHandler);
+    glfwSetCharCallback(charHandler);
     glfwSetMouseButtonCallback(mouseButtonHandler);
     glfwSetMousePosCallback(mousePosHandler);
     glfwSetScrollCallback(scrollHandler);
 }
 
 NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args)
-    : sceneData(SceneData((bool) scene->staticScene)),
+    : text(NBodyText(&robotoRegular12)),
+      sceneData(SceneData((bool) scene->staticScene)),
       drawOptions(args)
 {
     this->scene = scene;
@@ -695,7 +701,6 @@ bool NBodyGraphics::readSceneData()
 
 void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
 {
-    assert(glGetError() == GL_NO_ERROR);
     glPointSize(this->drawOptions.texturedSpritePointSize);
     glUseProgram(this->particleTextureProgram.program);
     glUniformMatrix4fv(this->particleTextureProgram.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
@@ -815,8 +820,6 @@ void NBodyGraphics::loadColors()
     GLint nbody = this->scene->nbody;
 
     /* assign random particle colors */
-    srand((unsigned int) time(NULL));
-
     Color* color = new Color[nbody];
 
     for (GLint i = 0; i < nbody; ++i)
@@ -1131,6 +1134,9 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
     }
 
     nbglSetSceneSettings(scene, args);
+
+
+    srand((unsigned int) time(NULL));
 
     try
     {

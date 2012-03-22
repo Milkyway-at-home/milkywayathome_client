@@ -96,11 +96,12 @@ void NBodyTextItem::addText(const wchar_t* text, TextPen& pen)
             continue;
         }
 
-        int charIdx = text[i] - 32;
+        int charIdx = text[i] - 32 + 1;
         // We only use ASCII characters in the correct order
-        if (charIdx >= 0 && charIdx < 96)
+        // + 1 for -1 character at start
+        if (charIdx > 0 && charIdx < 96 + 1)
         {
-            const texture_glyph_t* glyph = &font->glyphs[charIdx];
+            const texture_glyph_t* glyph = &this->font->glyphs[charIdx];
             float kerning = 0.0;
             if (i > 0)
             {
@@ -169,13 +170,15 @@ void NBodyText::loadShader()
     this->textProgram.cameraToClipMatrixLoc = glGetUniformLocation(this->textProgram.program, "cameraToClipMatrix");
 }
 
-NBodyText::NBodyText()
+NBodyText::NBodyText(const texture_font_t* textFont)
 {
+    this->font = textFont;
+
     this->loadShader();
     this->loadTextTexture();
 
-    this->varText = new NBodyTextItem(this->textProgram.positionLoc, &ubuntuFontR);
-    this->constText = new NBodyTextItem(this->textProgram.positionLoc, &ubuntuFontR);
+    this->varText = new NBodyTextItem(this->textProgram.positionLoc, font);
+    this->constText = new NBodyTextItem(this->textProgram.positionLoc, font);
 }
 
 NBodyText::~NBodyText()
@@ -259,8 +262,6 @@ void NBodyText::prepareConstantText(const scene_t* scene)
 
 void NBodyText::loadTextTexture()
 {
-    const texture_font_t* font = &ubuntuFontR;
-
     glGenTextures(1, &this->textTexture);
     glBindTexture(GL_TEXTURE_2D, this->textTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
