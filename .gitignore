@@ -54,6 +54,8 @@ thirdparty
 a.out
 *.diff
 bin/
+lib/
+include/
 build
 popt/configmake.h
 separation/tests/stars/
@@ -93,3 +95,5 @@ replace_amd_il
 *.bin
 *.out
 *.ps
+*.plist
+*.app
