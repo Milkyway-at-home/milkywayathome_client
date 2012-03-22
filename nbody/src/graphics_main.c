@@ -278,17 +278,17 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
     return failed;
 }
 
-static int nbglBoincGraphicsInit()
+static int nbglBoincGraphicsInit(int debug)
 {
-#if BOINC_APPLICATION
-    if (boinc_parse_init_data_file())
+    if (BOINC_APPLICATION)
     {
-        mw_printf("Error parsing init data file\n");
+        MWInitType type = MW_GRAPHICS | (debug ? MW_DEBUG : 0);
+        if (mwBoincInit(type))
+        {
+            mw_printf("BOINC graphics init failed\n");
+            return 1;
+        }
     }
-
-    if (mwBoincInit(MW_GRAPHICS))
-        return 1;
-#endif /* BOINC_APPLICATION */
 
     return 0;
 }
@@ -463,12 +463,15 @@ static scene_t* nbglAttemptConnectSharedScene(void)
 static scene_t* nbglConnectSharedScene(int instanceId)
 {
     int tries = 0;
+    scene_t* scene = NULL;
+
+    (void) instanceId;
 
     while (tries < MAX_TRIES)
     {
         if ((scene = nbglAttemptConnectSharedScene()))
         {
-            return NULL; /* Error if something already attached */
+            return scene; /* Error if something already attached */
         }
 
         mwMilliSleep(RETRY_INTERVAL);
@@ -556,7 +559,7 @@ int main(int argc, const char* argv[])
     VisArgs flags;
     scene_t* scene = NULL;
 
-    if (nbglBoincGraphicsInit())
+    if (nbglBoincGraphicsInit(FALSE))
         return 1;
 
     if (nbglHandleVisArguments(argc, (const char**) argv, &flags))
