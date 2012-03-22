@@ -375,8 +375,6 @@ if(NBODY_GL)
   set(GLM_PACKAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/glm/util)
   find_package(GLM)
-
-  add_subdirectory(glsdk)
 endif()
 
 

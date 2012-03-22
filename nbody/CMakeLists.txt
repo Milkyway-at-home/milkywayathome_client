@@ -47,6 +47,7 @@ endif()
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
   include_directories(${GLFW_INCLUDE_DIR})
+  include_directories(${GLM_INCLUDE_DIR})
 endif()
 
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
@@ -329,6 +330,7 @@ if(NBODY_GL)
                             ${NBODY_SRC_DIR}/nbody_gl_galaxy_model.cpp
                             ${NBODY_SRC_DIR}/nbody_particle_texture.cpp
                             ${NBODY_SRC_DIR}/nbody_milkyway_image.c
+                            ${NBODY_SRC_DIR}/MousePoles.cpp
                             ${NBODY_SRC_DIR}/graphics_main.c)
 
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
@@ -340,6 +342,7 @@ if(NBODY_GL)
                                 ${NBODY_INCLUDE_DIR}/nbody_particle_texture.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_shaders.h
                                 ${NBODY_INCLUDE_DIR}/nbody_milkyway_image.h
+                                ${NBODY_INCLUDE_DIR}/MousePoles.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_private.h)
 
   if(APPLE AND FALSE)
@@ -352,8 +355,8 @@ if(NBODY_GL)
                                 LANGUAGE C
                                 PROPERTIES COMPILE_FLAGS "-x objective-c")
   endif()
-#  find_library(CG_LIB CoreGraphics)
-  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB} ${OPA_LIBRARY})
+
+  set(vis_link_libs milkyway ${OPA_LIBRARY} ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES} ${COCOA_LIB})
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
   endif()
@@ -375,15 +378,14 @@ if(NBODY_GL)
   add_inline_shader(nbody_gl_inline_srcs "axes" "fragment")
   add_library(nbody_shaders STATIC ${nbody_gl_inline_srcs})
 
-#  set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mycompany.\${PRODUCT_NAME:identifier}")
+  #set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.rpi.cs.milkyway.\${PRODUCT_NAME:milkyway_nbody_graphics}")
+  set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.rpi.cs.milkyway")
+  set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${nbody_VERSION_MAJOR}.${nbody_VERSION}")
+  set(MACOSX_BUNDLE_BUNDLE_VERSION 3.0)
 
-  #add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})
-#  add_executable(milkyway_nbody_graphics ${NBODY_SRC_DIR}/nbody_gl.cpp ${NBODY_SRC_DIR}/zpr.cpp)
-#  add_executable(milkyway_nbody_graphics MACOSX_BUNDLE ${NBODY_SRC_DIR}/graphics_main.c ${NBODY_SRC_DIR}/nbody_gl.cpp)
-
-#
+  #add_executable(milkyway_nbody_graphics MACOSX_BUNDLE ${nbody_screensaver_src} ${nbody_screensaver_headers} )
   add_executable(milkyway_nbody_graphics  ${nbody_screensaver_src} ${nbody_screensaver_headers} )
-  target_link_libraries(milkyway_nbody_graphics nbody_shaders /opt/local/lib/libGLEW.a ${vis_link_libs} glutil glload ${FREETYPE_GL_LIBRARY} /opt/local/lib/libfreetype.dylib)
+  target_link_libraries(milkyway_nbody_graphics nbody_shaders ${vis_link_libs})
 endif()
 
 
@@ -414,6 +416,7 @@ if(INSTALL_BOINC)
   install_boinc(milkyway_nbody)
 else()
     install(TARGETS milkyway_nbody
+            BUNDLE DESTINATION bin
             RUNTIME DESTINATION bin)
 endif()
 
