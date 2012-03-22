@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "nbody_hernq.h"
 
-real hernqMassInsideRadius(real radius, real radius_scale, real a, real mass)
+static real hernqMassInsideRadius(real radius, real radius_scale, real a, real mass)
 {
     //Returns that mass inside a certain radius
     radius = radius / radius_scale;
@@ -36,13 +36,15 @@ real hernqMassInsideRadius(real radius, real radius_scale, real a, real mass)
 
 }
 
-real hernqNextRadius(real startRadius, real goalMass, real radius, real a, real mass)
+static real hernqNextRadius(real startRadius, real goalMass, real radius, real a, real mass)
 {
     // This is a scary function which returns the next radius limit
     // Do not use this code on client computers. It is slow inneficient
     // and well just dirty.
 
-    for (real test_radius = startRadius;; test_radius += (real)0.0001)
+    real test_radius;
+
+    for (test_radius = startRadius;; test_radius += (real)0.0001)
     {
         if (hernqMassInsideRadius(test_radius, radius, a, mass) >= goalMass)
         {
@@ -52,7 +54,7 @@ real hernqNextRadius(real startRadius, real goalMass, real radius, real a, real 
 }
 
 /* hernqPickShell: pick a random point on a sphere of specified radius. */
-mwvector hernqPickShell(dsfmt_t* dsfmtState, real rad)
+static mwvector hernqPickShell(dsfmt_t* dsfmtState, real rad)
 {
     real rsq, rsc;
     mwvector vec;
@@ -70,7 +72,7 @@ mwvector hernqPickShell(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-real hernqRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
+static real hernqRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
 {
     real rnd;
 
@@ -81,7 +83,7 @@ real hernqRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
     return (endradius - startradius) * rnd + startradius;
 }
 
-real hernqSelectFromG(dsfmt_t* dsfmtState)
+static real hernqSelectFromG(dsfmt_t* dsfmtState)
 {
     real x, y;
 
@@ -95,7 +97,7 @@ real hernqSelectFromG(dsfmt_t* dsfmtState)
     return x;
 }
 
-real hernqCalculateV(real r, real radius, real a, real mass)
+static real hernqCalculateV(real r, real radius, real a, real mass)
 {
     real v;
     mass = hernqMassInsideRadius(r, radius, a, mass);
@@ -104,7 +106,7 @@ real hernqCalculateV(real r, real radius, real a, real mass)
     return v;
 }
 
-mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
+static mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
 {
     mwvector pos;
 
@@ -114,7 +116,7 @@ mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real 
     return pos;
 }
 
-mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real radius, real a, real mass)
+static mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real radius, real a, real mass)
 {
     mwvector vel;
     real v;
@@ -192,16 +194,14 @@ int nbGenerateHernq(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
-            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
-            { "radius",        LUA_TNUMBER,   NULL,          TRUE,     &radius
-             },
-            { "a",          LUA_TNUMBER,   NULL,          TRUE,     &a
-             },
-            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
-            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity    },
-            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore      },
-            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng        },
+            { "nbody",    LUA_TNUMBER,   NULL,          TRUE,  &nbodyf   },
+            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &mass     },
+            { "radius",   LUA_TNUMBER,   NULL,          TRUE,  &radius   },
+            { "a",        LUA_TNUMBER,   NULL,          TRUE,  &a        },
+            { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position },
+            { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity },
+            { "ignore",   LUA_TBOOLEAN,  NULL,          FALSE, &ignore   },
+            { "prng",     LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng     },
             END_MW_NAMED_ARG
         };
 
