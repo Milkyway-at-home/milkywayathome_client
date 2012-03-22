@@ -366,8 +366,17 @@ if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
 endif()
 
+add_subdirectory(openpa)
+
 if(NBODY_GL)
-  add_subdirectory(openpa)
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glm/CMakeLists.txt)
+    message(FATAL_ERROR "GLM submodule is missing. Did you forget to git submodule init; git submodule update?")
+  endif()
+  set(GLM_PACKAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
+  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/glm/util)
+  find_package(GLM)
+
+  add_subdirectory(glsdk)
 endif()
 
 
