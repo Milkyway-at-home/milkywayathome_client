@@ -39,7 +39,7 @@
 #define NBODY_QUEUE_SLEEP_INTERVAL 16
 
 /* Number of seconds to wait before giving up on waiting for graphics */
-#define NBODY_QUEUE_TIMEOUT 60.0
+#define NBODY_QUEUE_TIMEOUT 5.0
 
 typedef struct
 {

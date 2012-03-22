@@ -1,22 +1,22 @@
 /*
-Copyright (c) 2011 Matthew Arsenault
-Copyright (c) 2011 Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2011 Rensselaer Polytechnic Institute.
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "nbody.h"
 #include "nbody_priv.h"
@@ -28,12 +28,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_defaults.h"
 
 #if USE_SHMEM
-  #include <sys/mman.h>
-  #include <sys/stat.h>
-  #include <fcntl.h>
+  #if HAVE_SYS_MMAN_H
+    #include <sys/mman.h>
+  #endif
+
+  #if HAVE_SYS_STAT_H
+    #include <sys/stat.h>
+  #endif
+
+  #if HAVE_FCNTL_H
+    #include <fcntl.h>
+  #endif
+
   #include <errno.h>
   #include <err.h>
-#endif
+#endif /* USE_SHMEM */
 
 
 /* Not actually necessary, but checking the next available one too
@@ -377,7 +386,7 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
 */
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b) schedule(static)
+    #pragma omp parallel for private(i, b) shared(r) schedule(static)
   #endif
     for (i = 0; i < nbody; ++i)
     {
@@ -410,19 +419,20 @@ static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, c
 
 void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
+    int pid;
     scene_t* scene = st->scene;
 
     if (!scene)
         return;
 
     /* No copying when no screensaver attached */
-    if (OPA_load_int(&scene->attachedPID) != 0)
+    pid = OPA_load_int(&scene->attachedPID);
+    if (pid != 0)
     {
         if (OPA_load_int(&scene->blockSimulationOnGraphics))
         {
+            double dt = -1.0f;
             double startTime = mwGetTime();
-            double dt;
-            int pid;
 
             /* FIXME: This needs to change if we allow changing
              * whether the simulation should block
@@ -433,19 +443,20 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 
             while (   !nbPushCircularQueue(&scene->queue, ctx, st)
                    && ((pid = OPA_load_int(&scene->attachedPID)) != 0)
-                   && (dt = mwGetTime() - startTime) < NBODY_QUEUE_TIMEOUT)
+                   && ((dt = mwGetTime() - startTime) < NBODY_QUEUE_TIMEOUT))
             {
                 mwMilliSleep(NBODY_QUEUE_SLEEP_INTERVAL);
             }
 
-            if (dt >= NBODY_QUEUE_TIMEOUT)
-            {
-                mw_printf("Blocking on graphics timed out\n");
-            }
-
             if (pid == 0)
             {
-                mw_printf("Graphics process quit while waiting\n");
+                /* Don't trust that dt was assigned to */
+                mw_report("Graphics process quit while waiting (waited %f seconds)\n", mwGetTime() - startTime);
+            }
+
+            if (dt >= NBODY_QUEUE_TIMEOUT)
+            {
+                mw_report("Blocking on graphics timed out (%f seconds)\n", dt);
             }
         }
         else
