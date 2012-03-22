@@ -5,6 +5,8 @@
 [submodule "glm"]
 	path = glm
 	url = git://github.com/Groovounet/glm.git
+	ignore = dirty
 [submodule "glfw"]
 	path = glfw
 	url = git://github.com/elmindreda/glfw.git
+	ignore = dirty
