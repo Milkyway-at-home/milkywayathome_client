@@ -31,6 +31,108 @@
   #include <errno.h>
 #endif /* !BOINC_APPLICATION */
 
+static void nbglPrintCopyright(void)
+{
+    mw_printf(
+        "Milkyway@Home N-body graphics client %d.%d\n\n"
+        "Copyright (c) 2012 Matthew Arsenault\n"
+        "\n"
+        "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+        "This is free software: you are free to change and redistribute it.\n"
+        "There is NO WARRANTY, to the extent permitted by law.\n"
+        "\n"
+        " Incorporates works covered by the following copyright and\n"
+        " permission notices:\n"
+        "\n"
+        "--------------------------------------------------------------------------------\n"
+        "Milkyway image courtesy NASA/JPL-Caltech.\n"
+        "--------------------------------------------------------------------------------\n"
+        "Font: Roboto Regular Copyright (c) 2008 The Android Open Source Project (Apache 2.0)\n"
+        "--------------------------------------------------------------------------------\n"
+        "This software contains source code provided by NVIDIA Corporation.\n"
+        "--------------------------------------------------------------------------------\n"
+        "GLM: Copyright (c) 2005 - 2012 G-Truc Creation\n"
+        "glutil: Copyright (c) 2011 by Jason L. McKesson\n"
+        "\n"
+        "The MIT License\n"
+        "\n"
+        " Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+        " of this software and associated documentation files (the \"Software\"), to deal\n"
+        " in the Software without restriction, including without limitation the rights\n"
+        " to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+        " copies of the Software, and to permit persons to whom the Software is\n"
+        " furnished to do so, subject to the following conditions:\n"
+        "\n"
+        " The above copyright notice and this permission notice shall be included in\n"
+        " all copies or substantial portions of the Software.\n"
+        "\n"
+        " THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+        " IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+        " FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE\n"
+        " AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+        " LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+        " OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n"
+        " THE SOFTWARE.\n"
+        "\n"
+        "--------------------------------------------------------------------------------\n"
+        "GLFW - Free, open source, portable framework for OpenGL application development.\n"
+        "\n"
+        "Copyright (c) 2002-2006 Marcus Geelnard\n"
+        "Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>\n"
+        "\n"
+        "This software is provided 'as-is', without any express or implied\n"
+        "warranty. In no event will the authors be held liable for any damages\n"
+        "arising from the use of this software.\n"
+        "\n"
+        "Permission is granted to anyone to use this software for any purpose,\n"
+        "including commercial applications, and to alter it and redistribute it\n"
+        "freely, subject to the following restrictions:\n"
+        "\n"
+        "1. The origin of this software must not be misrepresented; you must not\n"
+        "   claim that you wrote the original software. If you use this software\n"
+        "   in a product, an acknowledgment in the product documentation would\n"
+        "   be appreciated but is not required.\n"
+        "\n"
+        "2. Altered source versions must be plainly marked as such, and must not\n"
+        "   be misrepresented as being the original software.\n"
+        "\n"
+        "3. This notice may not be removed or altered from any source\n"
+        "   distribution.\n"
+        "\n"
+        "--------------------------------------------------------------------------------\n"
+        "Freetype GL - A C OpenGL Freetype engine\n"
+        "\n"
+        "Copyright 2011, 2012 Nicolas P. Rougier. All rights reserved.\n"
+        "Redistribution and use in source and binary forms, with or without\n"
+        "modification, are permitted provided that the following conditions are met:\n"
+        "\n"
+        "  1. Redistributions of source code must retain the above copyright notice,\n"
+        "    this list of conditions and the following disclaimer.\n"
+        "\n"
+        "  2. Redistributions in binary form must reproduce the above copyright\n"
+        "    notice, this list of conditions and the following disclaimer in the\n"
+        "    documentation and/or other materials provided with the distribution.\n"
+        "\n"
+        "THIS SOFTWARE IS PROVIDED BY NICOLAS P. ROUGIER ''AS IS'' AND ANY EXPRESS OR\n"
+        "IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
+        "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO\n"
+        "EVENT SHALL NICOLAS P. ROUGIER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,\n"
+        "INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"
+        "(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"
+        "LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\n"
+        "ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+        "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
+        "THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+        " * The views and conclusions contained in the software and documentation are\n"
+        "those of the authors and should not be interpreted as representing official\n"
+        "policies, either expressed or implied, of Nicolas P. Rougier.\n"
+        "--------------------------------------------------------------------------------\n"
+        "\n",
+        NBODY_VERSION_MAJOR,
+        NBODY_VERSION_MINOR
+        );
+}
+
 
 static const VisArgs defaultVisArgs =
 {
@@ -59,6 +161,7 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
 {
     poptContext context;
     int failed = FALSE;
+    static int copyright = FALSE;
     static VisArgs visArgs;
 
     static const struct poptOption options[] =
@@ -138,6 +241,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             0, "Load from an output file (in Cartesian coordinates) and statically display", NULL
         },
 
+        {
+            "copyright", '\0',
+            POPT_ARG_NONE, &copyright,
+            0, "Print copyright information and exit", NULL
+        },
+
         POPT_AUTOHELP
         POPT_TABLEEND
     };
@@ -157,6 +266,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
     if (visArgs.instanceId < 0) /* Default to first */
     {
         visArgs.instanceId = 0;
+    }
+
+    if (copyright)
+    {
+        nbglPrintCopyright();
+        exit(0);
     }
 
     *visOut = visArgs;
