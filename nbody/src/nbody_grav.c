@@ -22,6 +22,7 @@
 #include "nbody_priv.h"
 #include "nbody_util.h"
 #include "nbody_grav.h"
+#include "milkyway_util.h"
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -129,8 +130,11 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector a, externAcc;
     const Body* b;
 
+    const Body* bodies = mw_assume_aligned(st->bodytab, 16);
+    mwvector* accels = mw_assume_aligned(st->acctab, 16);
+
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b, a, externAcc) schedule(dynamic)
+    #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic)
   #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
@@ -141,23 +145,23 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         {
             case EXTERNAL_POTENTIAL_DEFAULT:
                 /* Include the external potential */
-                b = &st->bodytab[i];
+                b = &bodies[i];
                 a = nbGravity(ctx, st, b);
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
                 mw_incaddv(a, externAcc);
-                st->acctab[i] = a;
+                accels[i] = a;
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
-                st->acctab[i] = nbGravity(ctx, st, &st->bodytab[i]);
+                accels[i] = nbGravity(ctx, st, &bodies[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
-                a = nbGravity(ctx, st, &st->bodytab[i]);
-                nbEvalPotentialClosure(st, Pos(&st->bodytab[i]), &externAcc);
+                a = nbGravity(ctx, st, &bodies[i]);
+                nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc)
-                st->acctab[i] = a;
+                accels[i] = a;
                 break;
 
             default:
@@ -197,29 +201,32 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     mwvector a, externAcc;
     const Body* b;
 
+    Body* bodies = mw_assume_aligned(st->bodytab, 16);
+    mwvector* accels = mw_assume_aligned(st->acctab, 16);
+
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b, a, externAcc) schedule(dynamic)
+    #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic)
   #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         switch (ctx->potentialType)
         {
             case EXTERNAL_POTENTIAL_DEFAULT:
-                b = &st->bodytab[i];
+                b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b)));
-                st->acctab[i] = a;
+                accels[i] = a;
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
-                st->acctab[i] = nbGravity_Exact(ctx, st, &st->bodytab[i]);
+                accels[i] = nbGravity_Exact(ctx, st, &bodies[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
-                a = nbGravity_Exact(ctx, st, &st->bodytab[i]);
-                nbEvalPotentialClosure(st, Pos(&st->bodytab[i]), &externAcc);
+                a = nbGravity_Exact(ctx, st, &bodies[i]);
+                nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc);
-                st->acctab[i] = a;
+                accels[i] = a;
                 break;
 
             default:

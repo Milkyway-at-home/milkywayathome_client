@@ -136,12 +136,16 @@ static void threadTree(NBodyNode* p, NBodyNode* n)
         for (i = 0; i < NSUB; ++i)              /* loop over subnodes */
         {
             if (Subp(p)[i] != NULL)             /* found a live one? */
+            {
                 desc[ndesc++] = Subp(p)[i];     /* store in table */
+            }
         }
         More(p) = desc[0];                      /* link to first child */
         desc[ndesc] = n;                        /* end table with next */
         for (i = 0; i < ndesc; i++)             /* loop over children */
-            threadTree(desc[i], desc[i+1]);     /* thread each w/ next */
+        {
+            threadTree(desc[i], desc[i + 1]);     /* thread each w/ next */
+        }
     }
 }
 

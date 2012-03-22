@@ -144,7 +144,7 @@ typedef struct MW_ALIGN_TYPE
     NBodyNode cellnode;         /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
     NBodyNode* more;            /* link to first descendent */
-    union                       /* shared storage for... */
+    union MW_ALIGN_V(16)        /* shared storage for... */
     {
         NBodyNode* subp[NSUB];  /* descendents of cell */
         NBodyQuadMatrix quad;   /* quad. moment of cell. Unique symmetric matrix components */

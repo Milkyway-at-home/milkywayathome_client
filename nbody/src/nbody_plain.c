@@ -99,14 +99,16 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
 {
     int i;
     real dtHalf = 0.5 * dt;
+    Body* bodies = mw_assume_aligned(st->bodytab, 16);
+    const mwvector* accs = mw_assume_aligned(st->acctab, 16);
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i) schedule(static)
+    #pragma omp parallel for private(i) shared(bodies, accs) schedule(guided)
   #endif
     for (i = 0; i < nbody; ++i)
     {
-        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dtHalf);
-        bodyAdvancePos(&st->bodytab[i], dt);
+        bodyAdvanceVel(&bodies[i], accs[i], dtHalf);
+        bodyAdvancePos(&bodies[i], dt);
     }
 }
 
@@ -114,12 +116,17 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 {
     int i;
     real dtHalf = 0.5 * dt;
+    Body* bodies = mw_assume_aligned(st->bodytab, 16);
+    const mwvector* accs = mw_assume_aligned(st->acctab, 16);
+
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i) schedule(static)
+    #pragma omp parallel for private(i) schedule(guided)
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
-        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dtHalf);
+    {
+        bodyAdvanceVel(&bodies[i], accs[i], dtHalf);
+    }
 }
 
 /* stepSystem: advance N-body system one time-step. */

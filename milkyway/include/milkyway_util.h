@@ -237,9 +237,16 @@ void mwDisableErrorBoxes(void);
 #ifdef __GNUC__
   #define mw_likely(x)    __builtin_expect((x), 1)
   #define mw_unlikely(x)  __builtin_expect((x), 0)
+
+  #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+    #define mw_assume_aligned(p, a) __builtin_assume_aligned(p, a)
+  #else
+    #define mw_assume_aligned(p, a) (p)
+  #endif
 #else
   #define mw_likely(x) (x)
   #define mw_unlikely(x) (x)
+  #define mw_assume_aligned(p, a) (p)
 #endif /* __GNUC__ */
 
 #ifdef __cplusplus

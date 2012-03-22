@@ -62,6 +62,10 @@ static real probabilities_intrinsics(const AstronomyParameters* ap,
     MW_ALIGN_V(16) double xyzstr[MAX_CONVOLVE];
   #endif
 
+    sg_dx = mw_assume_aligned(sg_dx, 16);
+    r_point = mw_assume_aligned(r_point, 16);
+    qw_r3_N = mw_assume_aligned(qw_r3_N, 16);
+
     const __m128d REF_XR   = mw_set1_pd(reff_xr_rp3);
     const __m128d COSBL    = mw_set1_pd(lbt.lCosBCos);
     const __m128d SINB     = mw_set1_pd(lbt.bSin);
