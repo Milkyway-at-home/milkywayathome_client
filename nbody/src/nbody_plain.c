@@ -103,13 +103,14 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i) shared(bodies, accs) schedule(guided)
+    #pragma omp parallel for private(i) shared(bodies, accs) schedule(dynamic, 4096 / sizeof(accs[0]))
   #endif
     for (i = 0; i < nbody; ++i)
     {
         bodyAdvanceVel(&bodies[i], accs[i], dtHalf);
         bodyAdvancePos(&bodies[i], dt);
     }
+
 }
 
 static inline void advanceVelocities(NBodyState* st, const int nbody, const real dt)
@@ -119,9 +120,8 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
 
-
   #ifdef _OPENMP
-    #pragma omp parallel for private(i) schedule(guided)
+    #pragma omp parallel for private(i) schedule(dynamic, 4096 / sizeof(accs[0]))
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
     {

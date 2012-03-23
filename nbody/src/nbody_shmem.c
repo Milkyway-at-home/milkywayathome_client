@@ -331,7 +331,7 @@ void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
         scene->step = FALSE;
 
       #ifdef _OPENMP
-        #pragma omp parallel for private(i, b) schedule(static)
+        #pragma omp parallel for private(i, b) schedule(guided, 4096 / sizeof(Body))
       #endif
         for (i = 0; i < nbody; ++i)
         {
