@@ -20,11 +20,7 @@
 #ifndef _NBODY_GL_UTIL_H_
 #define _NBODY_GL_UTIL_H_
 
-#ifdef __APPLE__
-  #include <OpenGL/gl.h>
-#else
-  #include <GL/gl.h>
-#endif
+#include "nbody_gl_includes.h"
 
 
 #ifdef __cplusplus

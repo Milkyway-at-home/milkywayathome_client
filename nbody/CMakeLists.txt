@@ -356,12 +356,24 @@ if(NBODY_GL)
                                 PROPERTIES COMPILE_FLAGS "-x objective-c")
   endif()
 
+  # It would be better to get GLFW_LIBRARIES from the glfw build
   set(vis_link_libs milkyway ${OPA_LIBRARY} ${POPT_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARIES})
   if(APPLE)
     find_library(COCOA_FRAMEWORK Cocoa)
     find_library(IOKIT_FRAMEWORK IOKit)
     list(APPEND vis_link_libs ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK})
+  elseif(UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+    list(APPEND vis_link_libs ${X11_X11_LIB})
+    if (X11_Xrandr_FOUND)
+      list(APPEND vis_link_libs ${X11_Xrandr_LIB})
+    endif()
+
+    if (X11_xf86vmode_FOUND)
+      list(APPEND vis_link_libs Xxf86vm)
+    endif()
   endif()
+
 
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})

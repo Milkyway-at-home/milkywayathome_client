@@ -370,11 +370,17 @@ endif()
 add_subdirectory(openpa)
 
 if(NBODY_GL)
+  if(NOT APPLE)
+    set(OPENGL3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
+    include_directories(${OPENGL3_INCLUDE_DIR})
+  endif()
+
   if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glfw/CMakeLists.txt)
     message(FATAL_ERROR "GLFW submodule is missing. Did you forget to git submodule init; git submodule update?")
   endif()
 
   add_subdirectory(glfw)
+
   set(GLFW_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/glfw/include")
   set(GLFW_LIBRARY libglfwStatic)
   # TODO: We require 10.7 on OS X to use OpenGL 3.2

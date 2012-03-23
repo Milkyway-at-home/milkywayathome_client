@@ -20,6 +20,7 @@
 #ifndef _NBODY_GL_INCLUDES_H_
 #define _NBODY_GL_INCLUDES_H_
 
+#define GL3_PROTOTYPES
 #define GLFW_INCLUDE_GL3 1
 #define GLFW_NO_GLU 1
 #include <GL/glfw3.h>
@@ -38,8 +39,7 @@
 #include <glm/gtc/random.hpp>
 #include <glm/gtx/fast_square_root.hpp>
 #include <glm/gtx/quaternion.hpp>
-//#include <glload/gl_3_3.h>
-//#include <glutil/glutil.h>
+
 #include "MousePoles.h"
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)

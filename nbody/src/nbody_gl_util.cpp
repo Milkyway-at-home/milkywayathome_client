@@ -17,11 +17,12 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "nbody_gl_util.h"
+#include "nbody_gl_includes.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <stdexcept>
-#include "nbody_gl_util.h"
-#include "nbody_gl_includes.h"
 
 static void nbglGetProgramLog(GLuint program, const char* name)
 {
