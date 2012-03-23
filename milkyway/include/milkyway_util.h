@@ -234,6 +234,9 @@ int mwDisableDenormalsSSE(void);
 unsigned long long mwFixFPUPrecision(void);
 void mwDisableErrorBoxes(void);
 
+int mwProcessIsAlive(int pid);
+
+
 #ifdef __GNUC__
   #define mw_likely(x)    __builtin_expect((x), 1)
   #define mw_unlikely(x)  __builtin_expect((x), 0)
