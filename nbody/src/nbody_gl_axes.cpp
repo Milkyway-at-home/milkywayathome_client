@@ -22,6 +22,8 @@
 #include "nbody_gl_util.h"
 #include "nbody_gl_private.h"
 
+#define AXES_LENGTH 10.0f
+
 NBodyAxes::NBodyAxes()
 {
     this->loadShader();
@@ -53,10 +55,6 @@ void NBodyAxes::loadShader()
     this->axesProgramData.modelToCameraMatrixLoc = glGetUniformLocation(program, "modelToCameraMatrix");
     this->axesProgramData.cameraToClipMatrixLoc = glGetUniformLocation(program, "cameraToClipMatrix");
 }
-
-//#define AXES_LENGTH 10.0f
-//#define AXES_LENGTH 15.33f
-#define AXES_LENGTH 0.459899f
 
 void NBodyAxes::createBuffers()
 {

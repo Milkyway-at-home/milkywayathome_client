@@ -1052,14 +1052,14 @@ void NBodyGraphics::newFloatDirection()
     // make sure we are trying to move out if close
     if (this->floatState.radius <= 2.0f * minViewRadius)
     {
-        this->floatState.rSpeed = glm::gaussRand(0.0f, maxRadialFloatSpeed);
+        this->floatState.rSpeed = glm::linearRand(0.0f, maxRadialFloatSpeed);
     }
     else
     {
         // spend some periods at the same radius
         if (rand() > RAND_MAX / 2)
         {
-            this->floatState.rSpeed = glm::gaussRand(-maxRadialFloatSpeed, maxRadialFloatSpeed);
+            this->floatState.rSpeed = glm::linearRand(-maxRadialFloatSpeed, maxRadialFloatSpeed);
         }
         else
         {
