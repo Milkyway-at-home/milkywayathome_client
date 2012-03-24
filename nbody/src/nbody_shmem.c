@@ -57,6 +57,7 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->nbodyMajorVersion = NBODY_VERSION_MAJOR;
     st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
     st->scene->nbody = st->nbody;
+    st->scene->nSteps = ctx->nStep;
     st->scene->hasGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 }
 

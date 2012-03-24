@@ -26,7 +26,6 @@
 #define EXTERNC extern
 #endif
 
-
 EXTERNC unsigned char particle_vertex_glsl[];
 EXTERNC size_t particle_vertex_glsl_len;
 
@@ -42,6 +41,13 @@ EXTERNC size_t axes_vertex_glsl_len;
 
 EXTERNC unsigned char axes_fragment_glsl[];
 EXTERNC size_t axes_fragment_glsl_len;
+
+
+EXTERNC unsigned char orbit_trace_vertex_glsl[];
+EXTERNC size_t orbit_trace_vertex_glsl_len;
+
+EXTERNC unsigned char orbit_trace_fragment_glsl[];
+EXTERNC size_t orbit_trace_fragment_glsl_len;
 
 
 EXTERNC unsigned char galaxy_vertex_glsl[];

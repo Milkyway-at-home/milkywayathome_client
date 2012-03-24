@@ -23,8 +23,6 @@
 #include <stdint.h>
 #include <opa_primitives.h>
 
-#define MAX_DRAW_TRACE_POINTS 256
-
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 
@@ -73,6 +71,7 @@ typedef struct
     int nbodyMinorVersion;
 
     int nbody;
+    unsigned int nSteps;
     int hasGalaxy;
     int hasInfo;
     int staticScene;
@@ -86,9 +85,6 @@ typedef struct
       expense of slowing the simulation.
     */
     OPA_int_t blockSimulationOnGraphics;
-
-    OPA_int_t currentTracePoint;
-    FloatPos orbitTrace[MAX_DRAW_TRACE_POINTS];
 
     NBodyCircularQueue queue;
 } scene_t;

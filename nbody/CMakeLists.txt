@@ -327,6 +327,7 @@ if(NBODY_GL)
                             ${NBODY_SRC_DIR}/nbody_gl_util.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_text.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_axes.cpp
+                            ${NBODY_SRC_DIR}/nbody_gl_orbit_trace.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_galaxy_model.cpp
                             ${NBODY_SRC_DIR}/nbody_particle_texture.cpp
                             ${NBODY_SRC_DIR}/nbody_milkyway_image.c
@@ -338,6 +339,7 @@ if(NBODY_GL)
                                 ${NBODY_INCLUDE_DIR}/nbody_graphics.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_text.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_axes.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_orbit_trace.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_galaxy_model.h
                                 ${NBODY_INCLUDE_DIR}/nbody_particle_texture.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_shaders.h
@@ -395,6 +397,8 @@ if(NBODY_GL)
   add_inline_shader(nbody_gl_inline_srcs "text" "fragment")
   add_inline_shader(nbody_gl_inline_srcs "axes" "vertex")
   add_inline_shader(nbody_gl_inline_srcs "axes" "fragment")
+  add_inline_shader(nbody_gl_inline_srcs "orbit_trace" "vertex")
+  add_inline_shader(nbody_gl_inline_srcs "orbit_trace" "fragment")
   add_library(nbody_shaders STATIC ${nbody_gl_inline_srcs})
 
   #set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.rpi.cs.milkyway.\${PRODUCT_NAME:milkyway_nbody_graphics}")

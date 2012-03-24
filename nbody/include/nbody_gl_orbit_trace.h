@@ -17,43 +17,40 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_GL_H_
-#define _NBODY_GL_H_
+#ifndef _NBODY_GL_ORBIT_TRACE_H_
+#define _NBODY_GL_ORBIT_TRACE_H_
 
+#include "nbody_gl_includes.h"
 #include "nbody_graphics.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct
+class OrbitTrace
 {
-    int fullscreen;
-    int plainFullscreen;
-    int width;
-    int height;
-    int blockSimulation;
+private:
+    GLuint vao;
+    GLuint cmPosBuffer;
 
-    int monochrome;
-    int untexturedPoints;
-    int originCenter;
-    int drawAxes;
-    int drawOrbitTrace;
-    int noFloat;
+    struct OrbitTraceProgramData
+    {
+        GLuint program;
+        GLint cmPosLoc;
+        GLint modelToCameraMatrixLoc;
+        GLint cameraToClipMatrixLoc;
+    } progData;
 
-    int pid;
-    char* file;
-    int instanceId;
-} VisArgs;
+    unsigned int nPoints;
+    unsigned int maxPoints;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
+    void createBuffer();
+    void prepareVAO();
+    void loadShader();
 
-int nbglRunGraphics(scene_t* scene, const VisArgs* args);
+public:
+    void drawTrace(const glm::mat4& modelMatrix);
+    void addPoint(const GLfloat cm[3]);
 
-#ifdef __cplusplus
-}
-#endif
+    OrbitTrace(const scene_t* scene);
+    ~OrbitTrace();
+};
 
-#endif /* _NBODY_GL_H_ */
-
+#endif /* _NBODY_GL_ORBIT_TRACE_H_ */
 

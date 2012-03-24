@@ -24,6 +24,7 @@
 #include "nbody_graphics.h"
 #include "nbody_gl_util.h"
 #include "nbody_gl_axes.h"
+#include "nbody_gl_orbit_trace.h"
 #include "nbody_gl_text.h"
 #include "nbody_gl_galaxy_model.h"
 #include "nbody_gl_private.h"
@@ -148,6 +149,7 @@ private:
 
     NBodyText text;
     NBodyAxes axes;
+    OrbitTrace orbitTrace;
 
     SceneData sceneData;
 
@@ -191,9 +193,9 @@ private:
         float texturedSpritePointSize;
         float pointPointSize;
 
-        bool drawOrbitTrace;
         bool drawInfo;
         bool drawAxes;
+        bool drawOrbitTrace;
         bool drawParticles;
         bool drawHelp;
 
@@ -210,9 +212,9 @@ private:
             this->texturedSpritePointSize = 250.0f;
             this->pointPointSize = 5.0f;
 
-            this->drawOrbitTrace = false;
             this->drawInfo = true;
             this->drawAxes = (bool) args->drawAxes;
+            this->drawOrbitTrace = (bool) args->drawOrbitTrace;
             this->drawParticles = true;
             this->drawHelp = false;
         }
@@ -323,6 +325,11 @@ public:
     void toggleDrawAxes()
     {
         this->drawOptions.drawAxes = !this->drawOptions.drawAxes;
+    }
+
+    void toggleDrawOrbitTrace()
+    {
+        this->drawOptions.drawOrbitTrace = !this->drawOptions.drawOrbitTrace;
     }
 
     void toggleDrawInfo()
@@ -494,6 +501,10 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             ctx->toggleDrawAxes();
             break;
 
+        case GLFW_KEY_T:
+            ctx->toggleDrawOrbitTrace();
+            break;
+
         case GLFW_KEY_I:
             ctx->toggleDrawInfo();
             break;
@@ -571,6 +582,7 @@ static void nbglSetHandlers()
 
 NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args)
     : text(NBodyText(&robotoRegular12)),
+      orbitTrace(OrbitTrace(scene)),
       sceneData(SceneData((bool) scene->staticScene)),
       drawOptions(args)
 {
@@ -667,7 +679,11 @@ void NBodyGraphics::prepareVAOs()
     this->prepareColoredVAO(this->whiteParticleVAO, this->whiteBuffer);
 }
 
-static int nbPopCircularQueue(NBodyCircularQueue* queue, int nbody, GLuint positionBuffer, SceneData* sceneData)
+static int nbPopCircularQueue(NBodyCircularQueue* queue,
+                              int nbody,
+                              GLuint positionBuffer,
+                              SceneData* sceneData,
+                              OrbitTrace* trace)
 {
     int head = OPA_load_int(&queue->head);
     int tail = OPA_load_int(&queue->tail);
@@ -688,6 +704,9 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue, int nbody, GLuint posit
     sceneData->centerOfMassView = glm::vec3(-info->rootCenterOfMass[0],
                                             -info->rootCenterOfMass[1],
                                             -info->rootCenterOfMass[2]);
+
+    trace->addPoint(info->rootCenterOfMass);
+
     head = (head + 1) % NBODY_CIRC_QUEUE_SIZE;
     OPA_store_int(&queue->head, head);
     return TRUE;
@@ -696,7 +715,8 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue, int nbody, GLuint posit
 bool NBodyGraphics::readSceneData()
 {
     scene_t* scene = this->scene;
-    return (bool) nbPopCircularQueue(&scene->queue, scene->nbody, this->positionBuffer,  &this->sceneData);
+    return (bool) nbPopCircularQueue(&scene->queue, scene->nbody,
+                                     this->positionBuffer, &this->sceneData, &this->orbitTrace);
 }
 
 void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
@@ -903,13 +923,14 @@ void NBodyGraphics::prepareContext()
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE); // not sure what difference is between these
     glEnable(GL_PROGRAM_POINT_SIZE);
 
+    glEnable(GL_LINE_SMOOTH);
+
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    float maxSmoothPointSize[2];
-    glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, (GLfloat*) &maxSmoothPointSize);
-    printf("point size range %f %f\n", maxSmoothPointSize[0], maxSmoothPointSize[1]);
+    //float maxSmoothPointSize[2];
+    //glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, (GLfloat*) &maxSmoothPointSize);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -968,6 +989,11 @@ void NBodyGraphics::display()
     if (this->drawOptions.drawAxes)
     {
         this->axes.draw(modelMatrix);
+    }
+
+    if (this->drawOptions.drawOrbitTrace)
+    {
+        this->orbitTrace.drawTrace(modelMatrix);
     }
 
     if (this->drawOptions.drawParticles)

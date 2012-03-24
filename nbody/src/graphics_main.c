@@ -145,6 +145,7 @@ static const VisArgs defaultVisArgs =
     /* .untexturedPoints */ FALSE,
     /* .originCenter     */ FALSE,
     /* .drawAxes         */ FALSE,
+    /* .drawOrbitTrace   */ FALSE,
     /* .noFloat          */ FALSE,
     /* .pid              */ 0,
     /* .file             */ NULL,
@@ -206,7 +207,7 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "untextured-points", 't',
+            "untextured-points", 'T',
             POPT_ARG_NONE, &visArgs.untexturedPoints,
             0, "Use faster but possibly uglier drawing of points", NULL
         },
@@ -221,6 +222,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "show-axes", 'a',
             POPT_ARG_NONE, &visArgs.drawAxes,
             0, "Draw simple axes for reference", NULL
+        },
+
+        {
+            "show-orbit-trace", 't',
+            POPT_ARG_NONE, &visArgs.drawOrbitTrace,
+            0, "Show path of center of mass", NULL
         },
 
         {
