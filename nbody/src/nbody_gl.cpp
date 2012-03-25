@@ -49,6 +49,12 @@ static const glm::vec2 zeroVec2(0.0f, 0.0f);
 
 glm::mat4 cameraToClipMatrix(1.0f);
 
+static const float minPointPointSize = 1.0e-3f;
+static const float maxPointPointSize = 200.0f;
+
+static const float minTexturedPointSize = 1.0e-3f;
+static const float maxTexturedPointSize = 1000.0f;
+
 static const float pointSizeChangeFactor = 1.05f;
 
 // For access from callbacks
@@ -62,9 +68,9 @@ static const glm::fquat startOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
 static const float startRadius = 2.0f * 30.0f;
 
 // angular component only
-static const float startFloatSpeed = 0.2f;
+static const float startFloatSpeed = 0.9f;
 static const float minFloatSpeed = 1.0e-3f;
-static const float maxFloatSpeed = 10.0f;
+static const float maxFloatSpeed = 30.0f;
 static const float floatSpeedChangeFactor = 1.1f;
 
 
@@ -157,19 +163,21 @@ private:
     struct FloatState
     {
         glm::fquat orient;
-        glm::vec2 angleDiff;
+        glm::vec2 angle;
+        glm::vec2 angleVec;
         double lastTime;
         double floatTime; // time this float should last
-        float speed;
         float radius;
+        float speed;
         float rSpeed;
 
         FloatState() : orient(startOrientation),
-                       angleDiff(glm::vec2(0.0f, 0.0f)),
-                       lastTime(-FLT_MAX),
+                       angle(glm::vec2(0.0f, 0.0f)),
+                       angleVec(glm::vec2(0.0f, 0.0f)),
+                       lastTime(0.0f),
                        floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
+                       radius(0.0f),
                        speed(startFloatSpeed),
-                       radius(0.5f * startRadius),
                        rSpeed(0.0f) { }
     } floatState;
 
@@ -221,6 +229,7 @@ private:
     } drawOptions;
 
     bool running;
+    bool needsUpdate;
 
     void loadShaders();
     void createBuffers();
@@ -252,6 +261,16 @@ public:
         this->running = false;
     }
 
+    inline void markDirty()
+    {
+        this->needsUpdate = true;
+    }
+
+    inline void markClean()
+    {
+        this->needsUpdate = false;
+    }
+
     bool isScreensaver()
     {
         return this->drawOptions.screensaverMode;
@@ -259,6 +278,8 @@ public:
 
     void toggleDrawMode()
     {
+        this->markDirty();
+
         if (this->drawOptions.drawMode == POINTS)
         {
             this->drawOptions.drawMode = TEXTURED_SPRITES;
@@ -271,84 +292,74 @@ public:
 
     void increasePointSize()
     {
+        this->markDirty();
+
         if (this->drawOptions.drawMode == TEXTURED_SPRITES)
         {
             float size = this->drawOptions.texturedSpritePointSize;
-            size *= pointSizeChangeFactor;
-            if (size > 1000.0f)
-            {
-                size = 1000.0f;
-            }
-
+            size = glm::clamp(size * pointSizeChangeFactor, minTexturedPointSize, maxTexturedPointSize);
             this->drawOptions.texturedSpritePointSize = size;
         }
         else
         {
             float size = this->drawOptions.pointPointSize;
-            size *= pointSizeChangeFactor;
-            if (size > 200.0f)
-            {
-                size = 200.0f;
-            }
-
+            size = glm::clamp(size * pointSizeChangeFactor, minPointPointSize, maxPointPointSize);
             this->drawOptions.pointPointSize = size;
         }
     }
 
     void decreasePointSize()
     {
+        this->markDirty();
+
         if (this->drawOptions.drawMode == TEXTURED_SPRITES)
         {
             float size = this->drawOptions.texturedSpritePointSize;
-            size /= pointSizeChangeFactor;
-            if (size < 1.0e-3f)
-            {
-                size = 1.0e-3f;
-            }
-
+            size = glm::clamp(size / pointSizeChangeFactor, minTexturedPointSize, maxTexturedPointSize);
             this->drawOptions.texturedSpritePointSize = size;
         }
         else
         {
             float size = this->drawOptions.pointPointSize;
-
-            size /= pointSizeChangeFactor;
-            if (size < 1.0e-3f)
-            {
-                size = 1.0e-3f;
-            }
-
+            size = glm::clamp(size / pointSizeChangeFactor, minPointPointSize, maxPointPointSize);
             this->drawOptions.pointPointSize = size;
         }
     }
 
     void toggleDrawAxes()
     {
+        this->markDirty();
         this->drawOptions.drawAxes = !this->drawOptions.drawAxes;
     }
 
     void toggleDrawOrbitTrace()
     {
+        this->markDirty();
         this->drawOptions.drawOrbitTrace = !this->drawOptions.drawOrbitTrace;
     }
 
     void toggleDrawInfo()
     {
+        this->markDirty();
         this->drawOptions.drawInfo = !this->drawOptions.drawInfo;
     }
 
     void toggleHelp()
     {
+        this->markDirty();
         this->drawOptions.drawHelp = !this->drawOptions.drawHelp;
     }
 
     void toggleMonochromatic()
     {
+        this->markDirty();
         this->drawOptions.monochromatic = !this->drawOptions.monochromatic;
+        printf("Monochrome: %d\n", this->drawOptions.monochromatic);
     }
 
     void togglePaused()
     {
+        this->markDirty();
         this->drawOptions.paused = !this->drawOptions.paused;
     }
 
@@ -371,6 +382,7 @@ public:
 
     void toggleOrigin()
     {
+        this->markDirty();
         this->drawOptions.cmCentered = !this->drawOptions.cmCentered;
     }
 };
@@ -475,12 +487,15 @@ static void mousePosHandler(GLFWwindow window, int x, int y)
     }
 
     viewPole.MouseMove(glm::ivec2(x, y));
+
+    globalGraphicsContext->markDirty();
 }
 
 static void scrollHandler(GLFWwindow window, int x, int y)
 {
     int direction = y > 0;
     viewPole.MouseWheel(direction, getGLFWModifiers(window), glm::ivec2(x, y));
+    globalGraphicsContext->markDirty();
 }
 
 static void keyHandler(GLFWwindow window, int key, int pressed)
@@ -580,24 +595,24 @@ static void nbglSetHandlers()
     glfwSetScrollCallback(scrollHandler);
 }
 
-NBodyGraphics::NBodyGraphics(scene_t* scene, const VisArgs* args)
-    : text(NBodyText(&robotoRegular12)),
+NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
+    : scene(scene_),
+      text(NBodyText(&robotoRegular12)),
       orbitTrace(OrbitTrace(scene)),
       sceneData(SceneData((bool) scene->staticScene)),
-      drawOptions(args)
+      drawOptions(args),
+      running(true),
+      needsUpdate(true)
 {
-    this->scene = scene;
     this->loadShaders();
     this->createBuffers();
     this->prepareVAOs();
 
     this->createPositionBuffer();
-    this->loadColors();
+    this->loadColorsHSV();
     this->particleTexture = createParticleTexture(32);
 
     this->galaxyModel = scene->hasGalaxy ? new GalaxyModel() : NULL;
-
-    this->running = true;
 }
 
 NBodyGraphics::~NBodyGraphics()
@@ -679,6 +694,7 @@ void NBodyGraphics::prepareVAOs()
     this->prepareColoredVAO(this->whiteParticleVAO, this->whiteBuffer);
 }
 
+// return TRUE if something was popped from the queue, FALSE if it was empty
 static int nbPopCircularQueue(NBodyCircularQueue* queue,
                               int nbody,
                               GLuint positionBuffer,
@@ -715,8 +731,16 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue,
 bool NBodyGraphics::readSceneData()
 {
     scene_t* scene = this->scene;
-    return (bool) nbPopCircularQueue(&scene->queue, scene->nbody,
-                                     this->positionBuffer, &this->sceneData, &this->orbitTrace);
+    bool success;
+    success = (bool) nbPopCircularQueue(&scene->queue, scene->nbody,
+                                        this->positionBuffer, &this->sceneData, &this->orbitTrace);
+
+    if (success)
+    {
+        this->markDirty();
+    }
+
+    return success;
 }
 
 void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
@@ -1005,49 +1029,51 @@ void NBodyGraphics::display()
     {
         this->text.drawProgressText(this->sceneData);
     }
+
+    this->markClean();
 }
 
 void NBodyGraphics::mainLoop()
 {
+    static const int eventPollPeriod = (int) (1000.0 / 30.0);
+
     while (this->running)
     {
-        double t1 = glfwGetTime();
-
-        glfwPollEvents();
-        if (!this->drawOptions.paused)
+        while (!this->needsUpdate)
         {
-            this->readSceneData();
-        }
+            glfwPollEvents();
 
-        if (this->drawOptions.floatMode)
-        {
-            this->floatMotion();
+            if (!this->drawOptions.paused)
+            {
+                this->readSceneData();
+            }
+
+            if (this->drawOptions.floatMode)
+            {
+                this->floatMotion();
+            }
+
+            mwMilliSleep(eventPollPeriod);
         }
 
         this->display();
         glfwSwapBuffers();
-
-
-        double t2 = glfwGetTime();
-
-        double dt = t2 - t1;
-        dt = dt - (1.0 / 60.0);
-        if ((int) dt > 0)
-        {
-            mwMilliSleep((int) dt);
-        }
     }
 }
 
 void NBodyGraphics::newFloatDirection()
 {
-    glm::vec2& angleDiff = this->floatState.angleDiff;
+    glm::vec2& angleVec = this->floatState.angleVec;
 
-    angleDiff.x = glm::linearRand(0.0f, this->floatState.speed);
-    angleDiff.y = glm::linearRand(0.0f, this->floatState.speed);
-    angleDiff = this->floatState.speed * glm::normalize(angleDiff);
+    angleVec.x = glm::linearRand(0.0f, this->floatState.speed);
+    angleVec.y = glm::linearRand(0.0f, this->floatState.speed);
+    angleVec = glm::normalize(angleVec);
 
     this->floatState.floatTime = glm::linearRand(minFloatTime, maxFloatTime);
+
+    glm::vec2& angle = this->floatState.angle;
+    angle.x = std::fmod(angle.x, 360.0f);
+    angle.y = std::fmod(angle.y, 360.0f);
 
     // make sure we are trying to move out if close
     if (this->floatState.radius <= 2.0f * minViewRadius)
@@ -1070,26 +1096,34 @@ void NBodyGraphics::newFloatDirection()
 
 void NBodyGraphics::floatMotion()
 {
-    const glm::vec2& diff = this->floatState.angleDiff;
+    double t = glfwGetTime();
+    static double lastUpdateTime = 0.0;
+    double dt = t - lastUpdateTime;
+    lastUpdateTime = t;
+    float fdt = (float) dt;
 
-    this->floatState.orient = this->floatState.orient * glm::angleAxis(diff.x, yAxis);
-    this->floatState.orient = glm::angleAxis(diff.y, xAxis) * this->floatState.orient;
+    // CHECKME: are we concerned about error accumulation in adding
+    // the positions this way?
 
-    this->floatState.radius += this->floatState.rSpeed;
+    glm::vec2& angle = this->floatState.angle;
+    this->floatState.angle += this->floatState.speed * this->floatState.angleVec * fdt;
+
+    // TODO: Maybe projecting the final angle and then using glm::mix to interpolate?
+    this->floatState.orient = startOrientation * glm::angleAxis(angle.x, yAxis);
+    this->floatState.orient = glm::angleAxis(angle.y, xAxis) * this->floatState.orient;
+
+
+    this->floatState.radius += this->floatState.rSpeed * fdt;
     this->floatState.radius = glm::clamp(this->floatState.radius,
                                          minViewRadius,
                                          viewPole.GetView().radius);
-
-    double t = glfwGetTime();
-
-    if (t - this->floatState.lastTime < this->floatState.floatTime)
+    if (t - this->floatState.lastTime >= this->floatState.floatTime)
     {
-        return;
+        this->floatState.lastTime = t;
+        this->newFloatDirection();
     }
 
-    this->floatState.lastTime = t;
-
-    this->newFloatDirection();
+    this->markDirty();
 }
 
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
