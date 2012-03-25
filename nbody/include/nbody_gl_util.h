@@ -22,10 +22,14 @@
 
 #include "nbody_gl_includes.h"
 
+struct Color
+{
+    GLfloat r, g, b;
+    GLfloat ignore;
+};
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+void randomParticleColor(Color& rgb, bool ignore);
+
 
 GLuint nbglCreateProgram(const char* name,
                          const char* vertSrc,
@@ -34,10 +38,6 @@ GLuint nbglCreateProgram(const char* name,
                          GLint fragSrcLen);
 
 void nbglPrintGLVersionAndExts();
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _NBODY_GL_UTIL_H_ */
 

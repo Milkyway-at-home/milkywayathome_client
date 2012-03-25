@@ -142,3 +142,126 @@ void nbglPrintGLVersionAndExts()
     }
 }
 
+struct RGBColor
+{
+    GLfloat r, g, b;
+    RGBColor() : r(0.0f), g(0.0f), b(0.0f) { }
+    RGBColor(GLfloat rr, GLfloat gg, GLfloat bb) : r(rr), g(gg), b(bb) { }
+};
+
+struct HSVColor
+{
+    GLfloat hue;        /* Hue degree between 0 and 255 */
+    GLfloat sat;        /* Saturation between 0 (gray) and 255 */
+    GLfloat val;        /* Value between 0 (black) and 255 */
+
+    HSVColor() : hue(0.0f), sat(0.0f), val(0.0f) { }
+    HSVColor(GLfloat h, GLfloat s, GLfloat v) : hue(h), sat(s), val(v) { }
+};
+
+static void convertHSVToRGB(RGBColor& rgb, const HSVColor& hsv)
+{
+    if (hsv.sat == 0)
+    {
+        rgb.r = rgb.g = rgb.b = hsv.val;
+        return;
+    }
+
+    GLfloat h = fmod(hsv.hue, 360.0f) / 60.0f;
+
+    int region = (int) h;
+    GLfloat f = h - (GLfloat) region;
+    GLfloat p = hsv.val * (1.0f - hsv.sat);
+    GLfloat q = hsv.val * (1.0f - (hsv.sat * f));
+    GLfloat t = hsv.val * (1.0f - (hsv.sat * (1.0f - f)));
+
+    switch (region)
+    {
+        case 0:
+            rgb.r = hsv.val;
+            rgb.g = t;
+            rgb.b = p;
+            break;
+
+        case 1:
+            rgb.r = q;
+            rgb.g = hsv.val;
+            rgb.b = p;
+            break;
+
+        case 2:
+            rgb.r = p;
+            rgb.g = hsv.val;
+            rgb.b = t;
+            break;
+
+        case 3:
+            rgb.r = p;
+            rgb.g = q;
+            rgb.b = hsv.val;
+            break;
+
+        case 4:
+            rgb.r = t;
+            rgb.g = p;
+            rgb.b = hsv.val;
+            break;
+
+        case 5:
+        default:
+            rgb.r = hsv.val;
+            rgb.g = p;
+            rgb.b = q;
+            break;
+    }
+}
+
+static void betweenHSVColors(RGBColor& rgbMid, const HSVColor& a, const HSVColor& b)
+{
+    HSVColor mid(glm::linearRand(a.hue, b.hue),
+                 glm::linearRand(a.sat, b.sat),
+                 glm::linearRand(a.val, b.val));
+    convertHSVToRGB(rgbMid, mid);
+}
+
+void randomParticleColor(Color& color, bool ignore)
+{
+//    static const HSVColor dark(213.0f, 0.24f, 0.36f);
+
+//    static const HSVColor light(202.0f, 0.13f, 0.78f);
+//    static const HSVColor dark(212.0f, 0.32f, 0.21f);
+
+//    static const HSVColor dark(212.0f, 0.28f, 0.36f);
+//    static const HSVColor dark(213.0f, 0.32f, 0.22f);
+
+//    static const HSVColor dark(218.0f, 0.25f, 0.25f);
+//    static const HSVColor dark(240.0f, 0.9f, 0.21f);
+
+//    static const HSVColor light(206.0f, 0.25f, 76.0f);
+//    static const HSVColor light(198.0f, 8.0f, 85.0f);
+
+    static const HSVColor light(204.0f, 0.13f, 0.84f);
+    static const HSVColor dark(209.0f, 0.41f, 0.50f);
+
+    static const HSVColor coreLight(40.0f, 0.01f, 0.99f);
+    static const HSVColor coreDark(33.0f, 0.29f, 0.58f);
+
+    RGBColor rgb;
+    if (glm::linearRand(0.0f, 1.0f) > 0.2f)
+    {
+        // bluish
+        betweenHSVColors(rgb, dark, light);
+    }
+    else
+    {
+        // reddish
+        betweenHSVColors(rgb, coreDark, coreLight);
+    }
+
+    color.r = rgb.r;
+    color.g = rgb.g;
+    color.b = rgb.b;
+    color.ignore = 1.0f;
+    //color.ignore = ignore ? ?????
+}
+

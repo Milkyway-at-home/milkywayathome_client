@@ -102,12 +102,6 @@ static glutil::ViewScale viewScale =
 
 static glutil::ViewPole viewPole = glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN);
 
-struct Color
-{
-    GLfloat r, g, b;
-    GLfloat ignore;
-};
-
 class NBodyGraphics
 {
 private:
@@ -609,7 +603,7 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
     this->prepareVAOs();
 
     this->createPositionBuffer();
-    this->loadColorsHSV();
+    this->loadColors();
     this->particleTexture = createParticleTexture(32);
 
     this->galaxyModel = scene->hasGalaxy ? new GalaxyModel() : NULL;
@@ -862,6 +856,7 @@ void NBodyGraphics::createPositionBuffer()
 void NBodyGraphics::loadColors()
 {
     GLint nbody = this->scene->nbody;
+    const bool approxRealStarColors = true;
 
     /* assign random particle colors */
     Color* color = new Color[nbody];
@@ -912,21 +907,26 @@ void NBodyGraphics::loadColors()
             scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (std::min(2.0, 1.0 / B) - 1.0);
         }
 
-        if (false)
+        if (approxRealStarColors)
         {
-            color[i].r = (GLfloat) R * scale;
-            color[i].g = (GLfloat) G * scale;
-            color[i].b = (GLfloat) B * scale;
+            // TODO: ignore doesn't do anything yet
+            randomParticleColor(color[i], false);
         }
         else
         {
-            color[i].r = (double) rand() / (double) RAND_MAX;
-            color[i].g = (double) rand() / (double) RAND_MAX;
-            color[i].b = (double) rand() / (double) RAND_MAX;
+            if (false)
+            {
+                color[i].r = (GLfloat) R * scale;
+                color[i].g = (GLfloat) G * scale;
+                color[i].b = (GLfloat) B * scale;
+            }
+            else
+            {
+                color[i].r = (double) rand() / (double) RAND_MAX;
+                color[i].g = (double) rand() / (double) RAND_MAX;
+                color[i].b = (double) rand() / (double) RAND_MAX;
+            }
         }
-
-        // TODO: Doesn't do anything yet?
-        color[i].ignore = 1.0f;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
