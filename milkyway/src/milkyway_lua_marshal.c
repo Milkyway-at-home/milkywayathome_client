@@ -549,8 +549,7 @@ static int pushMultilineErrorPrefix(lua_State* luaSt)
 static void checkExtraArguments(lua_State* luaSt, const MWNamedArg* args, int table)
 {
     int iniTop, keyIdx, extraCount;
-    const char* key = NULL;
-    mwbool badFound = FALSE, keyIsString = FALSE, keyIsInTable = FALSE;
+    mwbool badFound = FALSE, keyIsString = FALSE;
 
     iniTop = lua_gettop(luaSt);
 
@@ -560,16 +559,12 @@ static void checkExtraArguments(lua_State* luaSt, const MWNamedArg* args, int ta
         lua_pop(luaSt, 1);    /* Get rid of value, keep key on top  */
         keyIdx = lua_gettop(luaSt);
 
-        /* Named arguments can only be strings */
+        /* Named arguments can only be strings
+           Avoid automatic conversions from numbers to string */
         keyIsString = lua_isstring(luaSt, keyIdx) && !lua_isnumber(luaSt, keyIdx);
 
-        /* Avoid automatic conversions from numbers to string */
-        key = keyIsString ? lua_tostring(luaSt, keyIdx) : NULL;
-
-        /* Only look for the key if it's actually a string */
-        keyIsInTable = nameInArgTable(args, key);
-
-        if (!keyIsString || !keyIsInTable)  /* Bad argument */
+        if (   !keyIsString    /* Only look for the key if it's actually a string */
+            || !nameInArgTable(args, keyIsString ? lua_tostring(luaSt, keyIdx) : NULL))  /* Bad argument */
         {
             if (!badFound)  /* Add prefix of filename, line number for first error */
             {
