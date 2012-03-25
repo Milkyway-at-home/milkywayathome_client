@@ -560,6 +560,10 @@ static void nbglInstallExitHandlers()
     atexit(nbglCleanupAttachedCount);
 }
 
+#ifdef __APPLE__
+#define main nbgl_main_apple
+#endif
+
 int main(int argc, const char* argv[])
 {
     int rc;
