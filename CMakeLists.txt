@@ -379,10 +379,10 @@ if(NBODY_GL)
     message(FATAL_ERROR "GLFW submodule is missing. Did you forget to git submodule init; git submodule update?")
   endif()
 
+  set(BUILD_SHARED_LIBS OFF)
   add_subdirectory(glfw)
-
   set(GLFW_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/glfw/include")
-  set(GLFW_LIBRARY libglfwStatic)
+  set(GLFW_LIBRARY glfw)
   # TODO: We require 10.7 on OS X to use OpenGL 3.2
   # Also The 10.7 Cocoa headers also require clang or Apple llvm-gcc If we're using
   # macports gcc we can build glfw as an external project with the
