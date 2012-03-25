@@ -36,6 +36,10 @@
     #include <sys/stat.h>
   #endif
 
+  #if HAVE_SYS_WAIT_H
+    #include <sys/wait.h>
+  #endif
+
   #if HAVE_FCNTL_H
     #include <fcntl.h>
   #endif
@@ -361,30 +365,6 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     info->rootCenterOfMass[0] = (float) X(cmPos);
     info->rootCenterOfMass[1] = (float) Y(cmPos);
     info->rootCenterOfMass[2] = (float) Z(cmPos);
-
-/*
-    if (FALSE)
-    {
-        // Tell the graphics about the orbit's history
-        int i = scene->currentTracePoint;
-
-        scene->rootCenterOfMass[0] = (float) X(cmPos);
-        scene->rootCenterOfMass[1] = (float) Y(cmPos);
-        scene->rootCenterOfMass[2] = (float) Z(cmPos);
-
-        if (i < N_ORBIT_TRACE_POINTS && i < MAX_DRAW_TRACE_POINTS)
-        {
-            if (X(st->orbitTrace[i]) < REAL_MAX)
-            {
-                scene->orbitTrace[i].x = (float) X(st->orbitTrace[i]);
-                scene->orbitTrace[i].y = (float) Y(st->orbitTrace[i]);
-                scene->orbitTrace[i].z = (float) Z(st->orbitTrace[i]);
-
-                scene->currentTracePoint++;
-            }
-        }
-    }
-*/
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b) shared(r) schedule(static)

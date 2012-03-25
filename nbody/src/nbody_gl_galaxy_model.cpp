@@ -48,13 +48,13 @@ GalaxyModel::~GalaxyModel()
 
 void GalaxyModel::loadGalaxyTexture()
 {
-    size_t size = milkywayImage.width * milkywayImage.height;
-    unsigned char* buf = new unsigned char[size * milkywayImage.bytes_per_pixel];
+    size_t imgSize = milkywayImage.width * milkywayImage.height;
+    unsigned char* buf = new unsigned char[imgSize * milkywayImage.bytes_per_pixel];
 
     glGenTextures(1, &this->texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    MILKYWAYIMAGE_RUN_LENGTH_DECODE(buf, milkywayImage.rle_pixel_data, size, milkywayImage.bytes_per_pixel);
+    MILKYWAYIMAGE_RUN_LENGTH_DECODE(buf, milkywayImage.rle_pixel_data, imgSize, milkywayImage.bytes_per_pixel);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -92,9 +92,6 @@ void GalaxyModel::prepareVAO()
     glBindBuffer(GL_ARRAY_BUFFER, this->buffer);
     glVertexAttribPointer(this->programData.positionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    //glBindBuffer(GL_ARRAY_BUFFER, this->colorBuffer);
-    //glVertexAttribPointer(this->programData.colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
     glBindVertexArray(0);
 }
 
@@ -113,43 +110,43 @@ void GalaxyModel::setMilkywayModelParameters()
 {
     this->radialSlices = 15;
     this->axialSlices = 50;
-    this->axialSliceSize = M_2PI / (double) this->axialSlices;
+    this->axialSliceSize = M_2PI / (float) this->axialSlices;
 
-    this->bulgeRadius = 0.5 * 8.308;
-    this->bulgeHeight = 0.7;
+    this->bulgeRadius = 0.5f * 8.308f;
+    this->bulgeHeight = 0.7f;
 
-    this->diskScale = 7.7;
-    //this->diskCoeff = 2.5;
-    this->diskCoeff = 1.5 * M_E * 0.459899;
+    this->diskScale = 7.7f;
+    //this->diskCoeff = 2.5f;
+    this->diskCoeff = 1.5f * M_E * 0.459899f;
 
-    this->totalDiameter = 2.0 * 15.33;
+    this->totalDiameter = 2.0f * 15.33f;
 
     GLuint nDiameterSlices = 2 * this->radialSlices;
 
     // for texturing
     this->invActualDiameter = 1.0f / (float) this->totalDiameter;
-    this->diameterSlice = this->totalDiameter / (double) nDiameterSlices;
+    this->diameterSlice = this->totalDiameter / (float) nDiameterSlices;
 
-    this->diskEdgeZ = shapeFunction(0.5 * this->totalDiameter);
+    this->diskEdgeZ = shapeFunction(0.5f * this->totalDiameter);
 }
 
-double GalaxyModel::shapeFunction(double r)
+float GalaxyModel::shapeFunction(float r)
 {
-    double rp = std::fabs(r);
+    float rp = std::fabs(r);
 
-    double bulge = this->bulgeHeight * exp(-7.67 * pow(rp / this->bulgeRadius, 4.0));
+    float bulge = this->bulgeHeight * expf(-7.67f * pow(rp / this->bulgeRadius, 4.0f));
 
-    double disk = this->diskCoeff * exp((-1.0 / this->diskScale) * rp);
+    float disk = this->diskCoeff * expf((-1.0f / this->diskScale) * rp);
 
     return bulge + disk;
 }
 
-void GalaxyModel::makePoint(NBodyVertex& point, bool neg, double r, double theta)
+void GalaxyModel::makePoint(NBodyVertex& point, bool neg, float r, float theta)
 {
-    double z;
+    float z;
 
-    point.x = std::fabs(r) * cos(theta);
-    point.y = std::fabs(r) * sin(theta);
+    point.x = std::fabs(r) * cosf(theta);
+    point.y = std::fabs(r) * sinf(theta);
 
     z = shapeFunction(r) - this->diskEdgeZ;
 
@@ -176,7 +173,7 @@ void GalaxyModel::generateSegment(bool neg)
 
     for (GLint i = start; i != end; i += inc)
     {
-        double r, r1;
+        float r, r1;
 
         if (neg) // next ring is smaller
         {
@@ -191,7 +188,7 @@ void GalaxyModel::generateSegment(bool neg)
 
         for (GLint j = 0; j < this->axialSlices + 1; ++j)
         {
-            double theta = this->axialSliceSize * (double) j;
+            float theta = this->axialSliceSize * (float) j;
 
             makePoint(this->points[this->count++], neg, r, theta);
             makePoint(this->points[this->count++], neg, r1, theta);
@@ -219,12 +216,6 @@ void GalaxyModel::draw(const glm::mat4& modelMatrix) const
     glUniformMatrix4fv(this->programData.modelToCameraMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
     glUniformMatrix4fv(this->programData.cameraToClipMatrixLoc, 1, GL_FALSE, glm::value_ptr(cameraToClipMatrix));
 
-    //glBlendFunc(GL_SRC_COLOR, GL_ONE);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-    //glBlendFunc(GL_CONSTANT_COLOR_EXT, GL_ONE_MINUS_SRC_COLOR);
-
-
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, this->texture);
     glUniform1i(this->programData.galaxyTextureLoc, 2);
@@ -235,7 +226,5 @@ void GalaxyModel::draw(const glm::mat4& modelMatrix) const
 
     glBindVertexArray(0);
     glUseProgram(0);
-
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 

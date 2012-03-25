@@ -17,18 +17,18 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_PARTICLE_TEXTURE_H_
-#define _NBODY_PARTICLE_TEXTURE_H_
+#ifndef _NBODY_GL_PARTICLE_TEXTURE_H_
+#define _NBODY_GL_PARTICLE_TEXTURE_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-GLuint createParticleTexture(int resolution);
+GLuint nbglCreateParticleTexture(int resolution);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NBODY_PARTICLE_TEXTURE_H_*/
+#endif /* _NBODY_GL_PARTICLE_TEXTURE_H_*/
 

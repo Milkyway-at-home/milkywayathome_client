@@ -40,21 +40,21 @@ private:
     GLuint vao;
     GLuint buffer;
 
-    double bulgeRadius;
-    double bulgeHeight;
-    double diskScale;
-    double diskCoeff;
-    double diskEdgeZ;
+    float bulgeRadius;
+    float bulgeHeight;
+    float diskScale;
+    float diskCoeff;
+    float diskEdgeZ;
 
     // what the rounded out diameter will be
     // after producing shape so we can sample the texture
     float invActualDiameter;
 
-    double totalDiameter;
+    float totalDiameter;
     GLint radialSlices;
     GLint axialSlices;
-    double axialSliceSize;
-    double diameterSlice;
+    float axialSliceSize;
+    float diameterSlice;
 
     GLuint texture;
 
@@ -69,10 +69,10 @@ private:
         GLint invGalaxyDiameterLoc;
     } programData;
 
-    void makePoint(NBodyVertex& point, bool neg, double r, double theta);
+    void makePoint(NBodyVertex& point, bool neg, float r, float theta);
     void generateSegment(bool neg);
     void setMilkywayModelParameters();
-    double shapeFunction(double r);
+    float shapeFunction(float r);
     void loadGalaxyTexture();
     void loadShaders();
     void prepareVAO();

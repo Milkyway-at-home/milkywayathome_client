@@ -329,7 +329,7 @@ if(NBODY_GL)
                             ${NBODY_SRC_DIR}/nbody_gl_axes.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_orbit_trace.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_galaxy_model.cpp
-                            ${NBODY_SRC_DIR}/nbody_particle_texture.cpp
+                            ${NBODY_SRC_DIR}/nbody_gl_particle_texture.cpp
                             ${NBODY_SRC_DIR}/nbody_milkyway_image.c
                             ${NBODY_SRC_DIR}/MousePoles.cpp
                             ${NBODY_SRC_DIR}/graphics_main.c)
@@ -341,7 +341,7 @@ if(NBODY_GL)
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_axes.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_orbit_trace.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_galaxy_model.h
-                                ${NBODY_INCLUDE_DIR}/nbody_particle_texture.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_particle_texture.h
                                 ${NBODY_INCLUDE_DIR}/nbody_gl_shaders.h
                                 ${NBODY_INCLUDE_DIR}/nbody_milkyway_image.h
                                 ${NBODY_INCLUDE_DIR}/MousePoles.h

@@ -216,7 +216,7 @@ static void convertHSVToRGB(RGBColor& rgb, const HSVColor& hsv)
     }
 }
 
-static void betweenHSVColors(RGBColor& rgbMid, const HSVColor& a, const HSVColor& b)
+static void nbglBetweenHSVColors(RGBColor& rgbMid, const HSVColor& a, const HSVColor& b)
 {
     HSVColor mid(glm::linearRand(a.hue, b.hue),
                  glm::linearRand(a.sat, b.sat),
@@ -224,7 +224,7 @@ static void betweenHSVColors(RGBColor& rgbMid, const HSVColor& a, const HSVColor
     convertHSVToRGB(rgbMid, mid);
 }
 
-void randomParticleColor(Color& color, bool ignore)
+void nbglRandomParticleColor(Color& color, bool ignore)
 {
 //    static const HSVColor dark(213.0f, 0.24f, 0.36f);
 
@@ -250,12 +250,12 @@ void randomParticleColor(Color& color, bool ignore)
     if (glm::linearRand(0.0f, 1.0f) > 0.2f)
     {
         // bluish
-        betweenHSVColors(rgb, dark, light);
+        nbglBetweenHSVColors(rgb, dark, light);
     }
     else
     {
         // reddish
-        betweenHSVColors(rgb, coreDark, coreLight);
+        nbglBetweenHSVColors(rgb, coreDark, coreLight);
     }
 
     color.r = rgb.r;

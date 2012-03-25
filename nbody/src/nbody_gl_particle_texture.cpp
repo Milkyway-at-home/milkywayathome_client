@@ -10,7 +10,7 @@
  */
 
 #include "nbody_gl_includes.h"
-#include "nbody_particle_texture.h"
+#include "nbody_gl_particle_texture.h"
 #include <cmath>
 
 
@@ -68,7 +68,7 @@ static unsigned char* createGaussianMap(int n)
     return b;
 }
 
-GLuint createParticleTexture(int resolution)
+GLuint nbglCreateParticleTexture(int resolution)
 {
     GLuint texture;
     unsigned char* data = createGaussianMap(resolution);

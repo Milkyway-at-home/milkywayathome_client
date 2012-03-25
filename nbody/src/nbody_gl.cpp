@@ -29,7 +29,7 @@
 #include "nbody_gl_galaxy_model.h"
 #include "nbody_gl_private.h"
 #include "nbody_gl_includes.h"
-#include "nbody_particle_texture.h"
+#include "nbody_gl_particle_texture.h"
 #include "nbody_gl_shaders.h"
 #include "milkyway_util.h"
 
@@ -399,20 +399,14 @@ static void resizeHandler(GLFWwindow window, int w, int h)
 
     glViewport(0, 0, (GLsizei) w, (GLsizei) h);
 
-    if (globalGraphicsContext)
-    {
-        globalGraphicsContext->display();
-        glfwSwapBuffers();
-    }
+
+    globalGraphicsContext->display();
+    glfwSwapBuffers();
 }
 
 static int closeHandler(GLFWwindow window)
 {
-    if (globalGraphicsContext)
-    {
-        globalGraphicsContext->stop();
-    }
-
+    globalGraphicsContext->stop();
     return 0;
 }
 
@@ -604,7 +598,7 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
 
     this->createPositionBuffer();
     this->loadColors();
-    this->particleTexture = createParticleTexture(32);
+    this->particleTexture = nbglCreateParticleTexture(32);
 
     this->galaxyModel = scene->hasGalaxy ? new GalaxyModel() : NULL;
 }
@@ -763,27 +757,10 @@ void NBodyGraphics::drawParticlesTextured(const glm::mat4& modelMatrix)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-    //glBlendFunc(GL_ONE, GL_ONE);
-    //float alpha = 0.5f;
-    //glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-
-    //glBlendColor(1.0f - alpha, 1.0f - alpha, 1.0f - alpha, 1.0f);
-
-    //glDepthMask(GL_FALSE);
-
-    //glEnable(GL_POINT_SPRITE);
-    //printf("enable point sprite %d\n", glGetError());
-    //glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-    //printf("tex envi %d\n", glGetError());
-
     glDrawArrays(GL_POINTS, 0, this->scene->nbody);
 
-    //glDisable(GL_BLEND);
     glDepthMask(GL_TRUE);
-    //glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 
     glBindVertexArray(0);
     glUseProgram(0);
@@ -910,7 +887,7 @@ void NBodyGraphics::loadColors()
         if (approxRealStarColors)
         {
             // TODO: ignore doesn't do anything yet
-            randomParticleColor(color[i], false);
+            nbglRandomParticleColor(color[i], false);
         }
         else
         {
@@ -1035,7 +1012,7 @@ void NBodyGraphics::display()
 
 void NBodyGraphics::mainLoop()
 {
-    static const int eventPollPeriod = (int) (1000.0 / 30.0);
+    const int eventPollPeriod = (int) (1000.0 / 30.0);
 
     while (this->running)
     {
