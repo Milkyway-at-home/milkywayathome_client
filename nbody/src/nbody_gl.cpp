@@ -87,15 +87,15 @@ static const float minViewRadius = 0.05f;
 static const float maxViewRadius = 350.0f;
 
 
-static const double minFloatTime = 3.0;
-static const double maxFloatTime = 10.0;
+static const double minFloatTime = 10.0;
+static const double maxFloatTime = 20.0;
 
 static const float maxRadialFloatSpeed = 0.2f;
 
 static glutil::ViewScale viewScale =
 {
     minViewRadius, maxViewRadius,
-    0.5f, 0.1f,    // radius deltas
+    2.5f, 0.5f,    // radius deltas
     4.0f, 1.0f,
     90.0f / 250.0f // rotation scale
 };
