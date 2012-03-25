@@ -202,24 +202,19 @@ private:
         bool drawHelp;
 
         DrawOptions(const VisArgs* args)
-        {
-            this->screensaverMode = (args->fullscreen && !args->plainFullscreen);
-            this->paused = false;
-            this->floatMode = (this->screensaverMode && !args->noFloat);
-
-            this->cmCentered = !args->originCenter;
-            this->monochromatic = (bool) args->monochrome;
-
-            this->drawMode = args->untexturedPoints ? POINTS : TEXTURED_SPRITES;
-            this->texturedSpritePointSize = 250.0f;
-            this->pointPointSize = 5.0f;
-
-            this->drawInfo = true;
-            this->drawAxes = (bool) args->drawAxes;
-            this->drawOrbitTrace = (bool) args->drawOrbitTrace;
-            this->drawParticles = true;
-            this->drawHelp = false;
-        }
+        : screensaverMode(args->fullscreen && !args->plainFullscreen),
+          paused(false),
+          floatMode(this->screensaverMode && !args->noFloat),
+          cmCentered(!args->originCenter),
+          monochromatic((bool) args->monochrome),
+          drawMode(args->untexturedPoints ? POINTS : TEXTURED_SPRITES),
+          texturedSpritePointSize(250.0f),
+          pointPointSize(5.0f),
+          drawInfo(true),
+          drawAxes((bool) args->drawAxes),
+          drawOrbitTrace((bool) args->drawOrbitTrace),
+          drawParticles(true),
+          drawHelp(false) { }
     } drawOptions;
 
     bool running;
