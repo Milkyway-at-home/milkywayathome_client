@@ -49,9 +49,7 @@
 #endif /* USE_SHMEM */
 
 
-/* Not actually necessary, but checking the next available one too
- * many times will take forever */
-#define MAX_INSTANCES 128
+#define MAX_INSTANCES 256
 
 
 static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
@@ -73,33 +71,50 @@ static size_t nbFindShmemSize(int nbody)
 
 #if USE_SHMEM
 
-/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127*/
+/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127 */
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
     size_t size = nbFindShmemSize(st->nbody);
     int shmId = -1;
-    const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+    const int mode = S_IRUSR | S_IWUSR | S_IRGRP;
     void* p = NULL;
-    int instanceId = -1;
+    int instanceId;
     char name[128];
 
     /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
-    while (shmId < 0 && instanceId < MAX_INSTANCES)
+    for (instanceId = 0; instanceId < MAX_INSTANCES; ++instanceId)
     {
-        ++instanceId;
+        scene_t sceneBuf;
 
         if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
             mw_panic("Buffer too small for shared memory name\n");
 
-        shmId = shm_open(name, O_CREAT | O_RDWR | O_EXCL, mode); /* Try to open exclusively */
-        if (shmId < 0 && errno != EEXIST) /* Only failed if */
+        shmId = shm_open(name, O_CREAT | O_RDWR, mode);
+        if (shmId < 0)
         {
-            mwPerror("Error creating shared memory '%s'", name);
-            return 1;
+            mwPerror("Error opening shared memory '%s'", name);
+            continue;
         }
+
+        if (read(shmId, &sceneBuf, sizeof(sceneBuf)) != sizeof(sceneBuf))
+        {
+            /* If we can't read this, it was probably already removed
+             * or didn't exist, so we'll steal this name for a new
+             * one */
+            break;
+        }
+
+        if (!mwProcessIsAlive(sceneBuf.ownerPID))
+        {
+            /* The original owner is dead, and nothing is drawing it,
+             * so let's steal it */
+            break;
+        }
+
+        close(shmId);
     }
 
-    if (instanceId >= MAX_INSTANCES)
+    if (instanceId >= MAX_INSTANCES || shmId < 0)
     {
         mw_printf("Could not open new shm segment in %d tries\n", MAX_INSTANCES);
         return 1;
@@ -108,6 +123,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
     if (ftruncate(shmId, size) < 0) /* Make the segment the correct size */
     {
         mwPerror("Error ftruncate() shared memory");
+        close(shmId);
         if (shm_unlink(name) < 0)
         {
             mwPerror("Error unlinking shared memory '%s'", name);
@@ -120,6 +136,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
     if (p == MAP_FAILED)
     {
         mwPerror("mmap: Failed to mmap shared memory");
+        close(shmId);
         if (shm_unlink(name) < 0)
         {
             mwPerror("Error unlinking shared memory '%s'", name);
@@ -128,9 +145,13 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
         return 1;
     }
 
+    /* Wipe out any possibly remaining queue state, etc. */
+    memset(p, 0, sizeof(scene_t));
+
     st->scene = (scene_t*) p;
     st->shmId = shmId;
     st->scene->instanceId = instanceId;
+    st->scene->ownerPID = (int) getpid();
     strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
     nbPrepareSceneFromState(ctx, st);
 

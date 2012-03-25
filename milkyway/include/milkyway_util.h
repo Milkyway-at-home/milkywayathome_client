@@ -242,6 +242,9 @@ void mwDisableErrorBoxes(void);
   #define mw_unlikely(x) (x)
 #endif /* __GNUC__ */
 
+
+int mwProcessIsAlive(int pid);
+
 #ifdef __cplusplus
 }
 #endif

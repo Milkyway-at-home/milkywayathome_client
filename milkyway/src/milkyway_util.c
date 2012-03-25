@@ -33,6 +33,10 @@
   #include <float.h>
 #endif
 
+#if HAVE_SIGNAL_H
+  #include <signal.h>
+#endif
+
 #include <time.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -631,4 +635,39 @@ uint64_t mwLCM(uint64_t a, uint64_t b)
 {
     return a * (b / mwEuclidGCD(a, b));
 }
+
+
+#ifndef _WIN32
+
+int mwProcessIsAlive(int pid)
+{
+    if (pid == 0)
+    {
+        return FALSE;
+    }
+    else
+    {
+        kill((pid_t) pid, 0);
+        return (errno != ESRCH);
+    }
+}
+
+#else
+
+int mwProcessIsAlive(int pid)
+{
+    if (pid == 0)
+    {
+        return FALSE;
+    }
+    else
+    {
+        HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
+        DWORD status = WaitForSingleObject(process, 0);
+        CloseHandle(process);
+        return (status == WAIT_TIMEOUT);
+    }
+}
+
+#endif /* _WIN32 */
 
