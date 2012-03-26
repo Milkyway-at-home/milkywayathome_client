@@ -212,6 +212,9 @@ set(gcc_warnings "-Wall"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
+
+                 # pragma to disable -Wunknown-pragmas seems to not work
+                 "-Wno-unknown-pragmas"
                #  "-Wsuggest-attribute=pure"
                #  "-Wsuggest-attribute=const"
                #  "-Wsuggest-attribute=noreturn"

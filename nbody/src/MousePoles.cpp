@@ -1,18 +1,24 @@
 //Copyright (C) 2011 by Jason L. McKesson
 //This file is licensed by the MIT License.
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
+#include "milkyway_gcc_diagnostics.h"
+
+GCC_DIAG_OFF(shadow)
+GCC_DIAG_OFF(float-equal)
+GCC_DIAG_OFF(type-limits)
+GCC_DIAG_OFF(unused-parameter)
+GCC_DIAG_OFF(switch-default)
+
 
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
+
+GCC_DIAG_ON(shadow)
+GCC_DIAG_ON(float-equal)
+GCC_DIAG_ON(type-limits)
+GCC_DIAG_ON(unused-parameter)
+GCC_DIAG_ON(switch-default)
 
 #include "MousePoles.h"
 

@@ -37,8 +37,8 @@
 #include <iostream>
 #include <stdexcept>
 
-static const float zNear = 0.01f;
-static const float zFar = 1000.0f;
+static const float zNearView = 0.01f;
+static const float zFarView = 1000.0f;
 
 static const glm::vec3 xAxis(1.0f, 0.0f, 0.0f);
 static const glm::vec3 yAxis(0.0f, 1.0f, 0.0f);
@@ -184,7 +184,6 @@ private:
     struct DrawOptions
     {
         bool screensaverMode;
-        bool paused;
         bool floatMode;
 
         bool cmCentered;
@@ -207,7 +206,6 @@ private:
 
         DrawOptions(const VisArgs* args)
         : screensaverMode(args->fullscreen && !args->plainFullscreen),
-          paused(false),
           floatMode(this->screensaverMode && !args->noFloat),
           cmCentered((bool) !args->originCentered),
           monochromatic((bool) args->monochromatic),
@@ -225,6 +223,7 @@ private:
 
     bool running;
     bool needsUpdate;
+    bool paused;
 
     void loadShaders();
     void createBuffers();
@@ -369,7 +368,7 @@ public:
     void togglePaused()
     {
         this->markDirty();
-        this->drawOptions.paused = !this->drawOptions.paused;
+        this->paused = !this->paused;
     }
 
     void toggleFloatMode()
@@ -403,10 +402,12 @@ static void errorHandler(int errorCode, const char* msg)
 
 static void resizeHandler(GLFWwindow window, int w, int h)
 {
+    (void) window;
+
     float wf = (float) w;
     float hf = (float) h;
     float aspectRatio = wf / hf;
-    cameraToClipMatrix = glm::perspective(90.0f, aspectRatio, zNear, zFar);
+    cameraToClipMatrix = glm::perspective(90.0f, aspectRatio, zNearView, zFarView);
 
     const float fontHeight = 12.0f; // FIXME: hardcoded font height
     textCameraToClipMatrix = glm::ortho(0.0f, wf, -hf, 0.0f);
@@ -421,12 +422,16 @@ static void resizeHandler(GLFWwindow window, int w, int h)
 
 static int closeHandler(GLFWwindow window)
 {
+    (void) window;
+
     globalGraphicsContext->stop();
     return 0;
 }
 
 static int getGLFWModifiers(GLFWwindow window)
 {
+    (void) window;
+
     int modifiers = 0;
 
     if (   glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
@@ -473,6 +478,8 @@ static void mouseButtonHandler(GLFWwindow window, int button, int action)
 
 static void mousePosHandler(GLFWwindow window, int x, int y)
 {
+    (void) window;
+
     if (globalGraphicsContext->isScreensaver())
     {
         int w, h;
@@ -503,6 +510,8 @@ static void scrollHandler(GLFWwindow window, int x, int y)
 
 static void keyHandler(GLFWwindow window, int key, int pressed)
 {
+    (void) window;
+
     if (!pressed) // release
         return;
 
@@ -526,6 +535,8 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
 
 static void charHandler(GLFWwindow window, int charCode)
 {
+    (void) window;
+
     NBodyGraphics* ctx = globalGraphicsContext;
 
     switch (charCode)
@@ -635,7 +646,8 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
       floatState(FloatState(args)),
       drawOptions(args),
       running(true),
-      needsUpdate(true)
+      needsUpdate(true),
+      paused(false)
 {
     this->loadShaders();
     this->createBuffers();
@@ -763,9 +775,8 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue,
 
 bool NBodyGraphics::readSceneData()
 {
-    scene_t* scene = this->scene;
     bool success;
-    success = (bool) nbPopCircularQueue(&scene->queue, scene->nbody,
+    success = (bool) nbPopCircularQueue(&this->scene->queue, this->scene->nbody,
                                         this->positionBuffer, &this->sceneData, &this->orbitTrace);
 
     if (success)
@@ -1075,7 +1086,7 @@ void NBodyGraphics::mainLoop()
                 return;
             }
 
-            if (!this->drawOptions.paused)
+            if (!this->paused)
             {
                 this->readSceneData();
             }

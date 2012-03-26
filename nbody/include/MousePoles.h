@@ -4,27 +4,27 @@
 #ifndef MOUSE_POLES_UTIL_H
 #define MOUSE_POLES_UTIL_H
 
+#include "milkyway_gcc_diagnostics.h"
+
+
+GCC_DIAG_OFF(shadow)
+GCC_DIAG_OFF(float-equal)
+GCC_DIAG_OFF(type-limits)
+GCC_DIAG_OFF(unused-parameter)
+GCC_DIAG_OFF(switch-default)
+
 /**
 \file
 \brief Header for \ref module_glutil_poles "mouse poles".
 **/
-
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic pop
-#endif
-
+GCC_DIAG_ON(shadow)
+GCC_DIAG_ON(float-equal)
+GCC_DIAG_ON(type-limits)
+GCC_DIAG_ON(unused-parameter)
+GCC_DIAG_ON(switch-default)
 
 namespace glutil
 {

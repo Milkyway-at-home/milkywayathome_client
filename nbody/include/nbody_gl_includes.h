@@ -20,19 +20,20 @@
 #ifndef _NBODY_GL_INCLUDES_H_
 #define _NBODY_GL_INCLUDES_H_
 
+#include "milkyway_gcc_diagnostics.h"
+
 #define GL3_PROTOTYPES
 #define GLFW_INCLUDE_GL3 1
 #define GLFW_NO_GLU 1
 #include <GL/glfw3.h>
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
+/* Only recentish GCC's support #pragma GCC diagnostic push / pop */
+GCC_DIAG_OFF(shadow)
+GCC_DIAG_OFF(float-equal)
+GCC_DIAG_OFF(type-limits)
+GCC_DIAG_OFF(unused-parameter)
+GCC_DIAG_OFF(switch-default)
+/* GCC_DIAG_OFF(unknown-pragmas) */
 
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
@@ -42,9 +43,12 @@
 
 #include "MousePoles.h"
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic pop
-#endif
+GCC_DIAG_ON(shadow)
+GCC_DIAG_ON(float-equal)
+GCC_DIAG_ON(type-limits)
+GCC_DIAG_ON(unused-parameter)
+GCC_DIAG_ON(switch-default)
+/* GCC_DIAG_ON(unknown-pragmas) */
 
 
 #endif /* _NBODY_GL_INCLUDES_H_ */

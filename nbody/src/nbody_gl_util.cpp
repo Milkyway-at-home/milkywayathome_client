@@ -24,6 +24,11 @@
 #include <cstdio>
 #include <stdexcept>
 
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
 static void nbglGetProgramLog(GLuint program, const char* name)
 {
     GLint logLength = 0;
@@ -161,7 +166,7 @@ struct HSVColor
 
 static void convertHSVToRGB(RGBColor& rgb, const HSVColor& hsv)
 {
-    if (hsv.sat == 0)
+    if (hsv.sat == 0.0f)
     {
         rgb.r = rgb.g = rgb.b = hsv.val;
         return;
