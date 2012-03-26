@@ -380,6 +380,8 @@ if(NBODY_GL)
   endif()
 
   set(BUILD_SHARED_LIBS OFF)
+  set(GLFW_BUILD_EXAMPLES OFF)
+  set(GLFW_BUILD_TESTS OFF)
   add_subdirectory(glfw)
   set(GLFW_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/glfw/include")
   set(GLFW_LIBRARY glfw)
