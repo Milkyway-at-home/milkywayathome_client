@@ -136,26 +136,88 @@ static void nbglPrintCopyright(void)
 
 static const VisArgs defaultVisArgs =
 {
-    /* .fullscreen       */ FALSE,
-    /* .plainFullscreen  */ FALSE,
-    /* .width            */ 0,
-    /* .height           */ 0,
-    /* .blockSimulation  */ FALSE,
-    /* .monochrome       */ FALSE,
-    /* .untexturedPoints */ FALSE,
-    /* .originCenter     */ FALSE,
-    /* .drawAxes         */ FALSE,
-    /* .drawOrbitTrace   */ FALSE,
-    /* .noFloat          */ FALSE,
-    /* .pid              */ 0,
-    /* .file             */ NULL,
-    /* .instanceId       */ -1
+    /* .fullscreen        */ FALSE,
+    /* .plainFullscreen   */ FALSE,
+    /* .width             */ 0,
+    /* .height            */ 0,
+
+    /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
+    /* .noFloat           */ DEFAULT_NO_FLOAT,
+    /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
+    /* .texturedPointSize */ DEFAULT_TEXTURED_POINT_SIZE,
+    /* .pointPointSize    */ DEFAULT_POINT_POINT_SIZE,
+    /* .untexturedPoints  */ DEFAULT_UNTEXTURED_POINTS,
+    /* .monochrome        */ DEFAULT_MONOCHROMATIC,
+    /* .originCenter      */ DEFAULT_ORIGIN_CENTERED,
+    /* .noDrawInfo        */ DEFAULT_NO_SHOW_INFO,
+    /* .drawAxes          */ DEFAULT_SHOW_AXES,
+    /* .drawOrbitTrace    */ DEFAULT_SHOW_ORBIT_TRACE,
+
+    /* .pid               */ 0,
+    /* .file              */ NULL,
+    /* .instanceId        */ -1
 };
 
 static void freeVisArgs(VisArgs* args)
 {
     free(args->file);
     args->file = NULL;
+}
+
+static void nbglReadPreferences(VisArgs* args)
+{
+    static struct
+    {
+        int blockSimulation;
+        int noFloat;
+        double floatSpeed;
+        double texturedPointSize;
+        double pointPointSize;
+        int untexturedPoints;
+        int monochromatic;
+        int originCentered;
+        int showAxes;
+        int showOrbitTrace;
+        int noShowInfo;
+    } prefs;
+
+    static MWProjectPrefs nbglPrefs[] =
+        {
+            { "block_simulation",    MW_PREF_BOOL,   FALSE, &prefs.blockSimulation   },
+            { "no_float",            MW_PREF_BOOL,   FALSE, &prefs.noFloat           },
+            { "float_speed",         MW_PREF_DOUBLE, FALSE, &prefs.floatSpeed        },
+            { "textured_point_size", MW_PREF_DOUBLE, FALSE, &prefs.texturedPointSize },
+            { "point_point_size",    MW_PREF_DOUBLE, FALSE, &prefs.pointPointSize    },
+            { "untextured_points",   MW_PREF_BOOL,   FALSE, &prefs.untexturedPoints  },
+            { "monochromatic",       MW_PREF_BOOL,   FALSE, &prefs.monochromatic     },
+            { "origin_centered",     MW_PREF_BOOL,   FALSE, &prefs.originCentered    },
+            { "no_show_info",        MW_PREF_BOOL,   FALSE, &prefs.noShowInfo        },
+            { "show_axes",           MW_PREF_BOOL,   FALSE, &prefs.showAxes          },
+            { "show_orbit_trace",    MW_PREF_BOOL,   FALSE, &prefs.showOrbitTrace    },
+            END_MW_PROJECT_PREFS
+        };
+
+    if (mwGetAppInitData())
+    {
+        mw_printf("Error reading app init data. Project preferences will not be used\n");
+    }
+    else
+    {
+        mwReadProjectPrefs(nbglPrefs, mwGetProjectPrefs());
+    }
+
+    /* Any successfully found setting will be used; otherwise it will get the default */
+    args->blockSimulation   = prefs.blockSimulation;
+    args->noFloat           = prefs.noFloat;
+    args->floatSpeed        = (float) prefs.floatSpeed;
+    args->texturedPointSize = (float) prefs.texturedPointSize;
+    args->pointPointSize    = (float) prefs.pointPointSize;
+    args->untexturedPoints  = prefs.untexturedPoints;
+    args->monochromatic     = prefs.monochromatic;
+    args->originCentered    = prefs.originCentered;
+    args->noDrawInfo        = prefs.noShowInfo;
+    args->drawAxes          = prefs.showAxes;
+    args->drawOrbitTrace    = prefs.showOrbitTrace;
 }
 
 static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
@@ -183,6 +245,18 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
+            "instance-id", 'i',
+            POPT_ARG_INT, &visArgs.instanceId,
+            0, "Instance id of main process to attach", NULL
+        },
+
+        {
+            "static-input", 's',
+            POPT_ARG_STRING, &visArgs.file,
+            0, "Load from an output file (in Cartesian coordinates) and statically display", NULL
+        },
+
+        {
             "width", 'w',
             POPT_ARG_INT, &visArgs.width,
             0, "Starting width of window", NULL
@@ -201,9 +275,9 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "monochromatic", 'm',
-            POPT_ARG_NONE, &visArgs.monochrome,
-            0, "All particles have same color", NULL
+            "no-float", 'r',
+            POPT_ARG_NONE, &visArgs.noFloat,
+            0, "By default do not float view around randomly", NULL
         },
 
         {
@@ -213,39 +287,33 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "origin-center", 'o',
-            POPT_ARG_NONE, &visArgs.originCenter,
+            "monochromatic", 'm',
+            POPT_ARG_NONE, &visArgs.monochromatic,
+            0, "All particles have same color", NULL
+        },
+
+        {
+            "origin-centered", 'o',
+            POPT_ARG_NONE, &visArgs.originCentered,
             0, "Focus on the galactic center instead of system's center of mass", NULL
+        },
+
+        {
+            "no-show-info", 'I',
+            POPT_ARG_NONE, &visArgs.noDrawInfo,
+            0, "Disable displaying basic information about simulation", NULL
         },
 
         {
             "show-axes", 'a',
             POPT_ARG_NONE, &visArgs.drawAxes,
-            0, "Draw simple axes for reference", NULL
+            0, "Display simple axes for reference", NULL
         },
 
         {
             "show-orbit-trace", 't',
             POPT_ARG_NONE, &visArgs.drawOrbitTrace,
             0, "Show path of center of mass", NULL
-        },
-
-        {
-            "no-float", 'r',
-            POPT_ARG_NONE, &visArgs.noFloat,
-            0, "By default do not float view around randomly", NULL
-        },
-
-        {
-            "instance-id", 'i',
-            POPT_ARG_INT, &visArgs.instanceId,
-            0, "Instance id of main process to attach", NULL
-        },
-
-        {
-            "static-input", 's',
-            POPT_ARG_STRING, &visArgs.file,
-            0, "Load from an output file (in Cartesian coordinates) and statically display", NULL
         },
 
         {
@@ -261,6 +329,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
     /* TODO: Check project prefs */
 
     visArgs = defaultVisArgs;
+
+    if (BOINC_APPLICATION)
+    {
+        nbglReadPreferences(&visArgs);
+    }
+
     context = poptGetContext(argv[0], argc, argv, options, 0);
 
     if (mwReadArguments(context) < 0)

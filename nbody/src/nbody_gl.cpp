@@ -67,8 +67,7 @@ static const glm::fquat startOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
 
 static const float startRadius = 2.0f * 30.0f;
 
-// angular component only
-static const float startFloatSpeed = 0.9f;
+// angular component only, degrees per second
 static const float minFloatSpeed = 1.0e-3f;
 static const float maxFloatSpeed = 30.0f;
 static const float floatSpeedChangeFactor = 1.1f;
@@ -165,14 +164,15 @@ private:
         float speed;
         float rSpeed;
 
-        FloatState() : orient(startOrientation),
-                       angle(glm::vec2(0.0f, 0.0f)),
-                       angleVec(glm::vec2(0.0f, 0.0f)),
-                       lastTime(0.0f),
-                       floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
-                       radius(0.0f),
-                       speed(startFloatSpeed),
-                       rSpeed(0.0f) { }
+        FloatState(const VisArgs* args)
+        : orient(startOrientation),
+          angle(glm::vec2(0.0f, 0.0f)),
+          angleVec(glm::vec2(0.0f, 0.0f)),
+          lastTime(0.0f),
+          floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
+          radius(0.0f),
+          speed(args->floatSpeed),
+          rSpeed(0.0f) { }
     } floatState;
 
     enum DrawMode
@@ -205,12 +205,12 @@ private:
         : screensaverMode(args->fullscreen && !args->plainFullscreen),
           paused(false),
           floatMode(this->screensaverMode && !args->noFloat),
-          cmCentered(!args->originCenter),
-          monochromatic((bool) args->monochrome),
+          cmCentered((bool) !args->originCentered),
+          monochromatic((bool) args->monochromatic),
           drawMode(args->untexturedPoints ? POINTS : TEXTURED_SPRITES),
-          texturedSpritePointSize(250.0f),
-          pointPointSize(5.0f),
-          drawInfo(true),
+          texturedSpritePointSize(args->texturedPointSize),
+          pointPointSize(args->pointPointSize),
+          drawInfo((bool) !args->noDrawInfo),
           drawAxes((bool) args->drawAxes),
           drawOrbitTrace((bool) args->drawOrbitTrace),
           drawParticles(true),
@@ -583,6 +583,7 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
       text(NBodyText(&robotoRegular12)),
       orbitTrace(OrbitTrace(scene)),
       sceneData(SceneData((bool) scene->staticScene)),
+      floatState(FloatState(args)),
       drawOptions(args),
       running(true),
       needsUpdate(true)

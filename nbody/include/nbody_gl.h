@@ -26,27 +26,48 @@
 extern "C" {
 #endif
 
+#define DEFAULT_TEXTURED_POINT_SIZE 250.0f
+#define DEFAULT_POINT_POINT_SIZE 5.0f
+#define DEFAULT_FLOAT_SPEED 1.0f
+#define DEFAULT_NO_FLOAT FALSE
+
+#define DEFAULT_UNTEXTURED_POINTS FALSE
+#define DEFAULT_SHOW_AXES FALSE
+
+/* The center of mass points don't persist, so the simulation will
+ * only show points from when the graphics started. This should be
+ * fixed before enabling it for the screensaver. */
+#define DEFAULT_SHOW_ORBIT_TRACE FALSE
+#define DEFAULT_NO_SHOW_INFO FALSE
+#define DEFAULT_ORIGIN_CENTERED FALSE
+#define DEFAULT_MONOCHROMATIC FALSE
+#define DEFAULT_BLOCK_SIMULATION FALSE
+
 typedef struct
 {
     int fullscreen;
     int plainFullscreen;
     int width;
     int height;
-    int blockSimulation;
 
-    int monochrome;
+    int blockSimulation;
+    int noFloat;
+    float floatSpeed;
+    float texturedPointSize;
+    float pointPointSize;
     int untexturedPoints;
-    int originCenter;
+    int monochromatic;
+    int originCentered;
+    int noDrawInfo;
     int drawAxes;
     int drawOrbitTrace;
-    int noFloat;
 
     int pid;
     char* file;
     int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, 0.0f, 0.0f, 0.0f, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
 int nbglRunGraphics(scene_t* scene, const VisArgs* args);
 
