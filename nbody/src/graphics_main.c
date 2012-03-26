@@ -509,20 +509,33 @@ static int nbglCheckConnectedVersion(const scene_t* scene)
 
 static int nbglGetExclusiveSceneAccess(scene_t* scene)
 {
-    int oldPID = OPA_cas_int(&scene->attachedLock, 0, (int) getpid());
+    int pid = (int) getpid();
+    int oldPID = OPA_cas_int(&scene->attachedLock, 0, pid);
     if (oldPID != 0)
     {
-        mw_printf("Could not get exclusive access to simulation shared segment "
-                  "(Owned by process %d)\n",
-                  oldPID);
+        if (mwProcessIsAlive(oldPID))
+        {
+            mw_printf("Could not get exclusive access to simulation shared segment "
+                      "(Owned by process %d)\n",
+                      oldPID);
+            return 1;
+        }
+        else
+        {
+            mw_printf("Simulation shared segment owned by dead process %d, stealing it\n",
+                      oldPID);
 
-        /* TODO: We could check if this process is actually alive in
-           case something went wrong and steal it if it is dead
-         */
-        return 1;
+            /* Process is dead, steal the lock */
+            OPA_store_int(&scene->attachedLock, pid);
+            OPA_store_int(&scene->attachedPID, 0);
+            return 0;
+        }
     }
-
-    return 0;
+    else
+    {
+        OPA_store_int(&scene->attachedPID, 0);
+        return 0;
+    }
 }
 
 static scene_t* g_scene = NULL;

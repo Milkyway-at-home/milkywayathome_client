@@ -23,9 +23,6 @@
 #include <stdint.h>
 #include <opa_primitives.h>
 
-/* "mw_nbody" */
-#define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
-
 #ifndef NAME_MAX
   #define NAME_MAX 255
 #endif
@@ -71,12 +68,6 @@ typedef struct
     int nbodyMajorVersion;
     int nbodyMinorVersion;
 
-    int nbody;
-    unsigned int nSteps;
-    int hasGalaxy;
-    int hasInfo;
-    int staticScene;
-
     /* We require exclusive access. One visualizer per running simulation
      *
      * We need 2 copies set at different times to signal to forking
@@ -97,6 +88,13 @@ typedef struct
       expense of slowing the simulation.
     */
     OPA_int_t blockSimulationOnGraphics;
+
+    int nbody;
+    unsigned int nSteps;
+    int hasGalaxy;
+    int hasInfo;
+    int staticScene;
+
     NBodyCircularQueue queue;
 } scene_t;
 

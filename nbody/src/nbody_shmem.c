@@ -85,7 +85,7 @@ static int nbSegmentIsOwned(int shmId)
         return TRUE; /* Can't be sure, assume it is owned */
     }
 
-    if (sb.st_size <= (off_t) sizeof(scene_t))
+    if (sb.st_size < (off_t) sizeof(scene_t))
     {
         /* This is impossibly small so assume it isn't valid */
         return FALSE;
@@ -174,7 +174,6 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
 
     if (nbSegmentIsOwned(shmId))
     {
-        printf("Segment is owned, unlinked it\n");
         shm_unlink(name);
         return NULL;
     }
@@ -199,7 +198,6 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
     scene = nbMapSharedSegment(name, shmId, size);
     if (!scene)
     {
-        printf("nbMapSharedSegment failed\n");
         shm_unlink(name);
     }
 
@@ -303,12 +301,6 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
-
-    if (st->usesExact)
-    {
-        mw_printf("Visualizer broken with Exact\n");
-        return;
-    }
 
     pid = fork();
     if (pid != 0)  /* Parent */
@@ -460,15 +452,15 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     SceneInfo* info = &queue->info[buffer];
     FloatPos* r = &queue->bodyData[buffer * nbody];
 
-    if (!st->tree.root)
+    if (st->tree.root)
+    {
+        cmPos = Pos(st->tree.root);
+    }
+    else
     {
         /* If we are using exact nbody or haven't constructed the tree
          * yet we need to calculate the center of mass on our own */
         cmPos = nbCenterOfMass(st);
-    }
-    else
-    {
-        cmPos = Pos(st->tree.root);
     }
 
     info->currentTime = (float) st->step * (float) ctx->timestep;
