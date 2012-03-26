@@ -1010,11 +1010,21 @@ void NBodyGraphics::mainLoop()
 {
     const int eventPollPeriod = (int) (1000.0 / 30.0);
 
-    while (this->running)
+    while (true)
     {
         while (!this->needsUpdate)
         {
             glfwPollEvents();
+
+            if (!this->running)
+            {
+                /* Make sure to test right after polling to avoid
+                 * waiting for the scene to update before quitting.
+                 * This can leave us stuck with quitting not working
+                 * after the simulation ends
+                 */
+                return;
+            }
 
             if (!this->drawOptions.paused)
             {
