@@ -952,7 +952,7 @@ void NBodyGraphics::calculateModelToCameraMatrix(glm::mat4& matrix)
     //is directly behind us by the radius number of units.
     matrix = glm::translate(identityMatrix, glm::vec3(0.0f, 0.0f, -effRadius));
 
-    //Rotate the world to look in the right direction..
+    //Rotate the world to look in the right direction.
     glm::fquat totalOrientation = this->floatState.orient * viewPole.GetView().orient;
     glm::fquat fullRotation = glm::angleAxis(-viewPole.GetView().degSpinRotation, zAxis) * totalOrientation;
 
@@ -1101,6 +1101,10 @@ void NBodyGraphics::floatMotion()
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
 {
     OPA_store_int(&scene->blockSimulationOnGraphics, args->blockSimulation);
+
+
+    /* Must be last thing set */
+    OPA_store_int(&scene->attachedPID, (int) getpid());
 }
 
 static void nbglRequestGL32()

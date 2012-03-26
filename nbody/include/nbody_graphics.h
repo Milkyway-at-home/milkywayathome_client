@@ -77,8 +77,19 @@ typedef struct
     int hasInfo;
     int staticScene;
 
-    /* We will require exclusive access. One visualizer per running simulation */
+    /* We require exclusive access. One visualizer per running simulation
+     *
+     * We need 2 copies set at different times to signal to forking
+     * process that visualizer is ready with setup.
+     *
+     * We need to acquire the attached lock before we can set
+     * settings from the graphics such as the
+     * blockSimulationOnGraphics, but then we need to indicate when
+     * we have finished setup or otherwise there can be a visible
+     * jump at the start
+     */
     OPA_int_t attachedPID;
+    OPA_int_t attachedLock;
 
     /*
       Optionally block the simulation while the graphics catches up.
@@ -86,7 +97,6 @@ typedef struct
       expense of slowing the simulation.
     */
     OPA_int_t blockSimulationOnGraphics;
-
     NBodyCircularQueue queue;
 } scene_t;
 

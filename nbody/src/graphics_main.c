@@ -509,7 +509,7 @@ static int nbglCheckConnectedVersion(const scene_t* scene)
 
 static int nbglGetExclusiveSceneAccess(scene_t* scene)
 {
-    int oldPID = OPA_cas_int(&scene->attachedPID, 0, (int) getpid());
+    int oldPID = OPA_cas_int(&scene->attachedLock, 0, (int) getpid());
     if (oldPID != 0)
     {
         mw_printf("Could not get exclusive access to simulation shared segment "
@@ -527,7 +527,7 @@ static int nbglGetExclusiveSceneAccess(scene_t* scene)
 
 static scene_t* g_scene = NULL;
 
-static void nbglCleanupAttachedCount(void)
+static void nbglCleanupAttached(void)
 {
     printf("Cleanup\n");
 
@@ -535,13 +535,14 @@ static void nbglCleanupAttachedCount(void)
     {
         printf("Release scene\n");
         OPA_store_int(&g_scene->attachedPID, 0);
+        OPA_store_int(&g_scene->attachedLock, 0);
         g_scene = NULL;
     }
 }
 
 static void nbglSigHandler(int sig)
 {
-    nbglCleanupAttachedCount();
+    nbglCleanupAttached();
     signal(sig, SIG_DFL);
     raise(sig);
 }
@@ -557,7 +558,7 @@ static void nbglInstallExitHandlers()
     signal(SIGKILL, nbglSigHandler);
     signal(SIGSEGV, nbglSigHandler);
     signal(SIGUSR1, nbglSigHandler);
-    atexit(nbglCleanupAttachedCount);
+    atexit(nbglCleanupAttached);
 }
 
 #ifdef __APPLE__

@@ -311,6 +311,7 @@ int nbMain(const NBodyFlags* nbf)
     if (nbf->visualizer)
     {
         nbLaunchVisualizer(st, nbf->visArgs);
+        nbUpdateDisplayedBodies(ctx, st);
     }
 
   #if NBODY_OPENCL
