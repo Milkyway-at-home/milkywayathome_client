@@ -374,6 +374,64 @@ static int nbglBoincGraphicsInit(int debug)
     return 0;
 }
 
+
+static int readCoordinateSystem = FALSE;
+static int readHasGalaxy = FALSE;
+static int readCenterOfMass = FALSE;
+static int fileUsesCartesian = TRUE;
+
+/* Return TRUE if succesfully matched a line */
+static int nbglTryReadSceneItems(const char* lineBuf, scene_t* scene)
+{
+
+    if (!readCoordinateSystem)
+    {
+        if (sscanf(lineBuf,
+                   " cartesian = %d \n",
+                   &fileUsesCartesian) == 1)
+        {
+            readCoordinateSystem = TRUE;
+
+            if (!fileUsesCartesian)
+            {
+                mw_printf("Warning: Noncartesian output files not implemented\n");
+            }
+
+            return TRUE;
+        }
+    }
+
+    if (!readHasGalaxy)
+    {
+        if (sscanf(lineBuf,
+                   " hasMilkyway = %d \n",
+                   &scene->hasGalaxy) == 1)
+        {
+            readHasGalaxy = TRUE;
+            return TRUE;
+        }
+    }
+
+    if (!readCenterOfMass)
+    {
+        float* cmPos = scene->queue.info[0].rootCenterOfMass;
+
+        if (sscanf(lineBuf,
+                   " centerOfMass = %f , %f , %f \n",
+                   &cmPos[0], &cmPos[1], &cmPos[2]) == 3)
+        {
+            readCenterOfMass = TRUE;
+            return TRUE;
+        }
+        else
+        {
+            cmPos[0] = cmPos[1] = cmPos[2] = 0.0f;
+        }
+    }
+
+    return FALSE;
+}
+
 static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
 {
     FILE* f;
@@ -387,6 +445,7 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
     double vx, vy, vz;
     double lambda;
     FloatPos* r;
+    int hasError = FALSE;
     scene_t* scene = NULL;
 
     f = fopen(filename, "r");
@@ -411,51 +470,75 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
     scene->hasInfo = FALSE;
     scene->staticScene = TRUE;
 
+    /* Make read data fake that we have 1 element in the queue */
+    OPA_store_int(&scene->queue.head, 0);
+    OPA_store_int(&scene->queue.tail, 1);
 
-    /* Skip the 1st line with the # comment */
-    fgets(lnBuf, sizeof(lnBuf), f);
 
-    while (rc != EOF)
+    readCoordinateSystem = FALSE;
+    readHasGalaxy = FALSE;
+    readCenterOfMass = FALSE;
+
+    while (fgets(lnBuf, (int) sizeof(lnBuf), f) && line < lnCount)
     {
         ++line;
-        rc = fscanf(f,
+
+        if (strlen(lnBuf) + 1 >= sizeof(lnBuf))
+        {
+            mw_printf("Error reading histogram line "ZU" (Line buffer too small): %s", line, lnBuf);
+            hasError = TRUE;
+            break;
+        }
+
+        /* Skip comments and blank lines */
+        if (lnBuf[0] == '#' || lnBuf[0] == '\n')
+            continue;
+
+        if (nbglTryReadSceneItems(lnBuf, scene))
+            continue;
+
+        rc = sscanf(lnBuf,
                     "%d , %lf , %lf , %lf , %lf , %lf , %lf ",
                     &ignore,
                     &x, &y, &z,
                     &vx, &vy, &vz);
         if (rc == 7)
         {
-            ++nbody;
             /* May or may not be there */
-            rc = fscanf(f, " , %lf \n", &lambda);
+            rc = sscanf(lnBuf, " , %lf \n", &lambda);
             if (rc != 1)
             {
-                fscanf(f, " \n");
+                sscanf(lnBuf, " \n");
             }
-            assert(line < lnCount);
 
-            r[line].x = (float) x;
-            r[line].y = (float) y;
-            r[line].z = (float) z;
+            r[nbody].x = (float) x;
+            r[nbody].y = (float) y;
+            r[nbody].z = (float) z;
+
+            ++nbody;
         }
-        else if (rc != EOF)
+        else
         {
-            mw_printf("Error reading '%s' at line "ZU"\n", filename, line);
+            mw_printf("Uh what\n");
+            hasError = TRUE;
         }
     }
-
-    if (rc != EOF)
-    {
-        fclose(f);
-        free(scene);
-        return NULL;
-    }
-
-    scene->nbody = nbody;
 
     if (fclose(f))
     {
         mwPerror("Failed to close file '%s'", filename);
+    }
+
+    if (!readCoordinateSystem || !readHasGalaxy || !readCenterOfMass)
+    {
+        mw_printf("Warning: Failed to read some scene info items\n");
+    }
+
+    scene->nbody = nbody;
+    if (hasError)
+    {
+        free(scene);
+        return NULL;
     }
 
     return scene;
@@ -690,7 +773,7 @@ int main(int argc, const char* argv[])
     else
     {
         scene = nbglLoadStaticSceneFromFile(flags.file);
-        if (scene)
+        if (!scene)
         {
             freeVisArgs(&flags);
             return 1;
