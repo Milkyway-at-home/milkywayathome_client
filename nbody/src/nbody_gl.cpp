@@ -195,6 +195,10 @@ private:
         float texturedSpritePointSize;
         float pointPointSize;
 
+        // for resetting to the same size as at the start
+        float texturedSpritePointSizeOrig;
+        float pointPointSizeOrig;
+
         bool drawInfo;
         bool drawAxes;
         bool drawOrbitTrace;
@@ -210,6 +214,8 @@ private:
           drawMode(args->untexturedPoints ? POINTS : TEXTURED_SPRITES),
           texturedSpritePointSize(args->texturedPointSize),
           pointPointSize(args->pointPointSize),
+          texturedSpritePointSizeOrig(args->texturedPointSize),
+          pointPointSizeOrig(args->pointPointSize),
           drawInfo((bool) !args->noDrawInfo),
           drawAxes((bool) args->drawAxes),
           drawOrbitTrace((bool) args->drawOrbitTrace),
@@ -276,6 +282,20 @@ public:
         else
         {
             this->drawOptions.drawMode = POINTS;
+        }
+    }
+
+    void resetPointSize()
+    {
+        this->markDirty();
+
+        if (this->drawOptions.drawMode == TEXTURED_SPRITES)
+        {
+            this->drawOptions.texturedSpritePointSize = this->drawOptions.texturedSpritePointSizeOrig;
+        }
+        else
+        {
+            this->drawOptions.pointPointSize = this->drawOptions.pointPointSizeOrig;
         }
     }
 
@@ -495,65 +515,8 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
 
     switch (key)
     {
-        case GLFW_KEY_A:
-            ctx->toggleDrawAxes();
-            break;
-
-        case GLFW_KEY_T:
-            ctx->toggleDrawOrbitTrace();
-            break;
-
-        case GLFW_KEY_I:
-            ctx->toggleDrawInfo();
-            break;
-
         case GLFW_KEY_ESC:
-        case GLFW_KEY_Q:
             ctx->stop();
-            break;
-
-        case GLFW_KEY_B:
-            ctx->increasePointSize();
-            break;
-
-        case GLFW_KEY_S:
-            ctx->decreasePointSize();
-            break;
-
-        case GLFW_KEY_L:
-            ctx->toggleDrawMode();
-            break;
-
-        case GLFW_KEY_N:
-            break;
-
-        case GLFW_KEY_H:
-        case GLFW_KEY_SLASH: /* Same as question mark key */
-            ctx->toggleHelp();
-            break;
-
-        case GLFW_KEY_O: /* Toggle camera following CM or on milkyway center */
-            ctx->toggleOrigin();
-            break;
-
-        case GLFW_KEY_F: /* Toggle floating */
-            ctx->toggleFloatMode();
-            break;
-
-        case GLFW_KEY_Z:
-            ctx->increaseFloatSpeed();
-            break;
-
-        case GLFW_KEY_X:
-            ctx->decreaseFloatSpeed();
-            break;
-
-        case GLFW_KEY_P:
-            ctx->togglePaused();
-            break;
-
-        case GLFW_KEY_C:
-            ctx->toggleMonochromatic();
             break;
 
         default:
@@ -561,9 +524,95 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
     }
 }
 
-static void charHandler(GLFWwindow window, int code)
+static void charHandler(GLFWwindow window, int charCode)
 {
-    printf("CHAR %d: %c\n", code, code);
+    NBodyGraphics* ctx = globalGraphicsContext;
+
+    switch (charCode)
+    {
+        case 'A':
+        case 'a':
+            ctx->toggleDrawAxes();
+            break;
+
+        case 'T':
+        case 't':
+            ctx->toggleDrawOrbitTrace();
+            break;
+
+        case 'I':
+        case 'i':
+            ctx->toggleDrawInfo();
+            break;
+
+        case 'Q':
+        case 'q':
+            ctx->stop();
+            break;
+
+        case 'B':
+        case 'b':
+        case '>':
+        case '+':
+            ctx->increasePointSize();
+            break;
+
+        case 'S':
+        case 's':
+        case '<':
+        case '-':
+            ctx->decreasePointSize();
+            break;
+
+        case '=':
+            ctx->resetPointSize();
+            break;
+
+        case 'L':
+        case 'l':
+            ctx->toggleDrawMode();
+            break;
+
+        case 'H':
+        case 'h':
+        case '?':
+            ctx->toggleHelp();
+            break;
+
+        case 'O':
+        case 'o': /* Toggle camera following CM or on milkyway center */
+            ctx->toggleOrigin();
+            break;
+
+        case 'F':
+        case 'f': /* Toggle floating */
+            ctx->toggleFloatMode();
+            break;
+
+        case 'Z':
+        case 'z':
+            ctx->increaseFloatSpeed();
+            break;
+
+        case 'X':
+        case 'x':
+            ctx->decreaseFloatSpeed();
+            break;
+
+        case 'P':
+        case 'p':
+        case ' ':
+            ctx->togglePaused();
+            break;
+
+        case 'C':
+        case 'c':
+            ctx->toggleMonochromatic();
+            break;
+
+        default:
+            return;
+    }
 }
 
 static void nbglSetHandlers()
