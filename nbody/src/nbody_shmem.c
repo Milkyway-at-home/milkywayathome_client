@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2011, 2012 Matthew Arsenault
  * Copyright (c) 2011 Rensselaer Polytechnic Institute.
  *
  * This file is part of Milkway@Home.
@@ -60,6 +60,7 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
     st->scene->nbody = st->nbody;
     st->scene->nSteps = ctx->nStep;
+    st->scene->hasInfo = TRUE;
     st->scene->hasGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 }
 
@@ -71,87 +72,177 @@ static size_t nbFindShmemSize(int nbody)
 
 #if USE_SHMEM
 
-/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127 */
-int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
+/* Map the header of a shared memory segment and see if it is owned by
+ * an active process already. */
+static int nbSegmentIsOwned(int shmId)
 {
-    size_t size = nbFindShmemSize(st->nbody);
-    int shmId = -1;
-    const int mode = S_IRUSR | S_IWUSR | S_IRGRP;
-    void* p = NULL;
-    int instanceId;
-    char name[128];
+    void* p;
+    int owner;
+    struct stat sb;
 
-    /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
-    for (instanceId = 0; instanceId < MAX_INSTANCES; ++instanceId)
+    if (fstat(shmId, &sb) < 0)
     {
-        scene_t sceneBuf;
-
-        if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
-            mw_panic("Buffer too small for shared memory name\n");
-
-        shmId = shm_open(name, O_CREAT | O_RDWR, mode);
-        if (shmId < 0)
-        {
-            mwPerror("Error opening shared memory '%s'", name);
-            continue;
-        }
-
-        if (read(shmId, &sceneBuf, sizeof(sceneBuf)) != sizeof(sceneBuf))
-        {
-            /* If we can't read this, it was probably already removed
-             * or didn't exist, so we'll steal this name for a new
-             * one */
-            break;
-        }
-
-        if (!mwProcessIsAlive(sceneBuf.ownerPID))
-        {
-            /* The original owner is dead, and nothing is drawing it,
-             * so let's steal it */
-            break;
-        }
-
-        close(shmId);
+        return TRUE; /* Can't be sure, assume it is owned */
     }
 
-    if (instanceId >= MAX_INSTANCES || shmId < 0)
+    if (sb.st_size <= (off_t) sizeof(scene_t))
     {
-        mw_printf("Could not open new shm segment in %d tries\n", MAX_INSTANCES);
-        return 1;
+        /* This is impossibly small so assume it isn't valid */
+        return FALSE;
     }
 
-    if (ftruncate(shmId, size) < 0) /* Make the segment the correct size */
+    p = mmap(NULL, sizeof(scene_t), PROT_READ, MAP_SHARED, shmId, 0);
+    if (p == MAP_FAILED)
     {
-        mwPerror("Error ftruncate() shared memory");
-        close(shmId);
-        if (shm_unlink(name) < 0)
-        {
-            mwPerror("Error unlinking shared memory '%s'", name);
-        }
+        mwPerror("mmap: Failed to mmap shared memory for ownership check");
+        return FALSE;
+    }
 
-        return 1;
+    /* We have the tip of the existing segment mapped. Test if this is actually in use */
+    owner = ((scene_t*) p)->ownerPID;
+    munmap(p, sizeof(scene_t));
+
+    return mwProcessIsAlive(owner);
+}
+
+/* Resize and map the fully sized shared memory segment */
+static scene_t* nbMapSharedSegment(const char* name, int shmId, size_t size)
+{
+    void* p;
+
+    if (ftruncate(shmId, (off_t) size) < 0) /* Make the segment the correct size */
+    {
+        mwPerror("Error ftruncate() shared memory '%s' to size "ZU, name, size);
+        return NULL;
     }
 
     p = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shmId, 0);
     if (p == MAP_FAILED)
     {
-        mwPerror("mmap: Failed to mmap shared memory");
-        close(shmId);
-        if (shm_unlink(name) < 0)
-        {
-            mwPerror("Error unlinking shared memory '%s'", name);
-        }
+        mwPerror("Error mapping shared memory segment '%s'", name);
+        return NULL;
+    }
 
+    return (scene_t*) p;
+}
+
+/* Resize a segment by destroying and recreating it to work around OS X */
+static int nbRecreateSegment(const char* name, int shmIdOld, int mode)
+{
+    int shmId;
+    struct stat sb;
+
+    if (!fstat(shmIdOld, &sb))
+    {
+        /* Assume that if the segment is empty to start it was new */
+        if (sb.st_size == 0)
+        {
+            return shmIdOld;
+        }
+    }
+
+    if (close(shmIdOld) < 0 || shm_unlink(name) < 0)
+    {
+        mwPerror("Error closing/unlink shared memory segment '%s' for recreation", name);
+        return -1;
+    }
+
+    shmId = shm_open(name, O_CREAT | O_RDWR, mode);
+    if (shmId < 0)
+    {
+        mwPerror("Error reopening shared memory '%s'", name);
+    }
+
+    return shmId;
+}
+
+/* Try to open shared memory segment and resize it if it isn't owned
+ * by a living process */
+static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
+{
+    int shmId;
+    const int mode = S_IRUSR | S_IWUSR | S_IRGRP;
+    scene_t* scene = NULL;
+
+    /* Try to create a new segment or test if it exists already */
+    shmId = shm_open(name, O_CREAT | O_RDWR, mode);
+    if (shmId < 0)
+    {
+        mwPerror("Error opening shared memory '%s'", name);
+        return NULL;
+    }
+
+    if (nbSegmentIsOwned(shmId))
+    {
+        printf("Segment is owned, unlinked it\n");
+        shm_unlink(name);
+        return NULL;
+    }
+
+  #ifdef __APPLE__
+    /* With OS X's noncomformant POSIX shm functions, ftruncate()
+     * doesn't work except on segment creation, so remove the old one
+     * and recreate to allow resizing it.
+     *
+     * Also on OS X read() doesn't work with shm_open fd's so that's
+     * why we do all this nonsense just to mmap it to test for segment
+     * ownership
+     */
+    shmId = nbRecreateSegment(name, shmId, mode);
+    if (shmId < 0)
+    {
+        return NULL;
+    }
+  #endif
+
+    /* Not owned, so resize it to what we need and map it */
+    scene = nbMapSharedSegment(name, shmId, size);
+    if (!scene)
+    {
+        printf("nbMapSharedSegment failed\n");
+        shm_unlink(name);
+    }
+
+    close(shmId);
+    return scene;
+}
+
+/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127 */
+int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
+{
+    int pid;
+    int instanceId;
+    char name[128];
+    scene_t* scene = NULL;
+    size_t size = nbFindShmemSize(st->nbody);
+
+    /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
+    for (instanceId = 0; instanceId < MAX_INSTANCES; ++instanceId)
+    {
+        if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
+            mw_panic("Buffer too small for shared memory name\n");
+
+        scene = nbOpenMappedSharedSegment(name, size);
+        if (scene)
+            break;
+    }
+
+    if (!scene)
+    {
+        mw_printf("Could not open new shm segment in %d tries\n", instanceId);
         return 1;
     }
 
-    /* Wipe out any possibly remaining queue state, etc. */
-    memset(p, 0, sizeof(scene_t));
 
-    st->scene = (scene_t*) p;
-    st->shmId = shmId;
+    pid = (int) getpid();
+    mw_report("Process %d created scene instance %d\n", pid, instanceId);
+
+    /* Wipe out any possibly remaining queue state, etc. */
+    memset(scene, 0, sizeof(scene_t));
+
+    st->scene = (scene_t*) scene;
     st->scene->instanceId = instanceId;
-    st->scene->ownerPID = (int) getpid();
+    st->scene->ownerPID = pid;
     strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
     nbPrepareSceneFromState(ctx, st);
 

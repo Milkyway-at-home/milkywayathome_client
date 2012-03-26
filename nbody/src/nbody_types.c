@@ -85,7 +85,6 @@ int nbDetachSharedScene(NBodyState* st)
             return 1;
         }
 
-        st->shmId = -1;
         st->scene = NULL;
     }
   #endif /* USE_SHMEM */

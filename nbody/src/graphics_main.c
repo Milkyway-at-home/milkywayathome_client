@@ -24,12 +24,12 @@
 
 #include <signal.h>
 
-#if !BOINC_APPLICATION
+#if USE_SHMEM
   #include <sys/mman.h>
   #include <sys/stat.h>
   #include <fcntl.h>
   #include <errno.h>
-#endif /* !BOINC_APPLICATION */
+#endif /* USE_SHMEM */
 
 static void nbglPrintCopyright(void)
 {
@@ -388,7 +388,7 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
 }
 
 
-#if !BOINC_APPLICATION
+#if USE_SHMEM
 
 /* FIXME: Duplicated in nbody_shmem.c */
 static size_t nbFindShmemSize(int nbody)
@@ -436,7 +436,7 @@ static scene_t* nbglConnectSharedScene(int instanceId)
         return NULL;
     }
 
-    if (sb.st_size < sizeof(scene_t) || sb.st_size < nbFindShmemSize(scene->nbody))
+    if (sb.st_size < (ssize_t) sizeof(scene_t) || sb.st_size < (ssize_t) nbFindShmemSize(scene->nbody))
     {
         mw_printf("Shared memory segment is impossibly small ("ZU")\n", (size_t) sb.st_size);
         if (shm_unlink(name) < 0)
@@ -489,7 +489,7 @@ static scene_t* nbglConnectSharedScene(int instanceId)
     return NULL;
 }
 
-#endif /* !BOINC_APPLICATION */
+#endif /* USE_SHMEM */
 
 static int nbglCheckConnectedVersion(const scene_t* scene)
 {
@@ -594,6 +594,8 @@ int main(int argc, const char* argv[])
             freeVisArgs(&flags);
             return 1;
         }
+
+        mw_report("Process %d acquired instance id %d\n", (int) getpid(), flags.instanceId);
 
         nbglInstallExitHandlers();
         g_scene = scene;

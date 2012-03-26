@@ -277,8 +277,6 @@ typedef struct MW_ALIGN_TYPE
     int treeIncest;          /* Tree incest has occured */
     int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
-    int shmId;               /* shmid, key when using shmem */
-
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -300,7 +298,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
