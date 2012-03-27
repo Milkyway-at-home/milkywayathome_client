@@ -28,9 +28,6 @@ struct Color
     GLfloat ignore;
 };
 
-void nbglRandomParticleColor(Color& rgb, bool ignore);
-
-
 GLuint nbglCreateProgram(const char* name,
                          const char* vertSrc,
                          const char* fragSrc,

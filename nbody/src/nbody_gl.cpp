@@ -901,6 +901,56 @@ void NBodyGraphics::createPositionBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+
+static inline glm::vec3 nbglBetweenHSVColors(const glm::vec3& a, const glm::vec3& b)
+{
+    return glm::rgbColor(glm::vec3(glm::linearRand(a.x, b.x),
+                                   glm::linearRand(a.y, b.y),
+                                   glm::linearRand(a.z, b.z)));
+}
+
+static void nbglRandomParticleColor(Color& color, bool ignore)
+{
+//    static const HSVColor dark(213.0f, 0.24f, 0.36f);
+
+//    static const HSVColor light(202.0f, 0.13f, 0.78f);
+//    static const HSVColor dark(212.0f, 0.32f, 0.21f);
+
+//    static const HSVColor dark(212.0f, 0.28f, 0.36f);
+//    static const HSVColor dark(213.0f, 0.32f, 0.22f);
+
+//    static const HSVColor dark(218.0f, 0.25f, 0.25f);
+//    static const HSVColor dark(240.0f, 0.9f, 0.21f);
+
+//    static const HSVColor light(206.0f, 0.25f, 76.0f);
+//    static const HSVColor light(198.0f, 8.0f, 85.0f);
+
+    // HSV colors
+    static const glm::vec3 light(204.0f, 0.13f, 0.84f);
+    static const glm::vec3 dark(209.0f, 0.41f, 0.50f);
+
+    static const glm::vec3 coreLight(40.0f, 0.01f, 0.99f);
+    static const glm::vec3 coreDark(33.0f, 0.29f, 0.58f);
+
+    glm::vec3 rgb;
+    if (glm::linearRand(0.0f, 1.0f) > 0.2f)
+    {
+        // bluish
+        rgb = nbglBetweenHSVColors(dark, light);
+    }
+    else
+    {
+        // reddish
+        rgb = nbglBetweenHSVColors(coreDark, coreLight);
+    }
+
+    color.r = rgb.x;
+    color.g = rgb.y;
+    color.b = rgb.z;
+    color.ignore = 1.0f;
+    //color.ignore = ignore ? ?????
+}
+
 void NBodyGraphics::loadColors()
 {
     GLint nbody = this->scene->nbody;
