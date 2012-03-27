@@ -651,20 +651,26 @@ int mwProcessIsAlive(int pid)
     }
     else
     {
+        pid_t result;
         int status;
 
         /* If the process is a child, i.e. the graphics is forked off
          * the main process, we need to wait for it or else it will
          * remain a zombie the kill will still report as alive.
          */
-        if (waitpid((pid_t) pid, &status, WNOHANG) == 0)
+        result = waitpid((pid_t) pid, &status, WNOHANG);
+        if (result < 0)
         {
-            /* If this succeded, it is a child process that is done */
-            return FALSE;
+            /* Error is probably because it isn't a child process (ECHILD)
+               We can test it with kill.
+             */
+            return (kill((pid_t) pid, 0) == 0);
         }
-
-        /* If it isn't a child, we can test it with kill */
-        return (kill((pid_t) pid, 0) == 0);
+        else
+        {
+            /* It was a child. result > 0 if it is dead  */
+            return (result == 0);
+        }
     }
 }
 
