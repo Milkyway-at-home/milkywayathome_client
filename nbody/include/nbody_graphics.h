@@ -33,8 +33,13 @@
  * waiting for the queue to clear */
 #define NBODY_QUEUE_SLEEP_INTERVAL 16
 
-/* Number of seconds to wait before giving up on waiting for graphics */
-#define NBODY_QUEUE_TIMEOUT 5.0
+/* number of NBODY_QUEUE_SLEEP_INTERVALS to wait before checking if the process is dead */
+#define NBODY_QUEUE_WAIT_PERIODS 7
+
+/* Number of seconds to wait on a supposedly living attached garphics
+   process before giving up on it
+ */
+#define NBODY_QUEUE_TIMEOUT 10.0
 
 typedef struct
 {
@@ -81,6 +86,7 @@ typedef struct
      */
     OPA_int_t attachedPID;
     OPA_int_t attachedLock;
+    OPA_int_t paused;
 
     /*
       Optionally block the simulation while the graphics catches up.

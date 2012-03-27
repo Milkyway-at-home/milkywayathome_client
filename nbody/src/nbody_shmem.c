@@ -502,52 +502,99 @@ static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, c
     }
 }
 
-void nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
+static void nbReleaseSceneLocks(scene_t* scene)
+{
+    OPA_store_int(&scene->paused, 0);
+    OPA_store_int(&scene->blockSimulationOnGraphics, 0);
+    OPA_store_int(&scene->attachedLock, 0);
+    OPA_store_int(&scene->attachedPID, 0);
+}
+
+/* TODO: Should we quit if we are supposed to be blocking on graphics
+ * and the graphics dies? */
+NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     int pid;
     scene_t* scene = st->scene;
 
     if (!scene)
-        return;
+    {
+        return NBODY_SUCCESS;
+    }
 
     /* No copying when no screensaver attached */
     pid = OPA_load_int(&scene->attachedPID);
-    if (pid != 0)
+    if (pid == 0)
     {
-        if (OPA_load_int(&scene->blockSimulationOnGraphics))
+        return NBODY_SUCCESS;
+    }
+
+    if (OPA_load_int(&scene->blockSimulationOnGraphics))
+    {
+        int updated = FALSE;
+        double dt = -1.0;
+        double startTime = mwGetTime();
+
+        /* FIXME: This needs to change if we allow changing
+         * whether the simulation should block
+         */
+
+        do
         {
-            double dt = -1.0f;
-            double startTime = mwGetTime();
+            int attempt = 0;
 
-            /* FIXME: This needs to change if we allow changing
-             * whether the simulation should block
-             *
-             * FIXME: do we trust the graphics process to clean up the
-             * attachedPID?
-             */
-
-            while (   !nbPushCircularQueue(&scene->queue, ctx, st)
+            /* Keep trying to push to the queue as long as the
+             * process is still attached. */
+            while (   !(updated = nbPushCircularQueue(&scene->queue, ctx, st))
                    && ((pid = OPA_load_int(&scene->attachedPID)) != 0)
-                   && ((dt = mwGetTime() - startTime) < NBODY_QUEUE_TIMEOUT))
+                   && (attempt < NBODY_QUEUE_WAIT_PERIODS))
             {
                 mwMilliSleep(NBODY_QUEUE_SLEEP_INTERVAL);
+                ++attempt;
             }
 
+            /* We did update successfully, we are done */
+            if (updated)
+            {
+                return NBODY_SUCCESS;
+            }
+
+            /* The PID was reset by the graphics to 0, the process quit normally */
             if (pid == 0)
             {
-                /* Don't trust that dt was assigned to */
-                mw_report("Graphics process quit while waiting (waited %f seconds)\n", mwGetTime() - startTime);
+                mw_report("Graphics process quit while waiting (waited %f seconds)\n",
+                          mwGetTime() - startTime);
+                return NBODY_GRAPHICS_DEAD;
             }
 
-            if (dt >= NBODY_QUEUE_TIMEOUT)
+            /* It's been a while, so the graphics may have
+             * crashed. If the process is dead, we give up and
+             * remove it's locks */
+            if (!mwProcessIsAlive(pid))
             {
-                mw_report("Blocking on graphics timed out (%f seconds)\n", dt);
+                mw_report("Graphics process %d is dead, releasing its locks\n", pid);
+                nbReleaseSceneLocks(scene);
+                return NBODY_GRAPHICS_DEAD;
             }
+
+            /* FIXME: What if it goes into an infinite loop while
+             * paused? */
         }
-        else
-        {
-            nbPushCircularQueue(&scene->queue, ctx, st);
-        }
+        while (OPA_load_int(&scene->paused) || (dt = mwGetTime() - startTime) < NBODY_QUEUE_TIMEOUT);
+
+        /* The process is supposedly still alive, but it has
+         * been a long time and it isn't paused.
+         * TODO: Should we kill it?
+         */
+        mw_report("Waiting on graphics timed out (%f seconds)\n", mwGetTime() - startTime);
+
+        return NBODY_GRAPHICS_TIMEOUT;
     }
+    else
+    {
+        nbPushCircularQueue(&scene->queue, ctx, st);
+    }
+
+    return NBODY_SUCCESS;
 }
 

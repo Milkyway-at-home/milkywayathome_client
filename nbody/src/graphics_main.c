@@ -664,6 +664,16 @@ static int nbglCheckConnectedVersion(const scene_t* scene)
     return 0;
 }
 
+static void nbglReleaseSceneLocks(scene_t* scene)
+{
+    OPA_store_int(&scene->paused, 0);
+    OPA_store_int(&scene->blockSimulationOnGraphics, 0);
+    OPA_store_int(&scene->attachedLock, 0);
+
+    /* Set this last */
+    OPA_store_int(&scene->attachedPID, 0);
+}
+
 static int nbglGetExclusiveSceneAccess(scene_t* scene)
 {
     int pid = (int) getpid();
@@ -683,8 +693,7 @@ static int nbglGetExclusiveSceneAccess(scene_t* scene)
                       oldPID);
 
             /* Process is dead, steal the lock */
-            OPA_store_int(&scene->attachedLock, pid);
-            OPA_store_int(&scene->attachedPID, 0);
+            nbglReleaseSceneLocks(scene);
             return 0;
         }
     }
@@ -704,8 +713,7 @@ static void nbglCleanupAttached(void)
     if (g_scene)
     {
         printf("Release scene\n");
-        OPA_store_int(&g_scene->attachedPID, 0);
-        OPA_store_int(&g_scene->attachedLock, 0);
+        nbglReleaseSceneLocks(g_scene);
         g_scene = NULL;
     }
 }

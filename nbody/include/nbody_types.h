@@ -386,12 +386,12 @@ typedef enum
     NBODY_LIKELIHOOD_ERROR     = 1 << 15,
     NBODY_MAX_DEPTH_ERROR      = 1 << 16,
     NBODY_CELL_OVERFLOW_ERROR  = 1 << 17,
-    NBODY_RESERVED_ERROR_1     = 1 << 18,
-    NBODY_RESERVED_ERROR_2     = 1 << 19,
-    NBODY_RESERVED_ERROR_3     = 1 << 20,
-    NBODY_RESERVED_ERROR_4     = 1 << 21,
-    NBODY_RESERVED_ERROR_5     = 1 << 22,
-    NBODY_RESERVED_ERROR_6     = 1 << 23,
+    NBODY_GRAPHICS_TIMEOUT     = 1 << 18,
+    NBODY_GRAPHICS_DEAD        = 1 << 19,
+    NBODY_RESERVED_ERROR_1     = 1 << 20,
+    NBODY_RESERVED_ERROR_2     = 1 << 21,
+    NBODY_RESERVED_ERROR_3     = 1 << 22,
+    NBODY_RESERVED_ERROR_4     = 1 << 23,
 
     /* Warnings */
     NBODY_TREE_INCEST_NONFATAL = 1 << 24,

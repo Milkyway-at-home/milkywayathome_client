@@ -140,6 +140,10 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_MAX_DEPTH_ERROR";
         case NBODY_CELL_OVERFLOW_ERROR:
             return "NBODY_CELL_OVERFLOW_ERROR";
+        case NBODY_GRAPHICS_TIMEOUT:
+            return "NBODY_GRAPHICS_TIMEOUT";
+        case NBODY_GRAPHICS_DEAD:
+            return "NBODY_GRAPHICS_DEAD";
         case NBODY_RESERVED_ERROR_1:
             return "NBODY_RESERVED_ERROR_1";
         case NBODY_RESERVED_ERROR_2:
@@ -148,10 +152,6 @@ const char* showNBodyStatus(NBodyStatus x)
             return "NBODY_RESERVED_ERROR_3";
         case NBODY_RESERVED_ERROR_4:
             return "NBODY_RESERVED_ERROR_4";
-        case NBODY_RESERVED_ERROR_5:
-            return "NBODY_RESERVED_ERROR_5";
-        case NBODY_RESERVED_ERROR_6:
-            return "NBODY_RESERVED_ERROR_6";
 
         case NBODY_TREE_INCEST_NONFATAL:
             return "NBODY_TREE_INCEST_NONFATAL";

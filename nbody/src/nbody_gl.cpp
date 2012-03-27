@@ -362,13 +362,13 @@ public:
     {
         this->markDirty();
         this->drawOptions.monochromatic = !this->drawOptions.monochromatic;
-        printf("Monochrome: %d\n", this->drawOptions.monochromatic);
     }
 
     void togglePaused()
     {
         this->markDirty();
         this->paused = !this->paused;
+        OPA_store_int(&this->scene->paused, (int) this->paused);
     }
 
     void toggleFloatMode()
