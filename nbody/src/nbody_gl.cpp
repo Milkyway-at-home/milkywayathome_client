@@ -57,13 +57,8 @@ static const float maxTexturedPointSize = 1000.0f;
 
 static const float pointSizeChangeFactor = 1.05f;
 
-// For access from callbacks
-class NBodyGraphics;
-static NBodyGraphics* globalGraphicsContext = NULL;
-
-
 static const glm::vec3 origin(0.0f, 0.0f, 0.0f);
-static const glm::fquat startOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
+static const glm::fquat identityOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
 
 static const float startRadius = 2.0f * 30.0f;
 
@@ -73,25 +68,17 @@ static const float maxFloatSpeed = 30.0f;
 static const float floatSpeedChangeFactor = 1.1f;
 
 
-static const glutil::ViewData initialViewData =
-{
-    origin,  // center position
-    startOrientation, // view direction
-    startRadius,  // radius
-    0.0f    // spin rotation of up axis
-};
-
 // limits of how far you can zoom to
 static const float minViewRadius = 0.05f;
 static const float maxViewRadius = 350.0f;
 
 
-static const double minFloatTime = 10.0;
-static const double maxFloatTime = 20.0;
+static const double minFloatTime = 2.0;
+static const double maxFloatTime = 10.0;
 
 static const float maxRadialFloatSpeed = 0.2f;
 
-static glutil::ViewScale viewScale =
+static const glutil::ViewScale viewScale =
 {
     minViewRadius, maxViewRadius,
     2.5f, 0.5f,    // radius deltas
@@ -99,7 +86,17 @@ static glutil::ViewScale viewScale =
     90.0f / 250.0f // rotation scale
 };
 
-static glutil::ViewPole viewPole = glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN);
+static const glutil::ViewData initialViewData =
+{
+    origin,              // center position
+    identityOrientation, // view direction
+    startRadius,         // radius
+    0.0f                 // spin rotation of up axis
+};
+
+class NBodyGraphics;
+static NBodyGraphics* globalGraphicsContext;
+
 
 class NBodyGraphics
 {
@@ -151,12 +148,13 @@ private:
     OrbitTrace orbitTrace;
 
     SceneData sceneData;
+    glutil::ViewPole viewPole;
+
 
     // state of auto rotate store
     struct FloatState
     {
-        glm::fquat orient;
-        glm::vec2 angle;
+        glm::fquat orient; // doesn't really matter what this starts as
         glm::vec2 angleVec;
         double lastTime;
         double floatTime; // time this float should last
@@ -165,8 +163,7 @@ private:
         float rSpeed;
 
         FloatState(const VisArgs* args)
-        : orient(startOrientation),
-          angle(glm::vec2(0.0f, 0.0f)),
+        : orient(identityOrientation),
           angleVec(glm::vec2(0.0f, 0.0f)),
           lastTime(0.0f),
           floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
@@ -240,12 +237,29 @@ public:
     NBodyGraphics(scene_t* scene, const VisArgs* args);
     ~NBodyGraphics();
 
+    inline void mouseClick(glutil::MouseButtons button, bool pressed, int modifiers, int x, int y)
+    {
+        this->viewPole.MouseClick(button, pressed, modifiers, glm::ivec2(x, y));
+    }
+
+    inline void mouseMove(int x, int y)
+    {
+        this->viewPole.MouseMove(glm::ivec2(x, y));
+    }
+
+    inline void mouseWheel(int modifiers, int x, int y)
+    {
+        int direction = y > 0;
+        this->viewPole.MouseWheel(direction, modifiers, glm::ivec2(x, y));
+    }
+
     void prepareContext();
 
     void drawAxes();
     void drawParticles(const glm::mat4& modelMatrix);
     bool readSceneData();
     void floatMotion();
+    void findInitialOrientation();
 
     void display();
     void mainLoop();
@@ -465,15 +479,17 @@ static glutil::MouseButtons glfwButtonToGLUtil(int button)
 
 static void mouseButtonHandler(GLFWwindow window, int button, int action)
 {
-    if (globalGraphicsContext->isScreensaver())
+    NBodyGraphics* ctx = globalGraphicsContext;
+
+    if (ctx->isScreensaver())
     {
-        globalGraphicsContext->stop();
+        ctx->stop();
     }
 
     int x, y;
     int modifiers = getGLFWModifiers(window);
     glfwGetMousePos(window, &x, &y);
-    viewPole.MouseClick(glfwButtonToGLUtil(button), action == GLFW_PRESS, modifiers, glm::ivec2(x, y));
+    ctx->mouseClick(glfwButtonToGLUtil(button), action == GLFW_PRESS, modifiers, x, y);
 }
 
 static void mousePosHandler(GLFWwindow window, int x, int y)
@@ -496,15 +512,13 @@ static void mousePosHandler(GLFWwindow window, int x, int y)
         }
     }
 
-    viewPole.MouseMove(glm::ivec2(x, y));
-
+    globalGraphicsContext->mouseMove(x, y);
     globalGraphicsContext->markDirty();
 }
 
 static void scrollHandler(GLFWwindow window, int x, int y)
 {
-    int direction = y > 0;
-    viewPole.MouseWheel(direction, getGLFWModifiers(window), glm::ivec2(x, y));
+    globalGraphicsContext->mouseWheel(getGLFWModifiers(window), x, y);
     globalGraphicsContext->markDirty();
 }
 
@@ -643,6 +657,7 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
       text(NBodyText(&robotoRegular12)),
       orbitTrace(OrbitTrace(scene)),
       sceneData(SceneData((bool) scene->staticScene)),
+      viewPole(glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN)),
       floatState(FloatState(args)),
       drawOptions(args),
       running(true),
@@ -1007,15 +1022,15 @@ void NBodyGraphics::calculateModelToCameraMatrix(glm::mat4& matrix)
     // We should only get really close or really far away if manually zooming.
     // The float radius should be kept < the current view radius
     // It should stay a reasonable viewing distance if left on its own
-    float effRadius = 0.5f * (viewPole.GetView().radius + this->floatState.radius);
+    float effRadius = 0.5f * (this->viewPole.GetView().radius + this->floatState.radius);
 
     //In this space, we are facing in the correct direction. Which means that the camera point
     //is directly behind us by the radius number of units.
     matrix = glm::translate(identityMatrix, glm::vec3(0.0f, 0.0f, -effRadius));
 
     //Rotate the world to look in the right direction.
-    glm::fquat totalOrientation = this->floatState.orient * viewPole.GetView().orient;
-    glm::fquat fullRotation = glm::angleAxis(-viewPole.GetView().degSpinRotation, zAxis) * totalOrientation;
+    glm::fquat totalOrientation = this->floatState.orient * this->viewPole.GetView().orient;
+    glm::fquat fullRotation = glm::angleAxis(-this->viewPole.GetView().degSpinRotation, zAxis) * totalOrientation;
 
     matrix *= glm::mat4_cast(fullRotation);
 
@@ -1114,10 +1129,6 @@ void NBodyGraphics::newFloatDirection()
 
     this->floatState.floatTime = glm::linearRand(minFloatTime, maxFloatTime);
 
-    glm::vec2& angle = this->floatState.angle;
-    angle.x = std::fmod(angle.x, 360.0f);
-    angle.y = std::fmod(angle.y, 360.0f);
-
     // make sure we are trying to move out if close
     if (this->floatState.radius <= 2.0f * minViewRadius)
     {
@@ -1139,40 +1150,76 @@ void NBodyGraphics::newFloatDirection()
 
 void NBodyGraphics::floatMotion()
 {
-    double t = glfwGetTime();
-    static double lastUpdateTime = 0.0;
-    double dt = t - lastUpdateTime;
-    lastUpdateTime = t;
-    float fdt = (float) dt;
+    static double lastUpdateTime = 0.0; // time since angle updated
 
-    // CHECKME: are we concerned about error accumulation in adding
-    // the positions this way?
+    double now = glfwGetTime();
+    double dt = now - lastUpdateTime;
+    lastUpdateTime = now;
 
-    glm::vec2& angle = this->floatState.angle;
-    this->floatState.angle += this->floatState.speed * this->floatState.angleVec * fdt;
+    glm::vec2 angle = this->floatState.speed * this->floatState.angleVec * (float) dt;
+    glm::fquat localOrientation = glm::angleAxis(angle.x, yAxis);
+    localOrientation  = glm::angleAxis(angle.y, xAxis) * localOrientation;
 
-    // TODO: Maybe projecting the final angle and then using glm::mix to interpolate?
-    this->floatState.orient = startOrientation * glm::angleAxis(angle.x, yAxis);
-    this->floatState.orient = glm::angleAxis(angle.y, xAxis) * this->floatState.orient;
+    this->floatState.orient = localOrientation * this->floatState.orient;
 
-
-    this->floatState.radius += this->floatState.rSpeed * fdt;
+    this->floatState.radius += this->floatState.rSpeed * (float) dt;
     this->floatState.radius = glm::clamp(this->floatState.radius,
                                          minViewRadius,
-                                         viewPole.GetView().radius);
-    if (t - this->floatState.lastTime >= this->floatState.floatTime)
+                                         this->viewPole.GetView().radius);
+
+    // time since direction changed
+    if (now - this->floatState.lastTime >= this->floatState.floatTime)
     {
-        this->floatState.lastTime = t;
+        this->floatState.lastTime = now;
         this->newFloatDirection();
     }
 
     this->markDirty();
 }
 
+// we'll use the float orientation to start out oriented facing the
+// origin from somewhere behind the center of mass
+void NBodyGraphics::findInitialOrientation()
+{
+    glm::vec3 centerOfMass = -this->sceneData.centerOfMassView; // negative center of mass
+    glm::vec3 centerOfMassDir = glm::normalize(centerOfMass);
+
+    // find angle between the center of mass and the plane of the milkyway
+    float angle = atanf(fabsf(centerOfMass.z / centerOfMass.x));
+    angle = glm::degrees(angle);
+
+    // find an angle somewhat close to that angle
+    float rangeAngle = glm::gaussRand(angle, 4.0f);
+
+    // we want to eliminate the z component or else the starting
+    // orientation makes rotation feel funny at the start
+    glm::vec3 cmCrossZ = glm::normalize(glm::cross(centerOfMass, zAxis));
+
+    float x = glm::linearRand(-1.0f, 1.0f);
+    float y = glm::linearRand(-1.0f, 1.0f);
+    glm::vec3 rVector = glm::normalize(glm::vec3(x, y, 0.0f));
+
+    // Find a view that looks sort of from behind the center of mass
+    // towards the origin but somewhat random.
+    //
+    // This doesn't do quite what I want but it seems to look good
+    // enough most of the time
+
+    float rotateAngle = glm::linearRand(0.0f, 360.0f);
+    rVector = glm::rotate(centerOfMassDir, rotateAngle, rVector);
+    rVector = glm::perp(rVector, zAxis);
+
+    glm::vec3 shifted = glm::normalize(rVector + cmCrossZ);
+    glm::fquat startOrient = glm::angleAxis(rangeAngle, shifted);
+
+
+    // set the component of float orientation which we control
+    this->floatState.orient = startOrient;
+}
+
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
 {
     OPA_store_int(&scene->blockSimulationOnGraphics, args->blockSimulation);
-
 
     /* Must be last thing set */
     OPA_store_int(&scene->attachedPID, (int) getpid());
@@ -1252,6 +1299,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
 
         graphicsContext.prepareContext();
         graphicsContext.readSceneData();
+        graphicsContext.findInitialOrientation();
 
         globalGraphicsContext = &graphicsContext;
         nbglSetHandlers();
