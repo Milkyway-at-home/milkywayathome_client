@@ -203,7 +203,7 @@ private:
 
         DrawOptions(const VisArgs* args)
         : screensaverMode(args->fullscreen && !args->plainFullscreen),
-          floatMode(this->screensaverMode && !args->noFloat),
+          floatMode(!args->noFloat),
           cmCentered((bool) !args->originCentered),
           monochromatic((bool) args->monochromatic),
           drawMode(args->untexturedPoints ? POINTS : TEXTURED_SPRITES),
