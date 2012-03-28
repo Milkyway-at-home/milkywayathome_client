@@ -156,7 +156,8 @@ private:
     {
         glm::fquat orient; // doesn't really matter what this starts as
         glm::vec2 angleVec;
-        double lastTime;
+        double lastShiftTime;    // time since direction changed
+        double lastUpdateTime;   // time since angle updated
         double floatTime; // time this float should last
         float radius;
         float speed;
@@ -165,7 +166,8 @@ private:
         FloatState(const VisArgs* args)
         : orient(identityOrientation),
           angleVec(glm::vec2(0.0f, 0.0f)),
-          lastTime(0.0f),
+          lastShiftTime(0.0f),
+          lastUpdateTime(0.0f),
           floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
           radius(0.0f),
           speed(args->floatSpeed),
@@ -232,6 +234,10 @@ private:
     void loadColors();
     void calculateModelToCameraMatrix(glm::mat4& matrix);
     void newFloatDirection();
+    void findInitialOrientation();
+    void floatMotion();
+    void prepareContext();
+    bool readSceneData();
 
 public:
     NBodyGraphics(scene_t* scene, const VisArgs* args);
@@ -253,13 +259,8 @@ public:
         this->viewPole.MouseWheel(direction, modifiers, glm::ivec2(x, y));
     }
 
-    void prepareContext();
-
     void drawAxes();
     void drawParticles(const glm::mat4& modelMatrix);
-    bool readSceneData();
-    void floatMotion();
-    void findInitialOrientation();
 
     void display();
     void mainLoop();
@@ -692,6 +693,11 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
     this->particleTexture = nbglCreateParticleTexture(32);
 
     this->galaxyModel = scene->hasGalaxy ? new GalaxyModel() : NULL;
+
+    this->prepareContext();
+
+    // read initial scene data before starting
+    this->readSceneData();
 }
 
 NBodyGraphics::~NBodyGraphics()
@@ -1162,6 +1168,14 @@ void NBodyGraphics::mainLoop()
 {
     const int eventPollPeriod = (int) (1000.0 / 30.0);
 
+    this->findInitialOrientation();
+
+    // update the update times avoid a small jump on the first frame
+    this->floatState.lastUpdateTime = glfwGetTime();
+    this->floatState.lastShiftTime = this->floatState.lastUpdateTime;
+    this->newFloatDirection();
+
+
     while (true)
     {
         while (!this->needsUpdate)
@@ -1200,8 +1214,8 @@ void NBodyGraphics::newFloatDirection()
 {
     glm::vec2& angleVec = this->floatState.angleVec;
 
-    angleVec.x = glm::linearRand(0.0f, this->floatState.speed);
-    angleVec.y = glm::linearRand(0.0f, this->floatState.speed);
+    angleVec.x = glm::linearRand(0.0f, 1.0f);
+    angleVec.y = glm::linearRand(-1.0f, 0.0f);
     angleVec = glm::normalize(angleVec);
 
     this->floatState.floatTime = glm::linearRand(minFloatTime, maxFloatTime);
@@ -1227,11 +1241,9 @@ void NBodyGraphics::newFloatDirection()
 
 void NBodyGraphics::floatMotion()
 {
-    static double lastUpdateTime = 0.0; // time since angle updated
-
     double now = glfwGetTime();
-    double dt = now - lastUpdateTime;
-    lastUpdateTime = now;
+    double dt = now - this->floatState.lastUpdateTime;
+    this->floatState.lastUpdateTime = now;
 
     glm::vec2 angle = this->floatState.speed * this->floatState.angleVec * (float) dt;
     glm::fquat localOrientation = glm::angleAxis(angle.x, yAxis);
@@ -1245,9 +1257,9 @@ void NBodyGraphics::floatMotion()
                                          this->viewPole.GetView().radius);
 
     // time since direction changed
-    if (now - this->floatState.lastTime >= this->floatState.floatTime)
+    if (now - this->floatState.lastShiftTime >= this->floatState.floatTime)
     {
-        this->floatState.lastTime = now;
+        this->floatState.lastShiftTime = now;
         this->newFloatDirection();
     }
 
@@ -1373,11 +1385,6 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
     {
         // GL context needs to be open or else destructors will crash
         NBodyGraphics graphicsContext(scene, args);
-
-        graphicsContext.prepareContext();
-        graphicsContext.readSceneData();
-        graphicsContext.findInitialOrientation();
-
         globalGraphicsContext = &graphicsContext;
         nbglSetHandlers();
         graphicsContext.mainLoop();
