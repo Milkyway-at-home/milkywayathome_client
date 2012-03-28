@@ -1181,11 +1181,11 @@ void NBodyGraphics::mainLoop()
             if (!this->paused)
             {
                 this->readSceneData();
-            }
 
-            if (this->drawOptions.floatMode)
-            {
-                this->floatMotion();
+                if (this->drawOptions.floatMode)
+                {
+                    this->floatMotion();
+                }
             }
 
             mwMilliSleep(eventPollPeriod);
