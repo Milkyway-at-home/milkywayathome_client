@@ -200,6 +200,7 @@ private:
         bool drawOrbitTrace;
         bool drawParticles;
         bool drawHelp;
+        bool quitOnSimulationComplete;
 
         DrawOptions(const VisArgs* args)
         : screensaverMode(args->fullscreen && !args->plainFullscreen),
@@ -215,7 +216,9 @@ private:
           drawAxes((bool) args->drawAxes),
           drawOrbitTrace((bool) args->drawOrbitTrace),
           drawParticles(true),
-          drawHelp(false) { }
+          drawHelp(false),
+          quitOnSimulationComplete((bool) args->quitOnComplete)
+        { }
     } drawOptions;
 
     bool running;
@@ -1195,6 +1198,15 @@ void NBodyGraphics::mainLoop()
                 if (this->drawOptions.floatMode)
                 {
                     this->floatMotion();
+                }
+
+                /* We will not quit if on completion if paused */
+                if (this->drawOptions.quitOnSimulationComplete)
+                {
+                    if (OPA_load_int(&this->scene->ownerPID) == 0)
+                    {
+                        return;
+                    }
                 }
             }
 

@@ -69,7 +69,7 @@ typedef struct
 {
     char shmemName[NAME_MAX + 1];
     int instanceId;
-    int ownerPID;
+    OPA_int_t ownerPID;
     int nbodyMajorVersion;
     int nbodyMinorVersion;
 

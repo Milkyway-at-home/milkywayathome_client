@@ -141,6 +141,7 @@ static const VisArgs defaultVisArgs =
     /* .width             */ 0,
     /* .height            */ 0,
 
+    /* .quitOnComplete    */ DEFAULT_QUIT_ON_COMPLETE,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
     /* .noFloat           */ DEFAULT_NO_FLOAT,
     /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
@@ -272,6 +273,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "block-simulation", 'b',
             POPT_ARG_NONE, &visArgs.blockSimulation,
             0, "Make simulation wait for graphics so every frame is drawn", NULL
+        },
+
+        {
+            "quit-on-complete", 'q',
+            POPT_ARG_NONE, &visArgs.quitOnComplete,
+            0, "Graphics should quit when the simulation completes", NULL
         },
 
         {

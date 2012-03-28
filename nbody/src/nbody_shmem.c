@@ -99,7 +99,7 @@ static int nbSegmentIsOwned(int shmId)
     }
 
     /* We have the tip of the existing segment mapped. Test if this is actually in use */
-    owner = ((scene_t*) p)->ownerPID;
+    owner = OPA_load_int(&((scene_t*) p)->ownerPID);
     munmap(p, sizeof(scene_t));
 
     return mwProcessIsAlive(owner);
@@ -240,7 +240,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
     st->scene = (scene_t*) scene;
     st->scene->instanceId = instanceId;
-    st->scene->ownerPID = pid;
+    OPA_store_int(&st->scene->ownerPID, pid);
     strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
     nbPrepareSceneFromState(ctx, st);
 
@@ -596,5 +596,17 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     }
 
     return NBODY_SUCCESS;
+}
+
+/* Report the simulation has ended as a hint to the graphics to quit */
+void nbReportSimulationComplete(NBodyState* st)
+{
+    scene_t* scene = st->scene;
+
+    if (!scene)
+        return;
+
+    /* Disown the scene */
+    OPA_store_int(&scene->ownerPID, 0);
 }
 

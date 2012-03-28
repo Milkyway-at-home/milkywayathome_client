@@ -30,6 +30,8 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx);
 void nbLaunchVisualizer(NBodyState* st, const char* visArgs);
 NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st);
 
+void nbReportSimulationComplete(NBodyState* st);
+
 #ifdef __cplusplus
 }
 #endif

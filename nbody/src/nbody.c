@@ -340,6 +340,8 @@ int nbMain(const NBodyFlags* nbf)
         nbCleanupCursesOutput();
     }
 
+    nbReportSimulationComplete(st);
+
     if (nbStatusIsFatal(rc))
     {
         mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
