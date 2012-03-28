@@ -310,7 +310,7 @@ int nbMain(const NBodyFlags* nbf)
 
     if (nbf->visualizer)
     {
-        nbLaunchVisualizer(st, nbf->visArgs);
+        nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
         nbUpdateDisplayedBodies(ctx, st);
     }
 

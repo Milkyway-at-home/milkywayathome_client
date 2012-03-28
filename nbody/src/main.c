@@ -295,6 +295,12 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
 
         {
+            "visualizer-bin", '\0',
+            POPT_ARG_STRING, &nbf.graphicsBin,
+            0, "Path to visualize", NULL
+        },
+
+        {
             "ignore-checkpoint", 'i',
             POPT_ARG_NONE, &nbf.ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
@@ -460,6 +466,8 @@ static void nbSetDefaultFlags(NBodyFlags* nbf)
     /* Use default if checkpoint file not specified */
     mwStringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
 
+    mwStringDefault(nbf->graphicsBin, NBODY_GRAPHICS_NAME);
+
     /* Use a specified seed or time seeding */
     nbf->seed = nbf->setSeed ? nbf->seed : (uint32_t) time(NULL);
 
@@ -484,6 +492,7 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->histoutFileName);
     free(nbf->matchHistogram);
     free(nbf->forwardedArgs);
+    free(nbf->graphicsBin);
     free(nbf->visArgs);
 }
 

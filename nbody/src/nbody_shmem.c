@@ -51,9 +51,6 @@
 
 #define MAX_INSTANCES 256
 
-
-static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
-
 static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 {
     st->scene->nbodyMajorVersion = NBODY_VERSION_MAJOR;
@@ -286,7 +283,7 @@ int visualizerIsAttached(const NBodyState* st)
 
 #ifndef _WIN32
 
-void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
+void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* visArgs)
 {
     pid_t pid;
     const char* path = NULL;
@@ -360,10 +357,10 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 
     /* Stick the program name at the head of the arguments passed in */
     visArgsLen = visArgs ? strlen(visArgs) : 0;
-    argvSize = visArgsLen + sizeof(idArg) + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
+    argvSize = visArgsLen + sizeof(idArg) + strlen(graphicsBin) + 2; /* arguments + program name + space + null */
     buf = mwCalloc(argvSize, sizeof(char));
 
-    p = stpcpy(buf, nbodyGraphicsName);
+    p = stpcpy(buf, graphicsBin);
     p = stpcpy(p, " ");
     p = stpcpy(p, idArg);
     if (visArgs)
@@ -390,7 +387,7 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
 
 #else
 
-void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
+void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* visArgs)
 {
     PROCESS_INFORMATION pInfo;
     STARTUPINFO startInfo;
@@ -406,10 +403,10 @@ void nbLaunchVisualizer(NBodyState* st, const char* visArgs)
     startInfo.cb = sizeof(startInfo);
 
     visArgsLen = visArgs ? strlen(visArgs) : 0;
-    argvSize = visArgsLen + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
+    argvSize = visArgsLen + strlen(graphicsBin) + 2; /* arguments + program name + space + null */
     buf = mwCalloc(argvSize, sizeof(char));
 
-    strcat(buf, nbodyGraphicsName);
+    strcat(buf, graphicsBin);
     strcat(buf, " ");
     if (visArgs)
     {
