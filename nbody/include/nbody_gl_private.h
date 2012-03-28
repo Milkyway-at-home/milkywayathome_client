@@ -26,13 +26,12 @@ struct SceneData
 {
     float currentTime;
     float timeEvolve;
-    glm::vec3 centerOfMassView;
+    glm::vec3 centerOfMass;
     bool staticScene;
-
 
     SceneData(bool isStatic) : currentTime(0.0f),
                                timeEvolve(0.0f),
-                               centerOfMassView(glm::vec3(0.0f, 0.0f, 0.0f)),
+                               centerOfMass(glm::vec3(0.0f, 0.0f, 0.0f)),
                                staticScene(isStatic) { }
 };
 

@@ -72,6 +72,9 @@ static const float floatSpeedChangeFactor = 1.1f;
 static const float minViewRadius = 0.05f;
 static const float maxViewRadius = 350.0f;
 
+// radius where floating is considered too close and should move away
+static const float closeViewRadiusThreshold = 5.0f;
+
 
 static const double minFloatTime = 2.0;
 static const double maxFloatTime = 10.0;
@@ -150,26 +153,21 @@ private:
     SceneData sceneData;
     glutil::ViewPole viewPole;
 
-
     // state of auto rotate store
     struct FloatState
     {
-        glm::fquat orient; // doesn't really matter what this starts as
         glm::vec2 angleVec;
         double lastShiftTime;    // time since direction changed
         double lastUpdateTime;   // time since angle updated
         double floatTime; // time this float should last
-        float radius;
         float speed;
         float rSpeed;
 
         FloatState(const VisArgs* args)
-        : orient(identityOrientation),
-          angleVec(glm::vec2(0.0f, 0.0f)),
+        : angleVec(glm::vec2(0.0f, 0.0f)),
           lastShiftTime(0.0f),
           lastUpdateTime(0.0f),
           floatTime(glm::linearRand(minFloatTime, maxFloatTime)),
-          radius(0.0f),
           speed(args->floatSpeed),
           rSpeed(0.0f) { }
     } floatState;
@@ -232,7 +230,6 @@ private:
     void drawParticlesTextured(const glm::mat4& modelMatrix);
     void drawParticlesPoints(const glm::mat4& modelMatrix);
     void loadColors();
-    void calculateModelToCameraMatrix(glm::mat4& matrix);
     void newFloatDirection();
     void resetFloatState();
     void findInitialOrientation();
@@ -418,6 +415,15 @@ public:
     {
         this->markDirty();
         this->drawOptions.cmCentered = !this->drawOptions.cmCentered;
+
+        if (this->drawOptions.cmCentered)
+        {
+            this->viewPole.SetOrigin(this->sceneData.centerOfMass);
+        }
+        else
+        {
+            this->viewPole.SetOrigin(origin);
+        }
     }
 };
 
@@ -813,9 +819,9 @@ static int nbPopCircularQueue(NBodyCircularQueue* queue,
 
     sceneData->currentTime = info->currentTime;
     sceneData->timeEvolve = info->timeEvolve;
-    sceneData->centerOfMassView = glm::vec3(-info->rootCenterOfMass[0],
-                                            -info->rootCenterOfMass[1],
-                                            -info->rootCenterOfMass[2]);
+    sceneData->centerOfMass = glm::vec3(info->rootCenterOfMass[0],
+                                        info->rootCenterOfMass[1],
+                                        info->rootCenterOfMass[2]);
 
     trace->addPoint(info->rootCenterOfMass);
 
@@ -832,6 +838,11 @@ bool NBodyGraphics::readSceneData()
 
     if (success)
     {
+        if (this->drawOptions.cmCentered)
+        {
+            this->viewPole.SetOrigin(this->sceneData.centerOfMass);
+        }
+
         this->markDirty();
     }
 
@@ -1098,46 +1109,13 @@ void NBodyGraphics::prepareContext()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void NBodyGraphics::calculateModelToCameraMatrix(glm::mat4& matrix)
-{
-    // we skip using viewPole.CalcMatrix() because
-    // we want to combine the orientation directly from the view pole
-    // with the orientation we randomly generate while floating
-
-
-    // We should only get really close or really far away if manually zooming.
-    // The float radius should be kept < the current view radius
-    // It should stay a reasonable viewing distance if left on its own
-    float effRadius = 0.5f * (this->viewPole.GetView().radius + this->floatState.radius);
-
-    //In this space, we are facing in the correct direction. Which means that the camera point
-    //is directly behind us by the radius number of units.
-    matrix = glm::translate(identityMatrix, glm::vec3(0.0f, 0.0f, -effRadius));
-
-    //Rotate the world to look in the right direction.
-    glm::fquat totalOrientation = this->floatState.orient * this->viewPole.GetView().orient;
-    glm::fquat fullRotation = glm::angleAxis(-this->viewPole.GetView().degSpinRotation, zAxis) * totalOrientation;
-
-    matrix *= glm::mat4_cast(fullRotation);
-
-    //Translate the world by the negation of the lookat point, placing the origin at the
-    //lookat point.
-
-    if (this->drawOptions.cmCentered)
-    {
-        matrix = glm::translate(matrix, this->sceneData.centerOfMassView);
-    }
-}
-
 void NBodyGraphics::display()
 {
-    glm::mat4 modelMatrix;
-
-    this->calculateModelToCameraMatrix(modelMatrix);
-
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClearDepth(1.0);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    glm::mat4 modelMatrix = this->viewPole.CalcMatrix();
 
     if (this->galaxyModel)
     {
@@ -1192,7 +1170,6 @@ void NBodyGraphics::mainLoop()
     const int eventPollPeriod = (int) (1000.0 / 30.0);
 
     this->findInitialOrientation();
-
     this->resetFloatState();
 
     while (true)
@@ -1240,9 +1217,9 @@ void NBodyGraphics::newFloatDirection()
     this->floatState.floatTime = glm::linearRand(minFloatTime, maxFloatTime);
 
     // make sure we are trying to move out if close
-    if (this->floatState.radius <= 2.0f * minViewRadius)
+    if (this->viewPole.GetView().radius <= closeViewRadiusThreshold)
     {
-        this->floatState.rSpeed = glm::linearRand(0.0f, maxRadialFloatSpeed);
+        this->floatState.rSpeed = glm::linearRand(0.3f * maxRadialFloatSpeed, maxRadialFloatSpeed);
     }
     else
     {
@@ -1268,12 +1245,12 @@ void NBodyGraphics::floatMotion()
     glm::fquat localOrientation = glm::angleAxis(angle.x, yAxis);
     localOrientation = glm::angleAxis(angle.y, xAxis) * localOrientation;
 
-    this->floatState.orient = localOrientation * this->floatState.orient;
+    this->viewPole.ApplyExternalOrientation(localOrientation);
 
-    this->floatState.radius += this->floatState.rSpeed * (float) dt;
-    this->floatState.radius = glm::clamp(this->floatState.radius,
-                                         minViewRadius,
-                                         this->viewPole.GetView().radius);
+    float dr = this->floatState.rSpeed * (float) dt;
+
+    this->viewPole.ApplyExternalRadiusDelta(dr);
+
 
     // time since direction changed
     if (now - this->floatState.lastShiftTime >= this->floatState.floatTime)
@@ -1289,7 +1266,7 @@ void NBodyGraphics::floatMotion()
 // origin from somewhere behind the center of mass
 void NBodyGraphics::findInitialOrientation()
 {
-    glm::vec3 centerOfMass = -this->sceneData.centerOfMassView; // negative center of mass
+    glm::vec3 centerOfMass = this->sceneData.centerOfMass;
     glm::vec3 centerOfMassDir = glm::normalize(centerOfMass);
 
     // find angle between the center of mass and the plane of the milkyway
@@ -1320,9 +1297,7 @@ void NBodyGraphics::findInitialOrientation()
     glm::vec3 shifted = glm::normalize(rVector + cmCrossZ);
     glm::fquat startOrient = glm::angleAxis(rangeAngle, shifted);
 
-
-    // set the component of float orientation which we control
-    this->floatState.orient = startOrient;
+    this->viewPole.SetOrientation(startOrient);
 }
 
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)

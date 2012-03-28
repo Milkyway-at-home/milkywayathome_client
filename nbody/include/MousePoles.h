@@ -302,6 +302,28 @@ namespace glutil
         ///Returns true if the mouse is being dragged.
         bool IsDragging() const {return m_bIsDragging;}
 
+        // functions to provide external controls over the view
+
+        inline void SetOrigin(const glm::vec3& newOrigin)
+        {
+            m_currView.targetPos = newOrigin;
+        }
+
+        inline void SetOrientation(const glm::fquat& newOrient)
+        {
+            m_currView.orient = newOrient;
+        }
+
+        inline void ApplyExternalOrientation(const glm::fquat& orient)
+        {
+            m_currView.orient = orient * m_currView.orient;
+        }
+
+        inline void ApplyExternalRadiusDelta(float dr)
+        {
+            m_currView.radius += dr;
+        }
+
     private:
         enum TargetOffsetDir
         {
