@@ -34,6 +34,7 @@ struct TextPen
 {
     float x, y;
     TextPen() : x(0.0f), y(0.0f) { }
+    TextPen(float xx, float yy) : x(xx), y(yy) { }
 };
 
 class NBodyTextItem
@@ -71,7 +72,7 @@ public:
     NBodyTextItem(GLuint textProgramPositionLoc, const texture_font_t* font);
     ~NBodyTextItem();
 
-    void addText(const wchar_t* text, TextPen& pen);
+    TextPen addText(const wchar_t* text, TextPen& pen);
     void uploadText();
     void clearText();
     void drawTextItem();
@@ -83,6 +84,9 @@ private:
     /* Text which may change every frame */
     NBodyTextItem* varText;
     NBodyTextItem* constText;
+    NBodyTextItem* helpTextLeftColumn;
+    NBodyTextItem* helpTextRightColumn;
+
     const texture_font_t* font;
     GLuint textTexture;
 
@@ -101,10 +105,15 @@ private:
 
     void loadTextTexture();
     void loadShader();
+    void prepareHelpText();
+
+    void useTextProgram();
+    void resetTextProgram();
 
 public:
     void prepareConstantText(const scene_t* scene);
     void drawProgressText(const SceneData& sceneData);
+    void drawHelpText();
 
     NBodyText(const texture_font_t* textFont);
     ~NBodyText();

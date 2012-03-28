@@ -82,10 +82,13 @@ static float makefont_texture_glyph_get_kerning(const texture_glyph_t* glyph, wc
     return 0.0f;
 }
 
-void NBodyTextItem::addText(const wchar_t* text, TextPen& pen)
+// returns the farthest right and farthest down the added text reached
+TextPen NBodyTextItem::addText(const wchar_t* text, TextPen& pen)
 {
     float left = pen.x;
     const size_t n = wcslen(text);
+
+    TextPen limits = pen;
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -139,8 +142,16 @@ void NBodyTextItem::addText(const wchar_t* text, TextPen& pen)
             this->vertices.push_back(charVertices);
 
             pen.x += glyph->advance_x;
+
+            // text grows right
+            limits.x = fmax(pen.x, limits.x);
+
+            // text grows down
+            limits.y = fmin(pen.y, limits.y);
         }
     }
+
+    return limits;
 }
 
 void NBodyTextItem::uploadText()
@@ -177,8 +188,12 @@ NBodyText::NBodyText(const texture_font_t* textFont)
     this->loadShader();
     this->loadTextTexture();
 
-    this->varText = new NBodyTextItem(this->textProgram.positionLoc, font);
-    this->constText = new NBodyTextItem(this->textProgram.positionLoc, font);
+    this->varText = new NBodyTextItem(this->textProgram.positionLoc, this->font);
+    this->constText = new NBodyTextItem(this->textProgram.positionLoc, this->font);
+    this->helpTextLeftColumn = new NBodyTextItem(this->textProgram.positionLoc, this->font);
+    this->helpTextRightColumn = new NBodyTextItem(this->textProgram.positionLoc, this->font);
+
+    this->prepareHelpText();
 }
 
 NBodyText::~NBodyText()
@@ -187,11 +202,13 @@ NBodyText::~NBodyText()
 
     delete this->varText;
     delete this->constText;
+    delete this->helpTextLeftColumn;
+    delete this->helpTextRightColumn;
 
     glDeleteTextures(1, &this->textTexture);
 }
 
-void NBodyText::drawProgressText(const SceneData& sceneData)
+void NBodyText::useTextProgram()
 {
     // Fix black boxes appearing behind letters
     // also keep text looking same when things are behind it
@@ -203,6 +220,18 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, this->textTexture);
     glUniform1i(this->textProgram.textTextureLoc, 0);
+}
+
+void NBodyText::resetTextProgram()
+{
+    glUseProgram(0);
+    glBindVertexArray(0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void NBodyText::drawProgressText(const SceneData& sceneData)
+{
+    this->useTextProgram();
 
     if (sceneData.staticScene)
     {
@@ -230,10 +259,93 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
         this->varText->drawTextItem();
     }
 
-    glUseProgram(0);
-    glBindVertexArray(0);
+    this->resetTextProgram();
+}
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+void NBodyText::drawHelpText()
+{
+    this->useTextProgram();
+    this->helpTextLeftColumn->drawTextItem();
+    this->helpTextRightColumn->drawTextItem();
+    this->resetTextProgram();
+}
+
+// we split the help text into 2 pieces so that we have key,
+// description columns line up without using a non-monospace font
+
+// key and maybe mnemonic column
+static const wchar_t* nbglHelpTextLeft =
+    L"\n"
+    L"Mouse controls:\n"
+    L"  Drag\n"
+    L"  [Alt]  Drag\n"
+    L"  [Ctrl] Drag\n"
+    L"    + [Shift]\n"
+    L"  Scroll\n"
+    L"  [Shift] Scroll\n"
+    L"\n"
+    L"Key controls:\n"
+    L"  ? / h (help)\n"
+    L"  q, Escape\n"
+    L"  space / p\n"
+    L"  a (axes)\n"
+    L"  o (origin)\n"
+    L"  f (float)\n"
+    L"  > / z\n"
+    L"  < / x\n"
+    L"  t (trace)\n"
+    L"  i (info)\n"
+    L"  c (color)\n"
+    L"  d (draw mode)\n"
+    L"  + / b (bigger)\n"
+    L"  - / s (smaller)\n"
+    L"  =\n"
+    L"\n";
+
+// longer description column
+static const wchar_t* nbglHelpTextRight =
+    L"\n"
+    L"\n"
+    L": rotate on X and Y (view local) axes\n"
+    L": rotate in view local Z direction\n"
+    L": rotate X and Y axes based on mouse distance from start\n"
+    L": zoom functions with smaller steps \n"
+    L": zoom\n"
+    L": zoom with smaller steps\n"
+    L"\n"
+    L"\n"
+    L": display this help text\n"
+    L": quit\n"
+    L": pause/unpause\n"
+    L": toggle displaying axes\n"
+    L": toggle center between origin or center of mass\n"
+    L": float view around randomly\n"
+    L": increase random float speed\n"
+    L": decrease random float speed\n"
+    L": toggle displaying orbit trace of center of mass\n"
+    L": toggle information display\n"
+    L": toggle particle color scheme (all white vs. colored)\n"
+    L": toggle using textured (prettier) points and plain (slightly faster)\n"
+    L": make points bigger\n"
+    L": (smaller) make points smaller\n"
+    L": reset points to initial size\n"
+    L"\n";
+
+void NBodyText::prepareHelpText()
+{
+    TextPen pen(0.0f, 0.0f);
+
+    TextPen limit = this->helpTextLeftColumn->addText(nbglHelpTextLeft, pen);
+
+    this->helpTextLeftColumn->uploadText();
+
+    // move the pen up past the column
+    pen.x = limit.x + 0.5f * this->font->size;
+    pen.y = 0.0f;
+
+    this->helpTextRightColumn->addText(nbglHelpTextRight, pen);
+    this->helpTextRightColumn->uploadText();
 }
 
 void NBodyText::prepareConstantText(const scene_t* scene)

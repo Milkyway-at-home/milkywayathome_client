@@ -542,6 +542,22 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
             ctx->stop();
             break;
 
+        case GLFW_KEY_PAUSE:
+            ctx->togglePaused();
+            break;
+
+        case GLFW_KEY_F1:
+            ctx->toggleHelp();
+            break;
+
+            // TODO: We should fix the mouse poles to use these
+            // special keys for controls
+        case GLFW_KEY_PAGE_UP:
+        case GLFW_KEY_PAGE_DOWN:
+        case GLFW_KEY_UP:
+        case GLFW_KEY_DOWN:
+        case GLFW_KEY_LEFT:
+        case GLFW_KEY_RIGHT:
         default:
             return;
     }
@@ -552,6 +568,9 @@ static void charHandler(GLFWwindow window, int charCode)
     (void) window;
 
     NBodyGraphics* ctx = globalGraphicsContext;
+
+    // the mousepoles have some controls for manually moving the focus
+    // point but we aren't using that
 
     switch (charCode)
     {
@@ -577,14 +596,12 @@ static void charHandler(GLFWwindow window, int charCode)
 
         case 'B':
         case 'b':
-        case '>':
         case '+':
             ctx->increasePointSize();
             break;
 
         case 'S':
         case 's':
-        case '<':
         case '-':
             ctx->decreasePointSize();
             break;
@@ -593,8 +610,8 @@ static void charHandler(GLFWwindow window, int charCode)
             ctx->resetPointSize();
             break;
 
-        case 'L':
-        case 'l':
+        case 'D':
+        case 'd':
             ctx->toggleDrawMode();
             break;
 
@@ -614,13 +631,15 @@ static void charHandler(GLFWwindow window, int charCode)
             ctx->toggleFloatMode();
             break;
 
-        case 'Z':
-        case 'z':
+        case 'X':
+        case 'x':
+        case '>':
             ctx->increaseFloatSpeed();
             break;
 
-        case 'X':
-        case 'x':
+        case 'Z':
+        case 'z':
+        case '<':
             ctx->decreaseFloatSpeed();
             break;
 
@@ -1123,9 +1142,17 @@ void NBodyGraphics::display()
         this->drawParticles(modelMatrix);
     }
 
-    if (this->drawOptions.drawInfo)
+    // FIXME? Maybe? Doesn't show info text when displaying help
+    if (this->drawOptions.drawHelp)
     {
-        this->text.drawProgressText(this->sceneData);
+        this->text.drawHelpText();
+    }
+    else
+    {
+        if (this->drawOptions.drawInfo)
+        {
+            this->text.drawProgressText(this->sceneData);
+        }
     }
 
     this->markClean();
