@@ -50,10 +50,10 @@ static const glm::vec2 zeroVec2(0.0f, 0.0f);
 glm::mat4 cameraToClipMatrix(1.0f);
 
 static const float minPointPointSize = 1.0e-3f;
-static const float maxPointPointSize = 200.0f;
+static const float maxPointPointSize = 500.0f;
 
 static const float minTexturedPointSize = 1.0e-3f;
-static const float maxTexturedPointSize = 1000.0f;
+static const float maxTexturedPointSize = 2000.0f;
 
 static const float pointSizeChangeFactor = 1.05f;
 
