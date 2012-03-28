@@ -205,7 +205,7 @@ private:
 
         DrawOptions(const VisArgs* args)
         : screensaverMode(args->fullscreen && !args->plainFullscreen),
-          floatMode(!args->noFloat),
+          floatMode((bool) !args->noFloat),
           cmCentered((bool) !args->originCentered),
           monochromatic((bool) args->monochromatic),
           drawMode(args->untexturedPoints ? POINTS : TEXTURED_SPRITES),
@@ -234,6 +234,7 @@ private:
     void loadColors();
     void calculateModelToCameraMatrix(glm::mat4& matrix);
     void newFloatDirection();
+    void resetFloatState();
     void findInitialOrientation();
     void floatMotion();
     void prepareContext();
@@ -384,11 +385,21 @@ public:
         this->markDirty();
         this->paused = !this->paused;
         OPA_store_int(&this->scene->paused, (int) this->paused);
+
+        if (this->drawOptions.floatMode)
+        {
+            this->resetFloatState();
+        }
     }
 
     void toggleFloatMode()
     {
         this->drawOptions.floatMode = !this->drawOptions.floatMode;
+
+        if (this->drawOptions.floatMode)
+        {
+            this->resetFloatState();
+        }
     }
 
     void increaseFloatSpeed()
@@ -1164,17 +1175,25 @@ void NBodyGraphics::display()
     this->markClean();
 }
 
+// We need to throw out old float state whenever an event happens
+// which could result in the float state not being updated for a
+// significant period of time or else there will be a visible jump
+void NBodyGraphics::resetFloatState()
+{
+    double now = glfwGetTime();
+    // update the update times avoid a small jump on the first frame
+    this->floatState.lastUpdateTime = now;
+    this->floatState.lastShiftTime = now;
+    this->newFloatDirection();
+}
+
 void NBodyGraphics::mainLoop()
 {
     const int eventPollPeriod = (int) (1000.0 / 30.0);
 
     this->findInitialOrientation();
 
-    // update the update times avoid a small jump on the first frame
-    this->floatState.lastUpdateTime = glfwGetTime();
-    this->floatState.lastShiftTime = this->floatState.lastUpdateTime;
-    this->newFloatDirection();
-
+    this->resetFloatState();
 
     while (true)
     {
@@ -1247,7 +1266,7 @@ void NBodyGraphics::floatMotion()
 
     glm::vec2 angle = this->floatState.speed * this->floatState.angleVec * (float) dt;
     glm::fquat localOrientation = glm::angleAxis(angle.x, yAxis);
-    localOrientation  = glm::angleAxis(angle.y, xAxis) * localOrientation;
+    localOrientation = glm::angleAxis(angle.y, xAxis) * localOrientation;
 
     this->floatState.orient = localOrientation * this->floatState.orient;
 
