@@ -718,6 +718,8 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
 
     // read initial scene data before starting
     this->readSceneData();
+    this->findInitialOrientation();
+    this->resetFloatState();
 }
 
 NBodyGraphics::~NBodyGraphics()
@@ -1171,9 +1173,6 @@ void NBodyGraphics::resetFloatState()
 void NBodyGraphics::mainLoop()
 {
     const int eventPollPeriod = (int) (1000.0 / 30.0);
-
-    this->findInitialOrientation();
-    this->resetFloatState();
 
     while (true)
     {
