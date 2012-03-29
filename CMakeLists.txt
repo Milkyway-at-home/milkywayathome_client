@@ -63,7 +63,6 @@ include(PrintInfo)
 include(CheckCFlag)
 include(MSVCFlags)
 include(PreferStatic)
-include(SpecialLibs)
 include(CMakeDependentOption)
 include(CheckFunctionExists)
 include(Profiling)
@@ -106,9 +105,6 @@ option(NBODY "Build nbody" ON)
 # Normal options
 option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
-
-option(BOINC_RELEASE
-       "Build with all options for making an actual release" OFF)
 
 cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
   "BOINC_APPLICATION" OFF)
@@ -160,13 +156,6 @@ endif()
 if(DISABLE_DENORMALS)
   add_definitions("-DDISABLE_DENORMALS=1")
 endif()
-
-if(BOINC_RELEASE)
-  set(BOINC_RELEASE_NAMES ON)
-  set(BOINC_APPLICATION ON)
-  set(DOUBLEPREC ON)
-endif()
-
 
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)
@@ -359,11 +348,13 @@ cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
 cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
                                 "OPENGL_FOUND;OPENGL_GLU_FOUND" OFF)
 
-
 print_separator()
 print_build_info()
 print_build_options()
 print_separator()
+
+
+include(SpecialLibs) # Do this after options
 
 
 add_subdirectory(tools)

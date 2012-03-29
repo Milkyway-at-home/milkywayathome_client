@@ -39,11 +39,6 @@ include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
                                        "NOT BOINC_APPLICATION;CURSES_FOUND" OFF)
 
-
-if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLFW_FOUND)
-  set(NBODY_GL ON CACHE INTERNAL "Build N-body graphics")
-endif()
-
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
   include_directories(${GLFW_INCLUDE_DIR})
@@ -73,10 +68,6 @@ if(OPENMP_FOUND AND NBODY_OPENMP)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 elseif(NOT OPENMP_FOUND AND NBODY_OPENMP)
   message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
-endif()
-
-if(BOINC_RELEASE)
-  set(NBODY_CRLIBM ON)
 endif()
 
 if(NOT DOUBLEPREC AND NBODY_CRLIBM)

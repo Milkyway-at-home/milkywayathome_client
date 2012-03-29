@@ -210,7 +210,7 @@ inline __m128d _mm_fsqrt_pd(__m128d x)  /* accurate to 1 ulp, i.e the last bit o
     return res;
 }
 
-
+ALWAYS_INLINE
 inline __m128d _mm_rcp_pd(__m128d x)
 {
     __m128d xmm0 = _mm_cvtps_pd(_mm_rcp_ps( _mm_cvtpd_ps(x)));
@@ -219,7 +219,8 @@ inline __m128d _mm_rcp_pd(__m128d x)
     return _mm_mul_pd(xmm0,_mm_sub_pd(DTWO,_mm_mul_pd(x,xmm0)));
 }
 
-static __m128d _mm128_exp_pd(__m128d d)
+ALWAYS_INLINE
+inline __m128d _mm128_exp_pd(__m128d d)
 {
     /* slow */
     __m128d x, y, z;
@@ -282,6 +283,7 @@ static __m128d _mm128_exp_pd(__m128d d)
     return x;
 }
 
+ALWAYS_INLINE
 inline __m128d gmx_mm_log_pd(__m128d x)
 {
     /* Same algorithm as cephes library */
