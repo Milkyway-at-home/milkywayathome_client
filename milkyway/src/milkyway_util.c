@@ -21,6 +21,10 @@
 #include "milkyway_util.h"
 #include "milkyway_boinc_util.h"
 
+#if HAVE_SYS_WAIT_H
+  #include <sys/wait.h>
+#endif
+
 #if HAVE_SYS_RESOURCE_H
   #include <sys/resource.h>
 #endif
@@ -675,18 +679,50 @@ uint64_t mwLCM(uint64_t a, uint64_t b)
 
 int mwProcessIsAlive(int pid)
 {
-    int arst = (kill((pid_t) pid, 0) == 0);
-    return arst;
+    if (pid == 0)
+    {
+        return FALSE;
+    }
+    else
+    {
+        pid_t result;
+        int status;
+
+        /* If the process is a child, i.e. the graphics is forked off
+         * the main process, we need to wait for it or else it will
+         * remain a zombie the kill will still report as alive.
+         */
+        result = waitpid((pid_t) pid, &status, WNOHANG);
+        if (result < 0)
+        {
+            /* Error is probably because it isn't a child process (ECHILD)
+               We can test it with kill.
+             */
+            return (kill((pid_t) pid, 0) == 0);
+        }
+        else
+        {
+            /* It was a child. result > 0 if it is dead  */
+            return (result == 0);
+        }
+    }
 }
 
 #else
 
 int mwProcessIsAlive(int pid)
 {
-    HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, (DWORD) pid);
-    DWORD ret = WaitForSingleObject(process, 0);
-    CloseHandle(process);
-    return (ret == WAIT_TIMEOUT);
+    if (pid == 0)
+    {
+        return FALSE;
+    }
+    else
+    {
+        HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
+        DWORD status = WaitForSingleObject(process, 0);
+        CloseHandle(process);
+        return (status == WAIT_TIMEOUT);
+    }
 }
 
 #endif /* _WIN32 */

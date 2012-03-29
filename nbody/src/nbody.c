@@ -310,7 +310,8 @@ int nbMain(const NBodyFlags* nbf)
 
     if (nbf->visualizer)
     {
-        nbLaunchVisualizer(st, nbf->visArgs);
+        nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
+        nbUpdateDisplayedBodies(ctx, st);
     }
 
   #if NBODY_OPENCL
@@ -338,6 +339,8 @@ int nbMain(const NBodyFlags* nbf)
     {
         nbCleanupCursesOutput();
     }
+
+    nbReportSimulationComplete(st);
 
     if (nbStatusIsFatal(rc))
     {

@@ -54,6 +54,7 @@ thirdparty
 a.out
 *.diff
 bin/
+lib/
 build
 popt/configmake.h
 separation/tests/stars/
@@ -96,3 +97,7 @@ replace_amd_il
 *.plist
 *.bak
 build_iphone
+*.app
+*.glc
+*.mp4
+*.avi

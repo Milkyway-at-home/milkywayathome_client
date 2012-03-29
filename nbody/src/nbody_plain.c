@@ -26,23 +26,6 @@
 #include "nbody_checkpoint.h"
 #include "nbody_grav.h"
 
-/* If enough time has passed, record the next center of mass position */
-static void nbAddTracePoint(const NBodyCtx* ctx, NBodyState* st)
-{
-    int i = st->step * N_ORBIT_TRACE_POINTS / ctx->nStep;
-
-    if (st->usesExact) /* FIXME?. We don't get the CM without the tree */
-        return;
-
-    if (i >= N_ORBIT_TRACE_POINTS) /* Just in case */
-        return;
-
-    if (X(st->orbitTrace[i]) < REAL_MAX)
-        return;
-
-    st->orbitTrace[i] = Pos(st->tree.root);
-}
-
 static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
 {
     double frac = (double) st->step / (double) ctx->nStep;
@@ -155,8 +138,6 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 
     while (st->step < ctx->nStep)
     {
-        nbAddTracePoint(ctx, st);
-        nbUpdateDisplayedBodies(ctx, st);
         rc |= nbStepSystemPlain(ctx, st);
         if (nbStatusIsFatal(rc))   /* advance N-body system */
             return rc;
@@ -166,6 +147,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
             return rc;
 
         nbReportProgress(ctx, st);
+        nbUpdateDisplayedBodies(ctx, st);
     }
 
     if (BOINC_APPLICATION || ctx->checkpointT >= 0)

@@ -24,7 +24,6 @@
   #include <graphics2.h>
   #include <util.h>
   #include <diagnostics.h>
-  #include <parse.h>
 #endif
 
 #if HAVE_SYS_TIME_H
@@ -35,7 +34,6 @@
   #include <sys/stat.h>
 #endif
 
-#include <errno.h>
 #include <limits.h>
 
 #include "milkyway_util.h"
@@ -128,8 +126,9 @@ static const int debugOptions = BOINC_DIAG_DUMPCALLSTACKENABLED
 
 /* I don't understand why the graphics have a separate debug with
  * diagnostics API type stuff. */
-static int mwBoincInitGraphics(int useDebug)
+static int mwBoincInitGraphics(MWInitType type)
 {
+    bool useDebug = !!(type & MW_DEBUG);
     return boinc_init_graphics_diagnostics(useDebug ? debugOptions : BOINC_DIAG_DEFAULTS);
 }
 
@@ -144,7 +143,6 @@ static int mwBoincInitNormal(MWInitType type)
     }
 
     boinc_options_defaults(options);
-
 
     options.multi_thread = (type & MW_MULTITHREAD) > 0;
     options.normal_thread_priority = ((type & MW_CAL) || (type & MW_OPENCL)) > 0;
@@ -240,6 +238,11 @@ int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
     {
         mw_printf("Missing project_preferences start tag\n");
         return 1;
+    }
+
+    /* Skip ahead to the project specific preferences */
+    while (!parser.get_tag() && !parser.match_tag("project_specific"))
+    {
     }
 
     while (!parser.get_tag())

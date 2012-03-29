@@ -252,6 +252,7 @@ int mwProcessIsAlive(int pid);
   #define mw_assume_aligned(p, a) (p)
 #endif /* __GNUC__ */
 
+
 #ifdef __cplusplus
 }
 #endif

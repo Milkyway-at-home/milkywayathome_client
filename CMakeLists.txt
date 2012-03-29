@@ -213,6 +213,9 @@ set(gcc_warnings "-Wall"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
+
+                 # pragma to disable -Wunknown-pragmas seems to not work
+                 "-Wno-unknown-pragmas"
                #  "-Wsuggest-attribute=pure"
                #  "-Wsuggest-attribute=const"
                #  "-Wsuggest-attribute=noreturn"
@@ -330,7 +333,6 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 find_package(OpenCL)
 find_package(OpenMP)
 find_package(OpenGL)
-find_package(GLUT)
 find_package(Curses)
 find_package(OpenSSL)
 
@@ -355,7 +357,7 @@ cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
                                     "OPENMP_FOUND" OFF)
 
 cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
-                                "OPENGL_FOUND;OPENGL_GLU_FOUND;GLUT_FOUND" OFF)
+                                "OPENGL_FOUND;OPENGL_GLU_FOUND" OFF)
 
 
 print_separator()
@@ -368,18 +370,45 @@ add_subdirectory(tools)
 add_subdirectory(popt)
 add_subdirectory(lua)
 
+add_subdirectory(dSFMT)
+add_definitions("${DSFMT_FLAGS}")
+
 if(SEPARATION_OPENCL)
   add_subdirectory(libelf)
 endif()
 
-if(NBODY_GL AND FALSE)
-  #TODO: use it
-  add_subdirectory(openpa)
+add_subdirectory(openpa)
+
+if(NBODY_GL)
+  if(NOT APPLE)
+    set(OPENGL3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
+    include_directories(${OPENGL3_INCLUDE_DIR})
+  endif()
+
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glfw/CMakeLists.txt)
+    message(FATAL_ERROR "GLFW submodule is missing. Did you forget to git submodule init; git submodule update?")
+  endif()
+
+  set(BUILD_SHARED_LIBS OFF)
+  set(GLFW_BUILD_EXAMPLES OFF)
+  set(GLFW_BUILD_TESTS OFF)
+  add_subdirectory(glfw)
+  set(GLFW_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/glfw/include")
+  set(GLFW_LIBRARY glfw)
+  # TODO: We require 10.7 on OS X to use OpenGL 3.2
+  # Also The 10.7 Cocoa headers also require clang or Apple llvm-gcc If we're using
+  # macports gcc we can build glfw as an external project with the
+  # other compiler
+
+
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glm/CMakeLists.txt)
+    message(FATAL_ERROR "GLM submodule is missing. Did you forget to git submodule init; git submodule update?")
+  endif()
+  set(GLM_PACKAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
+  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/glm/util)
+  find_package(GLM)
 endif()
 
-
-add_subdirectory(dSFMT)
-add_definitions("${DSFMT_FLAGS}")
 
 if(BOINC_APPLICATION)
   if(EXISTS ${PROJECT_SOURCE_DIR}/boinc/boinc/api/boinc_api.cpp)  # The submodule is there

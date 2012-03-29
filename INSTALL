@@ -12,7 +12,7 @@ Dependencies:
 
   nbody:
     OpenSSL: Optional, only used for tests
-    GLUT, OpenGL: Optional, for building graphics
+    OpenGL: Optional, for building graphics
 
 --------------------------------------------------------------------------------
 Dependency Installation Notes:
@@ -22,7 +22,7 @@ Dependency Installation Notes:
               - Make sure the necessary build tools are installed
 
               $ apt-get build-essential
-              $ apt-get install cmake git-core diffutils patch libssl-dev freeglut3-dev
+              $ apt-get install cmake git-core diffutils patch libssl-dev
 
           Other Distributions: Install equivalent packages.
 
@@ -174,7 +174,7 @@ to avoid multiple definitions (this is necessary with breezy)
 # cdebootstrap --flavour=build --arch=i386 breezy /srv/chroot/breezy_i386 http://old-releases.ubuntu.com/ubuntu/
 
 Make sure that gcc-multilib and g++-multilib are installed on the host
-system. Inside the chroot install libssl-dev and freeglut3-dev, then do
+system. Inside the chroot install libssl-dev and, then do
 
   $ mkdir build_i386; cd build_i386
   $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386 \

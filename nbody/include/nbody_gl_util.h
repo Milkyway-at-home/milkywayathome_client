@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2012 Matthew Arsenault
  *
  * This file is part of Milkway@Home.
  *
@@ -21,25 +20,21 @@
 #ifndef _NBODY_GL_UTIL_H_
 #define _NBODY_GL_UTIL_H_
 
-#ifndef __APPLE__
-  #include <GL/glut.h>
-  #include <GL/gl.h>
-  #include <GL/glu.h>
-#else
-  #include <GLUT/glut.h>
-  #include <OpenGL/gl.h>
-  #include <OpenGL/glu.h>
-#endif /* __APPLE__ */
+#include "nbody_gl_includes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct Color
+{
+    GLfloat r, g, b;
+    GLfloat ignore;
+};
 
-void nbody_glutBitmapStringHelvetica(const unsigned char* string);
+GLuint nbglCreateProgram(const char* name,
+                         const char* vertSrc,
+                         const char* fragSrc,
+                         GLint vertSrcLen,
+                         GLint fragSrcLen);
 
-#ifdef __cplusplus
-}
-#endif
+void nbglPrintGLVersionAndExts();
 
 #endif /* _NBODY_GL_UTIL_H_ */
 

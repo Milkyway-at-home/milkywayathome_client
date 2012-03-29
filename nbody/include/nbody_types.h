@@ -277,8 +277,6 @@ typedef struct MW_ALIGN_TYPE
     int treeIncest;          /* Tree incest has occured */
     int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
-    int shmId;               /* shmid, key when using shmem */
-
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -300,7 +298,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, -1, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
@@ -388,12 +386,12 @@ typedef enum
     NBODY_LIKELIHOOD_ERROR     = 1 << 15,
     NBODY_MAX_DEPTH_ERROR      = 1 << 16,
     NBODY_CELL_OVERFLOW_ERROR  = 1 << 17,
-    NBODY_RESERVED_ERROR_1     = 1 << 18,
-    NBODY_RESERVED_ERROR_2     = 1 << 19,
-    NBODY_RESERVED_ERROR_3     = 1 << 20,
-    NBODY_RESERVED_ERROR_4     = 1 << 21,
-    NBODY_RESERVED_ERROR_5     = 1 << 22,
-    NBODY_RESERVED_ERROR_6     = 1 << 23,
+    NBODY_GRAPHICS_TIMEOUT     = 1 << 18,
+    NBODY_GRAPHICS_DEAD        = 1 << 19,
+    NBODY_RESERVED_ERROR_1     = 1 << 20,
+    NBODY_RESERVED_ERROR_2     = 1 << 21,
+    NBODY_RESERVED_ERROR_3     = 1 << 22,
+    NBODY_RESERVED_ERROR_4     = 1 << 23,
 
     /* Warnings */
     NBODY_TREE_INCEST_NONFATAL = 1 << 24,

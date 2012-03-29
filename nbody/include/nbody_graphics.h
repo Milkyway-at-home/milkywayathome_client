@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2011-2012 Matthew Arsenault
  *
  * This file is part of Milkway@Home.
  *
@@ -21,15 +20,31 @@
 #ifndef _NBODY_GRAPHICS_H_
 #define _NBODY_GRAPHICS_H_
 
-#define MAX_DRAW_TRACE_POINTS 256
+#include <stdint.h>
+#include <opa_primitives.h>
 
-/* "mw_nbody" */
-#define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
+#ifndef NAME_MAX
+  #define NAME_MAX 255
+#endif
+
+#define NBODY_CIRC_QUEUE_SIZE 3
+
+/* Number of milliseconds to sleep if we are blocking the simulation
+ * waiting for the queue to clear */
+#define NBODY_QUEUE_SLEEP_INTERVAL 16
+
+/* number of NBODY_QUEUE_SLEEP_INTERVALS to wait before checking if the process is dead */
+#define NBODY_QUEUE_WAIT_PERIODS 7
+
+/* Number of seconds to wait on a supposedly living attached garphics
+   process before giving up on it
+ */
+#define NBODY_QUEUE_TIMEOUT 10.0
 
 typedef struct
 {
     float x, y, z;
-    int ignore;
+    int32_t ignore;
 } FloatPos;
 
 /* Mostly for progress information */
@@ -37,96 +52,57 @@ typedef struct
 {
     float currentTime;
     float timeEvolve;
+    float rootCenterOfMass[3];     /* Center of mass of the system  */
 } SceneInfo;
 
-typedef enum
+/* This should only be used as the last element of the scene_t */
+typedef struct
 {
-    MOUSE_MODE_NONE,
-    MOUSE_MODE_MOVE,
-    MOUSE_MODE_ZOOM
-} NBodyMouseMode;
-
-#ifndef NAME_MAX
-  #define NAME_MAX 255
-#endif
+    OPA_int_t head;
+    OPA_int_t tail;
+    SceneInfo info[NBODY_CIRC_QUEUE_SIZE];
+    FloatPos bodyData[1];
+} NBodyCircularQueue;
 
 /* the scene structure */
 typedef struct
 {
     char shmemName[NAME_MAX + 1];
     int instanceId;
+    OPA_int_t ownerPID;
     int nbodyMajorVersion;
     int nbodyMinorVersion;
 
-    int nbody;
-    int drawGalaxy;
-    int cmCentered; /* Center on the center of mass. Otherwise, on galactic center */
-
-    int floatMode;
-    float r;       /* Distance from center point. Maps to OpenGL z axis so often negative */
-    float xrot;
-    float yrot;
-    float starsize;
-
-    /* Terrible way of checking that a screensaver is attached.  It
-       avoids copying all of the bodies if it isn't running. Also only
-       semi-functional way of making sure only one screensaver is
-       attached at a time to the simulation. There's a small window
-       where you can end up with multiple at a time which could
-       potentially break, but it shouldn't matter that much.
+    /* We require exclusive access. One visualizer per running simulation
+     *
+     * We need 2 copies set at different times to signal to forking
+     * process that visualizer is ready with setup.
+     *
+     * We need to acquire the attached lock before we can set
+     * settings from the graphics such as the
+     * blockSimulationOnGraphics, but then we need to indicate when
+     * we have finished setup or otherwise there can be a visible
+     * jump at the start
      */
-  #ifndef _MSC_VER
-    volatile int attached;
-  #else
-    volatile LONG attached;
-  #endif /* _MSC_VER */
+    OPA_int_t attachedPID;
+    OPA_int_t attachedLock;
+    OPA_int_t paused;
 
-    int fullscreen;
-    int screensaverMode;
-    int monochromatic;
-    int drawAxes;
-    int drawOrbitTrace;
-    int drawHelp;
-    int drawInfo;
-    int drawParticles;
-    int useGLPoints;
+    /*
+      Optionally block the simulation while the graphics catches up.
+      This would let you create smoother visualizations etc. at the
+      expense of slowing the simulation.
+    */
+    OPA_int_t blockSimulationOnGraphics;
 
-    int ntri;
-    int paused;
-    int step;
-    NBodyMouseMode mouseMode;
-    int changed;
-    double t;
-    double dt;
-    double usleepcount;
-    double usleepdt;
+    int nbody;
+    unsigned int nSteps;
+    int hasGalaxy;
+    int hasInfo;
+    int staticScene;
 
-    float rootCenterOfMass[3];     /* Center of mass of the system  */
-    float startingPositionHint[3];
-    float startingAngleHint[3];
-    SceneInfo info;
-
-    int currentTracePoint;
-    FloatPos orbitTrace[MAX_DRAW_TRACE_POINTS];
-    FloatPos rTrace[];
+    NBodyCircularQueue queue;
 } scene_t;
-
-#if defined(__GNUC__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 1)
-  // #define nbodyGraphicsAtomicIncrement(x) __sync_fetch_and_add((x), 1)
-  // #define nbodyGraphicsAtomicDecrement(x) __sync_fetch_and_sub((x), 1)
-    #define nbodyGraphicsSetOn(x) __sync_fetch_and_or((x), 1)
-    #define nbodyGraphicsSetOff(x) __sync_fetch_and_and((x), 0)
-    #define nbodyGraphicsTestVal(x) __sync_add_and_fetch((x), 0)
-#elif defined(_MSC_VER)
-  // #define nbodyGraphicsAtomicIncrement(x) InterlockedIncrement((x))
-  // #define nbodyGraphicsAtomicDecrement(x) InterlockedDecrement((x))
-
-  #define nbodyGraphicsSetOn(x) InterlockedBitTestAndSet((x), 1) // 1st bit
-  #define nbodyGraphicsSetOff(x) InterlockedBitTestAndReset((x), 1)
-  #define nbodyGraphicsTestVal(x) InterlockedOr((x), 0);
-#else
-  #error Need atomics for compiler
-#endif /* defined(__GNUC__) */
 
 #endif /* _NBODY_GRAPHICS_H_ */
 

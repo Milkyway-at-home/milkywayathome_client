@@ -251,7 +251,7 @@ NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
 
     if (mw_likely(ctx->criterion != Exact))
     {
-        rc = makeTree(ctx, st);
+        rc = nbMakeTree(ctx, st);
         if (nbStatusIsFatal(rc))
             return rc;
 

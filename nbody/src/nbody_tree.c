@@ -33,7 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* subIndex: compute subcell index for body p in cell q. */
-static int subIndex(Body* p, NBodyCell* q)
+static inline int nbSubIndex(Body* p, NBodyCell* q)
 {
     int ind = 0;
 
@@ -176,7 +176,7 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 }
 
 /* makecell: return pointer to free cell. */
-static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
+static NBodyCell* nbMakeCell(NBodyState* st, NBodyTree* t)
 {
     NBodyCell* c;
 
@@ -196,8 +196,8 @@ static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
     return c;
 }
 
-/* newTree: reclaim cells in tree, prepare to build new one. */
-static void newTree(NBodyState* st, NBodyTree* t)
+/* reclaim cells in tree, prepare to build new one. */
+static void nbNewTree(NBodyState* st, NBodyTree* t)
 {
     NBodyNode* p = (NBodyNode*) t->root;              /* start with the root */
 
@@ -218,8 +218,8 @@ static void newTree(NBodyState* st, NBodyTree* t)
     t->cellUsed = 0;   /* init count of cells, levels */
     t->maxDepth = 0;
 
-    t->root = makeCell(st, t);    /* allocate the root cell */
-    mw_zerov(Pos(t->root));                          /* initialize the midpoint */
+    t->root = nbMakeCell(st, t);      /* allocate the root cell */
+    mw_zerov(Pos(t->root));           /* initialize the midpoint */
 }
 
 
@@ -231,7 +231,7 @@ static inline real calcOffset(real pPos, real qPos, real qsize)
 }
 
 ALWAYS_INLINE
-static inline void initMidpoint(NBodyCell* c, const Body* p, const NBodyCell* q, real qsize)
+static inline void nbInitMidpoint(NBodyCell* c, const Body* p, const NBodyCell* q, real qsize)
 {
     X(Pos(c)) = calcOffset(X(Pos(p)), X(Pos(q)), qsize);
     Y(Pos(c)) = calcOffset(Y(Pos(p)), Y(Pos(q)), qsize);
@@ -239,7 +239,7 @@ static inline void initMidpoint(NBodyCell* c, const Body* p, const NBodyCell* q,
 }
 
 /* loadBody: descend tree and insert body p in appropriate place. */
-static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
+static void nbLoadBody(NBodyState* st, NBodyTree* t, Body* p)
 {
     NBodyCell* q;
     NBodyCell* c;
@@ -248,7 +248,7 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
     real qsize;
 
     q = t->root;                                /* start with tree t.root */
-    qind = subIndex(p, q);                      /* get index of subcell */
+    qind = nbSubIndex(p, q);                    /* get index of subcell */
     qsize = t->rsize;                           /* keep track of cell size */
     lev = 0;                                    /* count levels descended */
     while (Subp(q)[qind] != NULL)               /* loop descending tree */
@@ -265,15 +265,15 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
 
         if (isBody(Subp(q)[qind]))              /* reached a "leaf"? */
         {
-            c = makeCell(st, t);               /* allocate new cell */
-            initMidpoint(c, p, q, qsize);      /* initialize midpoint */
+            c = nbMakeCell(st, t);             /* allocate new cell */
+            nbInitMidpoint(c, p, q, qsize);    /* initialize midpoint */
 
-            Subp(c)[subIndex((Body*) Subp(q)[qind], c)] = Subp(q)[qind];
+            Subp(c)[nbSubIndex((Body*) Subp(q)[qind], c)] = Subp(q)[qind];
             /* put body in cell */
             Subp(q)[qind] = (NBodyNode*) c;    /* link cell in tree */
         }
-        q = (NBodyCell*) Subp(q)[qind];        /* advance to next level */
-        qind = subIndex(p, q);            /* get index to examine */
+        q = (NBodyCell*) Subp(q)[qind];   /* advance to next level */
+        qind = nbSubIndex(p, q);          /* get index to examine */
         qsize *= 0.5;                     /* shrink current cell */
         ++lev;                            /* count another level */
     }
@@ -303,8 +303,8 @@ static inline real calcSW93MaxDist2(const NBodyCell* p, const mwvector cmpos, re
     return bmax2;
 }
 
-/* setRCrit: assign critical radius for cell p, using center-of-mass
- * position cmpos and cell size psize. */
+/* assign critical radius for cell p, using center-of-mass position
+ * cmpos and cell size psize. */
 static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeRSize, mwvector cmpos, real psize)
 {
     real rc, bmax2;
@@ -342,7 +342,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
     }
 }
 
-static inline void checkTreeDim(NBodyTree* tree, real pPos, real cmPos, real halfPsize)
+static inline void nbCheckTreeDim(NBodyTree* tree, real pPos, real cmPos, real halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
     if (   cmPos < pPos - halfPsize       /* if out of bounds */
@@ -370,13 +370,13 @@ static inline void checkTreeDim(NBodyTree* tree, real pPos, real cmPos, real hal
     }
 }
 
-static inline void checkTreeStructure(NBodyTree* tree, const mwvector pPos, const mwvector cmPos, const real psize)
+static inline void nbCheckTreeStructure(NBodyTree* tree, const mwvector pPos, const mwvector cmPos, const real psize)
 {
     real halfPsize = 0.5 * psize;
 
-    checkTreeDim(tree, X(pPos), X(cmPos), halfPsize);
-    checkTreeDim(tree, Y(pPos), Y(cmPos), halfPsize);
-    checkTreeDim(tree, Z(pPos), Z(cmPos), halfPsize);
+    nbCheckTreeDim(tree, X(pPos), X(cmPos), halfPsize);
+    nbCheckTreeDim(tree, Y(pPos), Y(cmPos), halfPsize);
+    nbCheckTreeDim(tree, Z(pPos), Z(cmPos), halfPsize);
 }
 
 
@@ -417,28 +417,28 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real ps
         cmpos = Pos(p);                /* use geo. center for now  */
     }
 
-    checkTreeStructure(tree, Pos(p), cmpos, psize);
+    nbCheckTreeStructure(tree, Pos(p), cmpos, psize);
 
     Rcrit2(p) = findRCrit(ctx, p, tree->rsize, cmpos, psize);            /* set critical radius */
     Pos(p) = cmpos;             /* and center-of-mass pos */
 }
 
-/* makeTree: initialize tree structure for hierarchical force calculation
+/* nbMakeTree: initialize tree structure for hierarchical force calculation
  * from body array btab, which contains ctx.nbody bodies.
  */
-NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbMakeTree(const NBodyCtx* ctx, NBodyState* st)
 {
     Body* p;
     const Body* endp = st->bodytab + st->nbody;
     NBodyTree* t = &st->tree;
 
-    newTree(st, t);                                  /* flush existing tree, etc */
+    nbNewTree(st, t);                                /* flush existing tree, etc */
 
     expandBox(t, st->bodytab, st->nbody);            /* and expand cell to fit */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
         if (Mass(p) != 0.0)                  /* exclude test particles */
-            loadBody(st, t, p);              /* and insert into tree */
+            nbLoadBody(st, t, p);              /* and insert into tree */
     }
 
     /* Check if tree structure error occured */

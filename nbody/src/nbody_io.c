@@ -1,28 +1,54 @@
-/* Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
-   Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/*
+ * Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
+ * Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.
+ * Copyright (c) 2010-2012 Matthew Arsenault
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-This file is part of Milkway@Home.
+#include "nbody_config.h"
 
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+#include "nbody_util.h"
 #include "nbody_io.h"
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
-#include "nbody_curses.h"
+
+static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx* ctx, const NBodyState* st)
+{
+    mwvector cmPos;
+
+    if (st->tree.root)
+    {
+        cmPos = Pos(st->tree.root);
+    }
+    else
+    {
+        cmPos = nbCenterOfMass(st);
+    }
+
+    fprintf(f,
+            "cartesian    = %d\n"
+            "hasMilkyway  = %d\n"
+            "centerOfMass = %f, %f, %f\n",
+            nbf->outputCartesian,
+            (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT),
+            X(cmPos), Y(cmPos), Z(cmPos)
+        );
+
+}
 
 static void nbPrintBodyOutputHeader(FILE* f, int cartesian)
 {
@@ -43,6 +69,7 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
     mwvector lbr;
     const Body* endp = st->bodytab + st->nbody;
 
+    nbPrintSimInfoHeader(f, nbf, ctx, st);
     nbPrintBodyOutputHeader(f, nbf->outputCartesian);
 
     for (p = st->bodytab; p < endp; p++)

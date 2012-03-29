@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2012 Matthew Arsenault
  *
  * This file is part of Milkway@Home.
  *
@@ -21,17 +20,29 @@
 #ifndef _NBODY_GL_H_
 #define _NBODY_GL_H_
 
-#ifndef __APPLE__
-  #include <GL/glut.h>
-  #include <GL/gl.h>
-  #include <GL/glu.h>
-#else
-  #include <GLUT/glut.h>
-  #include <OpenGL/gl.h>
-  #include <OpenGL/glu.h>
-#endif /* __APPLE__ */
-
 #include "nbody_graphics.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define DEFAULT_TEXTURED_POINT_SIZE 250.0f
+#define DEFAULT_POINT_POINT_SIZE 40.0f
+#define DEFAULT_FLOAT_SPEED 5.0f
+#define DEFAULT_NO_FLOAT FALSE
+
+#define DEFAULT_UNTEXTURED_POINTS FALSE
+#define DEFAULT_SHOW_AXES FALSE
+
+/* The center of mass points don't persist, so the simulation will
+ * only show points from when the graphics started. This should be
+ * fixed before enabling it for the screensaver. */
+#define DEFAULT_SHOW_ORBIT_TRACE FALSE
+#define DEFAULT_NO_SHOW_INFO FALSE
+#define DEFAULT_ORIGIN_CENTERED FALSE
+#define DEFAULT_MONOCHROMATIC FALSE
+#define DEFAULT_BLOCK_SIMULATION FALSE
+#define DEFAULT_QUIT_ON_COMPLETE FALSE
 
 typedef struct
 {
@@ -40,27 +51,30 @@ typedef struct
     int width;
     int height;
 
-    int monochrome;
-    int notUseGLPoints;
-    int originCenter;
+    int quitOnComplete;
+    int blockSimulation;
     int noFloat;
+    float floatSpeed;
+    float texturedPointSize;
+    float pointPointSize;
+    int untexturedPoints;
+    int monochromatic;
+    int originCentered;
+    int noDrawInfo;
+    int drawAxes;
+    int drawOrbitTrace;
 
     int pid;
     char* file;
     int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, 0.0f, 0.0f, 0.0f, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
-int nbglLoadStaticSceneFromFile(const char* filename);
+int nbglRunGraphics(scene_t* scene, const VisArgs* args);
 
-int connectSharedScene(int instanceId);
-int checkConnectedVersion(void);
-int nbodyGLSetup(const VisArgs* args);
-void nbodyGLCleanup(void);
-
-#ifndef _WIN32
-int nbodyInitShmemKey(const char* progName);
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _NBODY_GL_H_ */
