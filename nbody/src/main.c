@@ -413,6 +413,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
     argRead = mwReadArguments(context);
     if (argRead < 0)
     {
+        mw_printf("Failed to read arguments\n");
         poptFreeContext(context);
         return TRUE;
     }
