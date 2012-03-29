@@ -23,12 +23,19 @@
 extern "C" {
 #endif
 
-extern const struct {
+#define MILKYWAY_IMAGE_DATA_SIZE (2665007 + 1)
+
+extern const unsigned char* milkywayImageRLEPixelData;
+
+static const struct
+{
   unsigned int 	 width;
   unsigned int 	 height;
   unsigned int 	 bytes_per_pixel; /* 3:RGB, 4:RGBA */
-  unsigned char	 rle_pixel_data[2665007 + 1];
-} milkywayImage;
+} milkywayImageParams = {
+  1024, 1024, 3
+};
+
 
 #ifdef __cplusplus
 }

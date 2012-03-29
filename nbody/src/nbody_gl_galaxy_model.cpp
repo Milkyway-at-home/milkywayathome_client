@@ -48,19 +48,19 @@ GalaxyModel::~GalaxyModel()
 
 void GalaxyModel::loadGalaxyTexture()
 {
-    size_t imgSize = milkywayImage.width * milkywayImage.height;
-    unsigned char* buf = new unsigned char[imgSize * milkywayImage.bytes_per_pixel];
+    size_t imgSize = milkywayImageParams.width * milkywayImageParams.height;
+    unsigned char* buf = new unsigned char[imgSize * milkywayImageParams.bytes_per_pixel];
 
     glGenTextures(1, &this->texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    MILKYWAYIMAGE_RUN_LENGTH_DECODE(buf, milkywayImage.rle_pixel_data, imgSize, milkywayImage.bytes_per_pixel);
+    MILKYWAYIMAGE_RUN_LENGTH_DECODE(buf, milkywayImageRLEPixelData, imgSize, milkywayImageParams.bytes_per_pixel);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, milkywayImage.width, milkywayImage.height, 0, GL_RGB, GL_UNSIGNED_BYTE, buf);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, milkywayImageParams.width, milkywayImageParams.height, 0, GL_RGB, GL_UNSIGNED_BYTE, buf);
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
