@@ -31,15 +31,13 @@ check_include_files(stddef.h OPA_HAVE_STDDEF_H)
 
 check_library_exists(pthread pthread_create "" OPA_HAVE_LIBPTHREAD)
 
-set(CMAKE_EXTRA_INCLUDE_FILES pthread.h)
-
 set(CMAKE_REQUIRED_LIBRARIES pthread)
 check_function_exists(pthread_yield OPA_HAVE_PTHREAD_YIELD)
 set(CMAKE_REQUIRED_LIBRARIES )
 
 set(CMAKE_EXTRA_INCLUDE_FILES sched.h)
 check_function_exists(sched_yield OPA_HAVE_SCHED_YIELD)
-set(CMAKE_EXTRA_INCLUDES )
+set(CMAKE_EXTRA_INCLUDE_FILES )
 
 
 check_type_size("int" SIZEOF_INT)
@@ -121,7 +119,11 @@ macro(try_opa_header name header)
     #define OPA_SIZEOF_INT SIZEOF_INT
     #define OPA_SIZEOF_VOID_P SIZEOF_VOID_P
     #ifndef _opa_inline
-    #define _opa_inline inline
+      #ifndef _MSC_VER
+        #define _opa_inline inline
+      #else
+        #define _opa_inline __inline
+      #endif
     #endif
     #ifndef _opa_restrict
     #define _opa_restrict restrict
@@ -167,9 +169,6 @@ macro(try_opa_header name header)
 
   set(CMAKE_REQUIRED_INCLUDES )
   set(CMAKE_REQUIRED_DEFINITIONS )
-
-#  set(CMAKE_REQUIRED_INCLUDES )
-#  message("Check out my monster dong ${name} ${MONSTER_DONG}")
 endmacro()
 
 if(NOT ACCEPTS_BOGUS_ASM)

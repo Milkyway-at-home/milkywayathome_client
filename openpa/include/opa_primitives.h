@@ -16,7 +16,11 @@
    unconditionally using _opa_inline we must define it ourselves in this
    case. */
 #ifndef _opa_inline
-#define _opa_inline inline
+  #ifndef _MSC_VER
+    #define _opa_inline inline
+  #else
+    #define _opa_inline __inline
+  #endif
 #endif
 #ifndef _opa_restrict
 #define _opa_restrict restrict
