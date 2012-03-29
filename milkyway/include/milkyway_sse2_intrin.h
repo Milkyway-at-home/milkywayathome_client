@@ -148,11 +148,13 @@ inline __m128d hadd_pd_SSE2(__m128d a, __m128d b)
     return A.d;
 }
 
+ALWAYS_INLINE
 inline __m128d _mm128_vneg_pd(__m128d x)
 {
     return  _mm_sub_pd(_mm_setzero_pd(), (x));
 }
 
+ALWAYS_INLINE
 inline __m128d dotp(__m128d Xvec_a, __m128d Yvec_a, __m128d Zvec_a, __m128d X0,__m128d X1,__m128d X2)
 {
     __m128d x0, x1, x2, s0;
