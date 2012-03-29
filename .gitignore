@@ -96,3 +96,6 @@ replace_amd_il
 *.ps
 *.plist
 *.app
+*.glc
+*.mp4
+*.avi

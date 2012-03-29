@@ -8,6 +8,23 @@ Separation:
 --------------------------------------------------------------------------------
 Nbody:
 
+  - Simulations are described with Lua input files which can be used
+  to produce an arbitrary initial configuration of particles.
+
+  - Various options are available for applying external potentials
+  to a system.
+
+  - Graphics can be run separately and attach to existing simulations,
+  or can be launched at the same time with the --visualizer argument
+  to the main process.
+
+  - N-body videos can be produced by using a separate program to
+  record OpenGL. A wrapper script that uses this can be used as
+  the --visualizer-bin argument to record a video of the
+  visualization. An example script is at tools/RecordNBodyVideo.sh
+
+
+
   - Consistent N-body results between different systems require crlibm
   and SSE2 (at least on x86, not sure about other architectures)
 
