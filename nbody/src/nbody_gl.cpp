@@ -60,7 +60,7 @@ static const float pointSizeChangeFactor = 1.05f;
 static const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 static const glm::fquat identityOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
 
-static const float startRadius = 2.0f * 30.0f;
+static const float startRadius = 30.0f;
 
 // angular component only, degrees per second
 static const float minFloatSpeed = 1.0e-3f;
