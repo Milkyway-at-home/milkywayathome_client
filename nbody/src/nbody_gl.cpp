@@ -1064,15 +1064,15 @@ void NBodyGraphics::loadColors()
         {
             if (false)
             {
-                color[i].r = (GLfloat) R * scale;
-                color[i].g = (GLfloat) G * scale;
-                color[i].b = (GLfloat) B * scale;
+                color[i].r = (GLfloat) (R * scale);
+                color[i].g = (GLfloat) (G * scale);
+                color[i].b = (GLfloat) (B * scale);
             }
             else
             {
-                color[i].r = (double) rand() / (double) RAND_MAX;
-                color[i].g = (double) rand() / (double) RAND_MAX;
-                color[i].b = (double) rand() / (double) RAND_MAX;
+                color[i].r = (float) rand() / (float) RAND_MAX;
+                color[i].g = (float) rand() / (float) RAND_MAX;
+                color[i].b = (float) rand() / (float) RAND_MAX;
             }
         }
     }

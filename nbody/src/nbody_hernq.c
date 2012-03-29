@@ -149,21 +149,20 @@ static int nbGenerateHernqCore(lua_State* luaSt,
     int table;
     Body b;
     real r;
+    real radius = 0.0;
+    real massEpsilon = mass / nbody; /* The amount of mass we increase for
+                                        each particle */
+
+    /* Start with half an epsilon */
+    real totalMass = 0.5 * massEpsilon;
 
     memset(&b, 0, sizeof(b));
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
     b.bodynode.mass = mass / nbody;    /* Mass per particle */
-    real massEpsilon = mass / nbody;    /* The amount of mass we increase for
-                                        each particle */
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
-
-    real radius = 0;
-
-    //Start with half an epsilon
-    real totalMass = massEpsilon / (real)2;
 
     for (i = 0; i < nbody; ++i)
     {

@@ -39,6 +39,7 @@
   #define STREAM_VEC 1
 #endif
 
+
 static real probabilities_intrinsics(const AstronomyParameters* ap,
                                      const StreamConstants* sc,
                                      const real* RESTRICT sg_dx,
@@ -62,9 +63,8 @@ static real probabilities_intrinsics(const AstronomyParameters* ap,
     MW_ALIGN_V(16) double xyzstr[MAX_CONVOLVE];
   #endif
 
-    sg_dx = mw_assume_aligned(sg_dx, 16);
-    r_point = mw_assume_aligned(r_point, 16);
-    qw_r3_N = mw_assume_aligned(qw_r3_N, 16);
+    __m128d RI, tmp0,tmp1, PROD, PBXV, BGP;
+    __m128d xyz0, xyz1, xyz2;
 
     const __m128d REF_XR   = mw_set1_pd(reff_xr_rp3);
     const __m128d COSBL    = mw_set1_pd(lbt.lCosBCos);
@@ -74,10 +74,11 @@ static real probabilities_intrinsics(const AstronomyParameters* ap,
     const __m128d R0       = mw_set1_pd(ap->r0);
     const __m128d QV_RECIP = mw_set1_pd(ap->q_inv);
 
-    __m128d RI, tmp0,tmp1, PROD, PBXV, BGP;
-    __m128d xyz0, xyz1, xyz2;
-
     (void) gPrime, (void) sg_dx;
+
+    sg_dx = mw_assume_aligned(sg_dx, 16);
+    r_point = mw_assume_aligned(r_point, 16);
+    qw_r3_N = mw_assume_aligned(qw_r3_N, 16);
 
     BGP = mw_setzero_pd();
 

@@ -19,6 +19,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "nbody_config.h"
+
 #include "nbody_priv.h"
 #include "nbody_chisq.h"
 #include "milkyway_util.h"
@@ -43,7 +45,6 @@ static inline double nbNormalizedHistogramError(unsigned int n, double total)
 {
     return (n == 0) ? inv(total) : sqrt((double) n) / total;
 }
-
 
 static double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
 {
@@ -765,21 +766,21 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     {
         if (data->data[i].useBin)
         {
-            dat[i].weight = data->data[i].count;
+            dat[i].weight = (float) data->data[i].count;
             if (histogram->hasRawCounts)
             {
                 double correctedCount = (double) histogram->data[i].rawCount / (double) effTotalNum;
-                hist[i].weight = correctedCount;
+                hist[i].weight = (float) correctedCount;
             }
             else
             {
-                hist[i].weight = histogram->data[i].count / renormalize;
+                hist[i].weight = (float) (histogram->data[i].count / renormalize);
             }
         }
         /* Otherwise weight is 0.0 */
 
-        hist[i].pos = histogram->data[i].lambda;
-        dat[i].pos = data->data[i].lambda;
+        hist[i].pos = (float) histogram->data[i].lambda;
+        dat[i].pos = (float) data->data[i].lambda;
     }
 
     emd = emdCalc((const float*) dat, (const float*) hist, n, n, NULL);

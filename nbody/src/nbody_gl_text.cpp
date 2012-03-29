@@ -57,7 +57,7 @@ void NBodyTextItem::drawTextItem()
 {
     glBindVertexArray(this->vao);
     glBindBuffer(GL_ARRAY_BUFFER, this->verticesBuffer);
-    glDrawElements(GL_TRIANGLES, 6 * this->indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6 * (GLsizei) this->indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 
@@ -118,7 +118,7 @@ TextPen NBodyTextItem::addText(const wchar_t* text, TextPen& pen)
             float x1 = std::floor(x0 + glyph->width) ;
             float y1 = std::floor(y0 - glyph->height);
 
-            GLuint idx = (GLuint) 4 * this->vertices.size();
+            GLuint idx = 4 * (GLuint) this->vertices.size();
 
             TextVertexIndexArray charIndices =
                 {
@@ -144,10 +144,10 @@ TextPen NBodyTextItem::addText(const wchar_t* text, TextPen& pen)
             pen.x += glyph->advance_x;
 
             // text grows right
-            limits.x = fmax(pen.x, limits.x);
+            limits.x = std::max(pen.x, limits.x);
 
             // text grows down
-            limits.y = fmin(pen.y, limits.y);
+            limits.y = std::min(pen.y, limits.y);
         }
     }
 
@@ -380,7 +380,7 @@ void NBodyText::loadTextTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, font->tex_width, font->tex_height,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei) font->tex_width, (GLsizei) font->tex_height,
                  0, GL_RED, GL_UNSIGNED_BYTE, font->tex_data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, this->textTexture);

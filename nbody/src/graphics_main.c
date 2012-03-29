@@ -732,13 +732,17 @@ static void nbglInstallExitHandlers()
 {
     /* TODO: Use sigaction() if available instead */
     signal(SIGINT, nbglSigHandler);
-    signal(SIGQUIT, nbglSigHandler);
     signal(SIGINT, nbglSigHandler);
     signal(SIGABRT, nbglSigHandler);
     signal(SIGFPE, nbglSigHandler);
-    signal(SIGKILL, nbglSigHandler);
     signal(SIGSEGV, nbglSigHandler);
+
+  #ifndef _WIN32
+    signal(SIGQUIT, nbglSigHandler);
+    signal(SIGKILL, nbglSigHandler);
     signal(SIGUSR1, nbglSigHandler);
+  #endif
+
     atexit(nbglCleanupAttached);
 }
 

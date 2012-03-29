@@ -54,6 +54,11 @@
 
 #include <stddef.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4309)
+#endif
+
 typedef struct
 {
     wchar_t charcode;
@@ -700,6 +705,12 @@ const texture_font_t robotoRegular12 = {
   {L'~', 8, 3, 0, 6, 8.156250, 0.000000, 0.429688, 0.390625, 0.492188, 0.414062, 0, { } },
  }
 };
+
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 
 #endif /* _ROBOTO_REGULAR_12_H_ */
 

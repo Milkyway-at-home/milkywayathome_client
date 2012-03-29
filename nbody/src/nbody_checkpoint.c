@@ -311,7 +311,7 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + N_ORBIT_TRACE_POINTS * sizeof(mwvector);
+        cp->cpFileSize = (DWORD) (hdrSize + st->nbody * sizeof(Body) + N_ORBIT_TRACE_POINTS * sizeof(mwvector));
     }
     else
     {

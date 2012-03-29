@@ -1191,14 +1191,14 @@ float emdCalc(const float* RESTRICT signature_arr1,
               float* RESTRICT lower_bound)
 {
     EMDState state;
-    float emd = EMD_INVALID;
+    float emd = (float) EMD_INVALID;
     double totalCost = 0.0;
     int result = 0;
     EMDDistanceFunction dist_func = NULL;
     const EMDDistanceType dist_type = EMD_DIST_L1;
     const mwbool debugFlow = FALSE;
     float* flow = NULL;
-    const size_t dims = 1; /* We only have 1 dimension, lambda */
+    const int dims = 1; /* We only have 1 dimension, lambda */
     void* user_param = (void*) dims;
 
     memset(&state, 0, sizeof(state));
@@ -1219,7 +1219,7 @@ float emdCalc(const float* RESTRICT signature_arr1,
     else if (result < 0)
     {
         emdReleaseEMD(&state);
-        return EMD_INVALID;
+        return (float) EMD_INVALID;
     }
 
     if (debugFlow)

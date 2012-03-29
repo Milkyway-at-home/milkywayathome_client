@@ -47,10 +47,16 @@ set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
 
 include(CMakeDependentOption)
 include(CheckLibraryExists)
+
+
 include(CompilerID)
 
 if(WIN32)
-  add_definitions("-D_CRT_SECURE_NO_WARNINGS=1 -DWIN32_LEAN_AND_MEAN=1 -DVC_EXTRALEAN=1")
+  set(DISABLE_WIN32_BULLSHIT_DEFINES "-D_CRT_SECURE_NO_WARNINGS=1 -DWIN32_LEAN_AND_MEAN=1 -DVC_EXTRALEAN=1 -DNOMINMAX=1")
+  if(MSVC)
+    string(REPLACE "-D" "/D " DISABLE_WIN32_BULLSHIT_DEFINES ${DISABLE_WIN32_BULLSHIT_DEFINES})
+  endif()
+  add_definitions(${DISABLE_WIN32_BULLSHIT_DEFINES})
 endif()
 if(CXX_COMPILER_IS_SUN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -features=zla")

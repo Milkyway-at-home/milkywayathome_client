@@ -149,7 +149,7 @@ static cl_int runSummarization(CLInfo* ci,
             return err;
         }
 
-        nElements = mwDivRoundup(global[0], local[0]);
+        nElements = (cl_uint) mwDivRoundup(global[0], local[0]);
     }
 
 

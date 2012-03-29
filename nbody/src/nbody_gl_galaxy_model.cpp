@@ -110,7 +110,7 @@ void GalaxyModel::setMilkywayModelParameters()
 {
     this->radialSlices = 15;
     this->axialSlices = 50;
-    this->axialSliceSize = M_2PI / (float) this->axialSlices;
+    this->axialSliceSize = (float) M_2PI / (float) this->axialSlices;
 
     this->bulgeRadius = 0.5f * 8.308f;
     this->bulgeHeight = 0.7f;

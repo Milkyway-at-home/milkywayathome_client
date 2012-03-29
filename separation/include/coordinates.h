@@ -32,7 +32,7 @@ mwvector stripe_normal(int wedge);
 mwvector lbr2xyz(const AstronomyParameters* ap, const mwvector lbr);
 mwvector xyz_mag(const AstronomyParameters* ap, mwvector point, real offset);
 
-LB gc2lb(const int wedge, const real mu, const real nu);
+LB gc2lb(int wedge, real mu, real nu);
 
 #endif /* _COORDINATES_H_ */
 

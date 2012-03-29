@@ -21,6 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_COORDINATES_H_
 #define _NBODY_COORDINATES_H_
 
+#include "nbody_config.h"
+
 #include "milkyway_math.h"
 #include "nbody_types.h"
 

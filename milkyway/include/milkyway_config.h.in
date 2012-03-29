@@ -99,6 +99,9 @@
 
   /* Only sort of */
   #define WEAK __declspec(selectany)
+
+  #pragma warning(disable : 4141)
+  #pragma warning(disable : 4996)
 #endif /* _MSC_VER */
 
 

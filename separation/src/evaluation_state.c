@@ -356,7 +356,7 @@ int writeCheckpoint(EvaluationState* es)
 
 int deleteCheckpoint(void)
 {
-    mw_remove(resolvedCheckpointPath);
+    return mw_remove(resolvedCheckpointPath);
 }
 
 int maybeResume(EvaluationState* es)

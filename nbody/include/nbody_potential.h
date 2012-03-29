@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-mwvector nbExtAcceleration(const Potential* pot, const mwvector pos);
+mwvector nbExtAcceleration(const Potential* pot, mwvector pos);
 
 #ifdef __cplusplus
 }

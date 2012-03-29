@@ -223,7 +223,7 @@ static inline LB lbr2d(LB lb)
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 HOT CONST_F
-LB gc2lb(const int wedge, real mu, real nu)
+LB gc2lb(int wedge, real mu, real nu)
 {
     LB lb;
     real sinmunode, cosmunode;

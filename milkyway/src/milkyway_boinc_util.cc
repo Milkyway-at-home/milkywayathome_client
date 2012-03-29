@@ -144,8 +144,8 @@ static int mwBoincInitNormal(MWInitType type)
 
     boinc_options_defaults(options);
 
-    options.multi_thread = (type & MW_MULTITHREAD) > 0;
-    options.normal_thread_priority = ((type & MW_CAL) || (type & MW_OPENCL)) > 0;
+    options.multi_thread = (type & MW_MULTITHREAD);
+    options.normal_thread_priority = ((type & MW_CAL) || (type & MW_OPENCL));
 
     rc |= boinc_init_options(&options);
 
@@ -199,7 +199,7 @@ char* mwReadFileResolved(const char* filename)
 
 int mw_resolve_filename(const char* filename, char* buf, size_t bufSize)
 {
-    return boinc_resolve_filename(filename, buf, bufSize);
+    return boinc_resolve_filename(filename, buf, (int) bufSize);
 }
 
 int mw_file_exists(const char* file)

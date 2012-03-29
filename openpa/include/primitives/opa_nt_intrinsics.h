@@ -7,10 +7,11 @@
 #ifndef OPA_NT_INTRINSICS_H_INCLUDED
 #define OPA_NT_INTRINSICS_H_INCLUDED
 
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+#endif
 #include<windows.h>
 #include<intrin.h>
-#include "mpi.h"
 
 /* OPA_int_t uses a long because the compiler intrinsics operate on
  * longs instead of ints. */

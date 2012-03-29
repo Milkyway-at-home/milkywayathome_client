@@ -89,7 +89,9 @@
 #  if !defined(DSFMT_UINT32_DEFINED) && !defined(SFMT_UINT32_DEFINED)
 typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t;
+#if _MSC_VER < 1600
 #    define UINT64_C(v) (v ## ui64)
+#endif
 #    define DSFMT_UINT32_DEFINED
 #    if !defined(inline)
 #      define inline __inline

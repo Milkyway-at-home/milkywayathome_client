@@ -431,7 +431,7 @@ void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* vis
     do
     {
         ret = WaitForSingleObject(pInfo.hProcess, 10);
-        attached = !!OPA_load_int(st->scene->attachedPID);
+        attached = !!OPA_load_int(&st->scene->attachedPID);
     }
     while (!attached && (ret == WAIT_TIMEOUT));
 
