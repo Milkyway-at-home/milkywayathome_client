@@ -526,7 +526,6 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
         }
         else
         {
-            mw_printf("Uh what\n");
             hasError = TRUE;
         }
     }
@@ -715,11 +714,8 @@ static scene_t* g_scene = NULL;
 
 static void nbglCleanupAttached(void)
 {
-    printf("Cleanup\n");
-
     if (g_scene)
     {
-        printf("Release scene\n");
         nbglReleaseSceneLocks(g_scene);
         g_scene = NULL;
     }
