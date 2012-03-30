@@ -365,7 +365,9 @@ if(NBODY_GL)
     list(APPEND vis_link_libs ${GL3W_LIBRARY})
   endif()
 
-  list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
+  if(NOT WIN32)
+    list(APPEND vis_link_libs m)
+  endif()
 
   set(nbody_gl_inline_srcs )
   add_inline_shader(nbody_gl_inline_srcs "particle" "vertex")

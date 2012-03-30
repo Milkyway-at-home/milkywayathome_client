@@ -355,8 +355,14 @@ cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
                                 "OPENGL_FOUND;OPENGL_GLU_FOUND" OFF)
 
 # Required on Windows, optional on others
-cmake_dependent_option(USE_GL3W "Use GL3W for OpenGL 3 loading" ON
-                         "NOT WIN32" ON)
+# OS X GL 3.2 requires Lion anyway so there's no sense in using it by default
+if(APPLE)
+  set(USE_GL3W_DEFAULT OFF)
+else()
+  set(USE_GL3W_DEFAULT ON)
+endif()
+cmake_dependent_option(USE_GL3W "Use GL3W for OpenGL 3 loading" ${USE_GL3W_DEFAULT}
+                       "NOT WIN32" ON)
 
 
 print_separator()
