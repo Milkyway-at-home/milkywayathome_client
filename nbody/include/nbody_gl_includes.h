@@ -20,12 +20,20 @@
 #ifndef _NBODY_GL_INCLUDES_H_
 #define _NBODY_GL_INCLUDES_H_
 
-#include "milkyway_gcc_diagnostics.h"
+#include "nbody_config.h"
 
-#define GL3_PROTOTYPES
-#define GLFW_INCLUDE_GL3 1
-#define GLFW_NO_GLU 1
-#include <GL/glfw3.h>
+#if USE_GL3W
+  #include <GL3/gl3w.h>
+  #define GLFW_NO_GLU 1
+  #include <GL/glfw3.h>
+#else
+  #define GL3_PROTOTYPES
+  #define GLFW_INCLUDE_GL3 1
+  #define GLFW_NO_GLU 1
+  #include <GL/glfw3.h>
+#endif
+
+#include "milkyway_gcc_diagnostics.h"
 
 /* Only recentish GCC's support #pragma GCC diagnostic push / pop */
 GCC_DIAG_OFF(shadow)

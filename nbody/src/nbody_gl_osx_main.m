@@ -1,5 +1,7 @@
 
+#if 0
 #import <Cocoa/Cocoa.h>
+#endif
 
 extern int nbgl_main_apple(int argc, const char* argv[]);
 

@@ -29,6 +29,7 @@
 
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 NBODY_CRLIBM
+#cmakedefine01 USE_GL3W
 
 #define ENABLE_CRLIBM NBODY_CRLIBM
 #define ENABLE_OPENCL NBODY_OPENCL

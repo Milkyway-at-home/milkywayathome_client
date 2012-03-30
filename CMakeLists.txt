@@ -354,6 +354,11 @@ cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
 cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
                                 "OPENGL_FOUND;OPENGL_GLU_FOUND" OFF)
 
+# Required on Windows, optional on others
+cmake_dependent_option(USE_GL3W "Use GL3W for OpenGL 3 loading" ON
+                         "NOT WIN32" ON)
+
+
 print_separator()
 print_build_info()
 print_build_options()
@@ -380,6 +385,15 @@ if(NBODY_GL)
   if(NOT APPLE)
     set(OPENGL3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
     include_directories(${OPENGL3_INCLUDE_DIR})
+  endif()
+
+  if(USE_GL3W)
+    # Header and source generated to load all OpenGL3 functions via
+    # function pointer to work around Windows
+    set(GL3W_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
+    include_directories(${GL3W_INCLUDE_DIR})
+    add_library(gl3w STATIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/src/gl3w.c)
+    set(GL3W_LIBRARY gl3w)
   endif()
 
   if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glfw/CMakeLists.txt)

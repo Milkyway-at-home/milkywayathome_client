@@ -361,6 +361,10 @@ if(NBODY_GL)
     list(APPEND vis_link_libs rt)
   endif()
 
+  if(USE_GL3W)
+    list(APPEND vis_link_libs ${GL3W_LIBRARY})
+  endif()
+
   list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 
   set(nbody_gl_inline_srcs )

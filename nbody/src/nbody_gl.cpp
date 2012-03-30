@@ -1359,6 +1359,42 @@ static GLFWwindow nbglPrepareWindow(const VisArgs* args)
     }
 }
 
+static void nbglPrintGLVersion()
+{
+    mw_printf("OpenGL %s, GLSL %s\n",
+              glGetString(GL_VERSION),
+              glGetString(GL_SHADING_LANGUAGE_VERSION));
+}
+
+#if USE_GL3W
+
+// return true on error
+static bool nbglInitGL3W()
+{
+    if (gl3wInit())
+    {
+        mw_printf("Failed to load OpenGL 3\n");
+        return true;
+    }
+
+    if (!gl3wIsSupported(3, 2))
+    {
+        mw_printf("OpenGL 3.2 not supported\n");
+        return true;
+    }
+
+    return false;
+}
+
+#else
+
+static bool nbglInitGL3W()
+{
+    return false;
+}
+
+#endif /* USE_GL3W */
+
 int nbglRunGraphics(scene_t* scene, const VisArgs* args)
 {
     if (!scene)
@@ -1381,9 +1417,13 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
+    if (nbglInitGL3W())
+    {
+        return 1;
+    }
+
+    nbglPrintGLVersion();
     nbglSetSceneSettings(scene, args);
-
-
     srand((unsigned int) time(NULL));
 
     try

@@ -89,11 +89,20 @@ if(APPLE)
         set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4 CACHE STRING "" FORCE)
         set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk" CACHE PATH "" FORCE)
       else()
+
+        if(NBODY_GL)
+          set(LION_REQUIRED TRUE)
+        elseif(NBODY_GL OR MILKYWAY_OPENCL)
+          # OpenCL was added in 10.6
+          # GLFW build requires 10.6 features also
+          set(SL_REQUIRED TRUE)
+        endif()
+
         # Try for the lowest version SDK we can
-        if(HAVE_10_5_SDK AND NOT MILKYWAY_OPENCL AND NOT NBODY_GL)
+        if(HAVE_10_5_SDK AND NOT SL_REQUIRED AND NOT LION_REQUIRED)
           set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5 CACHE STRING "" FORCE)
           set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk" CACHE PATH "" FORCE)
-        elseif(HAVE_10_6_SDK AND NOT NBODY_GL)
+        elseif(HAVE_10_6_SDK AND NOT LION_REQUIRED)
           set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6 CACHE STRING "" FORCE)
           set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk" CACHE PATH "" FORCE)
         elseif(HAVE_10_7_SDK)
