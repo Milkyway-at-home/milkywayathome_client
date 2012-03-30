@@ -31,6 +31,21 @@
   #include <errno.h>
 #endif /* USE_SHMEM */
 
+typedef struct NBodyGLPrefs
+{
+    int blockSimulation;
+    int noFloat;
+    double floatSpeed;
+    double texturedPointSize;
+    double pointPointSize;
+    int untexturedPoints;
+    int monochromatic;
+    int originCentered;
+    int noShowInfo;
+    int showAxes;
+    int showOrbitTrace;
+} NBodyGLPrefs;
+
 static void nbglPrintCopyright(void)
 {
     mw_printf(
@@ -133,7 +148,6 @@ static void nbglPrintCopyright(void)
         );
 }
 
-
 static const VisArgs defaultVisArgs =
 {
     /* .fullscreen        */ FALSE,
@@ -149,7 +163,7 @@ static const VisArgs defaultVisArgs =
     /* .pointPointSize    */ DEFAULT_POINT_POINT_SIZE,
     /* .untexturedPoints  */ DEFAULT_UNTEXTURED_POINTS,
     /* .monochrome        */ DEFAULT_MONOCHROMATIC,
-    /* .originCenter      */ DEFAULT_ORIGIN_CENTERED,
+    /* .originCentered    */ DEFAULT_ORIGIN_CENTERED,
     /* .noDrawInfo        */ DEFAULT_NO_SHOW_INFO,
     /* .drawAxes          */ DEFAULT_SHOW_AXES,
     /* .drawOrbitTrace    */ DEFAULT_SHOW_ORBIT_TRACE,
@@ -165,22 +179,24 @@ static void freeVisArgs(VisArgs* args)
     args->file = NULL;
 }
 
+static const NBodyGLPrefs nbglDefaultPrefs =
+{
+    /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
+    /* .noFloat           */ DEFAULT_NO_FLOAT,
+    /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
+    /* .texturedPointSize */ DEFAULT_TEXTURED_POINT_SIZE,
+    /* .pointPointSize    */ DEFAULT_POINT_POINT_SIZE,
+    /* .untexturedPoints  */ DEFAULT_UNTEXTURED_POINTS,
+    /* .monochromatic     */ DEFAULT_MONOCHROMATIC,
+    /* .originCentered    */ DEFAULT_ORIGIN_CENTERED,
+    /* .noShowInfo        */ DEFAULT_NO_SHOW_INFO,
+    /* .drawAxes          */ DEFAULT_SHOW_AXES,
+    /* .drawOrbitTrace    */ DEFAULT_SHOW_ORBIT_TRACE
+};
+
 static void nbglReadPreferences(VisArgs* args)
 {
-    static struct
-    {
-        int blockSimulation;
-        int noFloat;
-        double floatSpeed;
-        double texturedPointSize;
-        double pointPointSize;
-        int untexturedPoints;
-        int monochromatic;
-        int originCentered;
-        int showAxes;
-        int showOrbitTrace;
-        int noShowInfo;
-    } prefs;
+    static NBodyGLPrefs prefs;
 
     static MWProjectPrefs nbglPrefs[] =
         {
@@ -197,6 +213,8 @@ static void nbglReadPreferences(VisArgs* args)
             { "show_orbit_trace",    MW_PREF_BOOL,   FALSE, &prefs.showOrbitTrace    },
             END_MW_PROJECT_PREFS
         };
+
+    prefs = nbglDefaultPrefs;
 
     if (mwGetAppInitData())
     {
