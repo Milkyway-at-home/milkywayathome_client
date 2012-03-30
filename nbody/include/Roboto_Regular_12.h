@@ -81,7 +81,7 @@ typedef struct
     size_t tex_width;
     size_t tex_height;
     size_t tex_depth;
-    char tex_data[16384];
+    unsigned char tex_data[16384];
     float size;
     float height;
     float linegap;
