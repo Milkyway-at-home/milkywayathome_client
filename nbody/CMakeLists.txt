@@ -325,7 +325,6 @@ if(NBODY_GL)
                             ${NBODY_SRC_DIR}/nbody_gl_orbit_trace.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_galaxy_model.cpp
                             ${NBODY_SRC_DIR}/nbody_gl_particle_texture.cpp
-                            ${NBODY_SRC_DIR}/nbody_milkyway_image.c
                             ${NBODY_SRC_DIR}/MousePoles.cpp
                             ${NBODY_SRC_DIR}/graphics_main.c)
 
@@ -383,6 +382,17 @@ if(NBODY_GL)
   add_inline_shader(nbody_gl_inline_srcs "orbit_trace" "fragment")
   add_library(nbody_shaders STATIC ${nbody_gl_inline_srcs})
 
+  set(milkyway_image_src "${LIBRARY_OUTPUT_PATH}/nbody_milkyway_image.c")
+  add_custom_command(
+    OUTPUT ${milkyway_image_src}
+    COMMAND $<TARGET_FILE:xxd> -i "nbody_milkyway_image.bin" ${milkyway_image_src}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/images"
+    DEPENDS "${PROJECT_SOURCE_DIR}/images/nbody_milkyway_image.bin"
+    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/images/nbody_milkyway_image.bin"
+    COMMENT "Inlining N-body Milkyway image")
+  add_library(milkyway_image STATIC ${milkyway_image_src})
+
+
   #set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.rpi.cs.milkyway.\${PRODUCT_NAME:milkyway_nbody_graphics}")
   set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.rpi.cs.milkyway")
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${nbody_VERSION_MAJOR}.${nbody_VERSION}")
@@ -390,7 +400,7 @@ if(NBODY_GL)
 
   #add_executable(milkyway_nbody_graphics MACOSX_BUNDLE ${nbody_screensaver_src} ${nbody_screensaver_headers} )
   add_executable(milkyway_nbody_graphics  ${nbody_screensaver_src} ${nbody_screensaver_headers} )
-  target_link_libraries(milkyway_nbody_graphics nbody_shaders ${vis_link_libs})
+  target_link_libraries(milkyway_nbody_graphics nbody_shaders milkyway_image ${vis_link_libs})
 endif()
 
 

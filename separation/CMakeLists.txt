@@ -92,7 +92,6 @@ if(NOT WIN32)
 endif()
 
 
-
 if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
