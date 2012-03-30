@@ -776,7 +776,7 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
       running(true),
       needsUpdate(true),
       paused(false),
-      eventPollPeriod(args->eventPollPeriod)
+      eventPollPeriod(glm::clamp(args->eventPollPeriod, 0, MAX_EVENT_POLL_PERIOD))
 {
     this->loadShaders();
     this->createBuffers();
