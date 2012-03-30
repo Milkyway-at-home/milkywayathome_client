@@ -33,6 +33,7 @@
 
 typedef struct NBodyGLPrefs
 {
+    int eventPollPeriod;
     int blockSimulation;
     int noFloat;
     double floatSpeed;
@@ -154,6 +155,7 @@ static const VisArgs defaultVisArgs =
     /* .plainFullscreen   */ FALSE,
     /* .width             */ 0,
     /* .height            */ 0,
+    /* .eventPollPeriod   */ DEFAULT_EVENT_POLL_PERIOD,
 
     /* .quitOnComplete    */ DEFAULT_QUIT_ON_COMPLETE,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
@@ -181,6 +183,7 @@ static void freeVisArgs(VisArgs* args)
 
 static const NBodyGLPrefs nbglDefaultPrefs =
 {
+    /* .eventPollPeriod   */ DEFAULT_EVENT_POLL_PERIOD,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
     /* .noFloat           */ DEFAULT_NO_FLOAT,
     /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
@@ -200,6 +203,7 @@ static void nbglReadPreferences(VisArgs* args)
 
     static MWProjectPrefs nbglPrefs[] =
         {
+            { "event_poll_period",   MW_PREF_INT,    FALSE, &prefs.eventPollPeriod   },
             { "block_simulation",    MW_PREF_BOOL,   FALSE, &prefs.blockSimulation   },
             { "no_float",            MW_PREF_BOOL,   FALSE, &prefs.noFloat           },
             { "float_speed",         MW_PREF_DOUBLE, FALSE, &prefs.floatSpeed        },
@@ -226,6 +230,7 @@ static void nbglReadPreferences(VisArgs* args)
     }
 
     /* Any successfully found setting will be used; otherwise it will get the default */
+    args->eventPollPeriod   = prefs.eventPollPeriod;
     args->blockSimulation   = prefs.blockSimulation;
     args->noFloat           = prefs.noFloat;
     args->floatSpeed        = (float) prefs.floatSpeed;
@@ -285,6 +290,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "height", 'h',
             POPT_ARG_INT, &visArgs.height,
             0, "Starting height of window", NULL
+        },
+
+        {
+            "event-poll-period", 'e',
+            POPT_ARG_INT, &visArgs.eventPollPeriod,
+            0, "Period to poll for events / draw in milliseconds", NULL
         },
 
         {

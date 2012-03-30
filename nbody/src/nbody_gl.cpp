@@ -224,6 +224,7 @@ private:
     bool running;
     bool needsUpdate;
     bool paused;
+    int eventPollPeriod;
 
     void loadShaders();
     void createBuffers();
@@ -774,7 +775,8 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
       drawOptions(args),
       running(true),
       needsUpdate(true),
-      paused(false)
+      paused(false),
+      eventPollPeriod(args->eventPollPeriod)
 {
     this->loadShaders();
     this->createBuffers();
@@ -1244,8 +1246,6 @@ void NBodyGraphics::resetFloatState()
 
 void NBodyGraphics::mainLoop()
 {
-    const int eventPollPeriod = (int) (1000.0 / 30.0);
-
     while (true)
     {
         while (!this->needsUpdate)
@@ -1281,7 +1281,7 @@ void NBodyGraphics::mainLoop()
                 }
             }
 
-            mwMilliSleep(eventPollPeriod);
+            mwMilliSleep(this->eventPollPeriod);
         }
 
         this->display();

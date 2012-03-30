@@ -31,6 +31,8 @@ extern "C" {
 #define DEFAULT_FLOAT_SPEED 5.0f
 #define DEFAULT_NO_FLOAT FALSE
 
+#define DEFAULT_EVENT_POLL_PERIOD ((int) (1000.0 / 30.0))
+
 #define DEFAULT_UNTEXTURED_POINTS FALSE
 #define DEFAULT_SHOW_AXES FALSE
 
@@ -50,6 +52,7 @@ typedef struct
     int plainFullscreen;
     int width;
     int height;
+    int eventPollPeriod;
 
     int quitOnComplete;
     int blockSimulation;
@@ -69,7 +72,7 @@ typedef struct
     int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, 0.0f, 0.0f, 0.0f, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, 0, FALSE, FALSE, FALSE, 0.0f, 0.0f, 0.0f, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
 int nbglRunGraphics(scene_t* scene, const VisArgs* args);
 
