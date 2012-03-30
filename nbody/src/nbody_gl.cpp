@@ -552,11 +552,6 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
 
     NBodyGraphics* ctx = globalGraphicsContext;
 
-    if (ctx->isScreensaver())
-    {
-        ctx->stop();
-    }
-
     switch (key)
     {
         case GLFW_KEY_ESC:
@@ -579,6 +574,78 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
         case GLFW_KEY_DOWN:
         case GLFW_KEY_LEFT:
         case GLFW_KEY_RIGHT:
+            break;
+
+       /* Any non-character keys that aren't used should be here. If a
+          key doesn't have a simple function and we are a screensaver,
+          we quit
+        */
+        case GLFW_KEY_ENTER:
+        case GLFW_KEY_BACKSLASH:
+        case GLFW_KEY_RIGHT_BRACKET:
+        case GLFW_KEY_GRAVE_ACCENT:
+        case GLFW_KEY_WORLD_1:
+        case GLFW_KEY_WORLD_2:
+        case GLFW_KEY_TAB:
+        case GLFW_KEY_BACKSPACE:
+        case GLFW_KEY_INSERT:
+        case GLFW_KEY_DELETE:
+        case GLFW_KEY_HOME:
+        case GLFW_KEY_END:
+        case GLFW_KEY_CAPS_LOCK:
+        case GLFW_KEY_SCROLL_LOCK:
+        case GLFW_KEY_NUM_LOCK:
+        case GLFW_KEY_PRINT_SCREEN:
+
+        case GLFW_KEY_F2:
+        case GLFW_KEY_F3:
+        case GLFW_KEY_F4:
+        case GLFW_KEY_F5:
+        case GLFW_KEY_F6:
+        case GLFW_KEY_F7:
+        case GLFW_KEY_F8:
+        case GLFW_KEY_F9:
+        case GLFW_KEY_F10:
+        case GLFW_KEY_F11:
+        case GLFW_KEY_F12:
+        case GLFW_KEY_F13:
+        case GLFW_KEY_F14:
+        case GLFW_KEY_F15:
+        case GLFW_KEY_F16:
+        case GLFW_KEY_F17:
+        case GLFW_KEY_F18:
+        case GLFW_KEY_F19:
+        case GLFW_KEY_F20:
+        case GLFW_KEY_F21:
+        case GLFW_KEY_F22:
+        case GLFW_KEY_F23:
+        case GLFW_KEY_F24:
+        case GLFW_KEY_F25:
+
+        case GLFW_KEY_KP_0:
+        case GLFW_KEY_KP_1:
+        case GLFW_KEY_KP_2:
+        case GLFW_KEY_KP_3:
+        case GLFW_KEY_KP_4:
+        case GLFW_KEY_KP_5:
+        case GLFW_KEY_KP_6:
+        case GLFW_KEY_KP_7:
+        case GLFW_KEY_KP_8:
+        case GLFW_KEY_KP_9:
+        case GLFW_KEY_KP_DECIMAL:
+        case GLFW_KEY_KP_DIVIDE:
+        case GLFW_KEY_KP_MULTIPLY:
+        case GLFW_KEY_KP_SUBTRACT:
+        case GLFW_KEY_KP_ADD:
+        case GLFW_KEY_KP_ENTER:
+
+        case GLFW_KEY_MENU:
+            if (ctx->isScreensaver())
+            {
+                ctx->stop();
+            }
+            break;
+
         default:
             return;
     }
@@ -676,6 +743,11 @@ static void charHandler(GLFWwindow window, int charCode)
             break;
 
         default:
+            if (ctx->isScreensaver())
+            {
+                ctx->stop();
+            }
+
             return;
     }
 }
