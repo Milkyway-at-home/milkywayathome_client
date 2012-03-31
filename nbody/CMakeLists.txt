@@ -362,6 +362,9 @@ if(NBODY_GL)
 
   if(USE_GL3W)
     list(APPEND vis_link_libs ${GL3W_LIBRARY})
+    if(HAVE_LIBDL)
+      list(APPEND vis_link_libs dl)
+    endif()
   endif()
 
   if(NOT WIN32)

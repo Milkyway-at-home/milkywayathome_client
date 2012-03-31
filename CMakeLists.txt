@@ -90,6 +90,7 @@ endif()
 
 check_function_exists(stpcpy HAVE_STPCPY)
 check_library_exists(rt shm_open "" HAVE_LIBRT)
+check_library_exists(dl dlopen "" HAVE_LIBDL)
 
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
