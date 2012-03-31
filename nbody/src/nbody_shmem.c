@@ -307,7 +307,13 @@ void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* vis
         int attached;
 
         /* Wait until the visualizer has exited or successfully
-         * attached
+         * attached.
+
+         * We need to wait for attachedPID to be set to make sure that
+         * any settings such as blockSimulationOnGraphics are set
+         * after the scene lock is taken to avoid potentially losing
+         * the first frame
+         *
          * TODO: maybe this should timeout?
          */
         do
@@ -593,6 +599,21 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     }
 
     return NBODY_SUCCESS;
+}
+
+/* Force a push to the queue regardless of whether something is
+ * attached or not. This is to make sure the first scene is available
+ * right away for a launched graphics process */
+NBodyStatus nbForceUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
+{
+    scene_t* scene = st->scene;
+
+    if (!scene)
+    {
+        return NBODY_SUCCESS;
+    }
+
+    return nbPushCircularQueue(&scene->queue, ctx, st) ? NBODY_SUCCESS : NBODY_ERROR;
 }
 
 /* Report the simulation has ended as a hint to the graphics to quit */

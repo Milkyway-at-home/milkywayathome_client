@@ -783,15 +783,21 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
     this->prepareVAOs();
 
     this->createPositionBuffer();
-    this->loadColors();
     this->particleTexture = nbglCreateParticleTexture(32);
 
     this->galaxyModel = scene->hasGalaxy ? new GalaxyModel() : NULL;
 
     this->prepareContext();
 
-    // read initial scene data before starting
+    // Read initial scene data.
+    // If we are launching from the main process, it should have
+    // updated the scene before launching us
     this->readSceneData();
+
+    // load the colors after we have scene data so we can color the
+    // ignored particles differently
+    this->loadColors();
+
     this->findInitialOrientation();
     this->resetFloatState();
 }
@@ -860,13 +866,13 @@ void NBodyGraphics::prepareColoredVAO(GLuint& vao, GLuint color)
     glEnableVertexAttribArray(this->particleTextureProgram.colorLoc);
 
     glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
-    /* 4th component is not included */
     glVertexAttribPointer(this->particleTextureProgram.positionLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, color);
     glVertexAttribPointer(this->particleTextureProgram.colorLoc, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void NBodyGraphics::prepareVAOs()
@@ -1475,6 +1481,11 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
+    if (nbglInitGL3W())
+    {
+        return 1;
+    }
+
     glfwSetErrorCallback(errorHandler);
 
     if (!glfwInit())
@@ -1489,14 +1500,9 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
-    if (nbglInitGL3W())
-    {
-        return 1;
-    }
-
+    srand((unsigned int) time(NULL));
     nbglPrintGLVersion();
     nbglSetSceneSettings(scene, args);
-    srand((unsigned int) time(NULL));
 
     try
     {

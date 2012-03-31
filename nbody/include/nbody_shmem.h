@@ -29,6 +29,7 @@ extern "C" {
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx);
 void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* visArgs);
 NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbForceUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st);
 
 void nbReportSimulationComplete(NBodyState* st);
 

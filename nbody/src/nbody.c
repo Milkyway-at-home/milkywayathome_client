@@ -310,8 +310,12 @@ int nbMain(const NBodyFlags* nbf)
 
     if (nbf->visualizer)
     {
+        /* Make sure the first scene is available for the launched graphics */
+        nbForceUpdateDisplayedBodies(ctx, st);
+
+        /* Launch graphics and make sure we are sure the graphics is
+         * attached in case we are using blocking mode */
         nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
-        nbUpdateDisplayedBodies(ctx, st);
     }
 
   #if NBODY_OPENCL
