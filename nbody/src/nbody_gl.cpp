@@ -1041,7 +1041,7 @@ static inline glm::vec3 nbglBetweenHSVColors(const glm::vec3& a, const glm::vec3
                                    glm::linearRand(a.z, b.z)));
 }
 
-static void nbglRandomParticleColor(Color& color, bool ignore)
+static void nbglRandomParticleColor(Color& color)
 {
 //    static const HSVColor dark(213.0f, 0.24f, 0.36f);
 
@@ -1079,8 +1079,6 @@ static void nbglRandomParticleColor(Color& color, bool ignore)
     color.r = rgb.x;
     color.g = rgb.y;
     color.b = rgb.z;
-    color.ignore = 1.0f;
-    //color.ignore = ignore ? ?????
 }
 
 void NBodyGraphics::loadColors()
@@ -1088,37 +1086,29 @@ void NBodyGraphics::loadColors()
     GLint nbody = this->scene->nbody;
     const bool approxRealStarColors = true;
 
-    /* assign random particle colors */
     Color* color = new Color[nbody];
 
-    for (GLint i = 0; i < nbody; ++i)
-    {
-        color[i].r = color[i].g = color[i].b = 1.0f;
-        color[i].ignore = 1.0f;
-    }
+    // copy the positions from the first scene we have so that we can
+    // take the 4th component as a hint on the coloration of dark
+    // particles
+    glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
+    glGetBufferSubData(GL_ARRAY_BUFFER, 0, 4 * nbody * sizeof(GLfloat), (GLfloat*) color);
 
     // create a white buffer now
-    // TODO: There is probably a better way to set a buffer to all 1
+    for (GLint i = 0; i < nbody; ++i)
+    {
+        // take this opportunity to fix up the alpha component for dark matter particles
+        // the 4th component ignore is actually an int interpreted as a float with a bit
+        // it will be very small but not exactly 0.0f
+        color[i].ignore = (color[i].ignore == 0.0f) ? 0.0f: 1.0f;
+        color[i].r = color[i].g = color[i].b = 1.0f;
+    }
     glBindBuffer(GL_ARRAY_BUFFER, this->whiteBuffer);
     glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
 
+    // assign random particle colors
     for (GLint i = 0; i < nbody; ++i)
     {
-        /*
-        if (r[i].ignore)
-        {
-            R = grey.x;  // TODO: Random greyish color?
-            G = grey.z;
-            B = grey.y;
-        }
-        else
-        {
-            R = ((double) rand()) / ((double) RAND_MAX);
-            G = ((double) rand()) / ((double) RAND_MAX) * (1.0 - R);
-            B = 1.0 - R - G;
-        }
-        */
-
         double R = ((double) rand()) / ((double) RAND_MAX);
         double G = ((double) rand()) / ((double) RAND_MAX) * (1.0 - R);
         double B = 1.0 - R - G;
@@ -1140,7 +1130,7 @@ void NBodyGraphics::loadColors()
         if (approxRealStarColors)
         {
             // TODO: ignore doesn't do anything yet
-            nbglRandomParticleColor(color[i], false);
+            nbglRandomParticleColor(color[i]);
         }
         else
         {
