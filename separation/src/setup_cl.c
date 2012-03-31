@@ -240,7 +240,7 @@ cl_bool findRunSizes(RunSizes* sizes,
         /* Make a guess appropriate for the hardware. */
 
         /* m * b ~= area / n   */
-        nBlockPerChunk = sizes->area / (sizes->nChunkEstimate * blockSize);
+        nBlockPerChunk = (cl_uint) (sizes->area / (sizes->nChunkEstimate * blockSize));
         if (nBlockPerChunk == 0)
             nBlockPerChunk = 1;
 
@@ -257,7 +257,7 @@ cl_bool findRunSizes(RunSizes* sizes,
         /* Like using nBlockPerChunk == 1 */
         sizes->effectiveArea = blockSize * mwDivRoundup(sizes->area, blockSize);
         sizes->chunkSize = sizes->effectiveArea;
-        sizes->extra = sizes->effectiveArea - sizes->area;
+        sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
     }
 
     mw_printf("Using a target frequency of %.1f\n"

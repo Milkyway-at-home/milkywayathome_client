@@ -454,7 +454,7 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, int nStr
         return NULL;
     }
 
-    if (write(fd, bin, binSize) <= 0)
+    if (write(fd, bin, (unsigned int) binSize) <= 0)
     {
         mwPerror("Failed to write temporary binary file '%s'", tmpBinFile);
         return NULL;
