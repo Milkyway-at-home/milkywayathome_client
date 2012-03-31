@@ -1079,6 +1079,14 @@ static void nbglRandomParticleColor(Color& color)
     color.r = rgb.x;
     color.g = rgb.y;
     color.b = rgb.z;
+
+    // TODO: Maybe a different color would be better? green?
+    if (color.ignore == 0.0f)
+    {
+        color.r *= 0.5f;
+        color.g *= 0.5f;
+        color.b *= 0.5f;
+    }
 }
 
 void NBodyGraphics::loadColors()
@@ -1100,8 +1108,14 @@ void NBodyGraphics::loadColors()
         // take this opportunity to fix up the alpha component for dark matter particles
         // the 4th component ignore is actually an int interpreted as a float with a bit
         // it will be very small but not exactly 0.0f
-        color[i].ignore = (color[i].ignore == 0.0f) ? 0.0f: 1.0f;
-        color[i].r = color[i].g = color[i].b = 1.0f;
+        if (color[i].ignore == 0.0f)
+        {
+            color[i].r = color[i].g = color[i].b = 1.0f;
+        }
+        else
+        {
+            color[i].r = color[i].g = color[i].b = 0.5f;
+        }
     }
     glBindBuffer(GL_ARRAY_BUFFER, this->whiteBuffer);
     glBufferData(GL_ARRAY_BUFFER, 4 * nbody * sizeof(GLfloat), color, GL_STATIC_DRAW);
