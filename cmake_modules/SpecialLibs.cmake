@@ -42,79 +42,70 @@ if(APPLE)
     set(HAVE_10_7_SDK TRUE)
   endif()
 
-  if(MILKYWAY_OPENCL)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6 CACHE STRING "" FORCE)
-    set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk" CACHE PATH "" FORCE)
+  # Assume we only care about old OS X on PPC
+  if(SYSTEM_IS_PPC)
+    if (NOT HAVE_10_3_SDK)
+      message(FATAL "OS X 10.3 SDK required for PPC build")
+    endif()
 
-    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
-    list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
+    # Apple gcc 4.0 incorrectly adds atexit calls which doesn't exist on
+    # 10.3 despite -mmacosx-version-min=10.3
+    set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -fno-use-cxa-atexit")
+
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.3 CACHE STRING "" FORCE)
+    set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.3.9.sdk" CACHE PATH "" FORCE)
+
+    # You seem to have to specify these explicitly on really old OS X
+    # CoreFoundation seems to take care of everything now
+    find_library(CARBON_LIBRARY Carbon)
+    find_library(STD_C_LIBRARY c)
+    find_library(SYSTEM_STUBS SystemStubs)
+    mark_as_advanced(CARBON_LIBRARY
+                     SYSTEM_STUBS
+                     STD_C_LIBRARY)
+    list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
   else()
-    # Assume we only care about old OS X on PPC
-    if(SYSTEM_IS_PPC)
-      if (NOT HAVE_10_3_SDK)
-        message(FATAL "OS X 10.3 SDK required for PPC build")
+    if(SYSTEM_IS_32)
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4 CACHE STRING "" FORCE)
+    else()
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5 CACHE STRING "" FORCE)
+    endif()
+
+    #set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk" CACHE PATH "" FORCE)
+
+    if(CMAKE_OSX_ARCHITECTURES MATCHES "i386")
+      if(NOT HAVE_10_4_SDK)
+        message(FATAL "OS X 10.4 SDK required for x86_32 build")
       endif()
-
-      # Apple gcc 4.0 incorrectly adds atexit calls which doesn't exist on
-      # 10.3 despite -mmacosx-version-min=10.3
-      set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -fno-use-cxa-atexit")
-
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.3 CACHE STRING "" FORCE)
-      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.3.9.sdk" CACHE PATH "" FORCE)
-
-      # You seem to have to specify these explicitly on really old OS X
-      # CoreFoundation seems to take care of everything now
-      find_library(CARBON_LIBRARY Carbon)
-      find_library(STD_C_LIBRARY c)
-      find_library(SYSTEM_STUBS SystemStubs)
-      mark_as_advanced(CARBON_LIBRARY
-        SYSTEM_STUBS
-        STD_C_LIBRARY)
-      list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
+      # When building for 32 bit, seem to need the 10.4 SDK
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4 CACHE STRING "" FORCE)
+      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk" CACHE PATH "" FORCE)
     else()
 
-      if(SYSTEM_IS_32)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4 CACHE STRING "" FORCE)
-      else()
+      if(NBODY_GL)
+        set(LION_REQUIRED TRUE)
+      elseif(NBODY_GL OR MILKYWAY_OPENCL)
+        # OpenCL was added in 10.6
+        # GLFW build requires 10.6 features also
+        set(SL_REQUIRED TRUE)
+      endif()
+
+      # Try for the lowest version SDK we can
+      if(HAVE_10_5_SDK AND NOT SL_REQUIRED AND NOT LION_REQUIRED)
         set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5 CACHE STRING "" FORCE)
-      endif()
-
-      #set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk" CACHE PATH "" FORCE)
-
-      if(CMAKE_OSX_ARCHITECTURES MATCHES "i386")
-        if(NOT HAVE_10_4_SDK)
-          message(FATAL "OS X 10.4 SDK required for x86_32 build")
-        endif()
-        # When building for 32 bit, seem to need the 10.4 SDK
-        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4 CACHE STRING "" FORCE)
-        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk" CACHE PATH "" FORCE)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk" CACHE PATH "" FORCE)
+      elseif(HAVE_10_6_SDK AND NOT LION_REQUIRED)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6 CACHE STRING "" FORCE)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk" CACHE PATH "" FORCE)
+      elseif(HAVE_10_7_SDK)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7 CACHE STRING "" FORCE)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.7.sdk" CACHE PATH "" FORCE)
       else()
-
-        if(NBODY_GL)
-          set(LION_REQUIRED TRUE)
-        elseif(NBODY_GL OR MILKYWAY_OPENCL)
-          # OpenCL was added in 10.6
-          # GLFW build requires 10.6 features also
-          set(SL_REQUIRED TRUE)
-        endif()
-
-        # Try for the lowest version SDK we can
-        if(HAVE_10_5_SDK AND NOT SL_REQUIRED AND NOT LION_REQUIRED)
-          set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5 CACHE STRING "" FORCE)
-          set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk" CACHE PATH "" FORCE)
-        elseif(HAVE_10_6_SDK AND NOT LION_REQUIRED)
-          set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6 CACHE STRING "" FORCE)
-          set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk" CACHE PATH "" FORCE)
-        elseif(HAVE_10_7_SDK)
-          set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7 CACHE STRING "" FORCE)
-          set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.7.sdk" CACHE PATH "" FORCE)
-        else()
-          message(FATAL "No OS X SDKs found")
-        endif()
+        message(FATAL "No OS X SDKs found")
       endif()
-      find_library(COREFOUNDATION_LIBRARY CoreFoundation)
-      list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
     endif()
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+    list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
   endif()
 
   if(NOT IS_DIRECTORY ${CMAKE_OSX_SYSROOT})
