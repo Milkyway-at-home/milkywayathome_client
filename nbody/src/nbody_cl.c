@@ -622,7 +622,6 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 {
     CLInfo* ci = st->ci;
-    cl_bool failed;
     char* compileFlags = NULL;
     cl_program program;
     const char* src = (const char*) nbody_kernels_cl;
@@ -635,13 +634,16 @@ cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
     free(compileFlags);
     if (!program)
     {
+        mw_printf("Failed to create program\n");
         return CL_TRUE;
     }
 
-    failed = nbCreateKernels(program, st->kernels);
+    if (!nbCreateKernels(program, st->kernels))
+        return CL_TRUE;
+
     clReleaseProgram(program);
 
-    return failed;
+    return CL_FALSE;
 }
 
 /* Return CL_FALSE if device isn't capable of running this */
@@ -1450,6 +1452,7 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
     err = nbMapBodies(pos, vel, &mass, nbb, ci, flags, st);
     if (err != CL_SUCCESS)
     {
+        mw_printf("Error mapping bodies for marshalling\n");
         nbUnmapBodies(pos, vel, mass, nbb, ci);
         return err;
     }
@@ -1487,7 +1490,13 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
         }
     }
 
-    return nbUnmapBodies(pos, vel, mass, nbb, ci);
+    err = nbUnmapBodies(pos, vel, mass, nbb, ci);
+    if (err != CL_SUCCESS)
+    {
+        mw_printf("Failed to unmap bodies for marshalling\n");
+    }
+
+    return err;
 }
 
 void nbPrintKernelTimings(const NBodyState* st)

@@ -200,6 +200,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
     /* Bodies must be set before trying to use this */
     if (!st->bodytab)
     {
+        mw_printf("Bodies not set for CL initialization\n");
         return NBODY_CONSISTENCY_ERROR;
     }
 

@@ -111,6 +111,7 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->verbose = nbf->verbose;
     clr->enableCheckpointing = FALSE;
     clr->enableProfiling = TRUE;
+    clr->pollingMode = MW_POLL_CL_WAIT_FOR_EVENTS;
 }
 
 /* Try to run a potential function and see if it fails. Return TRUE on failure. */
