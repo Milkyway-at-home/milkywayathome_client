@@ -78,7 +78,7 @@ typedef enum
 #define cl_assert(treeStatus, x)                        \
     do                                                  \
     {                                                   \
-        if (!(x))                                       \
+      if (!(x))                                         \
       {                                                 \
           if ((treeStatus)->assertionLine < 0)          \
           {                                             \
@@ -88,15 +88,18 @@ typedef enum
     }                                                   \
     while (0)
 
-#define cl_assert_rtn(treeStatus, x)                 \
-    do                                               \
-    {                                                \
-      if (!(x))                                      \
-      {                                              \
-          (treeStatus)->assertionLine = __LINE__;    \
-          return;                                    \
-      }                                              \
-    }                                                \
+#define cl_assert_rtn(treeStatus, x)                    \
+    do                                                  \
+    {                                                   \
+      if (!(x))                                         \
+      {                                                 \
+          if ((treeStatus)->assertionLine < 0)          \
+          {                                             \
+              (treeStatus)->assertionLine = __LINE__;   \
+          }                                             \
+          return;                                       \
+      }                                                 \
+    }                                                   \
     while (0)
 
 #else
@@ -465,7 +468,7 @@ __kernel void NBODY_KERNEL(buildTree)
     }
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
     int localMaxDepth = 1;
-    int skip = 1;
+    bool skip = true;
     int inc = get_local_size(0) * get_num_groups(0);
     int i = get_global_id(0);
 
@@ -495,10 +498,10 @@ __kernel void NBODY_KERNEL(buildTree)
         real px, py, pz;
         int j, n, depth;
 
-        if (skip != 0)
+        if (skip)
         {
             /* New body, so start traversing at root */
-            skip = 0;
+            skip = false;
 
             px = _posX[i];
             py = _posY[i];
@@ -631,7 +634,7 @@ __kernel void NBODY_KERNEL(buildTree)
                 mem_fence(CLK_GLOBAL_MEM_FENCE);
                 localMaxDepth = max(depth, localMaxDepth);
                 i += inc;  /* Move on to next body */
-                skip = 1;
+                skip = true;
             }
         }
     }
