@@ -45,6 +45,7 @@ cl_int nbReleaseKernels(NBodyState* st);
 cl_int nbSetAllKernelArguments(NBodyState* st);
 
 cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn);
+int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut);
 void nbPrintKernelTimings(const NBodyState* st);
 
 

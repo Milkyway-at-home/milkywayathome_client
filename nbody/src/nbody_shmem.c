@@ -27,6 +27,10 @@
 #include "nbody_shmem.h"
 #include "nbody_defaults.h"
 
+#if NBODY_OPENCL
+  #include "nbody_cl.h"
+#endif
+
 #if USE_POSIX_SHMEM
   #if HAVE_SYS_MMAN_H
     #include <sys/mman.h>
@@ -482,7 +486,7 @@ void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* vis
 
 #endif /* _WIN32 */
 
-static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCtx* ctx, const NBodyState* st)
+static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const Body* b;
@@ -491,9 +495,20 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     SceneInfo* info = &queue->info[buffer];
     FloatPos* r = &queue->bodyData[buffer * nbody];
 
+    /* Use the center of mass if we have it already in some form,
+     * otherwise we can find it */
     if (st->tree.root)
     {
         cmPos = Pos(st->tree.root);
+    }
+    else if (st->usesCL)
+    {
+      #if NBODY_OPENCL
+        if (nbDisplayUpdateMarshalBodies(st, &cmPos))
+        {
+            return;
+        }
+      #endif
     }
     else
     {
@@ -522,7 +537,7 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     }
 }
 
-static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, const NBodyState* st)
+static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, NBodyState* st)
 {
     int head, tail, nextTail;
     tail = OPA_load_int(&queue->tail);

@@ -143,6 +143,7 @@ typedef float4 real4;
 typedef struct __attribute__((aligned(64)))
 {
     volatile real radius;
+    volatile real cmPos[3];
     volatile int bottom;
     volatile int maxDepth;
     volatile unsigned int blkCnt;
@@ -150,7 +151,7 @@ typedef struct __attribute__((aligned(64)))
     volatile int errorCode;
     volatile int assertionLine;
 
-    char _pad[64 - (sizeof(real) - 5 * sizeof(int))];
+    char _pad[64 - (4 * sizeof(real) + 5 * sizeof(int))];
 
     struct
     {
@@ -423,29 +424,35 @@ __kernel void NBODY_KERNEL(boundingBox)
             real tmpR = max(maxX[0] - minX[0], maxY[0] - minY[0]);
             real radius = 0.5 * max(tmpR, maxZ[0] - minZ[0]);
 
+            real rootX = 0.5 * (minX[0] + maxX[0]);
+            real rootY = 0.5 * (minX[0] + maxX[0]);
+            real rootZ = 0.5 * (minZ[0] + maxZ[0]);
+
             _treeStatus->radius = radius;
+            _treeStatus->cmPos[0] = rootX;
+            _treeStatus->cmPos[1] = rootY;
+            _treeStatus->cmPos[2] = rootZ;
+
+            _treeStatus->bottom = NNODE;
+            _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
 
             if (NEWCRITERION || SW93)
             {
                 _critRadii[NNODE] = radius;
             }
 
-
             /* Create root node */
             _mass[NNODE] = -1.0;
             _start[NNODE] = 0;
-            _posX[NNODE] = 0.5 * (minX[0] + maxX[0]);
-            _posY[NNODE] = 0.5 * (minY[0] + maxY[0]);
-            _posZ[NNODE] = 0.5 * (minZ[0] + maxZ[0]);
+            _posX[NNODE] = rootX;
+            _posY[NNODE] = rootY;
+            _posZ[NNODE] = rootZ;
 
             #pragma unroll NSUB
             for (int k = 0; k < NSUB; ++k)
             {
                 _child[NSUB * NNODE + k] = -1;
             }
-
-            _treeStatus->bottom = NNODE;
-            _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
         }
     }
 }

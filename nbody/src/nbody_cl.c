@@ -24,11 +24,17 @@
 #include "nbody_show.h"
 #include "nbody_util.h"
 #include "nbody_curses.h"
+#include "nbody_shmem.h"
+
+
+extern const unsigned char nbody_kernels_cl[];
+extern const size_t nbody_kernels_cl_len;
 
 
 typedef struct MW_ALIGN_TYPE_V(64)
 {
     real radius;
+    real cmPos[3];
     cl_int bottom;
     cl_int maxDepth;
     cl_uint blkCnt;
@@ -36,7 +42,7 @@ typedef struct MW_ALIGN_TYPE_V(64)
     cl_int errorCode;
     cl_int assertionLine;
 
-    char _pad[64 - (sizeof(real) - 5 * sizeof(cl_int))];
+    char _pad[64 - (4 * sizeof(real) + 5 * sizeof(cl_int))];
 
     struct
     {
@@ -44,10 +50,6 @@ typedef struct MW_ALIGN_TYPE_V(64)
         cl_int i[64];
     } debug;
 } TreeStatus;
-
-
-extern const unsigned char nbody_kernels_cl[];
-extern const size_t nbody_kernels_cl_len;
 
 
 static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
@@ -700,20 +702,11 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
 
 static cl_int nbReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
 {
-    cl_int err;
-    assert(tc);
-
-    err = clEnqueueReadBuffer(ci->queue,
+    return clEnqueueReadBuffer(ci->queue,
                               nbb->treeStatus,
                               CL_TRUE,
                               0, sizeof(*tc), tc,
                               0, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        mwPerrorCL(err, "Error reading tree status");
-    }
-
-    return err;
 }
 
 static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, int type)
@@ -858,6 +851,7 @@ static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
     err = nbReadTreeStatus(&ts, ci, nbb);
     if (mw_unlikely(err != CL_SUCCESS))
     {
+        mwPerrorCL(err, "Error reading tree status");
         return NBODY_CL_ERROR;
     }
 
@@ -915,31 +909,73 @@ static cl_double waitReleaseEventWithTime(cl_event ev)
     return t;
 }
 
+int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
+{
+    static cl_bool reportedMarshalError = CL_FALSE;
+    cl_int err;
+    TreeStatus treeStatus;
+
+    /* TODO: If this fails we are probably in a bad state and should abort everything */
+
+    /* TODO: CL-GL sharing would be nice for CL graphics */
+    err = nbMarshalBodies(st, CL_FALSE);
+    if (err != CL_SUCCESS && !reportedMarshalError)
+    {
+        mwPerrorCL(err, "Error marshalling bodies for display update");
+        reportedMarshalError = CL_TRUE;
+        return 1;
+    }
+
+    err = nbReadTreeStatus(&treeStatus, st->ci, st->nbb);
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error reading tree status for display update");
+        reportedMarshalError = CL_TRUE;
+        return 1;
+    }
+
+    if (cmPosOut)
+    {
+        cmPosOut->x = treeStatus.cmPos[0];
+        cmPosOut->y = treeStatus.cmPos[1];
+        cmPosOut->z = treeStatus.cmPos[2];
+    }
+
+    return 0;
+}
+
 static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* st)
 {
-    NBodyWorkSizes* ws = st->workSizes;
+    double frac = (double) st->step / (double) ctx->nStep;
 
-    mw_mvprintw(0, 0,
-                "Step %d (%f%%):\n"
-                "  boundingBox:      %15f ms\n"
-                "  buildTree:        %15f ms%15f ms\n"
-                "  summarization:    %15f ms\n"
-                "  sort:             %15f ms\n"
-                "  quad moments:     %15f ms\n"
-                "  forceCalculation: %15f ms%15f ms\n"
-                "  integration:      %15f ms\n"
-                "\n",
-                st->step,
-                100.0 * (double) st->step / (double) ctx->nStep,
-                ws->timings[0],
-                ws->timings[1], ws->chunkTimings[1],
-                ws->timings[2],
-                ws->timings[3],
-                ws->timings[4],
-                ws->timings[5], ws->chunkTimings[5],
-                ws->timings[6]
-        );
-    mw_refresh();
+    mw_fraction_done(frac);
+
+    if (!st->reportProgress)
+    {
+        NBodyWorkSizes* ws = st->workSizes;
+
+        mw_mvprintw(0, 0,
+                    "Step %d (%f%%):\n"
+                    "  boundingBox:      %15f ms\n"
+                    "  buildTree:        %15f ms%15f ms\n"
+                    "  summarization:    %15f ms\n"
+                    "  sort:             %15f ms\n"
+                    "  quad moments:     %15f ms\n"
+                    "  forceCalculation: %15f ms%15f ms\n"
+                    "  integration:      %15f ms\n"
+                    "\n",
+                    st->step,
+                    100.0 * frac,
+                    ws->timings[0],
+                    ws->timings[1], ws->chunkTimings[1],
+                    ws->timings[2],
+                    ws->timings[3],
+                    ws->timings[4],
+                    ws->timings[5], ws->chunkTimings[5],
+                    ws->timings[6]
+            );
+        mw_refresh();
+    }
 }
 
 /* Run kernels used only by tree versions. */
@@ -1121,15 +1157,13 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
         return NBODY_CL_ERROR;
     }
 
-    if (st->reportProgress)
-    {
-        nbReportProgressWithTimings(ctx, st);
-    }
-
     for (i = 0; i < 7; ++i) /* Add timings to running totals */
     {
         ws->kernelTimings[i] += ws->timings[i];
     }
+
+    nbReportProgressWithTimings(ctx, st);
+    nbUpdateDisplayedBodies(ctx, st);
 
     return NBODY_SUCCESS;
 }
@@ -1281,7 +1315,7 @@ cl_int nbSetInitialTreeStatus(NBodyState* st)
     return err;
 }
 
-static cl_uint nbFindInc(cl_uint warpSize, cl_uint nbody)
+static cl_uint nbFindInc(cl_int warpSize, cl_uint nbody)
 {
     return (nbody + warpSize - 1) & (-warpSize);
 }
@@ -1452,7 +1486,6 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
     err = nbMapBodies(pos, vel, &mass, nbb, ci, flags, st);
     if (err != CL_SUCCESS)
     {
-        mw_printf("Error mapping bodies for marshalling\n");
         nbUnmapBodies(pos, vel, mass, nbb, ci);
         return err;
     }
@@ -1490,13 +1523,7 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
         }
     }
 
-    err = nbUnmapBodies(pos, vel, mass, nbb, ci);
-    if (err != CL_SUCCESS)
-    {
-        mw_printf("Failed to unmap bodies for marshalling\n");
-    }
-
-    return err;
+    return nbUnmapBodies(pos, vel, mass, nbb, ci);
 }
 
 void nbPrintKernelTimings(const NBodyState* st)
@@ -1595,6 +1622,7 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
     err = nbMarshalBodies(st, CL_FALSE);
     if (err != CL_SUCCESS)
     {
+        mw_printf("Error reading final bodies\n");
         return NBODY_CL_ERROR;
     }
 
