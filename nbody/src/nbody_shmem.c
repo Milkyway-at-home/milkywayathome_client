@@ -27,7 +27,7 @@
 #include "nbody_shmem.h"
 #include "nbody_defaults.h"
 
-#if USE_SHMEM
+#if USE_POSIX_SHMEM
   #if HAVE_SYS_MMAN_H
     #include <sys/mman.h>
   #endif
@@ -46,7 +46,7 @@
 
   #include <errno.h>
   #include <err.h>
-#endif /* USE_SHMEM */
+#endif /* USE_POSIX_SHMEM */
 
 
 #define MAX_INSTANCES 256
@@ -61,7 +61,7 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->hasGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 }
 
-#if USE_SHMEM
+#if USE_POSIX_SHMEM
 
 /* Map the header of a shared memory segment and see if it is owned by
  * an active process already. */
@@ -247,7 +247,7 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
     return scene;
 }
 
-#endif /* USE_SHMEM */
+#endif /* USE_POSIX_SHMEM */
 
 
 #if BOINC_APPLICATION

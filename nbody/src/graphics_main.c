@@ -24,12 +24,12 @@
 
 #include <signal.h>
 
-#if USE_SHMEM
+#if USE_POSIX_SHMEM
   #include <sys/mman.h>
   #include <sys/stat.h>
   #include <fcntl.h>
   #include <errno.h>
-#endif /* USE_SHMEM */
+#endif /* USE_POSIX_SHMEM */
 
 typedef struct NBodyGLPrefs
 {
@@ -591,7 +591,7 @@ static const char* nbGetShmemName(int instanceId)
     return name;
 }
 
-#if USE_SHMEM
+#if USE_POSIX_SHMEM
 
 static scene_t* nbglConnectSharedScene(int instanceId)
 {
@@ -749,7 +749,7 @@ static void nbglUnmapScene(scene_t* scene)
 
 }
 
-#endif /* USE_SHMEM */
+#endif /* USE_POSIX_SHMEM */
 
 static int nbglCheckConnectedVersion(const scene_t* scene)
 {

@@ -29,7 +29,7 @@
   #define NAME_MAX 255
 #endif
 
-#if USE_SHMEM
+#if USE_POSIX_SHMEM
   #define NBODY_SHMEM_NAME_FMT_STR "/milkyway_nbody_%d"
 #elif USE_WIN32_SHARED_MAP
   #define NBODY_SHMEM_NAME_FMT_STR "Local\\milkyway_nbody_%d"

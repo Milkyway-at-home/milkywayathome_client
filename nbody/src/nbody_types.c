@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include "nbody_cl.h"
 #endif /* NBODY_OPENCL */
 
-#if USE_SHMEM
+#if USE_POSIX_SHMEM
   #include <sys/mman.h>
 #endif
 
@@ -74,7 +74,7 @@ static void freeFreeCells(NBodyNode* freeCell)
 
 int nbDetachSharedScene(NBodyState* st)
 {
-  #if USE_SHMEM
+  #if USE_POSIX_SHMEM
     if (st->scene)
     {
         if (shm_unlink(st->scene->shmemName) < 0)
@@ -92,7 +92,7 @@ int nbDetachSharedScene(NBodyState* st)
             return 1;
         }
     }
-  #endif /* USE_SHMEM */
+  #endif /* USE_POSIX_SHMEM */
 
     st->scene = NULL;
     return 0;

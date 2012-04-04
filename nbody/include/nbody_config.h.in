@@ -55,7 +55,7 @@
 
 #if !BOINC_APPLICATION
   #ifndef _WIN32
-    #define USE_SHMEM 1
+    #define USE_POSIX_SHMEM 1
   #else
     #define USE_WIN32_SHARED_MAP 1
   #endif /* _WIN32*/
