@@ -579,8 +579,17 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
     return scene;
 }
 
+static const char* nbGetShmemName(int instanceId)
+{
+    static char name[256];
 
-#if USE_SHMEM
+    if (snprintf(name, sizeof(name), NBODY_SHMEM_NAME_FMT_STR, instanceId) == sizeof(name))
+    {
+        mw_panic("Name buffer too small for shared memory name\n");
+    }
+
+    return name;
+}
 
 /* FIXME: Duplicated in nbody_shmem.c */
 static size_t nbFindShmemSize(int nbody)
@@ -589,19 +598,17 @@ static size_t nbFindShmemSize(int nbody)
     return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
 }
 
+#if USE_SHMEM
+
 static scene_t* nbglConnectSharedScene(int instanceId)
 {
     int shmId;
     const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     struct stat sb;
-    char name[128];
+    const char* name;
     scene_t* scene = NULL;
 
-    if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
-    {
-        mw_panic("name buffer too small for shared memory name\n");
-    }
-
+    name = nbGetShmemName(instanceId);
     shmId = shm_open(name, O_RDWR, mode);
     if (shmId < 0)
     {
@@ -628,7 +635,9 @@ static scene_t* nbglConnectSharedScene(int instanceId)
         return NULL;
     }
 
-    if (sb.st_size < (ssize_t) sizeof(scene_t) || sb.st_size < (ssize_t) nbFindShmemSize(scene->nbody))
+    if (   sb.st_size < (ssize_t) sizeof(scene_t)
+        || sb.st_size < (ssize_t) scene->sceneSize
+        || sb.st_size < (ssize_t) nbFindShmemSize(scene->nbody))
     {
         mw_printf("Shared memory segment is impossibly small ("ZU")\n", (size_t) sb.st_size);
         if (shm_unlink(name) < 0)
@@ -636,10 +645,69 @@ static scene_t* nbglConnectSharedScene(int instanceId)
             mwPerror("Unlink shared memory");
         }
 
+        munmap(scene, (size_t) sb.st_size);
         return NULL;
     }
 
     return scene;
+}
+
+static void nbglUnmapScene(scene_t* scene)
+{
+    munmap(scene, scene->sceneSize);
+}
+
+#elif USE_WIN32_SHARED_MAP
+
+static scene_t* nbglConnectSharedScene(int instanceId)
+{
+    HANDLE mapFile;
+    scene_t* scene;
+    const char* name;
+    size_t size;
+
+    name = nbGetShmemName(instanceId);
+
+    mapFile = OpenFileMapping(
+        FILE_MAP_ALL_ACCESS,   /* read/write access */
+        FALSE,                 /* do not inherit the name */
+        name);                 /* name of mapping object */
+    if (!mapFile)
+    {
+        mwPerrorW32("Could not open shared file mapping object '%s'", name);
+        return NULL;
+    }
+
+    scene = (scene_t*) MapViewOfFile(mapFile,              /* handle to map object */
+                                     FILE_MAP_ALL_ACCESS,  /* read/write permission */
+                                     0,
+                                     0,
+                                     0); /* map entire file mapping */
+    CloseHandle(mapFile);
+    if (!scene)
+    {
+        mwPerrorW32("Could not map view of file mapping object '%s'", name);
+        UnmapViewOfFile((LPCVOID) scene);
+        return NULL;
+    }
+
+    /* Because this API sucks and doesn't give us a way to find the size of a
+       paging file backed shared mapped file use the size we stored ourselves. */
+    size = scene->sceneSize;
+    if (size < sizeof(scene_t) || size < nbFindShmemSize(scene->nbody))
+    {
+        mw_printf("Shared memory segment '%s' is impossibly small (%u)\n", name, size);
+        CloseHandle(mapFile);
+        UnmapViewOfFile((LPCVOID) scene);
+        return NULL;
+    }
+
+    return scene;
+}
+
+static void nbglUnmapScene(scene_t* scene)
+{
+    UnmapViewOfFile((LPCVOID) scene);
 }
 
 #else
@@ -679,6 +747,11 @@ static scene_t* nbglConnectSharedScene(int instanceId)
 
     mw_printf("Could not attach to simulation after %d attempts\n", MAX_TRIES);
     return NULL;
+}
+
+static void nbglUnmapScene(scene_t* scene)
+{
+
 }
 
 #endif /* USE_SHMEM */
@@ -746,6 +819,7 @@ static void nbglCleanupAttached(void)
     if (g_scene)
     {
         nbglReleaseSceneLocks(g_scene);
+        nbglUnmapScene(g_scene);
         g_scene = NULL;
     }
 }
@@ -760,7 +834,6 @@ static void nbglSigHandler(int sig)
 static void nbglInstallExitHandlers()
 {
     /* TODO: Use sigaction() if available instead */
-    signal(SIGINT, nbglSigHandler);
     signal(SIGINT, nbglSigHandler);
     signal(SIGABRT, nbglSigHandler);
     signal(SIGFPE, nbglSigHandler);

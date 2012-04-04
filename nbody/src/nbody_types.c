@@ -74,8 +74,6 @@ static void freeFreeCells(NBodyNode* freeCell)
 
 int nbDetachSharedScene(NBodyState* st)
 {
-    (void) st;
-
   #if USE_SHMEM
     if (st->scene)
     {
@@ -84,14 +82,21 @@ int nbDetachSharedScene(NBodyState* st)
             mwPerror("Closing shared scene memory '%s'", st->scene->shmemName);
             return 1;
         }
-
-        st->scene = NULL;
+    }
+  #elif USE_WIN32_SHARED_MAP
+    if (st->scene)
+    {
+        if (!UnmapViewOfFile((LPCVOID) st->scene))
+        {
+            mwPerrorW32("Error unmapping shared scene memory");
+            return 1;
+        }
     }
   #endif /* USE_SHMEM */
 
+    st->scene = NULL;
     return 0;
 }
-
 
 
 int destroyNBodyState(NBodyState* st)

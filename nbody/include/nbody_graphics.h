@@ -20,11 +20,21 @@
 #ifndef _NBODY_GRAPHICS_H_
 #define _NBODY_GRAPHICS_H_
 
+#include "nbody_config.h"
+
 #include <stdint.h>
 #include <opa_primitives.h>
 
 #ifndef NAME_MAX
   #define NAME_MAX 255
+#endif
+
+#if USE_SHMEM
+  #define NBODY_SHMEM_NAME_FMT_STR "/milkyway_nbody_%d"
+#elif USE_WIN32_SHARED_MAP
+  #define NBODY_SHMEM_NAME_FMT_STR "Local\\milkyway_nbody_%d"
+#else
+  #define NBODY_SHMEM_NAME_FMT_STR "milkyway_nbody_%d"
 #endif
 
 #define NBODY_CIRC_QUEUE_SIZE 3
@@ -67,6 +77,11 @@ typedef struct
 /* the scene structure */
 typedef struct
 {
+    /* The Win32 API is retarded and doesn't provide a way to get the
+       size of a segment so we store it ourselves first and hope it
+       works out OK
+    */
+    size_t sceneSize;
     char shmemName[NAME_MAX + 1];
     int instanceId;
     OPA_int_t ownerPID;

@@ -36,6 +36,7 @@
 #cmakedefine01 HAVE_DIRECT_H
 #cmakedefine01 HAVE_FCNTL_H
 #cmakedefine01 HAVE_SIGNAL_H
+#cmakedefine01 HAVE_PROCESS_H
 #cmakedefine01 HAVE_INTTYPES_H
 #cmakedefine01 HAVE_STDINT_H
 #cmakedefine01 HAVE_MALLOC_H

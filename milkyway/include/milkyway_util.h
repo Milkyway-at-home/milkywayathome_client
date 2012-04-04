@@ -153,6 +153,25 @@ int mwWriteFile(const char* filename, const char* str);
 
 size_t mwCountLinesInFile(FILE* f);
 
+
+/* Polling modes for OpenCL */
+
+/* After initial wait when using mwCLWaitForEvent() how long (in ms)
+ * should it sleep before trying again when using MW_POLL_SLEEP_CL_WAIT_FOR_EVENTS
+ */
+#define MW_DEFAULT_POLLING_PERIOD 3
+
+/* Use clWaitForEvents() for waiting unless we suspect the driver has the high CPU issue */
+#define MW_POLL_WORKAROUND_CL_WAIT_FOR_EVENTS -2
+
+/* Use clWaitForEvents() normally */
+#define MW_POLL_CL_WAIT_FOR_EVENTS -1
+
+/* Use clWaitForEvents() after using an initial sleep based on execution time estimate */
+#define MW_POLL_SLEEP_CL_WAIT_FOR_EVENTS 0
+
+
+
 /* The numbers these correspond to aren't usable */
 typedef enum
 {

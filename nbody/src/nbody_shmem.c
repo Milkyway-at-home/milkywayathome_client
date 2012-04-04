@@ -202,49 +202,61 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
     return scene;
 }
 
-/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127 */
-int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
+#elif USE_WIN32_SHARED_MAP
+
+static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
 {
-    int pid;
-    int instanceId;
-    char name[128];
-    scene_t* scene = NULL;
-    size_t size = nbFindShmemSize(st->nbody);
+    HANDLE mapFile;
+    scene_t* scene;
 
-    /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
-    for (instanceId = 0; instanceId < MAX_INSTANCES; ++instanceId)
+    mapFile = CreateFileMapping(
+        INVALID_HANDLE_VALUE,    /* use paging file */
+        NULL,                    /* default security */
+        PAGE_READWRITE,          /* read/write access */
+        0,                       /* maximum object size (high-order DWORD) */
+        (DWORD) size,            /* maximum object size (low-order DWORD) */
+        name);                   /* name of mapping object */
+    if (!mapFile)
     {
-        if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
-            mw_panic("Buffer too small for shared memory name\n");
-
-        scene = nbOpenMappedSharedSegment(name, size);
-        if (scene)
-            break;
+        mwPerrorW32("Could not create shared file mapping object");
+        return NULL;
     }
 
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        /* If it exists we know a previous main or
+           graphics process is alive and still using it.
+
+           If it existed anyway we would have to destroy
+           it to resize it anyway. */
+        CloseHandle(mapFile);
+        return NULL;
+    }
+
+    scene = (scene_t*) MapViewOfFile(mapFile,             /* handle to map object */
+                                     FILE_MAP_ALL_ACCESS, /* read/write permission */
+                                     0,                   /* no offset */
+                                     0,                   /* still no offset */
+                                     0);                  /* map entire file mapping */
+    /* We won't need the handle anymore directly.
+    It needs to stay around for other processes to find the segment.
+    We'll let it leak; it will be cleaned up on process exit like we want.
+
+    CloseHandle(mapFile);
+    */
     if (!scene)
     {
-        mw_printf("Could not open new shm segment in %d tries\n", instanceId);
-        return 1;
+        mwPerrorW32("Could not map view of shared memory file");
+        return NULL;
     }
 
-
-    pid = (int) getpid();
-    mw_report("Process %d created scene instance %d\n", pid, instanceId);
-
-    /* Wipe out any possibly remaining queue state, etc. */
-    memset(scene, 0, sizeof(scene_t));
-
-    st->scene = (scene_t*) scene;
-    st->scene->instanceId = instanceId;
-    OPA_store_int(&st->scene->ownerPID, pid);
-    strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
-    nbPrepareSceneFromState(ctx, st);
-
-    return 0;
+    return scene;
 }
 
-#elif USE_BOINC_SHMEM
+#endif /* USE_SHMEM */
+
+
+#if BOINC_APPLICATION
 
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
@@ -265,20 +277,50 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
 #else
 
+/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127 */
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
-    (void) st, (void) ctx;
-    mw_printf("Creating shared scene unimplemented for this system\n");
+    int pid;
+    int instanceId;
+    char name[NAME_MAX + 1];
+    scene_t* scene = NULL;
+    size_t size = nbFindShmemSize(st->nbody);
+
+    /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
+    for (instanceId = 0; instanceId < MAX_INSTANCES; ++instanceId)
+    {
+        if (snprintf(name, sizeof(name), NBODY_SHMEM_NAME_FMT_STR, instanceId) == sizeof(name))
+            mw_panic("Buffer too small for shared memory name\n");
+
+        scene = nbOpenMappedSharedSegment(name, size);
+        if (scene)
+            break;
+    }
+
+    if (!scene)
+    {
+        mw_printf("Could not open new shm segment in %d tries\n", instanceId);
+        return 1;
+    }
+
+    pid = (int) getpid();
+    mw_report("Process %d created scene instance %d\n", pid, instanceId);
+
+    /* Wipe out any possibly remaining queue state, etc. */
+    memset(scene, 0, sizeof(scene_t));
+
+    scene->sceneSize = size;
+
+    st->scene = (scene_t*) scene;
+    st->scene->instanceId = instanceId;
+    OPA_store_int(&st->scene->ownerPID, pid);
+    strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
+    nbPrepareSceneFromState(ctx, st);
+
     return 0;
 }
 
-int visualizerIsAttached(const NBodyState* st)
-{
-    (void) st;
-    return 0;
-}
-
-#endif /* USE_SHMEM */
+#endif /* BOINC_APPLICATION */
 
 
 #ifndef _WIN32

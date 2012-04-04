@@ -37,6 +37,10 @@
 #include <iostream>
 #include <stdexcept>
 
+#ifdef _MSC_VER
+  #pragma warning(disable : 4800)
+#endif
+
 static const float zNearView = 0.01f;
 static const float zFarView = 1000.0f;
 

@@ -35,6 +35,10 @@
   #include <float.h>
 #endif
 
+#if HAVE_PROCESS_H
+  #include <process.h>
+#endif
+
 typedef char mwbool;
 
 #ifndef TRUE
