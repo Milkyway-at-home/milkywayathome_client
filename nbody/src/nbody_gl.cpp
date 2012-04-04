@@ -1489,11 +1489,6 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
-    if (nbglInitGL3W())
-    {
-        return 1;
-    }
-
     glfwSetErrorCallback(errorHandler);
 
     if (!glfwInit())
@@ -1504,6 +1499,11 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
 
     GLFWwindow window = nbglPrepareWindow(args);
     if (!window)
+    {
+        return 1;
+    }
+
+    if (nbglInitGL3W())
     {
         return 1;
     }
