@@ -119,6 +119,12 @@ typedef struct
     NBodyCircularQueue queue;
 } scene_t;
 
+static inline size_t nbFindShmemSize(int nbody)
+{
+    size_t snapshotSize = sizeof(NBodyCircularQueue) + nbody * sizeof(FloatPos);
+    return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
+}
+
 #endif /* _NBODY_GRAPHICS_H_ */
 
 

@@ -591,13 +591,6 @@ static const char* nbGetShmemName(int instanceId)
     return name;
 }
 
-/* FIXME: Duplicated in nbody_shmem.c */
-static size_t nbFindShmemSize(int nbody)
-{
-    size_t snapshotSize = sizeof(NBodyCircularQueue) + nbody * sizeof(FloatPos);
-    return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
-}
-
 #if USE_SHMEM
 
 static scene_t* nbglConnectSharedScene(int instanceId)
@@ -606,6 +599,7 @@ static scene_t* nbglConnectSharedScene(int instanceId)
     const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     struct stat sb;
     const char* name;
+    size_t calcSize;
     scene_t* scene = NULL;
 
     name = nbGetShmemName(instanceId);
@@ -637,7 +631,8 @@ static scene_t* nbglConnectSharedScene(int instanceId)
 
     if (   sb.st_size < (ssize_t) sizeof(scene_t)
         || sb.st_size < (ssize_t) scene->sceneSize
-        || sb.st_size < (ssize_t) nbFindShmemSize(scene->nbody))
+        || sb.st_size < (ssize_t) (calcSize = nbFindShmemSize(scene->nbody))
+        || calcSize != scene->sceneSize)
     {
         mw_printf("Shared memory segment is impossibly small ("ZU")\n", (size_t) sb.st_size);
         if (shm_unlink(name) < 0)
@@ -694,7 +689,7 @@ static scene_t* nbglConnectSharedScene(int instanceId)
     /* Because this API sucks and doesn't give us a way to find the size of a
        paging file backed shared mapped file use the size we stored ourselves. */
     size = scene->sceneSize;
-    if (size < sizeof(scene_t) || size < nbFindShmemSize(scene->nbody))
+    if (size < sizeof(scene_t) || size != nbFindShmemSize(scene->nbody))
     {
         mw_printf("Shared memory segment '%s' is impossibly small (%u)\n", name, size);
         CloseHandle(mapFile);

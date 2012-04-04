@@ -61,12 +61,6 @@ static void nbPrepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->hasGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 }
 
-static size_t nbFindShmemSize(int nbody)
-{
-    size_t snapshotSize = sizeof(NBodyCircularQueue) + nbody * sizeof(FloatPos);
-    return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
-}
-
 #if USE_SHMEM
 
 /* Map the header of a shared memory segment and see if it is owned by

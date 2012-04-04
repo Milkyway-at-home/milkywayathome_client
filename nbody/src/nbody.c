@@ -309,7 +309,7 @@ int nbMain(const NBodyFlags* nbf)
         mw_printf("Failed to create shared scene\n");
     }
 
-    if (nbf->visualizer)
+    if (nbf->visualizer && st->scene)
     {
         /* Make sure the first scene is available for the launched graphics */
         nbForceUpdateDisplayedBodies(ctx, st);
