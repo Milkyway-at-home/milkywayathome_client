@@ -463,6 +463,11 @@ __kernel void NBODY_KERNEL(buildTree)
     __local real radius, rootX, rootY, rootZ;
     __local volatile int deadCount;
 
+    int localMaxDepth = 1;
+    bool skip = true;
+    int inc = get_local_size(0) * get_num_groups(0);
+    int i = get_global_id(0);
+
     if (get_local_id(0) == 0)
     {
         /* Cache root data */
@@ -474,176 +479,171 @@ __kernel void NBODY_KERNEL(buildTree)
         deadCount = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-    int localMaxDepth = 1;
-    bool skip = true;
-    int inc = get_local_size(0) * get_num_groups(0);
-    int i = get_global_id(0);
 
-
-    bool dead = false;
-    while (1)  /* while (i < NBODY) */
+    if (i >= maxNBody)
     {
+        atom_inc(&deadCount);
+    }
 
-        /* Ugly hackery to prevent conditional barrier() for when some
-         * items have another body and others don't */
-        if (i >= maxNBody && !dead)
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+
+    while (deadCount != THREADS2)
+    {
+        /* Avoid conditional barrier when some items finish earlier than others */
+        if (i < maxNBody)
         {
-            dead = true;
-            (void) atom_inc(&deadCount);
-        }
+            real r;
+            real px, py, pz;
+            int j, n, depth;
 
-        /* Wait for other wavefronts to finish loading */
-        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-
-        if (deadCount == THREADS2)
-            break;
-
-        if (dead)
-            continue;
-
-        real r;
-        real px, py, pz;
-        int j, n, depth;
-
-        if (skip)
-        {
-            /* New body, so start traversing at root */
-            skip = false;
-
-            px = _posX[i];
-            py = _posY[i];
-            pz = _posZ[i];
-            n = NNODE;
-            depth = 1;
-            r = radius;
-
-            /* Determine which child to follow */
-            j = 0;
-            if (rootX <= px)
-                j = 1;
-            if (rootY <= py)
-                j += 2;
-            if (rootZ <= pz)
-                j += 4;
-        }
-
-        int ch = _child[NSUB * n + j];
-        while (ch >= NBODY)  /* Follow path to leaf cell */
-        {
-            n = ch;
-            ++depth;
-            r *= 0.5;
-
-            /* Determine which child to follow */
-            j = 0;
-            if (_posX[n] <= px)
-                j = 1;
-            if (_posY[n] <= py)
-                j += 2;
-            if (_posZ[n] <= pz)
-                j += 4;
-            ch = _child[NSUB * n + j];
-        }
-
-        if (ch != -2) /* Skip if child pointer is locked and try again later */
-        {
-            int locked = NSUB * n + j;
-            if (ch == atom_cmpxchg(&_child[locked], ch, -2)) /* Try to lock */
+            if (skip)
             {
-                if (ch == -1)
+                /* New body, so start traversing at root */
+                skip = false;
+
+                px = _posX[i];
+                py = _posY[i];
+                pz = _posZ[i];
+                n = NNODE;
+                depth = 1;
+                r = radius;
+
+                /* Determine which child to follow */
+                j = 0;
+                if (rootX <= px)
+                    j = 1;
+                if (rootY <= py)
+                    j += 2;
+                if (rootZ <= pz)
+                    j += 4;
+            }
+
+            int ch = _child[NSUB * n + j];
+            while (ch >= NBODY)  /* Follow path to leaf cell */
+            {
+                n = ch;
+                ++depth;
+                r *= 0.5;
+
+                /* Determine which child to follow */
+                j = 0;
+                if (_posX[n] <= px)
+                    j = 1;
+                if (_posY[n] <= py)
+                    j += 2;
+                if (_posZ[n] <= pz)
+                    j += 4;
+                ch = _child[NSUB * n + j];
+            }
+
+            if (ch != -2) /* Skip if child pointer is locked and try again later */
+            {
+                int locked = NSUB * n + j;
+                if (ch == atom_cmpxchg(&_child[locked], ch, -2)) /* Try to lock */
                 {
-                    /* If null, just insert the new body */
-                    _child[locked] = i;
-                }
-                else  /* There already is a body in this position */
-                {
-                    int patch = -1;
-                    /* Create new cell(s) and insert the old and new body */
-                    do
+                    if (ch == -1)
                     {
-                        ++depth;
-
-                        int cell = atom_dec(&_treeStatus->bottom) - 1;
-                        if (cell <= NBODY)
-                        {
-                            _treeStatus->errorCode = NBODY_KERNEL_CELL_OVERFLOW;
-                            _treeStatus->bottom = NNODE;
-                        }
-                        patch = max(patch, cell);
-
-                        _mass[cell] = -1.0;
-                        _start[cell] = -1;
-
-                        if (SW93 || NEWCRITERION)
-                        {
-                            _critRadii[cell] = r;  /* Save cell size */
-                        }
-
-                        real nx = _posX[n];
-                        real ny = _posY[n];
-                        real nz = _posZ[n];
-
-                        r *= 0.5;
-
-                        real x = nx + (px < nx ? -r : r);
-                        real y = ny + (py < ny ? -r : r);
-                        real z = nz + (pz < nz ? -r : r);
-
-                        _posX[cell] = x;
-                        _posY[cell] = y;
-                        _posZ[cell] = z;
-
-                        #pragma unroll NSUB
-                        for (int k = 0; k < NSUB; ++k)
-                        {
-                            _child[NSUB * cell + k] = -1;
-                        }
-
-                        if (patch != cell)
-                        {
-                            _child[NSUB * n + j] = cell;
-                        }
-
-                        j = 0;
-                        if (x <= _posX[ch])
-                            j = 1;
-                        if (y <= _posY[ch])
-                            j += 2;
-                        if (z <= _posZ[ch])
-                            j += 4;
-
-                        _child[NSUB * cell + j] = ch;
-
-                        /* The AMD compiler reorders the next read
-                         * from _child, which then reads the old/wrong
-                         * value when the children are the same without this.
-                         */
-                        mem_fence(CLK_GLOBAL_MEM_FENCE);
-
-                        n = cell;
-                        j = 0;
-                        if (x <= px)
-                            j = 1;
-                        if (y <= py)
-                            j += 2;
-                        if (z <= pz)
-                            j += 4;
-
-                        ch = _child[NSUB * n + j];
-                        /* Repeat until the two bodies are different children */
+                        /* If null, just insert the new body */
+                        _child[locked] = i;
                     }
-                    while (ch >= 0);
+                    else  /* There already is a body in this position */
+                    {
+                        int patch = -1;
+                        /* Create new cell(s) and insert the old and new body */
+                        do
+                        {
+                            ++depth;
 
-                    _child[NSUB * n + j] = i;
+                            int cell = atom_dec(&_treeStatus->bottom) - 1;
+                            if (cell <= NBODY)
+                            {
+                                _treeStatus->errorCode = NBODY_KERNEL_CELL_OVERFLOW;
+                                _treeStatus->bottom = NNODE;
+                            }
+                            patch = max(patch, cell);
+
+                            _mass[cell] = -1.0;
+                            _start[cell] = -1;
+
+                            if (SW93 || NEWCRITERION)
+                            {
+                                _critRadii[cell] = r;  /* Save cell size */
+                            }
+
+                            real nx = _posX[n];
+                            real ny = _posY[n];
+                            real nz = _posZ[n];
+
+                            r *= 0.5;
+
+                            real x = nx + (px < nx ? -r : r);
+                            real y = ny + (py < ny ? -r : r);
+                            real z = nz + (pz < nz ? -r : r);
+
+                            _posX[cell] = x;
+                            _posY[cell] = y;
+                            _posZ[cell] = z;
+
+                            #pragma unroll NSUB
+                            for (int k = 0; k < NSUB; ++k)
+                            {
+                                _child[NSUB * cell + k] = -1;
+                            }
+
+                            if (patch != cell)
+                            {
+                                _child[NSUB * n + j] = cell;
+                            }
+
+                            j = 0;
+                            if (x <= _posX[ch])
+                                j = 1;
+                            if (y <= _posY[ch])
+                                j += 2;
+                            if (z <= _posZ[ch])
+                                j += 4;
+
+                            _child[NSUB * cell + j] = ch;
+
+                            /* The AMD compiler reorders the next read
+                             * from _child, which then reads the old/wrong
+                             * value when the children are the same without this.
+                             */
+                            mem_fence(CLK_GLOBAL_MEM_FENCE);
+
+                            n = cell;
+                            j = 0;
+                            if (x <= px)
+                                j = 1;
+                            if (y <= py)
+                                j += 2;
+                            if (z <= pz)
+                                j += 4;
+
+                            ch = _child[NSUB * n + j];
+                            /* Repeat until the two bodies are different children */
+                        }
+                        while (ch >= 0);
+
+                        _child[NSUB * n + j] = i;
+                        mem_fence(CLK_GLOBAL_MEM_FENCE);
+                        _child[locked] = patch;
+                    }
                     mem_fence(CLK_GLOBAL_MEM_FENCE);
-                    _child[locked] = patch;
+                    localMaxDepth = max(depth, localMaxDepth);
+                    i += inc;  /* Move on to next body */
+                    skip = true;
+
+                    if (i >= maxNBody)
+                        atom_inc(&deadCount);
                 }
-                mem_fence(CLK_GLOBAL_MEM_FENCE);
-                localMaxDepth = max(depth, localMaxDepth);
-                i += inc;  /* Move on to next body */
-                skip = true;
             }
         }
+
+        /* Wait for other wavefronts to finish loading to reduce
+         * memory pressures */
+        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
     }
 
     atom_max(&_treeStatus->maxDepth, localMaxDepth);
