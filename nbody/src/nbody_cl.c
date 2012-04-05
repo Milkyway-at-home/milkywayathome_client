@@ -950,7 +950,7 @@ static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* s
 
     mw_fraction_done(frac);
 
-    if (!st->reportProgress)
+    if (st->reportProgress)
     {
         NBodyWorkSizes* ws = st->workSizes;
 

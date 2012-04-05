@@ -425,7 +425,7 @@ __kernel void NBODY_KERNEL(boundingBox)
             real radius = 0.5 * max(tmpR, maxZ[0] - minZ[0]);
 
             real rootX = 0.5 * (minX[0] + maxX[0]);
-            real rootY = 0.5 * (minX[0] + maxX[0]);
+            real rootY = 0.5 * (minY[0] + maxY[0]);
             real rootZ = 0.5 * (minZ[0] + maxZ[0]);
 
             _treeStatus->radius = radius;
