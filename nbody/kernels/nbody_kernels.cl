@@ -464,7 +464,7 @@ __kernel void NBODY_KERNEL(buildTree)
     __local volatile int deadCount;
 
     int localMaxDepth = 1;
-    bool skip = true;
+    bool newParticle = true;
     int inc = get_local_size(0) * get_num_groups(0);
     int i = get_global_id(0);
 
@@ -497,10 +497,10 @@ __kernel void NBODY_KERNEL(buildTree)
             real px, py, pz;
             int j, n, depth;
 
-            if (skip)
+            if (newParticle)
             {
                 /* New body, so start traversing at root */
-                skip = false;
+                newParticle = false;
 
                 px = _posX[i];
                 py = _posY[i];
@@ -633,7 +633,7 @@ __kernel void NBODY_KERNEL(buildTree)
                     mem_fence(CLK_GLOBAL_MEM_FENCE);
                     localMaxDepth = max(depth, localMaxDepth);
                     i += inc;  /* Move on to next body */
-                    skip = true;
+                    newParticle = true;
 
                     if (i >= maxNBody)
                         atom_inc(&deadCount);
