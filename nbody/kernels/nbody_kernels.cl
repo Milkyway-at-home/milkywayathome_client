@@ -328,7 +328,7 @@ inline real4 externalAcceleration(real x, real y, real z)
     RVPtr _quadZZ,                                      \
                                                         \
     __global volatile TreeStatus*  _treeStatus,         \
-    int maxNBody,                                       \
+    uint maxNBody,                                      \
     int updateVel                                       \
     )
 
@@ -339,7 +339,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     __local volatile real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
     __local volatile real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
 
-    int i = (int) get_local_id(0);
+    uint i = (uint) get_local_id(0);
     if (i == 0)
     {
         minX[0] = _posX[0];
@@ -353,8 +353,8 @@ __kernel void NBODY_KERNEL(boundingBox)
     minY[i] = maxY[i] = minY[0];
     minZ[i] = maxZ[i] = minZ[0];
 
-    int inc = get_local_size(0) * get_num_groups(0);
-    int j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0) (- get_global_offset(0))
+    uint inc = get_local_size(0) * get_num_groups(0);
+    uint j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0) (- get_global_offset(0))
     while (j < NBODY) /* Scan bodies */
     {
         real tmp = _posX[j];
@@ -449,7 +449,7 @@ __kernel void NBODY_KERNEL(boundingBox)
             _posZ[NNODE] = rootZ;
 
             #pragma unroll NSUB
-            for (int k = 0; k < NSUB; ++k)
+            for (uint k = 0; k < NSUB; ++k)
             {
                 _child[NSUB * NNODE + k] = -1;
             }
@@ -465,8 +465,8 @@ __kernel void NBODY_KERNEL(buildTree)
 
     int localMaxDepth = 1;
     bool newParticle = true;
-    int inc = get_local_size(0) * get_num_groups(0);
-    int i = get_global_id(0);
+    uint inc = get_local_size(0) * get_num_groups(0);
+    uint i = get_global_id(0);
 
     if (get_local_id(0) == 0)
     {
@@ -482,7 +482,7 @@ __kernel void NBODY_KERNEL(buildTree)
 
     if (i >= maxNBody)
     {
-        atom_inc(&deadCount);
+        (void) atom_inc(&deadCount);
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -636,7 +636,9 @@ __kernel void NBODY_KERNEL(buildTree)
                     newParticle = true;
 
                     if (i >= maxNBody)
-                        atom_inc(&deadCount);
+                    {
+                        (void) atom_inc(&deadCount);
+                    }
                 }
             }
         }
@@ -646,7 +648,7 @@ __kernel void NBODY_KERNEL(buildTree)
         barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
     }
 
-    atom_max(&_treeStatus->maxDepth, localMaxDepth);
+    (void) atom_max(&_treeStatus->maxDepth, localMaxDepth);
 }
 
 /* Used by sw93 */
@@ -1183,7 +1185,7 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6], int wa
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
-    __local int maxDepth;
+    __local uint maxDepth;
     __local real rootCritRadius;
 
     __local volatile int ch[THREADS6 / WARPSIZE];
@@ -1261,7 +1263,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
             /* Precompute values that depend only on tree level */
             dq[0] = rc * rc;
-            for (int i = 1; i < maxDepth; ++i)
+            for (uint i = 1; i < maxDepth; ++i)
             {
                 dq[i] = 0.25 * dq[i - 1];
             }
@@ -1277,9 +1279,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
     if (maxDepth <= MAXDEPTH)
     {
         /* Figure out first thread in each warp */
-        int base = get_local_id(0) / WARPSIZE;
-        int sbase = base * WARPSIZE;
-        int j = base * MAXDEPTH;
+        uint base = get_local_id(0) / WARPSIZE;
+        uint sbase = base * WARPSIZE;
+        uint j = base * MAXDEPTH;
         int diff = get_local_id(0) - sbase; /* Index in warp */
 
         if (BH86 || EXACT)
@@ -1293,7 +1295,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
         }
 
         /* iterate over all bodies assigned to thread */
-        for (int k = get_global_id(0); k < maxNBody; k += get_local_size(0) * get_num_groups(0))
+        for (uint k = get_global_id(0); k < maxNBody; k += get_local_size(0) * get_num_groups(0))
         {
             int i = _sort[k];  /* Get permuted index */
 
@@ -1307,7 +1309,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             real az = 0.0;
 
             /* Initialize iteration stack, i.e., push root node onto stack */
-            int depth = j;
+            uint depth = j;
             if (get_local_id(0) == sbase)
             {
                 node[j] = NNODE;
@@ -1375,6 +1377,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                           #ifdef __FAST_RELAXED_MATH__
                             real rInv = rsqrt(rSq);   /* Compute distance with softening */
                             real ai = nm[base] * rInv * rInv * rInv;
+                            /* FIXME: If EPS is 0, we can get nan */
                           #else
                             real r = sqrt(rSq);   /* Compute distance with softening */
                             real ai = nm[base] / (rSq * r);
@@ -1514,10 +1517,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
 __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
-    int inc = get_local_size(0) * get_num_groups(0);
+    uint inc = get_local_size(0) * get_num_groups(0);
 
     /* Iterate over all bodies assigned to thread */
-    for (int i = (int) get_global_id(0); i < NBODY; i += inc)
+    for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
     {
         real px = _posX[i];
         real py = _posY[i];
@@ -1570,7 +1573,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
 
     cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
 
-    for (int i = get_global_id(0); i < maxNBody; i += get_local_size(0) * get_num_groups(0))
+    for (uint i = get_global_id(0); i < maxNBody; i += get_local_size(0) * get_num_groups(0))
     {
         real px = _posX[i];
         real py = _posY[i];
@@ -1590,10 +1593,10 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
         real ay = 0.0;
         real az = 0.0;
 
-        int nTile = EFFNBODY / THREADS8;
-        for (int j = 0; j < nTile; ++j)
+        uint nTile = EFFNBODY / THREADS8;
+        for (uint j = 0; j < nTile; ++j)
         {
-            int idx = THREADS8 * j + get_local_id(0);
+            uint idx = THREADS8 * j + get_local_id(0);
             xs[get_local_id(0)] = _posX[idx];
             ys[get_local_id(0)] = _posY[idx];
             zs[get_local_id(0)] = _posZ[idx];
