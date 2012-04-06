@@ -1371,8 +1371,14 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         if (isBody(n) || warpAcceptsCell(allBlock, base, rSq, dq[depth]))
                         {
                             rSq += EPS2;
+
+                          #ifdef __FAST_RELAXED_MATH__
+                            real rInv = rsqrt(rSq);   /* Compute distance with softening */
+                            real ai = nm[base] * rInv * rInv * rInv;
+                          #else
                             real r = sqrt(rSq);   /* Compute distance with softening */
                             real ai = nm[base] / (rSq * r);
+                          #endif
 
                             ax = mad(ai, dx, ax);
                             ay = mad(ai, dy, ay);
