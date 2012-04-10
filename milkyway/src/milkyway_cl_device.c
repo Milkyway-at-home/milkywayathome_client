@@ -238,7 +238,7 @@ cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 
 cl_bool mwIsNvidiaGPUDevice(const DevInfo* di)
 {
-    return (di->vendorID == MW_NVIDIA) && (di->devType == CL_DEVICE_TYPE_GPU);
+    return (di->vendorID == MW_NVIDIA || di->vendorID == MW_NVIDIA_ALT) && (di->devType == CL_DEVICE_TYPE_GPU);
 }
 
 cl_bool mwIsAMDGPUDevice(const DevInfo* di)

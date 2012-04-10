@@ -43,8 +43,9 @@ typedef enum
 
 typedef enum
 {
-    MW_AMD_ATI = 0x1002,
-    MW_NVIDIA = 0x10de
+    MW_AMD_ATI  = 0x1002,
+    MW_NVIDIA   = 0x10de,
+    MW_NVIDIA_ALT = 0x1022600 /* My laptop shows up as this 2nd id? */
 } MW_VENDOR_ID;
 
 typedef enum MWCALtargetEnum {
