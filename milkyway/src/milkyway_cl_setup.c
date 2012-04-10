@@ -41,7 +41,7 @@ static void CL_CALLBACK contextCallback(const char* errInfo,
   #define MW_CONTEXT_LOGGER contextCallback
 #endif /* cl_APPLE_ContextLoggingFunctions */
 
-static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue, cl_bool enableProfiling)
+static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useSecondaryQueue, cl_bool enableProfiling)
 {
     cl_int err = CL_SUCCESS;
     cl_command_queue_properties props = enableProfiling ? CL_QUEUE_PROFILING_ENABLE : 0;
@@ -60,12 +60,12 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue, cl_bool enablePr
         return err;
     }
 
-    if (useBufQueue)
+    if (useSecondaryQueue)
     {
-        ci->bufQueue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
+        ci->queueSecondary = clCreateCommandQueue(ci->clctx, ci->dev, props, &err);
         if (err != CL_SUCCESS)
         {
-            mwPerrorCL(err, "Error creating buffer command queue");
+            mwPerrorCL(err, "Error creating secondary command queue");
             return err;
         }
     }
@@ -240,8 +240,8 @@ cl_int mwDestroyCLInfo(CLInfo* ci)
    * will spew errors when trying to cleanup. */
     if (ci->queue)
         err |= clReleaseCommandQueue(ci->queue);
-    if (ci->bufQueue)
-        err |= clReleaseCommandQueue(ci->bufQueue);
+    if (ci->queueSecondary)
+        err |= clReleaseCommandQueue(ci->queueSecondary);
     if (ci->clctx)
         err |= clReleaseContext(ci->clctx);
 

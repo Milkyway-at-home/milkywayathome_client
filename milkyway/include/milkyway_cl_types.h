@@ -135,7 +135,7 @@ typedef struct
     cl_uint devCount;
     cl_context clctx;
     cl_command_queue queue;
-    cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
+    cl_command_queue queueSecondary;
 
     cl_int pollingMode;  /* Hint for how to poll for completion of event */
 
