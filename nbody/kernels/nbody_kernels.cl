@@ -526,13 +526,17 @@ __kernel void NBODY_KERNEL(buildTree)
                 ++depth;
                 r *= 0.5;
 
+                real pnx = _posX[n];
+                real pny = _posY[n];
+                real pnz = _posZ[n];
+
                 /* Determine which child to follow */
                 j = 0;
-                if (_posX[n] <= px)
+                if (pnx <= px)
                     j = 1;
-                if (_posY[n] <= py)
+                if (pny <= py)
                     j += 2;
-                if (_posZ[n] <= pz)
+                if (pnz <= pz)
                     j += 4;
                 ch = _child[NSUB * n + j];
             }
@@ -596,12 +600,17 @@ __kernel void NBODY_KERNEL(buildTree)
                                 _child[NSUB * n + j] = cell;
                             }
 
+                            real pchx = _posX[ch];
+                            real pchy = _posY[ch];
+                            real pchz = _posZ[ch];
+
+
                             j = 0;
-                            if (x <= _posX[ch])
+                            if (x <= pchx)
                                 j = 1;
-                            if (y <= _posY[ch])
+                            if (y <= pchy)
                                 j += 2;
-                            if (z <= _posZ[ch])
+                            if (z <= pchz)
                                 j += 4;
 
                             _child[NSUB * cell + j] = ch;
