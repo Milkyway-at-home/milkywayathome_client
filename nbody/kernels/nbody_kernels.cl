@@ -520,7 +520,7 @@ __kernel void NBODY_KERNEL(buildTree)
             }
 
             int ch = _child[NSUB * n + j];
-            while (ch >= NBODY)  /* Follow path to leaf cell */
+            while (ch >= NBODY && depth <= MAXDEPTH)  /* Follow path to leaf cell */
             {
                 n = ch;
                 ++depth;
@@ -633,7 +633,7 @@ __kernel void NBODY_KERNEL(buildTree)
                             ch = _child[NSUB * n + j];
                             /* Repeat until the two bodies are different children */
                         }
-                        while (ch >= 0);
+                        while (ch >= 0 && depth <= MAXDEPTH);
 
                         _child[NSUB * n + j] = i;
                         mem_fence(CLK_GLOBAL_MEM_FENCE);
