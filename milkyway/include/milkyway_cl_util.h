@@ -62,6 +62,7 @@ cl_int mwFinishEvent(cl_event ev);
 #endif /* CL_VERSION_1_1 */
 
 cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size);
+cl_mem mwCreatePinnedZeroReadWriteBuffer(CLInfo* ci, size_t size);
 cl_mem mwDuplicateBuffer(CLInfo* ci, cl_mem buf);
 
 /* Print a message with the name of a cl_int error the end of the line */
