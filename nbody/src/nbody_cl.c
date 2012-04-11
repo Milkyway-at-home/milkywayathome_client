@@ -34,7 +34,7 @@ extern const size_t nbody_kernels_cl_len;
 typedef struct MW_ALIGN_TYPE_V(64)
 {
     real radius;
-    real cmPos[3];
+    real cmPos[3]; /* FIXME: Root position is NOT CM position */
     cl_int bottom;
     cl_int maxDepth;
     cl_uint blkCnt;
@@ -137,6 +137,16 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
     {
         ws->global[i] = ws->threads[i] * ws->factors[i] * blocks;
         ws->local[i] = ws->threads[i];
+    }
+
+    /* Temporary hack to avoid deadlock on Southern Islands */
+    if (di->calTarget >= MW_CAL_TARGET_TAHITI)
+    {
+        ws->global[1] = ws->threads[1];
+        ws->global[2] = ws->threads[2];
+        ws->global[3] = ws->threads[3];
+        ws->global[4] = ws->threads[4];
+        ws->global[5] = 3 * ws->threads[5] * blocks;
     }
 
     return CL_FALSE;
@@ -273,6 +283,7 @@ static void nbPrintTreeStatus(const TreeStatus* ts)
 {
     mw_printf("TreeStatus = {\n"
               "  radius        = %.15f\n"
+              "  cmPos         = %.15f, %.15f, %.15f\n"
               "  bottom        = %d\n"
               "  maxDepth      = %d\n"
               "  blckCnt       = %u\n"
@@ -280,6 +291,7 @@ static void nbPrintTreeStatus(const TreeStatus* ts)
               "  assertionLine = %d\n"
               "}\n",
               ts->radius,
+              ts->cmPos[0], ts->cmPos[1], ts->cmPos[2],
               ts->bottom,
               ts->maxDepth,
               ts->blkCnt,
