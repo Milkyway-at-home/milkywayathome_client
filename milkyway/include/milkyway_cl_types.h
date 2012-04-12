@@ -43,8 +43,9 @@ typedef enum
 
 typedef enum
 {
-    MW_AMD_ATI = 0x1002,
-    MW_NVIDIA = 0x10de
+    MW_AMD_ATI  = 0x1002,
+    MW_NVIDIA   = 0x10de,
+    MW_NVIDIA_ALT = 0x1022600 /* My laptop shows up as this 2nd id? */
 } MW_VENDOR_ID;
 
 typedef enum MWCALtargetEnum {
@@ -109,7 +110,9 @@ typedef struct
     cl_bool imgSupport;
     cl_bool nonOutput;  /* A check for this should maybe be in OpenCL. Something like a Tesla GPU without video output */
     cl_bool hasGraphicsQOS;
+    cl_bool hasPersistentMemAMD;
     char devName[128];
+    char boardName[128];
     char vendor[128];
     char version[128];
     char driver[128];
@@ -134,7 +137,7 @@ typedef struct
     cl_uint devCount;
     cl_context clctx;
     cl_command_queue queue;
-    cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
+    cl_command_queue queueSecondary;
 
     cl_int pollingMode;  /* Hint for how to poll for completion of event */
 

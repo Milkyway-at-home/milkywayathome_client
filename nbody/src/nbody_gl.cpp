@@ -36,6 +36,7 @@
 #include <assert.h>
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
 
 #ifdef _MSC_VER
   #pragma warning(disable : 4800)
@@ -1127,22 +1128,22 @@ void NBodyGraphics::loadColors()
     // assign random particle colors
     for (GLint i = 0; i < nbody; ++i)
     {
-        double R = ((double) rand()) / ((double) RAND_MAX);
-        double G = ((double) rand()) / ((double) RAND_MAX) * (1.0 - R);
-        double B = 1.0 - R - G;
+        float R = ((float) rand()) / ((float) RAND_MAX);
+        float G = ((float) rand()) / ((float) RAND_MAX) * (1.0f - R);
+        float B = 1.0f - R - G;
 
-        double scale;
+        float scale;
         if (R >= G && R >= B)
         {
-            scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (std::min(2.0, 1.0 / R) - 1.0);
+            scale = 1.0f + ((float) rand()) / ((float) RAND_MAX) * (std::min(2.0f, 1.0f / R) - 1.0f);
         }
         else if (G >= R && G >= B)
         {
-            scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (std::min(2.0, 1.0 / G) - 1.0);
+            scale = 1.0f + ((float) rand()) / ((float) RAND_MAX) * (std::min(2.0f, 1.0f / G) - 1.0f);
         }
         else
         {
-            scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (std::min(2.0, 1.0 / B) - 1.0);
+            scale = 1.0f + ((float) rand()) / ((float) RAND_MAX) * (std::min(2.0f, 1.0f / B) - 1.0f);
         }
 
         if (approxRealStarColors)

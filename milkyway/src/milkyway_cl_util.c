@@ -179,13 +179,29 @@ void mwPrintWorkGroupInfo(const WGInfo* wgi)
               wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
 }
 
-cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
+static cl_mem mwCreateZeroReadWriteBufferComplete(CLInfo* ci, size_t size, cl_bool pinned)
 {
     void* p;
     cl_mem mem = NULL;
     cl_int err = CL_SUCCESS;
+    cl_mem_flags flags = CL_MEM_READ_WRITE;
 
-    mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
+    if (pinned)
+    {
+        /* TODO: use of these isn't really equivalent */
+        if (ci->di.hasPersistentMemAMD)
+        {
+            /* Host visible device memory */
+            flags |= CL_MEM_USE_PERSISTENT_MEM_AMD;
+        }
+        else
+        {
+            /* Pinned host memory */
+            flags |= CL_MEM_ALLOC_HOST_PTR;
+        }
+    }
+
+    mem = clCreateBuffer(ci->clctx, flags, size, NULL, &err);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to create zero buffer of size "ZU, size);
@@ -207,6 +223,16 @@ cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
         mwPerrorCL(err, "Failed to unmap zero buffer");
 fail:
     return mem;
+}
+
+cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
+{
+    return mwCreateZeroReadWriteBufferComplete(ci, size, CL_FALSE);
+}
+
+cl_mem mwCreatePinnedZeroReadWriteBuffer(CLInfo* ci, size_t size)
+{
+    return mwCreateZeroReadWriteBufferComplete(ci, size, CL_TRUE);
 }
 
 

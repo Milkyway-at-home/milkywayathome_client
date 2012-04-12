@@ -238,7 +238,7 @@ cl_double mwCUDAEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 
 cl_bool mwIsNvidiaGPUDevice(const DevInfo* di)
 {
-    return (di->vendorID == MW_NVIDIA) && (di->devType == CL_DEVICE_TYPE_GPU);
+    return (di->vendorID == MW_NVIDIA || di->vendorID == MW_NVIDIA_ALT) && (di->devType == CL_DEVICE_TYPE_GPU);
 }
 
 cl_bool mwIsAMDGPUDevice(const DevInfo* di)
@@ -412,11 +412,16 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
                 di->warpSize = 1;
             }
         }
+
+        if (strstr(di->exts, "cl_amd_device_attribute_query") != NULL)
+        {
+            err |= clGetDeviceInfo(dev, CL_DEVICE_BOARD_NAME_AMD, sizeof(di->boardName), di->boardName, NULL);
+        }
     }
 
     di->nonOutput = mwDeviceIsNonOutput(di);
     di->hasGraphicsQOS = mwDeviceHasGraphicsQOS(di);
-
+    di->hasPersistentMemAMD = (strstr(di->exts, "cl_amd_device_memory_flags") != NULL);
 
     if (mwIsNvidiaGPUDevice(di))
     {
@@ -465,6 +470,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 void mwPrintDevInfo(const DevInfo* di)
 {
     mw_printf("Device '%s' (%s:0x%x) (%s)\n"
+              "Board: %s\n"
               "Driver version:      %s\n"
               "Version:             %s\n"
               "Compute capability:  %u.%u\n"
@@ -504,6 +510,7 @@ void mwPrintDevInfo(const DevInfo* di)
               di->vendor,
               di->vendorID,
               showCLDeviceType(di->devType),
+              di->boardName,
               di->driver,
               di->version,
               di->computeCapabilityMajor, di->computeCapabilityMinor,
@@ -544,6 +551,7 @@ void mwPrintDevInfo(const DevInfo* di)
 void mwPrintDevInfoShort(const DevInfo* di)
 {
     mw_printf("Device '%s' (%s:0x%x) (%s)\n"
+              "Board: %s\n"
               "Driver version:      %s\n"
               "Version:             %s\n"
               "Compute capability:  %u.%u\n"
@@ -556,6 +564,7 @@ void mwPrintDevInfoShort(const DevInfo* di)
               di->devName,
               di->vendor, di->vendorID,
               showCLDeviceType(di->devType),
+              di->boardName,
               di->driver,
               di->version,
               di->computeCapabilityMajor, di->computeCapabilityMinor,

@@ -40,8 +40,17 @@
 
 
 #ifndef CL_PLATFORM_NOT_FOUND_KHR
-#define CL_PLATFORM_NOT_FOUND_KHR  -1001
+  #define CL_PLATFORM_NOT_FOUND_KHR  -1001
 #endif
+
+#ifndef CL_MEM_USE_PERSISTENT_MEM_AMD
+  #define CL_MEM_USE_PERSISTENT_MEM_AMD (1 << 6)
+#endif
+
+#ifndef CL_DEVICE_BOARD_NAME_AMD
+  #define CL_DEVICE_BOARD_NAME_AMD 0x4038
+#endif
+
 
 #endif /* _MW_CL_H_ */
 
