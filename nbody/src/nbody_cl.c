@@ -34,20 +34,24 @@ extern const size_t nbody_kernels_cl_len;
 typedef struct MW_ALIGN_TYPE_V(64)
 {
     real radius;
-    real cmPos[3]; /* FIXME: Root position is NOT CM position */
     cl_int bottom;
-    cl_int maxDepth;
+    cl_uint maxDepth;
     cl_uint blkCnt;
+    cl_uint doneCnt;
 
     cl_int errorCode;
     cl_int assertionLine;
 
-    char _pad[64 - (4 * sizeof(real) + 5 * sizeof(cl_int))];
+    char _pad[64 - (1 * sizeof(real) + 6 * sizeof(cl_int))];
 
     struct
     {
         real f[32];
         cl_int i[64];
+        int wg1[256];
+        int wg2[256];
+        int wg3[256];
+        int wg4[256];
     } debug;
 } TreeStatus;
 
@@ -283,18 +287,18 @@ static void nbPrintTreeStatus(const TreeStatus* ts)
 {
     mw_printf("TreeStatus = {\n"
               "  radius        = %.15f\n"
-              "  cmPos         = %.15f, %.15f, %.15f\n"
               "  bottom        = %d\n"
               "  maxDepth      = %d\n"
               "  blckCnt       = %u\n"
+              "  doneCnt       = %u\n"
               "  errorCode     = %d\n"
               "  assertionLine = %d\n"
               "}\n",
               ts->radius,
-              ts->cmPos[0], ts->cmPos[1], ts->cmPos[2],
               ts->bottom,
               ts->maxDepth,
               ts->blkCnt,
+              ts->doneCnt,
               ts->errorCode,
               ts->assertionLine
         );
@@ -921,37 +925,50 @@ static cl_double waitReleaseEventWithTime(cl_event ev)
     return t;
 }
 
+static cl_int nbReadCenterOfMass(NBodyState* st, mwvector* cmPos)
+{
+    cl_int err = CL_SUCCESS;
+    cl_mem* positions = st->nbb->pos;
+    cl_command_queue queue = st->ci->queue;
+    cl_uint nNode = nbFindNNode(&st->ci->di, st->nbody);
+
+    err |= clEnqueueReadBuffer(queue, positions[0], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->x, 0, NULL, NULL);
+    err |= clEnqueueReadBuffer(queue, positions[1], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->y, 0, NULL, NULL);
+    err |= clEnqueueReadBuffer(queue, positions[2], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->z, 0, NULL, NULL);
+    err |= clFlush(queue);
+
+    return err;
+}
+
 int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
 {
-    static cl_bool reportedMarshalError = CL_FALSE;
+    static cl_bool hadMarshalError = CL_FALSE;
     cl_int err;
     TreeStatus treeStatus;
 
     /* TODO: If this fails we are probably in a bad state and should abort everything */
-
     /* TODO: CL-GL sharing would be nice for CL graphics */
-    err = nbMarshalBodies(st, CL_FALSE);
-    if (err != CL_SUCCESS && !reportedMarshalError)
-    {
-        mwPerrorCL(err, "Error marshalling bodies for display update");
-        reportedMarshalError = CL_TRUE;
-        return 1;
-    }
 
-    err = nbReadTreeStatus(&treeStatus, st->ci, st->nbb);
+    if (hadMarshalError)
+        return 1;
+
+    err = nbReadCenterOfMass(st, cmPosOut);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL(err, "Error reading tree status for display update");
-        reportedMarshalError = CL_TRUE;
+        mwPerrorCL(err, "Failed to read center of mass\n");
+        hadMarshalError = CL_TRUE;
         return 1;
     }
 
-    if (cmPosOut)
+    err = nbMarshalBodies(st, CL_FALSE);
+    if (err != CL_SUCCESS)
     {
-        cmPosOut->x = treeStatus.cmPos[0];
-        cmPosOut->y = treeStatus.cmPos[1];
-        cmPosOut->z = treeStatus.cmPos[2];
+        mwPerrorCL(err, "Error marshalling bodies for display update");
+        hadMarshalError = CL_TRUE;
+        return 1;
     }
+
+    /* Center of mass read should be complete since body marshal uses blocking maps */
 
     return 0;
 }

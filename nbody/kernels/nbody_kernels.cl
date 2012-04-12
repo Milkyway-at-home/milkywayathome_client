@@ -142,21 +142,25 @@ typedef float4 real4;
 /* This needs to be the same as on the host */
 typedef struct __attribute__((aligned(64)))
 {
-    volatile real radius;
-    volatile real cmPos[3];
-    volatile int bottom;
-    volatile int maxDepth;
-    volatile unsigned int blkCnt;
+    real radius;
+    int bottom;
+    uint maxDepth;
+    uint blkCnt;
+    uint doneCnt;
 
-    volatile int errorCode;
-    volatile int assertionLine;
+    int errorCode;
+    int assertionLine;
 
-    char _pad[64 - (4 * sizeof(real) + 5 * sizeof(int))];
+    char _pad[64 - (1 * sizeof(real) + 6 * sizeof(int))];
 
     struct
     {
-        volatile real f[32];
-        volatile int i[64];
+        real f[32];
+        int i[64];
+        int wg1[256];
+        int wg2[256];
+        int wg3[256];
+        int wg4[256];
     } debug;
 } TreeStatus;
 
@@ -429,9 +433,6 @@ __kernel void NBODY_KERNEL(boundingBox)
             real rootZ = 0.5 * (minZ[0] + maxZ[0]);
 
             _treeStatus->radius = radius;
-            _treeStatus->cmPos[0] = rootX;
-            _treeStatus->cmPos[1] = rootY;
-            _treeStatus->cmPos[2] = rootZ;
 
             _treeStatus->bottom = NNODE;
             _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
