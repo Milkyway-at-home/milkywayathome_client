@@ -1290,7 +1290,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
         /* Figure out first thread in each warp */
         uint base = get_local_id(0) / WARPSIZE;
         uint sbase = base * WARPSIZE;
-        uint j = base * MAXDEPTH;
+        int j = base * MAXDEPTH;
         int diff = get_local_id(0) - sbase; /* Index in warp */
 
         if (BH86 || EXACT)
@@ -1318,7 +1318,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             real az = 0.0;
 
             /* Initialize iteration stack, i.e., push root node onto stack */
-            uint depth = j;
+            int depth = j;
             if (get_local_id(0) == sbase)
             {
                 node[j] = NNODE;
@@ -1520,7 +1520,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
           #endif /* !HAVE_INLINE_PTX */
         }
     }
-
 }
 
 __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
