@@ -327,7 +327,7 @@ inline real4 externalAcceleration(real x, real y, real z)
     RVPtr _quadYY, RVPtr _quadYZ,                       \
     RVPtr _quadZZ,                                      \
                                                         \
-    __global volatile TreeStatus*  _treeStatus,         \
+    __global volatile TreeStatus* _treeStatus,          \
     uint maxNBody,                                      \
     int updateVel                                       \
     )
@@ -358,16 +358,16 @@ __kernel void NBODY_KERNEL(boundingBox)
     while (j < NBODY) /* Scan bodies */
     {
         real tmp = _posX[j];
-        minX[i] = min(minX[i], tmp);
-        maxX[i] = max(maxX[i], tmp);
+        minX[i] = fmin(minX[i], tmp);
+        maxX[i] = fmax(maxX[i], tmp);
 
         tmp = _posY[j];
-        minY[i] = min(minY[i], tmp);
-        maxY[i] = max(maxY[i], tmp);
+        minY[i] = fmin(minY[i], tmp);
+        maxY[i] = fmax(maxY[i], tmp);
 
         tmp = _posZ[j];
-        minZ[i] = min(minZ[i], tmp);
-        maxZ[i] = max(maxZ[i], tmp);
+        minZ[i] = fmin(minZ[i], tmp);
+        maxZ[i] = fmax(maxZ[i], tmp);
 
         j += inc;  /* Move on to next body */
     }
@@ -379,13 +379,13 @@ __kernel void NBODY_KERNEL(boundingBox)
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         if (i < j)
         {
-            minX[i] = min(minX[i], minX[i + j]);
-            minY[i] = min(minY[i], minY[i + j]);
-            minZ[i] = min(minZ[i], minZ[i + j]);
+            minX[i] = fmin(minX[i], minX[i + j]);
+            minY[i] = fmin(minY[i], minY[i + j]);
+            minZ[i] = fmin(minZ[i], minZ[i + j]);
 
-            maxX[i] = max(maxX[i], maxX[i + j]);
-            maxY[i] = max(maxY[i], maxY[i + j]);
-            maxZ[i] = max(maxZ[i], maxZ[i + j]);
+            maxX[i] = fmax(maxX[i], maxX[i + j]);
+            maxY[i] = fmax(maxY[i], maxY[i + j]);
+            maxZ[i] = fmax(maxZ[i], maxZ[i + j]);
         }
 
         j >>= 1;
@@ -411,18 +411,18 @@ __kernel void NBODY_KERNEL(boundingBox)
             /* I'm the last block, so combine all block results */
             for (j = 0; j <= inc; ++j)
             {
-                minX[0] = min(minX[0], _minX[j]);
-                minY[0] = min(minY[0], _minY[j]);
-                minZ[0] = min(minZ[0], _minZ[j]);
+                minX[0] = fmin(minX[0], _minX[j]);
+                minY[0] = fmin(minY[0], _minY[j]);
+                minZ[0] = fmin(minZ[0], _minZ[j]);
 
-                maxX[0] = max(maxX[0], _maxX[j]);
-                maxY[0] = max(maxY[0], _maxY[j]);
-                maxZ[0] = max(maxZ[0], _maxZ[j]);
+                maxX[0] = fmax(maxX[0], _maxX[j]);
+                maxY[0] = fmax(maxY[0], _maxY[j]);
+                maxZ[0] = fmax(maxZ[0], _maxZ[j]);
             }
 
             /* Compute radius */
-            real tmpR = max(maxX[0] - minX[0], maxY[0] - minY[0]);
-            real radius = 0.5 * max(tmpR, maxZ[0] - minZ[0]);
+            real tmpR = fmax(maxX[0] - minX[0], maxY[0] - minY[0]);
+            real radius = 0.5 * fmax(tmpR, maxZ[0] - minZ[0]);
 
             real rootX = 0.5 * (minX[0] + maxX[0]);
             real rootY = 0.5 * (minY[0] + maxY[0]);
@@ -664,7 +664,7 @@ __kernel void NBODY_KERNEL(buildTree)
 inline real bmax2Inc(real cmPos, real pPos, real psize)
 {
     real dmin = cmPos - (pPos - 0.5 * psize);         /* dist from 1st corner */
-    real tmp = max(dmin, psize - dmin);
+    real tmp = fmax(dmin, psize - dmin);
     return tmp * tmp;      /* sum max distance^2 */
 }
 
