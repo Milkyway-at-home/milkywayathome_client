@@ -119,18 +119,22 @@ int mwGetHighResTime_RealTime(MWHighResTime* timer)
 int mwGetHighResTime_RealTime(MWHighResTime* timer)
 {
     LARGE_INTEGER tick, freq;
-    LONGLONG sec;
-    BOOL failed;
+    LONGLONG nSec;
+    BOOL success;
 
-    failed = QueryPerformanceCounter(&tick);
-    failed &= QueryPerformanceFrequency(&freq);
+    success = QueryPerformanceCounter(&tick);
+    success &= QueryPerformanceFrequency(&freq);
+    if (freq.QuadPart == 0)
+    {
+        return TRUE;
+    }
 
-    sec = tick.QuadPart / freq.QuadPart;
+    nSec = (nsPerSec * tick.QuadPart) / freq.QuadPart;
 
-    timer->sec = sec / nsPerSec;
-    timer->nSec = sec - nsPerSec * timer->sec;
+    timer->sec = nSec / nsPerSec;
+    timer->nSec = nSec - nsPerSec * timer->sec;
 
-    return (int) !failed;
+    return (int) !success;
 }
 
 #else

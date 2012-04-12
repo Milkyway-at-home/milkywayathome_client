@@ -74,6 +74,16 @@ double mwEventTimeMS(cl_event ev)
     return (double) mwEventTimeNS(ev) * 1.0e-6;
 }
 
+double mwReleaseEventWithTimingMS(cl_event ev)
+{
+    double t;
+
+    t = mwEventTimeMS(ev);
+    clReleaseEvent(ev);
+
+    return t;
+}
+
 double mwReleaseEventWithTiming(cl_event ev)
 {
     double t;
@@ -188,17 +198,8 @@ static cl_mem mwCreateZeroReadWriteBufferComplete(CLInfo* ci, size_t size, cl_bo
 
     if (pinned)
     {
-        /* TODO: use of these isn't really equivalent */
-        if (ci->di.hasPersistentMemAMD)
-        {
-            /* Host visible device memory */
-            flags |= CL_MEM_USE_PERSISTENT_MEM_AMD;
-        }
-        else
-        {
-            /* Pinned host memory */
-            flags |= CL_MEM_ALLOC_HOST_PTR;
-        }
+        flags |= CL_MEM_ALLOC_HOST_PTR;
+        /* flags |= CL_MEM_USE_PERSISTENT_MEM_AMD; */
     }
 
     mem = clCreateBuffer(ci->clctx, flags, size, NULL, &err);
