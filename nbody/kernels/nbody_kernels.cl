@@ -1256,29 +1256,28 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 #endif /* HAVE_INLINE_PTX */
 
 
-/* OpenCL is missing thread voting functions (so is AMD hardware as far as I can tell)
+/*
  * This should be equivalent roughtly to CUDA's __all() with the conditions
  * A barrier should be unnecessary here since
  * all the threads in a wavefront should be
  * forced to run simulatenously. This is not
  * over the workgroup, but the actual
  * wavefront.
- * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
  */
-inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6], int warpId, int cond)
+inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSIZE], int warpId, int cond)
 {
-    allBlock[get_local_id(0)] = cond;
-
     /* Relies on underlying wavefronts (not whole workgroup)
        executing in lockstep to not require barrier */
-    int predicate = 1;
-    for (int x = 0; x < WARPSIZE; ++x)
-    {
-        predicate &= allBlock[WARPSIZE * warpId + x];
-    }
 
-    /* For exact, this could always just return false */
-    return predicate;
+    int old = allBlock[warpId];
+
+    /* Increment if true, or leave unchanged */
+    (void) atom_add(&allBlock[warpId], cond);
+
+    int ret = (allBlock[warpId] == WARPSIZE);
+    allBlock[warpId] = old;
+
+    return ret;
 }
 
 #if HAVE_INLINE_PTX
@@ -1322,17 +1321,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
     */
-    __local volatile int allBlock[THREADS6];
-
-    /* Excess threads will "die", however their slots in the
-     * fake warp vote are still counted, but not set,
-     * resulting in garbage in the last few votes. Make sure
-     * that dead threads can't prevent a successful vote.
-     *
-     * Barrier should not be necessary when used, since
-     * communication should happen on wavefront/warp level
-     */
-    allBlock[get_local_id(0)] = 1;
+    __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
 
 
@@ -1375,6 +1364,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
             }
         }
 
+        for (uint i = 0; i < THREADS6 / WARPSIZE; ++i)
+        {
+            allBlock[i] = 0;
+        }
+
         if (maxDepth > MAXDEPTH)
         {
             _treeStatus->errorCode = maxDepth;
@@ -1400,8 +1394,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         }
 
+        uint k = get_global_id(0);
+
+        atom_add(&allBlock[base], k >= maxNBody);
+
         /* iterate over all bodies assigned to thread */
-        for (uint k = get_global_id(0); k < maxNBody; k += get_local_size(0) * get_num_groups(0))
+        while (k < maxNBody)
         {
             int i = _sort[k];  /* Get permuted index */
 
@@ -1611,9 +1609,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
             }
 
 
+            k += get_local_size(0) * get_num_groups(0);
+
           #if !HAVE_INLINE_PTX
             /* In case this thread is done with bodies and others in the wavefront aren't */
-            allBlock[get_local_id(0)] = 1;
+            atom_add(&allBlock[base], k >= maxNBody);
           #endif /* !HAVE_INLINE_PTX */
         }
     }

@@ -68,7 +68,7 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     /* Pieces which are not part of the "stack" */
     cl_ulong maxDepth = sizeof(cl_int);
     cl_ulong rootCritRadius = sizeof(real);
-    cl_ulong allBlock = wgSize * sizeof(cl_int);
+    cl_ulong allBlock = warpPerWG * sizeof(cl_int);
 
     cl_ulong ch = warpPerWG * sizeof(cl_int);
     cl_ulong nx = warpPerWG * sizeof(cl_int);
