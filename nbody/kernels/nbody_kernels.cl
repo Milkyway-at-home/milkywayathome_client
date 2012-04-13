@@ -146,7 +146,7 @@ typedef struct __attribute__((aligned(64)))
     int bottom;
     uint maxDepth;
     uint blkCnt;
-    uint doneCnt;
+    int doneCnt;
 
     int errorCode;
     int assertionLine;
@@ -436,6 +436,7 @@ __kernel void NBODY_KERNEL(boundingBox)
 
             _treeStatus->bottom = NNODE;
             _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
+            _treeStatus->doneCnt = 0;
 
             if (NEWCRITERION || SW93)
             {
@@ -458,16 +459,42 @@ __kernel void NBODY_KERNEL(boundingBox)
     }
 }
 
+#define LOCK (-2)
+
+/* FIXME: should maybe have separate threadcount, but
+   Should have attributes most similar to integration */
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+__kernel void NBODY_KERNEL(cellSanitize)
+{
+    const int bottom = NBODY; /* Wipe all cells */
+    int inc = get_local_size(0) * get_num_groups(0);
+    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
+    if (k < bottom)
+        k += inc;
+
+    while (k <= NNODE) /* Iterate over all cells assigned to thread */
+    {
+        _posX[k] = NAN;
+        _posY[k] = NAN;
+        _posZ[k] = NAN;
+
+        k += inc;
+    }
+}
+
+
 __attribute__ ((reqd_work_group_size(THREADS2, 1, 1)))
 __kernel void NBODY_KERNEL(buildTree)
 {
     __local real radius, rootX, rootY, rootZ;
-    __local volatile int deadCount;
+    __local volatile int successCount;
+    __local int doneCount;
 
     int localMaxDepth = 1;
     bool newParticle = true;
+
     uint inc = get_local_size(0) * get_num_groups(0);
-    uint i = get_global_id(0);
+    int i = get_global_id(0);
 
     if (get_local_id(0) == 0)
     {
@@ -477,31 +504,28 @@ __kernel void NBODY_KERNEL(buildTree)
         rootY = _posY[NNODE];
         rootZ = _posZ[NNODE];
 
-        deadCount = 0;
+        doneCount = _treeStatus->doneCnt;
+        successCount = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
-    if (i >= maxNBody)
+    if (doneCount == NBODY)
+        return;
+
+    while (i < NBODY)
     {
-        (void) atom_inc(&deadCount);
-    }
-
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-
-    while (deadCount != THREADS2)
-    {
-        /* Avoid conditional barrier when some items finish earlier than others */
-        if (i < maxNBody)
+        if (i < NBODY)
         {
             real r;
             real px, py, pz;
             int j, n, depth;
+            bool posNotReady;
 
             if (newParticle)
             {
                 /* New body, so start traversing at root */
                 newParticle = false;
+                posNotReady = false;
 
                 px = _posX[i];
                 py = _posY[i];
@@ -521,7 +545,7 @@ __kernel void NBODY_KERNEL(buildTree)
             }
 
             int ch = _child[NSUB * n + j];
-            while (ch >= NBODY && depth <= MAXDEPTH)  /* Follow path to leaf cell */
+            while (ch >= NBODY && !posNotReady && depth <= MAXDEPTH)  /* Follow path to leaf cell */
             {
                 n = ch;
                 ++depth;
@@ -530,6 +554,15 @@ __kernel void NBODY_KERNEL(buildTree)
                 real pnx = _posX[n];
                 real pny = _posY[n];
                 real pnz = _posZ[n];
+
+
+                /* Test if we don't have a consistent view. We
+                   initialized these all to NAN so we can be sure we
+                   have a good view once actually written.
+
+                   This is in case we don't have cross-workgroup global memory consistency
+                 */
+                posNotReady = isnan(pnx) || isnan(pny) || isnan(pnz);
 
                 /* Determine which child to follow */
                 j = 0;
@@ -542,10 +575,12 @@ __kernel void NBODY_KERNEL(buildTree)
                 ch = _child[NSUB * n + j];
             }
 
-            if (ch != -2) /* Skip if child pointer is locked and try again later */
+            /* Skip if child pointer is locked, or the same particle, and try again later */
+            if (ch != LOCK && (ch != i) && !posNotReady)
             {
                 int locked = NSUB * n + j;
-                if (ch == atom_cmpxchg(&_child[locked], ch, -2)) /* Try to lock */
+
+                if (ch == atom_cmpxchg(&_child[locked], ch, LOCK)) /* Try to lock */
                 {
                     if (ch == -1)
                     {
@@ -579,6 +614,8 @@ __kernel void NBODY_KERNEL(buildTree)
                             real nx = _posX[n];
                             real ny = _posY[n];
                             real nz = _posZ[n];
+
+                            cl_assert(_treeStatus, !isnan(nx) && !isnan(ny) && !isnan(nz));
 
                             r *= 0.5;
 
@@ -632,7 +669,9 @@ __kernel void NBODY_KERNEL(buildTree)
                                 j += 4;
 
                             ch = _child[NSUB * n + j];
-                            /* Repeat until the two bodies are different children */
+
+                            /* Repeat until the two bodies are
+                             * different children or we overflow */
                         }
                         while (ch >= 0 && depth <= MAXDEPTH);
 
@@ -640,22 +679,24 @@ __kernel void NBODY_KERNEL(buildTree)
                         mem_fence(CLK_GLOBAL_MEM_FENCE);
                         _child[locked] = patch;
                     }
-                    mem_fence(CLK_GLOBAL_MEM_FENCE);
-                    localMaxDepth = max(depth, localMaxDepth);
-                    i += inc;  /* Move on to next body */
-                    newParticle = true;
 
-                    if (i >= maxNBody)
-                    {
-                        (void) atom_inc(&deadCount);
-                    }
+                    localMaxDepth = max(depth, localMaxDepth);
+                    atom_inc(&successCount);
                 }
             }
+
+            i += inc;  /* Move on to next body */
+            newParticle = true;
         }
 
         /* Wait for other wavefronts to finish loading to reduce
          * memory pressures */
         barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+    }
+
+    if (get_local_id(0) == 0)
+    {
+        (void) atomic_add(&_treeStatus->doneCnt, successCount);
     }
 
     (void) atom_max(&_treeStatus->maxDepth, localMaxDepth);
@@ -1133,7 +1174,7 @@ __kernel void NBODY_KERNEL(quadMoments)
 #if HAVE_INLINE_PTX
 inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 {
-    unsigned int result;
+    uint result;
 
   #if DOUBLEPREC
     asm("{\n\t"

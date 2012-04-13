@@ -37,7 +37,7 @@ typedef struct MW_ALIGN_TYPE_V(64)
     cl_int bottom;
     cl_uint maxDepth;
     cl_uint blkCnt;
-    cl_uint doneCnt;
+    cl_int doneCnt;
 
     cl_int errorCode;
     cl_int assertionLine;
@@ -100,11 +100,14 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     return estMaxDepth - 1;  /* A bit extra will be used. Some kind of rounding up */
 }
 
-static cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
+cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
 {
     cl_ulong d;
 
     d = nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(di, ws, useQuad);
+
+    /* TODO: We should be able to reduce this; this is usually quite a
+     * bit deeper than we can go before hitting precision limits */
 
     return (cl_uint) d;
 }
@@ -144,14 +147,17 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
     }
 
     /* Temporary hack to avoid deadlock on Southern Islands */
+
     if (di->calTarget >= MW_CAL_TARGET_TAHITI)
     {
-        ws->global[1] = ws->threads[1];
+        //ws->global[1] = 3 * ws->threads[1] * blocks;
+        ws->global[1] = 2 * ws->threads[1] * blocks;
         ws->global[2] = ws->threads[2];
         ws->global[3] = ws->threads[3];
         ws->global[4] = ws->threads[4];
         ws->global[5] = 3 * ws->threads[5] * blocks;
     }
+
 
     return CL_FALSE;
 }
@@ -402,6 +408,7 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 
     if (!exact)
     {
+        err |= nbSetKernelArguments(k->cellSanitize, st->nbb, exact);
         err |= nbSetKernelArguments(k->boundingBox, st->nbb, exact);
         err |= nbSetKernelArguments(k->buildTree, st->nbb, exact);
         err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
@@ -434,6 +441,7 @@ cl_int nbReleaseKernels(NBodyState* st)
     cl_int err = CL_SUCCESS;
     NBodyKernels* kernels = st->kernels;
 
+    err |= clReleaseKernel_quiet(kernels->cellSanitize);
     err |= clReleaseKernel_quiet(kernels->boundingBox);
     err |= clReleaseKernel_quiet(kernels->buildTree);
     err |= clReleaseKernel_quiet(kernels->summarization);
@@ -559,7 +567,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  ws->threads[5],
                  ws->threads[6],
                  ws->threads[7],
-                 nbFindMaxDepthForDevice(di, st->workSizes, ctx->useQuad),
+
+                 st->maxDepth,
 
                  ctx->timestep,
                  ctx->eps2,
@@ -618,6 +627,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
+    kernels->cellSanitize = mwCreateKernel(program, "cellSanitize");
     kernels->boundingBox = mwCreateKernel(program, "boundingBox");
     kernels->buildTree = mwCreateKernel(program, "buildTree");
     kernels->summarization = mwCreateKernel(program, "summarization");
@@ -627,7 +637,8 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
     kernels->integration = mwCreateKernel(program, "integration");
     kernels->forceCalculation_Exact = mwCreateKernel(program, "forceCalculation_Exact");
 
-    return (   kernels->boundingBox
+    return (   kernels->cellSanitize
+            && kernels->boundingBox
             && kernels->buildTree
             && kernels->summarization
             && kernels->quadMoments
@@ -891,9 +902,7 @@ static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
 
             if (ts.errorCode > 0)
             {
-                mw_printf("(%s (%u))\n",
-                          showNBodyKernelError(ts.errorCode),
-                          nbFindMaxDepthForDevice(&ci->di, st->workSizes, st->usesQuad));
+                mw_printf("(%s (%u))\n", showNBodyKernelError(ts.errorCode), st->maxDepth);
                 return NBODY_MAX_DEPTH_ERROR;
             }
             else
@@ -944,7 +953,6 @@ int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
 {
     static cl_bool hadMarshalError = CL_FALSE;
     cl_int err;
-    TreeStatus treeStatus;
 
     /* TODO: If this fails we are probably in a bad state and should abort everything */
     /* TODO: CL-GL sharing would be nice for CL graphics */
@@ -1010,63 +1018,98 @@ static void nbReportProgressWithTimings(const NBodyCtx* ctx, const NBodyState* s
 /* Run kernels used only by tree versions. */
 static cl_int nbExecuteTreeConstruction(NBodyState* st)
 {
-    cl_int err;
-    size_t chunk;
-    size_t nChunk;
-    cl_int upperBound;
-    size_t offset[1];
-    cl_event boxEv, sumEv, sortEv, quadEv;
+    cl_int err = CL_SUCCESS;
+    TreeStatus treeStatus;
+
     CLInfo* ci = st->ci;
+    NBodyBuffers* nbb = st->nbb;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-    cl_int effNBody = st->effNBody;
+    cl_uint iterations = 0;
+    cl_event sanitizeEv = NULL;
+    cl_event boxEv = NULL;
+    cl_event sumEv = NULL;
+    cl_event sortEv = NULL;
+    cl_event quadEv = NULL;
+
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->cellSanitize, 1,
+                                 NULL, &ws->global[6], &ws->local[6],
+                                 0, NULL, &sanitizeEv);
+    if (err != CL_SUCCESS)
+        goto tree_build_exit;
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
                                  0, NULL, &boxEv);
     if (err != CL_SUCCESS)
-        return err;
+        goto tree_build_exit;
 
-    nChunk     = st->ignoreResponsive ?        1 : mwDivRoundup((size_t) effNBody, ws->global[1]);
-    upperBound = st->ignoreResponsive ? effNBody : (cl_int) ws->global[1];
-    for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += ws->global[1])
+    /* Repeat the tree construction kernel until all bodies have been successfully inserted */
+    do
     {
         cl_event ev;
+        cl_event readEv;
 
-        if (upperBound > effNBody)
-            upperBound = effNBody;
-
-        err = clSetKernelArg(kernels->buildTree, 28, sizeof(cl_int), &upperBound);
-        if (err != CL_SUCCESS)
-            return err;
+        /*
+          TODO: We can save somewhat on launch overhead and extra
+          reads by enqueuing a number of iterations based on a running
+          average of how many it has taken
+         */
 
         err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTree, 1,
-                                     offset, &ws->global[1], &ws->local[1],
+                                     NULL, &ws->global[1], &ws->local[1],
                                      0, NULL, &ev);
         if (err != CL_SUCCESS)
-            return err;
+            goto tree_build_exit;
 
-        upperBound += (cl_int) ws->global[1];
-        ws->timings[1] += waitReleaseEventWithTime(ev);
+        err = clFlush(ci->queue);
+        if (err != CL_SUCCESS)
+        {
+            clReleaseEvent(ev);
+            goto tree_build_exit;
+        }
+
+
+        err = clEnqueueReadBuffer(ci->queue,
+                                  nbb->treeStatus,
+                                  CL_TRUE,
+                                  0, sizeof(treeStatus), &treeStatus,
+                                  0, NULL, &readEv);
+        if (err != CL_SUCCESS)
+        {
+            clReleaseEvent(ev);
+            goto tree_build_exit;
+        }
+
+        ++iterations;
+
+        ws->timings[1] += mwReleaseEventWithTimingMS(ev);
+        ws->timings[1] += mwReleaseEventWithTimingMS(readEv);
+
+        if (treeStatus.maxDepth > st->maxDepth)
+        {
+            mw_printf("Overflow during tree construction\n");
+            err = MW_CL_ERROR;
+            goto tree_build_exit;
+        }
     }
-
+    while (treeStatus.doneCnt != st->effNBody);
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
                                  NULL, &ws->global[2], &ws->local[2],
                                  0, NULL, &sumEv);
     if (err != CL_SUCCESS)
-        return err;
+        goto tree_build_exit;
 
-    /* FIXME: This does not work unless ALL of the threads are
-     * launched at once. This may be bad when we need
-     * responsiveness. This also means it will always hang with
-     * CPUs. It seems to be fast enough though in every case I've
-     * tried. */
     err = clEnqueueNDRangeKernel(ci->queue, kernels->sort, 1,
                                  NULL, &ws->global[3], &ws->local[3],
                                  0, NULL, &sortEv);
     if (err != CL_SUCCESS)
-        return err;
+        goto tree_build_exit;
+
+    err = clFlush(ci->queue);
+    if (err != CL_SUCCESS)
+        goto tree_build_exit;
 
     if (st->usesQuad)
     {
@@ -1074,19 +1117,30 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                                      NULL, &ws->global[4], &ws->local[4],
                                      0, NULL, &quadEv);
         if (err != CL_SUCCESS)
-            return err;
+            goto tree_build_exit;
     }
 
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+        goto tree_build_exit;
+
+
+tree_build_exit:
     ws->timings[0] += mwReleaseEventWithTiming(boxEv);
-    ws->chunkTimings[1] = ws->timings[1] / (double) nChunk;
-    ws->timings[2] += waitReleaseEventWithTime(sumEv);
-    ws->timings[3] += waitReleaseEventWithTime(sortEv);
+    ws->chunkTimings[1] = ws->timings[1] / (double) iterations;
+
+    /* Pretend the sanitize kernel doesn't exist, include it's time as
+     * part of buildTree since it exists to support it anyway */
+    ws->timings[1] += mwReleaseEventWithTimingMS(sanitizeEv);
+
+    ws->timings[2] += mwReleaseEventWithTimingMS(sumEv);
+    ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
     if (st->usesQuad)
     {
-        ws->timings[4] += waitReleaseEventWithTime(quadEv);
+        ws->timings[4] += mwReleaseEventWithTimingMS(quadEv);
     }
 
-    return CL_SUCCESS;
+    return err;
 }
 
 /* Run force calculation and integration kernels */
@@ -1128,7 +1182,7 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 
         upperBound = (upperBound > effNBody) ? effNBody : upperBound;
 
-        err = clSetKernelArg(forceKern, 28, sizeof(cl_int), &upperBound);
+        err = clSetKernelArg(forceKern, 28, sizeof(cl_uint), &upperBound);
         if (err != CL_SUCCESS)
             return err;
 
