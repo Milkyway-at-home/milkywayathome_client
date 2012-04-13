@@ -1032,11 +1032,14 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     cl_event sortEv = NULL;
     cl_event quadEv = NULL;
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels->cellSanitize, 1,
-                                 NULL, &ws->global[6], &ws->local[6],
-                                 0, NULL, &sanitizeEv);
-    if (err != CL_SUCCESS)
-        goto tree_build_exit;
+    if (!st->usesConsistentMemory)
+    {
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->cellSanitize, 1,
+                                     NULL, &ws->global[6], &ws->local[6],
+                                     0, NULL, &sanitizeEv);
+        if (err != CL_SUCCESS)
+            goto tree_build_exit;
+    }
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
@@ -1044,56 +1047,103 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     if (err != CL_SUCCESS)
         goto tree_build_exit;
 
-    /* Repeat the tree construction kernel until all bodies have been successfully inserted */
-    do
+    if (st->usesConsistentMemory)
     {
+        size_t chunk;
+        size_t offset[1];
         cl_event ev;
-        cl_event readEv;
 
-        /*
-          TODO: We can save somewhat on launch overhead and extra
-          reads by enqueuing a number of iterations based on a running
-          average of how many it has taken
-         */
+        size_t nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) st->effNBody, ws->global[1]);
+        cl_uint upperBound = st->ignoreResponsive ? st->effNBody : (cl_int) ws->global[1];
 
-        err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTree, 1,
-                                     NULL, &ws->global[1], &ws->local[1],
-                                     0, NULL, &ev);
-        if (err != CL_SUCCESS)
-            goto tree_build_exit;
-
-        err = clFlush(ci->queue);
-        if (err != CL_SUCCESS)
+        for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += ws->global[1])
         {
-            clReleaseEvent(ev);
-            goto tree_build_exit;
-        }
+            if (upperBound > (cl_uint) st->effNBody)
+                upperBound = st->effNBody;
 
+            err = clSetKernelArg(kernels->buildTree, 28, sizeof(cl_int), &upperBound);
+            if (err != CL_SUCCESS)
+                goto tree_build_exit;
 
-        err = clEnqueueReadBuffer(ci->queue,
-                                  nbb->treeStatus,
-                                  CL_TRUE,
-                                  0, sizeof(treeStatus), &treeStatus,
-                                  0, NULL, &readEv);
-        if (err != CL_SUCCESS)
-        {
-            clReleaseEvent(ev);
-            goto tree_build_exit;
-        }
+            err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTree, 1,
+                                         offset, &ws->global[1], &ws->local[1],
+                                         0, NULL, &ev);
+            if (err != CL_SUCCESS)
+                goto tree_build_exit;
 
-        ++iterations;
-
-        ws->timings[1] += mwReleaseEventWithTimingMS(ev);
-        ws->timings[1] += mwReleaseEventWithTimingMS(readEv);
-
-        if (treeStatus.maxDepth > st->maxDepth)
-        {
-            mw_printf("Overflow during tree construction\n");
-            err = MW_CL_ERROR;
-            goto tree_build_exit;
+            upperBound += (cl_int) ws->global[1];
+            ws->timings[1] += waitReleaseEventWithTime(ev);
         }
     }
-    while (treeStatus.doneCnt != st->effNBody);
+    else
+    {
+        cl_uint lastCounts[3] = { 0, 0, 0 };
+        cl_uint lasti = 0;
+
+        /* Repeat the tree construction kernel until all bodies have been successfully inserted */
+        do
+        {
+            cl_event ev;
+            cl_event readEv;
+
+            /*
+              TODO: We can save somewhat on launch overhead and extra
+              reads by enqueuing a number of iterations based on a running
+              average of how many it has taken
+            */
+
+            err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTree, 1,
+                                         NULL, &ws->global[1], &ws->local[1],
+                                         0, NULL, &ev);
+            if (err != CL_SUCCESS)
+                goto tree_build_exit;
+
+            err = clFlush(ci->queue);
+            if (err != CL_SUCCESS)
+            {
+                clReleaseEvent(ev);
+                goto tree_build_exit;
+            }
+
+            err = clEnqueueReadBuffer(ci->queue,
+                                      nbb->treeStatus,
+                                      CL_TRUE,
+                                      0, sizeof(treeStatus), &treeStatus,
+                                      0, NULL, &readEv);
+            if (err != CL_SUCCESS)
+            {
+                clReleaseEvent(ev);
+                goto tree_build_exit;
+            }
+
+            ws->timings[1] += mwReleaseEventWithTimingMS(ev);
+            ws->timings[1] += mwReleaseEventWithTimingMS(readEv);
+
+            if (treeStatus.maxDepth > st->maxDepth)
+            {
+                mw_printf("Overflow during tree construction (%u > %u)\n",
+                          treeStatus.maxDepth, st->maxDepth
+                    );
+                stdDebugPrint(st, CL_FALSE, CL_TRUE, CL_FALSE);
+                err = MW_CL_ERROR;
+                goto tree_build_exit;
+            }
+
+            lastCounts[(lasti++) % 3] = treeStatus.doneCnt;
+            if ((lastCounts[0] == lastCounts[1]) && (lastCounts[1] == lastCounts[2]))
+            {
+                mw_printf("Tree construction iterations not progressing: stuck at %u / %u\n",
+                          treeStatus.doneCnt,
+                          st->effNBody
+                    );
+                err = MW_CL_ERROR;
+                goto tree_build_exit;
+            }
+
+            ++iterations;
+        }
+        while (treeStatus.doneCnt != st->effNBody);
+    }
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
                                  NULL, &ws->global[2], &ws->local[2],

@@ -41,6 +41,7 @@ void mwPrintDevInfo(const DevInfo* di);
 void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms);
 
 cl_bool mwPlatformSupportsAMDOfflineDevices(const CLInfo* ci);
+cl_bool mwDeviceHasConsistentMemory(const DevInfo* di);
 
 MWDoubleExts mwGetDoubleExts(const char* extensions);
 cl_bool mwSupportsDoubles(const DevInfo* di);

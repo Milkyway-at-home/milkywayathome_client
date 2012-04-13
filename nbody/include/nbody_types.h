@@ -216,11 +216,12 @@ typedef struct
     } quad;
 
     cl_mem treeStatus;
+    cl_mem treeStatus2;
 } NBodyBuffers;
 
 
-/* 6 used by tree + 1 with quad, 2 used by exact. 1 shared. */
-#define NKERNELS 8
+/* 7 used by tree + 1 with quad, 2 used by exact. 1 shared. */
+#define NKERNELS 9
 
 
 typedef struct
@@ -232,6 +233,7 @@ typedef struct
     cl_kernel quadMoments;
     cl_kernel forceCalculation;
     cl_kernel integration;
+    cl_kernel cellSanitize;
 
     /* Used by exact one only */
     cl_kernel forceCalculation_Exact;
@@ -277,9 +279,12 @@ typedef struct MW_ALIGN_TYPE
     int treeIncest;          /* Tree incest has occured */
     int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
+    unsigned int maxDepth;   /* Maximum depth before overflow. Used for CL version */
+
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
+    mwbool usesConsistentMemory;
     mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
     mwbool usesCL;
     mwbool reportProgress;
@@ -298,7 +303,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct

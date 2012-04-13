@@ -488,6 +488,22 @@ __kernel void NBODY_KERNEL(cellSanitize)
     }
 }
 
+#if HAVE_INLINE_PTX
+inline void strong_global_mem_fence_ptx()
+{
+    asm("{\n\t"
+        "membar.gl;\n\t"
+        "}\n\t"
+        );
+}
+#endif
+
+#if HAVE_INLINE_PTX
+  #define maybe_strong_global_mem_fence() strong_global_mem_fence_ptx()
+#else
+  #define maybe_strong_global_mem_fence() mem_fence(CLK_GLOBAL_MEM_FENCE)
+#endif /* HAVE_INLINE_PTX */
+
 
 __attribute__ ((reqd_work_group_size(THREADS2, 1, 1)))
 __kernel void NBODY_KERNEL(buildTree)
@@ -518,9 +534,24 @@ __kernel void NBODY_KERNEL(buildTree)
     if (doneCount == NBODY)
         return;
 
-    while (i < NBODY)
+    const uint maxN = HAVE_CONSISTENT_MEMORY ? maxNBody : NBODY;
+
+    /* If we know we have consistent global memory across workgroups,
+     * we will continue this loop until we completely construct the
+     * tree in a single kernel call, limited by the upper bound
+     * on the number of particles for responsiveness.
+     *
+     * If we don't have consistent memory, we will try once per
+     * particle to load it, and if it fails we abandon it. We repeat
+     * the kernel until everything is completed. We also need to do
+     * additional checking to make sure that all values we depend on
+     * are fully visible to the workitem before using them.
+     *
+     */
+
+    while (i < maxN)
     {
-        if (i < NBODY)
+        if (i < maxN)
         {
             real r;
             real px, py, pz;
@@ -561,7 +592,6 @@ __kernel void NBODY_KERNEL(buildTree)
                 real pny = _posY[n];
                 real pnz = _posZ[n];
 
-
                 /* Test if we don't have a consistent view. We
                    initialized these all to NAN so we can be sure we
                    have a good view once actually written.
@@ -581,8 +611,11 @@ __kernel void NBODY_KERNEL(buildTree)
                 ch = _child[NSUB * n + j];
             }
 
-            /* Skip if child pointer is locked, or the same particle, and try again later */
-            if (ch != LOCK && (ch != i) && !posNotReady)
+            /* Skip if child pointer is locked, or the same particle, and try again later.
+
+               If we have consistent memory we only need to check if ch != LOCK.
+             */
+            if ((ch != LOCK) && (ch != i) && !posNotReady)
             {
                 int locked = NSUB * n + j;
 
@@ -644,10 +677,14 @@ __kernel void NBODY_KERNEL(buildTree)
                                 _child[NSUB * n + j] = cell;
                             }
 
+                            mem_fence(CLK_GLOBAL_MEM_FENCE);
+
                             real pchx = _posX[ch];
                             real pchy = _posY[ch];
                             real pchz = _posZ[ch];
 
+
+                            cl_assert(_treeStatus, !isnan(pchx) && !isnan(pchy) && !isnan(pchz));
 
                             j = 0;
                             if (x <= pchx)
@@ -663,7 +700,7 @@ __kernel void NBODY_KERNEL(buildTree)
                              * from _child, which then reads the old/wrong
                              * value when the children are the same without this.
                              */
-                            mem_fence(CLK_GLOBAL_MEM_FENCE);
+                            maybe_strong_global_mem_fence();
 
                             n = cell;
                             j = 0;
@@ -682,17 +719,29 @@ __kernel void NBODY_KERNEL(buildTree)
                         while (ch >= 0 && depth <= MAXDEPTH);
 
                         _child[NSUB * n + j] = i;
-                        mem_fence(CLK_GLOBAL_MEM_FENCE);
+                        maybe_strong_global_mem_fence();
                         _child[locked] = patch;
                     }
+                    maybe_strong_global_mem_fence();
 
                     localMaxDepth = max(depth, localMaxDepth);
-                    atom_inc(&successCount);
+                    if (HAVE_CONSISTENT_MEMORY)
+                    {
+                        i += inc;  /* Move on to next body */
+                        newParticle = true;
+                    }
+                    else
+                    {
+                        atom_inc(&successCount);
+                    }
                 }
             }
 
-            i += inc;  /* Move on to next body */
-            newParticle = true;
+            if (!HAVE_CONSISTENT_MEMORY)
+            {
+                i += inc;  /* Move on to next body */
+                newParticle = true;
+            }
         }
 
         /* Wait for other wavefronts to finish loading to reduce

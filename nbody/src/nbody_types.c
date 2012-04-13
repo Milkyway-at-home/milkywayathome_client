@@ -201,6 +201,7 @@ NBodyState* newNBodyState()
 NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
 {
     cl_int err;
+    const DevInfo* devInfo;
 
     /* Bodies must be set before trying to use this */
     if (!st->bodytab)
@@ -228,13 +229,19 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    if (!nbCheckDevCapabilities(&st->ci->di, ctx, st->nbody))
+    devInfo = &st->ci->di;
+
+    if (!nbCheckDevCapabilities(devInfo, ctx, st->nbody))
         return NBODY_CAPABILITY_ERROR;
 
-    if (nbSetThreadCounts(st->workSizes, &st->ci->di, ctx) || nbSetWorkSizes(st->workSizes, &st->ci->di))
+    if (nbSetThreadCounts(st->workSizes, devInfo, ctx) || nbSetWorkSizes(st->workSizes, devInfo))
         return NBODY_ERROR;
 
     st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);
+    st->maxDepth = nbFindMaxDepthForDevice(devInfo, st->workSizes, ctx->useQuad);
+
+    st->usesConsistentMemory =  (mwIsNvidiaGPUDevice(devInfo) && mwNvidiaInlinePTXAvailable(st->ci->plat))
+                              || mwDeviceHasConsistentMemory(devInfo);
 
     if (nbLoadKernels(ctx, st))
         return NBODY_CL_ERROR;

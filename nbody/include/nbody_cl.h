@@ -33,6 +33,7 @@ extern "C" {
 cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di);
 cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx* ctx);
 cl_int nbFindEffectiveNBody(const NBodyWorkSizes* ws, cl_bool exact, cl_int nbody);
+cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad);
 
 cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st);
 cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint nbody);

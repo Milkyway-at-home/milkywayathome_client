@@ -44,6 +44,9 @@ cl_ulong mwEventTimeNS(cl_event ev)
     cl_int err;
     cl_ulong ts, te;
 
+    if (!ev)
+        return 0;
+
     err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &ts, NULL);
     if (err != CL_SUCCESS)
     {

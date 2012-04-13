@@ -131,13 +131,13 @@ typedef struct
 
 typedef struct
 {
-    cl_platform_id plat;
-    cl_device_id dev;
-    cl_device_type devType;
-    cl_uint devCount;
     cl_context clctx;
     cl_command_queue queue;
     cl_command_queue queueSecondary;
+
+    cl_device_id dev;
+    cl_device_type devType;
+    cl_platform_id plat;
 
     cl_int pollingMode;  /* Hint for how to poll for completion of event */
 

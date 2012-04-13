@@ -336,6 +336,23 @@ static cl_bool mwDeviceHasGraphicsQOS(const DevInfo* di)
     return CL_FALSE;
 }
 
+cl_bool mwDeviceHasConsistentMemory(const DevInfo* di)
+{
+    /* No on Tahiti. Pretty sure yes on earlier AMD, if only because
+       the caches are read only and not used by default except for
+       images.
+
+       I think on Fermi the cache is fully coherent.
+
+       This only applies to whether we are certain the device has the
+       feature without doing anything.
+
+       e.g. On Nvidia we may be less sure, but we can be 100% sure if
+       we have inline PTX support from the compiler also.
+     */
+    return CL_FALSE;
+}
+
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 {
     const AMDGPUData* amdData;
