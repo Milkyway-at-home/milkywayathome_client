@@ -478,6 +478,12 @@ __kernel void NBODY_KERNEL(cellSanitize)
         _posY[k] = NAN;
         _posZ[k] = NAN;
 
+        #pragma unroll NSUB
+        for (uint j = 0; j < NSUB; ++j)
+        {
+            _child[NSUB * k + j] = -1;
+        }
+
         k += inc;
     }
 }
