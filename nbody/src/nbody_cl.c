@@ -468,88 +468,88 @@ static cl_uint nbFindNNode(const DevInfo* di, cl_int nbody)
     return nNode - 1;
 }
 
+#ifndef NDEBUG
+  #define NBODY_DEBUG_KERNEL 1
+#else
+  #define NBODY_DEBUG_KERNEL 0
+#endif
+
 static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
 {
     char* buf;
     const NBodyWorkSizes* ws = st->workSizes;
     const Potential* p = &ctx->pot;
 
-    /* Put a space between the -D. if the thing begins with D, there's
-     * an Apple OpenCL compiler bug where the D will be
-     * stripped. -DDOUBLEPREC=1 will actually define OUBLEPREC */
     if (asprintf(&buf,
-                 "-D DOUBLEPREC=%d "
+                 "-DDEBUG=%d "
+
+                 "-DDOUBLEPREC=%d "
                #if !DOUBLEPREC
                  "-cl-single-precision-constant "
                #endif
-
                  "-cl-mad-enable "
 
-               #ifndef NDEBUG
-                 "-D DEBUG=1 "
-               #else
-                 "-D DEBUG=0 "
-               #endif
+                 "-DNBODY=%d "
+                 "-DEFFNBODY=%d "
+                 "-DNNODE=%u "
+                 "-DWARPSIZE=%u "
 
-                 "-D NBODY=%d "
-                 "-D EFFNBODY=%d "
-                 "-D NNODE=%u "
-                 "-D WARPSIZE=%u "
+                 "-DNOSORT=%d "
 
-                 "-D NOSORT=%d "
+                 "-DTHREADS1="ZU" "
+                 "-DTHREADS2="ZU" "
+                 "-DTHREADS3="ZU" "
+                 "-DTHREADS4="ZU" "
+                 "-DTHREADS5="ZU" "
+                 "-DTHREADS6="ZU" "
+                 "-DTHREADS7="ZU" "
+                 "-DTHREADS8="ZU" "
 
-                 "-D THREADS1="ZU" "
-                 "-D THREADS2="ZU" "
-                 "-D THREADS3="ZU" "
-                 "-D THREADS4="ZU" "
-                 "-D THREADS5="ZU" "
-                 "-D THREADS6="ZU" "
-                 "-D THREADS7="ZU" "
-                 "-D THREADS8="ZU" "
+                 "-DMAXDEPTH=%u "
 
-                 "-D MAXDEPTH=%u "
+                 "-DTIMESTEP=%a "
+                 "-DEPS2=%a "
+                 "-DTHETA=%a "
+                 "-DUSE_QUAD=%d "
 
-                 "-D TIMESTEP=%a "
-                 "-D EPS2=%a "
-                 "-D THETA=%a "
-                 "-D USE_QUAD=%d "
-
-                 "-D NEWCRITERION=%d "
-                 "-D SW93=%d "
-                 "-D BH86=%d "
-                 "-D EXACT=%d "
+                 "-DNEWCRITERION=%d "
+                 "-DSW93=%d "
+                 "-DBH86=%d "
+                 "-DEXACT=%d "
 
                  /* Potential */
-                 "-D USE_EXTERNAL_POTENTIAL=%d "
-                 "-D MIYAMOTO_NAGAI_DISK=%d "
-                 "-D EXPONENTIAL_DISK=%d "
-                 "-D LOG_HALO=%d "
-                 "-D NFW_HALO=%d "
-                 "-D TRIAXIAL_HALO=%d "
+                 "-DUSE_EXTERNAL_POTENTIAL=%d "
+                 "-DMIYAMOTO_NAGAI_DISK=%d "
+                 "-DEXPONENTIAL_DISK=%d "
+                 "-DLOG_HALO=%d "
+                 "-DNFW_HALO=%d "
+                 "-DTRIAXIAL_HALO=%d "
 
                  /* Spherical constants */
-                 "-D SPHERICAL_MASS=%a "
-                 "-D SPHERICAL_SCALE=%a "
+                 "-DSPHERICAL_MASS=%a "
+                 "-DSPHERICAL_SCALE=%a "
 
                  /* Disk constants */
-                 "-D DISK_MASS=%a "
-                 "-D DISK_SCALE_LENGTH=%a "
-                 "-D DISK_SCALE_HEIGHT=%a "
+                 "-DDISK_MASS=%a "
+                 "-DDISK_SCALE_LENGTH=%a "
+                 "-DDISK_SCALE_HEIGHT=%a "
 
                  /* Halo constants */
-                 "-D HALO_VHALO=%a "
-                 "-D HALO_SCALE_LENGTH=%a "
-                 "-D HALO_FLATTEN_Z=%a "
-                 "-D HALO_FLATTEN_Y=%a "
-                 "-D HALO_FLATTEN_X=%a "
-                 "-D HALO_TRIAX_ANGLE=%a "
-                 "-D HALO_C1=%a "
-                 "-D HALO_C2=%a "
-                 "-D HALO_C3=%a "
+                 "-DHALO_VHALO=%a "
+                 "-DHALO_SCALE_LENGTH=%a "
+                 "-DHALO_FLATTEN_Z=%a "
+                 "-DHALO_FLATTEN_Y=%a "
+                 "-DHALO_FLATTEN_X=%a "
+                 "-DHALO_TRIAX_ANGLE=%a "
+                 "-DHALO_C1=%a "
+                 "-DHALO_C2=%a "
+                 "-DHALO_C3=%a "
 
                  "%s "
                  "%s "
-                 "-D HAVE_INLINE_PTX=%d ",
+                 "-DHAVE_INLINE_PTX=%d "
+                 "-DHAVE_CONSISTENT_MEMORY=%d ",
+                 NBODY_DEBUG_KERNEL,
                  DOUBLEPREC,
 
                  st->nbody,
@@ -615,7 +615,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  /* Misc. other stuff */
                  mwHasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",
                  nbMaybeNvMaxRegCount(di, ctx),
-                 mwNvidiaInlinePTXAvailable(st->ci->plat)
+                 mwNvidiaInlinePTXAvailable(st->ci->plat),
+                 st->usesConsistentMemory
             ) < 1)
     {
         mw_printf("Error getting compile flags\n");

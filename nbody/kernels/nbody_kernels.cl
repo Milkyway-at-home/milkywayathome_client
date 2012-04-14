@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2010 The University of Texas at Austin
  * Copyright (c) 2010 Dr. Martin Burtscher
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2011-2012 Matthew Arsenault
  * Copyright (c) 2011 Rensselaer Polytechnic Institute
  *
  * This file is part of Milkway@Home.
@@ -19,6 +19,32 @@
  * You should have received a copy of the GNU General Public License
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* In case there isn't a space a space between the -D and the
+ * symbol. if the thing begins with D there's an Apple OpenCL compiler
+ * bug on 10.6 where the D will be stripped. -DDOUBLEPREC=1 will
+ * actually define OUBLEPREC */
+
+#ifdef OUBLEPREC
+  #define DOUBLEPREC OUBLEPREC
+#endif
+
+#ifdef EBUG
+  #define DEBUG EBUG
+#endif
+
+#ifdef ISK_MASS
+  #define DISK_MASS ISK_MASS
+#endif
+
+#ifdef ISK_SCALE_LENGTH
+  #define DISK_SCALE_LENGTH ISK_SCALE_LENGTH
+#endif
+
+#ifdef ISK_SCALE_HEIGHT
+  #define DISK_SCALE_HEIGHT ISK_SCALE_HEIGHT
+#endif
+
 
 #ifndef DOUBLEPREC
   #error Precision not defined
