@@ -30,15 +30,15 @@
 /* From the range of a histogram, find the number of bins */
 static unsigned int nbHistogramNBin(const HistogramParams* hp)
 {
-    double rawCount = (hp->endRaw - hp->startRaw) / hp->binSize;
-    return (unsigned int) ceil(rawCount);   /* Total number of bins */
+    real rawCount = (hp->endRaw - hp->startRaw) / hp->binSize;
+    return (unsigned int) mw_ceil(rawCount);   /* Total number of bins */
 }
 
 /* Find the corrected starting point for the histogram */
 static double nbHistogramStart(const HistogramParams* hp)
 {
     unsigned int nBin = nbHistogramNBin(hp);
-    return mw_ceil(hp->center - hp->binSize * (double) nBin / 2.0);
+    return (double) mw_ceil(hp->center - hp->binSize * (real) nBin / 2.0);
 }
 
 static inline double nbNormalizedHistogramError(unsigned int n, double total)
@@ -497,15 +497,15 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
 
     unsigned int nBin = histogram->nBin;
     const HistogramParams* hp = &histogram->params;
+    double binSize = (double) hp->binSize;
     double totalNum = (double) histogram->totalNum;
     HistData* histData = histogram->data;
     double start = nbHistogramStart(&histogram->params);
 
-
     for (i = 0; i < nBin; ++i)
     {
         count = (double) histData[i].rawCount;
-        histData[i].lambda = ((double) i  + 0.5) * hp->binSize + start;  /* Report center of the bins */
+        histData[i].lambda = ((double) i + 0.5) * binSize + start;  /* Report center of the bins */
         histData[i].count = count / totalNum;
         histData[i].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
     }
@@ -565,6 +565,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
+    double binSize = (double) hp->binSize;
 
     /* Calculate the bounds of the bin range, making sure to use a
      * fixed bin size which spans the entire range, and is symmetric
@@ -595,7 +596,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         if (!ignoreBody(p))
         {
             lambda = nbXYZToLambda(&histTrig, Pos(p), ctx->sunGCDist);
-            idx = (unsigned int) mw_floor((lambda - start) / hp->binSize);
+            idx = (unsigned int) floor((lambda - start) / binSize);
             if (idx < nBin)
             {
                 histData[idx].rawCount++;

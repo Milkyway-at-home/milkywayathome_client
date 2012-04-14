@@ -308,13 +308,13 @@ typedef struct MW_ALIGN_TYPE
 
 typedef struct
 {
-    double phi;
-    double theta;
-    double psi;
-    double startRaw;
-    double endRaw;
-    double binSize;
-    double center;
+    real phi;
+    real theta;
+    real psi;
+    real startRaw;
+    real endRaw;
+    real binSize;
+    real center;
 } HistogramParams;
 
 #define EMPTY_HISTOGRAM_PARAMS { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
