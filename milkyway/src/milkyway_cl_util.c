@@ -347,6 +347,42 @@ cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_uint initialWait)
     }
 }
 
+cl_bool mwCALVersionMin(const DevInfo* di, int minMajor, int minMinor, int minPatchLevel)
+{
+    int major = 0, minor = 0, patchLevel = 0;
+
+    assert(mwIsAMDGPUDevice(di));
+
+    if (sscanf(di->driver, "CAL %d.%d.%d", &major, &minor, &patchLevel) != 3)
+    {
+        return CL_FALSE;
+    }
+
+    if (major > minMajor)
+    {
+        return CL_TRUE;
+    }
+    else if (major < minMajor)
+    {
+        return CL_FALSE;
+    }
+    else
+    {
+        if (minor > minMinor)
+        {
+            return CL_TRUE;
+        }
+        else if (minor < minMinor)
+        {
+            return CL_FALSE;
+        }
+        else
+        {
+            return (patchLevel >= minPatchLevel);
+        }
+    }
+}
+
 cl_bool mwDriverHasHighCPUWaitIssue(CLInfo* ci)
 {
     const DevInfo* di = &ci->di;

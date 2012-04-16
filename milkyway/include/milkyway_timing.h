@@ -39,6 +39,7 @@ typedef struct
 int mwGetHighResTime_RealTime(MWHighResTime* timer);
 MWHighResTime mwDiffMWHighResTime(const MWHighResTime* a, const MWHighResTime* b);
 void mwIncMWHighResTime(MWHighResTime* a, const MWHighResTime* b);
+void mwPrintHighResTimeDiff(const MWHighResTime* t2, const MWHighResTime* t1, const char* msg);
 
 
 double mwGetTime(void);

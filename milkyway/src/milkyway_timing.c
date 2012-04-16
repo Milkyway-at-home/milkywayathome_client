@@ -243,5 +243,17 @@ int mwResetTimerResolution(void)
   #error Missing timer?
 #endif
 
+void mwPrintHighResTimeDiff(const MWHighResTime* t2, const MWHighResTime* t1, const char* msg)
+{
+    MWHighResTime dt = mwDiffMWHighResTime(t2, t1);
+    uint64_t ms = dt.nSec / 1000000ULL;
+    uint64_t ns = dt.nSec - ms * 1000000ULL;
 
+    mw_printf("%s: sec = "LLU"  msec = "LLU"  nsec = "LLU"\n",
+              msg,
+              dt.sec,
+              ms,
+              ns
+        );
+}
 

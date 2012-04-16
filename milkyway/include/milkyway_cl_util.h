@@ -43,6 +43,7 @@
 extern "C" {
 #endif
 
+cl_bool mwCALVersionMin(const DevInfo* di, int minMajor, int minMinor, int minPatchLevel);
 cl_bool mwDriverHasHighCPUWaitIssue(CLInfo* ci);
 cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_uint initialWait);
 

@@ -36,7 +36,7 @@
 
 #ifdef _WIN32
   /* WTF? Why is the windows one missing the 2nd argument? */
-  #define mkdir(x, y) mkdir(x)
+  #define mkdir(x, y) _mkdir(x)
 #endif
 
 /* Lazy binding for creating directories. Should probably error and things */
