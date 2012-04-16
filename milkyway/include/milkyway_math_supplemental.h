@@ -148,6 +148,17 @@ inline real mw_fmin(real a, real b)
 
 #define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
+typedef struct MW_ALIGN_TYPE_V(16)
+{
+    real sum;
+    real correction;
+} Kahan;
+
+#define ZERO_KAHAN { 0.0, 0.0 }
+
+#define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
+
+
 #define KAHAN_ADD(k, item)                          \
     {                                               \
         real _y = (item) - (k).correction;          \

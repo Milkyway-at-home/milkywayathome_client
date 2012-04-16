@@ -243,17 +243,6 @@ typedef struct MW_ALIGN_TYPE_V(128)
     real exp_background_weight;
 } AstronomyParameters;
 
-typedef struct MW_ALIGN_TYPE_V(16)
-{
-    real sum;
-    real correction;
-} Kahan;
-
-#define ZERO_KAHAN { 0.0, 0.0 }
-
-#define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
-
-
 
 /* Completed integral state */
 typedef struct

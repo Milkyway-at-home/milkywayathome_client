@@ -25,20 +25,28 @@ mwvector nbCenterOfMass(const NBodyState* st)
 {
     int i;
     const Body* b;
+    int nbody = st->nbody;
     mwvector cm = ZERO_VECTOR;
     mwvector tmp;
-    real mass = 0.0;
+    Kahan mass;
+    Kahan pos[3];
 
-    for (i = 0; i < st->nbody; ++i)
+    for (i = 0; i < nbody; ++i)
     {
         b = &st->bodytab[i];
 
         tmp = mw_mulvs(Pos(b), Mass(b));
-        mass += Mass(b);
-        mw_incaddv(cm, tmp);
+
+        KAHAN_ADD(pos[0], tmp.x);
+        KAHAN_ADD(pos[1], tmp.y);
+        KAHAN_ADD(pos[2], tmp.z);
+        KAHAN_ADD(mass, Mass(b));
     }
 
-    mw_incdivs(cm, mass);
+    X(cm) = pos[0].sum / mass.sum;
+    Y(cm) = pos[1].sum / mass.sum;
+    Z(cm) = pos[2].sum / mass.sum;
+    W(cm) = mass.sum;
 
     return cm;
 }
