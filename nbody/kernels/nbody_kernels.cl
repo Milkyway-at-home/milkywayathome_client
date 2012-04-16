@@ -536,13 +536,15 @@ __kernel void NBODY_KERNEL(buildTree)
 {
     __local real radius, rootX, rootY, rootZ;
     __local volatile int successCount;
-    __local int doneCount;
+    __local volatile int doneCount; /* Count of items loaded in the tree */
+    __local volatile int deadCount; /* Count of items in workgroup finished */
 
+    const uint maxN = HAVE_CONSISTENT_MEMORY ? maxNBody : NBODY;
     int localMaxDepth = 1;
     bool newParticle = true;
 
     uint inc = get_local_size(0) * get_num_groups(0);
-    int i = get_global_id(0);
+    uint i = get_global_id(0);
 
     if (get_local_id(0) == 0)
     {
@@ -554,13 +556,21 @@ __kernel void NBODY_KERNEL(buildTree)
 
         doneCount = _treeStatus->doneCnt;
         successCount = 0;
+        deadCount = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
-    if (doneCount == NBODY)
-        return;
+    if (HAVE_CONSISTENT_MEMORY)
+    {
+        atom_add(&deadCount, i >= maxN);
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
 
-    const uint maxN = HAVE_CONSISTENT_MEMORY ? maxNBody : NBODY;
+    if (!HAVE_CONSISTENT_MEMORY)
+    {
+        if (doneCount == NBODY)
+            return;
+    }
 
     /* If we know we have consistent global memory across workgroups,
      * we will continue this loop until we completely construct the
@@ -575,9 +585,13 @@ __kernel void NBODY_KERNEL(buildTree)
      *
      */
 
-    while (i < maxN)
+  #if HAVE_CONSISTENT_MEMORY
+    while (deadCount != THREADS2) /* We need to avoid conditionally barriering when reducing mem. pressure */
+  #else
+    while (i < maxN)   /* We can just keep going until we are done with no barrier */
+  #endif
     {
-        if (i < maxN)
+        if (!HAVE_CONSISTENT_MEMORY || i < maxN)
         {
             real r;
             real px, py, pz;
@@ -703,7 +717,6 @@ __kernel void NBODY_KERNEL(buildTree)
                                 _child[NSUB * n + j] = cell;
                             }
 
-                            mem_fence(CLK_GLOBAL_MEM_FENCE);
 
                             real pchx = _posX[ch];
                             real pchy = _posY[ch];
@@ -755,10 +768,11 @@ __kernel void NBODY_KERNEL(buildTree)
                     {
                         i += inc;  /* Move on to next body */
                         newParticle = true;
+                        (void) atom_add(&deadCount, i >= maxN);
                     }
                     else
                     {
-                        atom_inc(&successCount);
+                        (void) atom_inc(&successCount);
                     }
                 }
             }
@@ -770,14 +784,21 @@ __kernel void NBODY_KERNEL(buildTree)
             }
         }
 
-        /* Wait for other wavefronts to finish loading to reduce
-         * memory pressures */
-        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+       if (HAVE_CONSISTENT_MEMORY)
+       {
+            /* Wait for other wavefronts to finish loading to reduce
+             * memory pressures */
+           barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+       }
     }
 
-    if (get_local_id(0) == 0)
+    if (!HAVE_CONSISTENT_MEMORY)
     {
-        (void) atomic_add(&_treeStatus->doneCnt, successCount);
+        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+        if (get_local_id(0) == 0)
+        {
+            (void) atomic_add(&_treeStatus->doneCnt, successCount);
+        }
     }
 
     (void) atom_max(&_treeStatus->maxDepth, localMaxDepth);
