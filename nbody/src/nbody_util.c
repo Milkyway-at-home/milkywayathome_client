@@ -31,6 +31,9 @@ mwvector nbCenterOfMass(const NBodyState* st)
     Kahan mass;
     Kahan pos[3];
 
+    CLEAR_KAHAN(mass);
+    memset(pos, 0, sizeof(pos));
+
     for (i = 0; i < nbody; ++i)
     {
         b = &st->bodytab[i];
