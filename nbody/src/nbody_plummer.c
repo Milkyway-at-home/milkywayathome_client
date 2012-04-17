@@ -135,10 +135,19 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
 
     for (i = 0; i < nbody; ++i)
     {
-        r = plummerRandomR(prng);
+        do
+        {
+            r = plummerRandomR(prng);
+            /* FIXME: We should avoid the divide by 0.0 by multiplying
+             * the original random number by 0.9999.. but I'm too lazy
+             * to change the tests. Same with other models */
+        }
+        while (isinf(r));
 
         b.bodynode.pos = plummerBodyPosition(prng, rShift, radiusScale, r);
         b.vel = plummerBodyVelocity(prng, vShift, velScale, r);
+
+        assert(nbPositionValid(b.bodynode.pos));
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);

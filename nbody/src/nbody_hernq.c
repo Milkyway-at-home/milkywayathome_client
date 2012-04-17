@@ -168,13 +168,18 @@ static int nbGenerateHernqCore(lua_State* luaSt,
     {
         real endradius = hernqNextRadius(radius, totalMass + massEpsilon, radius, a, mass);
 
-        r = hernqRandomR(prng, radius, endradius);
+        do
+        {
+            r = hernqRandomR(prng, radius, endradius);
+        }
+        while (isinf(r));
 
         radius = endradius;
         totalMass += massEpsilon;
 
         b.bodynode.pos = hernqBodyPosition(prng, rShift, 1, r);
         b.vel = hernqBodyVelocity(prng, vShift, r, radius_scale, a, mass);
+        assert(nbPositionValid(b.bodynode.pos));
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);

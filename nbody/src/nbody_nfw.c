@@ -171,13 +171,18 @@ static int nbGenerateNFWCore(lua_State* luaSt,
     {
         real endradius = nfwNextRadius(radius, totalMass + massEpsilon, rho_0, R_S);
 
-        r = nfwRandomR(prng, radius, endradius);
+        do
+        {
+            r = nfwRandomR(prng, radius, endradius);
+        }
+        while (isinf(r));
 
         radius = endradius;
         totalMass += massEpsilon;
 
         b.bodynode.pos = nfwBodyPosition(prng, rShift, 1, r);
         b.vel = nfwBodyVelocity(prng, vShift, r, rho_0, R_S);
+        assert(nbPositionValid(b.bodynode.pos));
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);

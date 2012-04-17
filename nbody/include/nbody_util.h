@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+#define _nbValidPositionItem(x) (!isinf(x) && !isnan(x))
+#define nbPositionValid(r) (_nbValidPositionItem(r.x) && _nbValidPositionItem(r.y) && _nbValidPositionItem(r.z))
+
 mwvector nbCenterOfMass(const NBodyState* st);
 
 double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);

@@ -68,6 +68,8 @@ typedef char mwbool;
   #if _MSC_VER > 1600
     #define write _write
   #endif
+
+  #define isinf(x) (!_finite(x) && !_isnan(x))
 #endif /* _MSC_VER */
 
 /* Horrible workaround for lack of C99 in MSVCRT and it being

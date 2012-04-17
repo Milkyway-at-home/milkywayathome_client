@@ -572,6 +572,8 @@ __kernel void NBODY_KERNEL(buildTree)
             return;
     }
 
+    cl_assert_rtn(_treeStatus, !isnan(radius) && !isinf(radius));
+
     /* If we know we have consistent global memory across workgroups,
      * we will continue this loop until we completely construct the
      * tree in a single kernel call, limited by the upper bound
@@ -797,7 +799,7 @@ __kernel void NBODY_KERNEL(buildTree)
         barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
         if (get_local_id(0) == 0)
         {
-            (void) atomic_add(&_treeStatus->doneCnt, successCount);
+            (void) atom_add(&_treeStatus->doneCnt, successCount);
         }
     }
 
