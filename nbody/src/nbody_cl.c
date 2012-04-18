@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Matthew Arsenault
+ * Copyright (c) 2011-2012 Matthew Arsenault
  * Copyright (c) 2011 Rensselaer Polytechnic Institute
  *
  * This file is part of Milkway@Home.
@@ -26,6 +26,7 @@
 #include "nbody_curses.h"
 #include "nbody_shmem.h"
 
+#define NB_MAX_MAX_DEPTH 512
 
 extern const unsigned char nbody_kernels_cl[];
 extern const size_t nbody_kernels_cl_len;
@@ -109,7 +110,7 @@ cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_
     /* TODO: We should be able to reduce this; this is usually quite a
      * bit deeper than we can go before hitting precision limits */
 
-    return (cl_uint) d;
+    return (cl_uint) mwMin(d, NB_MAX_MAX_DEPTH);
 }
 
 
@@ -150,12 +151,12 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
 
     if (di->calTarget >= MW_CAL_TARGET_TAHITI)
     {
-        //ws->global[1] = 3 * ws->threads[1] * blocks;
         ws->global[1] = 2 * ws->threads[1] * blocks;
-        ws->global[2] = ws->threads[2];
+        ws->global[2] = 2 * ws->threads[2] * blocks;
         ws->global[3] = ws->threads[3];
         ws->global[4] = ws->threads[4];
-        ws->global[5] = 3 * ws->threads[5] * blocks;
+        //ws->global[5] = 2 * ws->threads[5] * blocks;
+        ws->global[5] = 4 * ws->threads[5] * blocks;
     }
 
 
@@ -941,7 +942,7 @@ static cl_double waitReleaseEventWithTime(cl_event ev)
     return t;
 }
 
-static cl_int nbReadCenterOfMass(NBodyState* st, mwvector* cmPos)
+static cl_int nbEnqueueReadCenterOfMass(NBodyState* st, mwvector* cmPos)
 {
     cl_int err = CL_SUCCESS;
     cl_mem* positions = st->nbb->pos;
@@ -951,6 +952,13 @@ static cl_int nbReadCenterOfMass(NBodyState* st, mwvector* cmPos)
     err |= clEnqueueReadBuffer(queue, positions[0], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->x, 0, NULL, NULL);
     err |= clEnqueueReadBuffer(queue, positions[1], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->y, 0, NULL, NULL);
     err |= clEnqueueReadBuffer(queue, positions[2], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->z, 0, NULL, NULL);
+    err |= clEnqueueReadBuffer(queue, st->nbb->masses, CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->w, 0, NULL, NULL);
+
+    /* The mass of the root cell should be the total mass of the
+     * system. You can get an idea of the error in the center of mass
+     * positions by looking at how far this mass has drifted from the
+     * real total mass. */
+
     err |= clFlush(queue);
 
     return err;
@@ -967,7 +975,7 @@ int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
     if (hadMarshalError)
         return 1;
 
-    err = nbReadCenterOfMass(st, cmPosOut);
+    err = nbEnqueueReadCenterOfMass(st, cmPosOut);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to read center of mass\n");
@@ -1027,17 +1035,18 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     TreeStatus treeStatus;
-
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-    cl_uint iterations = 0;
+
+    cl_uint buildIterations = 0;
     cl_event sanitizeEv = NULL;
     cl_event boxEv = NULL;
-    cl_event sumEv = NULL;
     cl_event sortEv = NULL;
     cl_event quadEv = NULL;
+    cl_event sumEvs[NB_MAX_MAX_DEPTH];
+
 
     if (!st->usesConsistentMemory)
     {
@@ -1053,6 +1062,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                                  0, NULL, &boxEv);
     if (err != CL_SUCCESS)
         goto tree_build_exit;
+
 
     if (st->usesConsistentMemory)
     {
@@ -1131,7 +1141,6 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                 mw_printf("Overflow during tree construction (%u > %u)\n",
                           treeStatus.maxDepth, st->maxDepth
                     );
-                stdDebugPrint(st, CL_FALSE, CL_TRUE, CL_FALSE);
                 err = MW_CL_ERROR;
                 goto tree_build_exit;
             }
@@ -1147,16 +1156,33 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                 goto tree_build_exit;
             }
 
-            ++iterations;
+            ++buildIterations;
         }
         while (treeStatus.doneCnt != st->effNBody);
     }
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
-                                 NULL, &ws->global[2], &ws->local[2],
-                                 0, NULL, &sumEv);
-    if (err != CL_SUCCESS)
-        goto tree_build_exit;
+    if (st->usesConsistentMemory)
+    {
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
+                                     NULL, &ws->global[2], &ws->local[2],
+                                     0, NULL, &sumEvs[0]);
+        if (err != CL_SUCCESS)
+            goto tree_build_exit;
+    }
+    else
+    {
+        cl_uint depth;
+
+        for (depth = 0; depth < treeStatus.maxDepth; ++depth)
+        {
+            err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
+                                         NULL, &ws->global[2], &ws->local[2],
+                                         0, NULL, &sumEvs[depth]);
+            err |= clFlush(ci->queue);
+            if (err != CL_SUCCESS)
+                goto tree_build_exit;
+        }
+    }
 
     err = clEnqueueNDRangeKernel(ci->queue, kernels->sort, 1,
                                  NULL, &ws->global[3], &ws->local[3],
@@ -1184,13 +1210,22 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
 tree_build_exit:
     ws->timings[0] += mwReleaseEventWithTiming(boxEv);
-    ws->chunkTimings[1] = ws->timings[1] / (double) iterations;
+    ws->chunkTimings[1] = ws->timings[1] / (double) buildIterations;
 
     /* Pretend the sanitize kernel doesn't exist, include it's time as
      * part of buildTree since it exists to support it anyway */
     ws->timings[1] += mwReleaseEventWithTimingMS(sanitizeEv);
 
-    ws->timings[2] += mwReleaseEventWithTimingMS(sumEv);
+    {
+        cl_int depth;
+        cl_int maxDepth = st->usesConsistentMemory ? 1 : treeStatus.maxDepth;
+
+        for (depth = 0; depth < maxDepth; ++depth)
+        {
+            ws->timings[2] += mwReleaseEventWithTimingMS(sumEvs[depth]);
+        }
+    }
+
     ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
     if (st->usesQuad)
     {
@@ -1744,6 +1779,82 @@ void nbPrintKernelLimits(NBodyState* st)
     mwPrintWorkGroupInfo(&wgi);
 }
 
+/*
+  Run the tree building stages and then compare the resulting center
+  of masses and quadrupole moments calculated from the normal CPU
+  method and the summarization/quad moment kernels
+ */
+static cl_int nbPrintSummarizationDifferences(NBodyState* st)
+{
+    cl_int err;
+    mwvector cm, cmRef;
+    mwvector dcm;
+    mwvector dcmRel;
+
+  #if DOUBLEPREC
+    const real threshold = 1.0e-9;
+  #else
+    const real threshold = 1.0e-7;
+  #endif
+
+    err = nbEnqueueReadCenterOfMass(st, &cm);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = nbMarshalBodies(st, CL_FALSE);
+    if (err != CL_SUCCESS)
+        return err;
+
+
+    cmRef = nbCenterOfMass(st);
+
+    dcm = mw_subv(cm, cmRef);
+    dcmRel = mw_mulvs(dcm, 100.0);
+    mw_incdivv(dcmRel, cmRef);
+
+    mw_printf("\nReference center of mass: %21.15f, %21.15f, %21.15f, %21.15f\n",
+              cmRef.x, cmRef.y, cmRef.z, cmRef.w);
+
+    mw_printf("Center of mass:           %21.15f, %21.15f, %21.15f, %21.15f\n",
+              cm.x, cm.y, cm.z, cm.w);
+
+    mw_printf("Difference:               %21.15f, %21.15f, %21.15f, %21.15f\n",
+              dcm.x, dcm.y, dcm.z, dcm.w);
+
+    mw_printf("Relative difference %%:    %21.15f, %21.15f, %21.15f, %21.15f\n\n",
+              dcmRel.x, dcmRel.y, dcmRel.z, dcmRel.w);
+
+    if (dcm.x >= threshold || dcm.y >= threshold || dcm.z >= threshold || dcm.w >= threshold)
+    {
+        mw_printf("WARNING: Summarization ");
+        return MW_CL_ERROR;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_int nbDebugSummarization(NBodyState* st)
+{
+    cl_uint i;
+    const cl_uint nSamples = 10;
+
+    for (i = 0; i < nSamples; ++i)
+    {
+        cl_int err;
+
+        err = nbExecuteTreeConstruction(st);
+        if (err != CL_SUCCESS)
+            return err;
+
+        /* TODO: quadrupole moments */
+
+        err = nbPrintSummarizationDifferences(st);
+        if (err != CL_SUCCESS)
+            return err;
+    }
+
+    return CL_SUCCESS;
+}
 
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {

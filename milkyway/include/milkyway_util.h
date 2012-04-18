@@ -232,6 +232,9 @@ mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 /* Find next multiple of b that is >= n */
 #define mwNextMultiple(b, n) (((n) % (b)) ? ((n) + ((b) - (n) % (b))) : (n))
 
+#define mwMin(a, b) ((a) < (b) ? (a) : (b));
+#define mwMax(a, b) ((a) < (b) ? (b) : (a));
+
 
 int mwCheckNormalPosNum(real n);
 int mwCheckNormalPosNumEps(real n);

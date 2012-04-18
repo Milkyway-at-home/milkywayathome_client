@@ -819,6 +819,98 @@ inline bool checkTreeDim(real cmPos, real pPos, real halfPsize)
     return (cmPos < pPos - halfPsize || cmPos > pPos + halfPsize);
 }
 
+
+/*
+  According to the OpenCL specification, global memory consistency is
+  only guaranteed between workitems in the same workgroup.
+
+  We rely on AMD and Nvidia GPU implementation details and pretend
+  this doesn't exist when possible.
+
+  - On AMD GPUs, mem_fence(CLK_GLOBAL_MEM_FENCE) compiles to a
+  fence_memory instruction which ensures a write is not in the cache
+  and is committed to memory before completing.
+  We have to be more careful when it comes to reading.
+
+  On previous AMD architectures it was sufficient to have a write
+  fence and then other items, not necessarily in the same workgroup,
+  would read the value committed by the fence.
+
+  On GCN/Tahiti, the caching architecture was changed. A single
+  workgroup will run on the same compute unit. A GCN compute unit has
+  it's own incoherent L1 cache (and workgroups have always stayed on
+  the same compute unit). A write by one compute unit will be
+  committed to memory by a fence there, but a second compute unit may
+  read a stale value from its private L1 cache afterwards.
+
+  We may need to use an atomic to ensure we bypass the L1 cache in
+  places where we need stronger consistency across workgroups.
+
+  Since Evergreen, the hardware has had a "GDS" buffer for global
+  synchronization, however 3 years later we still don't yet have an
+  extension to access it from OpenCL. When that finally happens, it
+  will probably be a better option to use that for these places.
+
+
+  - On Nvidia, mem_fence(CLK_GLOBAL_MEM_FENCE) seems to compile to a
+  membar.gl instruction, the same as the global sync
+  __threadfence(). It may change to a workgroup level membar.cta at
+  some point. To be sure we use the correct global level sync, use
+  inline PTX to make sure we use membar.gl
+
+  Not sure what to do about Nvidia on Apple's implementation. I'm not
+  sure how to even see what PTX it is generating, and there is no
+  inline PTX.
+
+*/
+
+
+#if DOUBLEPREC
+
+inline real atomic_read_real(RVPtr arr, int idx)
+{
+    union
+    {
+        int2 i;
+        double f;
+    } u;
+
+    IVPtr src = (IVPtr) &arr[idx];
+
+    /* Breaks aliasing rules */
+    u.i.x = atomic_or(src + 0, 0);
+    u.i.y = atomic_or(src + 1, 0);
+
+    return u.f;
+}
+
+#else
+
+inline real atomic_read_real(RVPtr arr, int idx)
+{
+    union
+    {
+        int2 i;
+        float f;
+    } u;
+
+    IVPtr src = (IVPtr) &arr[idx];
+
+    u.i = atomic_or(src, 0);
+
+    return u.f;
+}
+#endif /* DOUBLEPREC */
+
+#if HAVE_CONSISTENT_MEMORY
+  #define read_bypass_cache_int(arr, idx) ((arr)[idx])
+  #define read_bypass_cache_real(arr, idx) ((arr)[idx])
+#else
+  #define read_bypass_cache_int(arr, idx) atomic_or(&((arr)[idx]), 0)
+  #define read_bypass_cache_real(base, idx) atomic_read_real(base, idx)
+#endif /* HAVE_CONSISTENT_MEMORY */
+
+
 __attribute__ ((reqd_work_group_size(THREADS3, 1, 1)))
 __kernel void NBODY_KERNEL(summarization)
 {
@@ -843,156 +935,186 @@ __kernel void NBODY_KERNEL(summarization)
     {
         real m, cm, px, py, pz;
         int cnt, ch;
+        real mk;
 
-        if (missing == 0)
+        if (!HAVE_CONSISTENT_MEMORY)
         {
-            /* New cell, so initialize */
-            cm = px = py = pz = 0.0;
-            cnt = 0;
-            int j = 0;
-            #pragma unroll NSUB
-            for (int i = 0; i < NSUB; ++i)
+            mk = _mass[k];
+        }
+
+        if (HAVE_CONSISTENT_MEMORY || mk < 0.0)         /* Skip if we finished this cell already */
+        {
+            if (missing == 0)
             {
-                ch = _child[NSUB * k + i];
-                if (ch >= 0)
+                /* New cell, so initialize */
+                cm = px = py = pz = 0.0;
+                cnt = 0;
+                int j = 0;
+
+                #pragma unroll NSUB
+                for (int i = 0; i < NSUB; ++i)
                 {
-                    if (i != j)
+                    ch = _child[NSUB * k + i];
+                    if (ch >= 0)
                     {
-                        /* Move children to front (needed later for speed) */
-                        _child[NSUB * k + i] = -1;
-                        _child[NSUB * k + j] = ch;
-                    }
-                    child[THREADS3 * missing + get_local_id(0)] = ch; /* Cache missing children */
-                    m = _mass[ch];
-                    ++missing;
-                    if (m >= 0.0)
-                    {
-                        /* Child is ready */
-                        --missing;
-                        if (ch >= NBODY) /* Count bodies (needed later) */
+
+                        if (i != j)
                         {
-                            cnt += _count[ch] - 1;
+                            /* Move children to front (needed later for speed) */
+                            _child[NSUB * k + i] = -1;
+                            _child[NSUB * k + j] = ch;
                         }
 
-                        /* Add child's contribution */
+                        m = _mass[ch];
+                        child[THREADS3 * missing + get_local_id(0)] = ch; /* Cache missing children */
+
+                        ++missing;
+
+                        if (m >= 0.0)
+                        {
+                            /* Child is ready */
+                            --missing;
+                            if (ch >= NBODY) /* Count bodies (needed later) */
+                            {
+                                cnt += read_bypass_cache_int(_count, ch) - 1;
+                            }
+
+                            real chx = read_bypass_cache_real(_posX, ch);
+                            real chy = read_bypass_cache_real(_posY, ch);
+                            real chz = read_bypass_cache_real(_posZ, ch);
+
+
+                            /* Add child's contribution */
+                            cm += m;
+                            px += chx * m;
+                            py += chy * m;
+                            pz += chz * m;
+                        }
+                        ++j;
+                    }
+                }
+                mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); /* Only for performance */
+                cnt += j;
+            }
+
+            if ((HAVE_CONSISTENT_MEMORY || get_num_groups(0) == 1) && missing != 0)
+            {
+                do
+                {
+                    /* poll missing child */
+                    ch = child[THREADS3 * (missing - 1) + get_local_id(0)];
+                    m = _mass[ch];
+                    if (m >= 0.0) /* Body children can never be missing, so this is a cell */
+                    {
+                        cl_assert(_treeStatus, ch >= NBODY /* Missing child must be a cell */);
+
+                        /* child is now ready */
+                        --missing;
+
+                        /* count bodies (needed later) */
+                        cnt += _count[ch] - 1;
+
+                        /* add child's contribution */
                         cm += m;
                         px += _posX[ch] * m;
                         py += _posY[ch] * m;
                         pz += _posZ[ch] * m;
                     }
-                    ++j;
+                    /* repeat until we are done or child is not ready */
+                }
+                while ((m >= 0.0) && (missing != 0));
+            }
+
+            if (missing == 0)
+            {
+                /* All children are ready, so store computed information */
+                _count[k] = cnt;
+                real cx = _posX[k];  /* Load geometric center */
+                real cy = _posY[k];
+                real cz = _posZ[k];
+
+                real psize;
+
+                if (SW93 || NEWCRITERION)
+                {
+                    psize = _critRadii[k]; /* Get saved size (half cell = radius) */
+                }
+
+                m = 1.0 / cm;
+                px *= m; /* Scale up to position */
+                py *= m;
+                pz *= m;
+
+                /* Calculate opening criterion if necessary */
+                real rc2;
+
+                if (THETA == 0.0)
+                {
+                    rc2 = sqr(2.0 * rootSize);
+                }
+                else if (SW93)
+                {
+                    real bmax2 = bmax2Inc(px, cx, psize);
+                    bmax2 += bmax2Inc(py, cy, psize);
+                    bmax2 += bmax2Inc(pz, cz, psize);
+                    rc2 = bmax2 / (THETA * THETA);
+                }
+                else if (NEWCRITERION)
+                {
+                    real dx = px - cx;  /* Find distance from center of mass to geometric center */
+                    real dy = py - cy;
+                    real dz = pz - cz;
+                    real dr = sqrt(mad(dz, dz, mad(dy, dy, dx * dx)));
+
+                    real rc = (psize / THETA) + dr;
+
+                    rc2 = rc * rc;
+                }
+
+                if (SW93 || NEWCRITERION)
+                {
+                    /* We don't have the size of the cell for BH86, but really still should check */
+                    bool xTest = checkTreeDim(px, cx, psize);
+                    bool yTest = checkTreeDim(py, cy, psize);
+                    bool zTest = checkTreeDim(pz, cz, psize);
+                    bool structureCheck = xTest || yTest || zTest;
+                    if (structureCheck)
+                    {
+                        _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
+                    }
+                }
+
+                _posX[k] = px;
+                _posY[k] = py;
+                _posZ[k] = pz;
+
+                if (SW93 || NEWCRITERION)
+                {
+                    _critRadii[k] = rc2;
+                }
+
+                if (USE_QUAD)
+                {
+                    /* We must initialize all cells quad moments to NaN */
+                    _quadXX[k] = NAN;
+                }
+
+                atom_inc(&_treeStatus->debug.i[0]);
+
+                maybe_strong_global_mem_fence(); /* Make sure data is visible before setting mass */
+                _mass[k] = cm;
+
+                if (HAVE_CONSISTENT_MEMORY)
+                {
+                    k += inc;  /* Move on to next cell */
                 }
             }
-            mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); /* Only for performance */
-            cnt += j;
         }
 
-        if (missing != 0)
+        if (!HAVE_CONSISTENT_MEMORY)
         {
-            do
-            {
-                /* poll missing child */
-                ch = child[THREADS3 * (missing - 1) + get_local_id(0)];
-                m = _mass[ch];
-                if (m >= 0.0) /* Body children can never be missing, so this is a cell */
-                {
-                    cl_assert(_treeStatus, ch >= NBODY /* Missing child must be a cell */);
-
-                    /* child is now ready */
-                    --missing;
-
-                    /* count bodies (needed later) */
-                    cnt += _count[ch] - 1;
-
-                    /* add child's contribution */
-                    cm += m;
-                    px += _posX[ch] * m;
-                    py += _posY[ch] * m;
-                    pz += _posZ[ch] * m;
-                }
-                /* repeat until we are done or child is not ready */
-            }
-            while ((m >= 0.0) && (missing != 0));
-        }
-
-        if (missing == 0)
-        {
-            /* All children are ready, so store computed information */
-            _count[k] = cnt;
-            real cx = _posX[k];  /* Load geometric center */
-            real cy = _posY[k];
-            real cz = _posZ[k];
-
-            real psize;
-
-            if (SW93 || NEWCRITERION)
-            {
-                psize = _critRadii[k]; /* Get saved size (half cell = radius) */
-            }
-
-            m = 1.0 / cm;
-            px *= m; /* Scale up to position */
-            py *= m;
-            pz *= m;
-
-            /* Calculate opening criterion if necessary */
-            real rc2;
-
-            if (THETA == 0.0)
-            {
-                rc2 = sqr(2.0 * rootSize);
-            }
-            else if (SW93)
-            {
-                real bmax2 = bmax2Inc(px, cx, psize);
-                bmax2 += bmax2Inc(py, cy, psize);
-                bmax2 += bmax2Inc(pz, cz, psize);
-                rc2 = bmax2 / (THETA * THETA);
-            }
-            else if (NEWCRITERION)
-            {
-                real dx = px - cx;  /* Find distance from center of mass to geometric center */
-                real dy = py - cy;
-                real dz = pz - cz;
-                real dr = sqrt((dx * dx) + (dy * dy) + (dz * dz));
-
-                real rc = (psize / THETA) + dr;
-
-                rc2 = rc * rc;
-            }
-
-            if (SW93 || NEWCRITERION)
-            {
-                /* We don't have the size of the cell for BH86, but really still should check */
-                bool xTest = checkTreeDim(px, cx, psize);
-                bool yTest = checkTreeDim(py, cy, psize);
-                bool zTest = checkTreeDim(pz, cz, psize);
-                bool structureCheck = xTest || yTest || zTest;
-                if (structureCheck)
-                {
-                    _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
-                }
-            }
-
-            _posX[k] = px;
-            _posY[k] = py;
-            _posZ[k] = pz;
-
-            if (SW93 || NEWCRITERION)
-            {
-                _critRadii[k] = rc2;
-            }
-
-            if (USE_QUAD)
-            {
-                /* We must initialize all cells quad moments to NaN */
-                _quadXX[k] = NAN;
-            }
-
-            write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting mass */
-            _mass[k] = cm;
-            write_mem_fence(CLK_GLOBAL_MEM_FENCE);
-
+            missing = 0;
+            cnt = 0;
             k += inc;  /* Move on to next cell */
         }
     }
