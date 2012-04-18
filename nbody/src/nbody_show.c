@@ -247,7 +247,7 @@ char* showHalo(const Halo* h)
         return NULL;
 
     if (0 > asprintf(&buf,
-                     "{ \n"
+                     "{\n"
                      "      type         = %s\n"
                      "      vhalo        = %g\n"
                      "      scaleLength  = %g\n"
@@ -284,7 +284,7 @@ char* showDisk(const Disk* d)
         return NULL;
 
     if (0 > asprintf(&buf,
-                     "{ \n"
+                     "{\n"
                      "      type        = %s\n"
                      "      mass        = %g\n"
                      "      scaleLength = %g\n"
@@ -379,7 +379,7 @@ char* showBody(const Body* p)
     pos = showVector(Pos(p));
 
     if (0 > asprintf(&buf,
-                     "body { \n"
+                     "body {\n"
                      "      mass     = %g\n"
                      "      position = %s\n"
                      "      velocity = %s\n"
@@ -452,7 +452,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
         return NULL;
 
     if (0 > asprintf(&buf,
-                     "ctx = { \n"
+                     "ctx = {\n"
                      "  eps2            = %f\n"
                      "  theta           = %f\n"
                      "  timestep        = %f\n"
@@ -501,7 +501,7 @@ char* showHistogramParams(const HistogramParams* hp)
 {
     char* buf;
     if (0 > asprintf(&buf,
-                     "histogram-params = { \n"
+                     "histogram-params = {\n"
                      "  phi      = %g\n"
                      "  theta    = %g\n"
                      "  psi      = %g\n"
