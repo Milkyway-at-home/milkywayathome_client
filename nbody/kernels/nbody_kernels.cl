@@ -75,12 +75,15 @@
 #endif
 
 #if DOUBLEPREC
-  #if cl_khr_fp64
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-  #elif cl_amd_fp64
-    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #else
-    #error Missing double precision extension
+  /* double precision is optional core feature in 1.2, not an extension */
+  #if __OPENCL_VERSION__ < 120
+    #if cl_khr_fp64
+      #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    #elif cl_amd_fp64
+      #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+    #else
+      #error Missing double precision extension
+    #endif
   #endif
 #endif /* DOUBLEPREC */
 
