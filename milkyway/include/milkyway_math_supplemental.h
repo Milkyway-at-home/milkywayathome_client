@@ -207,24 +207,22 @@ typedef struct MW_ALIGN_TYPE_V(16)
 #endif /* M_PI */
 
 
-#if !defined(NAN) && defined(_MSC_VER) && DOUBLEPREC
-  /* CHECKME, also float */
-    static const union
-    {
-        unsigned __int32 _mw_nanbytes[2];
-        double _mw_nanval;
-    } _mw_nanhack = { { 0xffffffff, 0x7fffffff } };
-  #define NAN (_mw_nanhack._mw_nanval)
-#endif /* NAN */
+#if !defined(NAN) && defined(_MSC_VER)
+static const union
+{
+    unsigned __int32 _mw_nanbytes[2];
+    double _mw_nanval;
+} _mw_nanhack = { { 0xffffffff, 0x7fffffff } };
+#define NAN (_mw_nanhack._mw_nanval)
+#endif /* !defined(NAN) && defined(_MSC_VER) */
 
 #if defined(_WIN32)
-/* MSVC hacks */
+  /* MSVC hacks */
   #ifndef INFINITY
-    //#warning "FIXME: USING MAX_DOUBLE FOR INFINITY for MSVC"
+    #warning "FIXME: USING MAX_DOUBLE FOR INFINITY for MSVC"
     //#define INFINITY MAX_DOUBLE
     #define INFINITY HUGE_VAL
   #endif /* INFINITY */
-
 #endif /* _WIN32 */
 
 #ifdef __cplusplus
