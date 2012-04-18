@@ -988,10 +988,11 @@ __kernel void NBODY_KERNEL(summarization)
 
 
                             /* Add child's contribution */
+
                             cm += m;
-                            px += chx * m;
-                            py += chy * m;
-                            pz += chz * m;
+                            px = mad(m, chx, px);
+                            py = mad(m, chy, py);
+                            pz = mad(m, chz, pz);
                         }
                         ++j;
                     }
@@ -1017,11 +1018,16 @@ __kernel void NBODY_KERNEL(summarization)
                         /* count bodies (needed later) */
                         cnt += _count[ch] - 1;
 
+                        real chx = _posX[ch];
+                        real chy = _posY[ch];
+                        real chz = _posZ[ch];
+
+
                         /* add child's contribution */
                         cm += m;
-                        px += _posX[ch] * m;
-                        py += _posY[ch] * m;
-                        pz += _posZ[ch] * m;
+                        px = mad(m, chx, px);
+                        py = mad(m, chy, py);
+                        pz = mad(m, chz, pz);
                     }
                     /* repeat until we are done or child is not ready */
                 }
