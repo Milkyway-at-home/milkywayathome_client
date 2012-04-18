@@ -216,7 +216,6 @@ typedef struct
     } quad;
 
     cl_mem treeStatus;
-    cl_mem treeStatus2;
 } NBodyBuffers;
 
 

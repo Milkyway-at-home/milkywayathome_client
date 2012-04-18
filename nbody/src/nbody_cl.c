@@ -148,17 +148,14 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
     }
 
     /* Temporary hack to avoid deadlock on Southern Islands */
-
     if (di->calTarget >= MW_CAL_TARGET_TAHITI)
     {
         ws->global[1] = 2 * ws->threads[1] * blocks;
         ws->global[2] = 2 * ws->threads[2] * blocks;
         ws->global[3] = ws->threads[3];
         ws->global[4] = ws->threads[4];
-        //ws->global[5] = 2 * ws->threads[5] * blocks;
         ws->global[5] = 4 * ws->threads[5] * blocks;
     }
-
 
     return CL_FALSE;
 }
@@ -735,11 +732,11 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
     return CL_TRUE;
 }
 
-static cl_int nbReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
+static cl_int nbEnqueueReadTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb, cl_bool blocking)
 {
     return clEnqueueReadBuffer(ci->queue,
                               nbb->treeStatus,
-                              CL_TRUE,
+                              blocking,
                               0, sizeof(*tc), tc,
                               0, NULL, NULL);
 }
@@ -789,6 +786,7 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
 
         mw_printf("BEGIN CHILD\n");
         printBuffer(ci, nbb->child, NSUB * (nNode + 1), "child", 1);
+        mw_printf("END CHILD\n");
         mw_printf("BEGIN START\n");
         printBuffer(ci, nbb->start, nNode, "start", 1);
 
@@ -840,7 +838,7 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
     {
         TreeStatus ts;
         memset(&ts, 0, sizeof(ts));
-        err = nbReadTreeStatus(&ts, ci, nbb);
+        err = nbEnqueueReadTreeStatus(&ts, ci, nbb, CL_TRUE);
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Reading tree status failed\n");
@@ -883,7 +881,7 @@ static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
 
-    err = nbReadTreeStatus(&ts, ci, nbb);
+    err = nbEnqueueReadTreeStatus(&ts, ci, nbb, CL_TRUE);
     if (mw_unlikely(err != CL_SUCCESS))
     {
         mwPerrorCL(err, "Error reading tree status");
