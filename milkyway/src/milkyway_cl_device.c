@@ -336,21 +336,48 @@ static cl_bool mwDeviceHasGraphicsQOS(const DevInfo* di)
     return CL_FALSE;
 }
 
+/*
+  This only applies to whether we are certain the device has the
+  feature without doing anything.
+*/
 cl_bool mwDeviceHasConsistentMemory(const DevInfo* di)
 {
-    /* No on Tahiti. Pretty sure yes on earlier AMD, if only because
-       the caches are read only and not used by default except for
-       images.
+    if (mwIsAMDGPUDevice(di))
+    {
+        /* Tahiti has a noncoherent read-write L1 cache per compute unit, so no
+         *
+         * Previous architectures had an incoherent read only
+         * texture cache which wasn't used by default except for
+         * images, so as far as we are concerned, yes
+         */
 
-       I think on Fermi the cache is fully coherent.
+        return (   di->calTarget < MW_CAL_TARGET_TAHITI
+                && di->calTarget != MW_CAL_TARGET_UNKNOWN
+                && di->calTarget != MW_CAL_TARGET_INVALID);
+    }
+    else if (mwIsNvidiaGPUDevice(di))
+    {
+        /* Fermi also has an incoherent L1 cache, but if we have inline
+         * PTX we can ensure it won't be an issue with membar.gl */
+        if (mwMinComputeCapabilityCheck(di, 2, 0))
+        {
+            return CL_FALSE;
+        }
 
-       This only applies to whether we are certain the device has the
-       feature without doing anything.
+        if (mwComputeCapabilityIs(di, 1, 3) || mwComputeCapabilityIs(di, 1, 2))
+        {
+            /* GT200 had a mostly useless texture cache which wasn't used, so we can say yes */
+            return CL_TRUE;
+        }
 
-       e.g. On Nvidia we may be less sure, but we can be 100% sure if
-       we have inline PTX support from the compiler also.
-     */
-    return CL_FALSE;
+        /* Assume no if we aren't sure. We don't have the CC on OS X
+         * for example. We need a better way of IDing Nvidia cards */
+        return CL_FALSE;
+    }
+    else
+    {
+        return CL_FALSE;
+    }
 }
 
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
