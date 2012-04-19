@@ -952,11 +952,6 @@ static cl_int nbEnqueueReadCenterOfMass(NBodyState* st, mwvector* cmPos)
     err |= clEnqueueReadBuffer(queue, positions[2], CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->z, 0, NULL, NULL);
     err |= clEnqueueReadBuffer(queue, st->nbb->masses, CL_FALSE, nNode * sizeof(real), sizeof(real), &cmPos->w, 0, NULL, NULL);
 
-    /* The mass of the root cell should be the total mass of the
-     * system. You can get an idea of the error in the center of mass
-     * positions by looking at how far this mass has drifted from the
-     * real total mass. */
-
     err |= clFlush(queue);
 
     return err;
@@ -1703,7 +1698,7 @@ void nbPrintKernelTimings(const NBodyState* st)
 {
     double totalTime = 0.0;
     cl_uint i;
-    double nStep = (double) (st->step + 1);
+    double nStep = (double) st->step;
     const double* kernelTimings = st->workSizes->kernelTimings;
 
     for (i = 0; i < 7; ++i)
@@ -1712,7 +1707,7 @@ void nbPrintKernelTimings(const NBodyState* st)
     }
 
     mw_printf("\n--------------------------------------------------------------------------------\n"
-              "Total timing over %d (+1) steps:\n"
+              "Total timing over %d steps:\n"
               "                         Average             Total            Fraction\n"
               "                    ----------------   ----------------   ----------------\n"
               "  boundingBox:      %16f   %16f   %15.4f%%\n"
