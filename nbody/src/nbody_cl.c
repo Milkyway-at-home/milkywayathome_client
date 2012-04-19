@@ -28,7 +28,10 @@
 
 #include "nbody_tree.h"
 
-#define NB_MAX_MAX_DEPTH 512
+/* We want to restrict this a bit to ensure we can get better occupancy.
+   TODO: Option to raise the maximum depth at expense of performance.
+ */
+#define NB_MAX_MAX_DEPTH 128
 
 extern const unsigned char nbody_kernels_cl[];
 extern const size_t nbody_kernels_cl_len;
