@@ -1172,7 +1172,7 @@ __kernel void NBODY_KERNEL(sort)
 
     while (k >= bottom) /* Iterate over all cells assigned to thread */
     {
-        int start = _start[k];
+        int start = read_bypass_cache_int(_start, k);
         if (start >= 0)
         {
             #pragma unroll NSUB
@@ -1186,10 +1186,13 @@ __kernel void NBODY_KERNEL(sort)
                 }
                 else if (ch >= 0)        /* Child is a body */
                 {
-                    _sort[start] = ch;  /* Record body in sorted array */
+                    _sort[start] = ch;   /* Record body in sorted array */
                     ++start;
                 }
             }
+
+            write_mem_fence(CLK_GLOBAL_MEM_FENCE);
+
             k -= dec;  /* Move on to next cell */
         }
     }
