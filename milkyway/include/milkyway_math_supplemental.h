@@ -219,7 +219,7 @@ static const union
 #if defined(_WIN32)
   /* MSVC hacks */
   #ifndef INFINITY
-    #warning "FIXME: USING MAX_DOUBLE FOR INFINITY for MSVC"
+    //#pragma message("FIXME: USING MAX_DOUBLE FOR INFINITY for MSVC")
     //#define INFINITY MAX_DOUBLE
     #define INFINITY HUGE_VAL
   #endif /* INFINITY */

@@ -1108,8 +1108,6 @@ __kernel void NBODY_KERNEL(summarization)
                     _quadXX[k] = NAN;
                 }
 
-                atom_inc(&_treeStatus->debug.i[0]);
-
                 maybe_strong_global_mem_fence(); /* Make sure data is visible before setting mass */
                 _mass[k] = cm;
 
@@ -1267,45 +1265,101 @@ __kernel void NBODY_KERNEL(quadMoments)
         real4 kp;        /* Position of this cell k */
         QuadMatrix kq;   /* Quad moment for this cell */
         QuadMatrix qCh;  /* Loads of child quad moments */
+        real kQxx;
 
-        kp.x = _posX[k];  /* This cell's center of mass position */
+        kp.x = _posX[k]; /* This cell's center of mass position */
         kp.y = _posY[k];
         kp.z = _posZ[k];
 
-        if (missing == 0)
+        if (!HAVE_CONSISTENT_MEMORY)
         {
-            /* New cell, so initialize */
-            kq.xx = kq.xy = kq.xz = 0.0;
-            kq.yy = kq.yz = 0.0;
-            kq.zz = 0.0;
+            kQxx = _quadXX[k];
+        }
 
-            int j = 0;
-            #pragma unroll NSUB
-            for (int i = 0; i < NSUB; ++i)
+        if (HAVE_CONSISTENT_MEMORY || isnan(kQxx))
+        {
+            if (missing == 0)
             {
-                QuadMatrix quad; /* Increment from this descendent */
-                ch = _child[NSUB * k + i];
+                /* New cell, so initialize */
+                kq.xx = kq.xy = kq.xz = 0.0;
+                kq.yy = kq.yz = 0.0;
+                kq.zz = 0.0;
 
-                if (ch >= 0)
+                int j = 0;
+
+                #pragma unroll NSUB
+                for (int i = 0; i < NSUB; ++i)
                 {
-                    if (isBody(ch))
+                    QuadMatrix quad; /* Increment from this descendent */
+                    ch = _child[NSUB * k + i];
+
+                    if (ch >= 0)
                     {
-                        real4 chCM;
+                        if (isBody(ch))
+                        {
+                            real4 chCM;
 
-                        chCM.x = _posX[ch];
-                        chCM.y = _posY[ch];
-                        chCM.z = _posZ[ch];
-                        chCM.w = _mass[ch];
+                            chCM.x = _posX[ch];
+                            chCM.y = _posY[ch];
+                            chCM.z = _posZ[ch];
+                            chCM.w = _mass[ch];
 
-                        quadCalc(&quad, chCM, kp);
-                        incAddMatrix(&kq, &quad);  /* Add to total moment */
+                            quadCalc(&quad, chCM, kp);
+                            incAddMatrix(&kq, &quad);  /* Add to total moment */
+                        }
+
+                        if (isCell(ch))
+                        {
+                            child[THREADS5 * missing + get_local_id(0)] = ch; /* Cache missing children */
+                            ++missing;
+
+                            qCh.xx = _quadXX[ch];
+                            if (!isnan(qCh.xx))
+                            {
+                                real4 chCM;
+
+                                /* Load the rest */
+                              //qCh.xx = read_bypass_cache_real(_quadXX, ch);
+                                qCh.xy = read_bypass_cache_real(_quadXY, ch);
+                                qCh.xz = read_bypass_cache_real(_quadXZ, ch);
+
+                                qCh.yy = read_bypass_cache_real(_quadYY, ch);
+                                qCh.yz = read_bypass_cache_real(_quadYZ, ch);
+
+                                qCh.zz = read_bypass_cache_real(_quadZZ, ch);
+
+                                chCM.x = _posX[ch];
+                                chCM.y = _posY[ch];
+                                chCM.z = _posZ[ch];
+                                chCM.w = _mass[ch];
+
+                                quadCalc(&quad, chCM, kp);
+
+                                --missing;  /* Child is ready */
+
+                                incAddMatrix(&quad, &qCh);  /* Add child's contribution */
+                                incAddMatrix(&kq, &quad);   /* Add to total moment */
+                            }
+                        }
+
+                        ++j;
                     }
+                }
+                mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); /* Only for performance */
+            }
 
-                    if (isCell(ch))
+            if ((HAVE_CONSISTENT_MEMORY || get_num_groups(0) == 1) && missing != 0)
+            {
+                do
+                {
+                    QuadMatrix quad; /* Increment from this missing child */
+
+                    /* poll missing child */
+                    ch = child[THREADS5 * (missing - 1) + get_local_id(0)];
+                    cl_assert(_treeStatus, ch > 0);
+                    cl_assert(_treeStatus, ch >= NBODY);
+                    if (ch >= NBODY) /* Is a cell */
                     {
-                        child[THREADS5 * missing + get_local_id(0)] = ch; /* Cache missing children */
-                        ++missing;
-
                         qCh.xx = _quadXX[ch];
                         if (!isnan(qCh.xx))
                         {
@@ -1316,8 +1370,7 @@ __kernel void NBODY_KERNEL(quadMoments)
                             chCM.z = _posZ[ch];
                             chCM.w = _mass[ch];
 
-                            /* Load the rest */
-                          //qCh.xx = _quadXX[ch];
+                            //qCh.xx = _quadXX[ch];
                             qCh.xy = _quadXY[ch];
                             qCh.xz = _quadXZ[ch];
 
@@ -1328,80 +1381,44 @@ __kernel void NBODY_KERNEL(quadMoments)
 
                             quadCalc(&quad, chCM, kp);
 
-                            --missing;  /* Child is ready */
+                            --missing;  /* Child is now ready */
 
-                            incAddMatrix(&quad, &qCh);  /* Add child's contribution */
-                            incAddMatrix(&kq, &quad);   /* Add to total moment */
+                            incAddMatrix(&quad, &qCh);  /* Add subcell's moment */
+                            incAddMatrix(&kq, &quad);   /* add child's contribution */
                         }
                     }
-
-                    ++j;
+                    /* repeat until we are done or child is not ready */
                 }
+                while ((!isnan(qCh.xx)) && (missing != 0));
             }
-            mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); /* Only for performance */
-        }
 
-        if (missing != 0)
-        {
-            do
+            if (missing == 0)
             {
-                QuadMatrix quad; /* Increment from this missing child */
+                /* All children are ready, so store computed information */
+                //_quadXX[k] = kq.xx;  /* Store last */
+                _quadXY[k] = kq.xy;
+                _quadXZ[k] = kq.xz;
 
-                /* poll missing child */
-                ch = child[THREADS5 * (missing - 1) + get_local_id(0)];
-                cl_assert(_treeStatus, ch > 0);
-                cl_assert(_treeStatus, ch >= NBODY);
-                if (ch >= NBODY) /* Is a cell */
+                _quadYY[k] = kq.yy;
+                _quadYZ[k] = kq.yz;
+
+                _quadZZ[k] = kq.zz;
+
+                write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting tested quadx */
+                _quadXX[k] = kq.xx;
+                write_mem_fence(CLK_GLOBAL_MEM_FENCE);
+
+                if (HAVE_CONSISTENT_MEMORY)
                 {
-                    qCh.xx = _quadXX[ch];
-                    if (!isnan(qCh.xx))
-                    {
-                        real4 chCM;
-
-                        chCM.x = _posX[ch];
-                        chCM.y = _posY[ch];
-                        chCM.z = _posZ[ch];
-                        chCM.w = _mass[ch];
-
-                      //qCh.xx = _quadXX[ch];
-                        qCh.xy = _quadXY[ch];
-                        qCh.xz = _quadXZ[ch];
-
-                        qCh.yy = _quadYY[ch];
-                        qCh.yz = _quadYZ[ch];
-
-                        qCh.zz = _quadZZ[ch];
-
-                        quadCalc(&quad, chCM, kp);
-
-                        --missing;  /* Child is now ready */
-
-                        incAddMatrix(&quad, &qCh);  /* Add subcell's moment */
-                        incAddMatrix(&kq, &quad);   /* add child's contribution */
-                    }
+                    k += inc;  /* Move on to next cell */
                 }
-                /* repeat until we are done or child is not ready */
             }
-            while ((!isnan(qCh.xx)) && (missing != 0));
         }
 
-        if (missing == 0)
+        if (!HAVE_CONSISTENT_MEMORY)
         {
-            /* All children are ready, so store computed information */
-          //_quadXX[k] = kq.xx;  /* Store last */
-            _quadXY[k] = kq.xy;
-            _quadXZ[k] = kq.xz;
-
-            _quadYY[k] = kq.yy;
-            _quadYZ[k] = kq.yz;
-
-            _quadZZ[k] = kq.zz;
-
-            write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting tested quadx */
-            _quadXX[k] = kq.xx;
-            write_mem_fence(CLK_GLOBAL_MEM_FENCE);
-
-            k += inc;  /* Move on to next cell */
+            missing = 0;
+            k += inc;
         }
     }
 }

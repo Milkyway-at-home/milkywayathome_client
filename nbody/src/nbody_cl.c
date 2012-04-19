@@ -26,6 +26,8 @@
 #include "nbody_curses.h"
 #include "nbody_shmem.h"
 
+#include "nbody_tree.h"
+
 #define NB_MAX_MAX_DEPTH 512
 
 extern const unsigned char nbody_kernels_cl[];
@@ -153,7 +155,7 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
         ws->global[1] = 2 * ws->threads[1] * blocks;
         ws->global[2] = 2 * ws->threads[2] * blocks;
         ws->global[3] = ws->threads[3];
-        ws->global[4] = ws->threads[4];
+        ws->global[4] = 2 * ws->threads[4] * blocks;
         ws->global[5] = 4 * ws->threads[5] * blocks;
     }
 
@@ -940,6 +942,32 @@ static cl_double waitReleaseEventWithTime(cl_event ev)
     return t;
 }
 
+static cl_int nbEnqueueReadRootQuadMoment(NBodyState* st, NBodyQuadMatrix* quad)
+{
+    cl_int err = CL_SUCCESS;
+    NBodyBuffers* nbb = st->nbb;
+    cl_command_queue queue = st->ci->queue;
+    cl_uint nNode = nbFindNNode(&st->ci->di, st->nbody);
+
+    if (!nbb->quad.xx)
+    {
+        return MW_CL_ERROR;
+    }
+
+    err |= clEnqueueReadBuffer(queue, nbb->quad.xx, CL_FALSE, nNode * sizeof(real), sizeof(real), &quad->xx, 0, NULL, NULL);
+    err |= clEnqueueReadBuffer(queue, nbb->quad.xy, CL_FALSE, nNode * sizeof(real), sizeof(real), &quad->xy, 0, NULL, NULL);
+    err |= clEnqueueReadBuffer(queue, nbb->quad.xz, CL_FALSE, nNode * sizeof(real), sizeof(real), &quad->xz, 0, NULL, NULL);
+
+    err |= clEnqueueReadBuffer(queue, nbb->quad.yy, CL_FALSE, nNode * sizeof(real), sizeof(real), &quad->yy, 0, NULL, NULL);
+    err |= clEnqueueReadBuffer(queue, nbb->quad.yz, CL_FALSE, nNode * sizeof(real), sizeof(real), &quad->yz, 0, NULL, NULL);
+
+    err |= clEnqueueReadBuffer(queue, nbb->quad.zz, CL_FALSE, nNode * sizeof(real), sizeof(real), &quad->zz, 0, NULL, NULL);
+
+    err |= clFlush(queue);
+
+    return err;
+}
+
 static cl_int nbEnqueueReadCenterOfMass(NBodyState* st, mwvector* cmPos)
 {
     cl_int err = CL_SUCCESS;
@@ -1037,8 +1065,8 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     cl_event sanitizeEv = NULL;
     cl_event boxEv = NULL;
     cl_event sortEv = NULL;
-    cl_event quadEv = NULL;
     cl_event sumEvs[NB_MAX_MAX_DEPTH];
+    cl_event quadEvs[NB_MAX_MAX_DEPTH];
 
 
     if (!st->usesConsistentMemory)
@@ -1189,11 +1217,28 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
     if (st->usesQuad)
     {
-        err = clEnqueueNDRangeKernel(ci->queue, kernels->quadMoments, 1,
-                                     NULL, &ws->global[4], &ws->local[4],
-                                     0, NULL, &quadEv);
-        if (err != CL_SUCCESS)
-            goto tree_build_exit;
+        if (st->usesConsistentMemory)
+        {
+            err = clEnqueueNDRangeKernel(ci->queue, kernels->quadMoments, 1,
+                                         NULL, &ws->global[4], &ws->local[4],
+                                         0, NULL, &quadEvs[0]);
+            if (err != CL_SUCCESS)
+                goto tree_build_exit;
+        }
+        else
+        {
+            cl_uint depth;
+
+            for (depth = 0; depth < treeStatus.maxDepth; ++depth)
+            {
+                err = clEnqueueNDRangeKernel(ci->queue, kernels->quadMoments, 1,
+                                             NULL, &ws->global[4], &ws->local[4],
+                                             0, NULL, &quadEvs[depth]);
+                err |= clFlush(ci->queue);
+                if (err != CL_SUCCESS)
+                    goto tree_build_exit;
+            }
+        }
     }
 
     err = clFinish(ci->queue);
@@ -1208,6 +1253,7 @@ tree_build_exit:
     /* Pretend the sanitize kernel doesn't exist, include it's time as
      * part of buildTree since it exists to support it anyway */
     ws->timings[1] += mwReleaseEventWithTimingMS(sanitizeEv);
+    ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
 
     {
         cl_int depth;
@@ -1216,13 +1262,11 @@ tree_build_exit:
         for (depth = 0; depth < maxDepth; ++depth)
         {
             ws->timings[2] += mwReleaseEventWithTimingMS(sumEvs[depth]);
+            if (st->usesQuad)
+            {
+                ws->timings[4] += mwReleaseEventWithTimingMS(quadEvs[depth]);
+            }
         }
-    }
-
-    ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
-    if (st->usesQuad)
-    {
-        ws->timings[4] += mwReleaseEventWithTimingMS(quadEv);
     }
 
     return err;
@@ -1772,6 +1816,100 @@ void nbPrintKernelLimits(NBodyState* st)
     mwPrintWorkGroupInfo(&wgi);
 }
 
+/* Debug function */
+static cl_int nbPrintQuadMomentDifferences(const NBodyCtx* ctx, NBodyState* st)
+{
+    cl_int err;
+    NBodyQuadMatrix quad;
+    NBodyQuadMatrix quadRef;
+    NBodyQuadMatrix quadDiff;
+    NBodyQuadMatrix relDiff;
+
+  #if DOUBLEPREC
+    const real threshold = 1.0e-9;
+  #else
+    const real threshold = 1.0e-6;
+  #endif
+
+    err = nbEnqueueReadRootQuadMoment(st, &quad);
+    err |= nbMarshalBodies(st, CL_FALSE);
+    if (err != CL_SUCCESS)
+        return err;
+
+    nbMakeTree(ctx, st);
+    quadRef = Quad(st->tree.root);
+
+
+    quadDiff.xx = quad.xx - quadRef.xx;
+    quadDiff.xy = quad.xy - quadRef.xy;
+    quadDiff.xz = quad.xz - quadRef.xz;
+
+    quadDiff.yy = quad.yy - quadRef.yy;
+    quadDiff.yz = quad.yz - quadRef.yz;
+
+    quadDiff.zz = quad.zz - quadRef.zz;
+
+    mw_printf("\n\nQuad: {\n"
+              "  %21.15f, %21.15f, %21.15f\n"
+              "  %21.15f, %21.15f\n"
+              "  %21.15f\n"
+              "}\n",
+              quad.xx, quad.xy, quad.xz,
+              quad.yy, quad.yz,
+              quad.zz
+        );
+
+    mw_printf("QuadRef: {\n"
+              "  %21.15f, %21.15f, %21.15f\n"
+              "  %21.15f, %21.15f\n"
+              "  %21.15f\n"
+              "}\n",
+              quadRef.xx, quadRef.xy, quadRef.xz,
+              quadRef.yy, quadRef.yz,
+              quadRef.zz
+        );
+
+    mw_printf("Diff: {\n"
+              "  %21.15f, %21.15f, %21.15f\n"
+              "  %21.15f, %21.15f\n"
+              "  %21.15f\n"
+              "}\n",
+              quadDiff.xx, quadDiff.xy, quadDiff.xz,
+              quadDiff.yy, quadDiff.yz,
+              quadDiff.zz
+        );
+
+    relDiff.xx = 100.0 * quadDiff.xx / quad.xx;
+    relDiff.xy = 100.0 * quadDiff.xy / quad.xy;
+    relDiff.xz = 100.0 * quadDiff.xz / quad.xz;
+
+    relDiff.yy = 100.0 * quadDiff.yy / quad.yy;
+    relDiff.yz = 100.0 * quadDiff.yz / quad.yz;
+
+    relDiff.zz = 100.0 * quadDiff.zz / quad.zz;
+
+    mw_printf("RelativeDiff: {\n"
+              "  %21.15f, %21.15f, %21.15f\n"
+              "  %21.15f, %21.15f\n"
+              "  %21.15f\n"
+              "}\n"
+              "\n",
+              relDiff.xx, relDiff.xy, relDiff.xz,
+              relDiff.yy, relDiff.yz,
+              relDiff.zz
+        );
+
+    if (   mw_fabs(quadDiff.xx) >= threshold || mw_fabs(quadDiff.xy) >= threshold || mw_fabs(quadDiff.xz) >= threshold
+        || mw_fabs(quadDiff.yy) >= threshold || mw_fabs(quadDiff.yz) >= threshold
+        || mw_fabs(quadDiff.zz) >= threshold)
+    {
+        mw_printf("WARNING: Quad moment summarization results greatly differs from reference\n");
+    }
+
+    return CL_SUCCESS;
+}
+
+
 /*
   Run the tree building stages and then compare the resulting center
   of masses and quadrupole moments calculated from the normal CPU
@@ -1787,7 +1925,7 @@ static cl_int nbPrintSummarizationDifferences(NBodyState* st)
   #if DOUBLEPREC
     const real threshold = 1.0e-9;
   #else
-    const real threshold = 1.0e-7;
+    const real threshold = 1.0e-6f;
   #endif
 
     err = nbEnqueueReadCenterOfMass(st, &cm);
@@ -1802,8 +1940,12 @@ static cl_int nbPrintSummarizationDifferences(NBodyState* st)
     cmRef = nbCenterOfMass(st);
 
     dcm = mw_subv(cm, cmRef);
+
     dcmRel = mw_mulvs(dcm, 100.0);
     mw_incdivv(dcmRel, cmRef);
+
+    dcm.w = cm.w - cmRef.w;
+    dcmRel.w = 100.0 * dcm.w / cmRef.w;
 
     mw_printf("\nReference center of mass: %21.15f, %21.15f, %21.15f, %21.15f\n",
               cmRef.x, cmRef.y, cmRef.z, cmRef.w);
@@ -1817,16 +1959,15 @@ static cl_int nbPrintSummarizationDifferences(NBodyState* st)
     mw_printf("Relative difference %%:    %21.15f, %21.15f, %21.15f, %21.15f\n\n",
               dcmRel.x, dcmRel.y, dcmRel.z, dcmRel.w);
 
-    if (dcm.x >= threshold || dcm.y >= threshold || dcm.z >= threshold || dcm.w >= threshold)
+    if (mw_fabs(dcm.x) >= threshold || mw_fabs(dcm.y) >= threshold || mw_fabs(dcm.z) >= threshold || mw_fabs(dcm.w) >= threshold)
     {
-        mw_printf("WARNING: Summarization ");
-        return MW_CL_ERROR;
+        mw_printf("WARNING: Summarization results greatly differs from reference\n");
     }
 
     return CL_SUCCESS;
 }
 
-static cl_int nbDebugSummarization(NBodyState* st)
+static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_uint i;
     const cl_uint nSamples = 10;
@@ -1839,11 +1980,16 @@ static cl_int nbDebugSummarization(NBodyState* st)
         if (err != CL_SUCCESS)
             return err;
 
-        /* TODO: quadrupole moments */
-
         err = nbPrintSummarizationDifferences(st);
         if (err != CL_SUCCESS)
             return err;
+
+        if (ctx->useQuad && ctx->criterion != Exact)
+        {
+            err = nbPrintQuadMomentDifferences(ctx, st);
+            if (err != CL_SUCCESS)
+                return err;
+        }
     }
 
     return CL_SUCCESS;
