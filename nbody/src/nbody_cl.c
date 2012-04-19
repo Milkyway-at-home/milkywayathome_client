@@ -152,16 +152,6 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
         ws->local[i] = ws->threads[i];
     }
 
-    /* Temporary hack to avoid deadlock on Southern Islands */
-    if (di->calTarget >= MW_CAL_TARGET_TAHITI)
-    {
-        ws->global[1] = 2 * ws->threads[1] * blocks;
-        ws->global[2] = 2 * ws->threads[2] * blocks;
-        ws->global[3] = ws->threads[3];
-        ws->global[4] = 2 * ws->threads[4] * blocks;
-        ws->global[5] = 4 * ws->threads[5] * blocks;
-    }
-
     return CL_FALSE;
 }
 
@@ -245,6 +235,39 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
 
         ws->threads[6] = 1024;
         ws->threads[7] = 1024;
+    }
+    else if (di->calTarget >= MW_CAL_TARGET_TAHITI)
+    {
+        ws->factors[0] = 1;
+        ws->factors[1] = 4;
+        ws->factors[2] = 4;
+        ws->factors[3] = 1;
+        ws->factors[4] = 4;
+
+        /* It seems to help if we make this huge so that the global
+         * size is about the same as the number of bodies,
+         * but we can't do that while maintaining responsiveness
+         */
+        ws->factors[5] = 16;
+
+        // some multiple of 16 since that is number of workgroups
+        // supported per CU when workgroup size is more than 1
+        // wavefront?
+
+        //ws->factors[5] = 256;
+        //ws->factors[5] = 342;
+
+        ws->factors[6] = 2;
+        ws->factors[7] = 2;
+
+        ws->threads[0] = 256;
+        ws->threads[1] = 256;
+        ws->threads[2] = 256;
+        ws->threads[3] = 256;
+        ws->threads[4] = 256;
+        ws->threads[5] = 256;
+        ws->threads[6] = 256;
+        ws->threads[7] = 256;
     }
     else
     {
