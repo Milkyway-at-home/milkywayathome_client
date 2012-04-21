@@ -34,6 +34,7 @@ extern "C" {
 #define _nbValidPositionItem(x) (!isinf(x) && !isnan(x))
 #define nbPositionValid(r) (_nbValidPositionItem(r.x) && _nbValidPositionItem(r.y) && _nbValidPositionItem(r.z))
 
+real nbCorrectTimestep(real timeEvolve, real dt);
 mwvector nbCenterOfMass(const NBodyState* st);
 
 double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);

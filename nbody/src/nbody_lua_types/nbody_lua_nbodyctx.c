@@ -134,6 +134,7 @@ static int createNBodyCtx(lua_State* luaSt)
     }
 
     ctx.nStep = (unsigned int) nStepf;
+    ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;

@@ -32,6 +32,7 @@
 #include "nbody_lua_util.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
+#include "nbody_util.h"
 
 
 static int luaLbrToCartesian(lua_State* luaSt)
@@ -137,9 +138,26 @@ static int luaKiloparsecToLightyear(lua_State* luaSt)
 
 }
 
+static int luaCorrectTimestep(lua_State* luaSt)
+{
+    real t, dt;
+
+    if (lua_gettop(luaSt) != 2)
+    {
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+    }
+
+    t = luaL_checknumber(luaSt, 1);
+    dt = luaL_checknumber(luaSt, 2);
+    lua_pushnumber(luaSt, nbCorrectTimestep(t, dt));
+
+    return 1;
+}
+
 void nbRegisterUtilityFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "lbrToCartesian", luaLbrToCartesian);
+    lua_register(luaSt, "correctTimestep", luaCorrectTimestep);
 
     /* Unit conversions */
     lua_register(luaSt, "solarMassToMassUnit", luaSolarMassToMassUnit);

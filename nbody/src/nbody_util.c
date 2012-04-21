@@ -1,25 +1,33 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-Copyright (c) 2011 Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2011-2012 Matthew Arsenault
+ * Copyright (c) 2011 Rensselaer Polytechnic Institute
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "nbody_util.h"
 #include "milkyway_math.h"
+
+/* Correct timestep so an integer number of steps covers the exact
+ * evolution time */
+real nbCorrectTimestep(real timeEvolve, real dt)
+{
+    real nStep = mw_ceil(timeEvolve / dt);
+    return timeEvolve / nStep;
+}
 
 mwvector nbCenterOfMass(const NBodyState* st)
 {

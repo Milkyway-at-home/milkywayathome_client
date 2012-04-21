@@ -864,6 +864,13 @@ galactic coordinates. Optional argument indicates that the l and b in
 the input vector are in radians.
 @end deffn
 
+@deffn utility function correctTimestep(@var{timeEvolve}, @var{dt})
+Find corrected timestep so that it evenly divides the evolution
+time. This ensures you do not evolve for slightly longer than you
+intended. This will happen automatically when you create the context,
+but you may wish to perform the calculation yourself.
+@end deffn
+
 @deffn utility function solarMassToMassUnits(@var{mass})
 Convert a mass in solar masses to one in simulation units.
 @end deffn
