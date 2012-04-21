@@ -35,14 +35,14 @@ typedef struct NBodyGLPrefs
 {
     int eventPollPeriod;
     int blockSimulation;
-    int noFloat;
+    int floatView;
     double floatSpeed;
     double texturedPointSize;
     double pointPointSize;
     int untexturedPoints;
     int monochromatic;
     int originCentered;
-    int noShowInfo;
+    int showInfo;
     int showAxes;
     int showOrbitTrace;
 } NBodyGLPrefs;
@@ -159,14 +159,14 @@ static const VisArgs defaultVisArgs =
 
     /* .quitOnComplete    */ DEFAULT_QUIT_ON_COMPLETE,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
-    /* .noFloat           */ DEFAULT_NO_FLOAT,
+    /* .noFloat           */ FALSE,
     /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
     /* .texturedPointSize */ DEFAULT_TEXTURED_POINT_SIZE,
     /* .pointPointSize    */ DEFAULT_POINT_POINT_SIZE,
     /* .untexturedPoints  */ DEFAULT_UNTEXTURED_POINTS,
     /* .monochrome        */ DEFAULT_MONOCHROMATIC,
     /* .originCentered    */ DEFAULT_ORIGIN_CENTERED,
-    /* .noDrawInfo        */ DEFAULT_NO_SHOW_INFO,
+    /* .noDrawInfo        */ FALSE,
     /* .drawAxes          */ DEFAULT_SHOW_AXES,
     /* .drawOrbitTrace    */ DEFAULT_SHOW_ORBIT_TRACE,
 
@@ -185,14 +185,14 @@ static const NBodyGLPrefs nbglDefaultPrefs =
 {
     /* .eventPollPeriod   */ DEFAULT_EVENT_POLL_PERIOD,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
-    /* .noFloat           */ DEFAULT_NO_FLOAT,
+    /* .floatView         */ DEFAULT_FLOAT,
     /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
     /* .texturedPointSize */ DEFAULT_TEXTURED_POINT_SIZE,
     /* .pointPointSize    */ DEFAULT_POINT_POINT_SIZE,
     /* .untexturedPoints  */ DEFAULT_UNTEXTURED_POINTS,
     /* .monochromatic     */ DEFAULT_MONOCHROMATIC,
     /* .originCentered    */ DEFAULT_ORIGIN_CENTERED,
-    /* .noShowInfo        */ DEFAULT_NO_SHOW_INFO,
+    /* .showInfo          */ DEFAULT_SHOW_INFO,
     /* .drawAxes          */ DEFAULT_SHOW_AXES,
     /* .drawOrbitTrace    */ DEFAULT_SHOW_ORBIT_TRACE
 };
@@ -205,14 +205,14 @@ static void nbglReadPreferences(VisArgs* args)
         {
             { "event_poll_period",   MW_PREF_INT,    FALSE, &prefs.eventPollPeriod   },
             { "block_simulation",    MW_PREF_BOOL,   FALSE, &prefs.blockSimulation   },
-            { "no_float",            MW_PREF_BOOL,   FALSE, &prefs.noFloat           },
+            { "float",               MW_PREF_BOOL,   FALSE, &prefs.floatView         },
             { "float_speed",         MW_PREF_DOUBLE, FALSE, &prefs.floatSpeed        },
             { "textured_point_size", MW_PREF_DOUBLE, FALSE, &prefs.texturedPointSize },
             { "point_point_size",    MW_PREF_DOUBLE, FALSE, &prefs.pointPointSize    },
             { "untextured_points",   MW_PREF_BOOL,   FALSE, &prefs.untexturedPoints  },
             { "monochromatic",       MW_PREF_BOOL,   FALSE, &prefs.monochromatic     },
             { "origin_centered",     MW_PREF_BOOL,   FALSE, &prefs.originCentered    },
-            { "no_show_info",        MW_PREF_BOOL,   FALSE, &prefs.noShowInfo        },
+            { "show_info",           MW_PREF_BOOL,   FALSE, &prefs.showInfo          },
             { "show_axes",           MW_PREF_BOOL,   FALSE, &prefs.showAxes          },
             { "show_orbit_trace",    MW_PREF_BOOL,   FALSE, &prefs.showOrbitTrace    },
             END_MW_PROJECT_PREFS
@@ -232,14 +232,14 @@ static void nbglReadPreferences(VisArgs* args)
     /* Any successfully found setting will be used; otherwise it will get the default */
     args->eventPollPeriod   = prefs.eventPollPeriod;
     args->blockSimulation   = prefs.blockSimulation;
-    args->noFloat           = prefs.noFloat;
+    args->noFloat           = !prefs.floatView;
     args->floatSpeed        = (float) prefs.floatSpeed;
     args->texturedPointSize = (float) prefs.texturedPointSize;
     args->pointPointSize    = (float) prefs.pointPointSize;
     args->untexturedPoints  = prefs.untexturedPoints;
     args->monochromatic     = prefs.monochromatic;
     args->originCentered    = prefs.originCentered;
-    args->noDrawInfo        = prefs.noShowInfo;
+    args->noDrawInfo        = !prefs.showInfo;
     args->drawAxes          = prefs.showAxes;
     args->drawOrbitTrace    = prefs.showOrbitTrace;
 }

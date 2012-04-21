@@ -29,7 +29,7 @@ extern "C" {
 #define DEFAULT_TEXTURED_POINT_SIZE 250.0f
 #define DEFAULT_POINT_POINT_SIZE 40.0f
 #define DEFAULT_FLOAT_SPEED 5.0f
-#define DEFAULT_NO_FLOAT FALSE
+#define DEFAULT_FLOAT TRUE
 
 #define DEFAULT_EVENT_POLL_PERIOD ((int) (1000.0 / 30.0))
 #define MAX_EVENT_POLL_PERIOD ((int) 5000)
@@ -41,7 +41,7 @@ extern "C" {
  * only show points from when the graphics started. This should be
  * fixed before enabling it for the screensaver. */
 #define DEFAULT_SHOW_ORBIT_TRACE FALSE
-#define DEFAULT_NO_SHOW_INFO FALSE
+#define DEFAULT_SHOW_INFO TRUE
 #define DEFAULT_ORIGIN_CENTERED FALSE
 #define DEFAULT_MONOCHROMATIC FALSE
 #define DEFAULT_BLOCK_SIMULATION FALSE
