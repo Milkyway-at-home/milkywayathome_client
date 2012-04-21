@@ -29,7 +29,7 @@
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
 #include "nbody_lua_misc.h"
-
+#include "nbody_util.h"
 
 
 static const MWEnumAssociation criterionOptions[] =

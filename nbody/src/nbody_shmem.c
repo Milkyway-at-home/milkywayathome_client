@@ -40,10 +40,6 @@
     #include <sys/stat.h>
   #endif
 
-  #if HAVE_SYS_WAIT_H
-    #include <sys/wait.h>
-  #endif
-
   #if HAVE_FCNTL_H
     #include <fcntl.h>
   #endif
@@ -51,6 +47,11 @@
   #include <errno.h>
   #include <err.h>
 #endif /* USE_POSIX_SHMEM */
+
+#if HAVE_SYS_WAIT_H
+  #include <sys/wait.h>
+#endif
+
 
 
 #define MAX_INSTANCES 256
@@ -508,6 +509,8 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
         {
             return;
         }
+      #else
+        memset(&cmPos, 0, sizeof(cmPos));
       #endif
     }
     else
@@ -517,7 +520,7 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
         cmPos = nbCenterOfMass(st);
     }
 
-    info->currentTime = (float) st->step * (float) ctx->timestep;
+    info->currentTime = (float) (st->step * ctx->timestep);
     info->timeEvolve = (float) ctx->timeEvolve;
 
     info->rootCenterOfMass[0] = (float) X(cmPos);
