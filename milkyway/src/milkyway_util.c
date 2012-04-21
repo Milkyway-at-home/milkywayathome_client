@@ -698,7 +698,7 @@ int mwProcessIsAlive(int pid)
             /* Error is probably because it isn't a child process (ECHILD)
                We can test it with kill.
              */
-            return (kill((pid_t) pid, 0) == 0);
+            return (kill((pid_t) pid, 0) == 0 || errno == EPERM);
         }
         else
         {
