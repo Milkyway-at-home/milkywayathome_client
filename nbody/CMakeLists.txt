@@ -399,6 +399,11 @@ if(NBODY_GL)
   set(MACOSX_BUNDLE_BUNDLE_VERSION 3.0)
 
   #add_executable(milkyway_nbody_graphics MACOSX_BUNDLE ${nbody_screensaver_src} ${nbody_screensaver_headers} )
+
+  if(WIN32)
+    list(APPEND nbody_screensaver_src ${NBODY_SRC_DIR}/graphics_main_win.c)
+  endif()
+
   add_executable(milkyway_nbody_graphics  ${nbody_screensaver_src} ${nbody_screensaver_headers} )
   target_link_libraries(milkyway_nbody_graphics nbody_shaders milkyway_image ${vis_link_libs})
 endif()

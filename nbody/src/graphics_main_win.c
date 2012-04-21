@@ -38,10 +38,9 @@ void AppInvalidParameterHandler(const wchar_t* expression,
 {
     fprintf(stderr, "Invalid parameter detected in function %ls. File: %ls Line: %d\n", function, file, line);
     fprintf(stderr, "Expression: %ls\n", expression);
-    // Cause a Debug Breakpoint.
+    /* Cause a Debug Breakpoint. */
     DebugBreak();
 }
-
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode)
 {
@@ -49,7 +48,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
     const char** argv;
     int argc, rc;
 
-    //_set_invalid_parameter_handler(AppInvalidParameterHandler);
+    /* _set_invalid_parameter_handler(AppInvalidParameterHandler); */
 
     commandLine = GetCommandLine();
     if (poptParseArgvString(commandLine, &argc, &argv))
@@ -63,5 +62,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 
     return rc;
 }
-
 

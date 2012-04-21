@@ -21,6 +21,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef _WIN32
+  #if MW_IS_X86_32
+    #pragma comment(linker, "/SUBSYSTEM:CONSOLE,5.0")
+  #else
+    #pragma comment(linker, "/SUBSYSTEM:CONSOLE,5.02")
+  #endif
+#endif
+
 #include "separation.h"
 #include "separation_lua.h"
 #include "milkyway_util.h"

@@ -233,10 +233,6 @@ endif()
 
 set(separation_main_src src/separation_main.c)
 
-if(MSVC)
-  list(APPEND separation_main_src src/main_win.c)
-endif()
-
 if(SEPARATION_OPENCL)
   if(NVIDIA_OPENCL)
     set(CL_PLAN_CLASS "cuda_opencl")

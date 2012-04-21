@@ -17,6 +17,10 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef _WIN32
+  #pragma comment(linker, "/SUBSYSTEM:WINDOWS")
+#endif
+
 #include "nbody_config.h"
 #include "nbody_gl.h"
 #include "nbody_graphics.h"

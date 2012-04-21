@@ -24,11 +24,6 @@ macro(set_msvc_extra_link_flags)
   if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "/VERBOSE:LIB ${CMAKE_EXE_LINKER_FLAGS}")
 
-    # Minimum is 5.0 on x86 and (5.02 on x64, same as default)
-    if(SYSTEM_IS_32)
-      set(CMAKE_EXE_LINKER_FLAGS "/SUBSYSTEM:CONSOLE,5.0 ${CMAKE_EXE_LINKER_FLAGS}")
-    endif()
-
     if(MSVC_USE_STATIC_CRT)
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:msvcrt.lib")
     endif()
