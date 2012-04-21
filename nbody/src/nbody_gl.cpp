@@ -1365,35 +1365,53 @@ void NBodyGraphics::floatMotion()
 void NBodyGraphics::findInitialOrientation()
 {
     glm::vec3 centerOfMass = this->sceneData.centerOfMass;
-    glm::vec3 centerOfMassDir = glm::normalize(centerOfMass);
+    glm::fquat startOrient;
 
-    // find angle between the center of mass and the plane of the milkyway
-    float angle = atanf(fabsf(centerOfMass.z / centerOfMass.x));
-    angle = glm::degrees(angle);
+    if (centerOfMass == glm::vec3(0.0f, 0.0f, 0.0f))
+    {
+        float x = glm::linearRand(0.0f, 360.0f);
+        float y = glm::linearRand(0.0f, 360.0f);
 
-    // find an angle somewhat close to that angle
-    float rangeAngle = glm::gaussRand(angle, 4.0f);
+        startOrient = glm::angleAxis(y, xAxis) * glm::angleAxis(x, yAxis);
+    }
+    else
+    {
+        glm::vec3 centerOfMassDir = glm::normalize(centerOfMass);
 
-    // we want to eliminate the z component or else the starting
-    // orientation makes rotation feel funny at the start
-    glm::vec3 cmCrossZ = glm::normalize(glm::cross(centerOfMass, zAxis));
+        // find angle between the center of mass and the plane of the milkyway
+        float angle = centerOfMass.x == 0.0f ? 0.0f : atanf(fabsf(centerOfMass.z / centerOfMass.x));
+        angle = glm::degrees(angle);
 
-    float x = glm::linearRand(-1.0f, 1.0f);
-    float y = glm::linearRand(-1.0f, 1.0f);
-    glm::vec3 rVector = glm::normalize(glm::vec3(x, y, 0.0f));
+        // find an angle somewhat close to that angle
+        float rangeAngle = glm::gaussRand(angle, 4.0f);
 
-    // Find a view that looks sort of from behind the center of mass
-    // towards the origin but somewhat random.
-    //
-    // This doesn't do quite what I want but it seems to look good
-    // enough most of the time
+        // we want to eliminate the z component or else the starting
+        // orientation makes rotation feel funny at the start
+        glm::vec3 cmCrossZ = glm::normalize(glm::cross(centerOfMass, zAxis));
 
-    float rotateAngle = glm::linearRand(0.0f, 360.0f);
-    rVector = glm::rotate(centerOfMassDir, rotateAngle, rVector);
-    rVector = glm::perp(rVector, zAxis);
 
-    glm::vec3 shifted = glm::normalize(rVector + cmCrossZ);
-    glm::fquat startOrient = glm::angleAxis(rangeAngle, shifted);
+        float x = glm::linearRand(-1.0f, 1.0f);
+        float y = glm::linearRand(-1.0f, 1.0f);
+        if (x == 0.0f && y == 0.0f)
+        {
+            x = 1.0f;
+        }
+
+        glm::vec3 rVector = glm::normalize(glm::vec3(x, y, 0.0f));
+
+        // Find a view that looks sort of from behind the center of mass
+        // towards the origin but somewhat random.
+        //
+        // This doesn't do quite what I want but it seems to look good
+        // enough most of the time
+
+        float rotateAngle = glm::linearRand(0.0f, 360.0f);
+        rVector = glm::rotate(centerOfMassDir, rotateAngle, rVector);
+        rVector = glm::perp(rVector, zAxis);
+
+        glm::vec3 shifted = glm::normalize(rVector + cmCrossZ);
+        startOrient = glm::angleAxis(rangeAngle, shifted);
+    }
 
     this->viewPole.SetOrientation(startOrient);
 }
