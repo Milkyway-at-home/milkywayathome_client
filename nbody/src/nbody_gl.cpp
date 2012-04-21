@@ -1298,7 +1298,7 @@ void NBodyGraphics::mainLoop()
         {
             glfwPollEvents();
 
-            if (!this->running)
+            if (!this->running || mw_status_quit_request() || mw_status_abort_request())
             {
                 /* Make sure to test right after polling to avoid
                  * waiting for the scene to update before quitting.
