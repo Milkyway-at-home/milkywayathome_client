@@ -245,6 +245,7 @@ private:
     void floatMotion();
     void prepareContext();
     bool readSceneData();
+    bool waitForSceneData();
 
 public:
     NBodyGraphics(scene_t* scene, const VisArgs* args);
@@ -770,6 +771,30 @@ static void nbglSetHandlers()
     glfwSetScrollCallback(scrollHandler);
 }
 
+bool NBodyGraphics::waitForSceneData()
+{
+    int ownerPID = OPA_load_int(&this->scene->ownerPID);
+
+    while (!this->readSceneData())
+    {
+        if (mw_status_quit_request() || mw_status_abort_request())
+        {
+            mw_printf("BOINC requested quit while waiting for initial scene\n");
+            return true;
+        }
+
+        if (!mwProcessIsAlive(ownerPID))
+        {
+            mw_printf("Scene owner process (%d) not alive waiting for initial scene\n", ownerPID);
+            return true;
+        }
+
+        mwMilliSleep(10);
+    }
+
+    return false;
+}
+
 NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
     : scene(scene_),
       text(NBodyText(&robotoRegular12)),
@@ -797,7 +822,13 @@ NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
     // Read initial scene data.
     // If we are launching from the main process, it should have
     // updated the scene before launching us
-    this->readSceneData();
+    //
+    // if we are not launching with --visualizer, we may need to wait
+    // for the main process to catch up, to actually get something useful
+    if (this->waitForSceneData())
+    {
+        throw std::runtime_error("Failed to read initial scene data");
+    }
 
     // load the colors after we have scene data so we can color the
     // ignored particles differently
