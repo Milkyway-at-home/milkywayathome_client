@@ -26,6 +26,10 @@
 #include "nbody_gl_shaders.h"
 #include "nbody_gl_util.h"
 
+#ifdef _WIN32
+  #define swprintf _snwprintf
+#endif
+
 glm::mat4 textCameraToClipMatrix(1.0f);
 
 NBodyTextItem::NBodyTextItem(GLuint textProgramPositionLoc, const texture_font_t* textureFont)

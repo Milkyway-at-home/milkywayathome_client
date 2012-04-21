@@ -461,6 +461,11 @@ if(NBODY_GL)
 
   set_target_properties(milkyway_nbody_graphics PROPERTIES
                           COMPILE_FLAGS "${FAST_MATH_FLAGS}")
+  if(MINGW)
+    set_target_properties(milkyway_nbody_graphics
+                          PROPERTIES
+                            LINK_FLAGS "-mwindows")
+  endif()
 endif()
 
 configure_file (
