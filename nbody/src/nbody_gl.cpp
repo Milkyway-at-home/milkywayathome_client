@@ -1450,6 +1450,7 @@ void NBodyGraphics::findInitialOrientation()
 static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
 {
     OPA_store_int(&scene->blockSimulationOnGraphics, args->blockSimulation);
+    OPA_store_int(&scene->updatePeriod, args->updatePeriod);
 
     /* Must be last thing set */
     OPA_store_int(&scene->attachedPID, (int) getpid());

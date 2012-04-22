@@ -45,6 +45,7 @@ extern "C" {
 #define DEFAULT_ORIGIN_CENTERED FALSE
 #define DEFAULT_MONOCHROMATIC FALSE
 #define DEFAULT_BLOCK_SIMULATION FALSE
+#define DEFAULT_UPDATE_PERIOD 0
 #define DEFAULT_QUIT_ON_COMPLETE FALSE
 
 typedef struct
@@ -57,6 +58,7 @@ typedef struct
 
     int quitOnComplete;
     int blockSimulation;
+    int updatePeriod;
     int noFloat;
     float floatSpeed;
     float texturedPointSize;
@@ -73,7 +75,7 @@ typedef struct
     int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, 0, FALSE, FALSE, FALSE, 0.0f, 0.0f, 0.0f, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, 0, 0, FALSE, FALSE, FALSE, 0.0f, 0.0f, 0.0f, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
 int nbglRunGraphics(scene_t* scene, const VisArgs* args);
 

@@ -103,6 +103,10 @@ typedef struct
     OPA_int_t attachedLock;
     OPA_int_t paused;
 
+    /* Last time queue was pushed to in seconds */
+    OPA_int_t lastUpdateTime;
+    OPA_int_t updatePeriod;
+
     /*
       Optionally block the simulation while the graphics catches up.
       This would let you create smoother visualizations etc. at the

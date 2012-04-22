@@ -39,6 +39,7 @@ typedef struct NBodyGLPrefs
 {
     int eventPollPeriod;
     int blockSimulation;
+    int updatePeriod;
     int floatView;
     double floatSpeed;
     double texturedPointSize;
@@ -163,6 +164,7 @@ static const VisArgs defaultVisArgs =
 
     /* .quitOnComplete    */ DEFAULT_QUIT_ON_COMPLETE,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
+    /* .updatePeriod      */ DEFAULT_UPDATE_PERIOD,
     /* .noFloat           */ FALSE,
     /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
     /* .texturedPointSize */ DEFAULT_TEXTURED_POINT_SIZE,
@@ -189,6 +191,7 @@ static const NBodyGLPrefs nbglDefaultPrefs =
 {
     /* .eventPollPeriod   */ DEFAULT_EVENT_POLL_PERIOD,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
+    /* .updatePeriod      */ DEFAULT_UPDATE_PERIOD,
     /* .floatView         */ DEFAULT_FLOAT,
     /* .floatSpeed        */ DEFAULT_FLOAT_SPEED,
     /* .texturedPointSize */ DEFAULT_TEXTURED_POINT_SIZE,
@@ -209,6 +212,7 @@ static void nbglReadPreferences(VisArgs* args)
         {
             { "event_poll_period",   MW_PREF_INT,    FALSE, &prefs.eventPollPeriod   },
             { "block_simulation",    MW_PREF_BOOL,   FALSE, &prefs.blockSimulation   },
+            { "update_period",       MW_PREF_INT,    FALSE, &prefs.updatePeriod      },
             { "float",               MW_PREF_BOOL,   FALSE, &prefs.floatView         },
             { "float_speed",         MW_PREF_DOUBLE, FALSE, &prefs.floatSpeed        },
             { "textured_point_size", MW_PREF_DOUBLE, FALSE, &prefs.texturedPointSize },
@@ -236,6 +240,7 @@ static void nbglReadPreferences(VisArgs* args)
     /* Any successfully found setting will be used; otherwise it will get the default */
     args->eventPollPeriod   = prefs.eventPollPeriod;
     args->blockSimulation   = prefs.blockSimulation;
+    args->updatePeriod      = prefs.updatePeriod;
     args->noFloat           = !prefs.floatView;
     args->floatSpeed        = (float) prefs.floatSpeed;
     args->texturedPointSize = (float) prefs.texturedPointSize;
@@ -306,6 +311,12 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "block-simulation", 'b',
             POPT_ARG_NONE, &visArgs.blockSimulation,
             0, "Make simulation wait for graphics so every frame is drawn", NULL
+        },
+
+        {
+            "update-period", 'p',
+            POPT_ARG_INT, &visArgs.updatePeriod,
+            0, "Interval between scene refreshes", NULL
         },
 
         {

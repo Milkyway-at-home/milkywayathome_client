@@ -268,7 +268,8 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
         return 1;
     }
 
-    memset(st->scene, 0, size);
+    memset(st->scene, 0, sizeof(scene_t));
+    OPA_store_int(&st->scene->ownerPID, (int) getpid());
     nbPrepareSceneFromState(ctx, st);
 
     return 0;
@@ -491,7 +492,7 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
 {
     int i;
     const Body* b;
-    mwvector cmPos;
+    mwvector cmPos = ZERO_VECTOR;
     int nbody = st->nbody;
     SceneInfo* info = &queue->info[buffer];
     FloatPos* r = &queue->bodyData[buffer * nbody];
@@ -509,8 +510,6 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
         {
             return;
         }
-      #else
-        memset(&cmPos, 0, sizeof(cmPos));
       #endif
     }
     else
@@ -572,6 +571,7 @@ static void nbReleaseSceneLocks(scene_t* scene)
 NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     int pid;
+    int updatePeriod;
     scene_t* scene = st->scene;
 
     if (!scene)
@@ -613,6 +613,7 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
             /* We did update successfully, we are done */
             if (updated)
             {
+                OPA_store_int(&scene->lastUpdateTime, (int) mwGetTime());
                 return NBODY_SUCCESS;
             }
 
@@ -647,12 +648,26 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 
         return NBODY_GRAPHICS_TIMEOUT;
     }
+    else if ((updatePeriod = OPA_load_int(&scene->updatePeriod)) != 0)
+    {
+        int lastTime = OPA_load_int(&scene->lastUpdateTime);
+        int now = (int) mwGetTime();
+
+        if (now - lastTime >= updatePeriod)
+        {
+            if (nbPushCircularQueue(&scene->queue, ctx, st))
+            {
+                OPA_store_int(&scene->lastUpdateTime, now);
+            }
+        }
+
+        return NBODY_SUCCESS;
+    }
     else
     {
         nbPushCircularQueue(&scene->queue, ctx, st);
+        return NBODY_SUCCESS;
     }
-
-    return NBODY_SUCCESS;
 }
 
 /* Force a push to the queue regardless of whether something is
