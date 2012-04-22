@@ -222,7 +222,7 @@ private:
           drawOrbitTrace((bool) args->drawOrbitTrace),
           drawParticles(true),
           drawHelp(false),
-          quitOnSimulationComplete((bool) args->quitOnComplete)
+          quitOnSimulationComplete((bool) !args->noQuitOnComplete)
         { }
     } drawOptions;
 
