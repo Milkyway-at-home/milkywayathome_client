@@ -99,7 +99,7 @@ static const size_t hdrSize = sizeof(NBodyCheckpointHeader) + sizeof(tail);
 
 
 
-static void prepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyCtx* ctx, const NBodyState* st)
+static void nbPrepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyCtx* ctx, const NBodyState* st)
 {
     strcpy(cp->header, hdr);
     cp->realSize = sizeof(real);
@@ -116,7 +116,7 @@ static void prepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyC
     cp->nOrbitTrace = N_ORBIT_TRACE_POINTS;
 }
 
-static void readCheckpointHeader(NBodyCheckpointHeader* cp, NBodyCtx* ctx, NBodyState* st)
+static void nbReadCheckpointHeader(NBodyCheckpointHeader* cp, NBodyCtx* ctx, NBodyState* st)
 {
     memcpy(ctx, &cp->ctx, sizeof(*ctx));
     st->nbody = cp->nbody;
@@ -125,10 +125,10 @@ static void readCheckpointHeader(NBodyCheckpointHeader* cp, NBodyCtx* ctx, NBody
     st->treeIncest = cp->treeIncest;
 }
 
-static int verifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
-                                  const CheckpointHandle* cp,
-                                  const NBodyState* st,
-                                  size_t supposedCheckpointSize)
+static int nbVerifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
+                                    const CheckpointHandle* cp,
+                                    const NBodyState* st,
+                                    size_t supposedCheckpointSize)
 {
     if (strncmp(cpHdr->header, hdr, sizeof(cpHdr->header)))
     {
@@ -397,18 +397,17 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     memcpy(&cpHdr, p, sizeof(cpHdr));
     p += sizeof(cpHdr);
 
-    readCheckpointHeader(&cpHdr, ctx, st);
+    nbReadCheckpointHeader(&cpHdr, ctx, st);
 
     assert(cp->cpFileSize != 0);
     bodySize = st->nbody * sizeof(Body);
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     supposedCheckpointSize = hdrSize + bodySize + traceSize;
 
-    if (verifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
+    if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
         return TRUE;
     }
-
 
     /* Read the bodies */
     st->bodytab = (Body*) mwMallocA(bodySize);
@@ -421,10 +420,10 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     if (strncmp(p, tail, sizeof(tail)))
     {
-        free(st->bodytab);
+        mwFreeA(st->bodytab);
         st->bodytab = NULL;
 
-        free(st->orbitTrace);
+        mwFreeA(st->orbitTrace);
         st->orbitTrace = NULL;
 
         mw_printf("Failed to find end marker in checkpoint file.\n");
@@ -436,13 +435,13 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
 static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
-    const size_t bodySize =  st->nbody * sizeof(Body);
+    const size_t bodySize = st->nbody * sizeof(Body);
     const size_t traceSize = N_ORBIT_TRACE_POINTS * sizeof(mwvector);
     char* p = cp->mptr;
     NBodyCheckpointHeader cpHdr;
 
     memset(&cpHdr, 0, sizeof(cpHdr));
-    prepareWriteCheckpointHeader(&cpHdr, ctx, st);
+    nbPrepareWriteCheckpointHeader(&cpHdr, ctx, st);
 
     memcpy(p, &cpHdr, sizeof(cpHdr));
     p += sizeof(cpHdr);
