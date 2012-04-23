@@ -326,7 +326,7 @@ int equalBody(const Body* a, const Body* b)
     }
     if (!equalVector(&Vel(a), &Vel(b)))
     {
-        mw_printf("VElocity differ\n");
+        mw_printf("velocity differ\n");
         return FALSE;
     }
 

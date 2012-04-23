@@ -60,7 +60,7 @@ function makeBodies(ctx, potential)
    }
 
    secondModel = predefinedModels.plummer{
-      nbody      = model2Bodies,
+      nbody       = model2Bodies,
       prng        = prng,
       position    = finalPosition,
       velocity    = finalVelocity,

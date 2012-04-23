@@ -924,7 +924,7 @@ static NBodyStatus nbCheckKernelErrorCode(const NBodyCtx* ctx, NBodyState* st)
 
     if (mw_unlikely(ts.errorCode != 0))
     {
-        /* Incest is special because we cagn choose to ignore it */
+        /* Incest is special because we can choose to ignore it */
         if (ts.errorCode == NBODY_KERNEL_TREE_INCEST)
         {
             nbReportTreeIncest(ctx, st);
@@ -1537,7 +1537,7 @@ cl_int nbSetInitialTreeStatus(NBodyState* st)
 
     memset(&iniTreeStatus, 0, sizeof(iniTreeStatus));
 
-    iniTreeStatus.radius = 0;
+    iniTreeStatus.radius = 0.0;
     iniTreeStatus.bottom = 0;
     iniTreeStatus.maxDepth = 1;
     iniTreeStatus.assertionLine = -1;
