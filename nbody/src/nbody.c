@@ -293,6 +293,20 @@ int nbMain(const NBodyFlags* nbf)
         return NBODY_USER_ERROR;
     }
 
+    nbSetCLRequestFromFlags(&clr, nbf);
+
+    /* Find out what device we're using so we can tell the workunit
+     * about it */
+    if (NBODY_OPENCL && !nbf->noCL)
+    {
+        rc = nbInitCL(st, ctx, &clr);
+        if (nbStatusIsFatal(rc))
+        {
+            destroyNBodyState(st);
+            return rc;
+        }
+    }
+
     rc = nbResumeOrNewRun(ctx, st, nbf);
     if (nbStatusIsFatal(rc))
     {
@@ -302,7 +316,16 @@ int nbMain(const NBodyFlags* nbf)
 
     nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     nbSetStateFromFlags(st, nbf);
-    nbSetCLRequestFromFlags(&clr, nbf);
+
+    if (NBODY_OPENCL && !nbf->noCL)
+    {
+        rc = nbInitNBodyStateCL(st, ctx, &clr);
+        if (nbStatusIsFatal(rc))
+        {
+            destroyNBodyState(st);
+            return rc;
+        }
+    }
 
     if (nbCreateSharedScene(st, ctx))
     {
@@ -318,18 +341,6 @@ int nbMain(const NBodyFlags* nbf)
          * attached in case we are using blocking mode */
         nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
     }
-
-  #if NBODY_OPENCL
-    if (!nbf->noCL)
-    {
-        rc = nbInitNBodyStateCL(st, ctx, &clr);
-        if (nbStatusIsFatal(rc))
-        {
-            destroyNBodyState(st);
-            return rc;
-        }
-    }
-  #endif /* NBODY_OPENCL */
 
     if (nbf->reportProgress)
     {

@@ -198,23 +198,9 @@ NBodyState* newNBodyState()
 
 #if NBODY_OPENCL
 
-NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
 {
     cl_int err;
-    const DevInfo* devInfo;
-
-    /* Bodies must be set before trying to use this */
-    if (!st->bodytab)
-    {
-        mw_printf("Bodies not set for CL initialization\n");
-        return NBODY_CONSISTENCY_ERROR;
-    }
-
-    if (ctx->potentialType == EXTERNAL_POTENTIAL_CUSTOM_LUA)
-    {
-        mw_printf("Cannot use Lua potential with OpenCL\n");
-        return NBODY_UNSUPPORTED;
-    }
 
     st->usesQuad = ctx->useQuad;
     st->usesExact = (ctx->criterion == Exact);
@@ -228,6 +214,33 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
     err = mwSetupCL(st->ci, clr);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
+
+    return NBODY_SUCCESS;
+}
+
+NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+{
+    cl_int err;
+    const DevInfo* devInfo;
+
+    if (!st->usesCL)
+    {
+        mw_printf("CL not setup for CL state initialization\n");
+        return NBODY_CONSISTENCY_ERROR;
+    }
+
+    /* Bodies must be set before trying to use this */
+    if (!st->bodytab)
+    {
+        mw_printf("Bodies not set for CL state initialization\n");
+        return NBODY_CONSISTENCY_ERROR;
+    }
+
+    if (ctx->potentialType == EXTERNAL_POTENTIAL_CUSTOM_LUA)
+    {
+        mw_printf("Cannot use Lua potential with OpenCL\n");
+        return NBODY_UNSUPPORTED;
+    }
 
     devInfo = &st->ci->di;
 
@@ -266,6 +279,20 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequ
     }
 
     return NBODY_SUCCESS;
+}
+
+#else
+
+NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+{
+    (void) st, (void) ctx, (void) clr;
+    return NBODY_CL_ERROR;
+}
+
+NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+{
+    (void) st, (void) ctx, (void) clr;
+    return NBODY_CL_ERROR;
 }
 
 #endif /* NBODY_OPENCL */

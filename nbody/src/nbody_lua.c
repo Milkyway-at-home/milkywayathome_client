@@ -62,6 +62,116 @@ static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
     return 0;
 }
 
+#if NBODY_OPENCL
+
+static inline void bindCALTarget(lua_State* luaSt, MWCALtargetEnum target)
+{
+    lua_pushinteger(luaSt, (lua_Integer) target);
+    lua_setglobal(luaSt, showMWCALtargetEnum(target));
+}
+
+static void bindCALTargetConstants(lua_State* luaSt)
+{
+    bindCALTarget(luaSt, MW_CAL_TARGET_UNKNOWN);
+    bindCALTarget(luaSt, MW_CAL_TARGET_INVALID);
+    bindCALTarget(luaSt, MW_CAL_TARGET_600);
+    bindCALTarget(luaSt, MW_CAL_TARGET_610);
+    bindCALTarget(luaSt, MW_CAL_TARGET_630);
+    bindCALTarget(luaSt, MW_CAL_TARGET_670);
+    bindCALTarget(luaSt, MW_CAL_TARGET_7XX);
+    bindCALTarget(luaSt, MW_CAL_TARGET_770);
+    bindCALTarget(luaSt, MW_CAL_TARGET_710);
+    bindCALTarget(luaSt, MW_CAL_TARGET_730);
+    bindCALTarget(luaSt, MW_CAL_TARGET_CYPRESS);
+    bindCALTarget(luaSt, MW_CAL_TARGET_JUNIPER);
+    bindCALTarget(luaSt, MW_CAL_TARGET_REDWOOD);
+    bindCALTarget(luaSt, MW_CAL_TARGET_CEDAR);
+    bindCALTarget(luaSt, MW_CAL_TARGET_SUMO);
+    bindCALTarget(luaSt, MW_CAL_TARGET_SUPERSUMO);
+    bindCALTarget(luaSt, MW_CAL_TARGET_WRESTLER);
+    bindCALTarget(luaSt, MW_CAL_TARGET_CAYMAN);
+    bindCALTarget(luaSt, MW_CAL_TARGET_RESERVED2);
+    bindCALTarget(luaSt, MW_CAL_TARGET_BARTS);
+    bindCALTarget(luaSt, MW_CAL_TARGET_TURKS);
+    bindCALTarget(luaSt, MW_CAL_TARGET_CAICOS);
+    bindCALTarget(luaSt, MW_CAL_TARGET_TAHITI);
+    bindCALTarget(luaSt, MW_CAL_TARGET_THAMES);
+    bindCALTarget(luaSt, MW_CAL_TARGET_LOMBOK);
+}
+
+static int bindDeviceInformation(lua_State* luaSt, NBodyState* st)
+{
+    const int numberItems = 10;
+    int attrTable;
+    const DevInfo* devInfo = &st->ci->di;
+
+    if (!st || !st->usesCL)
+    {
+        lua_pushnil(luaSt);
+        lua_setglobal(luaSt, "deviceInfo");
+        return 0;
+    }
+
+    bindCALTargetConstants(luaSt);
+
+    lua_createtable(luaSt, numberItems, 0);
+    attrTable = lua_gettop(luaSt);
+
+  #define DEV_STRING_ITEM(name, val)            \
+    do                                          \
+    {                                           \
+        lua_pushstring(luaSt, name);            \
+        lua_pushstring(luaSt, val);             \
+        lua_rawset(luaSt, attrTable);           \
+    }                                           \
+    while (0)
+
+  #define DEV_INT_ITEM(name, val)                     \
+    do                                                \
+    {                                                 \
+        lua_pushstring(luaSt, name);                  \
+        lua_pushinteger(luaSt, (lua_Integer) (val));  \
+        lua_rawset(luaSt, attrTable);                 \
+    }                                                 \
+    while (0)
+
+    DEV_STRING_ITEM("devType", showCLDeviceType(devInfo->devType));
+    DEV_INT_ITEM("maxCompUnits", devInfo->maxCompUnits);
+    DEV_INT_ITEM("clockFreq", devInfo->clockFreq);
+    DEV_INT_ITEM("memSize", devInfo->memSize);
+    DEV_INT_ITEM("maxMemAlloc", devInfo->maxMemAlloc);
+    DEV_INT_ITEM("localMemSize", devInfo->localMemSize);
+    DEV_INT_ITEM("warpSize", devInfo->warpSize);
+    DEV_INT_ITEM("vendorID", devInfo->vendorID);
+    DEV_STRING_ITEM("devName", devInfo->devName);
+    DEV_STRING_ITEM("vendor", devInfo->vendor);
+    DEV_STRING_ITEM("version", devInfo->version);
+    DEV_STRING_ITEM("boardName", devInfo->boardName);
+    DEV_STRING_ITEM("driver", devInfo->driver);
+    DEV_INT_ITEM("computeCapabilityMajor", devInfo->computeCapabilityMajor);
+    DEV_INT_ITEM("computeCapabilityMinor", devInfo->computeCapabilityMinor);
+    DEV_INT_ITEM("calTarget", devInfo->calTarget);
+    DEV_INT_ITEM("doubleFrac", devInfo->doubleFrac);
+    DEV_INT_ITEM("aluPerCU", devInfo->aluPerCU);
+    DEV_STRING_ITEM("exts", devInfo->exts);
+  #undef DEV_STRING_ITEM
+  #undef DEV_INT_ITEM
+
+    lua_setglobal(luaSt, "deviceInfo");
+    return 0;
+}
+
+#else
+
+static int bindDeviceInformation(lua_State* luaSt, NBodyState* st)
+{
+    lua_pushnil(luaSt);
+    lua_setglobal(luaSt, "deviceInfo");
+
+    return 0;
+}
+#endif /* NBODY_OPENCL */
+
 static int bindVersionNumber(lua_State* luaSt)
 {
     lua_pushinteger(luaSt, NBODY_VERSION_MAJOR);
@@ -135,8 +245,10 @@ lua_State* nbLuaOpen(mwbool debug)
 }
 
 /* Open a lua_State, bind run information such as server arguments and
- * BOINC status, and evaluate input script. */
-lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
+ * BOINC status, and evaluate input script.
+ * If given NULL state, no device information will be given
+ */
+lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf, NBodyState* st)
 {
     char* script;
     lua_State* luaSt;
@@ -148,6 +260,7 @@ lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf)
 
     bindVersionNumber(luaSt);
     bindArgSeed(luaSt, nbf);
+    bindDeviceInformation(luaSt, st);
     mwBindBOINCStatus(luaSt);
 
     script = mwReadFileResolved(nbf->inputFile);
@@ -247,7 +360,7 @@ int nbOpenPotentialEvalStatePerThread(NBodyState* st, const NBodyFlags* nbf)
     for (i = 0; i < maxThreads; ++i)
     {
         /* FIXME: Is there a better way to copy a lua_State? */
-        states[i] = nbOpenLuaStateWithScript(nbf);
+        states[i] = nbOpenLuaStateWithScript(nbf, st);
         closures[i] = nbGetPotentialClosure(states[i]);
         if (closures[i] == LUA_NOREF)
         {
@@ -431,7 +544,7 @@ int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
     int rc;
     NBodyLikelihoodMethod method;
 
-    luaSt = nbOpenLuaStateWithScript(nbf);
+    luaSt = nbOpenLuaStateWithScript(nbf, NULL);
     if (!luaSt)
     {
         return 1;
@@ -497,7 +610,7 @@ int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     int rc;
     lua_State* luaSt;
 
-    luaSt = nbOpenLuaStateWithScript(nbf);
+    luaSt = nbOpenLuaStateWithScript(nbf, st);
     if (!luaSt)
         return 1;
 

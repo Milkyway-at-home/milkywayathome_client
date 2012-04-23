@@ -64,8 +64,6 @@ CMake documentation.
 @table @samp
 @item OpenSSL
 Used for some tests
-@item GLUT, OpenGL
-Used for visualizer / screensaver
 @item ncurses
 Used for optional progress reporting
 @item OpenCL
@@ -151,12 +149,51 @@ parameters for the simulation such as timestep size and run time, and
 specify an external potential to apply. This allows for running
 totally arbitrary configurations of particles.
 
+@xref{Application Information} for information about the application
+running the unit
+
 @xref{Required Functions} for which functions are required.
 
 @xref{Utility Functions} for information on other tools.
 
 @xref{Custom Lua Types} for information on types.
 
+@section Application Information
+The following variables are set to provide information from the
+application to the workunit. Additional arguments to the application
+are forwarded to the input file as the arguments to the script.
+@multitable @columnfractions .2 .8
+@headitem Name @tab Description
+
+@item @code{argSeed}
+@cindex argSeed
+@tab integer to use for random number seed (from @var{--seed} argument)
+
+@item @code{isBOINCApplication}
+@cindex isBOINCApplication
+@tab Application was built for BOINC usage
+
+@item @code{isStandalone}
+@cindex isStandalone
+@tab Application is running standalone as BOINC application
+
+@item @code{NBODY_VERSION_MAJOR}
+@cindex NBODY_VERSION_MAJOR
+@tab integer containing major version number
+
+@item @code{NBODY_VERSION_MINOR}
+@cindex NBODY_VERSION_MINOR
+@tab integer containing minor version number
+
+@item @code{NBODY_VERSION}
+@cindex NBODY_VERSION
+@tab String containing full version number
+
+@item @code{deviceInfo}
+@cindex deviceInfo
+@tab Table containing information about the GPU device. nil if using CPU.
+
+@end multitable
 
 
 @section Running
@@ -957,8 +994,6 @@ Passes the random number seed @var{seed} to input Lua script
 @cindex command-line argument, debug
 Print more detailed information than normally would happen. Combined
 with --version, will print commit ID
-
-
 
 @end table
 

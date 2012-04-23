@@ -20,6 +20,29 @@ model2Bodies = 1000
 totalBodies = model1Bodies + model2Bodies
 
 
+-- we can make accuracy decisions based on the device we are using
+if deviceInfo ~= nil then
+   -- Using OpenCL device
+   criterion = "BH86"
+   quads = false
+
+   print("Using device")
+
+   if deviceInfo.warpSize == 64 then
+      openingAngle = 0.6
+   else
+      openingAngle = 0.5
+   end
+else
+   print("Using cpu")
+   -- Using CPU
+   criterion = "NewCriterion"
+   quads = true
+   openingAngle = 1.0
+
+end
+
+
 
 function makePotential()
    return Potential.create{
@@ -38,9 +61,9 @@ function makeContext()
       timeEvolve = evolveTime,
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       eps2       = calculateEps2(totalBodies, r0),
-      criterion  = "NewCriterion",
-      useQuad    = true,
-      theta      = 1.0
+      criterion  = criterion,
+      useQuad    = quads,
+      theta      = openingAngle
    }
 end
 

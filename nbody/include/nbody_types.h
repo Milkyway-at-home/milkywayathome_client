@@ -452,10 +452,8 @@ typedef enum
 
 
 
-
-#if NBODY_OPENCL
+NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
 NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
-#endif
 
 int destroyNBodyState(NBodyState* st);
 int nbDetachSharedScene(NBodyState* st);

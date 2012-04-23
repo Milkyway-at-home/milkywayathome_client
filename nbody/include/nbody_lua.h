@@ -35,7 +35,7 @@ NBodyLikelihoodMethod nbEvaluateLikelihoodMethod(lua_State* luaSt);
 int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp);
 
 lua_State* nbLuaOpen(mwbool debug);
-lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf);
+lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf, NBodyState* st);
 int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
 #ifdef __cplusplus

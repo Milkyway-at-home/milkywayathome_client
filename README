@@ -31,6 +31,9 @@ Nbody:
   - Returning nil from makePotential() for N-body will run the
     simulation without an external potential
 
+  - Device information is exposed to the workunit through the
+    deviceInfo table if it is used.
+
 Tests can be run by running:
   $ make test
 
