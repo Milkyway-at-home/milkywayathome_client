@@ -1025,7 +1025,7 @@ int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut)
     err = nbEnqueueReadCenterOfMass(st, cmPosOut);
     if (err != CL_SUCCESS)
     {
-        mwPerrorCL(err, "Failed to read center of mass\n");
+        mwPerrorCL(err, "Failed to read center of mass");
         hadMarshalError = CL_TRUE;
         return 1;
     }
@@ -1093,6 +1093,10 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     cl_event sortEv = NULL;
     cl_event sumEvs[NB_MAX_MAX_DEPTH];
     cl_event quadEvs[NB_MAX_MAX_DEPTH];
+
+    treeStatus.maxDepth = 0;
+    memset(sumEvs, 0, sizeof(sumEvs));
+    memset(quadEvs, 0, sizeof(quadEvs));
 
 
     if (!st->usesConsistentMemory)
