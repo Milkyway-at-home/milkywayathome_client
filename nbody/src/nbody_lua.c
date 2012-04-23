@@ -101,9 +101,8 @@ static void bindCALTargetConstants(lua_State* luaSt)
 
 static int bindDeviceInformation(lua_State* luaSt, NBodyState* st)
 {
-    const int numberItems = 10;
     int attrTable;
-    const DevInfo* devInfo = &st->ci->di;
+    const DevInfo* devInfo;
 
     if (!st || !st->usesCL)
     {
@@ -112,9 +111,10 @@ static int bindDeviceInformation(lua_State* luaSt, NBodyState* st)
         return 0;
     }
 
+    devInfo = &st->ci->di;
     bindCALTargetConstants(luaSt);
 
-    lua_createtable(luaSt, numberItems, 0);
+    lua_createtable(luaSt, 20, 0);
     attrTable = lua_gettop(luaSt);
 
   #define DEV_STRING_ITEM(name, val)            \
