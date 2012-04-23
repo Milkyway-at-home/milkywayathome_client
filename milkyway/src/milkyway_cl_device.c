@@ -445,10 +445,18 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
             }
             else if (di->devType == CL_DEVICE_TYPE_GPU)
             {
-                /* FIXME: How do I get this on AMD? It's 64 for all of
-                 * the high end stuff, but 32 for lower. I think it's
-                 * 64 for all the GPUs that do have doubles */
-                di->warpSize = 64;
+                if (mwIsNvidiaGPUDevice(di))
+                {
+                    /* This happens if we don't have the Nvidia attribute extension, like on OS X */
+                    di->warpSize = 32;
+                }
+                else
+                {
+                    /* FIXME: How do I get this on AMD? It's 64 for all of
+                     * the high end stuff, but 32 for lower. I think it's
+                     * 64 for all the GPUs that do have doubles */
+                    di->warpSize = 64;
+                }
             }
             else
             {
