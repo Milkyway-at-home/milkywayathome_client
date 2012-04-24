@@ -219,7 +219,7 @@ NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
     return NBODY_SUCCESS;
 }
 
-NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 {
     cl_int err;
     const DevInfo* devInfo;
@@ -290,9 +290,9 @@ NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
     return NBODY_CL_ERROR;
 }
 
-NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr)
+NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 {
-    (void) st, (void) ctx, (void) clr;
+    (void) st, (void) ctx;
     return NBODY_CL_ERROR;
 }
 

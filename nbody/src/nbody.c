@@ -321,7 +321,7 @@ int nbMain(const NBodyFlags* nbf)
 
     if (NBODY_OPENCL && !nbf->noCL)
     {
-        rc = nbInitNBodyStateCL(st, ctx, &clr);
+        rc = nbInitNBodyStateCL(st, ctx);
         if (nbStatusIsFatal(rc))
         {
             destroyNBodyState(st);

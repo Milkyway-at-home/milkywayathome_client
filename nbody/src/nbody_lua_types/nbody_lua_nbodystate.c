@@ -228,6 +228,72 @@ static int toStringNBodyState(lua_State* luaSt)
     return 1;
 }
 
+static void readCLRequestFromTable(lua_State* luaSt, CLRequest* clr, int table)
+{
+    static const char* prefVendor;
+    static real platformf;
+    static real devicef;
+    static mwbool nonResponsive;
+    static mwbool enableProfiling;
+
+    static const MWNamedArg argTable[] =
+        {
+            { "preferredPlatformVendor", LUA_TSTRING,  NULL, FALSE, &prefVendor      },
+            { "platform",                LUA_TNUMBER,  NULL, FALSE, &platformf       },
+            { "device",                  LUA_TNUMBER,  NULL, FALSE, &devicef         },
+            { "nonResponsive",           LUA_TBOOLEAN, NULL, FALSE, &nonResponsive   },
+            { "enableProfiling",         LUA_TBOOLEAN, NULL, FALSE, &enableProfiling },
+            END_MW_NAMED_ARG
+        };
+
+    prefVendor = NULL;
+    platformf = 0.0;
+    devicef = 0.0;
+    nonResponsive = FALSE;
+    enableProfiling = FALSE;
+
+    handleNamedArgumentTable(luaSt, argTable, table);
+
+    memset(clr, 0, sizeof(*clr));
+    clr->preferredPlatformVendor = prefVendor;
+    clr->platform = (unsigned int) platformf;
+    clr->devNum = (unsigned int) devicef;
+    clr->nonResponsive = (int) nonResponsive;
+    clr->enableProfiling = (int) enableProfiling;
+}
+
+static int luaInitCL(lua_State* luaSt)
+{
+    NBodyState* st;
+    const NBodyCtx* ctx;
+    CLRequest clr;
+    int table;
+    NBodyStatus rc;
+
+    st = checkNBodyState(luaSt, 1);
+    ctx = checkNBodyCtx(luaSt, 2);
+    table = mw_lua_checktable(luaSt, 3);
+
+    readCLRequestFromTable(luaSt, &clr, table);
+
+    rc = nbInitCL(st, ctx, &clr);
+    lua_pushstring(luaSt, showNBodyStatus(rc));
+    return 1;
+}
+
+static int luaInitNBodyStateCL(lua_State* luaSt)
+{
+    NBodyState* st;
+    const NBodyCtx* ctx;
+    NBodyStatus rc;
+
+    st = checkNBodyState(luaSt, 1);
+    ctx = checkNBodyCtx(luaSt, 2);
+
+    rc = nbInitNBodyStateCL(st, ctx);
+    lua_pushstring(luaSt, showNBodyStatus(rc));
+    return 1;
+}
 
 static const luaL_reg metaMethodsNBodyState[] =
 {
@@ -246,6 +312,8 @@ static const luaL_reg methodsNBodyState[] =
     { "clone",           luaCloneNBodyState   },
     { "writeCheckpoint", luaWriteCheckpoint   },
     { "readCheckpoint",  luaReadCheckpoint    },
+    { "initCL",          luaInitCL            },
+    { "initCLState",     luaInitNBodyStateCL  },
     { NULL, NULL }
 };
 
