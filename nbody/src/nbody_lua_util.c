@@ -166,4 +166,23 @@ void nbRegisterUtilityFunctions(lua_State* luaSt)
     lua_register(luaSt, "kiloparsecToLightyear", luaKiloparsecToLightyear);
 }
 
+/* Return FALSE if min version set to something invalid */
+int nbReadMinVersion(lua_State* luaSt, int* major, int* minor)
+{
+    const char* version;
+    int rc;
+
+    lua_getglobal(luaSt, "nbodyMinVersion");
+    version = luaL_optstring(luaSt, -1, "0.0");
+    rc = sscanf(version, "%d.%d", major, minor);
+    lua_pop(luaSt, 1);
+
+    if (rc != 2)
+    {
+        mw_printf("Error reading minimum required version\n");
+        return FALSE;
+    }
+
+    return TRUE;
+}
 

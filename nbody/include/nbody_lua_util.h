@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 void nbRegisterUtilityFunctions(lua_State* luaSt);
+int nbReadMinVersion(lua_State* luaSt, int* major, int* minor);
 
 #ifdef __cplusplus
 }

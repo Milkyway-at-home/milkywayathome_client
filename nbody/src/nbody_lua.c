@@ -188,20 +188,12 @@ static int bindVersionNumber(lua_State* luaSt)
 
 static int nbCheckMinVersionRequired(lua_State* luaSt)
 {
-    const char* version;
-    int major, minor;
+    int major = 0, minor = 0;
 
-    lua_getglobal(luaSt, "nbodyMinVersion");
-    version = luaL_optstring(luaSt, -1, "0.0");
-
-    if (sscanf(version, "%d.%d", &major, &minor) != 2)
+    if (!nbReadMinVersion(luaSt, &major, &minor))
     {
-        mw_printf("Error reading minimum required version\n");
-        lua_pop(luaSt, 1);
-        return 0;
+        return FALSE;
     }
-
-    lua_pop(luaSt, 1);
 
     if ((NBODY_VERSION_MAJOR < major) || (NBODY_VERSION_MAJOR == major && NBODY_VERSION_MINOR < minor))
     {
