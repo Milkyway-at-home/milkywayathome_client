@@ -279,6 +279,12 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
 
         {
+            "gpu-disable-checkpointing", 'k',
+            POPT_ARG_NONE, &nbf.disableGPUCheckpointing,
+            0, "Disable checkpointing with GPUs" , NULL
+        },
+
+        {
             "debug-boinc", 'g',
             POPT_ARG_NONE, &nbf.debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL

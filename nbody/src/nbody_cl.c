@@ -25,7 +25,7 @@
 #include "nbody_util.h"
 #include "nbody_curses.h"
 #include "nbody_shmem.h"
-
+#include "nbody_checkpoint.h"
 #include "nbody_tree.h"
 
 /* We want to restrict this a bit to ensure we can get better occupancy.
@@ -1374,11 +1374,36 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
     return CL_SUCCESS;
 }
 
+static NBodyStatus nbCheckpointCL(const NBodyCtx* ctx, NBodyState* st)
+{
+    if (st->useCLCheckpointing && nbTimeToCheckpoint(ctx, st))
+    {
+        cl_int err;
+
+        err = nbMarshalBodies(st, CL_FALSE);
+        if (err != CL_SUCCESS)
+        {
+            return NBODY_CL_ERROR;
+        }
+
+        if (nbWriteCheckpoint(ctx, st))
+        {
+            return NBODY_CHECKPOINT_ERROR;
+        }
+
+        mw_checkpoint_completed();
+    }
+
+    return NBODY_SUCCESS;
+}
+
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     cl_uint i;
     NBodyWorkSizes* ws = st->workSizes;
+
+    st->dirty = TRUE;
 
     memset(ws->timings, 0, sizeof(ws->timings));
 
@@ -1453,8 +1478,6 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 
     while (st->step < ctx->nStep)
     {
-        st->dirty = TRUE;
-
         rc = nbCheckKernelErrorCode(ctx, st);
         if (nbStatusIsFatal(rc))
         {
@@ -1462,6 +1485,12 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         }
 
         rc = nbStepSystemCL(ctx, st);
+        if (nbStatusIsFatal(rc))
+        {
+            return rc;
+        }
+
+        rc = nbCheckpointCL(ctx, st);
         if (nbStatusIsFatal(rc))
         {
             return rc;
@@ -1725,6 +1754,11 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
     NBodyBuffers* nbb = st->nbb;
     cl_map_flags flags = marshalIn ? CL_MAP_WRITE : CL_MAP_READ;
 
+    if (!marshalIn && !st->dirty)     /* Skip copying if already up to date */
+    {
+        return CL_SUCCESS;
+    }
+
     err = nbMapBodies(pos, vel, &mass, nbb, ci, flags, st);
     if (err != CL_SUCCESS)
     {
@@ -1746,8 +1780,6 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
 
             mass[i] = Mass(b);
         }
-
-        st->dirty = FALSE;
     }
     else
     {
@@ -1765,9 +1797,12 @@ cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn)
         }
     }
 
+    st->dirty = FALSE; /* Host and GPU state match */
+
     return nbUnmapBodies(pos, vel, mass, nbb, ci);
 }
 
+/* FIXME: This will be completely wrong with checkpointing */
 void nbPrintKernelTimings(const NBodyState* st)
 {
     double totalTime = 0.0;
@@ -2048,6 +2083,6 @@ NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     nbPrintKernelTimings(st);
 
-    return rc;
+    return nbWriteFinalCheckpoint(ctx, st);
 }
 

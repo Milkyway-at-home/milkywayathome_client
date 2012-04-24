@@ -45,7 +45,7 @@ static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static inline NBodyStatus nbCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+static NBodyStatus nbCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
     if (nbTimeToCheckpoint(ctx, st))
     {
@@ -150,17 +150,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         nbUpdateDisplayedBodies(ctx, st);
     }
 
-    if (BOINC_APPLICATION || ctx->checkpointT >= 0)
-    {
-        mw_report("Making final checkpoint\n");
-        if (nbWriteCheckpoint(ctx, st))
-        {
-            mw_printf("Failed to write final checkpoint\n");
-            return NBODY_CHECKPOINT_ERROR;
-        }
-    }
-
-    return rc;
+    return nbWriteFinalCheckpoint(ctx, st);
 }
 
 

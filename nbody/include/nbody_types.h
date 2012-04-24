@@ -286,6 +286,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool usesConsistentMemory;
     mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
     mwbool usesCL;
+    mwbool useCLCheckpointing;
     mwbool reportProgress;
 
   #if NBODY_OPENCL
@@ -302,7 +303,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct

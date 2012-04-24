@@ -106,10 +106,12 @@ static void nbSetStateFromFlags(NBodyState* st, const NBodyFlags* nbf)
 
 static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 {
+    memset(clr, 0, sizeof(*clr));
+
     clr->platform = nbf->platform;
     clr->devNum = nbf->devNum;
     clr->verbose = nbf->verbose;
-    clr->enableCheckpointing = FALSE;
+    clr->enableCheckpointing = !nbf->disableGPUCheckpointing;
     clr->enableProfiling = TRUE;
     clr->pollingMode = MW_POLL_CL_WAIT_FOR_EVENTS;
 }

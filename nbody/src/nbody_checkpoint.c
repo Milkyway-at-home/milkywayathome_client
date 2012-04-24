@@ -617,3 +617,18 @@ int nbTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
     return FALSE;
 }
 
+NBodyStatus nbWriteFinalCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+{
+    if (BOINC_APPLICATION || ctx->checkpointT >= 0)
+    {
+        mw_report("Making final checkpoint\n");
+        if (nbWriteCheckpoint(ctx, st))
+        {
+            mw_printf("Failed to write final checkpoint\n");
+            return NBODY_CHECKPOINT_ERROR;
+        }
+    }
+
+    return NBODY_SUCCESS;
+}
+
