@@ -207,7 +207,21 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[2] = 256;
         ws->threads[3] = 512;
         ws->threads[4] = 256;
-        ws->threads[5] = 384;
+
+        /* TODO: We can decrease the thread count and rebuild if we
+         * hit the much lower maximum depths on local memory
+         * constrained GPUs
+         */
+        if (ctx->useQuad && DOUBLEPREC)
+        {
+            /* Constrains to maxdepth ~= 30. Higher brings it unacceptably low */
+            ws->threads[5] = 256;
+        }
+        else
+        {
+            ws->threads[5] = 384;
+        }
+
         ws->threads[6] = 512;
         ws->threads[7] = 448;
     }
