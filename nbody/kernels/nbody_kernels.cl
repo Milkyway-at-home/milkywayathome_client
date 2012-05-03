@@ -1524,7 +1524,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
 
-
     if (get_local_id(0) == 0)
     {
         maxDepth = _treeStatus->maxDepth;
@@ -1564,10 +1563,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
             }
         }
 
+      #if !HAVE_INLINE_PTX
         for (uint i = 0; i < THREADS6 / WARPSIZE; ++i)
         {
             allBlock[i] = 0;
         }
+      #endif
 
         if (maxDepth > MAXDEPTH)
         {
@@ -1596,7 +1597,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
         uint k = get_global_id(0);
 
+      #if !HAVE_INLINE_PTX
         atom_add(&allBlock[base], k >= maxNBody);
+      #endif
 
         /* iterate over all bodies assigned to thread */
         while (k < maxNBody)
