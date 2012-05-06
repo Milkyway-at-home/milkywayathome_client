@@ -131,7 +131,8 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_coordinates.c
                   ${NBODY_SRC_DIR}/nbody_shmem.c
                   ${NBODY_SRC_DIR}/nbody_util.c
-                  ${NBODY_SRC_DIR}/nbody_emd.c)
+                  ${NBODY_SRC_DIR}/nbody_emd.c
+                  ${NBODY_SRC_DIR}/nbody_mass.c)
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
@@ -156,7 +157,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_shmem.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h
                       ${NBODY_INCLUDE_DIR}/nbody_graphics.h
-                      ${NBODY_INCLUDE_DIR}/nbody_emd.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_emd.h
+                      ${NBODY_INCLUDE_DIR}/nbody_mass.h)
 
 
 
