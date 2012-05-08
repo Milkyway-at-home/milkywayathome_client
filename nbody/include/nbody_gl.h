@@ -46,6 +46,7 @@ extern "C" {
 #define DEFAULT_MONOCHROMATIC FALSE
 #define DEFAULT_BLOCK_SIMULATION FALSE
 #define DEFAULT_UPDATE_PERIOD 0
+#define DEFAULT_QUIT_ON_COMPLETE FALSE
 
 typedef struct
 {
@@ -55,7 +56,7 @@ typedef struct
     int height;
     int eventPollPeriod;
 
-    int noQuitOnComplete;
+    int quitOnComplete;
     int blockSimulation;
     int updatePeriod;
     int noFloat;

@@ -162,7 +162,7 @@ static const VisArgs defaultVisArgs =
     /* .height            */ 0,
     /* .eventPollPeriod   */ DEFAULT_EVENT_POLL_PERIOD,
 
-    /* .noQuitOnComplete  */ FALSE,
+    /* .quitOnComplete    */ DEFAULT_QUIT_ON_COMPLETE,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
     /* .updatePeriod      */ DEFAULT_UPDATE_PERIOD,
     /* .noFloat           */ FALSE,
@@ -320,9 +320,9 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "no-quit-on-complete", 'q',
-            POPT_ARG_NONE, &visArgs.noQuitOnComplete,
-            0, "Stop graphics from quitting when the simulation completes", NULL
+            "quit-on-complete", 'q',
+            POPT_ARG_NONE, &visArgs.quitOnComplete,
+            0, "Graphics should quit when the simulation completes", NULL
         },
 
         {
