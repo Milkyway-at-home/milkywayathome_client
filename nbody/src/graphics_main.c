@@ -834,6 +834,44 @@ static void nbglCleanupAttached(void)
     }
 }
 
+#if HAVE_SIGACTION
+
+static void nbglSigInfoHandler(int sig, siginfo_t* siginfo, void* context)
+{
+    (void) siginfo, (void) context;
+
+    nbglCleanupAttached();
+    raise(sig);
+}
+
+static int nbglInstallExitHandlers(void)
+{
+    int rc = 0;
+    struct sigaction action;
+
+    memset(&action, 0, sizeof(action));
+
+    action.sa_sigaction = nbglSigInfoHandler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = SA_SIGINFO | SA_RESETHAND; /* Use sa_sigaction handler, reset handler on call */
+
+
+    rc |= sigaction(SIGINT, &action, NULL);
+    rc |= sigaction(SIGABRT, &action, NULL);
+    rc |= sigaction(SIGFPE, &action, NULL);
+    rc |= sigaction(SIGSEGV, &action, NULL);
+
+    rc |= sigaction(SIGQUIT, &action, NULL);
+    rc |= sigaction(SIGKILL, &action, NULL);
+    rc |= sigaction(SIGUSR1, &action, NULL);
+
+    rc |= atexit(nbglCleanupAttached);
+
+    return rc;
+}
+
+#else
+
 static void nbglSigHandler(int sig)
 {
     nbglCleanupAttached();
@@ -841,9 +879,8 @@ static void nbglSigHandler(int sig)
     raise(sig);
 }
 
-static void nbglInstallExitHandlers()
+static int nbglInstallExitHandlers(void)
 {
-    /* TODO: Use sigaction() if available instead */
     signal(SIGINT, nbglSigHandler);
     signal(SIGABRT, nbglSigHandler);
     signal(SIGFPE, nbglSigHandler);
@@ -855,8 +892,10 @@ static void nbglInstallExitHandlers()
     signal(SIGUSR1, nbglSigHandler);
   #endif
 
-    atexit(nbglCleanupAttached);
+    return atexit(nbglCleanupAttached);
 }
+
+#endif /* HAVE_SIGACTION */
 
 #ifdef __APPLE__
 #define main nbgl_main_apple
