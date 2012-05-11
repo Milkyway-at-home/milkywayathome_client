@@ -141,6 +141,38 @@ static void nbPrintNBodyWorkSizes(const NBodyWorkSizes* ws)
         );
 }
 
+/* In case work sizes are larger than the maximum, clamp them to the maximum */
+static cl_uint nbClampWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+{
+    cl_uint i;
+    cl_uint clamped = 0;
+    size_t maxGlobalSize = di->maxWorkItemSizes[0] * di->maxWorkItemSizes[1] * di->maxWorkItemSizes[2];
+
+    for (i = 0; i < 8; ++i)
+    {
+        if (ws->global[i] > maxGlobalSize)
+        {
+            if (mwDivisible(maxGlobalSize, ws->local[i]))
+            {
+                ws->global[i] = maxGlobalSize;
+            }
+            else
+            {
+                ws->global[i] = mwNextMultiple(ws->local[i], maxGlobalSize - ws->local[i]);
+            }
+
+            ++clamped;
+        }
+    }
+
+    if (clamped != 0)
+    {
+        mw_printf("Warning: %u work sizes clamped to maximum\n", clamped);
+    }
+
+    return clamped;
+}
+
 cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di, cl_int nbody, cl_bool ignoreResponsive)
 {
     cl_uint i;
@@ -166,6 +198,8 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di, cl_int nbody, cl_b
             ws->global[5] = mwNextMultiple(ws->threads[5], nbody);
         }
     }
+
+    nbClampWorkSizes(ws, di);
 
     return CL_FALSE;
 }
