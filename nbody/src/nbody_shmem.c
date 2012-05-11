@@ -488,43 +488,20 @@ void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* vis
 
 #endif /* _WIN32 */
 
-static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCtx* ctx, NBodyState* st)
+static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCtx* ctx, NBodyState* st, const mwvector* cmPos)
 {
     int i;
     const Body* b;
-    mwvector cmPos = ZERO_VECTOR;
     int nbody = st->nbody;
     SceneInfo* info = &queue->info[buffer];
     FloatPos* r = &queue->bodyData[buffer * nbody];
 
-    /* Use the center of mass if we have it already in some form,
-     * otherwise we can find it */
-    if (st->tree.root)
-    {
-        cmPos = Pos(st->tree.root);
-    }
-    else if (st->usesCL)
-    {
-      #if NBODY_OPENCL
-        if (nbDisplayUpdateMarshalBodies(st, &cmPos))
-        {
-            return;
-        }
-      #endif
-    }
-    else
-    {
-        /* If we are using exact nbody or haven't constructed the tree
-         * yet we need to calculate the center of mass on our own */
-        cmPos = nbCenterOfMass(st);
-    }
-
     info->currentTime = (float) (st->step * ctx->timestep);
     info->timeEvolve = (float) ctx->timeEvolve;
 
-    info->rootCenterOfMass[0] = (float) X(cmPos);
-    info->rootCenterOfMass[1] = (float) Y(cmPos);
-    info->rootCenterOfMass[2] = (float) Z(cmPos);
+    info->rootCenterOfMass[0] = (float) cmPos->x;
+    info->rootCenterOfMass[1] = (float) cmPos->y;
+    info->rootCenterOfMass[2] = (float) cmPos->z;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b) schedule(guided, 4096 / sizeof(Body))
@@ -539,7 +516,7 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     }
 }
 
-static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, NBodyState* st)
+static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, NBodyState* st, const mwvector* cmPos)
 {
     int head, tail, nextTail;
     tail = OPA_load_int(&queue->tail);
@@ -548,7 +525,7 @@ static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, N
     nextTail = (tail + 1) % NBODY_CIRC_QUEUE_SIZE;
     if (nextTail != head)
     {
-        nbWriteSnapshot(queue, tail, ctx, st);
+        nbWriteSnapshot(queue, tail, ctx, st, cmPos);
         OPA_store_int(&queue->tail, nextTail);
         return TRUE;
     }
@@ -566,12 +543,40 @@ static void nbReleaseSceneLocks(scene_t* scene)
     OPA_store_int(&scene->attachedPID, 0);
 }
 
+/* Use the center of mass if we have it already in some form,
+ * otherwise we can find it */
+static int nbFindCenterOfMass(mwvector* cmPos, NBodyState* st)
+{
+    if (st->tree.root)
+    {
+        *cmPos = Pos(st->tree.root);
+    }
+    else if (st->usesCL)
+    {
+      #if NBODY_OPENCL
+        if (nbDisplayUpdateMarshalBodies(st, cmPos))
+        {
+            return 1;
+        }
+      #endif
+    }
+    else
+    {
+        /* If we are using exact nbody or haven't constructed the tree
+         * yet we need to calculate the center of mass on our own */
+        *cmPos = nbCenterOfMass(st);
+    }
+
+    return 0;
+}
+
 /* TODO: Should we quit if we are supposed to be blocking on graphics
  * and the graphics dies? */
 NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     int pid;
     int updatePeriod;
+    mwvector cmPos;
     scene_t* scene = st->scene;
 
     if (!scene)
@@ -584,6 +589,11 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     if (pid == 0)
     {
         return NBODY_SUCCESS;
+    }
+
+    if (nbFindCenterOfMass(&cmPos, st))
+    {
+        return NBODY_ERROR;
     }
 
     if (OPA_load_int(&scene->blockSimulationOnGraphics))
@@ -602,7 +612,7 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 
             /* Keep trying to push to the queue as long as the
              * process is still attached. */
-            while (   !(updated = nbPushCircularQueue(&scene->queue, ctx, st))
+            while (   !(updated = nbPushCircularQueue(&scene->queue, ctx, st, &cmPos))
                    && ((pid = OPA_load_int(&scene->attachedPID)) != 0)
                    && (attempt < NBODY_QUEUE_WAIT_PERIODS))
             {
@@ -655,7 +665,7 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 
         if (now - lastTime >= updatePeriod)
         {
-            if (nbPushCircularQueue(&scene->queue, ctx, st))
+            if (nbPushCircularQueue(&scene->queue, ctx, st, &cmPos))
             {
                 OPA_store_int(&scene->lastUpdateTime, now);
             }
@@ -665,7 +675,7 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     }
     else
     {
-        nbPushCircularQueue(&scene->queue, ctx, st);
+        nbPushCircularQueue(&scene->queue, ctx, st, &cmPos);
         return NBODY_SUCCESS;
     }
 }
@@ -676,13 +686,19 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 NBodyStatus nbForceUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     scene_t* scene = st->scene;
+    mwvector cmPos;
 
     if (!scene)
     {
         return NBODY_SUCCESS;
     }
 
-    return nbPushCircularQueue(&scene->queue, ctx, st) ? NBODY_SUCCESS : NBODY_ERROR;
+    if (nbFindCenterOfMass(&cmPos, st))
+    {
+        return NBODY_ERROR;
+    }
+
+    return nbPushCircularQueue(&scene->queue, ctx, st, &cmPos) ? NBODY_SUCCESS : NBODY_ERROR;
 }
 
 /* Report the simulation has ended as a hint to the graphics to quit */

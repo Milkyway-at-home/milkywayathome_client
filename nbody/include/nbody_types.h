@@ -267,9 +267,10 @@ typedef struct MW_ALIGN_TYPE
     scene_t* scene;
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
-                                  We need one per thread in the general case. */
+                                   We need one per thread in the general case. */
     int* potEvalClosures;       /* Lua closure for each state */
 
+    size_t nOrbitTrace;         /* Number of items in orbitTrace */
     time_t lastCheckpoint;
 
     unsigned int step;
@@ -303,7 +304,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
