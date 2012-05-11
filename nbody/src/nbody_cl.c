@@ -141,7 +141,7 @@ static void nbPrintNBodyWorkSizes(const NBodyWorkSizes* ws)
         );
 }
 
-cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di, cl_int nbody, cl_bool ignoreResponsive)
 {
     cl_uint i;
     cl_uint blocks = di->maxCompUnits;
@@ -150,6 +150,21 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
     {
         ws->global[i] = ws->threads[i] * ws->factors[i] * blocks;
         ws->local[i] = ws->threads[i];
+    }
+
+    if (ignoreResponsive)
+    {
+        /* It seems to help if we make this huge so that the global
+         * size is about the same as the number of bodies on Tahiti
+         * (not sure why yet) but we can't do that while maintaining
+         * responsiveness
+         *
+         * TODO: Does this happen on other GPUs? Why does it happen here?
+         */
+        if (di->calTarget >= MW_CAL_TARGET_TAHITI)
+        {
+            ws->global[5] = mwNextMultiple(ws->threads[5], nbody);
+        }
     }
 
     return CL_FALSE;
@@ -257,20 +272,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->factors[2] = 4;
         ws->factors[3] = 1;
         ws->factors[4] = 4;
-
-        /* It seems to help if we make this huge so that the global
-         * size is about the same as the number of bodies,
-         * but we can't do that while maintaining responsiveness
-         */
-        ws->factors[5] = 16;
-
-        // some multiple of 16 since that is number of workgroups
-        // supported per CU when workgroup size is more than 1
-        // wavefront?
-
-        //ws->factors[5] = 256;
-        //ws->factors[5] = 342;
-
+        ws->factors[5] = 20;
         ws->factors[6] = 2;
         ws->factors[7] = 2;
 

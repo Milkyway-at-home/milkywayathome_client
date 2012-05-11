@@ -242,7 +242,8 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
     if (!nbCheckDevCapabilities(devInfo, ctx, st->nbody))
         return NBODY_CAPABILITY_ERROR;
 
-    if (nbSetThreadCounts(st->workSizes, devInfo, ctx) || nbSetWorkSizes(st->workSizes, devInfo))
+    if (   nbSetThreadCounts(st->workSizes, devInfo, ctx)
+        || nbSetWorkSizes(st->workSizes, devInfo, st->nbody, st->ignoreResponsive))
         return NBODY_ERROR;
 
     st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);
