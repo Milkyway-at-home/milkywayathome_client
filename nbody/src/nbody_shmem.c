@@ -255,11 +255,11 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
 #endif /* USE_POSIX_SHMEM */
 
 
-#if BOINC_APPLICATION
+#if USE_BOINC_SHMEM
 
 int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
-    size_t size = nbFindShmemSize(st->nbody);
+    size_t size = nbFindShmemSize(st->nbody, ctx->nStep);
 
     st->scene = (scene_t*) mw_graphics_make_shmem(NBODY_BIN_NAME, (int) size);
     if (!st->scene)
@@ -284,7 +284,7 @@ int nbCreateSharedScene(NBodyState* st, const NBodyCtx* ctx)
     int instanceId;
     char name[NAME_MAX + 1];
     scene_t* scene = NULL;
-    size_t size = nbFindShmemSize(st->nbody);
+    size_t size = nbFindShmemSize(st->nbody, ctx->nStep);
 
     /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
     for (instanceId = 0; instanceId < MAX_INSTANCES; ++instanceId)
@@ -494,8 +494,9 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     const Body* b;
     int nbody = st->nbody;
     SceneInfo* info = &queue->info[buffer];
-    FloatPos* r = &queue->bodyData[buffer * nbody];
+    FloatPos* r = nbSceneGetQueueBuffer(st->scene, buffer);
 
+    info->currentStep = st->step;
     info->currentTime = (float) (st->step * ctx->timestep);
     info->timeEvolve = (float) ctx->timeEvolve;
 
@@ -516,6 +517,19 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     }
 }
 
+/* FIXME: Copies all the steps every step */
+static inline void nbUpdateDisplayedOrbitTrace(FloatPos* sceneTrace, const mwvector* trace, int n)
+{
+    int i;
+
+    for (i = 0; i < n; ++i)
+    {
+        sceneTrace[i].x = (float) trace[i].x;
+        sceneTrace[i].y = (float) trace[i].y;
+        sceneTrace[i].z = (float) trace[i].z;
+    }
+}
+
 static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, NBodyState* st, const mwvector* cmPos)
 {
     int head, tail, nextTail;
@@ -526,6 +540,8 @@ static int nbPushCircularQueue(NBodyCircularQueue* queue, const NBodyCtx* ctx, N
     if (nextTail != head)
     {
         nbWriteSnapshot(queue, tail, ctx, st, cmPos);
+        nbUpdateDisplayedOrbitTrace(nbSceneGetOrbitTrace(st->scene), st->orbitTrace, st->step);
+
         OPA_store_int(&queue->tail, nextTail);
         return TRUE;
     }
@@ -584,16 +600,21 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
         return NBODY_SUCCESS;
     }
 
+    if (nbFindCenterOfMass(&cmPos, st))
+    {
+        return NBODY_ERROR;
+    }
+
+    if (st->orbitTrace)
+    {
+        st->orbitTrace[st->step] = cmPos;
+    }
+
     /* No copying when no screensaver attached */
     pid = OPA_load_int(&scene->attachedPID);
     if (pid == 0)
     {
         return NBODY_SUCCESS;
-    }
-
-    if (nbFindCenterOfMass(&cmPos, st))
-    {
-        return NBODY_ERROR;
     }
 
     if (OPA_load_int(&scene->blockSimulationOnGraphics))
@@ -696,6 +717,11 @@ NBodyStatus nbForceUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     if (nbFindCenterOfMass(&cmPos, st))
     {
         return NBODY_ERROR;
+    }
+
+    if (st->orbitTrace)
+    {
+        st->orbitTrace[st->step] = cmPos;
     }
 
     return nbPushCircularQueue(&scene->queue, ctx, st, &cmPos) ? NBODY_SUCCESS : NBODY_ERROR;

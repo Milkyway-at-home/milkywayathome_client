@@ -60,18 +60,17 @@ typedef struct
 /* Mostly for progress information */
 typedef struct
 {
+    unsigned int currentStep;
     float currentTime;
     float timeEvolve;
     float rootCenterOfMass[3];     /* Center of mass of the system  */
 } SceneInfo;
 
-/* This should only be used as the last element of the scene_t */
 typedef struct
 {
     OPA_int_t head;
     OPA_int_t tail;
     SceneInfo info[NBODY_CIRC_QUEUE_SIZE];
-    FloatPos bodyData[1];
 } NBodyCircularQueue;
 
 /* the scene structure */
@@ -121,12 +120,25 @@ typedef struct
     int staticScene;
 
     NBodyCircularQueue queue;
+    FloatPos sceneData[1]; /* Space for orbit trace then space for actual data for the queue */
 } scene_t;
 
-static inline size_t nbFindShmemSize(int nbody)
+/* Get the starting position of the given queue position accounting for the orbit trace offset */
+static inline FloatPos* nbSceneGetQueueBuffer(scene_t* scene, int buffer)
 {
-    size_t snapshotSize = sizeof(NBodyCircularQueue) + nbody * sizeof(FloatPos);
-    return sizeof(scene_t) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
+    return &scene->sceneData[scene->nSteps + buffer * scene->nbody];
+}
+
+/* Get the starting position of the orbit trace in the scene data */
+static inline FloatPos* nbSceneGetOrbitTrace(scene_t* scene)
+{
+    return &scene->sceneData[0];
+}
+
+static inline size_t nbFindShmemSize(int nbody, int nSteps)
+{
+    size_t snapshotSize = nbody * sizeof(FloatPos);
+    return sizeof(scene_t) + nSteps * sizeof(FloatPos) + NBODY_CIRC_QUEUE_SIZE * snapshotSize;
 }
 
 #endif /* _NBODY_GRAPHICS_H_ */

@@ -516,8 +516,8 @@ static scene_t* nbglLoadStaticSceneFromFile(const char* filename)
 
     scene = mwCalloc(sizeof(scene_t) + 1 * (lnCount * sizeof(FloatPos)), sizeof(char));
 
-    /* We don't need the buffering features so just use first buffer slot */
-    r = &scene->queue.bodyData[0];
+    /* We don't neeqd the buffering features so just use first buffer slot */
+    r = nbSceneGetQueueBuffer(scene, 0);
     scene->hasInfo = FALSE;
     scene->staticScene = TRUE;
 
@@ -646,7 +646,7 @@ static scene_t* nbglConnectSharedScene(int instanceId)
 
     if (   sb.st_size < (ssize_t) sizeof(scene_t)
         || sb.st_size < (ssize_t) scene->sceneSize
-        || sb.st_size < (ssize_t) (calcSize = nbFindShmemSize(scene->nbody))
+        || sb.st_size < (ssize_t) (calcSize = nbFindShmemSize(scene->nbody, scene->nSteps))
         || calcSize != scene->sceneSize)
     {
         mw_printf("Shared memory segment is impossibly small ("ZU")\n", (size_t) sb.st_size);
@@ -720,7 +720,7 @@ static void nbglUnmapScene(scene_t* scene)
     UnmapViewOfFile((LPCVOID) scene);
 }
 
-#else
+#elif USE_BOINC_SHMEM
 
 static scene_t* nbglAttemptConnectSharedScene(void)
 {
@@ -764,6 +764,8 @@ static void nbglUnmapScene(scene_t* scene)
 
 }
 
+#else
+  #error No shared memory method used
 #endif /* USE_POSIX_SHMEM */
 
 static int nbglCheckConnectedVersion(const scene_t* scene)

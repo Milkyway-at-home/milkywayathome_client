@@ -84,20 +84,18 @@ void OrbitTrace::prepareVAO()
     glBindVertexArray(0);
 }
 
-void OrbitTrace::addPoint(const GLfloat cm[3])
+void OrbitTrace::updatePoints(const FloatPos* cmList, GLuint step)
 {
-    if (this->nPoints >= this->maxPoints)
+    if (step >= this->maxPoints)
         return;
-
-    GLfloat cm4[4] = { cm[0], cm[1], cm[2], 1.0f };
 
     glBindBuffer(GL_ARRAY_BUFFER, this->cmPosBuffer);
     glBufferSubData(GL_ARRAY_BUFFER,
-                    this->nPoints * 4 * sizeof(GLfloat),
-                    4 * sizeof(GLfloat),
-                    cm4);
+                    4 * sizeof(GLfloat) * this->nPoints,
+                    4 * sizeof(GLfloat) * (step - this->nPoints),
+                    &cmList[this->nPoints]);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    this->nPoints++;
+    this->nPoints = step;
 }
 
