@@ -7,6 +7,6 @@ in vec4 cmPos;
 
 void main()
 {
-    gl_Position = cameraToClipMatrix * modelToCameraMatrix * cmPos;
+    gl_Position = cameraToClipMatrix * modelToCameraMatrix * vec4(cmPos.xyz, 1.0f);
 }
 

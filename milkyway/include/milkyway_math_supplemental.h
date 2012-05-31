@@ -56,8 +56,8 @@ extern "C" {
     #define mw_fmax fmaxf
   #endif /* DOUBLEPREC */
 #else
-CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline real mw_fmax(real a, real b)
+CONST_F ALWAYS_INLINE
+static inline real mw_fmax(real a, real b)
 {
     return ((a >= b) || isnan(b)) ?  a : b;
 }
@@ -71,8 +71,8 @@ inline real mw_fmax(real a, real b)
     #define mw_fmin   fminf
   #endif /*  DOUBLEPREC */
 #else
-CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline real mw_fmin(real a, real b)
+CONST_F ALWAYS_INLINE
+static inline real mw_fmin(real a, real b)
 {
     return ((a <= b) || isnan(b)) ? a : b;
 }

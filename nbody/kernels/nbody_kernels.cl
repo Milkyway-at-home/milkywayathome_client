@@ -542,12 +542,12 @@ __kernel void NBODY_KERNEL(buildTree)
     __local volatile int doneCount; /* Count of items loaded in the tree */
     __local volatile int deadCount; /* Count of items in workgroup finished */
 
-    const uint maxN = HAVE_CONSISTENT_MEMORY ? maxNBody : NBODY;
+    const int maxN = HAVE_CONSISTENT_MEMORY ? maxNBody : NBODY;
     int localMaxDepth = 1;
     bool newParticle = true;
 
     uint inc = get_local_size(0) * get_num_groups(0);
-    uint i = get_global_id(0);
+    int i = get_global_id(0);
 
     if (get_local_id(0) == 0)
     {
@@ -565,7 +565,7 @@ __kernel void NBODY_KERNEL(buildTree)
 
     if (HAVE_CONSISTENT_MEMORY)
     {
-        atom_add(&deadCount, i >= maxN);
+        (void) atom_add(&deadCount, i >= maxN);
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
@@ -1598,7 +1598,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
         uint k = get_global_id(0);
 
       #if !HAVE_INLINE_PTX
-        atom_add(&allBlock[base], k >= maxNBody);
+        (void) atom_add(&allBlock[base], k >= maxNBody);
       #endif
 
         /* iterate over all bodies assigned to thread */
@@ -1816,7 +1816,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
           #if !HAVE_INLINE_PTX
             /* In case this thread is done with bodies and others in the wavefront aren't */
-            atom_add(&allBlock[base], k >= maxNBody);
+            (void) atom_add(&allBlock[base], k >= maxNBody);
           #endif /* !HAVE_INLINE_PTX */
         }
     }

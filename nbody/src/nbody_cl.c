@@ -141,7 +141,39 @@ static void nbPrintNBodyWorkSizes(const NBodyWorkSizes* ws)
         );
 }
 
-cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+/* In case work sizes are larger than the maximum, clamp them to the maximum */
+static cl_uint nbClampWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+{
+    cl_uint i;
+    cl_uint clamped = 0;
+    size_t maxGlobalSize = di->maxWorkItemSizes[0] * di->maxWorkItemSizes[1] * di->maxWorkItemSizes[2];
+
+    for (i = 0; i < 8; ++i)
+    {
+        if (ws->global[i] > maxGlobalSize)
+        {
+            if (mwDivisible(maxGlobalSize, ws->local[i]))
+            {
+                ws->global[i] = maxGlobalSize;
+            }
+            else
+            {
+                ws->global[i] = mwNextMultiple(ws->local[i], maxGlobalSize - ws->local[i]);
+            }
+
+            ++clamped;
+        }
+    }
+
+    if (clamped != 0)
+    {
+        mw_printf("Warning: %u work sizes clamped to maximum\n", clamped);
+    }
+
+    return clamped;
+}
+
+cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di, cl_int nbody, cl_bool ignoreResponsive)
 {
     cl_uint i;
     cl_uint blocks = di->maxCompUnits;
@@ -151,6 +183,23 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
         ws->global[i] = ws->threads[i] * ws->factors[i] * blocks;
         ws->local[i] = ws->threads[i];
     }
+
+    if (ignoreResponsive)
+    {
+        /* It seems to help if we make this huge so that the global
+         * size is about the same as the number of bodies on Tahiti
+         * (not sure why yet) but we can't do that while maintaining
+         * responsiveness
+         *
+         * TODO: Does this happen on other GPUs? Why does it happen here?
+         */
+        if (di->calTarget >= MW_CAL_TARGET_TAHITI)
+        {
+            ws->global[5] = mwNextMultiple(ws->threads[5], nbody);
+        }
+    }
+
+    nbClampWorkSizes(ws, di);
 
     return CL_FALSE;
 }
@@ -257,20 +306,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->factors[2] = 4;
         ws->factors[3] = 1;
         ws->factors[4] = 4;
-
-        /* It seems to help if we make this huge so that the global
-         * size is about the same as the number of bodies,
-         * but we can't do that while maintaining responsiveness
-         */
-        ws->factors[5] = 16;
-
-        // some multiple of 16 since that is number of workgroups
-        // supported per CU when workgroup size is more than 1
-        // wavefront?
-
-        //ws->factors[5] = 256;
-        //ws->factors[5] = 342;
-
+        ws->factors[5] = 20;
         ws->factors[6] = 2;
         ws->factors[7] = 2;
 

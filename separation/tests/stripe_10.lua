@@ -39,29 +39,29 @@ area = {
    {
       r_min = 16.0,
       r_max = 23.0,
-      r_steps = 140,
+      r_steps = 1400,
 
       mu_min = 165,
       mu_max = 245,
-      mu_steps = 160,
+      mu_steps = 1600,
 
       nu_min = -1.25,
       nu_max = 1.25,
-      nu_steps = 64
+      nu_steps = 640
    },
 
    {
       r_min = 16.0,
       r_max = 23.0,
-      r_steps = 140,
+      r_steps = 1400,
 
       mu_min = 227.0,
       mu_max = 230.0,
-      mu_steps = 160,
+      mu_steps = 400,
 
       nu_min = -1.25,
       nu_max = 0.5,
-      nu_steps = 64
+      nu_steps = 640
    }
 }
 

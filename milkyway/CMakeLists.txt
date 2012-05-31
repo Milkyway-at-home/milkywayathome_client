@@ -83,6 +83,10 @@ set(CMAKE_REQUIRED_INCLUDES "sys/time.h")
 check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
 set(CMAKE_REQUIRED_INCLUDES )
 
+set(CMAKE_REQUIRED_INCLUDES "signal.h")
+check_function_exists(sigaction HAVE_SIGACTION)
+set(CMAKE_REQUIRED_INCLUDES )
+
 
 set(CMAKE_REQUIRED_INCLUDES "mach/mach_time.h")
 check_function_exists(mach_absolute_time HAVE_MACH_ABSOLUTE_TIME)

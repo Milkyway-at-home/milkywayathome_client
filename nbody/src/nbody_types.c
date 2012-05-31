@@ -167,8 +167,6 @@ int destroyNBodyState(NBodyState* st)
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
-    static const mwvector maxV = mw_vec(REAL_MAX, REAL_MAX, REAL_MAX);
-    int i;
 
     st->tree = emptyTree;
     st->freeCell = NULL;
@@ -180,12 +178,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->nbody = nbody;
     st->bodytab = bodies;
 
-
-    st->orbitTrace = (mwvector*) mwMallocA(N_ORBIT_TRACE_POINTS * sizeof(mwvector));
-    for (i = 0; i < N_ORBIT_TRACE_POINTS; ++i)
-    {
-        st->orbitTrace[i] = maxV;
-    }
+    st->nOrbitTrace = ctx->nStep;
+    st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace, sizeof(mwvector));
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
@@ -248,7 +242,8 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
     if (!nbCheckDevCapabilities(devInfo, ctx, st->nbody))
         return NBODY_CAPABILITY_ERROR;
 
-    if (nbSetThreadCounts(st->workSizes, devInfo, ctx) || nbSetWorkSizes(st->workSizes, devInfo))
+    if (   nbSetThreadCounts(st->workSizes, devInfo, ctx)
+        || nbSetWorkSizes(st->workSizes, devInfo, st->nbody, st->ignoreResponsive))
         return NBODY_ERROR;
 
     st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);
@@ -432,8 +427,12 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->acctab = (mwvector*) mwMallocA(nbody * sizeof(mwvector));
     memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));
 
-    st->orbitTrace = (mwvector*) mwMallocA(N_ORBIT_TRACE_POINTS * sizeof(mwvector));
-    memcpy(st->orbitTrace, oldSt->orbitTrace, N_ORBIT_TRACE_POINTS * sizeof(mwvector));
+    if (oldSt->orbitTrace)
+    {
+        st->orbitTrace = (mwvector*) mwMallocA(oldSt->nOrbitTrace * sizeof(mwvector));
+        memcpy(st->orbitTrace, oldSt->orbitTrace, oldSt->nOrbitTrace * sizeof(mwvector));
+        st->nOrbitTrace = oldSt->nOrbitTrace;
+    }
 
     if (st->ci)
     {

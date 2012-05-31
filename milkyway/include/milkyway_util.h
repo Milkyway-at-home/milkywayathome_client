@@ -205,12 +205,6 @@ void mwLocalTimeFull(char* buf, size_t bufSize);
         fprintf(stdout, "%s: " msg, _buf, ##__VA_ARGS__);   \
     } while (0)
 
-#ifndef _WIN32
-  #define mw_win_perror perror
-#else
-  #define mw_win_perror(str) fprintf(stderr, str ": %ld\n", GetLastError());
-#endif
-
 /* mw_xrandom: generate floating-point random number */
 #define mwXrandom(st, xl, xh) ((real) (xl) + ((real) (xh) - (real) (xl)) * dsfmt_genrand_open_open((st)))
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
