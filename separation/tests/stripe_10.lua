@@ -5,7 +5,7 @@ background = {
    q  = 0.5318908267793211,
    r0 = 8.0
 }
-
+--verbose
 streams = {
    {
       epsilon = -1.2626905052978556,
@@ -39,29 +39,29 @@ area = {
    {
       r_min = 16.0,
       r_max = 23.0,
-      r_steps = 1400,
+      r_steps = 175,
 
       mu_min = 165,
       mu_max = 245,
-      mu_steps = 1600,
+      mu_steps = 400,
 
       nu_min = -1.25,
       nu_max = 1.25,
-      nu_steps = 640
+      nu_steps = 40
    },
 
    {
       r_min = 16.0,
       r_max = 23.0,
-      r_steps = 1400,
+      r_steps = 95,
 
       mu_min = 227.0,
       mu_max = 230.0,
-      mu_steps = 400,
+      mu_steps = 200,
 
       nu_min = -1.25,
       nu_max = 0.5,
-      nu_steps = 640
+      nu_steps = 20
    }
 }
 

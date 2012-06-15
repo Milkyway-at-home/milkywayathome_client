@@ -101,3 +101,4 @@ build_iphone
 *.glc
 *.mp4
 *.avi
+/include
