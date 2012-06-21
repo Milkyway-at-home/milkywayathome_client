@@ -139,6 +139,9 @@ typedef struct
 {
     real irv_reff_xr_rp3;
     real gPrime;
+    real coeff;
+   //stdev_r is right side stdev for modfit, but is normal stdev (both sides) and is not used otherwise
+    real stdev_r;
 } RConsts;
 
 
@@ -235,7 +238,7 @@ typedef struct MW_ALIGN_TYPE_V(128)
     int wedge;
     real sun_r0;
     real q;
-    real coeff;
+//    real coeff;
 
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
     int number_integrals;

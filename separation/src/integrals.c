@@ -44,7 +44,7 @@ static RConsts* initRPoints(const AstronomyParameters* ap,
     RPoints* rPts;
     RConsts* rc;
 
-    rPts = precalculateRPts(ap, ia, sg, &rc, FALSE);
+    rPts = precalculateRPts(ap->convolve, ia, sg, &rc, FALSE);
 
     for (i = 0; i < ia->r_steps; ++i)
     {

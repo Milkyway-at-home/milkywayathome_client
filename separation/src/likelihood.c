@@ -291,7 +291,7 @@ static int likelihood_sum(SeparationResults* results,
     LB lb;
     LBTrig lbt;
     real reff_xr_rp3;
-    RConsts rc = { 0.0, 0.0 };
+    RConsts rc = { 0.0, 0.0, 0.0, 0.0 };
 
     real bgProb = 0.0;
     real epsilon_b = 0.0;
@@ -308,8 +308,8 @@ static int likelihood_sum(SeparationResults* results,
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
         point = sp->stars[current_star_point];
-        rc.gPrime = calcG(Z(point));
-        setSplitRPoints(ap, sg, ap->convolve, rc.gPrime, r_points, qw_r3_N);
+        rc = calcRConsts(Z(point));
+        setSplitRPoints(sg, ap->convolve, &rc, r_points, qw_r3_N);
         reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
 
         LB_L(lb) = L(point);

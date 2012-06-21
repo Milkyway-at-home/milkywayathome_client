@@ -359,6 +359,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
+                "modfit", 'f',
+                POPT_ARG_NONE, &sf.modfit,
+                0, "Modified fit from Newby 2011", NULL
+            },
+
+            {
                 "ignore-checkpoint", 'i',
                 POPT_ARG_NONE, &sf.ignoreCheckpoint,
                 0, "Ignore the checkpoint file", NULL

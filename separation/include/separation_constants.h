@@ -34,7 +34,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* DOUBLEPREC */
 
 #define stdev ((real) 0.6)
-#define xr ((real) 3.0 * stdev)
+/*The variable xr appears to be nothing more than a constant value multiplying the probability integral throughout
+the program.  It does not affect the likelihood and therefore does not appear to have any important effect so we are 
+taking it out of the computation.  The reason it was put in to start with is unknown.*/
+//#define xr ((real) 3.0 * stdev)
 #define absm ((real) 4.2)
 #define SIGMA_LIMIT ((real) 0.0001)
 

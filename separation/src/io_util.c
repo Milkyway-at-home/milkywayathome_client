@@ -197,7 +197,7 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  wedge                 = %d\n"
            "  sun_r0                = %f\n"
            "  q                     = %f\n"
-           "  coeff                 = %f\n"
+//           "  coeff                 = %f\n"
            "  total_calc_probs      = %f\n"
            "  number_integrals      = %u\n"
            "  exp_background_weight = %f\n",
@@ -216,7 +216,7 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->wedge,
            ap->sun_r0,
            ap->q,
-           ap->coeff,
+//           ap->coeff,
            ap->total_calc_probs,
            ap->number_integrals,
            ap->exp_background_weight);

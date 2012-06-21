@@ -94,7 +94,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
         return 1;
     }
 
-    ap->coeff = 1.0 / (stdev * SQRT_2PI);
+ //   ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
     ap->exp_background_weight = mw_exp(bgp->epsilon);
@@ -165,6 +165,10 @@ StreamGauss getStreamGauss(int convolve)
     gaussLegendre(-1.0, 1.0, qgaus_X, sg.qgaus_W, convolve);
 
     sg.dx = (real*) mwMallocA(sizeof(real) * convolve);
+
+    /*Using old (single-sided gaussian stdev = 0.6) to spread points.  This is a small simplification when using 
+    modfit, but does not cause any problems since it is parameter independent.  The weights will be calculated 
+    later based on the two-sided gaussian.*/
 
     for (i = 0; i < convolve; ++i)
         sg.dx[i] = 3.0 * stdev * qgaus_X[i];

@@ -122,7 +122,7 @@ static cl_int createRBuffers(CLInfo* ci,
     RPoints* r_pts;
     RConsts* rc;
 
-    r_pts = precalculateRPts(ap, ia, sg, &rc, FALSE);
+    r_pts = precalculateRPts(ap->convolve, ia, sg, &rc, FALSE);
 
     cm->rPts = clCreateBuffer(ci->clctx, constBufFlags, sizes->rPts, r_pts, &err);
 
