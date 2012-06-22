@@ -73,7 +73,7 @@ real calcG(real coords)
     return 5.0 * (mw_log10(1000.0 * coords) - 1.0) + absm;
 }
 
-static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc)
+static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc, const AstronomyParameters* ap)
 {
     RPoints r_pt;
     real g, exponent, r3, N;
@@ -84,14 +84,13 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc)
 
     g = rc->gPrime + dx;
 
-//#if sf.modfit
-#if 1
+if (ap->modfit)
+{
     /* Implement modified f_turnoff distribution described in Newby 2011*/
     absm_u = 4.18;
     stdev_l = 0.36;
     stdev_i = (g <= rc->gPrime) ? stdev_l : rc->stdev_r;
-#endif 
-
+}
     /* MAG2R */
     r_pt.r_point = 0.001 * mw_exp10(0.2 * (g - absm_u) + 1.0);
     r3 = cube(r_pt.r_point);
@@ -104,7 +103,7 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc)
 }
 
 //Ignore calculation of irv_reff_xr_rp3.  Use for efficiency when this is not needed.
-RConsts calcRConsts(real coords)
+RConsts calcRConsts(real coords, const AstronomyParameters* ap)
 {
     RConsts rc;
     real stdev_o;
@@ -114,8 +113,8 @@ RConsts calcRConsts(real coords)
     rc.stdev_r = stdev;
     stdev_o = rc.stdev_r;
 
-    //#if sf.modfit
-    #if 1
+    if (ap->modfit)
+    {
         /* Implement modified f_turnoff distribution described in Newby 2011*/
         const real stdev_l = 0.36;
         const real alpha = 0.52;
@@ -124,7 +123,7 @@ RConsts calcRConsts(real coords)
 
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
-    #endif
+    }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
     
@@ -132,7 +131,7 @@ RConsts calcRConsts(real coords)
 }
 
 //Include calculation of irv_reff_xr_rp3
-static RConsts calcRConstsplus(RPrime rp)
+static RConsts calcRConstsplus(RPrime rp, const AstronomyParameters* ap)
 {
     RConsts rc;
     real stdev_o;
@@ -142,8 +141,8 @@ static RConsts calcRConstsplus(RPrime rp)
     rc.stdev_r = stdev;
     stdev_o = rc.stdev_r;
 
-    //#if sf.modfit
-    #if 1
+    if (ap->modfit)
+    {
         /* Implement modified f_turnoff distribution described in Newby 2011*/
         const real stdev_l = 0.36;
         const real alpha = 0.52;
@@ -152,26 +151,26 @@ static RConsts calcRConstsplus(RPrime rp)
 
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
-    #endif
+    }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
     
     return rc;
 }
 
-void setRPoints(const StreamGauss sg,
-                unsigned int n_convolve,
+void setRPoints(const AstronomyParameters* ap,
+                const StreamGauss sg,
                 RConsts* rc,
                 RPoints* r_pts)
 {
     unsigned int i;
 
-    for (i = 0; i < n_convolve; ++i)
-        r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], rc);
+    for (i = 0; i < ap->convolve; ++i)
+        r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], rc, ap);
 }
 
-void setSplitRPoints(const StreamGauss sg,
-                     unsigned int n_convolve,
+void setSplitRPoints(const AstronomyParameters* ap,
+                     const StreamGauss sg,
                      RConsts* rc,
                      real* RESTRICT r_points,
                      real* RESTRICT qw_r3_N)
@@ -179,15 +178,15 @@ void setSplitRPoints(const StreamGauss sg,
     unsigned int i;
     RPoints rPt;
 
-    for (i = 0; i < n_convolve; ++i)
+    for (i = 0; i < ap->convolve; ++i)
     {
-        rPt = calc_r_point(sg.dx[i], sg.qgaus_W[i], rc);
+        rPt = calc_r_point(sg.dx[i], sg.qgaus_W[i], rc, ap);
         r_points[i] = rPt.r_point;
         qw_r3_N[i] = rPt.qw_r3_N;
     }
 }
 
-RPoints* precalculateRPts(unsigned int n_convolve,
+RPoints* precalculateRPts(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const StreamGauss sg,
                           RConsts** rc_out,
@@ -200,7 +199,7 @@ RPoints* precalculateRPts(unsigned int n_convolve,
     RConsts* rc;
     RPoints r_pt;
 
-    size_t rPtsSize = sizeof(RPoints) * n_convolve * ia->r_steps;
+    size_t rPtsSize = sizeof(RPoints) * ap->convolve * ia->r_steps;
     size_t rConstsSize = sizeof(RConsts) * ia->r_steps;
 
     r_pts = (RPoints*) mwMallocA(rPtsSize);
@@ -209,12 +208,12 @@ RPoints* precalculateRPts(unsigned int n_convolve,
     for (i = 0; i < ia->r_steps; ++i)
     {
         rp = calcRPrime(ia, i);
-        rc[i] = calcRConstsplus(rp);
+        rc[i] = calcRConstsplus(rp, ap);
 
-        for (j = 0; j < n_convolve; ++j)
+        for (j = 0; j < ap->convolve; ++j)
         {
-            r_pt = calc_r_point(sg.dx[j], sg.qgaus_W[j], &rc[i]);
-            idx = transpose ? j * ia->r_steps + i : i * n_convolve + j;
+            r_pt = calc_r_point(sg.dx[j], sg.qgaus_W[j], &rc[i], ap);
+            idx = transpose ? j * ia->r_steps + i : i * ap->convolve + j;
             r_pts[idx] = r_pt;
         }
     }

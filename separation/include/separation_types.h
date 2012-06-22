@@ -240,6 +240,8 @@ typedef struct MW_ALIGN_TYPE_V(128)
     real q;
 //    real coeff;
 
+    int modfit;             /*flag for using modified fit*/
+
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
     int number_integrals;
 

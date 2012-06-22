@@ -620,6 +620,8 @@ static int worker(const SeparationFlags* sf)
     memset(&ap, 0, sizeof(ap));
     memset(&clr, 0, sizeof(clr));
 
+    ap.modfit = sf->modfit;
+
     setCLReqFlags(&clr, sf);
     ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)

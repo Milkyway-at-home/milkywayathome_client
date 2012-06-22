@@ -35,21 +35,21 @@ extern "C" {
 #endif
 
 real calcG(real coords);
-RConsts calcRConsts(real coords);
+RConsts calcRConsts(real coords, const AstronomyParameters* ap);
 real calcReffXrRp3(real coords, real gPrime);
 
-void setRPoints(const StreamGauss sg,
-                unsigned int n_convolve,
+void setRPoints(const AstronomyParameters* ap,
+                const StreamGauss sg,
                 RConsts* rc,
                 RPoints* r_pts);
 
-void setSplitRPoints(const StreamGauss sg,
-                     unsigned int n_convolve,
+void setSplitRPoints(const AstronomyParameters* ap,
+                     const StreamGauss sg,
                      RConsts* rc,
                      real* RESTRICT r_points,
                      real* RESTRICT qw_r3_N);
 
-RPoints* precalculateRPts(unsigned int n_convolve,
+RPoints* precalculateRPts(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const StreamGauss sg,
                           RConsts** rc_out,

@@ -200,7 +200,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
 //           "  coeff                 = %f\n"
            "  total_calc_probs      = %f\n"
            "  number_integrals      = %u\n"
-           "  exp_background_weight = %f\n",
+           "  exp_background_weight = %f\n"
+           "  modfit                = %u\n",
            ap->m_sun_r0,
            ap->q_inv,
            ap->q_inv_sqr,
@@ -219,7 +220,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
 //           ap->coeff,
            ap->total_calc_probs,
            ap->number_integrals,
-           ap->exp_background_weight);
+           ap->exp_background_weight,
+           ap->modfit);
 }
 
 void printSeparationResults(const SeparationResults* results, unsigned int numberStreams)
