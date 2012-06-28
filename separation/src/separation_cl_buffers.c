@@ -132,10 +132,7 @@ static cl_int createRBuffers(CLInfo* ci,
         return err;
     }
 
-    RCBuf* rcb;
-
-    size_t rCBufSize = sizeof(RCBuf*) * ia->r_steps;
-    rcb = (RCBuf*) mwMallocA(rCBufSize);
+    RCBuf rcb[ia->r_steps];
 
     for (unsigned int i = 0; i < ia->r_steps; ++i)
     {
