@@ -85,8 +85,8 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc, const Ast
     g = rc->gPrime + dx;
 
 if (ap->modfit)
+/* Implement modified f_turnoff distribution described in Newby 2011*/
 {
-    /* Implement modified f_turnoff distribution described in Newby 2011*/
     absm_u = 4.18;
     stdev_l = 0.36;
     stdev_i = (g <= rc->gPrime) ? stdev_l : rc->stdev_r;
@@ -96,8 +96,9 @@ if (ap->modfit)
     r3 = cube(r_pt.r_point);
 
     exponent = sqr(g - rc->gPrime) * inv(2.0 * sqr(stdev_i));
-    N = rc->coeff * mw_exp(-exponent);
-    r_pt.qw_r3_N = qgaus_W * r3 * N;
+    N = rc->coeff * mw_exp(-exponent);    
+
+    r_pt.qw_r3_N = qgaus_W * r3 * N * rc->eps;
 
     return r_pt;
 }
@@ -112,10 +113,11 @@ RConsts calcRConsts(real coords, const AstronomyParameters* ap)
     rc.irv_reff_xr_rp3 = 0.0;
     rc.stdev_r = stdev;
     stdev_o = rc.stdev_r;
+    rc.eps = 1;
 
     if (ap->modfit)
+    /* Implement modified f_turnoff distribution and SDSS correction described in Newby 2011*/
     {
-        /* Implement modified f_turnoff distribution described in Newby 2011*/
         const real stdev_l = 0.36;
         const real alpha = 0.52;
         const real beta = 12.0;
@@ -123,6 +125,16 @@ RConsts calcRConsts(real coords, const AstronomyParameters* ap)
 
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
+    
+        real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
+        
+        //Curve Fit Parameters
+        static const real ay[8] = { 1.06, -0.031, 0.0002, 0.00000254, -0.0000000267, 0.0, 0.0, 0.0};
+        static const real ar[8] = { 0.016, -0.02, 0.0066, -0.00043, 0.0000126, -0.000000192, 0.00000000147, 
+                                    -0.00000000000454};
+        rc.eps = ay[0]+ar[0] + (ay[1]+ar[1])*tempr+ (ay[2]+ar[2])*sqr(tempr) +(ay[3]+ar[3])*cube(tempr) +
+              (ay[4]+ar[4])*mw_powr(tempr, 4) + (ay[5]+ar[5])*mw_powr(tempr, 5) + 
+              (ay[6]+ar[6])*mw_powr(tempr, 6) + (ay[7]+ar[7])*mw_powr(tempr, 7);
     }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
@@ -140,10 +152,11 @@ static RConsts calcRConstsplus(RPrime rp, const AstronomyParameters* ap)
     rc.irv_reff_xr_rp3 = rp.irv * calcReffXrRp3(rp.rPrime, rc.gPrime);
     rc.stdev_r = stdev;
     stdev_o = rc.stdev_r;
+    rc.eps = 1;
 
     if (ap->modfit)
+    /* Implement modified f_turnoff distribution and SDSS correction described in Newby 2011*/
     {
-        /* Implement modified f_turnoff distribution described in Newby 2011*/
         const real stdev_l = 0.36;
         const real alpha = 0.52;
         const real beta = 12.0;
@@ -151,6 +164,16 @@ static RConsts calcRConstsplus(RPrime rp, const AstronomyParameters* ap)
 
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
+
+        real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
+        
+        //Curve Fit Parameters
+        static const real ay[8] = { 1.06, -0.031, 0.0002, 0.00000254, -0.0000000267, 0.0, 0.0, 0.0};
+        static const real ar[8] = { 0.016, -0.02, 0.0066, -0.00043, 0.0000126, -0.000000192, 0.00000000147, 
+                                    -0.00000000000454};
+        rc.eps = ay[0]+ar[0] + (ay[1]+ar[1])*tempr+ (ay[2]+ar[2])*sqr(tempr) +(ay[3]+ar[3])*cube(tempr) +
+              (ay[4]+ar[4])*mw_powr(tempr, 4) + (ay[5]+ar[5])*mw_powr(tempr, 5) + 
+              (ay[6]+ar[6])*mw_powr(tempr, 6) + (ay[7]+ar[7])*mw_powr(tempr, 7);
     }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);

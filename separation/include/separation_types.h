@@ -142,6 +142,7 @@ typedef struct
     real coeff;
    //stdev_r is right side stdev for modfit, but is normal stdev (both sides) and is not used otherwise
     real stdev_r;
+    real eps;
 } RConsts;
 
 

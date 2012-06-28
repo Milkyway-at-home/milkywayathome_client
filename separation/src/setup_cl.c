@@ -247,8 +247,8 @@ cl_bool findRunSizes(RunSizes* sizes,
         sizes->chunkSize = nBlockPerChunk * blockSize;
     }
 
-    //sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
-    sizes->effectiveArea = di->warpSize * mwDivRoundup(sizes->area, di->warpSize);
+    sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
+    //sizes->effectiveArea = di->warpSize * mwDivRoundup(sizes->area, di->warpSize);
     sizes->nChunk = forceOneChunk ? 1 : mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
     sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
 
@@ -300,6 +300,12 @@ cl_bool findRunSizes(RunSizes* sizes,
         mw_printf("Effective area less than actual area!\n");
         return CL_TRUE;
     }
+
+    if (!mwDivisible(sizes->global[0], sizes->local[0]))
+   {
+        mw_printf("Global work size not divisible by workgroup size\n");
+        return CL_TRUE;
+   }
 
     return CL_FALSE;
 }

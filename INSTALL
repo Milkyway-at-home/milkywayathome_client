@@ -21,7 +21,7 @@ Dependency Installation Notes:
         Ubuntu / Debian:
               - Make sure the necessary build tools are installed
 
-              $ apt-get build-essential
+              $ apt-get install build-essential
               $ apt-get install cmake git-core diffutils patch libssl-dev
 
           Other Distributions: Install equivalent packages.
