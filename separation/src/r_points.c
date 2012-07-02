@@ -103,8 +103,8 @@ if (ap->modfit)
     return r_pt;
 }
 
-//Ignore calculation of irv_reff_xr_rp3.  Use for efficiency when this is not needed.
-RConsts calcRConsts(real coords, const AstronomyParameters* ap)
+//Used in likelihood calculation
+RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
 {
     RConsts rc;
     real stdev_o;
@@ -116,7 +116,7 @@ RConsts calcRConsts(real coords, const AstronomyParameters* ap)
     rc.eps = 1;
 
     if (ap->modfit)
-    /* Implement modified f_turnoff distribution and SDSS correction described in Newby 2011*/
+    /* Implement modified f_turnoff distribution described in Newby 2011*/
     {
         const real stdev_l = 0.36;
         const real alpha = 0.52;
@@ -127,14 +127,6 @@ RConsts calcRConsts(real coords, const AstronomyParameters* ap)
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
     
         real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
-        
-        //Curve Fit Parameters
-        static const real ay[8] = { 1.06, -0.031, 0.0002, 0.00000254, -0.0000000267, 0.0, 0.0, 0.0};
-        static const real ar[8] = { 0.016, -0.02, 0.0066, -0.00043, 0.0000126, -0.000000192, 0.00000000147, 
-                                    -0.00000000000454};
-        rc.eps = ay[0]+ar[0] + (ay[1]+ar[1])*tempr+ (ay[2]+ar[2])*sqr(tempr) +(ay[3]+ar[3])*cube(tempr) +
-              (ay[4]+ar[4])*mw_powr(tempr, 4) + (ay[5]+ar[5])*mw_powr(tempr, 5) + 
-              (ay[6]+ar[6])*mw_powr(tempr, 6) + (ay[7]+ar[7])*mw_powr(tempr, 7);
     }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
@@ -142,8 +134,8 @@ RConsts calcRConsts(real coords, const AstronomyParameters* ap)
     return rc;
 }
 
-//Include calculation of irv_reff_xr_rp3
-static RConsts calcRConstsplus(RPrime rp, const AstronomyParameters* ap)
+//Used in integral calculation
+static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
 {
     RConsts rc;
     real stdev_o;
@@ -181,6 +173,7 @@ static RConsts calcRConstsplus(RPrime rp, const AstronomyParameters* ap)
     return rc;
 }
 
+//Unused function.  Probably should be erased during code clean-up.
 void setRPoints(const AstronomyParameters* ap,
                 const StreamGauss sg,
                 RConsts* rc,
@@ -231,7 +224,7 @@ RPoints* precalculateRPts(const AstronomyParameters* ap,
     for (i = 0; i < ia->r_steps; ++i)
     {
         rp = calcRPrime(ia, i);
-        rc[i] = calcRConstsplus(rp, ap);
+        rc[i] = calcRConstsPlus(rp, ap);
 
         for (j = 0; j < ap->convolve; ++j)
         {

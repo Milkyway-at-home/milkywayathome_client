@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 real calcG(real coords);
-RConsts calcRConsts(real coords, const AstronomyParameters* ap);
+RConsts calcRConstsLik(real coords, const AstronomyParameters* ap);
 real calcReffXrRp3(real coords, real gPrime);
 
 void setRPoints(const AstronomyParameters* ap,

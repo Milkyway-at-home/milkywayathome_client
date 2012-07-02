@@ -308,7 +308,7 @@ static int likelihood_sum(SeparationResults* results,
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
         point = sp->stars[current_star_point];
-        rc = calcRConsts(Z(point), ap);
+        rc = calcRConstsLik(Z(point), ap);
         setSplitRPoints(ap, sg, &rc, r_points, qw_r3_N);
         reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
 
