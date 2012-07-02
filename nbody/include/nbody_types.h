@@ -335,9 +335,11 @@ typedef struct
 {
     unsigned int nBin;
     unsigned int totalNum;
+    unsigned int totalSimulated;
     int hasRawCounts;
     HistogramParams params;
     HistData data[1];
+    double massPerParticle;
 } NBodyHistogram;
 
 

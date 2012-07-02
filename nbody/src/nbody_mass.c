@@ -1,22 +1,33 @@
 #include "milkyway_math.h"
 #include "nbody_types.h"
 
-int factorial(int n) {
-    if (n <= 0){
-        return 1;
+
+/*In order to decrease the size of the numbers
+ * computed all these functions are
+ * calculated in log space*/
+
+static real factorial(int n) {
+    if (n <= 1){
+        return 0;
     }
-    return n * factorial(n-1);
+    return mw_log(n) + factorial(n-1);
 }
     
-real choose(int n, int c) {
-    return (real)factorial(n) / (real)(factorial(c) * (real)factorial(n-c));
+static real choose(int n, int c) {
+	unsigned int i;
+	real result = 0;
+	/*This for loop calulates log(n!/(n-c)!)*/
+	for(i = n-c+1; i <= (unsigned int)n; i++){
+		result += mw_log(i);
+	}
+	result -= factorial(c);
+    return result;
 }
 
-real propability_match(int n, int k, real pobs){
+real probability_match(int n, int k, real pobs){
     real result;
     result = choose(n, k);
-    result *= mw_pow(pobs, (real)k);
-    result *= mw_pow((1-pobs), (real)(n-k));
-    result = mw_log(result);
+    result += mw_log(pobs) * (real) k;
+    result += mw_log(1-pobs) * (real) (n-k);
     return result;
 }

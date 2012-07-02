@@ -25,6 +25,7 @@
 #include "nbody_chisq.h"
 #include "milkyway_util.h"
 #include "nbody_emd.h"
+#include "nbody_mass.h"
 
 
 /* From the range of a histogram, find the number of bins */
@@ -450,6 +451,9 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 
     mw_boinc_print(f, "<histogram>\n");
     fprintf(f, "n = %u\n", histogram->totalNum);
+    fprintf(f, "massPerParticle = %12.10f\n", histogram->massPerParticle);
+    fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
+
     for (i = 0; i < nBin; ++i)
     {
         data = &histogram->data[i];
@@ -581,6 +585,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->nBin = nBin;
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
+    histogram->totalSimulated = (unsigned int) st->nbody;
+    histogram->massPerParticle = (double) st->bodytab->bodynode.mass;
     histData = histogram->data;
 
     /* It does not make sense to ignore bins in a generated histogram */
@@ -628,16 +634,20 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     mwbool error = FALSE;
     mwbool readParams = FALSE; /* Read some other optional histogram params */
     mwbool readNGen = FALSE;  /* Read the scale for the histogram (particles in data bin) */
-    unsigned int nGen = 0;    /* Number of particles read from the */
+    mwbool readTotalSim = FALSE; /*Read the total number of particles simulated for the histogram */
+    mwbool readMass = FALSE; /*Read the mass per particle for the histogram*/
+    unsigned int nGen = 0;    /* Number of particles read from the histogram */
+    unsigned int totalSim = 0;	/*Total number of simulated particles read from the histogram */
+    double mass = 0;			/*mass per particle read from the histogram */
     char lineBuf[1024];
 
     f = mwOpenResolved(histogramFile, "r");
+    
     if (f == NULL)
     {
-        mw_printf("Opening histogram file '%s'\n", histogramFile);
+        mw_printf("Error opening histogram file '%s'\n", histogramFile);
         return NULL;
     }
-
     fsize = mwCountLinesInFile(f);
     if (fsize == 0)
     {
@@ -649,7 +659,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     histogram->hasRawCounts = FALSE;     /* Do we want to include these? */
     histData = histogram->data;
 
-
+	
     while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
         ++lineNum;
@@ -688,6 +698,24 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                 continue;
             }
         }
+        if (!readMass)
+        {
+            rc = sscanf(lineBuf, " massPerParticle = %lf \n", &mass);
+            if (rc == 1)
+            {
+                readMass = TRUE;
+                continue;
+            }
+        }
+        if (!readTotalSim)
+        {
+            rc = sscanf(lineBuf, " totalSimulated = %u \n", &totalSim);
+            if (rc == 1)
+            {
+                readTotalSim = TRUE;
+                continue;
+            }
+        }
 
         rc = sscanf(lineBuf,
                     "%d %lf %lf %lf \n",
@@ -708,7 +736,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     fclose(f);
 
     if (error)
-    {
+    {	
         free(histogram);
         return NULL;
     }
@@ -716,6 +744,8 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
     histogram->nBin = fileCount;
     histogram->totalNum = nGen;
+    histogram->totalSimulated = totalSim;
+    histogram->massPerParticle = mass;
     return histogram;
 }
 
@@ -726,70 +756,68 @@ static double nbWorstCaseEMD(const NBodyHistogram* hist)
 
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
+	unsigned int K;
+    unsigned int bins = data->nBin;
+    unsigned int N = histogram->totalSimulated;
+    unsigned int Nobs = histogram->totalNum;
+    unsigned int N_data = data->totalNum;
+    real Pobs = (real)Nobs/(real)N;
+    real hist_mass = histogram->massPerParticle;
+    real data_mass = data->massPerParticle;
     unsigned int i;
-    unsigned int n = data->nBin;
-    unsigned int effTotalNum = 0;
-    double emd;
     WeightPos* hist;
     WeightPos* dat;
-    double renormalize = 0.0;
-
+    real ratio;
+    double emd;
+    double likelihood;
+    
     if (data->nBin != histogram->nBin)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm not sure what to do with ignored bins and renormalization */
         return NAN;
     }
-
-    if (histogram->hasRawCounts)
+    if (Nobs == 0 || N_data == 0)
     {
-        effTotalNum = nbCorrectTotalNumberInHistogram(histogram, data);
-        mw_printf("Histogram has %u bodies with %u in accepted bins\n",
-                  histogram->totalNum,
-                  effTotalNum
-            );
-
-        if (effTotalNum == 0)
-        {
-            /* If the histogram is totally empty, it is worse than the worst case */
-            return INFINITY;
-        }
-    }
-    else
-    {
-        renormalize = nbCorrectRenormalizedInHistogram(histogram, data);
-    }
-
-    /* We need a correctly normalized histogram with the missing bins filtered out */
-    hist = mwCalloc(n, sizeof(WeightPos));
-    dat = mwCalloc(n, sizeof(WeightPos));
-
-    for (i = 0; i < n; ++i)
+		/* If the histogram is totally empty, it is worse than the worst case */
+		return INFINITY;
+	}
+	if (hist_mass <= 0 || data_mass <= 0)
+	{
+		/*In order to calculate likelihood the masses are necessary*/
+		return NAN;
+	}
+	
+	
+	/*This creates histograms that emdCalc can use*/
+	hist = mwCalloc(bins, sizeof(WeightPos));
+    dat = mwCalloc(bins, sizeof(WeightPos));
+    
+    for (i = 0; i < bins; ++i)
     {
         if (data->data[i].useBin)
         {
             dat[i].weight = (float) data->data[i].count;
-            if (histogram->hasRawCounts)
-            {
-                double correctedCount = (double) histogram->data[i].rawCount / (double) effTotalNum;
-                hist[i].weight = (float) correctedCount;
-            }
-            else
-            {
-                hist[i].weight = (float) (histogram->data[i].count / renormalize);
-            }
-        }
-        /* Otherwise weight is 0.0 */
-
+            hist[i].weight = (float) histogram->data[i].count;
+		}
         hist[i].pos = (float) histogram->data[i].lambda;
         dat[i].pos = (float) data->data[i].lambda;
     }
-
-    emd = emdCalc((const float*) dat, (const float*) hist, n, n, NULL);
-
-    free(hist);
-    free(dat);
-
-    return emd;
+	
+    emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
+    
+    if(emd > 50)
+    {
+		/*emd's max value is 50*/
+		return NAN;
+	}
+    
+    ratio = data_mass*100000/(hist_mass*100000);
+	K = (unsigned int) (ratio*(double)N_data);
+	
+	/*This calculates the likelihood as the combination of the probability distribution
+	 * and (1-emd/max_dist)*/
+	likelihood = -(mw_log(1.0-emd/50.0) + (double) probability_match(N, K, Pobs));
+    return likelihood;
 }
 
 /*
