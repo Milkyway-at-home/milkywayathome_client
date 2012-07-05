@@ -113,7 +113,7 @@ RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
     rc.irv_reff_xr_rp3 = 0.0;
     rc.stdev_r = stdev;
     stdev_o = rc.stdev_r;
-    rc.eps = 1;
+    rc.eps = 1.0;
 
     if (ap->modfit)
     /* Implement modified f_turnoff distribution described in Newby 2011*/
@@ -127,6 +127,17 @@ RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
     
         real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
+
+        //Curve Fit Parameters (un-normalized)
+        //Only works for 0 < r < 80 kpc
+        static const real ay[8] = {5.61945007e2, -1.67343282e1, 1.09325822e-1, 1.34993610e-3, -1.42044161e-5, 0.0,
+            0.0, 0.0};
+        static const real ar[8] = {8.55878159, -1.04891551e1, 3.51630757, -2.29741062e-01, 6.72278105e-03,
+            -1.01910181e-04, 7.82787167e-07, -2.41452056e-09};
+        rc.eps = ay[0]+ar[0] + (ay[1]+ar[1])*tempr+ (ay[2]+ar[2])*sqr(tempr) +(ay[3]+ar[3])*cube(tempr) +
+              (ay[4]+ar[4])*mw_powr(tempr, 4) + (ay[5]+ar[5])*mw_powr(tempr, 5) + 
+              (ay[6]+ar[6])*mw_powr(tempr, 6) + (ay[7]+ar[7])*mw_powr(tempr, 7);
+        rc.eps = rc.eps/532.0;          //Normalization
     }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
@@ -144,7 +155,7 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
     rc.irv_reff_xr_rp3 = rp.irv * calcReffXrRp3(rp.rPrime, rc.gPrime);
     rc.stdev_r = stdev;
     stdev_o = rc.stdev_r;
-    rc.eps = 1;
+    rc.eps = 1.0;
 
     if (ap->modfit)
     /* Implement modified f_turnoff distribution and SDSS correction described in Newby 2011*/
@@ -159,13 +170,16 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
 
         real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
         
-        //Curve Fit Parameters
-        static const real ay[8] = { 1.06, -0.031, 0.0002, 0.00000254, -0.0000000267, 0.0, 0.0, 0.0};
-        static const real ar[8] = { 0.016, -0.02, 0.0066, -0.00043, 0.0000126, -0.000000192, 0.00000000147, 
-                                    -0.00000000000454};
+        //Curve Fit Parameters (un-normalized)
+        //Only works for 0 < r < 80 kpc
+        static const real ay[8] = {5.61945007e2, -1.67343282e1, 1.09325822e-1, 1.34993610e-3, -1.42044161e-5, 0.0,
+            0.0, 0.0};
+        static const real ar[8] = {8.55878159, -1.04891551e1, 3.51630757, -2.29741062e-01, 6.72278105e-03,
+            -1.01910181e-04, 7.82787167e-07, -2.41452056e-09};
         rc.eps = ay[0]+ar[0] + (ay[1]+ar[1])*tempr+ (ay[2]+ar[2])*sqr(tempr) +(ay[3]+ar[3])*cube(tempr) +
               (ay[4]+ar[4])*mw_powr(tempr, 4) + (ay[5]+ar[5])*mw_powr(tempr, 5) + 
               (ay[6]+ar[6])*mw_powr(tempr, 6) + (ay[7]+ar[7])*mw_powr(tempr, 7);
+        rc.eps = rc.eps/532.0;          //Normalization
     }
 
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
@@ -224,7 +238,7 @@ RPoints* precalculateRPts(const AstronomyParameters* ap,
     for (i = 0; i < ia->r_steps; ++i)
     {
         rp = calcRPrime(ia, i);
-        rc[i] = calcRConstsPlus(rp, ap);
+        rc[i] = calcRConstsInt(rp, ap);
 
         for (j = 0; j < ap->convolve; ++j)
         {
