@@ -2,8 +2,8 @@
 wedge = 82
 
 background = {
-   q = 19.53,
-   r0 = -1.828
+   q = 0.456,
+   r0 = 19.530
 }
 
 streams = {

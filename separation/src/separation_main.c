@@ -377,6 +377,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
+                "print-likelihood-text", 't',
+                POPT_ARG_NONE, &sf.LikelihoodToText,
+                0, "Create text file with likelihood for use in local MLE", NULL
+            },
+
+            {
                 "debug-boinc", 'g',
                 POPT_ARG_NONE, &sf.debugBOINC,
                 0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
@@ -652,7 +658,7 @@ static int worker(const SeparationFlags* sf)
     if (rc)
         mw_printf("Failed to calculate likelihood\n");
 
-    printSeparationResults(results, ap.number_streams);
+    printSeparationResults(results, ap.number_streams, sf->LikelihoodToText);
 
     mwFreeA(ias);
     mwFreeA(sc);

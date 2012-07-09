@@ -224,7 +224,7 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->modfit);
 }
 
-void printSeparationResults(const SeparationResults* results, unsigned int numberStreams)
+void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText)
 {
     unsigned int i;
 
@@ -248,6 +248,14 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     /* Print overall likelihood */
     mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+
+    if (LikelihoodToText)
+    {
+      FILE * pFile;
+      pFile = fopen ("results.txt","w");
+      fprintf (pFile, "%.15f",results->likelihood);
+      fclose (pFile);
+    }
 
     fflush(stderr);
 

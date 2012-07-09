@@ -1,12 +1,20 @@
 
-stripe = 79
+wedge = 79
 
 background = {
-
+   q = 0.342,
+   r0 = 25.952
 }
 
 streams = {
-
+   {
+      epsilon = -2.171,
+      mu      = 38.273,
+      r       = 30.225,
+      theta   = 2.215,
+      phi     = 0.323,
+      sigma   = 2.774
+   }
 }
 
 
