@@ -359,6 +359,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
+                "modfit", 'f',
+                POPT_ARG_NONE, &sf.modfit,
+                0, "Modified fit from Newby 2011", NULL
+            },
+
+            {
                 "ignore-checkpoint", 'i',
                 POPT_ARG_NONE, &sf.ignoreCheckpoint,
                 0, "Ignore the checkpoint file", NULL
@@ -368,6 +374,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "cleanup-checkpoint", 'c',
                 POPT_ARG_NONE, &sf.cleanupCheckpoint,
                 0, "Delete checkpoint on successful", NULL
+            },
+
+            {
+                "print-likelihood-text", 't',
+                POPT_ARG_NONE, &sf.LikelihoodToText,
+                0, "Create text file with likelihood for use in local MLE", NULL
             },
 
             {
@@ -614,6 +626,8 @@ static int worker(const SeparationFlags* sf)
     memset(&ap, 0, sizeof(ap));
     memset(&clr, 0, sizeof(clr));
 
+    ap.modfit = sf->modfit;
+
     setCLReqFlags(&clr, sf);
     ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)
@@ -644,7 +658,7 @@ static int worker(const SeparationFlags* sf)
     if (rc)
         mw_printf("Failed to calculate likelihood\n");
 
-    printSeparationResults(results, ap.number_streams);
+    printSeparationResults(results, ap.number_streams, sf->LikelihoodToText);
 
     mwFreeA(ias);
     mwFreeA(sc);

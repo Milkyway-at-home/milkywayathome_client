@@ -77,6 +77,8 @@ typedef struct
     double waitFactor;  /* When using high CPU CL workarounds, factor for initial wait */
     int pollingMode;
     int disableGPUCheckpointing;
+    int modfit;         /* Modified fitting function from Newby 2011 */
+    int LikelihoodToText;   /* Create text file containing likelihood for use in local MLE*/
 
     MWPriority processPriority;
 

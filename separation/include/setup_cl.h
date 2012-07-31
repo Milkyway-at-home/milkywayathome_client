@@ -82,6 +82,13 @@ typedef struct
     cl_mem sg_dx;
 } SeparationCLMem;
 
+/* The buffers for needed part of RConsts by the integrate function. */
+typedef struct
+{
+    real irv_reff_xr_rp3;
+    real gPrime;
+} RCBuf;
+
 #define EMPTY_SEPARATION_CL_MEM { { NULL, NULL }, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 cl_int setupSeparationCL(CLInfo* ci,

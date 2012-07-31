@@ -2,11 +2,19 @@
 wedge = 86
 
 background = {
-
+   q = 0.633,
+   r0 = 16.657
 }
 
 streams = {
-
+   {
+      epsilon = -1.735,
+      mu      = 16.312,
+      r       = 26.077,
+      theta   = 1.403,
+      phi     = 0.086,
+      sigma   = 2.425
+   }
 }
 
 area = {

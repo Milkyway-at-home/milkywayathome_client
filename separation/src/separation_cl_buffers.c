@@ -132,7 +132,15 @@ static cl_int createRBuffers(CLInfo* ci,
         return err;
     }
 
-    cm->rc = clCreateBuffer(ci->clctx, constBufFlags, sizes->rc, rc, &err);
+    RCBuf rcb[ia->r_steps];
+
+    for (unsigned int i = 0; i < ia->r_steps; ++i)
+    {
+        rcb[i].irv_reff_xr_rp3 = rc[i].irv_reff_xr_rp3;
+        rcb[i].gPrime = rc[i].gPrime;
+    }
+
+    cm->rc = clCreateBuffer(ci->clctx, constBufFlags, sizes->rc, rcb, &err);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error creating stream r consts buffer of size "ZU, sizes->rc);
@@ -286,7 +294,7 @@ void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const
     sizes->ap = 16 * sizeof(double);
     sizes->ia = sizeof(IntegralArea);
     sizes->sc = 8 * sizeof(real) * ap->number_streams;
-    sizes->rc = sizeof(RConsts) * ia->r_steps;
+    sizes->rc = sizeof(RCBuf) * ia->r_steps;
     sizes->sg_dx = sizeof(real) * ap->convolve;
 }
 

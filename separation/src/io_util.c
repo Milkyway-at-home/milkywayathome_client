@@ -197,10 +197,11 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  wedge                 = %d\n"
            "  sun_r0                = %f\n"
            "  q                     = %f\n"
-           "  coeff                 = %f\n"
+//           "  coeff                 = %f\n"
            "  total_calc_probs      = %f\n"
            "  number_integrals      = %u\n"
-           "  exp_background_weight = %f\n",
+           "  exp_background_weight = %f\n"
+           "  modfit                = %u\n",
            ap->m_sun_r0,
            ap->q_inv,
            ap->q_inv_sqr,
@@ -216,13 +217,14 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->wedge,
            ap->sun_r0,
            ap->q,
-           ap->coeff,
+//           ap->coeff,
            ap->total_calc_probs,
            ap->number_integrals,
-           ap->exp_background_weight);
+           ap->exp_background_weight,
+           ap->modfit);
 }
 
-void printSeparationResults(const SeparationResults* results, unsigned int numberStreams)
+void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText)
 {
     unsigned int i;
 
@@ -246,6 +248,14 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     /* Print overall likelihood */
     mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+
+    if (LikelihoodToText)
+    {
+      FILE * pFile;
+      pFile = fopen ("results.txt","w");
+      fprintf (pFile, "%.15f",results->likelihood);
+      fclose (pFile);
+    }
 
     fflush(stderr);
 
