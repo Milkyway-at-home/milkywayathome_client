@@ -4,7 +4,6 @@ Separation:
   - separation will do a separation after the integration if given an
     output file. There is also an argument to set the random number seed.
 
-
 --------------------------------------------------------------------------------
 Nbody:
 
