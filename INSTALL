@@ -48,6 +48,9 @@ Dependency Installation Notes:
            not work with N-body with crlibm. It should build without crlibm however.
 
         - MinGW: Try using TDM-GCC http://tdm-gcc.tdragon.net/
+        
+      - Install cmake if you haven't already www.cmake.org/cmake/resources/software.html
+
       - build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason
           helps find things with MinGW
 

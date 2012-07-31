@@ -47,7 +47,7 @@ check_include_files(sys/resource.h HAVE_SYS_RESOURCE_H)
 check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
 check_include_files(sys/types.h HAVE_SYS_TYPES_H)
 check_include_files(sys/stat.h HAVE_SYS_STAT_H)
-check_include_files(sys/stat.h HAVE_SYS_WAIT_H)
+check_include_files(sys/wait.h HAVE_SYS_WAIT_H)
 check_include_files(sys/time.h HAVE_SYS_TIME_H)
 
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "libmilkyway headers")
