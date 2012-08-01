@@ -21,9 +21,9 @@
 cmake_minimum_required(VERSION 2.6)
 project(milkyway_nbody)
 
-set(nbody_VERSION_MAJOR 0
+set(nbody_VERSION_MAJOR 1
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 94
+set(nbody_VERSION_MINOR 00
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
