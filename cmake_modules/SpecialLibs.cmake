@@ -42,6 +42,13 @@ if(APPLE)
     set(HAVE_10_7_SDK TRUE)
   endif()
 
+   #FIXME: Somehow use xcrun to find the correct location
+   #FIXME: hack, need to be able to target old versions of OS X from ML
+  if(IS_DIRECTORY "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk")
+    set(HAVE_10_8_SDK TRUE)
+  endif()
+
+
   # Assume we only care about old OS X on PPC
   if(SYSTEM_IS_PPC)
     if (NOT HAVE_10_3_SDK)
@@ -100,6 +107,9 @@ if(APPLE)
       elseif(HAVE_10_7_SDK)
         set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7 CACHE STRING "" FORCE)
         set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.7.sdk" CACHE PATH "" FORCE)
+      elseif(HAVE_10_8_SDK)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.8 CACHE STRING "" FORCE)
+        set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk" CACHE PATH "" FORCE)
       else()
         message(FATAL "No OS X SDKs found")
       endif()
