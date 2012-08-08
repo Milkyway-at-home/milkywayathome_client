@@ -121,20 +121,28 @@ void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
 }
 
 StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams)
-
 {
     int i;
     StreamConstants* sc;
     real stream_sigma;
     real sigma_sq2;
 
-    sc = (StreamConstants*) mwMallocA(sizeof(StreamConstants) * streams->number_streams);
+    sc = (StreamConstants*) mwMallocA(streams->number_streams * sizeof(StreamConstants));
 
-    for (i = 0; i < streams->number_streams; i++)
+    for (i = 0; i < streams->number_streams; ++i)
     {
         stream_sigma = streams->parameters[i].sigma;
+
+        if (stream_sigma == 0.0)
+        {
+            mw_printf("stream sigma 0.0 is invalid\n");
+            mwFreeA(sc);
+            return NULL;
+        }
+
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
         sigma_sq2 = 2.0 * sqr(stream_sigma);
+
         sc[i].sigma_sq2_inv = 1.0 / sigma_sq2;
 
         sc[i].a = streamA(&streams->parameters[i]);
@@ -171,7 +179,9 @@ StreamGauss getStreamGauss(int convolve)
     later based on the two-sided gaussian.*/
 
     for (i = 0; i < convolve; ++i)
+    {
         sg.dx[i] = 3.0 * stdev * qgaus_X[i];
+    }
 
     mwFreeA(qgaus_X);
 
