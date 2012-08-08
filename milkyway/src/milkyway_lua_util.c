@@ -185,17 +185,30 @@ void mw_lua_openlibs(lua_State* luaSt, mwbool debug)
 {
     mw_luaL_register(luaSt, normalLibs);
     if (debug)
+    {
         mw_luaL_register(luaSt, debugOnlyLibs);
+    }
 }
 
 static int doWithArgs(lua_State* luaSt, const char** args, unsigned int nArgs)
 {
     unsigned int i;
 
+    if (!lua_checkstack(luaSt, nArgs))
+    {
+        mw_printf("Lua stack limit (%u) < required %u for arguments",
+                  LUA_MINSTACK,
+                  nArgs
+            );
+        return 1;
+    }
+
     if (args)
     {
         for (i = 0; i < nArgs; ++i)
+        {
             lua_pushstring(luaSt, args[i]);
+        }
     }
 
     if (lua_pcall(luaSt, nArgs, 0, 0))
