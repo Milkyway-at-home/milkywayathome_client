@@ -86,8 +86,7 @@ Dependency Installation Notes:
 BOINC:
     If building from git, you can build BOINC along with everything else
     using a submodule:
-
-    $ git checkout <tag of desired version>
+     $ git checkout <tag of desired version>  (optional)
        e.g. $ git checkout separation_0.80
      $ git submodule init
      $ git submodule update
@@ -98,6 +97,14 @@ BOINC:
 
      - If BOINC isn't found there, it will try to find the BOINC libraries
      installed on the system or dumped in include and lib in the binary directory
+
+     - If the compiler gives an error complaining about directory not being or svn, then git submodule update has failed.  To fix this:
+      $ cd milkywayathome_client/boinc/
+      $ rm -r boinc/ --force
+      $ git clone https://github.com/Milkyway-at-home/BOINC.git boinc
+
+     - If the compiler gives an error about the type psinfo_t it is because of an error in boinc with unix.  To correct the problem edit line 187 of the file milkywayathome_client/boinc/boinc/lib/procinfo_unix.cpp to say 
+      #if HAVE_PROCFS_H && defined(HAVE__PROC_SELF_PSINFO)  // solaris
 
 --------------------------------------------------------------------------------
 Using Build Options:
