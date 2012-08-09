@@ -49,6 +49,96 @@ Tests can be run by running:
 
 --------------------------------------------------------------------------------
 
+TAO:    *TODO: update for latest tao version
+
+-Maximum Likelihood Evaluation Code for running milkyway separation program
+
+-Note: Lua files for TAO searches are different from those used by the separation code.
+
+-The terminal output from this program appears confusing since it mixes the output of each separation run with that of TAO.  Using the linux ">" operator to port output to a file only takes the TAO output, making it much clearer.
+
+To run call:
+  $ ./TAO <options>
+
+  General required options:
+    --separation "<path/to/separation_binary>"
+    --stars "<path/to/stars_file>"
+    --params "<path/to/search_paramaters_file>"
+    --search_type <options>
+      search type options:
+        de    - differential evolution
+        ps    - particle swarm
+        snm   - synchronous newton method
+        gd    - gradient descent
+        cgd   - conjugate gradient descent
+        sweep - paramater sweep
+
+  Search Specific Options:
+    de:
+      optional:
+        --population_size <int>         (default:200)
+        --maximum_iterations <int>        (default:will run forever - Ctrl-C to kill)
+        --maximum_created <int>         (default:will run forever - Ctrl-C to kill)
+        --maximum_reported <int>        (default:will run forever - Ctrl-C to kill)
+        --parent_scaling_factor <float>     (default:1.0)
+        --differential_scaling_factor <float> (default:1.0)
+        --crossover_rate <float>        (default:0.5)
+        --int_pairs <int>           (default:1)
+        --parent_selection <option>       (defualt:best)
+          options:
+            best
+            random
+            current-to-best
+            current-to-random
+        --recombination_selection <option>    (default:binary)
+          options:
+            binary
+            exponential
+            sum
+            none
+    ps:
+      optional:
+        --population_size <int>       (default:200)
+        --maximum_iterations <int>      (default:will run forever - Ctrl-C to kill)
+        --maximum_created <int>       (default:will run forever - Ctrl-C to kill)
+        --maximum_reported <int>      (default:will run forever - Ctrl-C to kill)
+        --inertia <float>         (default:0.75)
+        --global_best_weight <float>    (default:1.5)
+        --local_best_weight <float>     (default:1.5)
+        --initial_velocity_scale <float>  (default:0.25)
+    snm:
+      required:
+        --iterations <int>
+      optional:
+        --rand <double>     (randomizes the search parameters by +- the given percent)
+    gd:
+      required:
+        --iterations <int>
+      optional:
+        --loop1_max <int>   (default:300 iterations)
+        --loop2_max <int>   (default:300 iterations)
+        --nquad <int>     (default:4 iterations for loop 3)
+        --tol <double>      (default:1e-6 for tolerance of dstar in loop 3)
+        --min_threshold <double_1, double_2, ... , double_n>
+                    (default:line search will not quit if the input direction is very small)
+        --rand <double>     (randomizes the search parameters by +- the given percent)
+
+    gd:
+      required:
+        --iterations <int>
+        --cgd_reset <int> **roughly speaking this should be the number of paramaters...
+      optional:
+        --loop1_max <int>   (default:300 iterations)
+        --loop2_max <int>   (default:300 iterations)
+        --nquad <int>     (default:4 iterations for loop 3)
+        --tol <doublMaximum Likelihood Evaluation Code for running milkyway separation program
+e>      (default:1e-6 for tolerance of dstar in loop 3)
+        --min_threshold <double_1, double_2, ... , double_n>
+                    (default:line search will not quit if the input direction is very small)
+        --rand <double>     (randomizes the search parameters by +- the given percent)
+
+---------------------------------------------------------------------------------------------------
+
 Random notes:
 
  - All give usage with --help/-? arguments

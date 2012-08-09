@@ -505,3 +505,7 @@ if(INSTALL_BOINC)
   install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
 endif()
 
+option(TAO "Build TAO search package" OFF)
+if(TAO)
+  add_subdirectory(mwtao)
+endif()
