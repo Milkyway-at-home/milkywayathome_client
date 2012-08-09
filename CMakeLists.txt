@@ -111,7 +111,7 @@ option(NBODY "Build nbody" ON)
 
 # Normal options
 option(BOINC_APPLICATION
-       "Run as BOINC application or independently" ON)
+       "Run as BOINC application or independently" OFF)
 
 cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
   "BOINC_APPLICATION" OFF)
@@ -352,7 +352,7 @@ endif()
 cmake_dependent_option(NBODY_OPENMP "Use OpenMP for nbody" ON
                                     "OPENMP_FOUND" OFF)
 
-cmake_dependent_option(NBODY_GL "Build nbody visualizer" ON
+cmake_dependent_option(NBODY_GL "Build nbody visualizer" OFF
                                 "OPENGL_FOUND;OPENGL_GLU_FOUND" OFF)
 
 # Required on Windows, optional on others

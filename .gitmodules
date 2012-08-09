@@ -10,3 +10,11 @@
 	path = glfw
 	url = git://github.com/elmindreda/glfw.git
 	ignore = dirty
+[submodule "mwtao/tao"]
+	path = mwtao/tao
+	url = git://github.com/travisdesell/tao.git
+	ignore = dirty
+[submodule "mwtao/tao/undvc_common"]
+	path = mwtao/tao/undvc_common
+	url = git://github.com/travisdesell/undvc_common.git
+	ignore = dirty
