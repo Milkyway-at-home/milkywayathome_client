@@ -152,11 +152,13 @@ Common system options:
 
 Building:
   Linux:
-    $ cmake /path/to/source
+    $ cmake -i /path/to/source
     $ make
 
   OS X:
     Same as Linux. Alternatively, Xcode projects could be built, but I have never tried or tested it
+
+  The -i switch will prompt for default values, in most cases accepting the default values will suffice.
 
   Windows/MinGW (TDM-GCC)
      $ cmake /path/to/source -G "MinGW Makefiles"
