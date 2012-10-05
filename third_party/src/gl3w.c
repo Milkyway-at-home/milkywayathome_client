@@ -26,7 +26,7 @@ static void *get_proc(const char *proc)
 	return res;
 }
 #elif defined(__APPLE__) || defined(__APPLE_CC__)
-#include <Carbon/Carbon.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 CFBundleRef bundle;
 CFURLRef bundleURL;
