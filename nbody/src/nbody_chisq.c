@@ -642,7 +642,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     char lineBuf[1024];
 
     f = mwOpenResolved(histogramFile, "r");
-    
+
     if (f == NULL)
     {
         mw_printf("Error opening histogram file '%s'\n", histogramFile);
@@ -659,7 +659,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     histogram->hasRawCounts = FALSE;     /* Do we want to include these? */
     histData = histogram->data;
 
-	
+
     while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
         ++lineNum;
@@ -736,11 +736,10 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     fclose(f);
 
     if (error)
-    {	
+    {
         free(histogram);
         return NULL;
     }
-
 
     histogram->nBin = fileCount;
     histogram->totalNum = nGen;
@@ -756,42 +755,45 @@ static double nbWorstCaseEMD(const NBodyHistogram* hist)
 
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-	unsigned int K;
+	unsigned int k;
     unsigned int bins = data->nBin;
-    unsigned int N = histogram->totalSimulated;
-    unsigned int Nobs = histogram->totalNum;
-    unsigned int N_data = data->totalNum;
-    real Pobs = (real)Nobs/(real)N;
-    real hist_mass = histogram->massPerParticle;
-    real data_mass = data->massPerParticle;
+    unsigned int n = histogram->totalSimulated;
+    unsigned int nObs = histogram->totalNum;
+    unsigned int nData = data->totalNum;
+    real pObs = (real) nObs / (real) n;
+    real histMass = histogram->massPerParticle;
+    real dataMass = data->massPerParticle;
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
     real ratio;
     double emd;
     double likelihood;
-    
+
     if (data->nBin != histogram->nBin)
     {
-        /* FIXME?: We could have mismatched histogram sizes, but I'm not sure what to do with ignored bins and renormalization */
+        /* FIXME?: We could have mismatched histogram sizes, but I'm
+         * not sure what to do with ignored bins and
+         * renormalization */
         return NAN;
     }
-    if (Nobs == 0 || N_data == 0)
+
+    if (nObs == 0 || nData == 0)
     {
 		/* If the histogram is totally empty, it is worse than the worst case */
 		return INFINITY;
 	}
-	if (hist_mass <= 0 || data_mass <= 0)
+
+	if (histMass <= 0.0 || dataMass <= 0.0)
 	{
 		/*In order to calculate likelihood the masses are necessary*/
 		return NAN;
 	}
-	
-	
-	/*This creates histograms that emdCalc can use*/
+
+	/* This creates histograms that emdCalc can use */
 	hist = mwCalloc(bins, sizeof(WeightPos));
     dat = mwCalloc(bins, sizeof(WeightPos));
-    
+
     for (i = 0; i < bins; ++i)
     {
         if (data->data[i].useBin)
@@ -799,24 +801,31 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
             dat[i].weight = (float) data->data[i].count;
             hist[i].weight = (float) histogram->data[i].count;
 		}
+
         hist[i].pos = (float) histogram->data[i].lambda;
         dat[i].pos = (float) data->data[i].lambda;
     }
-	
+
     emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
-    
-    if(emd > 50)
+
+    if (emd > 50.0)
     {
-		/*emd's max value is 50*/
+        free(hist);
+        free(dat);
+		/* emd's max value is 50 */
 		return NAN;
 	}
-    
-    ratio = data_mass*100000/(hist_mass*100000);
-	K = (unsigned int) (ratio*(double)N_data);
-	
-	/*This calculates the likelihood as the combination of the probability distribution
-	 * and (1-emd/max_dist)*/
-	likelihood = -(mw_log(1.0-emd/50.0) + (double) probability_match(N, K, Pobs));
+
+    ratio = 100000.0 * dataMass / (histMass * 100000.0);
+	k = (unsigned int) (ratio * (double)nData);
+
+	/* This calculates the likelihood as the combination of the
+	 * probability distribution and (1.0 - emd / max_dist) */
+	likelihood = -(mw_log(1.0 - emd / 50.0) + (double) probability_match(n, k, pObs));
+
+    free(hist);
+    free(dat);
+
     return likelihood;
 }
 
