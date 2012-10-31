@@ -142,8 +142,10 @@ execute_process(COMMAND ${PROJECT_SOURCE_DIR}/config.guess
                  OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Generate configuration headers
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/config.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/boinc/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/boinc/version.h)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/boinc)
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/boinc/svn_version.h
                      COMMAND ${CMAKE_COMMAND}
