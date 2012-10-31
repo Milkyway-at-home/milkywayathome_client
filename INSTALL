@@ -52,7 +52,7 @@ Dependency Installation Notes:
            not work with N-body with crlibm. It should build without crlibm however.
 
         - MinGW: Try using TDM-GCC http://tdm-gcc.tdragon.net/
-        
+
       - Install cmake if you haven't already www.cmake.org/cmake/resources/software.html
 
       - build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason
@@ -100,11 +100,8 @@ BOINC:
       $ rm -r boinc/ --force
       $ git clone https://github.com/Milkyway-at-home/BOINC.git boinc
 
-    If the compiler gives an error about the type psinfo_t it is because of an error in boinc with unix.  To correct the problem edit line 187 of the file milkywayathome_client/boinc/boinc/lib/procinfo_unix.cpp to say 
-      #if HAVE_PROCFS_H && defined(HAVE__PROC_SELF_PSINFO)  // solaris
-
 TAO:
-  This package has only been tests on 64-bit linux machines.  Support for other platforms is not available.  Use at your own risk.  
+  This package has only been tests on 64-bit linux machines.  Support for other platforms is not available.  Use at your own risk.
 
   **There is currently an issue with the submodule undvc_common.  To include use:
       $ cd tao
