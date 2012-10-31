@@ -113,7 +113,7 @@ option(NBODY "Build nbody" ON)
 
 # Normal options
 option(BOINC_APPLICATION
-       "Run as BOINC application or independently" OFF)
+       "Run as BOINC application or independently" ON)
 
 cmake_dependent_option(INSTALL_BOINC "make install should go to BOINC project directory (e.g. /var/lib/boinc-client/projects/milkyway.cs.rpi.edu/" ON
   "BOINC_APPLICATION" OFF)
