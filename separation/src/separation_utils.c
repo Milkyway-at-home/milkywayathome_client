@@ -197,9 +197,9 @@ int checkSeparationResults(const SeparationResults* results, unsigned int number
         rc |= !isfinite(results->streamIntegrals[i]);
         rc |= !isfinite(results->streamLikelihoods[i]);
     }
-
+    
     if (rc)
-        mw_printf("Non-finite result\n");
+        mw_printf("Non-finite result:  setting likelihood to -999\n");
 
     return rc;
 }

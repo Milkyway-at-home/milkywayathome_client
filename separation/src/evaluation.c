@@ -251,8 +251,12 @@ int evaluate(SeparationResults* results,
 
 
     rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
-    rc |= checkSeparationResults(results, ap->number_streams);
-
+    /* Modifying output;  non-finite results now return a very bad likelihood, but 
+     * otherwise finish cleanly */
+    if (checkSeparationResults(results, ap->number_streams))
+    {
+        results->likelihood = -999.0;
+    }
 
 error:
     freeEvaluationState(es);
