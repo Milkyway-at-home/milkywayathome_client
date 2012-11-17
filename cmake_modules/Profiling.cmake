@@ -22,11 +22,11 @@
 # set(CMAKE_BUILD_TYPE Profile)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-  set(CMAKE_C_FLAGS_PROFILE "-g -pg" CACHE STRING "C compiler flags for profiling builds" FORCE)
-  set(CMAKE_CXX_FLAGS_PROFILE "-g -pg" CACHE STRING "C++ compiler flags for profiling builds" FORCE)
+  set(CMAKE_C_FLAGS_PROFILE "-pg" CACHE STRING "C compiler flags for profiling builds" FORCE)
+  set(CMAKE_CXX_FLAGS_PROFILE "-pg" CACHE STRING "C++ compiler flags for profiling builds" FORCE)
 
-  set(CMAKE_EXE_LINKER_FLAGS_PROFILE "" CACHE STRING "" FORCE)
-  set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "" CACHE STRING "" FORCE)
+  set(CMAKE_EXE_LINKER_FLAGS_PROFILE "-pg" CACHE STRING "" FORCE)
+  set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "-pg" CACHE STRING "" FORCE)
 else()
   # TODO
   set(CMAKE_C_FLAGS_PROFILE CACHE STRING "C compiler flags for profiling builds")
