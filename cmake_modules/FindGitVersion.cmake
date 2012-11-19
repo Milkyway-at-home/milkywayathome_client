@@ -21,7 +21,7 @@
 
 find_package(Git)
 
-if(IS_DIRECTORY ".svn")
+if(EXISTS "${CMAKE_SOURCE_DIR}/.svn")
   execute_process(COMMAND svnversion ${repodir}
                     OUTPUT_VARIABLE SVN_REVISION
                     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -32,14 +32,14 @@ if(IS_DIRECTORY ".svn")
   endif()
   set(REPOSITORY_REVISION ${SVN_REVISION})
 
-elseif(IS_DIRECTORY ".git")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
   execute_process(COMMAND ${GIT_EXECUTABLE} rev-list HEAD
                     OUTPUT_VARIABLE GIT_REVISION
                     OUTPUT_STRIP_TRAILING_WHITESPACE
                     ERROR_STRIP_TRAILING_WHITESPACE)
   set(REPOSITORY_REVISION ${GIT_REVISION})
 else()
-  message(FATAL_ERROR "Directory does not contain .svn or .git")
+  message(FATAL_ERROR "Source directory does not contain .svn or .git")
 endif()
 
 string(TOUPPER HEADER_BASENAME uppername)
