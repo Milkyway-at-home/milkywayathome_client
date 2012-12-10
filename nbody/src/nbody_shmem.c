@@ -341,6 +341,12 @@ void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* vis
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
 
+    if (!graphicsBin || !strncmp(graphicsBin, "", 1))
+    {
+        mw_printf("Graphics binary path is empty\n");
+        return;
+    }
+
     pid = fork();
     if (pid != 0)  /* Parent */
     {
@@ -445,6 +451,13 @@ void nbLaunchVisualizer(NBodyState* st, const char* graphicsBin, const char* vis
     int ret;
 
     (void) st;
+
+
+    if (!graphicsBin || !strncmp(graphicsBin, "", 1))
+    {
+        mw_printf("Graphics binary path is empty\n");
+        return;
+    }
 
     memset(&pInfo, 0, sizeof(pInfo));
     memset(&startInfo, 0, sizeof(startInfo));
