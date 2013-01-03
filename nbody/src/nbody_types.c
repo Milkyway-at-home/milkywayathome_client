@@ -179,7 +179,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->bodytab = bodies;
 
     st->nOrbitTrace = ctx->nStep;
-    st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace + 1, sizeof(mwvector));
+    st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace, sizeof(mwvector));
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
