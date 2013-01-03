@@ -511,3 +511,14 @@ option(TAO "Build TAO search package" OFF)
 if(TAO)
   add_subdirectory(mwtao)
 endif()
+
+
+
+# Workaround for MSVS10 to avoid the Dialog Hell
+# FIXME: This could be removed with future version of CMake.
+if(MSVC_VERSION EQUAL 1600)
+  set(MILKYWAYATHOME_CLIENT_SLN_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/milkywayathome_client.sln")
+  if(EXISTS "${MILKYWAYATHOME_CLIENT_SLN_FILENAME}")
+    file(APPEND "${MILKYWAYATHOME_CLIENT_SLN_FILENAME}" "\n# This should be regenerated!\n")
+  endif()
+endif()
