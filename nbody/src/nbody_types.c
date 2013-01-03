@@ -178,7 +178,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->nbody = nbody;
     st->bodytab = bodies;
 
-    st->nOrbitTrace = ctx->nStep;
+    /* We'll report the center of mass for each step + the initial one */
+    st->nOrbitTrace = ctx->nStep + 1;
     st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace, sizeof(mwvector));
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */

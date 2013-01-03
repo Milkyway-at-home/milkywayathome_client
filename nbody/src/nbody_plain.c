@@ -146,6 +146,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         if (nbStatusIsFatal(rc))
             return rc;
 
+        /* We report the progress at step + 1. 0 is the original
+           center of mass. */
         nbReportProgress(ctx, st);
         nbUpdateDisplayedBodies(ctx, st);
     }
