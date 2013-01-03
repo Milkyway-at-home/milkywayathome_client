@@ -26,6 +26,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_BUILD_TYPE MinSizeRel)
 endif()
 
+
 set(POPT_VERSION_MAJOR 1)
 set(POPT_VERSION_MINOR 17)
 set(POPT_VERSION "${POPT_VERSION_MAJOR}.${POPT_VERSION_MINOR}")
@@ -69,7 +70,9 @@ check_function_exists(strerror HAVE_STRERROR)
 check_include_files(unistd.h HAVE_UNISTD_H)
 
 check_function_exists(vasprintf HAVE_VASPRINTF)
+check_function_exists(secure_getenv HAVE_SECURE_GETENV)
 check_function_exists(__secure_getenv HAVE___SECURE_GETENV)
+
 
 set(libpopt_src src/popt.c
                 src/poptparse.c
