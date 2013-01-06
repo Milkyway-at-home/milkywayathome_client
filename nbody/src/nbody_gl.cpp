@@ -261,10 +261,10 @@ public:
         this->viewPole.MouseMove(glm::ivec2(x, y));
     }
 
-    inline void mouseWheel(int modifiers, int x, int y)
+    inline void mouseWheel(int modifiers, double x, double y)
     {
         int direction = y > 0;
-        this->viewPole.MouseWheel(direction, modifiers, glm::ivec2(x, y));
+        this->viewPole.MouseWheel(direction, modifiers, glm::ivec2((int) x, (int) y));
     }
 
     void drawAxes();
@@ -444,8 +444,6 @@ static void errorHandler(int errorCode, const char* msg)
 
 static void resizeHandler(GLFWwindow window, int w, int h)
 {
-    (void) window;
-
     float wf = (float) w;
     float hf = (float) h;
     float aspectRatio = wf / hf;
@@ -459,7 +457,7 @@ static void resizeHandler(GLFWwindow window, int w, int h)
 
 
     globalGraphicsContext->display();
-    glfwSwapBuffers();
+    glfwSwapBuffers(window);
 }
 
 static int closeHandler(GLFWwindow window)
@@ -516,7 +514,7 @@ static void mouseButtonHandler(GLFWwindow window, int button, int action)
 
     int x, y;
     int modifiers = getGLFWModifiers(window);
-    glfwGetMousePos(window, &x, &y);
+    glfwGetCursorPos(window, &x, &y);
     ctx->mouseClick(glfwButtonToGLUtil(button), action == GLFW_PRESS, modifiers, x, y);
 }
 
@@ -544,7 +542,7 @@ static void mousePosHandler(GLFWwindow window, int x, int y)
     globalGraphicsContext->markDirty();
 }
 
-static void scrollHandler(GLFWwindow window, int x, int y)
+static void scrollHandler(GLFWwindow window, double x, double y)
 {
     globalGraphicsContext->mouseWheel(getGLFWModifiers(window), x, y);
     globalGraphicsContext->markDirty();
@@ -759,16 +757,16 @@ static void charHandler(GLFWwindow window, int charCode)
     }
 }
 
-static void nbglSetHandlers()
+static void nbglSetHandlers(GLFWwindow window)
 {
-    glfwSetWindowSizeCallback(resizeHandler);
-    glfwSetWindowCloseCallback(closeHandler);
+    glfwSetWindowSizeCallback(window, resizeHandler);
+    glfwSetWindowCloseCallback(window, closeHandler);
 
-    glfwSetKeyCallback(keyHandler);
-    glfwSetCharCallback(charHandler);
-    glfwSetMouseButtonCallback(mouseButtonHandler);
-    glfwSetMousePosCallback(mousePosHandler);
-    glfwSetScrollCallback(scrollHandler);
+    glfwSetKeyCallback(window, keyHandler);
+    glfwSetCharCallback(window, charHandler);
+    glfwSetMouseButtonCallback(window, mouseButtonHandler);
+    glfwSetCursorPosCallback(window, mousePosHandler);
+    glfwSetScrollCallback(window, scrollHandler);
 }
 
 bool NBodyGraphics::waitForSceneData()
@@ -1331,7 +1329,7 @@ void NBodyGraphics::mainLoop()
         }
 
         this->display();
-        glfwSwapBuffers();
+        glfwSwapBuffers(window);
     }
 }
 
@@ -1456,19 +1454,19 @@ static void nbglSetSceneSettings(scene_t* scene, const VisArgs* args)
     OPA_store_int(&scene->attachedPID, (int) getpid());
 }
 
-static void nbglRequestGL32()
+static void nbglRequestGLVersion()
 {
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwOpenWindowHint(GLFW_DEPTH_BITS, 24);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
-    glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
   #ifndef NDEBUG
-    glfwOpenWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
   #endif
 }
 
@@ -1477,22 +1475,23 @@ static GLFWwindow nbglPrepareWindow(const VisArgs* args)
     const char* title = "Milkyway@Home N-body";
     GLFWvidmode vidMode;
 
-    glfwGetDesktopMode(&vidMode);
-    nbglRequestGL32();
+    GLFWmonitor monitor = glfwGetPrimaryMonitor();
+    glfwGetVideoMode(monitor, &vidMode);
+    nbglRequestGLVersion();
 
     if (args->fullscreen || args->plainFullscreen)
     {
         int width = args->width == 0 ? vidMode.width : args->width;
         int height = args->height == 0 ? vidMode.height : args->height;
 
-        return glfwOpenWindow(width, height, GLFW_FULLSCREEN, title, NULL);
+        return glfwCreateWindow(width, height, title, monitor, NULL);
     }
     else
     {
         int width = args->width == 0 ? 3 * vidMode.width / 4 : args->width;
         int height = args->height == 0 ? 3 * vidMode.height / 4 : args->height;
 
-        return glfwOpenWindow(width, height, GLFW_WINDOWED, title, NULL);
+        return glfwCreateWindow(width, height, title, monitor, NULL);
     }
 }
 
@@ -1568,7 +1567,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         // GL context needs to be open or else destructors will crash
         NBodyGraphics graphicsContext(scene, args);
         globalGraphicsContext = &graphicsContext;
-        nbglSetHandlers();
+        nbglSetHandlers(window);
         graphicsContext.mainLoop();
     }
     catch (const std::exception& e)
@@ -1583,4 +1582,3 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
 
     return 0;
 }
-
