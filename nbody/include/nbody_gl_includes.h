@@ -22,7 +22,10 @@
 
 #include "nbody_config.h"
 
-#define GLFW_INCLUDE_GLCOREARB
+#ifdef __APPLE__
+  #define GLFW_INCLUDE_GLCOREARB
+#endif
+
 #if USE_GL3W
   #include <GL3/gl3w.h>
   #define GLFW_NO_GLU 1
