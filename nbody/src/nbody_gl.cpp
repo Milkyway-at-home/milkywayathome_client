@@ -110,7 +110,7 @@ class NBodyGraphics
 {
 private:
     scene_t* scene;
-    GLFWwindow window;
+    GLFWwindow* window;
 
     GLuint particleVAO;
     GLuint whiteParticleVAO;
@@ -442,7 +442,7 @@ static void errorHandler(int errorCode, const char* msg)
     fprintf(stderr, "GLFW error (%d): %s\n", errorCode, msg);
 }
 
-static void resizeHandler(GLFWwindow window, int w, int h)
+static void resizeHandler(GLFWwindow* window, int w, int h)
 {
     float wf = (float) w;
     float hf = (float) h;
@@ -460,7 +460,7 @@ static void resizeHandler(GLFWwindow window, int w, int h)
     glfwSwapBuffers(window);
 }
 
-static int closeHandler(GLFWwindow window)
+static int closeHandler(GLFWwindow* window)
 {
     (void) window;
 
@@ -468,7 +468,7 @@ static int closeHandler(GLFWwindow window)
     return 0;
 }
 
-static int getGLFWModifiers(GLFWwindow window)
+static int getGLFWModifiers(GLFWwindow* window)
 {
     (void) window;
 
@@ -503,7 +503,7 @@ static glutil::MouseButtons glfwButtonToGLUtil(int button)
     }
 }
 
-static void mouseButtonHandler(GLFWwindow window, int button, int action)
+static void mouseButtonHandler(GLFWwindow* window, int button, int action)
 {
     NBodyGraphics* ctx = globalGraphicsContext;
 
@@ -518,7 +518,7 @@ static void mouseButtonHandler(GLFWwindow window, int button, int action)
     ctx->mouseClick(glfwButtonToGLUtil(button), action == GLFW_PRESS, modifiers, x, y);
 }
 
-static void mousePosHandler(GLFWwindow window, int x, int y)
+static void mousePosHandler(GLFWwindow* window, int x, int y)
 {
     (void) window;
 
@@ -542,13 +542,13 @@ static void mousePosHandler(GLFWwindow window, int x, int y)
     globalGraphicsContext->markDirty();
 }
 
-static void scrollHandler(GLFWwindow window, double x, double y)
+static void scrollHandler(GLFWwindow* window, double x, double y)
 {
     globalGraphicsContext->mouseWheel(getGLFWModifiers(window), x, y);
     globalGraphicsContext->markDirty();
 }
 
-static void keyHandler(GLFWwindow window, int key, int pressed)
+static void keyHandler(GLFWwindow* window, int key, int pressed)
 {
     (void) window;
 
@@ -656,7 +656,7 @@ static void keyHandler(GLFWwindow window, int key, int pressed)
     }
 }
 
-static void charHandler(GLFWwindow window, int charCode)
+static void charHandler(GLFWwindow* window, int charCode)
 {
     (void) window;
 
@@ -757,7 +757,7 @@ static void charHandler(GLFWwindow window, int charCode)
     }
 }
 
-static void nbglSetHandlers(GLFWwindow window)
+static void nbglSetHandlers(GLFWwindow* window)
 {
     glfwSetWindowSizeCallback(window, resizeHandler);
     glfwSetWindowCloseCallback(window, closeHandler);
@@ -1470,13 +1470,11 @@ static void nbglRequestGLVersion()
   #endif
 }
 
-static GLFWwindow nbglPrepareWindow(const VisArgs* args)
+static GLFWwindow* nbglPrepareWindow(const VisArgs* args)
 {
     const char* title = "Milkyway@Home N-body";
-    GLFWvidmode vidMode;
-
-    GLFWmonitor monitor = glfwGetPrimaryMonitor();
-    glfwGetVideoMode(monitor, &vidMode);
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    GLFWvidmode vidMode = glfwGetVideoMode(monitor);
     nbglRequestGLVersion();
 
     if (args->fullscreen || args->plainFullscreen)
@@ -1547,7 +1545,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
-    GLFWwindow window = nbglPrepareWindow(args);
+    GLFWwindow* window = nbglPrepareWindow(args);
     if (!window)
     {
         return 1;
