@@ -194,6 +194,7 @@ static cl_int runIntegralKernel(CLInfo* ci, const RunSizes* runSizes, const size
 
     /* Give the screen a chance to redraw */
     err = mwCLWaitForEvent(ci, ev, runSizes->initialWait);
+    clReleaseEvent(ev);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Failed to wait for integral event");
