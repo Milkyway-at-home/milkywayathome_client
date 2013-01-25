@@ -184,21 +184,6 @@ cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di, cl_int nbody, cl_b
         ws->local[i] = ws->threads[i];
     }
 
-    if (ignoreResponsive)
-    {
-        /* It seems to help if we make this huge so that the global
-         * size is about the same as the number of bodies on Tahiti
-         * (not sure why yet) but we can't do that while maintaining
-         * responsiveness
-         *
-         * TODO: Does this happen on other GPUs? Why does it happen here?
-         */
-        if (di->calTarget >= MW_CAL_TARGET_TAHITI)
-        {
-            ws->global[5] = mwNextMultiple(ws->threads[5], nbody);
-        }
-    }
-
     nbClampWorkSizes(ws, di);
 
     return CL_FALSE;
@@ -306,7 +291,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->factors[2] = 4;
         ws->factors[3] = 1;
         ws->factors[4] = 4;
-        ws->factors[5] = 20;
+        ws->factors[5] = 40; /* Max at 10 per vector unit, 4 vector units */
         ws->factors[6] = 2;
         ws->factors[7] = 2;
 
