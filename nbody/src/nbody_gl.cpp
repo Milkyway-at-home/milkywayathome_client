@@ -1476,7 +1476,17 @@ static GLFWwindow* nbglPrepareWindow(const VisArgs* args)
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     if (!monitor)
     {
-        return NULL;
+        // None are marked as primary for some reason, pick another if
+        // we have them.
+
+        int nMonitor = 0;
+        GLFWmonitor** monitors = glfwGetMonitors(&nMonitor);
+        if (!monitors || nMonitor <= 0)
+        {
+            return NULL;
+        }
+
+        monitor = monitors[0];
     }
 
     GLFWvidmode vidMode = glfwGetVideoMode(monitor);
