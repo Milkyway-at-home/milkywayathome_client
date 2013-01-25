@@ -1566,6 +1566,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
+    glfwMakeContextCurrent(window);
     if (nbglInitGL3W())
     {
         return 1;
