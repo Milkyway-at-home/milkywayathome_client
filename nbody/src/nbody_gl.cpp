@@ -1474,6 +1474,11 @@ static GLFWwindow* nbglPrepareWindow(const VisArgs* args)
 {
     const char* title = "Milkyway@Home N-body";
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (!monitor)
+    {
+        return NULL;
+    }
+
     GLFWvidmode vidMode = glfwGetVideoMode(monitor);
     nbglRequestGLVersion();
 
