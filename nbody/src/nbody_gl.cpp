@@ -248,7 +248,7 @@ private:
     bool waitForSceneData();
 
 public:
-    NBodyGraphics(scene_t* scene, const VisArgs* args);
+    NBodyGraphics(scene_t* scene, GLFWwindow* window, const VisArgs* args);
     ~NBodyGraphics();
 
     inline void mouseClick(glutil::MouseButtons button, bool pressed, int modifiers, int x, int y)
@@ -793,9 +793,22 @@ bool NBodyGraphics::waitForSceneData()
     return false;
 }
 
-NBodyGraphics::NBodyGraphics(scene_t* scene_, const VisArgs* args)
+NBodyGraphics::NBodyGraphics(scene_t* scene_, GLFWwindow* window_, const VisArgs* args)
     : scene(scene_),
+      window(window_),
+      particleVAO(0),
+      whiteParticleVAO(0),
+      particleTextureProgram(),
+      particlePointProgram(),
+      positionBuffer(0),
+      velocityBuffer(0),
+      accelerationBuffer(0),
+      colorBuffer(0),
+      whiteBuffer(0),
+      particleTexture(0),
+      galaxyModel(NULL),
       text(NBodyText(&robotoRegular12)),
+      axes(),
       orbitTrace(OrbitTrace(scene)),
       sceneData(SceneData((bool) scene->staticScene)),
       viewPole(glutil::ViewPole(initialViewData, viewScale, glutil::MB_LEFT_BTN)),
@@ -1329,7 +1342,7 @@ void NBodyGraphics::mainLoop()
         }
 
         this->display();
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(this->window);
     }
 }
 
@@ -1462,7 +1475,6 @@ static void nbglRequestGLVersion()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
-
     glfwWindowHint(GLFW_SAMPLES, 4);
 
   #ifndef NDEBUG
@@ -1566,7 +1578,10 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
+    glfwSetInputMode(window, GLFW_CURSOR_MODE, GLFW_CURSOR_NORMAL);
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
     if (nbglInitGL3W())
     {
         return 1;
@@ -1579,7 +1594,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
     try
     {
         // GL context needs to be open or else destructors will crash
-        NBodyGraphics graphicsContext(scene, args);
+        NBodyGraphics graphicsContext(scene, window, args);
         globalGraphicsContext = &graphicsContext;
         nbglSetHandlers(window);
         graphicsContext.mainLoop();
