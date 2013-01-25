@@ -786,7 +786,9 @@ cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint n
     }
 
     /* if TAHITI and < 12.3 driver bug requires additional clFinishes */
-    if (di->calTarget >= MW_CAL_TARGET_TAHITI && !mwCALVersionMin(di, 1, 4, 1720))
+    if (di->calTarget >= MW_CAL_TARGET_TAHITI
+        && !mwAMDCLVersionMin(di, 900, 0) /* No idea, but if using new format new enough */
+        && !mwCALVersionMin(di, 1, 4, 1720))
     {
         mw_printf("Tahiti driver bug requires Catalyst 12.3 or newer\n");
         return CL_FALSE;

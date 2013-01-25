@@ -347,6 +347,38 @@ cl_int mwCLWaitForEvent(CLInfo* ci, cl_event ev, cl_uint initialWait)
     }
 }
 
+// The driver version format changed to stop using the CAL version
+cl_bool mwAMDCLVersionMin(const DevInfo* di, int minMajor, int minPatchLevel)
+{
+    int major = 0, patchLevel = 0;
+    int matches = sscanf(di->driver, "%d.%d%*s", &major, &patchLevel);
+
+    assert(mwIsAMDGPUDevice(di));
+
+    /* <number>.<number> (VM)
+       where the (VM) is optional.
+       I have no idea what the minor part is.
+    */
+
+    if (matches != 2)
+    {
+        return CL_FALSE;
+    }
+
+    if (major > minMajor)
+    {
+        return CL_TRUE;
+    }
+    else if (major < minMajor)
+    {
+        return CL_FALSE;
+    }
+    else
+    {
+        return (patchLevel > minPatchLevel);
+    }
+}
+
 cl_bool mwCALVersionMin(const DevInfo* di, int minMajor, int minMinor, int minPatchLevel)
 {
     int major = 0, minor = 0, patchLevel = 0;
