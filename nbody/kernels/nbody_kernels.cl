@@ -91,6 +91,17 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 
+#ifdef cl_amd_c1x_atomics
+  #pragma OPENCL EXTENSION cl_amd_c1x_atomics : enable
+
+  /* FIXME: Why is this missing? */
+  #define memory_order_relaxed 0
+
+  #define USE_AMD_C1X_ATOMICS 1
+#else
+  #define USE_AMD_C1X_ATOMICS 0
+#endif
+
 
 /* Reserve positive numbers for reporting depth > MAXDEPTH. Should match on host */
 typedef enum
@@ -881,8 +892,14 @@ inline real atomic_read_real(RVPtr arr, int idx)
     IVPtr src = (IVPtr) &arr[idx];
 
     /* Breaks aliasing rules */
+
+  #if USE_AMD_C1X_ATOMICS
+    u.i.x = atomic_load_explicit(src + 0, memory_order_relaxed);
+    u.i.y = atomic_load_explicit(src + 1, memory_order_relaxed);
+  #else
     u.i.x = atomic_or(src + 0, 0);
     u.i.y = atomic_or(src + 1, 0);
+  #endif
 
     return u.f;
 }
@@ -899,17 +916,27 @@ inline real atomic_read_real(RVPtr arr, int idx)
 
     IVPtr src = (IVPtr) &arr[idx];
 
+  #if USE_AMD_C1X_ATOMICS
+    u.i = atomic_load_explicit(src, memory_order_relaxed);
+  #else
     u.i = atomic_or(src, 0);
+  #endif
 
     return u.f;
 }
+
 #endif /* DOUBLEPREC */
 
 #if HAVE_CONSISTENT_MEMORY
   #define read_bypass_cache_int(arr, idx) ((arr)[idx])
   #define read_bypass_cache_real(arr, idx) ((arr)[idx])
 #else
-  #define read_bypass_cache_int(arr, idx) atomic_or(&((arr)[idx]), 0)
+  #if USE_AMD_C1X_ATOMICS
+    #define read_bypass_cache_int(arr, idx) atomic_load_explicit(&((arr)[idx]), memory_order_relaxed)
+  #else
+    #define read_bypass_cache_int(arr, idx) atomic_or(&((arr)[idx]), 0)
+  #endif
+
   #define read_bypass_cache_real(base, idx) atomic_read_real(base, idx)
 #endif /* HAVE_CONSISTENT_MEMORY */
 
