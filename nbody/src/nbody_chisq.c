@@ -888,7 +888,7 @@ double nbSystemChisq(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->totalNum < 0.01 * (double) st->nbody)
+        if (histogram->totalNum < 0.0001 * (double) st->nbody)
         {
             double worstEMD;
 
