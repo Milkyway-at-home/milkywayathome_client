@@ -26,7 +26,7 @@
 #include "milkyway_util.h"
 #include "nbody_emd.h"
 #include "nbody_mass.h"
-
+#include "nbody_defaults.h"
 
 /* From the range of a histogram, find the number of bins */
 static unsigned int nbHistogramNBin(const HistogramParams* hp)
@@ -750,7 +750,9 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
 static double nbWorstCaseEMD(const NBodyHistogram* hist)
 {
-    return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
+  //(This makes no sense to be defined this way now that histograms are not normalized.  
+  //  return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
+  return DEFAULT_WORST_CASE;
 }
 
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
@@ -898,7 +900,8 @@ double nbSystemChisq(const NBodyState* st,
                       st->nbody
                 );
             worstEMD = nbWorstCaseEMD(histogram);
-            return 2.0 * worstEMD;
+            //return 2.0 * worstEMD;
+	    return worstEMD; //Changed.  See above comment.
         }
 
         return nbMatchEMD(data, histogram);
