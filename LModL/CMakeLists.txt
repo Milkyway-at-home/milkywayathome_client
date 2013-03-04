@@ -81,14 +81,16 @@ set(lmodl_src src/3dproj.cpp
               src/drawhalo.cpp
               src/rgbconv.cpp)
 
-add_library(lmodl STATIC ${lmodl_src} ${lmodl_headers})
-
-set(test_list fpstest
+set(test_list coltest
+              cubetest
+              cubetest_fullscreen
+              fpstest
               gfxinfo
               imgrender
               quattest
               trigtblm)
 
+add_library(lmodl STATIC ${lmodl_src} ${lmodl_headers})
 
 foreach(i ${test_list})
   add_executable(${i} test/${i}.cpp)
