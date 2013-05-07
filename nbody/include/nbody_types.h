@@ -338,8 +338,8 @@ typedef struct
     unsigned int totalSimulated;
     int hasRawCounts;
     HistogramParams params;
+		double massPerParticle;
     HistData data[1];
-    double massPerParticle;
 } NBodyHistogram;
 
 
