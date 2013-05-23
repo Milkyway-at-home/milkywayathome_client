@@ -248,8 +248,8 @@ void NBodyText::drawProgressText(const SceneData& sceneData)
         /* Start right after the constant portion */
         TextPen pen = this->penEndConst;
 
-        swprintf(buf, sizeof(buf),
-                 L"Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
+        swprintf(buf, sizeof(buf) / sizeof(wchar_t),
+                 L"Time: %4.3f / %4.3f Gyr (%4.3f %%) foo foo foo foo foo\n",
                  sceneData.currentTime,
                  sceneData.timeEvolve,
                  100.0f * sceneData.currentTime / sceneData.timeEvolve
@@ -359,13 +359,13 @@ void NBodyText::prepareConstantText(const scene_t* scene)
 
     if (scene->staticScene)
     {
-        swprintf(buf, sizeof(buf),
+        swprintf(buf, sizeof(buf) / sizeof(wchar_t),
                  L"Static N-body scene (%d particles)\n",
                  scene->nbody);
     }
     else
     {
-        swprintf(buf, sizeof(buf),
+        swprintf(buf, sizeof(buf) / sizeof(wchar_t),
                  L"N-body simulation (%d particles)\n",
                  scene->nbody);
     }
