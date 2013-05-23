@@ -291,7 +291,7 @@ static int likelihood_sum(SeparationResults* results,
     LB lb;
     LBTrig lbt;
     real reff_xr_rp3;
-    RConsts rc = { 0.0, 0.0, 0.0, 0.0 };
+    RConsts rc = { 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     real bgProb = 0.0;
     real epsilon_b = 0.0;
