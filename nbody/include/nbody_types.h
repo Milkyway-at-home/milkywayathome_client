@@ -338,7 +338,10 @@ typedef struct
     unsigned int totalSimulated;
     int hasRawCounts;
     HistogramParams params;
-		double massPerParticle;
+    double massPerParticle;
+
+    /* This is used as a variable length struct. Do not add any fields
+     * after data. */
     HistData data[1];
 } NBodyHistogram;
 
