@@ -287,7 +287,7 @@ if(C_COMPILER_IS_CLANG)
   endforeach()
 
   if(MW_ENABLE_DEBUG)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftrapv -fcatch-undefined-behavior")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftrapv -fsanitize=undefined-trap -fsanitize-undefined-trap-on-error")
   endif()
 endif()
 
