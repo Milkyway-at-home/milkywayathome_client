@@ -460,12 +460,11 @@ static void resizeHandler(GLFWwindow* window, int w, int h)
     glfwSwapBuffers(window);
 }
 
-static int closeHandler(GLFWwindow* window)
+static void closeHandler(GLFWwindow* window)
 {
     (void) window;
 
     globalGraphicsContext->stop();
-    return 0;
 }
 
 static int getGLFWModifiers(GLFWwindow* window)
@@ -503,7 +502,7 @@ static glutil::MouseButtons glfwButtonToGLUtil(int button)
     }
 }
 
-static void mouseButtonHandler(GLFWwindow* window, int button, int action)
+static void mouseButtonHandler(GLFWwindow* window, int button, int action, int /* mods */)
 {
     NBodyGraphics* ctx = globalGraphicsContext;
 
@@ -512,14 +511,21 @@ static void mouseButtonHandler(GLFWwindow* window, int button, int action)
         ctx->stop();
     }
 
-    int x, y;
+    double x, y;
     int modifiers = getGLFWModifiers(window);
     glfwGetCursorPos(window, &x, &y);
-    ctx->mouseClick(glfwButtonToGLUtil(button), action == GLFW_PRESS, modifiers, x, y);
+    ctx->mouseClick(glfwButtonToGLUtil(button),
+                    action == GLFW_PRESS,
+                    modifiers,
+                    static_cast<int>(x),
+                    static_cast<int>(y));
 }
 
-static void mousePosHandler(GLFWwindow* window, int x, int y)
+static void mousePosHandler(GLFWwindow* window, double xf, double yf)
 {
+    int x = static_cast<int>(xf);
+    int y = static_cast<int>(yf);
+
     (void) window;
 
     if (globalGraphicsContext->isScreensaver())
@@ -548,11 +554,11 @@ static void scrollHandler(GLFWwindow* window, double x, double y)
     globalGraphicsContext->markDirty();
 }
 
-static void keyHandler(GLFWwindow* window, int key, int pressed)
+static void keyHandler(GLFWwindow* window, int key, int action, int /* mods */)
 {
     (void) window;
 
-    if (!pressed) // release
+    if (action == GLFW_RELEASE)
         return;
 
     NBodyGraphics* ctx = globalGraphicsContext;
@@ -656,7 +662,7 @@ static void keyHandler(GLFWwindow* window, int key, int pressed)
     }
 }
 
-static void charHandler(GLFWwindow* window, int charCode)
+static void charHandler(GLFWwindow* window, unsigned int charCode)
 {
     (void) window;
 
@@ -1501,20 +1507,20 @@ static GLFWwindow* nbglPrepareWindow(const VisArgs* args)
         monitor = monitors[0];
     }
 
-    GLFWvidmode vidMode = glfwGetVideoMode(monitor);
+    const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
     nbglRequestGLVersion();
 
     if (args->fullscreen || args->plainFullscreen)
     {
-        int width = args->width == 0 ? vidMode.width : args->width;
-        int height = args->height == 0 ? vidMode.height : args->height;
+        int width = args->width == 0 ? vidMode->width : args->width;
+        int height = args->height == 0 ? vidMode->height : args->height;
 
         return glfwCreateWindow(width, height, title, monitor, NULL);
     }
     else
     {
-        int width = args->width == 0 ? 3 * vidMode.width / 4 : args->width;
-        int height = args->height == 0 ? 3 * vidMode.height / 4 : args->height;
+        int width = args->width == 0 ? 3 * vidMode->width / 4 : args->width;
+        int height = args->height == 0 ? 3 * vidMode->height / 4 : args->height;
 
         return glfwCreateWindow(width, height, title, monitor, NULL);
     }
@@ -1578,7 +1584,7 @@ int nbglRunGraphics(scene_t* scene, const VisArgs* args)
         return 1;
     }
 
-    glfwSetInputMode(window, GLFW_CURSOR_MODE, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 

@@ -29,12 +29,12 @@
 #if USE_GL3W
   #include <GL3/gl3w.h>
   #define GLFW_NO_GLU 1
-  #include <GL/glfw3.h>
+  #include <GLFW/glfw3.h>
 #else
   #define GL3_PROTOTYPES
   #define GLFW_INCLUDE_GL3 1
   #define GLFW_NO_GLU 1
-  #include <GL/glfw3.h>
+  #include <GLFW/glfw3.h>
 #endif
 
 #include "milkyway_gcc_diagnostics.h"
