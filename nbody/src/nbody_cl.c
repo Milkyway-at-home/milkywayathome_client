@@ -853,7 +853,7 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
         printBuffer(ci, nbb->child, NSUB * (nNode + 1), "child", 1);
         mw_printf("END CHILD\n");
         mw_printf("BEGIN START\n");
-        printBuffer(ci, nbb->start, nNode, "start", 1);
+        printBuffer(ci, nbb->start, nNode + 1, "start", 1);
 
         mw_printf("BEGIN MASS\n");
         printBuffer(ci, nbb->masses, nNode + 1, "mass", 0);
