@@ -216,6 +216,20 @@ typedef struct
     } quad;
 
     cl_mem treeStatus;
+
+    /* Just valid non-aliasing, read only buffers.
+     * Used as dummy arguments for kernel arguments we don't need
+     * depending on the specific simulation options since you can't set
+     * a kernel argument to null.
+     *
+     * The AMD runtime will rebuild the kernel with noalias if it
+     * thinks an argument aliases, so use this to avoid that.
+     *
+     * This is probably less of a mess than the work required to
+     * account for fewer / a different order of arguments in different
+     * cases.
+     */
+    cl_mem dummy[18];
 } NBodyBuffers;
 
 

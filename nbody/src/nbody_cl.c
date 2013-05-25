@@ -390,9 +390,6 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
     cl_int err = CL_SUCCESS;
     cl_int zeroVal = 0;
 
-    /* Just any valid buffer that we'll use for arguments we don't need */
-    cl_mem* anything = &nbb->masses;
-
     if (!exact)
     {
         err |= nbSetMemArrayArgs(kern, nbb->pos, 0);
@@ -408,7 +405,7 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
         err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->count);
         err |= clSetKernelArg(kern, 18, sizeof(cl_mem), &nbb->child);
         err |= clSetKernelArg(kern, 19, sizeof(cl_mem), &nbb->sort);
-        err |= clSetKernelArg(kern, 20, sizeof(cl_mem), nbb->critRadii ? &nbb->critRadii : anything);
+        err |= clSetKernelArg(kern, 20, sizeof(cl_mem), nbb->critRadii ? &nbb->critRadii : &nbb->dummy[0]);
 
 
         if (nbb->quad.xx) /* If we're using quadrupole moments */
@@ -424,14 +421,14 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
         }
         else
         {
-            err |= clSetKernelArg(kern, 21, sizeof(cl_mem), anything);
-            err |= clSetKernelArg(kern, 22, sizeof(cl_mem), anything);
-            err |= clSetKernelArg(kern, 23, sizeof(cl_mem), anything);
+            err |= clSetKernelArg(kern, 21, sizeof(cl_mem), &nbb->dummy[1]);
+            err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->dummy[2]);
+            err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->dummy[3]);
 
-            err |= clSetKernelArg(kern, 24, sizeof(cl_mem), anything);
-            err |= clSetKernelArg(kern, 25, sizeof(cl_mem), anything);
+            err |= clSetKernelArg(kern, 24, sizeof(cl_mem), &nbb->dummy[4]);
+            err |= clSetKernelArg(kern, 25, sizeof(cl_mem), &nbb->dummy[5]);
 
-            err |= clSetKernelArg(kern, 26, sizeof(cl_mem), anything);
+            err |= clSetKernelArg(kern, 26, sizeof(cl_mem), &nbb->dummy[6]);
         }
 
         err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->treeStatus);
@@ -450,7 +447,7 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
 
         for (i = 10; i < 27; ++i)
         {
-            err |= clSetKernelArg(kern, i, sizeof(cl_mem), anything);
+            err |= clSetKernelArg(kern, i, sizeof(cl_mem), &nbb->dummy[i - 10]);
         }
 
         err |= clSetKernelArg(kern, 27, sizeof(cl_mem), &nbb->treeStatus);
@@ -1549,6 +1546,8 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
+    int j;
+    const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
 
     if (!nbb)
     {
@@ -1580,6 +1579,11 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
     err |= clReleaseMemObject_quiet(nbb->quad.yz);
 
     err |= clReleaseMemObject_quiet(nbb->quad.zz);
+
+    for (j = 0; j < nDummy; ++j)
+    {
+        err |= clReleaseMemObject_quiet(nbb->dummy[j]);
+    }
 
     if (err != CL_SUCCESS)
     {
@@ -1651,7 +1655,10 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     CLInfo* ci = st->ci;
     NBodyBuffers* nbb = st->nbb;
     size_t massSize;
+    cl_int err;
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
+    int j;
+    const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
 
     for (i = 0; i < 3; ++i)
     {
@@ -1705,6 +1712,14 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
         return MW_CL_ERROR;
     }
 
+    for (j = 0; j < nDummy; ++j)
+    {
+        nbb->dummy[j] = clCreateBuffer(ci->clctx, CL_MEM_READ_ONLY, 1, NULL, &err);
+        if (!nbb->dummy[j])
+        {
+            return MW_CL_ERROR;
+        }
+    }
 
     /* If we are doing an exact Nbody, we don't need the rest */
     if (ctx->criterion != Exact)
