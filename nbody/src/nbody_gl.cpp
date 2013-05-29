@@ -1522,7 +1522,7 @@ static GLFWwindow* nbglPrepareWindow(const VisArgs* args)
         int width = args->width == 0 ? 3 * vidMode->width / 4 : args->width;
         int height = args->height == 0 ? 3 * vidMode->height / 4 : args->height;
 
-        return glfwCreateWindow(width, height, title, monitor, NULL);
+        return glfwCreateWindow(width, height, title, NULL, NULL);
     }
 }
 
