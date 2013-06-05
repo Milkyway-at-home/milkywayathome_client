@@ -259,6 +259,20 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         }
 
         likelihood = nbSystemChisq(st, data, histogram, method);
+        
+        /*
+          Used to fix Windows platform issues.  Windows' infinity is expressed as:
+          1.#INF00000, -1.#INF00000, or 0.#INF000000.  The server reads these as -1, 1, and 0
+          respectively, accounting for the sign change.  Thus, I have changed overflow
+          infinities (not errors) to be the worst case.  The worst case is now the actual
+          worst thing that can happen. 
+        */
+        
+          if (likelihood > DEFAULT_WORST_CASE || likelihood < DEFAULT_WORST_CASE || likelihood == 0)
+	        {
+	            mw_printf("Poor likelihood.  Returning worst case.\n");
+	            likelihood = DEFAULT_WORST_CASE;
+          }
     }
 
     free(histogram);
