@@ -291,8 +291,8 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->factors[2] = 4;
         ws->factors[3] = 1;
         ws->factors[4] = 4;
-        ws->factors[5] = 40; /* Max at 10 per vector unit, 4 vector units */
-        ws->factors[6] = 2;
+        ws->factors[5] = 4 * (4 * 10); /* Max at 10 per vector unit, 4 vector units */
+        ws->factors[6] = 4 * 10;
         ws->factors[7] = 2;
 
         ws->threads[0] = 256;
@@ -300,8 +300,8 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[2] = 256;
         ws->threads[3] = 256;
         ws->threads[4] = 256;
-        ws->threads[5] = 256;
-        ws->threads[6] = 256;
+        ws->threads[5] = 64;
+        ws->threads[6] = 64;
         ws->threads[7] = 256;
     }
     else
