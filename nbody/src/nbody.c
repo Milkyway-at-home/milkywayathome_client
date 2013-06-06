@@ -267,7 +267,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
           infinities (not errors) to be the worst case.  The worst case is now the actual
           worst thing that can happen.
         */
-        if (likelihood > DEFAULT_WORST_CASE || likelihood < DEFAULT_WORST_CASE || likelihood == 0.0)
+        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1*DEFAULT_WORST_CASE) || likelihood == 0.0)
         {
             mw_printf("Poor likelihood.  Returning worst case.\n");
             likelihood = DEFAULT_WORST_CASE;
