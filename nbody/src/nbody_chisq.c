@@ -750,7 +750,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
 
 static double nbWorstCaseEMD(const NBodyHistogram* hist)
 {
-  //(This makes no sense to be defined this way now that histograms are not normalized.  
+  //(This makes no sense to be defined this way now that histograms are not normalized.
   //  return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
   return DEFAULT_WORST_CASE;
 }
@@ -901,7 +901,7 @@ double nbSystemChisq(const NBodyState* st,
                 );
             worstEMD = nbWorstCaseEMD(histogram);
             //return 2.0 * worstEMD;
-	    return worstEMD; //Changed.  See above comment.
+            return worstEMD; //Changed.  See above comment.
         }
 
         return nbMatchEMD(data, histogram);
