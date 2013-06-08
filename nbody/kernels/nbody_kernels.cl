@@ -617,9 +617,9 @@ __kernel void NBODY_KERNEL(buildTree)
                 if (rootX <= px)
                     j = 1;
                 if (rootY <= py)
-                    j += 2;
+                    j |= 2;
                 if (rootZ <= pz)
-                    j += 4;
+                    j |= 4;
             }
 
             int ch = _child[NSUB * n + j];
@@ -646,9 +646,9 @@ __kernel void NBODY_KERNEL(buildTree)
                 if (pnx <= px)
                     j = 1;
                 if (pny <= py)
-                    j += 2;
+                    j |= 2;
                 if (pnz <= pz)
-                    j += 4;
+                    j |= 4;
                 ch = _child[NSUB * n + j];
             }
 
@@ -720,9 +720,9 @@ __kernel void NBODY_KERNEL(buildTree)
                             if (x <= pchx)
                                 j = 1;
                             if (y <= pchy)
-                                j += 2;
+                                j |= 2;
                             if (z <= pchz)
-                                j += 4;
+                                j |= 4;
 
                             _child[NSUB * cell + j] = ch;
 
@@ -737,9 +737,9 @@ __kernel void NBODY_KERNEL(buildTree)
                             if (x <= px)
                                 j = 1;
                             if (y <= py)
-                                j += 2;
+                                j |= 2;
                             if (z <= pz)
-                                j += 4;
+                                j |= 4;
 
                             ch = _child[NSUB * n + j];
 
