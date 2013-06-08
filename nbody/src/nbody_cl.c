@@ -54,10 +54,10 @@ typedef struct MW_ALIGN_TYPE_V(64)
     {
         real f[32];
         cl_int i[64];
-        int wg1[256];
-        int wg2[256];
-        int wg3[256];
-        int wg4[256];
+        cl_int wg1[256];
+        cl_int wg2[256];
+        cl_int wg3[256];
+        cl_int wg4[256];
     } debug;
 } TreeStatus;
 
