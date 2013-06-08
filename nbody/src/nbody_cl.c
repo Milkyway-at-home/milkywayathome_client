@@ -466,9 +466,10 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 
     if (!exact)
     {
-        err |= nbSetKernelArguments(k->cellSanitize, st->nbb, exact);
         err |= nbSetKernelArguments(k->boundingBox, st->nbb, exact);
+        err |= nbSetKernelArguments(k->buildTreeClear, st->nbb, exact);
         err |= nbSetKernelArguments(k->buildTree, st->nbb, exact);
+        err |= nbSetKernelArguments(k->summarizationClear, st->nbb, exact);
         err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
         err |= nbSetKernelArguments(k->sort, st->nbb, exact);
         err |= nbSetKernelArguments(k->quadMoments, st->nbb, exact);
@@ -499,9 +500,10 @@ cl_int nbReleaseKernels(NBodyState* st)
     cl_int err = CL_SUCCESS;
     NBodyKernels* kernels = st->kernels;
 
-    err |= clReleaseKernel_quiet(kernels->cellSanitize);
     err |= clReleaseKernel_quiet(kernels->boundingBox);
+    err |= clReleaseKernel_quiet(kernels->buildTreeClear);
     err |= clReleaseKernel_quiet(kernels->buildTree);
+    err |= clReleaseKernel_quiet(kernels->summarizationClear);
     err |= clReleaseKernel_quiet(kernels->summarization);
     err |= clReleaseKernel_quiet(kernels->quadMoments);
     err |= clReleaseKernel_quiet(kernels->sort);
@@ -686,9 +688,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
-    kernels->cellSanitize = mwCreateKernel(program, "cellSanitize");
     kernels->boundingBox = mwCreateKernel(program, "boundingBox");
+    kernels->buildTreeClear = mwCreateKernel(program, "buildTreeClear");
     kernels->buildTree = mwCreateKernel(program, "buildTree");
+    kernels->summarizationClear = mwCreateKernel(program, "summarizationClear");
     kernels->summarization = mwCreateKernel(program, "summarization");
     kernels->quadMoments = mwCreateKernel(program, "quadMoments");
     kernels->sort = mwCreateKernel(program, "sort");
@@ -696,9 +699,10 @@ static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
     kernels->integration = mwCreateKernel(program, "integration");
     kernels->forceCalculation_Exact = mwCreateKernel(program, "forceCalculation_Exact");
 
-    return (   kernels->cellSanitize
-            && kernels->boundingBox
+    return (   kernels->boundingBox
+            && kernels->buildTreeClear
             && kernels->buildTree
+            && kernels->summarizationClear
             && kernels->summarization
             && kernels->quadMoments
             && kernels->sort
@@ -1149,7 +1153,8 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     NBodyKernels* kernels = st->kernels;
     cl_uint depth;
     cl_uint buildIterations = 0;
-    cl_event sanitizeEv = NULL;
+    cl_event buildTreeClearEv = NULL;
+    cl_event summarizationClearEv = NULL;
     cl_event boxEv = NULL;
     cl_event sortEvs[NB_MAX_MAX_DEPTH];
     cl_event sumEvs[NB_MAX_MAX_DEPTH];
@@ -1160,22 +1165,18 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     memset(sumEvs, 0, sizeof(sumEvs));
     memset(quadEvs, 0, sizeof(quadEvs));
 
-
-    if (!st->usesConsistentMemory)
-    {
-        err = clEnqueueNDRangeKernel(ci->queue, kernels->cellSanitize, 1,
-                                     NULL, &ws->global[6], &ws->local[6],
-                                     0, NULL, &sanitizeEv);
-        if (err != CL_SUCCESS)
-            goto tree_build_exit;
-    }
-
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
                                  0, NULL, &boxEv);
     if (err != CL_SUCCESS)
         goto tree_build_exit;
 
+    /* FIXME: Work sizes */
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTreeClear, 1,
+                                 NULL, &ws->global[6], &ws->local[6],
+                                 0, NULL, &buildTreeClearEv);
+    if (err != CL_SUCCESS)
+        goto tree_build_exit;
 
     if (st->usesConsistentMemory)
     {
@@ -1274,6 +1275,13 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
         while (treeStatus.doneCnt != st->effNBody);
     }
 
+    /* FIXME: Work sizes */
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->summarizationClear, 1,
+                                 NULL, &ws->global[6], &ws->local[6],
+                                 0, NULL, &summarizationClearEv);
+    if (err != CL_SUCCESS)
+        goto tree_build_exit;
+
     if (st->usesConsistentMemory)
     {
         err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
@@ -1341,10 +1349,8 @@ tree_build_exit:
     ws->timings[0] += mwReleaseEventWithTiming(boxEv);
     ws->chunkTimings[1] = ws->timings[1] / (double) buildIterations;
 
-    /* Pretend the sanitize kernel doesn't exist, include it's time as
-     * part of buildTree since it exists to support it anyway */
-    ws->timings[1] += mwReleaseEventWithTimingMS(sanitizeEv);
-    //ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
+    ws->timings[1] += mwReleaseEventWithTiming(buildTreeClearEv);
+    ws->timings[2] += mwReleaseEventWithTiming(summarizationClearEv);
 
     {
         for (depth = 0; depth < treeStatus.maxDepth; ++depth)
@@ -1937,8 +1943,16 @@ void nbPrintKernelLimits(NBodyState* st)
     mwGetWorkGroupInfo(kernels->boundingBox, ci, &wgi);
     mwPrintWorkGroupInfo(&wgi);
 
+    mw_printf("Tree Build Clear:\n");
+    mwGetWorkGroupInfo(kernels->buildTreeClear, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
+
     mw_printf("Tree Build:\n");
     mwGetWorkGroupInfo(kernels->buildTree, ci, &wgi);
+    mwPrintWorkGroupInfo(&wgi);
+
+    mw_printf("Summarization Clear:\n");
+    mwGetWorkGroupInfo(kernels->summarizationClear, ci, &wgi);
     mwPrintWorkGroupInfo(&wgi);
 
     mw_printf("Summarization:\n");

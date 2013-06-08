@@ -167,6 +167,9 @@ typedef float4 real4;
 #define isBody(n) ((n) < NBODY)
 #define isCell(n) ((n) >= NBODY)
 
+#define NULL_BODY (-1)
+#define LOCK (-2)
+
 
 /* This needs to be the same as on the host */
 typedef struct __attribute__((aligned(64)))
@@ -488,35 +491,6 @@ __kernel void NBODY_KERNEL(boundingBox)
     }
 }
 
-#define LOCK (-2)
-
-/* FIXME: should maybe have separate threadcount, but
-   Should have attributes most similar to integration */
-__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void NBODY_KERNEL(cellSanitize)
-{
-    const int bottom = NBODY; /* Wipe all cells */
-    int inc = get_local_size(0) * get_num_groups(0);
-    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
-    if (k < bottom)
-        k += inc;
-
-    while (k <= NNODE) /* Iterate over all cells assigned to thread */
-    {
-        _posX[k] = NAN;
-        _posY[k] = NAN;
-        _posZ[k] = NAN;
-
-        #pragma unroll NSUB
-        for (uint j = 0; j < NSUB; ++j)
-        {
-            _child[NSUB * k + j] = -1;
-        }
-
-        k += inc;
-    }
-}
-
 #if HAVE_INLINE_PTX
 inline void strong_global_mem_fence_ptx()
 {
@@ -533,6 +507,28 @@ inline void strong_global_mem_fence_ptx()
   #define maybe_strong_global_mem_fence() mem_fence(CLK_GLOBAL_MEM_FENCE)
 #endif /* HAVE_INLINE_PTX */
 
+
+/* FIXME: should maybe have separate threadcount, but
+   Should have attributes most similar to integration */
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+__kernel void NBODY_KERNEL(buildTreeClear)
+{
+    int top = 8 * NNODE;
+    const int bottom = 8 * NBODY;
+    int inc = get_local_size(0) * get_num_groups(0);
+    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
+
+    if (k < bottom)
+    {
+        k += inc;
+    }
+
+    while (k < top) /* Iterate over all cells assigned to thread */
+    {
+        _child[k] = NULL_BODY;
+        k += inc;
+    }
+}
 
 __attribute__ ((reqd_work_group_size(THREADS2, 1, 1)))
 __kernel void NBODY_KERNEL(buildTree)
@@ -687,9 +683,6 @@ __kernel void NBODY_KERNEL(buildTree)
                             }
                             patch = max(patch, cell);
 
-                            _mass[cell] = -1.0;
-                            _start[cell] = -1;
-
                             if (SW93 || NEWCRITERION)
                             {
                                 _critRadii[cell] = r;  /* Save cell size */
@@ -711,12 +704,6 @@ __kernel void NBODY_KERNEL(buildTree)
                             _posY[cell] = y;
                             _posZ[cell] = z;
 
-                            #pragma unroll NSUB
-                            for (int k = 0; k < NSUB; ++k)
-                            {
-                                _child[NSUB * cell + k] = -1;
-                            }
-
                             if (patch != cell)
                             {
                                 _child[NSUB * n + j] = cell;
@@ -726,7 +713,6 @@ __kernel void NBODY_KERNEL(buildTree)
                             real pchx = _posX[ch];
                             real pchy = _posY[ch];
                             real pchz = _posZ[ch];
-
 
                             cl_assert(_treeStatus, !isnan(pchx) && !isnan(pchy) && !isnan(pchz));
 
@@ -913,6 +899,46 @@ inline real atomic_read_real(RVPtr arr, int idx)
   #define read_bypass_cache_real(base, idx) atomic_read_real(base, idx)
 #endif /* HAVE_CONSISTENT_MEMORY */
 
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+__kernel void NBODY_KERNEL(summarizationClear)
+{
+    __local int bottom;
+
+    if (get_local_id(0) == 0)
+    {
+        bottom = _treeStatus->bottom;
+    }
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    int inc = get_local_size(0) * get_num_groups(0);
+    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
+
+    if (k < bottom)
+    {
+        k += inc;
+    }
+
+    while (k < NNODE)
+    {
+        _mass[k] = -1.0;
+        _start[k] = NULL_BODY;
+
+        if (USE_QUAD)
+        {
+            _quadXX[k] = NAN;
+            _quadXY[k] = NAN;
+            _quadXZ[k] = NAN;
+
+            _quadYY[k] = NAN;
+            _quadYZ[k] = NAN;
+
+            _quadZZ[k] = NAN;
+        }
+
+        k += inc;
+    }
+}
 
 __attribute__ ((reqd_work_group_size(THREADS3, 1, 1)))
 __kernel void NBODY_KERNEL(summarization)

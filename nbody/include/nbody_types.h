@@ -233,20 +233,21 @@ typedef struct
 } NBodyBuffers;
 
 
-/* 7 used by tree + 1 with quad, 2 used by exact. 1 shared. */
-#define NKERNELS 9
+/* 8 used by tree + 1 with quad, 2 used by exact. 1 shared. */
+#define NKERNELS 11
 
 
 typedef struct
 {
     cl_kernel boundingBox;
+    cl_kernel buildTreeClear;
     cl_kernel buildTree;
+    cl_kernel summarizationClear;
     cl_kernel summarization;
     cl_kernel sort;
     cl_kernel quadMoments;
     cl_kernel forceCalculation;
     cl_kernel integration;
-    cl_kernel cellSanitize;
 
     /* Used by exact one only */
     cl_kernel forceCalculation_Exact;
