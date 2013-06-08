@@ -1172,7 +1172,7 @@ __kernel void NBODY_KERNEL(sort)
 
     while (k >= bottom) /* Iterate over all cells assigned to thread */
     {
-        int start = read_bypass_cache_int(_start, k);
+        int start = _start[k];
         if (start >= 0)
         {
             #pragma unroll NSUB
@@ -1190,11 +1190,9 @@ __kernel void NBODY_KERNEL(sort)
                     ++start;
                 }
             }
-
-            write_mem_fence(CLK_GLOBAL_MEM_FENCE);
-
-            k -= dec;  /* Move on to next cell */
         }
+
+        k -= dec;  /* Move on to next cell */
     }
 }
 

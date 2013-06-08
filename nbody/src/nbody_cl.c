@@ -1120,15 +1120,16 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     NBodyBuffers* nbb = st->nbb;
     NBodyWorkSizes* ws = st->workSizes;
     NBodyKernels* kernels = st->kernels;
-
+    cl_uint depth;
     cl_uint buildIterations = 0;
     cl_event sanitizeEv = NULL;
     cl_event boxEv = NULL;
-    cl_event sortEv = NULL;
+    cl_event sortEvs[NB_MAX_MAX_DEPTH];
     cl_event sumEvs[NB_MAX_MAX_DEPTH];
     cl_event quadEvs[NB_MAX_MAX_DEPTH];
 
     treeStatus.maxDepth = 0;
+    memset(sortEvs, 0, sizeof(sortEvs));
     memset(sumEvs, 0, sizeof(sumEvs));
     memset(quadEvs, 0, sizeof(quadEvs));
 
@@ -1256,8 +1257,6 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     }
     else
     {
-        cl_uint depth;
-
         for (depth = 0; depth < treeStatus.maxDepth; ++depth)
         {
             err = clEnqueueNDRangeKernel(ci->queue, kernels->summarization, 1,
@@ -1269,15 +1268,18 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
         }
     }
 
-    err = clEnqueueNDRangeKernel(ci->queue, kernels->sort, 1,
-                                 NULL, &ws->global[3], &ws->local[3],
-                                 0, NULL, &sortEv);
-    if (err != CL_SUCCESS)
-        goto tree_build_exit;
-
-    err = clFlush(ci->queue);
-    if (err != CL_SUCCESS)
-        goto tree_build_exit;
+    /* Run the sort kernel as many times as will be necessary in the worst case.
+       FIXME: This is horribly inefficient. The sort kernel needs to
+       be redesigned, but this is the minimum effort to make this always correct.
+     */
+    for (depth = 0; depth < treeStatus.maxDepth; ++depth)
+    {
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->sort, 1,
+                                     NULL, &ws->global[3], &ws->local[3],
+                                     0, NULL, &sortEvs[depth]);
+        if (err != CL_SUCCESS)
+            goto tree_build_exit;
+    }
 
     if (st->usesQuad)
     {
@@ -1291,8 +1293,6 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
         }
         else
         {
-            cl_uint depth;
-
             for (depth = 0; depth < treeStatus.maxDepth; ++depth)
             {
                 err = clEnqueueNDRangeKernel(ci->queue, kernels->quadMoments, 1,
@@ -1317,11 +1317,17 @@ tree_build_exit:
     /* Pretend the sanitize kernel doesn't exist, include it's time as
      * part of buildTree since it exists to support it anyway */
     ws->timings[1] += mwReleaseEventWithTimingMS(sanitizeEv);
-    ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
+    //ws->timings[3] += mwReleaseEventWithTimingMS(sortEv);
 
     {
-        cl_int depth;
-        cl_int maxDepth = st->usesConsistentMemory ? 1 : treeStatus.maxDepth;
+        for (depth = 0; depth < treeStatus.maxDepth; ++depth)
+        {
+            ws->timings[3] += mwReleaseEventWithTimingMS(sortEvs[depth]);
+        }
+    }
+
+    {
+        cl_uint maxDepth = st->usesConsistentMemory ? 1 : treeStatus.maxDepth;
 
         for (depth = 0; depth < maxDepth; ++depth)
         {
