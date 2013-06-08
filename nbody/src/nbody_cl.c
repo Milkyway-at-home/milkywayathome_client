@@ -849,50 +849,77 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
         mw_printf("BEGIN CHILD\n");
         printBuffer(ci, nbb->child, NSUB * (nNode + 1), "child", 1);
         mw_printf("END CHILD\n");
+
         mw_printf("BEGIN START\n");
         printBuffer(ci, nbb->start, nNode + 1, "start", 1);
+        mw_printf("END START\n");
 
         mw_printf("BEGIN MASS\n");
         printBuffer(ci, nbb->masses, nNode + 1, "mass", 0);
+        mw_printf("END MASS\n");
 
         mw_printf("BEGIN POSX\n");
         printBuffer(ci, nbb->pos[0], nNode + 1, "posX", 0);
+        mw_printf("END POSX\n");
+
         mw_printf("BEGIN POSY\n");
         printBuffer(ci, nbb->pos[1], nNode + 1, "posY", 0);
+        mw_printf("END POSY\n");
+
         mw_printf("BEGIN POSY\n");
         printBuffer(ci, nbb->pos[2], nNode + 1, "posZ", 0);
+        mw_printf("END POSY\n");
 
         mw_printf("BEGIN VELX\n");
         printBuffer(ci, nbb->vel[0], st->effNBody, "velX", 0);
+        mw_printf("END VELX\n");
+
         mw_printf("BEGIN VELY\n");
         printBuffer(ci, nbb->vel[1], st->effNBody, "velY", 0);
+        mw_printf("END VELY\n");
+
         mw_printf("BEGIN VELY\n");
         printBuffer(ci, nbb->vel[2], st->effNBody, "velZ", 0);
+        mw_printf("END VELY\n");
 
         mw_printf("BEGIN ACCX\n");
         printBuffer(ci, nbb->acc[0], st->effNBody, "accX", 0);
+        mw_printf("END ACCX\n");
+
         mw_printf("BEGIN ACCY\n");
         printBuffer(ci, nbb->acc[1], st->effNBody, "accY", 0);
+        mw_printf("END ACCY\n");
+
         mw_printf("BEGIN ACCY\n");
         printBuffer(ci, nbb->acc[2], st->effNBody, "accZ", 0);
+        mw_printf("END ACCY\n");
     }
 
     if (quads)
     {
         mw_printf("BEGIN QUAD.XX\n");
         printBuffer(ci, nbb->quad.xx, nNode + 1, "quad.xx", 0);
+        mw_printf("END QUAD.XX\n");
+
         mw_printf("BEGIN QUAD.XY\n");
         printBuffer(ci, nbb->quad.xy, nNode + 1, "quad.xy", 0);
+        mw_printf("END QUAD.XY\n");
+
         mw_printf("BEGIN QUAD.XZ\n");
         printBuffer(ci, nbb->quad.xz, nNode + 1, "quad.xz", 0);
+        mw_printf("ENDQUAD.XZ\n");
 
         mw_printf("BEGIN QUAD.YY\n");
         printBuffer(ci, nbb->quad.yy, nNode + 1, "quad.yy", 0);
+        mw_printf("END QUAD.YY\n");
+
         mw_printf("BEGIN QUAD.YZ\n");
         printBuffer(ci, nbb->quad.yz, nNode + 1, "quad.yz", 0);
+        mw_printf("END QUAD.YZ\n");
 
         mw_printf("BEGIN QUAD.ZZ\n");
         printBuffer(ci, nbb->quad.zz, nNode + 1, "quad.zz", 0);
+        mw_printf("END QUAD.ZZ\n");
     }
 
 
