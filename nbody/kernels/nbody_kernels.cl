@@ -1665,7 +1665,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
             bool skipSelf = false;
-            while (depth >= j)
+            do
             {
                 int curPos;
 
@@ -1795,6 +1795,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 }
                 --depth;  /* Done with this level */
             }
+            while (depth >= j);
 
             real accX = _accX[i];
             real accY = _accY[i];
