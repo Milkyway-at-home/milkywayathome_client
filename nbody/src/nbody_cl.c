@@ -870,9 +870,9 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
         printBuffer(ci, nbb->pos[1], nNode + 1, "posY", 0);
         mw_printf("END POSY\n");
 
-        mw_printf("BEGIN POSY\n");
+        mw_printf("BEGIN POSZ\n");
         printBuffer(ci, nbb->pos[2], nNode + 1, "posZ", 0);
-        mw_printf("END POSY\n");
+        mw_printf("END POSZ\n");
 
         mw_printf("BEGIN VELX\n");
         printBuffer(ci, nbb->vel[0], st->effNBody, "velX", 0);
@@ -882,9 +882,9 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
         printBuffer(ci, nbb->vel[1], st->effNBody, "velY", 0);
         mw_printf("END VELY\n");
 
-        mw_printf("BEGIN VELY\n");
+        mw_printf("BEGIN VELZ\n");
         printBuffer(ci, nbb->vel[2], st->effNBody, "velZ", 0);
-        mw_printf("END VELY\n");
+        mw_printf("END VELZ\n");
 
         mw_printf("BEGIN ACCX\n");
         printBuffer(ci, nbb->acc[0], st->effNBody, "accX", 0);
@@ -894,9 +894,9 @@ static void stdDebugPrint(NBodyState* st, cl_bool children, cl_bool tree, cl_boo
         printBuffer(ci, nbb->acc[1], st->effNBody, "accY", 0);
         mw_printf("END ACCY\n");
 
-        mw_printf("BEGIN ACCY\n");
+        mw_printf("BEGIN ACCZ\n");
         printBuffer(ci, nbb->acc[2], st->effNBody, "accZ", 0);
-        mw_printf("END ACCY\n");
+        mw_printf("END ACCZ\n");
     }
 
     if (quads)
