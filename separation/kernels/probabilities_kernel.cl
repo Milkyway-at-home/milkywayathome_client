@@ -172,8 +172,8 @@ __kernel void probabilities(__global real2* restrict bgOut,
                             /* Placeholder for IL kernel */
                             __constant real* _ap_consts __attribute__((max_constant_size(16 * sizeof(real)))),
 
-                            __constant SC sc[NSTREAM] __attribute__((max_constant_size(NSTREAM * sizeof(SC)))),
-                            __constant real sg_dx[CONVOLVE] __attribute__((max_constant_size(256 * sizeof(real)))),
+                            __constant SC* sc __attribute__((max_constant_size(NSTREAM * sizeof(SC)))),
+                            __constant real* sg_dx __attribute__((max_constant_size(256 * sizeof(real)))),
 
                             const unsigned int extra,
                             const unsigned int r_steps,
