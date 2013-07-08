@@ -27,15 +27,18 @@
  * computed all these functions are
  * calculated in log space*/
 
-static real factorial(int n)
-{
-    if (n <= 1)
-    {
-        return 0;
-    }
+static real factorial(int n){
+     int counter;
+     real result = 0;
 
-    return mw_log(n) + factorial(n - 1);
-}
+     for (counter = n; counter >= 1; counter--)
+       {
+          result += mw_log(counter);
+       }
+
+     return result;
+  }
+
 
 static real choose(int n, int c)
 {
