@@ -823,7 +823,14 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
 	/* This calculates the likelihood as the combination of the
 	 * probability distribution and (1.0 - emd / max_dist) */
-	likelihood = -(mw_log(1.0 - emd / 50.0) + (double) probability_match(n, k, pObs));
+	 
+	/*
+	  Previously, this calculation was wrong.  Fixed to reflect notes on 
+	  conversation with Magdon-Ismail and Newberg.  Confirmed to be a valid
+	  metric for a metric space.  
+	*/
+        likelihood = -(mw_log(1 + emd / 50.0) + (double) probability_match(n, k, pObs));
+
 
     free(hist);
     free(dat);
