@@ -57,9 +57,15 @@ static real choose(int n, int c)
 
 real probability_match(int n, int k, real pobs)
 {
-    real result;
-    result = choose(n, k);
-    result += mw_log(pobs) * (real) k;
-    result += mw_log(1.0 - pobs) * (real)(n - k);
+    real result = 0;
+
+    //result +=  (real) mw_log(choose(n, k));                                                                                                                                                        
+    //result += mw_log(pobs) * (real) k;                                                                                                                                                             
+    //result += mw_log(1.0 - pobs) * (real)(n - k);                                                                                                                                                  
+
+    //The previous calculation does not return the right values.                                                                                                                                     
+    result = (real)  mw_log(choose(n,k)) * mw_pow(pobs,k) * mw_pow((1 - pobs),n - k);
     return result;
 }
+
+
