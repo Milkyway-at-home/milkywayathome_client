@@ -829,7 +829,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 	  conversation with Magdon-Ismail and Newberg.  Confirmed to be a valid
 	  metric for a metric space.  
 	*/
-        likelihood = -(mw_log(1 + emd / 50.0) + (double) probability_match(n, k, pObs));
+        likelihood = (mw_log(1 + emd / 50.0) + (double) probability_match(n, k, pObs));
 
 
     free(hist);
