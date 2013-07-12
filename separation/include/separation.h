@@ -78,6 +78,7 @@ typedef struct
     int pollingMode;
     int disableGPUCheckpointing;
     int modfit;         /* Modified fitting function from Newby 2011 */
+    int background;		/* Broken Power Law Option */
     int LikelihoodToText;   /* Create text file containing likelihood for use in local MLE*/
 
     MWPriority processPriority;

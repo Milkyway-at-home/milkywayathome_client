@@ -98,7 +98,18 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
     ap->exp_background_weight = mw_exp(bgp->epsilon);
-    ap->fast_h_prob = (ap->alpha == 1.0 && ap->delta == 1.0);
+    //Check if we need to use fast or slow hernquist if we are not using Broken Power Law which doesn't care.
+    if(ap->background_profile != BROKEN_POWER_LAW)
+    {
+    	if(ap->alpha == 1.0 && ap->delta == 1.0)
+    	{
+    		ap->background_profile = FAST_HERNQUIST;
+    	}
+    	else
+    	{
+    		ap->background_profile = SLOW_HERNQUIST;
+    	}
+    }
 
     ap->sun_r0 = const_sun_r0;
     ap->m_sun_r0 = -ap->sun_r0;

@@ -228,7 +228,7 @@ typedef struct MW_ALIGN_TYPE_V(128)
 
     int convolve;
     int number_streams;
-    int fast_h_prob;
+    int background_profile; /*flag for using different background profiles*/
     int aux_bg_profile;
 
     real alpha;
@@ -249,6 +249,10 @@ typedef struct MW_ALIGN_TYPE_V(128)
     real exp_background_weight;
 } AstronomyParameters;
 
+/*Options for Background*/
+#define SLOW_HERNQUIST 0
+#define FAST_HERNQUIST 1
+#define BROKEN_POWER_LAW 2
 
 /* Completed integral state */
 typedef struct

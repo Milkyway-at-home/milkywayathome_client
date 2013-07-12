@@ -4,6 +4,7 @@
  *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
  *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
  *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2013      Jake Weiss
  *  Copyright (c) 1991-2000 University of Groningen, The Netherlands
  *  Copyright (c) 2001-2009 The GROMACS Development Team
  *
@@ -98,17 +99,24 @@ static inline void streamSums(real* st_probs,
 }
 
 HOT
-static inline real h_prob_fast(const AstronomyParameters* ap, real qw_r3_N, real rg)
+static inline real hernquist_prob_fast(const AstronomyParameters* ap, real qw_r3_N, real rg)
 {
     const real rs = rg + ap->r0;
     return qw_r3_N / (rg * cube(rs));
 }
 
 HOT
-static inline real h_prob_slow(const AstronomyParameters* ap, real qw_r3_N, real rg)
+static inline real hernquist_prob_slow(const AstronomyParameters* ap, real qw_r3_N, real rg)
 {
     const real rs = rg + ap->r0;
     return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+}
+
+HOT
+static inline real broken_power_law_prob(const AstronomyParameters* ap, real qw_r3_N, real rg)  //p(R)=p0(R/R0)^-n  Power Law Equation (From a paper)
+{
+	const real n = 2.78 + (rg >= ap->r0) *  2.22; //Basically an if statement for checking if we are past R0
+    return qw_r3_N * mw_powr(ap->sun_r0 / rg, n);
 }
 
 HOT
@@ -164,7 +172,7 @@ real probabilities_fast_hprob(const AstronomyParameters* ap,
         xyz = lbr2xyz_2(ap, r_point[i], lbt);
         rg = rg_calc(ap, xyz);
 
-        h_prob = h_prob_fast(ap, qw_r3_N[i], rg);
+        h_prob = hernquist_prob_fast(ap, qw_r3_N[i], rg);
 
         /* Add a quadratic term in g to the the Hernquist profile */
         if (aux_bg_profile)
@@ -210,7 +218,7 @@ real probabilities_slow_hprob(const AstronomyParameters* ap,
 
         rg = rg_calc(ap, xyz);
 
-        bg_prob += h_prob_slow(ap, qw_r3_N[i], rg);
+        bg_prob += hernquist_prob_slow(ap, qw_r3_N[i], rg);
         if (aux_bg_profile)
         {
             g = gPrime + sg_dx[i];
@@ -227,3 +235,40 @@ real probabilities_slow_hprob(const AstronomyParameters* ap,
     return bg_prob;
 }
 
+HOT
+real probabilities_broken_power_law(const AstronomyParameters* ap,
+                              const StreamConstants* sc,
+                              const real* RESTRICT sg_dx,
+                              const real* RESTRICT r_point,
+                              const real* RESTRICT qw_r3_N,
+                              LBTrig lbt,
+                              real gPrime,
+                              real reff_xr_rp3,
+                              real* RESTRICT streamTmps)
+{
+    int i;
+    real rg, g;
+    mwvector xyz;
+    real bg_prob = 0.0;
+    int convolve = ap->convolve;
+    int aux_bg_profile = ap->aux_bg_profile;
+
+    zero_st_probs(streamTmps, ap->number_streams);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        xyz = lbr2xyz_2(ap, r_point[i], lbt);
+
+        rg = rg_calc(ap, xyz);
+
+        bg_prob += broken_power_law_prob(ap, qw_r3_N[i], rg);
+
+        streamSums(streamTmps, sc, xyz, qw_r3_N[i], ap->number_streams);
+    }
+
+    bg_prob *= reff_xr_rp3;
+    for (i = 0; i < ap->number_streams; ++i)
+        streamTmps[i] *= reff_xr_rp3;
+
+    return bg_prob;
+}

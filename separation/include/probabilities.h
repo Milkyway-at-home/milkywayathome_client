@@ -52,10 +52,10 @@ extern "C" {
 
 
 #if MW_IS_X86
-ProbabilityFunc initProbabilities_AVX(void);
-ProbabilityFunc initProbabilities_SSE41(void);
-ProbabilityFunc initProbabilities_SSE3(void);
-ProbabilityFunc initProbabilities_SSE2(void);
+ProbabilityFunc initProbabilities_AVX(const AstronomyParameters* ap);
+ProbabilityFunc initProbabilities_SSE41(const AstronomyParameters* ap);
+ProbabilityFunc initProbabilities_SSE3(const AstronomyParameters* ap);
+ProbabilityFunc initProbabilities_SSE2(const AstronomyParameters* ap);
 #endif /* MW_IS_X86 */
 
 
@@ -79,6 +79,15 @@ real probabilities_slow_hprob(const AstronomyParameters* ap,
                               real reff_xr_rp3,
                               real* RESTRICT streamTmps);
 
+real probabilities_broken_power_law(const AstronomyParameters* ap,
+                              const StreamConstants* sc,
+                              const real* RESTRICT sg_dx,
+                              const real* RESTRICT r_point,
+                              const real* RESTRICT qw_r3_N,
+                              LBTrig lbt,
+                              real gPrime,
+                              real reff_xr_rp3,
+                              real* RESTRICT streamTmps);
 
 #ifdef __cplusplus
 }

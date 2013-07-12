@@ -97,6 +97,8 @@
 #define mw_exp_pd gmx_mm_exp_pd
 #define mw_setzero_pd _mm_setzero_pd
 #define mw_vneg_pd _mm128_vneg_pd
+#define mw_cmpge_pd _mm_cmpge_pd
+
 
 #if defined (__SSE3__) || (__SSSE3__) || (__SSE41__)
   #define mw_hadd_pd _mm_hadd_pd
@@ -948,5 +950,11 @@ static __m128d gmx_mm_exp_pd(__m128d x)
     return  z;
 }
 
+
+ALWAYS_INLINE
+static __m128d _mm_pow_pd(__m128d base, __m128d power)
+{
+	return gmx_mm_exp_pd(power * gmx_mm_log_pd(base));
+}
 #endif /* _MILKYWAY_SSE2_INTRIN_H_ */
 

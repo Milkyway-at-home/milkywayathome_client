@@ -67,7 +67,7 @@ static int usingIntrinsicsIsAcceptable(const AstronomyParameters* ap, int forceN
         return FALSE;
     }
 
-    if (!ap->fast_h_prob || ap->aux_bg_profile)
+    if (ap->background_profile == SLOW_HERNQUIST || ap->aux_bg_profile)
     {
         mw_printf("Intrinsics are not acceptable for workunit\n");
         return FALSE;
@@ -78,7 +78,22 @@ static int usingIntrinsicsIsAcceptable(const AstronomyParameters* ap, int forceN
 
 static ProbabilityFunc selectStandardFunction(const AstronomyParameters* ap)
 {
-    return ap->fast_h_prob ? probabilities_fast_hprob : probabilities_slow_hprob;
+	switch(ap->background_profile)
+	{
+	case SLOW_HERNQUIST:
+		return probabilities_slow_hprob;
+		break;
+	case FAST_HERNQUIST:
+		return probabilities_fast_hprob;
+		break;
+	case BROKEN_POWER_LAW:
+		return probabilities_broken_power_law;
+		break;
+	default:
+		return probabilities_slow_hprob;
+		break;
+	}
+	return probabilities_slow_hprob;
 }
 
 #if MW_IS_X86
@@ -119,22 +134,22 @@ int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* 
         if (clr->forceAVX && hasAVX && initAVX)
         {
             mw_printf("Using AVX path\n");
-            probabilityFunc = initAVX();
+            probabilityFunc = initAVX(ap);
         }
         else if (clr->forceSSE41 && hasSSE41 && initSSE41)
         {
             mw_printf("Using SSE4.1 path\n");
-            probabilityFunc = initSSE41();
+            probabilityFunc = initSSE41(ap);
         }
         else if (clr->forceSSE3 && hasSSE3 && initSSE3)
         {
             mw_printf("Using SSE3 path\n");
-            probabilityFunc = initSSE3();
+            probabilityFunc = initSSE3(ap);
         }
         else if (clr->forceSSE2 && hasSSE2 && initSSE2)
         {
             mw_printf("Using SSE2 path\n");
-            probabilityFunc = initSSE2();
+            probabilityFunc = initSSE2(ap);
         }
         else if (clr->forceX87)
         {
@@ -153,22 +168,22 @@ int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* 
         if (hasAVX && initAVX)
         {
             mw_printf("Using AVX path\n");
-            probabilityFunc = initAVX();
+            probabilityFunc = initAVX(ap);
         }
         else if (hasSSE41 && initSSE41)
         {
             mw_printf("Using SSE4.1 path\n");
-            probabilityFunc = initSSE41();
+            probabilityFunc = initSSE41(ap);
         }
         else if (hasSSE3 && initSSE3)
         {
             mw_printf("Using SSE3 path\n");
-            probabilityFunc = initSSE3();
+            probabilityFunc = initSSE3(ap);
         }
         else if (hasSSE2 && initSSE2)
         {
             mw_printf("Using SSE2 path\n");
-            probabilityFunc = initSSE2();
+            probabilityFunc = initSSE2(ap);
         }
         else
         {

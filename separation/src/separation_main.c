@@ -256,6 +256,7 @@ static void setInitialFlags(SeparationFlags* sf)
     sf->disableGPUCheckpointing = DEFAULT_DISABLE_GPU_CHECKPOINTING;
     sf->forceNoOpenCL = DEFAULT_DISABLE_OPENCL;
     sf->forceNoILKernel = DEFAULT_DISABLE_IL_KERNEL;
+    sf->background = 0;
 }
 
 /* Set any flags based on project preferences that weren't specified
@@ -363,6 +364,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 POPT_ARG_NONE, &sf.modfit,
                 0, "Modified fit from Newby 2011", NULL
             },
+
+            {
+				"newbg", 'y',
+				POPT_ARG_NONE, &sf.background,
+				0, "Uses broken power law as background fit", NULL
+			},
 
             {
                 "ignore-checkpoint", 'i',
@@ -591,8 +598,7 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
     /* Try the new file first. If that doesn't work, try the old one. */
     if (!ias)
     {
-        mw_printf("Error reading astronomy parameters from file '%s'\n"
-                  "  Trying old parameters file\n", sf->ap_file);
+        mw_printf("Switching to Parameter File\n", sf->ap_file);
         ias = readParameters(sf->ap_file, ap, bgp, streams);
     }
 
@@ -627,6 +633,15 @@ static int worker(const SeparationFlags* sf)
     memset(&clr, 0, sizeof(clr));
 
     ap.modfit = sf->modfit;
+
+    if(sf->background)
+    {
+    	ap.background_profile = BROKEN_POWER_LAW;
+    }
+    else
+    {
+    	ap.background_profile = FAST_HERNQUIST;
+    }
 
     setCLReqFlags(&clr, sf);
     ias = prepareParameters(sf, &ap, &bgp, &streams);

@@ -65,7 +65,7 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool 
     flags << "-cl-finite-math-only ";
 
     /* Get constant definitions */
-    flags << "-D FAST_H_PROB="    << ap->fast_h_prob    << " ";
+    flags << "-D BACKGROUND_PROFILE="    << ap->background_profile    << " ";
     flags << "-D AUX_BG_PROFILE=" << ap->aux_bg_profile << " ";
     flags << "-D NSTREAM="        << ap->number_streams << " ";
     flags << "-D CONVOLVE="       << ap->convolve       << " ";

@@ -43,7 +43,7 @@ typedef real (*ProbabilityFunc)(const AstronomyParameters* ap,
                                 real reff_xr_rp3,
                                 real* RESTRICT streamTmps);
 
-typedef ProbabilityFunc (*ProbInitFunc)();
+typedef ProbabilityFunc (*ProbInitFunc)(const AstronomyParameters* ap);
 
 extern ProbabilityFunc probabilityFunc;
 

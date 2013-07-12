@@ -84,6 +84,9 @@ typedef float4 real4;
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x) ((x) * (x))
 
+#define SLOW_HERNQUIST 0
+#define FAST_HERNQUIST 1
+#define BROKEN_POWER_LAW 2
 
 #if DOUBLEPREC
 double mw_div_custom(double a, double b)
@@ -226,21 +229,32 @@ __kernel void probabilities(__global real2* restrict bgOut,
         real rg = mw_fsqrt(tmp);
         real rs = rg + R0;
 
-        if (FAST_H_PROB)
+        if (BACKGROUND_PROFILE == FAST_HERNQUIST)
         {
             bg_prob += mw_div(rPt.y, rg * cube(rs));
+            if (AUX_BG_PROFILE)
+            {
+                /* Currently not used */
+                /* Add a quadratic term in g to the Hernquist profile */
+                real g = rc.y + sg_dx[i];
+                bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
+            }
         }
-        else
+        else if (BACKGROUND_PROFILE == SLOW_HERNQUIST)
         {
             bg_prob += mw_div(rPt.y, powr(rg, ALPHA) * powr(rs, ALPHA_DELTA_3));
+            if (AUX_BG_PROFILE)
+            {
+                /* Currently not used */
+                /* Add a quadratic term in g to the Hernquist profile */
+                real g = rc.y + sg_dx[i];
+                bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
+            }
         }
-
-        if (AUX_BG_PROFILE)
+        else /*Broken Power Law*/
         {
-            /* Currently not used */
-            /* Add a quadratic term in g to the Hernquist profile */
-            real g = rc.y + sg_dx[i];
-            bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
+            const real n = mad((rg >= R0),  2.22, 2.78);
+            bg_prob += rPt.y * powr(mw_div((real) SUN_R0, rg), n);
         }
 
         #pragma unroll NSTREAM

@@ -186,7 +186,6 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  r0                    = %f\n"
            "  convolve              = %u\n"
            "  number_streams        = %u\n"
-           "  fast_h_prob           = %d\n"
            "  aux_bg_profile        = %d\n"
            "  alpha                 = %f\n"
            "  delta                 = %f\n"
@@ -201,14 +200,14 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  total_calc_probs      = %f\n"
            "  number_integrals      = %u\n"
            "  exp_background_weight = %f\n"
-           "  modfit                = %u\n",
+           "  modfit                = %u\n"
+           "  background_profile    = %u\n",
            ap->m_sun_r0,
            ap->q_inv,
            ap->q_inv_sqr,
            ap->r0,
            ap->convolve,
            ap->number_streams,
-           ap->fast_h_prob,
            ap->aux_bg_profile,
            ap->alpha,
            ap->delta,
@@ -221,7 +220,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->total_calc_probs,
            ap->number_integrals,
            ap->exp_background_weight,
-           ap->modfit);
+           ap->modfit,
+           ap->background_profile);
 }
 
 void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText)
