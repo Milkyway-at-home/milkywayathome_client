@@ -63,8 +63,9 @@ real probability_match(int n, int k, real pobs)
     //result += mw_log(pobs) * (real) k;                                                                                                                                                             
     //result += mw_log(1.0 - pobs) * (real)(n - k);                                                                                                                                                  
 
-    //The previous calculation does not return the right values.                                                                                                                                     
-    result = (real)  mw_log(choose(n,k)) * mw_pow(pobs,k) * mw_pow((1 - pobs),n - k);
+    //The previous calculation does not return the right values.  Furthermore, we need a zeroed metric.                                                                                              
+    result = (real)  choose(n,k) * mw_log(1 + mw_pow(pobs,k)) * mw_log(1 + mw_pow((1 - pobs),n - k));
+
     return result;
 }
 
