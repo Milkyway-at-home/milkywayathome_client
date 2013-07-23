@@ -277,16 +277,19 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     free(histogram);
     free(data);
 
-    if (calculateLikelihood)
+  if (calculateLikelihood)
     {
         /* Reported negated distance since the search maximizes this */
-        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
-        if (isnan(likelihood))
+      if (isnan(likelihood))
         {
-            mw_printf("Failed to calculate likelihood\n");
-            return NBODY_LIKELIHOOD_ERROR;
+            likelihood = DEFAULT_WORST_CASE;
+            mw_printf("Likelihood was NAN. Returning worst case. \n");
+            mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
+            return NBODY_SUCCESS;
         }
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
     }
+
 
     return NBODY_SUCCESS;
 }
