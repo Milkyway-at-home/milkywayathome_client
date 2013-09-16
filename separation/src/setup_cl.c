@@ -96,7 +96,7 @@ static cl_double estimateWUGFLOPsPerIter(const AstronomyParameters* ap, const In
     cl_ulong loop;
 
     loop = 58 * ap->number_streams + 56;
-    if (ap->background_profile == BROKEN_POWER_LAW))
+    if (ap->background_profile == BROKEN_POWER_LAW)
         loop += 8;
 
     perItem = ap->convolve * loop + (2 * ap->number_streams) + 4;
