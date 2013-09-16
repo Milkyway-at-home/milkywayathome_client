@@ -173,7 +173,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
 
 
                             /* Placeholder for IL kernel */
-                            __constant real* _ap_consts __attribute__((max_constant_size(16 * sizeof(real)))),
+                            __constant real* _ap_consts __attribute__((max_constant_size(18 * sizeof(real)))),
 
                             __constant SC* sc __attribute__((max_constant_size(NSTREAM * sizeof(SC)))),
                             __constant real* sg_dx __attribute__((max_constant_size(256 * sizeof(real)))),
@@ -254,7 +254,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
         else /*Broken Power Law*/
         {
             const real n = mad((rg >= R0),  2.22, 2.78);
-            bg_prob += rPt.y * powr(mw_div((real) SUN_R0, rg), n);
+            bg_prob = mad(rPt.y, powr(mw_div((real) SUN_R0, rg), n), bg_prob);
         }
 
         #pragma unroll NSTREAM
