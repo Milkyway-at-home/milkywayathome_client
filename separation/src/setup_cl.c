@@ -96,7 +96,7 @@ static cl_double estimateWUGFLOPsPerIter(const AstronomyParameters* ap, const In
     cl_ulong loop;
 
     loop = 58 * ap->number_streams + 56;
-    if (ap->aux_bg_profile)
+    if (ap->background_profile == BROKEN_POWER_LAW))
         loop += 8;
 
     perItem = ap->convolve * loop + (2 * ap->number_streams) + 4;
@@ -502,7 +502,7 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
         return CL_FALSE;
 
     /* Supporting these unused options with the IL kernel is too much work */
-    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile || ap->number_streams == 0)
+    if (ap->number_streams > maxILKernelStreams || ap->background_profile != SLOW_HERNQUIST || ap->number_streams == 0)
         return CL_FALSE;
 
     /* Make sure an acceptable device */
