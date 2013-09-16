@@ -235,7 +235,7 @@ static cl_int createAPBuffer(CLInfo* ci,
                              const cl_mem_flags constBufFlags)
 {
     cl_int err = CL_SUCCESS;
-    double buf[16];
+    double buf[18];
     union
     {
         double d;
@@ -291,7 +291,7 @@ void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const
     sizes->bSin = sizeof(real) * ia->mu_steps * ia->nu_steps;
 
     /* Constant buffer things */
-    sizes->ap = 16 * sizeof(double);
+    sizes->ap = 18 * sizeof(double);
     sizes->ia = sizeof(IntegralArea);
     sizes->sc = 8 * sizeof(real) * ap->number_streams;
     sizes->rc = sizeof(RCBuf) * ia->r_steps;
