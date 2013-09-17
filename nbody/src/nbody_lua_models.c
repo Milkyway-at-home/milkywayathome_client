@@ -31,6 +31,7 @@
 #include "nbody_plummer.h"
 #include "nbody_nfw.h"
 #include "nbody_hernq.h"
+#include "nbody_isotropic.h"
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
@@ -107,6 +108,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     registerGeneratePlummer(luaSt);
     registerGenerateNFW(luaSt);
     registerGenerateHernq(luaSt);
+    registerGenerateIsotropic(luaSt);
 
     /* Create a table of predefined models, so we can use them like
      * predefinedModels.plummer() etc. */
@@ -116,7 +118,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     setModelTableItem(luaSt, table, nbGeneratePlummer, "plummer");
     setModelTableItem(luaSt, table, nbGenerateNFW, "nfw");
     setModelTableItem(luaSt, table, nbGenerateHernq, "hernq");
-
+    setModelTableItem(luaSt, table, nbGenerateIsotropic, "isotropic");
     /*
       setModelTableItem(luaSt, table, generateKing, "king");
       setModelTableItem(luaSt, table, generateDehnen, "dehnen");
