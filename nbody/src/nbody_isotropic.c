@@ -71,68 +71,11 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
   return r;
 }
 
-/*
-static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
-{
-    real x, y;
 
-    do                      
-    {
-        x = mwXrandom(dsfmtState, 0.0, 1.0);      
-	y = mwXrandom(dsfmtState, 0.0, 0.1);      
-    } 
-    while (y > sqr(x) * mw_pow(1.0 - sqr(x), 3.5));
-
-    return x;
-}
-*/
-
-/*
-
-static inline real isotropicRandomV(dsfmt_t* dsfmtState, real scaleRad1, real scaleRad2,
-                                     real Mass1, real Mass2)
-
-{
-  
-  real SIGMA_MAX = -mw_pow(scaleRad2,2)*(Mass1/mw_pow(scaleRad1,3)*(mw_asinh(scaleRad1/scaleRad2)) +
-		 			 (Mass2/mw_pow(scaleRad2,3)*(mw_asinh(scaleRad2/scaleRad2))) -
-	 				 (Mass1/mw_pow(scaleRad1,2)*1/mw_pow(mw_pow(scaleRad2,2) + mw_pow(scaleRad1,2),1/2)) -
-					 (Mass2/mw_pow(scaleRad1,2)*1/mw_pow(mw_pow(scaleRad2,2) + mw_pow(scaleRad2,2),1/2)));
-  
-
-  mwbool GOOD_SIG MA = 0;
-                                                                                                                                               
-  real r;
-  real val;
-  while (GOOD_SIGMA != 1)
-  {
-      r = mwXrandom(dsfmtState,0.0, 3*(scaleRad1 + scaleRad2));
-      real u = mwXrandom(dsfmtState, 0.0, 1.0);
-      
-      val = -mw_pow(r,2)*(Mass1/mw_pow(scaleRad1,3)*(mw_asinh(scaleRad1/r)) +
-			       (Mass2/mw_pow(scaleRad2,3)*(mw_asinh(scaleRad2/r))) -
-			       (Mass1/mw_pow(scaleRad1,2)*1/mw_pow(mw_pow(r,2) + mw_pow(scaleRad1,2),1/2)) -
-			       (Mass2/mw_pow(scaleRad1,2)*1/mw_pow(mw_pow(r,2) + mw_pow(scaleRad2,2),1/2)));
-
-     if (val/SIGMA_MAX < u)
-       {
-	GOOD_SIGMA = 1;
-       }
-      }
-  return mw_pow(val,1/2);
-    
-}
-*/
 
 static inline real isotropicRandomV(real r, real scaleRad1, real scaleRad2,                                                                                                             				    real Mass1, real Mass2)  
 {
-  /*  real val;
-  val = mw_pow(r,2)*(Mass1/mw_pow(scaleRad1,3)*(mw_asinh(scaleRad1/r)) +                                                                                                                        
-	 	      (Mass2/mw_pow(scaleRad2,3)*(mw_asinh(scaleRad2/r))) -                                                                                                                 
- 		      (Mass1/mw_pow(scaleRad1,2)*1/mw_pow(mw_pow(r,2) + mw_pow(scaleRad1,2),1/2)) -                                                                                         
-		      (Mass2/mw_pow(scaleRad1,2)*1/mw_pow(mw_pow(r,2) + mw_pow(scaleRad2,2),1/2)));    
 
-		      return mw_sqrt(val);*/
 
   real val;
   val = mw_sqrt(Mass1/mw_sqrt(mw_pow(r,2) + mw_pow(scaleRad1,2)) 
@@ -165,7 +108,7 @@ static inline mwvector isotropicBodyVelocity(dsfmt_t* dsfmtState,real r, mwvecto
 }
 
 /* generatePlummer: generate Plummer model initial conditions for test
- * runs, scaled to units such that M = -4E = G = 1 (Henon, Hegge,
+ * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
@@ -211,14 +154,9 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
         }
         while (isinf(r));
 
-	//printf("rshift =(%10.5f,%10.5f,%10.5f)", rShift.x,rShift.y,rShift.z);
         b.bodynode.pos = isotropicBodyPosition(prng, rShift, r);
-	//printf("The radial coordinate is %10.5f\n", b.bodynode.pos.x);
-	//printf("The phi coordinate is %10.5f\n", b.bodynode.pos.y);
-	//printf("The theta coordinate is %10.5f\n", b.bodynode.pos.z);
+
         b.vel = isotropicBodyVelocity(prng, r, vShift, velScale, radiusScale1, radiusScale2, mass1, mass2);
-	printf("The velocity is (%10.5f, %10.5f, %10.5f).\n", b.vel.x,b.vel.y,b.vel.z);
-	//printf("Position = %10.5f\n", b.bodynode.mass);
 	
         assert(nbPositionValid(b.bodynode.pos));
 
