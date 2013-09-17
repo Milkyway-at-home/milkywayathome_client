@@ -589,11 +589,11 @@ static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodySta
         return 1;
 
     bodies = nbEvaluateBodies(luaSt, ctx, &nbody);
-    printf("Passed nbEvaluateBodies, n = %10.5f\n", nbody);
+    
     if (!bodies)
         return 1;
 
-    printf("Passed number check, n = %10.5f\n", nbody);
+    
     setInitialNBodyState(st, ctx, bodies, nbody);
 
     return 0;
