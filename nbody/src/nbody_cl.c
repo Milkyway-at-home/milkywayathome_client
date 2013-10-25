@@ -1183,6 +1183,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
         size_t chunk;
         size_t offset[1];
         cl_event ev;
+        cl_event readEv;
 
         size_t nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) st->effNBody, ws->global[1]);
         cl_uint upperBound = st->ignoreResponsive ? st->effNBody : (cl_int) ws->global[1];
@@ -1201,6 +1202,18 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                                          0, NULL, &ev);
             if (err != CL_SUCCESS)
                 goto tree_build_exit;
+
+            err = clEnqueueReadBuffer(ci->queue,
+                                      nbb->treeStatus,
+                                      CL_TRUE,
+                                      0, sizeof(treeStatus), &treeStatus,
+                                      0, NULL, &readEv);
+
+            if (err != CL_SUCCESS)
+            {
+                clReleaseEvent(readEv);
+                goto tree_build_exit;
+            }
 
             upperBound += (cl_int) ws->global[1];
             ws->timings[1] += waitReleaseEventWithTime(ev);
@@ -1243,7 +1256,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                                       0, NULL, &readEv);
             if (err != CL_SUCCESS)
             {
-                clReleaseEvent(ev);
+                clReleaseEvent(readEv);
                 goto tree_build_exit;
             }
 
