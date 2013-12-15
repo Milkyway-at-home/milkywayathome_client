@@ -833,7 +833,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 	*/
 	double EMDComponent = 1 - emd / 50.0;
 	double CostComponent = probability_match(n, k, pObs)/probability_match(n,n*pObs,pObs);
-        likelihood = (mw_log(EMDComponent) * mw_log(CostComponent));
+        likelihood = (mw_log(EMDComponent) +  mw_log(CostComponent));
 	//mw_printf("n = %10.10f\n",(double)n);
         //mw_printf("k = %10.10f\n",(double)k);
 	//mw_printf("nData = %10.10f\n",(double)nData);
@@ -844,7 +844,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     free(hist);
     free(dat);
 
-    return likelihood;
+    return -likelihood;
 }
 
 /*
