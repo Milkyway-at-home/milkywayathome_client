@@ -828,9 +828,18 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 	  Previously, this calculation was wrong.  Fixed to reflect notes on 
 	  conversation with Magdon-Ismail and Newberg.  Confirmed to be a valid
 	  metric for a metric space.  
-	*/
-        likelihood = (mw_log(1 + emd / 50.0) + (double) probability_match(n, k, pObs));
 
+	  Some more notes about the revised calculation
+	*/
+	double EMDComponent = 1 - emd / 50.0;
+	double CostComponent = probability_match(n, k, pObs)/probability_match(n,n*pObs,pObs);
+        likelihood = (mw_log(EMDComponent) * mw_log(CostComponent));
+	//mw_printf("n = %10.10f\n",(double)n);
+        //mw_printf("k = %10.10f\n",(double)k);
+	//mw_printf("nData = %10.10f\n",(double)nData);
+	//mw_printf("pObs = %10.10f\n",(double)pObs);
+	//mw_printf("EMD = %10.10f\n",EMDComponent);
+	//mw_printf("Cost = %10.10f\n",mw_log(CostComponent));
 
     free(hist);
     free(dat);

@@ -64,9 +64,12 @@ real probability_match(int n, int k, real pobs)
     //result += mw_log(1.0 - pobs) * (real)(n - k);                                                                                                                                                  
 
     //The previous calculation does not return the right values.  Furthermore, we need a zeroed metric.                                                                                              
-    result = (real)  choose(n,k) * mw_log(1 + mw_pow(pobs,k)) * mw_log(1 + mw_pow((1 - pobs),n - k));
+    result = (real)  choose(n,k) + k * mw_log(pobs) + (n-k) * mw_log(1 - pobs);
+    //mw_printf("Coeff = %10.10f\n",choose(n,k));
+    //mw_printf("Term 1 = %10.10f\n",k * mw_log(pobs));
+    //mw_printf("Term 2 = %10.10f\n",(n-k) * mw_log(1 - pobs));
 
-    return result;
+    return(mw_pow(10,result));
 }
 
 
