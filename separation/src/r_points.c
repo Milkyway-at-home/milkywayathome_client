@@ -77,9 +77,8 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc, const Ast
 {
     RPoints r_pt;
     real g, exponent, r3, N;
-    real absm_u, stdev_l, stdev_i;
+    real stdev_l, stdev_i;
 
-    absm_u = absm;
     stdev_i = stdev;
 
     g = rc->gPrime + dx;
@@ -87,12 +86,11 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc, const Ast
 if (ap->modfit)
 /* Implement modified f_turnoff distribution described in Newby 2011*/
 {
-    absm_u = 4.18;
     stdev_l = 0.36;
     stdev_i = (g <= rc->gPrime) ? stdev_l : rc->stdev_r;
 }
     /* MAG2R */
-    r_pt.r_point = 0.001 * mw_exp10(0.2 * (g - absm_u) + 1.0);
+    r_pt.r_point = distance_magnitude(g);
     r3 = cube(r_pt.r_point);
 
     exponent = sqr(g - rc->gPrime) * inv(2.0 * sqr(stdev_i));
@@ -126,7 +124,7 @@ RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
     
-        real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
+        real tempr = distance_magnitude(rc.gPrime);
 
         //Curve Fit Parameters (un-normalized)
         //Only works for 0 < r < 80 kpc
@@ -168,7 +166,7 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
 
-        real tempr = 0.001 * mw_exp10(0.2 * (rc.gPrime - 4.18) + 1.0);
+        real tempr = distance_magnitude(rc.gPrime);
         
         //Curve Fit Parameters (un-normalized)
         //Only works for 0 < r < 80 kpc
