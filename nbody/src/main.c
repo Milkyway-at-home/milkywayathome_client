@@ -30,7 +30,7 @@
 
 #include "milkyway_util.h"
 #include "nbody.h"
-#include "nbody_chisq.h"
+#include "nbody_likelihood.h"
 #include "nbody_defaults.h"
 #include "milkyway_git_version.h"
 
