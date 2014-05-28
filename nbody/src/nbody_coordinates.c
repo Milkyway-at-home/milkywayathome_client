@@ -125,6 +125,8 @@ real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
 / Input must be in kpc of the form X Y Z
 / Output is in kpc and degrees, of the form X_Sgr Y_Sgr Z_Sgr r lambda beta 
 Adapted from http://www.astro.virginia.edu/~srm4n/Sgr/SgrCoord.h*/
+
+/* Still Needs to be tested!!! */
 mwvector nbXYZtoLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)  
 {
     mwvector lambdabetar;
@@ -158,10 +160,6 @@ mwvector nbXYZtoLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
     tempZ=-tempZ;
     /* Calculate the angular coordinates lambda,beta */
     L(lambdabetar)=r2d(mw_atan2(tempY,tempX));
-    if (L(lambdabetar) < 0) 
-    {
-        L(lambdabetar)+=360;
-    }
     B(lambdabetar)=r2d(asin(tempZ/R(lambdabetar)));
     return lambdabetar;
 }
