@@ -578,10 +578,12 @@ int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2)
     return feqWithNan(hp1->phi, hp2->phi)
         && feqWithNan(hp1->theta, hp2->theta)
         && feqWithNan(hp1->psi, hp2->psi)
-        && feqWithNan(hp1->startRaw, hp2->startRaw)
-        && feqWithNan(hp1->endRaw, hp2->endRaw)
-        && feqWithNan(hp1->binSize, hp2->binSize)
-        && feqWithNan(hp1->center, hp2->center);
+        && feqWithNan(hp1->lambdaStart, hp2->lambdaStart)
+        && feqWithNan(hp1->lambdaEnd, hp2->lambdaEnd)
+        && feqWithNan(hp1->lambdaBins, hp2->lambdaBins)
+        && feqWithNan(hp1->betaStart, hp2->betaStart)
+        && feqWithNan(hp1->betaEnd, hp2->betaEnd)
+        && feqWithNan(hp1->betaBins, hp2->betaBins);
 }
 
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)

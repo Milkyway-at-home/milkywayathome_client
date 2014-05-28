@@ -54,12 +54,14 @@ static int createHistogramParams(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "phi",      LUA_TNUMBER, NULL, TRUE, &hp.phi      },
-            { "theta",    LUA_TNUMBER, NULL, TRUE, &hp.theta    },
-            { "startRaw", LUA_TNUMBER, NULL, TRUE, &hp.startRaw },
-            { "endRaw",   LUA_TNUMBER, NULL, TRUE, &hp.endRaw   },
-            { "binSize",  LUA_TNUMBER, NULL, TRUE, &hp.binSize  },
-            { "center",   LUA_TNUMBER, NULL, TRUE, &hp.center   },
+            { "phi",         LUA_TNUMBER, NULL, TRUE, &hp.phi         },
+            { "theta",       LUA_TNUMBER, NULL, TRUE, &hp.theta       },
+            { "lambdaStart", LUA_TNUMBER, NULL, TRUE, &hp.lambdaStart },
+            { "lambdaEnd",   LUA_TNUMBER, NULL, TRUE, &hp.lambdaEnd   },
+            { "lambdaBins",  LUA_TNUMBER, NULL, TRUE, &hp.lambdaBins  },
+            { "betaStart",   LUA_TNUMBER, NULL, TRUE, &hp.betaStart   },
+            { "betaEnd",     LUA_TNUMBER, NULL, TRUE, &hp.betaEnd     },
+            { "betaBins",    LUA_TNUMBER, NULL, TRUE, &hp.betaBins    },
             END_MW_NAMED_ARG
         };
 
@@ -119,23 +121,27 @@ static const luaL_reg methodsHistogramParams[] =
 
 static const Xet_reg_pre gettersHistogramParams[] =
 {
-    { "phi" ,     getNumber, offsetof(HistogramParams, phi)      },
-    { "theta",    getNumber, offsetof(HistogramParams, theta)    },
-    { "startRaw", getNumber, offsetof(HistogramParams, startRaw) },
-    { "endRaw",   getNumber, offsetof(HistogramParams, endRaw)   },
-    { "binSize",  getNumber, offsetof(HistogramParams, binSize)  },
-    { "center",   getNumber, offsetof(HistogramParams, center)   },
+    { "phi" ,        getNumber, offsetof(HistogramParams, phi)         },
+    { "theta",       getNumber, offsetof(HistogramParams, theta)       },
+    { "lambdaStart", getNumber, offsetof(HistogramParams, lambdaStart) },
+    { "lambdaEnd",   getNumber, offsetof(HistogramParams, lambdaEnd)   },
+    { "lambdaBins",  getNumber, offsetof(HistogramParams, lambdaBins)  },
+    { "betaStart",   getNumber, offsetof(HistogramParams, betaStart)   },
+    { "betaEnd",     getNumber, offsetof(HistogramParams, betaEnd)     },
+    { "betaBins",    getNumber, offsetof(HistogramParams, betaBins)    },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersHistogramParams[] =
 {
-    { "phi" ,     setNumber, offsetof(HistogramParams, phi)      },
-    { "theta",    setNumber, offsetof(HistogramParams, theta)    },
-    { "startRaw", setNumber, offsetof(HistogramParams, startRaw) },
-    { "endRaw",   setNumber, offsetof(HistogramParams, endRaw)   },
-    { "binSize",  setNumber, offsetof(HistogramParams, binSize)  },
-    { "center",   setNumber, offsetof(HistogramParams, center)   },
+    { "phi" ,        setNumber, offsetof(HistogramParams, phi)         },
+    { "theta",       setNumber, offsetof(HistogramParams, theta)       },
+    { "lambdaStart", setNumber, offsetof(HistogramParams, lambdaStart) },
+    { "lambdaEnd",   setNumber, offsetof(HistogramParams, lambdaEnd)   },
+    { "lambdaBins",  setNumber, offsetof(HistogramParams, lambdaBins)  },
+    { "betaStart",   setNumber, offsetof(HistogramParams, betaStart)   },
+    { "betaEnd",     setNumber, offsetof(HistogramParams, betaEnd)     },
+    { "betaBins",    setNumber, offsetof(HistogramParams, betaBins)    },
     { NULL, NULL, 0 }
 };
 
