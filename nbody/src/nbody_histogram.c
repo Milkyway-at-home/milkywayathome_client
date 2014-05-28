@@ -360,6 +360,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
     double lambda;
+    mwvector lambdaBetaR;
     unsigned int i;
     unsigned int idx;
     unsigned int totalNum = 0;
@@ -401,9 +402,11 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         if (!ignoreBody(p))
         {
 
-	  // Use vector instead
-            lambda = nbXYZToLambda(&histTrig, Pos(p), ctx->sunGCDist);
-            idx = (unsigned int) floor((lambda - start) / binSize);
+	    // Use vector instead
+            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
+            lambda = L(lambdaBetaR);
+
+	    idx = (unsigned int) floor((lambda - start) / binSize);
             if (idx < nBin)
             {
                 histData[idx].rawCount++;
