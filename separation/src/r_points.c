@@ -185,18 +185,6 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
     return rc;
 }
 
-//Unused function.  Probably should be erased during code clean-up.
-void setRPoints(const AstronomyParameters* ap,
-                const StreamGauss sg,
-                RConsts* rc,
-                RPoints* r_pts)
-{
-    unsigned int i;
-
-    for (i = 0; i < ap->convolve; ++i)
-        r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], rc, ap);
-}
-
 void setSplitRPoints(const AstronomyParameters* ap,
                      const StreamGauss sg,
                      RConsts* rc,
