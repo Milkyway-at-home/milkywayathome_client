@@ -19,25 +19,27 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_CHISQ_H_
-#define _NBODY_CHISQ_H_
+#ifndef _NBODY_LIKELIHOOD_H_
+#define _NBODY_LIKELIHOOD_H_
 
 #include "nbody_types.h"
 #include "nbody.h"
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
-                   const NBodyHistogram* histogram,   /* Generated histogram */
-                   NBodyLikelihoodMethod method);
+double nbSystemLikelihood(const NBodyState* st,
+                     const NBodyHistogram* data,
+                     const NBodyHistogram* histogram,
+                     NBodyLikelihoodMethod method);
 
+int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method);
+
+double nbMatchHistogramFiles(const char* datHist, const char* matchHist);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NBODY_CHISQ_H_ */
-
+#endif /* _NBODY_LIKELIHOOD_H_ */

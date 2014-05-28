@@ -29,7 +29,7 @@
 #include "nbody_shmem.h"
 #include "nbody_defaults.h"
 #include "nbody_plain.h"
-#include "nbody_chisq.h"
+#include "nbody_likelihood.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -258,7 +258,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_LIKELIHOOD_ERROR;
         }
 
-        likelihood = nbSystemChisq(st, data, histogram, method);
+        likelihood = nbSystemLikelihood(st, data, histogram, method);
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
