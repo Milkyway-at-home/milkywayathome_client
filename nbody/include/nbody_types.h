@@ -324,9 +324,11 @@ typedef struct MW_ALIGN_TYPE
 
 typedef struct
 {
+    /* Beta */
     real phi;
     real theta;
     real psi;
+    /* Lambda */
     real startRaw;
     real endRaw;
     real binSize;
@@ -342,6 +344,7 @@ typedef struct
     int useBin;
     unsigned int rawCount;
     double lambda;
+    double beta;
     double count;
     double err;
 } HistData;
