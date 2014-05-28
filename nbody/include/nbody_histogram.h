@@ -19,8 +19,8 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_CHISQ_H_
-#define _NBODY_CHISQ_H_
+#ifndef _NBODY_HISTOGRAM_H_
+#define _NBODY_HISTOGRAM_H_
 
 #include "nbody_types.h"
 #include "nbody.h"
@@ -30,14 +30,28 @@
 extern "C" {
 #endif
 
-double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
-                   const NBodyHistogram* histogram,   /* Generated histogram */
-                   NBodyLikelihoodMethod method);
+NBodyHistogram* nbReadHistogram(const char* histogramFile);
+
+NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp);
+
+void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram);
+
+void nbWriteHistogram(const char* histoutFileName,
+                      const NBodyCtx* ctx,
+                      const NBodyState* st,
+                      const NBodyHistogram* histogram);
+
+double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data);
+
+double nbNormalizedHistogramError(unsigned int n, double total);
+
+unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generated histogram */
+					     const NBodyHistogram* data);      /* Data histogram */
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NBODY_CHISQ_H_ */
+#endif /* _NBODY_HISTOGRAM_H_ */
 
