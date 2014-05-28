@@ -125,7 +125,7 @@ real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
 / Input must be in kpc of the form X Y Z
 / Output is in kpc and degrees, of the form X_Sgr Y_Sgr Z_Sgr r lambda beta 
 Adapted from http://www.astro.virginia.edu/~srm4n/Sgr/SgrCoord.h*/
-mwvector nbXYZtoLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)  
+mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)  
 {
     mwvector lambdabetar;
     real tempX, tempY, tempZ;
