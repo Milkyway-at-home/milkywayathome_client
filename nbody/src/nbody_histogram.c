@@ -44,7 +44,7 @@ static double nbHistogramStart(const HistogramParams* hp)
     return (double) mw_ceil(hp->center - hp->binSize * (real) nBin / 2.0);
 }
 
-extern inline double nbNormalizedHistogramError(unsigned int n, double total)
+double nbNormalizedHistogramError(unsigned int n, double total)
 {
     return (n == 0) ? inv(total) : sqrt((double) n) / total;
 }

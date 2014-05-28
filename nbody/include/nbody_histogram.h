@@ -43,7 +43,11 @@ void nbWriteHistogram(const char* histoutFileName,
 
 double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data);
 
-inline double nbNormalizedHistogramError(unsigned int n, double total);
+double nbNormalizedHistogramError(unsigned int n, double total);
+
+unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generated histogram */
+					     const NBodyHistogram* data);      /* Data histogram */
+
 
 #ifdef __cplusplus
 }

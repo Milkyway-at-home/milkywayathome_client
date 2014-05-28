@@ -61,6 +61,7 @@
 #include "nbody_emd.h"
 #include "nbody_defaults.h"
 #include "nbody_types.h"
+#include "nbody_mass.h"
 
 #define MAX_ITERATIONS 500
 #define EMD_INF   ((float)1.0e20)
