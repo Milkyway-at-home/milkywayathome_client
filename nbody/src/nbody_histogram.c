@@ -30,18 +30,24 @@
 #include "nbody_coordinates.h"
 #include "nbody_show.h"
 
-/* From the range of a histogram, find the number of bins */
-static unsigned int nbHistogramNBin(const HistogramParams* hp)
+/*Calculates the center of two numbers */
+static real nbHistogramCenter(real start, real end)
 {
-    real rawCount = (hp->endRaw - hp->startRaw) / hp->binSize;
-    return (unsigned int) mw_ceil(rawCount);   /* Total number of bins */
+    return (start + end)/2;
 }
 
-/* Find the corrected starting point for the histogram */
-static double nbHistogramStart(const HistogramParams* hp)
+/* From the range of a histogram, find the bin size in Lambda */
+static real nbHistogramLambdaBinSize(const HistogramParams* hp)
 {
-    unsigned int nBin = nbHistogramNBin(hp);
-    return (double) mw_ceil(hp->center - hp->binSize * (real) nBin / 2.0);
+    real binSize = (hp->lambdaStart - hp->lambdaEnd) / hp->lambdaBins;
+    return binSize;   /* Size of bins */
+}
+
+/* From the range of a histogram, find the bin size in Beta */
+static real nbHistogramBetaBinSize(const HistogramParams* hp)
+{
+    real binSize = (hp->betaStart - hp->betaEnd) / hp->betaBins;
+    return binSize;
 }
 
 double nbNormalizedHistogramError(unsigned int n, double total)
@@ -52,7 +58,7 @@ double nbNormalizedHistogramError(unsigned int n, double total)
 double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
 {
     unsigned int i;
-    unsigned int nBin = data->nBin;
+    unsigned int nBin = data->lambdaBins;
     double total = 0.0;
 
     for (i = 0; i < nBin; ++i)
@@ -77,7 +83,7 @@ unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /*
                                                     const NBodyHistogram* data)      /* Data histogram */
 {
     unsigned int i;
-    unsigned int nBin = data->nBin;
+    unsigned int nBin = data->lambdaBins;
     unsigned int totalNum = histogram->totalNum;
 
     assert(histogram->hasRawCounts);
@@ -109,14 +115,18 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Generated %s\n"
             "#\n"
             "# (phi,   theta,  psi) = (%f, %f, %f)\n"
-            "# (start, center, end) = (%f, %f, %f)\n"
-            "# Bin size = %f\n"
+            "# (lambdaStart, lambdaCenter, lambdaEnd) = (%f, %f, %f)\n"
+            "# (betaStart, betaCenter, betaEnd) = (%f, %f, %f)\n"
+            "# Lambda Bin size = %f\n"
+            "# Beta Bin size = %f\n"
             "#\n"
             "#\n",
             tBuf,
             hp->phi, hp->theta, hp->psi,
-            hp->startRaw, hp->center, hp->endRaw,
-            hp->binSize);
+            hp->lambdaStart, nbHistogramCenter(hp->lambdaStart, hp->lambdaEnd), hp->lambdaEnd,
+            hp->betaStart, nbHistogramCenter(hp->betaStart, hp->betaEnd), hp->betaEnd,
+            nbHistogramLambdaBinSize(hp),
+            nbHistogramBetaBinSize(hp));
 
 
     fprintf(f,
@@ -246,7 +256,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 {
     unsigned int i;
     const HistData* data;
-    unsigned int nBin = histogram->nBin;
+    unsigned int nBin = histogram->lambdaBins;
 
     mw_boinc_print(f, "<histogram>\n");
     fprintf(f, "n = %u\n", histogram->totalNum);
@@ -298,12 +308,12 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     unsigned int i;
     double count;
 
-    unsigned int nBin = histogram->nBin;
+    unsigned int nBin = histogram->lambdaBins;
     const HistogramParams* hp = &histogram->params;
-    double binSize = (double) hp->binSize;
+    double binSize = nbHistogramLambdaBinSize(hp);
     double totalNum = (double) histogram->totalNum;
     HistData* histData = histogram->data;
-    double start = nbHistogramStart(&histogram->params);
+    double start = hp->lambdaStart;
 
     for (i = 0; i < nBin; ++i)
     {
@@ -320,7 +330,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
 static double nbHistogramCenterOfMass(const NBodyHistogram* hist, int useBinIndex)
 {
     unsigned int i;
-    unsigned int n = hist->nBin;
+    unsigned int n = hist->lambdaBins;
     const HistData* data = hist->data;
     double cm = 0.0;
 
@@ -369,20 +379,20 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
-    double binSize = (double) hp->binSize;
+    double binSize = nbHistogramLambdaBinSize(hp);
 
     /* Calculate the bounds of the bin range, making sure to use a
      * fixed bin size which spans the entire range, and is symmetric
      * around 0 */
 
-    double start = nbHistogramStart(hp);
-    unsigned int nBin = nbHistogramNBin(hp);
+    double start = hp->lambdaStart;
+    unsigned int nBin = hp->lambdaBins;
 
 
     nbGetHistTrig(&histTrig, hp);
 
     histogram = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    histogram->nBin = nBin;
+    histogram->lambdaBins = nBin;
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
     histogram->totalSimulated = (unsigned int) st->nbody;
@@ -544,7 +554,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         return NULL;
     }
 
-    histogram->nBin = fileCount;
+    histogram->lambdaBins = fileCount;
     histogram->totalNum = nGen;
     histogram->totalSimulated = totalSim;
     histogram->massPerParticle = mass;

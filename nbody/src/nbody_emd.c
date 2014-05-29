@@ -1258,7 +1258,7 @@ double nbWorstCaseEMD(const NBodyHistogram* hist)
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int k;
-    unsigned int bins = data->nBin;
+    unsigned int bins = data->lambdaBins;
     unsigned int n = histogram->totalSimulated;
     unsigned int nObs = histogram->totalNum;
     unsigned int nData = data->totalNum;
@@ -1272,7 +1272,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     double emd;
     double likelihood;
 
-    if (data->nBin != histogram->nBin)
+    if (data->lambdaBins != histogram->lambdaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and

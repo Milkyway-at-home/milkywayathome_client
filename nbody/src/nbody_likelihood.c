@@ -87,12 +87,12 @@ double nbSystemLikelihood(const NBodyState* st,
                      const NBodyHistogram* histogram,
                      NBodyLikelihoodMethod method)
 {
-    if (data->nBin != histogram->nBin)
+    if (data->lambdaBins != histogram->lambdaBins)
     {
         mw_printf("Number of bins does not match those in histogram file. "
                   "Expected %u, got %u\n",
-                  histogram->nBin,
-                  data->nBin);
+                  histogram->lambdaBins,
+                  data->lambdaBins);
         return NAN;
     }
 
