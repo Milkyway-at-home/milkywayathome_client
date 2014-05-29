@@ -140,9 +140,10 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     double err;
     double simErr;
     double scale = 1.0;
-    unsigned int nBin = data->lambdaBins;
+    unsigned int nBin = data->lambdaBins * histogram->lambdaBins;
 
-    assert(nBin == histogram->nBin);
+    assert(data->lambdaBins == histogram->lambdaBins);
+	assert(data->betaBins == data->betaBins);
 
     if (!histogram->hasRawCounts)
     {
