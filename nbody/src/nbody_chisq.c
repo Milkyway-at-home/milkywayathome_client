@@ -145,6 +145,7 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     assert(data->lambdaBins == histogram->lambdaBins);
     assert(data->betaBins == histogram->betaBins);
 
+
     if (!histogram->hasRawCounts)
     {
         mw_printf("FIXME: other likelihoods need raw count on generated histogram\n");
