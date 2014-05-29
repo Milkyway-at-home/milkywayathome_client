@@ -332,12 +332,12 @@ typedef struct
     /* Lambda */
     real lambdaStart;
     real lambdaEnd;
-    real lambdaBins;
+    unsigned int lambdaBins;
 
 	/* Beta */
 	real betaStart;
 	real betaEnd;
-    real betaBins;
+    unsigned int betaBins;
 
 } HistogramParams;
 

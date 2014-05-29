@@ -39,14 +39,14 @@ static real nbHistogramCenter(real start, real end)
 /* From the range of a histogram, find the bin size in Lambda */
 static real nbHistogramLambdaBinSize(const HistogramParams* hp)
 {
-    real binSize = (hp->lambdaStart - hp->lambdaEnd) / hp->lambdaBins;
+    real binSize = (hp->lambdaEnd - hp->lambdaStart) / (real) hp->lambdaBins;
     return binSize;   /* Size of bins */
 }
 
 /* From the range of a histogram, find the bin size in Beta */
 static real nbHistogramBetaBinSize(const HistogramParams* hp)
 {
-    real binSize = (hp->betaStart - hp->betaEnd) / hp->betaBins;
+    real binSize = (hp->betaEnd - hp->betaStart) / (real) hp->betaBins;
     return binSize;
 }
 
