@@ -275,6 +275,12 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 				data->beta,
                 data->count,
                 data->err);
+
+	/* Print blank lines for plotting histograms in gnuplot pm3d */
+	if(i % histogram->betaBins == 0) {
+	  fprintf(f, "\n");
+	}
+
     }
 
     mw_boinc_print(f, "</histogram>\n");

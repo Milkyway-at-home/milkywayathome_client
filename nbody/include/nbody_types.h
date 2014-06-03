@@ -334,9 +334,9 @@ typedef struct
     real lambdaEnd;
     unsigned int lambdaBins;
 
-	/* Beta */
-	real betaStart;
-	real betaEnd;
+    /* Beta */
+    real betaStart;
+    real betaEnd;
     unsigned int betaBins;
 
 } HistogramParams;

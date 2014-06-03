@@ -27,8 +27,9 @@
 
 typedef struct
 {
-    float weight; /* 1st column */
-    float pos;    /* 2nd column */
+    float weight; /* Normalized Weight */
+    float lambda;    /* Lambda Position */
+    float beta; /* Beta Position */
 } WeightPos;
 
 

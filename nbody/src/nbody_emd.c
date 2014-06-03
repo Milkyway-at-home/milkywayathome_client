@@ -1198,10 +1198,10 @@ float emdCalc(const float* RESTRICT signature_arr1,
     double totalCost = 0.0;
     int result = 0;
     EMDDistanceFunction dist_func = NULL;
-    const EMDDistanceType dist_type = EMD_DIST_L1;
+    const EMDDistanceType dist_type = EMD_DIST_L2;
     const mwbool debugFlow = FALSE;
     float* flow = NULL;
-    const int dims = 1; /* We only have 1 dimension, lambda */
+    const int dims = 2; /* We have 2 dimensions, lambda and beta */
     void* user_param = (void*) dims;
 
     memset(&state, 0, sizeof(state));
@@ -1258,7 +1258,9 @@ double nbWorstCaseEMD(const NBodyHistogram* hist)
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int k;
-    unsigned int bins = data->lambdaBins;
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int bins = lambdaBins * betaBins;
     unsigned int n = histogram->totalSimulated;
     unsigned int nObs = histogram->totalNum;
     unsigned int nData = data->totalNum;
@@ -1272,7 +1274,8 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     double emd;
     double likelihood;
 
-    if (data->lambdaBins != histogram->lambdaBins)
+    if (data->lambdaBins != histogram->lambdaBins
+	|| data->betaBins != histgram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and
@@ -1304,8 +1307,11 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
             hist[i].weight = (float) histogram->data[i].count;
         }
 
-        hist[i].pos = (float) histogram->data[i].lambda;
-        dat[i].pos = (float) data->data[i].lambda;
+        hist[i].lambda = (float) histogram->data[i].lambda;
+        dat[i].lambda = (float) data->data[i].lambda;
+	
+	hist[i].beta = (float) histogram->data[i].beta;
+	dat[i].beta = (float) data->data[i].beta;
     }
 
     emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
