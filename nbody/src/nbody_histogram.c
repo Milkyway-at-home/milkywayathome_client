@@ -262,8 +262,8 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     fprintf(f, "n = %u\n", histogram->totalNum);
     fprintf(f, "massPerParticle = %12.10f\n", histogram->massPerParticle);
     fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
-	fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
-	fprintf(f, "betaBins = %u\n", histogram->betaBins);
+    fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
+    fprintf(f, "betaBins = %u\n", histogram->betaBins);
 
     for (i = 0; i < nBin; ++i)
     {
@@ -272,15 +272,15 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 "%d %12.10f %12.10f %12.10f %12.10f\n",
                 data->useBin,
                 data->lambda,
-				data->beta,
+                data->beta,
                 data->count,
                 data->err);
 
-	/* Print blank lines for plotting histograms in gnuplot pm3d */
-	if(i % histogram->betaBins == histogram->betaBins-1)
-    {
-	  fprintf(f, "\n");
-	}
+    /* Print blank lines for plotting histograms in gnuplot pm3d */
+        if(i % histogram->betaBins == histogram->betaBins-1)
+        {
+            fprintf(f, "\n");
+        }
 
     }
 
@@ -316,8 +316,8 @@ void nbWriteHistogram(const char* histoutFileName,
 static void nbNormalizeHistogram(NBodyHistogram* histogram)
 {
     unsigned int i;
-	unsigned int j;
-	unsigned int index;
+    unsigned int j;
+    unsigned int index;
     double count;
 
     const HistogramParams* hp = &histogram->params;
