@@ -277,7 +277,8 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->err);
 
 	/* Print blank lines for plotting histograms in gnuplot pm3d */
-	if(i % histogram->betaBins == 0) {
+	if(i % histogram->betaBins == histogram->betaBins-1)
+    {
 	  fprintf(f, "\n");
 	}
 

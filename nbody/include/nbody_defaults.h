@@ -53,10 +53,10 @@ extern "C" {
 #define histogramPsi 90.70
 #define histogramlambdaStart ((real) -50.0)
 #define histogramlambdaEnd ((real) 50.0)
-#define histogramlambdaBins ((unsigned int) 200)
+#define histogramlambdaBins ((unsigned int) 34)
 #define histogrambetaStart ((real) -25.0)
 #define histogrambetaEnd ((real) 25.0)
-#define histogrambetaBins ((unsigned int) 200)
+#define histogrambetaBins ((unsigned int) 10)
 
 
 extern const NBodyCtx defaultNBodyCtx;
