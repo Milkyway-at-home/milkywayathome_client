@@ -279,5 +279,8 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r)
     }
 
     Z(accel) = zfield;
+
+    printf("%f, %f, %f\n", X(accel), Y(accel), Z(accel));
+    
     return accel;
 }
