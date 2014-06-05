@@ -31,6 +31,16 @@ static dsfmt_t _prng;
  * match of size n. Returns expected EMD for the distribution */
 typedef float (*EMDTestDistribFunc)(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, unsigned int n);
 
+/* Distance metric used by EMD code, currently uses L2 standard metric */
+static inline float distMetric(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, unsigned int i, unsigned int j)
+{
+    /* Calculate Euclidean Norm */
+    float lambda = arr1[i].lambda - arr2[j].lambda;
+    float beta = arr1[i].beta - arr2[j].beta;
+
+    return sqrt((lambda * lambda) + (beta * beta));
+}
+
 static void zeroWeights(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, unsigned int n)
 {
     unsigned int i;
@@ -47,7 +57,8 @@ static float oppositeSides(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, u
     arr1[0].weight = 1.0f;
     arr2[n - 1].weight = 1.0f;
 
-    return fabsf(arr1[0].pos - arr2[n-1].pos);
+    /* Diagonal distance between opposite corners */
+    return distMetric(arr1, arr2, 0, n-1);
 }
 
 static float allInDifferentBins(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, unsigned int n)
@@ -61,7 +72,7 @@ static float allInDifferentBins(WeightPos* RESTRICT arr1, WeightPos* RESTRICT ar
     arr1[i].weight = 1.0f;
     arr2[j].weight = 1.0f;
 
-    return fabsf(arr1[i].pos - arr2[j].pos);
+    return distMetric(arr1, arr2, i, j);
 }
 
 static float allInSameBin(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, unsigned int n)
@@ -98,9 +109,13 @@ static float randomSelf(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2, unsi
     return 0.0f;
 }
 
-static int testDistributionEMD(const char* distName, EMDTestDistribFunc distribf, unsigned int n)
+static int testDistributionEMD(const char* distName, EMDTestDistribFunc distribf,
+                               unsigned int dim1, unsigned int dim2)
 {
     unsigned int i;
+    unsigned int j;
+    unsigned int k;
+    unsigned int n = dim1 * dim2;
     WeightPos* arr1;
     WeightPos* arr2;
     float expected;
@@ -110,9 +125,14 @@ static int testDistributionEMD(const char* distName, EMDTestDistribFunc distribf
     arr1 = mwCalloc(n, sizeof(WeightPos));
     arr2 = mwCalloc(n, sizeof(WeightPos));
 
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < dim1; ++i)
     {
-        arr2[i].pos = arr1[i].pos = (float) i;
+        for (j = 0; j < dim2; j++)
+        {
+            k = i * dim2 + j;
+            arr2[k].lambda = arr1[k].lambda = (float) i;
+            arr2[k].beta = arr1[k].beta = (float) j;
+        }
     }
 
     expected = distribf(arr1, arr2, n);
@@ -149,33 +169,33 @@ int main(int argc, const char* argv[])
     dsfmt_init_gen_rand(&_prng, (uint32_t) time(NULL));
 
 
-    fails += testDistributionEMD("randomSelf", randomSelf, 1);
-    fails += testDistributionEMD("randomSelf", randomSelf, 7);
-    fails += testDistributionEMD("randomSelf", randomSelf, 20);
-    fails += testDistributionEMD("randomSelf", randomSelf, 33);
-    fails += testDistributionEMD("randomSelf", randomSelf, 34);
-    fails += testDistributionEMD("randomSelf", randomSelf, 50);
+    fails += testDistributionEMD("randomSelf", randomSelf, 1, 7);
+    fails += testDistributionEMD("randomSelf", randomSelf, 7, 1);
+    fails += testDistributionEMD("randomSelf", randomSelf, 7, 7);
+    fails += testDistributionEMD("randomSelf", randomSelf, 7, 34);
+    fails += testDistributionEMD("randomSelf", randomSelf, 34, 7);
+    fails += testDistributionEMD("randomSelf", randomSelf, 34, 34);
 
-    fails += testDistributionEMD("allInSameBin", allInSameBin, 1);
-    fails += testDistributionEMD("allInSameBin", allInSameBin, 7);
-    fails += testDistributionEMD("allInSameBin", allInSameBin, 20);
-    fails += testDistributionEMD("allInSameBin", allInSameBin, 33);
-    fails += testDistributionEMD("allInSameBin", allInSameBin, 34);
-    fails += testDistributionEMD("allInSameBin", allInSameBin, 50);
+    fails += testDistributionEMD("allInSameBin", allInSameBin, 1, 7);
+    fails += testDistributionEMD("allInSameBin", allInSameBin, 7, 1);
+    fails += testDistributionEMD("allInSameBin", allInSameBin, 7, 7);
+    fails += testDistributionEMD("allInSameBin", allInSameBin, 7, 34);
+    fails += testDistributionEMD("allInSameBin", allInSameBin, 34, 7);
+    fails += testDistributionEMD("allInSameBin", allInSameBin, 34, 34);
 
-    fails += testDistributionEMD("oppositeSides", oppositeSides, 1);
-    fails += testDistributionEMD("oppositeSides", oppositeSides, 7);
-    fails += testDistributionEMD("oppositeSides", oppositeSides, 20);
-    fails += testDistributionEMD("oppositeSides", oppositeSides, 33);
-    fails += testDistributionEMD("oppositeSides", oppositeSides, 34);
-    fails += testDistributionEMD("oppositeSides", oppositeSides, 50);
+    fails += testDistributionEMD("oppositeSides", oppositeSides, 1, 7);
+    fails += testDistributionEMD("oppositeSides", oppositeSides, 7, 1);
+    fails += testDistributionEMD("oppositeSides", oppositeSides, 7, 7);
+    fails += testDistributionEMD("oppositeSides", oppositeSides, 7, 34);
+    fails += testDistributionEMD("oppositeSides", oppositeSides, 34, 7);
+    fails += testDistributionEMD("oppositeSides", oppositeSides, 34, 34);
 
-    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 1);
-    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 7);
-    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 20);
-    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 33);
-    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 34);
-    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 50);
+    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 1, 7);
+    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 7, 1);
+    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 7, 7);
+    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 7, 34);
+    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 34, 7);
+    fails += testDistributionEMD("allInDifferentBins", allInDifferentBins, 34, 34);
 
     if (fails != 0)
     {
