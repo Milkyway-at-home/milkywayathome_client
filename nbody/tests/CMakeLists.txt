@@ -38,7 +38,15 @@ milkyway_link(nbody_test_driver ${BOINC_APPLICATION} ${NBODY_STATIC} "${test_dri
 
 
 add_executable(emd_test emd_test.c)
-target_link_libraries(emd_test nbody milkyway)
+
+set(emd_test_link_libs nbody
+                       milkyway)
+
+if(NBODY_CRLIBM)
+    list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
+endif()
+
+target_link_libraries(emd_test "${emd_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
