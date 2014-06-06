@@ -1,3 +1,24 @@
+/*
+Copyright (C) 2014 Julie Dumas
+Copyright (C) 2014 Jake Weiss
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include "nbody_caustic.h"
 
 const double G = 1.0;
@@ -248,7 +269,7 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r)
     for (n = 1; n <= 20; n++)
     {
 
-        //tricusp
+        /* tricusp */
         R=(3.0-mw_sqrt(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
         l=(3.0+mw_sqrt(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
         tr=2.0*p_n[n]*mw_sqrt(cube(R)*(1.0-R));
@@ -257,6 +278,7 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r)
 
         if( (Z(pos)<=tr && Z(pos)>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (Z(pos)>=tl && Z(pos)<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (Z(pos)>=-tr && Z(pos)<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (Z(pos)<=-tl && Z(pos)>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
         {
+            printf("Close\n");
             gfield_close(rho,Z(pos),n,&rfield,&zfield);
         }
 
@@ -280,7 +302,7 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r)
 
     Z(accel) = zfield;
 
-    printf("%f, %f, %f\n", X(accel), Y(accel), Z(accel));
+    //printf("%f, %f, %f, %f, %f, %f\n", X(pos), Y(pos), Z(pos), X(accel), Y(accel), Z(accel));
     
     return accel;
 }
