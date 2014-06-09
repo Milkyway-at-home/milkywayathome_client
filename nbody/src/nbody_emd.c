@@ -63,7 +63,7 @@
 #include "nbody_types.h"
 #include "nbody_mass.h"
 
-#define MAX_ITERATIONS 500
+#define MAX_ITERATIONS 2500
 #define EMD_INF   ((float)1.0e20)
 #define EMD_EPS   ((float)1.0e-5)
 #define EMD_INVALID NAN

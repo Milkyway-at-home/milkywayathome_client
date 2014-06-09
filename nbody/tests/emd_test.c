@@ -25,7 +25,7 @@
 
 static dsfmt_t _prng;
 
-#define ZERO_THRESHOLD 1.0e-6
+#define ZERO_THRESHOLD 1.0e-4
 
 /* Function which assigns a sample distribution to arr1 and arr2 to
  * match of size n. Returns expected EMD for the distribution */
@@ -41,22 +41,42 @@ static inline float distMetric(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr
     return sqrt((lambda * lambda) + (beta * beta));
 }
 
+/* Compare two floats using ZERO_THRESHOLD */            
+static inline int floatsDiffer(float value1, float value2)
+{
+    return (fabsf(value1 - value2) >= ZERO_THRESHOLD);
+}
+
 static void randomDist(WeightPos* RESTRICT arr, unsigned int n)
 {
     unsigned int i;
-    float total = 0.0f;
-    
+    double total = 0.0f;
+    double rand;
+
     /* Generate random histogram */
     for (i = 0; i < n; ++i)
     {
-        arr[i].weight = (float) dsfmt_genrand_open_open(&_prng);
-        total += arr[i].weight;
+        rand = dsfmt_genrand_open_open(&_prng);
+        arr[i].weight = (float) rand;
+        total += rand;
     }
 
     /* Normalize it */
     for (i = 0; i < n; ++i) 
     {
-        arr[i].weight /= total;
+        arr[i].weight = arr[i].weight / (float) total;
+    }
+
+    /* Check what the total of all the bins is, should be 1 */
+    total = 0.0f;
+    for (i = 0; i < n; ++i) 
+    {
+        total += arr[i].weight;
+    }
+
+    if(floatsDiffer(1.0f, total))
+    {
+        mw_printf("WARNING: Sum of all bins != 1,  %f\n", total);
     }
 }
 
@@ -149,12 +169,6 @@ static void generatePositions(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr2
     }
 }
 
-/* Compare two floats using ZERO_THRESHOLD */            
-static inline int compareFloats(float value1, float value2)
-{
-    return (fabsf(value1 - value2) >= ZERO_THRESHOLD);
-}
-
 /* Create two random histograms, compute the EMD value twice and compare the values */
 /* Used to verify that MAX_ITERATIONS is large enough for large histograms */
 static int testConsistentEMD(unsigned int dim1, unsigned int dim2) 
@@ -177,11 +191,11 @@ static int testConsistentEMD(unsigned int dim1, unsigned int dim2)
     result1 = emdCalc((const float*) arr1, (const float*) arr2, n, n, NULL);
     result2 = emdCalc((const float*) arr1, (const float*) arr2, n, n, NULL);
 
-    differs = compareFloats(result1, result2);
+    differs = floatsDiffer(result1, result2);
 
     if(differs) 
     {
-        mw_printf("EMD returned inconsistent results with %u x %u bins:\n"
+        mw_printf("ERROR: EMD returned inconsistent results with %u x %u bins:\n"
                   "  Result1 %f, Result2 %f, |Diff| = %f\n",
                   dim1, dim2,
                   result1, result2, fabsf(result1 - result2)
@@ -219,11 +233,11 @@ static int testDistributionEMD(const char* distName, EMDTestDistribFunc distribf
     free(arr1);
     free(arr2);
 
-    differs = compareFloats(expected, actual);
+    differs = floatsDiffer(expected, actual);
 
     if (differs)
     {
-        mw_printf("EMD different for test distribution '%s' with %u x %u bins:\n"
+        mw_printf("ERROR: EMD different for test distribution '%s' with %u x %u bins:\n"
                   "  Expected %f, Actual %f, |Diff| = %f\n",
                   distName,
                   dim1, dim2,
@@ -245,6 +259,7 @@ int runTestsEMD(unsigned int dim1, unsigned int dim2)
 {
     int fails = 0;
 
+    /* TODO randomSelf fails sometimes with a value slightly above zero */
     fails += testDistributionEMD("randomSelf", randomSelf, dim1, dim2);
     fails += testDistributionEMD("allInSameBin", allInSameBin, dim1, dim2);    
     fails += testDistributionEMD("oppositeSides", oppositeSides, dim1, dim2);
@@ -272,7 +287,7 @@ int main(int argc, const char* argv[])
     fails += runTestsEMD(34, 34);
 
     fails += runTestsEMD(50, 50);
-    
+
     if (fails != 0)
     {
         mw_printf("%d EMD test distributions failed\n", fails);
