@@ -242,7 +242,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
         }
         else if (BACKGROUND_PROFILE == SLOW_HERNQUIST)
         {
-            bg_prob += mw_div(rPt.y, powr(rg, ALPHA) * powr(rs, ALPHA_DELTA_3));
+            bg_prob += mw_div(rPt.y, powr(rg, INNERPOWER) * powr(rs, ALPHA_DELTA_3));
             if (AUX_BG_PROFILE)
             {
                 /* Currently not used */
@@ -253,7 +253,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
         }
         else /*Broken Power Law*/
         {
-            const real n = mad((rg >= R0),  2.22, 2.78);
+            const real n = mad((real)(rg >= R0),  (real)ALPHA_DELTA_3, (real)INNERPOWER);
             bg_prob = mad(rPt.y, powr(mw_div((real) SUN_R0, rg), n), bg_prob);
         }
 

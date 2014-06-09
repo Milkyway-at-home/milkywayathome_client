@@ -313,14 +313,14 @@ static int evaluateConstants(lua_State* luaSt)
 
 static const BackgroundParameters defaultBG =
 {
-    /* .alpha   */   1.0,
-    /* .r0      */   0.0,
-    /* .q       */   0.0,
-    /* .delta   */   1.0,
-    /* .epsilon */   0.0,
-    /* .a       */   0.0,
-    /* .b       */   0.0,
-    /* .c       */   0.0
+    /* .innerPower  */   1.0,
+    /* .r0          */   0.0,
+    /* .q           */   0.0,
+    /* .outerPower  */   1.0,
+    /* .epsilon     */   0.0,
+    /* .a           */   0.0,
+    /* .b           */   0.0,
+    /* .c           */   0.0
 };
 
 static int evaluateBackground(lua_State* luaSt)
@@ -329,16 +329,16 @@ static int evaluateBackground(lua_State* luaSt)
     static BackgroundParameters bg = EMPTY_BACKGROUND_PARAMETERS;
     static const MWNamedArg bgArgTable[] =
         {
-            { "alpha",   LUA_TNUMBER, NULL, FALSE, &bg.alpha   },
-            { "r0",      LUA_TNUMBER, NULL, TRUE,  &bg.r0      },
-            { "q",       LUA_TNUMBER, NULL, TRUE,  &bg.q       },
-            { "delta",   LUA_TNUMBER, NULL, FALSE, &bg.delta   },
+            { "innerPower", LUA_TNUMBER, NULL, FALSE, &bg.innerPower    },
+            { "r0",         LUA_TNUMBER, NULL, TRUE,  &bg.r0            },
+            { "q",          LUA_TNUMBER, NULL, TRUE,  &bg.q             },
+            { "outerPower", LUA_TNUMBER, NULL, FALSE, &bg.outerPower    },
 
-            { "epsilon", LUA_TNUMBER, NULL, FALSE, &bg.epsilon },
+            { "epsilon",    LUA_TNUMBER, NULL, FALSE, &bg.epsilon       },
 
-            { "a",       LUA_TNUMBER, NULL, FALSE, &bg.a       },
-            { "b",       LUA_TNUMBER, NULL, FALSE, &bg.b       },
-            { "c",       LUA_TNUMBER, NULL, FALSE, &bg.c       },
+            { "a",          LUA_TNUMBER, NULL, FALSE, &bg.a             },
+            { "b",          LUA_TNUMBER, NULL, FALSE, &bg.b             },
+            { "c",          LUA_TNUMBER, NULL, FALSE, &bg.c             },
             END_MW_NAMED_ARG
         };
 
@@ -395,10 +395,10 @@ static int luaDefaultSetBGStreamParametersFromArguments(lua_State* luaSt)
     lua_setfield(luaSt, bgTable, "epsilon");
 
     lua_pushnumber(luaSt, 1.0);
-    lua_setfield(luaSt, bgTable, "alpha");
+    lua_setfield(luaSt, bgTable, "innerPower");
 
     lua_pushnumber(luaSt, 1.0);
-    lua_setfield(luaSt, bgTable, "delta");
+    lua_setfield(luaSt, bgTable, "outerPower");
 
     lua_pop(luaSt, 1);
 

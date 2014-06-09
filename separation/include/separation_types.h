@@ -117,10 +117,10 @@ typedef struct
 
 typedef struct
 {
-    real alpha;
+    real innerPower;
     real r0;
     real q;
-    real delta;
+    real outerPower;
 
     real epsilon;
 
@@ -140,7 +140,7 @@ typedef struct
     real irv_reff_xr_rp3;
     real gPrime;
     real coeff;
-   //stdev_r is right side stdev for modfit, but is normal stdev (both sides) and is not used otherwise
+    /* stdev_r is right side stdev for modfit, but is normal stdev (both sides) and is not used otherwise */
     real stdev_r;
     real eps;
 } RConsts;
@@ -231,15 +231,14 @@ typedef struct MW_ALIGN_TYPE_V(256)
     int background_profile; /*flag for using different background profiles*/
     int aux_bg_profile;
 
-    real alpha;
-    real delta;
+    real innerPower;
+    real outerPower;
     real alpha_delta3;
     real bg_a, bg_b, bg_c;
 
     int wedge;
     real sun_r0;
     real q;
-//    real coeff;
 
     int modfit;             /*flag for using modified fit*/
 

@@ -190,36 +190,36 @@ static real probabilities_avx_hernquist(const AstronomyParameters* ap,
 
     for (i = 0; i < convolve; i += 4)
     {
-    	//Put r_point and qw_r3_n into RI and QI respectively
+    	/* Put r_point and qw_r3_n into RI and QI respectively */
         RI = _mm256_load_pd(&r_point[i]);
         QI = _mm256_load_pd(&qw_r3_N[i]);
 
-        //Coordinate Transform to Galactic Center XYZ
+        /* Coordinate Transform to Galactic Center XYZ */
         xyz0.d = _mm256_sub_pd(_mm256_mul_pd(RI, COSBL), SUNR0); //X Value
-        //xyz0.d = _mm256_fmadd_pd(RI, COSBL, NSUNR0);
+        /* xyz0.d = _mm256_fmadd_pd(RI, COSBL, NSUNR0); */
 
         _mm256_store_pd(&xs[i], xyz0.d);
 
-        xyz1.d = _mm256_mul_pd(RI, SINCOSBL); //Y Value
+        xyz1.d = _mm256_mul_pd(RI, SINCOSBL); /* Y Value */
         _mm256_store_pd(&ys[i], xyz1.d);
 
-        xyz2.d = _mm256_mul_pd(RI, SINB); //Z Value
-        tmp0.d = _mm256_mul_pd(xyz2.d, QV_RECIP); //Squashed Z
+        xyz2.d = _mm256_mul_pd(RI, SINB); /* Z Value */
+        tmp0.d = _mm256_mul_pd(xyz2.d, QV_RECIP); /* Squashed Z */
 
         _mm256_store_pd(&zs[i], xyz2.d);
 
         //Finish Convert to Galactic Center XYZ
-        xyz0.d = _mm256_mul_pd(xyz0.d, xyz0.d); //X^2
-        xyz1.d = _mm256_mul_pd(xyz1.d, xyz1.d); //Y^2
-        tmp0.d = _mm256_mul_pd(tmp0.d, tmp0.d); //(Z/q)^2 Squishy Squishy
+        xyz0.d = _mm256_mul_pd(xyz0.d, xyz0.d); /* X^2 */
+        xyz1.d = _mm256_mul_pd(xyz1.d, xyz1.d); /* Y^2 */
+        tmp0.d = _mm256_mul_pd(tmp0.d, tmp0.d); /* (Z/q)^2 Squishy Squishy */
 
-        tmp1.d = _mm256_add_pd(xyz0.d, _mm256_add_pd(xyz1.d, tmp0.d)); //Calculate R^2
+        tmp1.d = _mm256_add_pd(xyz0.d, _mm256_add_pd(xyz1.d, tmp0.d)); /* Calculate R^2 */
 
-        PROD.d = _mm256_sqrt_pd(tmp1.d); //Calculate R from R^2
-        tmp2.d = _mm256_add_pd(PROD.d, R0); //Calculate R + R0
+        PROD.d = _mm256_sqrt_pd(tmp1.d); /* Calculate R from R^2 */
+        tmp2.d = _mm256_add_pd(PROD.d, R0); /* Calculate R + R0 */
 
-        PBXV.d = _mm256_div_pd(DONE256, _mm256_mul_pd(PROD.d, _mm256_mul_pd(tmp2.d, _mm256_mul_pd(tmp2.d, tmp2.d)))); //Calculate Hernquist Profile
-        BGP.d  = _mm256_add_pd(BGP.d, _mm256_mul_pd(QI, PBXV.d));  //Add probability for this part to total BGP
+        PBXV.d = _mm256_div_pd(DONE256, _mm256_mul_pd(PROD.d, _mm256_mul_pd(tmp2.d, _mm256_mul_pd(tmp2.d, tmp2.d)))); /* Calculate Hernquist Profile */
+        BGP.d  = _mm256_add_pd(BGP.d, _mm256_mul_pd(QI, PBXV.d));  /* Add probability for this part to total BGP */
     }
 
     BGP.d = _mm256_mul_pd(BGP.d, REF_XR);
@@ -292,11 +292,11 @@ static real probabilities_avx_BPL(const AstronomyParameters* ap,
     const __m256d SUNR0    = _mm256_set1_pd(ap->sun_r0);
     const __m256d R0       = _mm256_set1_pd(ap->r0);
     const __m256d QV_RECIP = _mm256_set1_pd(ap->q_inv);
-    const __m256d INNER    = _mm256_set1_pd(2.78); //Exponent for the inner halo
-    const __m256d OUTER    = _mm256_set1_pd(2.22); //Change in exp value from inner to outer
+    const __m256d INNER    = _mm256_set1_pd(ap->innerPower); /* Exponent for the inner halo */
+    const __m256d OUTER    = _mm256_set1_pd(ap->alpha_delta3); /* Change in exp value from inner to outer */
     __m256d RI, QI;
     ssp_m256 xyz0, xyz1, xyz2, tmp0, tmp1, PROD, PBXV, BGP;
-    //xyz0, 1, 2 = x, y, z
+    /* xyz0, 1, 2 = x, y, z */
     BGP.d = _mm256_setzero_pd();
 
     convolve = ap->convolve;
@@ -304,34 +304,34 @@ static real probabilities_avx_BPL(const AstronomyParameters* ap,
 
     for (i = 0; i < convolve; i += 4)
     {
-    	//Put r_point and qw_r3_n into RI and QI respectively
+    	/* Put r_point and qw_r3_n into RI and QI respectively */
         RI = _mm256_load_pd(&r_point[i]);
         QI = _mm256_load_pd(&qw_r3_N[i]);
 
-        //Coordinate Transform to Galactic Center XYZ
-        xyz0.d = _mm256_sub_pd(_mm256_mul_pd(RI, COSBL), SUNR0); //X Value
+        /* Coordinate Transform to Galactic Center XYZ */
+        xyz0.d = _mm256_sub_pd(_mm256_mul_pd(RI, COSBL), SUNR0); /* X Value */
 
         _mm256_store_pd(&xs[i], xyz0.d);
 
-        xyz1.d = _mm256_mul_pd(RI, SINCOSBL); //Y Value
+        xyz1.d = _mm256_mul_pd(RI, SINCOSBL); /* Y Value */
         _mm256_store_pd(&ys[i], xyz1.d);
 
-        xyz2.d = _mm256_mul_pd(RI, SINB); //Z Value
-        tmp0.d = _mm256_mul_pd(xyz2.d, QV_RECIP); //Squashed Z
+        xyz2.d = _mm256_mul_pd(RI, SINB); /* Z Value */
+        tmp0.d = _mm256_mul_pd(xyz2.d, QV_RECIP); /* Squashed Z */
 
         _mm256_store_pd(&zs[i], xyz2.d);
 
-        //Finish Convert to Galactic Center XYZ
-        xyz0.d = _mm256_mul_pd(xyz0.d, xyz0.d); //X^2
-        xyz1.d = _mm256_mul_pd(xyz1.d, xyz1.d); //Y^2
-        tmp0.d = _mm256_mul_pd(tmp0.d, tmp0.d); //(Z/q)^2 Squishy Squishy
+        /* Finish Convert to Galactic Center XYZ */
+        xyz0.d = _mm256_mul_pd(xyz0.d, xyz0.d); /* X^2 */
+        xyz1.d = _mm256_mul_pd(xyz1.d, xyz1.d); /* Y^2 */
+        tmp0.d = _mm256_mul_pd(tmp0.d, tmp0.d); /* (Z/q)^2 Squishy Squishy */
 
-        tmp1.d = _mm256_add_pd(xyz0.d, _mm256_add_pd(xyz1.d, tmp0.d)); //Calculate R^2
+        tmp1.d = _mm256_add_pd(xyz0.d, _mm256_add_pd(xyz1.d, tmp0.d)); /* Calculate R^2 */ 
 
-        PROD.d = _mm256_sqrt_pd(tmp1.d); //Calculate R from R^2
+        PROD.d = _mm256_sqrt_pd(tmp1.d); /* Calculate R from R^2 */
 
-        PBXV.d = _mm256_add_pd(INNER.d, _mm256_mul_pd(OUTER.d, _mm256_cmp_pd(PROD.d, R0.d, _CMP_GE_OQ)));//Determine exponent
-        BGP.d  = _mm256_add_pd(BGP.d, _mm256_mul_pd(QI.d, _mm256_pow_pd(_mm256_div_pd(SUNR0.d, PROD.d), PBXV.d))); //Calculates Broken Power Law
+        PBXV.d = _mm256_add_pd(INNER.d, _mm256_mul_pd(OUTER.d, _mm256_cmp_pd(PROD.d, R0.d, _CMP_GE_OQ))); /* Determine exponent */
+        BGP.d  = _mm256_add_pd(BGP.d, _mm256_mul_pd(QI.d, _mm256_pow_pd(_mm256_div_pd(SUNR0.d, PROD.d), PBXV.d))); /* Calculates Broken Power Law */
     }
 
     BGP.d = _mm256_mul_pd(BGP.d, REF_XR);
