@@ -284,9 +284,6 @@ int main(int argc, const char* argv[])
     fails += runTestsEMD(11, 11);
     fails += runTestsEMD(11, 34);
     fails += runTestsEMD(34, 11);
-    fails += runTestsEMD(34, 34);
-
-    fails += runTestsEMD(50, 50);
 
     if (fails != 0)
     {
