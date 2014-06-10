@@ -46,7 +46,7 @@ if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
-target_link_libraries(emd_test "${emd_test_link_libs}")
+milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
