@@ -180,6 +180,10 @@ endif()
 option(NBODY
         "Build the n-body code" ON)
 
+option(NBODY_BLENDER_OUTPUT
+        "Builds with the ability to output for use with Blender Visualizer." OFF)
+mark_as_advanced(NBODY_BLENDER_OUTPUT)
+
 cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
                          "DOUBLEPREC" ON)
 mark_as_advanced(NBODY_CRLIBM)

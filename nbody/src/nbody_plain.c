@@ -26,6 +26,10 @@
 #include "nbody_checkpoint.h"
 #include "nbody_grav.h"
 
+#ifdef NBODY_BLENDER_OUTPUT
+  #include "blender_visualizer.h"
+#endif
+
 static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
 {
     double frac = (double) st->step / (double) ctx->nStep;
@@ -124,6 +128,10 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
     advanceVelocities(st, st->nbody, dt);
 
     st->step++;
+    #ifdef NBODY_BLENDER_OUTPUT
+        blenderPrintBodies(st, ctx);
+        printf("Frame: %d\n", (int)(st->step));
+    #endif
 
     return rc;
 }
@@ -136,8 +144,22 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
     if (nbStatusIsFatal(rc))
         return rc;
 
+    #ifdef NBODY_BLENDER_OUTPUT
+        mkdir("./frames", S_IRWXU | S_IRWXG);
+        deleteOldFiles(st);
+        mwvector startCmPos;
+        mwvector perpendicularCmPos;
+        mwvector nextCmPos;
+        nbFindCenterOfMass(&startCmPos, st);
+        perpendicularCmPos=startCmPos;
+    #endif
+
     while (st->step < ctx->nStep)
     {
+        #ifdef NBODY_BLENDER_OUTPUT
+            nbFindCenterOfMass(&nextCmPos, st);
+            blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
+        #endif
         rc |= nbStepSystemPlain(ctx, st);
         if (nbStatusIsFatal(rc))   /* advance N-body system */
             return rc;
@@ -151,6 +173,10 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         nbReportProgress(ctx, st);
         nbUpdateDisplayedBodies(ctx, st);
     }
+    
+    #ifdef NBODY_BLENDER_OUTPUT
+        blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
+    #endif
 
     return nbWriteFinalCheckpoint(ctx, st);
 }
