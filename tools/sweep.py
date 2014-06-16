@@ -9,7 +9,7 @@ import re
 # Ugly script to run a parameter sweep for nbody and one of the existing workunits
 
 # Print debug statements?
-debug = False
+debug = True
 
 # Store all the data for the sweep the directory specificed by argv[1]
 if(len(sys.argv) < 2):
@@ -23,9 +23,9 @@ print("WARNING: This program may take several hours to run, consider using a uti
 
 # Define Constants
 steps = 20
-luaFile = "../nbody/sample_workunits/EMD_10k_isotropic2.lua"
+luaFile = "../nbody/sample_workunits/EMD_20k_isotropic2_custom_histogram.lua"
 sweepName = sys.argv[1]
-histDir = "./" + sweepName + "/hist"
+histDir = "./" + sweepName + "/hist/"
 
 # Create the directory if it doesn't exist
 if not os.path.isdir(histDir):
@@ -36,24 +36,24 @@ if not os.path.isdir(histDir):
 # match the order in the lua file
 params = collections.OrderedDict()
 
-#       NAME                MIN   DEFAULT  MAX
-params["forwardTime"]    = [1.9,  2,       2.1]
-params["reverseRatio"]   = [0.95, 1,       1.05]
-params["radius"]         = [0.9,  1,       1.1]
-params["lightRadius"]    = [0.4,  0.5,     0.6]
-params["mass"]           = [9,    10,      11]
-params["lightMassRatio"] = [0.4,  0.5,     0.6]
+#       NAME               STARTING VALUE
+params["forwardTime"]    = 2
+params["reverseRatio"]   = 1
+params["radius"]         = 1
+params["lightRadius"]    = 0.5
+params["mass"]           = 10
+params["lightMassRatio"] = 0.5
 
 # Return the default params for the run
 def getDefaultParams(params):
     command = []
     for key in params:
-        command += [ str(params[key][1]) ]
+        command += [ str(params[key]) ]
     return command
 
 # Generate reference histogram
 print "Generating reference histogram"
-refHist = histDir + "/ref.hist"
+refHist = histDir + "ref.hist"
 command = ["milkyway_nbody","-e", "0", "-f", luaFile, "-z", refHist, "--disable-opencl", "-i"]
 command += getDefaultParams(params)
 if(debug):
@@ -66,8 +66,8 @@ for key in params:
 
     # Print info about sweep, calculate increment
     print 'Sweeping parameter:', key
-    start = params[key][0]
-    end = params[key][2]
+    start = params[key] * float(0.9)
+    end = params[key] * float(1.1)
     inc = (end - start) / float(steps)
     print start, ':', inc, ':', end
 
@@ -81,7 +81,7 @@ for key in params:
         f.write(str(currentValue) + "\t")
 
         # Save the output to the hist directory 
-        histFile = histDir + "/" + key + "_" + str(currentValue) + ".hist"
+        histFile = histDir + key + "_" + str(currentValue) + ".hist"
         command = ["milkyway_nbody","-e", "0", "-f", luaFile, "-z", histFile, "--disable-opencl", "-i", "-h", refHist]
 
         # Generate the params to pass to the current run
@@ -105,7 +105,7 @@ for key in params:
         
 
         # Do not plot worst case likelihoods
-        if( likelihood < -9999990 ):
+        if( float(likelihood) < -100000 ):
             f.write("#")
 
         f.write(str(likelihood) + "\n")

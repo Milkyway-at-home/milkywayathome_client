@@ -124,6 +124,7 @@ static const Xet_reg_pre gettersHistogramParams[] =
 {
     { "phi" ,        getNumber, offsetof(HistogramParams, phi)         },
     { "theta",       getNumber, offsetof(HistogramParams, theta)       },
+    { "psi",         getNumber, offsetof(HistogramParams, psi)         }.
     { "lambdaStart", getNumber, offsetof(HistogramParams, lambdaStart) },
     { "lambdaEnd",   getNumber, offsetof(HistogramParams, lambdaEnd)   },
     { "lambdaBins",  getNumber, offsetof(HistogramParams, lambdaBins)  },
@@ -137,6 +138,7 @@ static const Xet_reg_pre settersHistogramParams[] =
 {
     { "phi" ,        setNumber, offsetof(HistogramParams, phi)         },
     { "theta",       setNumber, offsetof(HistogramParams, theta)       },
+    { "psi",         setNumber, offsetof(HistogramParams, psi)         },
     { "lambdaStart", setNumber, offsetof(HistogramParams, lambdaStart) },
     { "lambdaEnd",   setNumber, offsetof(HistogramParams, lambdaEnd)   },
     { "lambdaBins",  setNumber, offsetof(HistogramParams, lambdaBins)  },
