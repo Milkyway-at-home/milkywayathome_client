@@ -56,6 +56,7 @@ static int createHistogramParams(lua_State* luaSt)
         {
             { "phi",         LUA_TNUMBER, NULL, TRUE, &hp.phi         },
             { "theta",       LUA_TNUMBER, NULL, TRUE, &hp.theta       },
+            { "psi",         LUA_TNUMBER, NULL, TRUE, &hp.psi         },
             { "lambdaStart", LUA_TNUMBER, NULL, TRUE, &hp.lambdaStart },
             { "lambdaEnd",   LUA_TNUMBER, NULL, TRUE, &hp.lambdaEnd   },
             { "lambdaBins",  LUA_TNUMBER, NULL, TRUE, &hp.lambdaBins  },
