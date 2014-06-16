@@ -507,10 +507,10 @@ char* showHistogramParams(const HistogramParams* hp)
                      "  psi         = %g\n"
                      "  lambdaStart = %g\n"
                      "  lambdaEnd   = %g\n"
-                     "  lambdaBins  = %g\n"
+                     "  lambdaBins  = %u\n"
                      "  betaStart   = %g\n"
                      "  betaEnd     = %g\n"
-                     "  betaBins    = %g\n"
+                     "  betaBins    = %u\n"
                      "};\n",
                      hp->phi,
                      hp->theta,
