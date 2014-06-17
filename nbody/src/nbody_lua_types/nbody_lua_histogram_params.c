@@ -127,10 +127,10 @@ static const Xet_reg_pre gettersHistogramParams[] =
     { "psi",         getNumber, offsetof(HistogramParams, psi)         },
     { "lambdaStart", getNumber, offsetof(HistogramParams, lambdaStart) },
     { "lambdaEnd",   getNumber, offsetof(HistogramParams, lambdaEnd)   },
-    { "lambdaBins",  getNumber, offsetof(HistogramParams, lambdaBins)  },
+    { "lambdaBins",  getUInt,   offsetof(HistogramParams, lambdaBins)  },
     { "betaStart",   getNumber, offsetof(HistogramParams, betaStart)   },
     { "betaEnd",     getNumber, offsetof(HistogramParams, betaEnd)     },
-    { "betaBins",    getNumber, offsetof(HistogramParams, betaBins)    },
+    { "betaBins",    getUInt,   offsetof(HistogramParams, betaBins)    },
     { NULL, NULL, 0 }
 };
 
@@ -141,10 +141,10 @@ static const Xet_reg_pre settersHistogramParams[] =
     { "psi",         setNumber, offsetof(HistogramParams, psi)         },
     { "lambdaStart", setNumber, offsetof(HistogramParams, lambdaStart) },
     { "lambdaEnd",   setNumber, offsetof(HistogramParams, lambdaEnd)   },
-    { "lambdaBins",  setNumber, offsetof(HistogramParams, lambdaBins)  },
+    { "lambdaBins",  setUInt,   offsetof(HistogramParams, lambdaBins)  },
     { "betaStart",   setNumber, offsetof(HistogramParams, betaStart)   },
     { "betaEnd",     setNumber, offsetof(HistogramParams, betaEnd)     },
-    { "betaBins",    setNumber, offsetof(HistogramParams, betaBins)    },
+    { "betaBins",    setUInt,   offsetof(HistogramParams, betaBins)    },
     { NULL, NULL, 0 }
 };
 
