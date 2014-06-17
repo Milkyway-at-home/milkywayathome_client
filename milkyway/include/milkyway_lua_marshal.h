@@ -79,6 +79,9 @@ int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable);
 int getInt(lua_State* luaSt, void* v);
 int setInt(lua_State* luaSt, void* v);
 
+int getUInt(lua_State* luaSt, void* v);
+int setUInt(lua_State* luaSt, void* v);
+
 int getLong(lua_State* luaSt, void* v);
 int setLong(lua_State* luaSt, void* v);
 

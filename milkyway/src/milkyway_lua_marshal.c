@@ -208,6 +208,18 @@ int setInt(lua_State* luaSt, void* v)
     return 0;
 }
 
+int getUInt(lua_State* luaSt, void* v)
+{
+    lua_pushnumber(luaSt, *(unsigned int*) v);
+    return 1;
+}
+
+int setUInt(lua_State* luaSt, void* v)
+{
+    *(unsigned int*) v = luaL_checkint(luaSt, 3);
+    return 0;
+}
+
 int getLong(lua_State* luaSt, void* v)
 {
     lua_pushinteger(luaSt, *(long*) v);
