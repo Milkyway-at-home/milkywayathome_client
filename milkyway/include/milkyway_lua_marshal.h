@@ -33,7 +33,10 @@
 /* All Lua allocations will be aligned to this */
 #define MW_LUA_ALIGN 16
 
-
+/* Numeric types for userDataTypeName in MWNamedArg */
+#define INT_TYPE "INT"
+#define UINT_TYPE "UINT"
+#define REAL_TYPE "REAL"
 
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 

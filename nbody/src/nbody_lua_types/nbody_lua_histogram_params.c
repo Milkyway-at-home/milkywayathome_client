@@ -54,15 +54,15 @@ static int createHistogramParams(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "phi",         LUA_TNUMBER, NULL, TRUE, &hp.phi         },
-            { "theta",       LUA_TNUMBER, NULL, TRUE, &hp.theta       },
-            { "psi",         LUA_TNUMBER, NULL, TRUE, &hp.psi         },
-            { "lambdaStart", LUA_TNUMBER, NULL, TRUE, &hp.lambdaStart },
-            { "lambdaEnd",   LUA_TNUMBER, NULL, TRUE, &hp.lambdaEnd   },
-            { "lambdaBins",  LUA_TNUMBER, NULL, TRUE, &hp.lambdaBins  },
-            { "betaStart",   LUA_TNUMBER, NULL, TRUE, &hp.betaStart   },
-            { "betaEnd",     LUA_TNUMBER, NULL, TRUE, &hp.betaEnd     },
-            { "betaBins",    LUA_TNUMBER, NULL, TRUE, &hp.betaBins    },
+            { "phi",         LUA_TNUMBER, REAL_TYPE, TRUE, &hp.phi         },
+            { "theta",       LUA_TNUMBER, REAL_TYPE, TRUE, &hp.theta       },
+            { "psi",         LUA_TNUMBER, REAL_TYPE, TRUE, &hp.psi         },
+            { "lambdaStart", LUA_TNUMBER, REAL_TYPE, TRUE, &hp.lambdaStart },
+            { "lambdaEnd",   LUA_TNUMBER, REAL_TYPE, TRUE, &hp.lambdaEnd   },
+            { "lambdaBins",  LUA_TNUMBER, UINT_TYPE, TRUE, &hp.lambdaBins  },
+            { "betaStart",   LUA_TNUMBER, REAL_TYPE, TRUE, &hp.betaStart   },
+            { "betaEnd",     LUA_TNUMBER, REAL_TYPE, TRUE, &hp.betaEnd     },
+            { "betaBins",    LUA_TNUMBER, UINT_TYPE, TRUE, &hp.betaBins    },
             END_MW_NAMED_ARG
         };
 
