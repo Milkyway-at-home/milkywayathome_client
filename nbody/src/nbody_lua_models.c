@@ -109,6 +109,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     registerGenerateNFW(luaSt);
     registerGenerateHernq(luaSt);
     registerGenerateIsotropic(luaSt);
+    registerGenerateBody(luaSt);
 
     /* Create a table of predefined models, so we can use them like
      * predefinedModels.plummer() etc. */
@@ -119,6 +120,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     setModelTableItem(luaSt, table, nbGenerateNFW, "nfw");
     setModelTableItem(luaSt, table, nbGenerateHernq, "hernq");
     setModelTableItem(luaSt, table, nbGenerateIsotropic, "isotropic");
+    setModelTableItem(luaSt, table, nbGenerateBody, "body");
     /*
       setModelTableItem(luaSt, table, generateKing, "king");
       setModelTableItem(luaSt, table, generateDehnen, "dehnen");

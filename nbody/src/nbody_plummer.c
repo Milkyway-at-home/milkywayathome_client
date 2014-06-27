@@ -185,8 +185,37 @@ int nbGeneratePlummer(lua_State* luaSt)
                                  *position, *velocity, radiusScale);
 }
 
+int nbGenerateBody(lua_State* luaSt)
+{
+    static mwvector* position = NULL;
+    static mwvector* velocity = NULL;
+    static mwbool ignore;
+    static real mass = 0.0;
+    static const MWNamedArg argTable[]=
+    {
+        { "mass", LUA_TNUMBER, NULL, TRUE, &mass},
+        { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE, &position},
+        { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE, &velocity},
+        { "ignore", LUA_TBOOLEAN, NULL, FALSE, &ignore},
+        END_MW_NAMED_ARG
+    };
+    handleNamedArgumentTable(luaSt, argTable, 1);
+    Body b;
+    b.bodynode.type = BODY(ignore);    /* Same for all in the model */
+    b.bodynode.mass = mass;
+    b.bodynode.pos=*position;
+    b.vel=*velocity;
+    pushBody(luaSt, &b);
+    return 1;
+    
+}
+
 void registerGeneratePlummer(lua_State* luaSt)
 {
     lua_register(luaSt, "generatePlummer", nbGeneratePlummer);
+}
+void registerGenerateBody(lua_State* luaSt)
+{
+    lua_register(luaSt, "generateBody", nbGenerateBody);
 }
 

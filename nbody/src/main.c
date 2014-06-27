@@ -215,7 +215,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             POPT_ARG_STRING, &nbf.inputFile,
             0, "Input Lua file to read", NULL
         },
-
+        
         {
             "histoout-file", 'z',
             POPT_ARG_STRING, &nbf.histoutFileName,
@@ -295,7 +295,18 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             POPT_ARG_NONE, &nbf.debugLuaLibs,
             0, "Load extra Lua libraries not normally allowed (e.g. io) ", NULL
         },
-
+        
+        {
+            "First", 'F',
+            POPT_ARG_NONE, &nbf.firstrun,
+            0, "First run of a multi-stage simulation", NULL
+        },
+        
+        {
+            "Number", 'N',
+            POPT_ARG_INT, &nbf.number,
+            0, "Number of bodies for first run", NULL
+        },
         {
             "visualizer", 'u',
             POPT_ARG_NONE, &nbf.visualizer,
@@ -514,6 +525,7 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->forwardedArgs);
     free(nbf->graphicsBin);
     free(nbf->visArgs);
+    //free(nbf->number_of_dwarves);
 }
 
 static int nbSetNumThreads(int numThreads)

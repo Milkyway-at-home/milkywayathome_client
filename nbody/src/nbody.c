@@ -19,7 +19,6 @@
  * You should have received a copy of the GNU General Public License
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "nbody.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
@@ -31,6 +30,7 @@
 #include "nbody_plain.h"
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
+
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -303,7 +303,6 @@ int nbMain(const NBodyFlags* nbf)
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
     CLRequest clr;
-
     NBodyStatus rc = NBODY_SUCCESS;
     double ts = 0.0, te = 0.0;
 
@@ -395,8 +394,65 @@ int nbMain(const NBodyFlags* nbf)
             printf("<run_time> %f </run_time>\n", te - ts);
         }
     }
+    
 
     rc = nbReportResults(ctx, st, nbf);
+    if (nbf->firstrun){
+        FILE *outfile;
+        outfile=fopen("Temporary.lua", "w");
+        fprintf(outfile, "n=");
+        fprintf(outfile, "%u", nbf->number);
+        fprintf(outfile, "\nnbodies={}\nx0={");
+        for (int i=0; i<nbf->number; ++i){
+            mwvector position=st->bodytab[i].bodynode.pos;
+            fprintf(outfile,"%lf",position.x);
+            if (i!=(nbf->number-1)){
+                fprintf(outfile, ",");
+            }
+        }
+        fprintf(outfile, "}\ny0={");
+        for (int i=0; i<nbf->number; ++i){
+            mwvector position=st->bodytab[i].bodynode.pos;
+            fprintf(outfile,"%lf",position.y);
+            if (i!=(nbf->number-1)){
+                fprintf(outfile, ",");
+            }
+        }
+        fprintf(outfile, "}\nz0={");
+        for (int i=0; i<nbf->number; ++i){
+            mwvector position=st->bodytab[i].bodynode.pos;
+            fprintf(outfile,"%lf",position.z);
+            if (i!=(nbf->number-1)){
+                fprintf(outfile, ",");
+            }
+        }
+        fprintf(outfile, "}\ndx0={");
+        for (int i=0; i<nbf->number; ++i){
+            mwvector velocity=st->bodytab[i].vel;
+            fprintf(outfile,"%lf",velocity.x);
+            if (i!=(nbf->number-1)){
+                fprintf(outfile, ",");
+            }
+        }
+        fprintf(outfile, "}\ndy0={");
+        for (int i=0; i<nbf->number; ++i){
+            mwvector velocity=st->bodytab[i].vel;
+            fprintf(outfile,"%lf",velocity.y);
+            if (i!=(nbf->number-1)){
+                fprintf(outfile, ",");
+            }
+        }
+        fprintf(outfile, "}\ndz0={");
+        for (int i=0; i<nbf->number; ++i){
+            mwvector velocity=st->bodytab[i].vel;
+            fprintf(outfile,"%lf",velocity.z);
+            if (i!=(nbf->number-1)){
+                fprintf(outfile, ",");
+            }
+        }
+        fprintf(outfile, "}\nfor i=1,n do\ntemp=predefinedModels.body{\nmass=0.01,\nposition=Vector.create(x0[i],y0[i],z0[i]),\nvelocity=Vector.create(dx0[i],dy0[i],dz0[i]),\nignore=true\n}\nnbodies[i]=temp\nend\nnbodies[0]=n\n\nreturn(nbodies)");
+        fclose(outfile);
+    }
 
     destroyNBodyState(st);
 
