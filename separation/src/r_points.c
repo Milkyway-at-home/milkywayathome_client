@@ -120,11 +120,12 @@ RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
         const real alpha = 0.52;
         const real beta = 12.0;
         const real gam = 0.76;
-
-        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
-        stdev_o = 0.5 * (stdev_l + rc.stdev_r);
-    
+        
         real tempr = distance_magnitude(rc.gPrime);
+
+
+        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - tempr)) + gam;
+        stdev_o = 0.5 * (stdev_l + rc.stdev_r);
 
         //Curve Fit Parameters (un-normalized)
         //Only works for 0 < r < 80 kpc
@@ -163,7 +164,10 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
         const real beta = 12.0;
         const real gam = 0.76;
 
-        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
+        real tempr = distance_magnitude(rc.gPrime);
+
+
+        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - tempr)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
 
         real tempr = distance_magnitude(rc.gPrime);
