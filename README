@@ -150,3 +150,8 @@ tarballs if git and xz are installed and found.
   (/MT) for the builds of the various libraries
 
 
+The "server" folder contains code for the nbody work generator.
+
+The bin folder contains lua files that have been modified to work with multiple dwarf galaxies
+
+
