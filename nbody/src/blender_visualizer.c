@@ -65,13 +65,25 @@ NBodyStatus deleteOldFiles(const NBodyState* st)
     if (nbody != 1) /* Particle sim */
     {
         FILE *f = fopen("blender_event_record.txt", "w");
+        if(!f)
+        {
+            return NBODY_ERROR;
+        }
         fclose(f);
         f = fopen("blender_misc_record.txt", "w");
+        if(!f)
+        {
+            return NBODY_ERROR;
+        }
         fclose(f);
     }
     else            /* Orbit sim */
     {
         FILE *f = fopen("blender_orbit_record.txt", "w");
+        if(!f)
+        {
+            return NBODY_ERROR;
+        }
         fclose(f);
     }
     return NBODY_SUCCESS;
@@ -94,9 +106,19 @@ NBodyStatus blenderPrintBodies(const NBodyState* st, const NBodyCtx* ctx)
         char filename[19] = "frames/frame_";
         appendFileNum(filename, st->step);
         f = fopen(filename, "w"); /* We are simulating the particles, put this in the right file */
+        if(!f)
+        {
+            return NBODY_ERROR;
+        }
     }
     else
+    {
         f = fopen("blender_orbit_record.txt", "a"); /* We are simulating the orbit instead, which is a one-particle simulation */
+        if(!f)
+        {
+            return NBODY_ERROR;
+        }
+    }
     for (int i = 0; i < nbody; i++)
     {
         b = &st->bodytab[i];
@@ -116,11 +138,19 @@ NBodyStatus blenderPrintCOM(const NBodyState* st)
     scene_t* scene = st->scene;
 
     if (!scene)
+    {
         return NBODY_SUCCESS;
+    }
 
     if (nbFindCenterOfMass(&cmPos, st)) 
+    {
         return NBODY_ERROR;
+    }
     FILE *f = fopen("blender_event_record.txt", "a");
+    if(!f)
+    {
+        return NBODY_ERROR;
+    }
     float x = (float) X(cmPos);
     float y = (float) Y(cmPos);
     float z = (float) Z(cmPos);
@@ -134,9 +164,15 @@ NBodyStatus blenderPrintMisc(const NBodyState* st, const NBodyCtx* ctx, mwvector
 {
     /* This is the orbit sim (one particle), so the particle sim will have the misc data covered. */
     if (st->nbody == 1) 
+    {
         return NBODY_SUCCESS;
+    }
 
     FILE *f = fopen("blender_misc_record.txt", "a");
+    if(!f)
+    {
+        return NBODY_ERROR;
+    }
 
     /* Number of particles, number of frames, evolve time */
     fprintf(f,"%d\n%d\n%f\n", st->nbody, st->step, ctx->timeEvolve);
