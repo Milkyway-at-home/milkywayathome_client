@@ -38,6 +38,7 @@ extern "C" {
 typedef struct
 {
     char* inputFile;
+    char* inputFile2;
     char* outFileName;
     char* checkpointFileName;
     char* histogramFileName;
@@ -45,14 +46,15 @@ typedef struct
     char* matchHistogram;   /* Just match this histogram to other histogram, no simulation */
     char* graphicsBin;
     char* visArgs;
+    
 
-    const char** forwardedArgs;
-    unsigned int numForwardedArgs;
+    const char** forwardedArgs;    unsigned int numForwardedArgs;
 
     int setSeed;  /* If the seed was specified or not */
     uint32_t seed;   /* Seed value */
 
     int numThreads;
+    int number;
 
     time_t checkpointPeriod;
     unsigned int platform;
@@ -67,6 +69,7 @@ typedef struct
     int printHistogram;  /* Print histogram at end */
     int outputBinary;
     int ignoreCheckpoint;
+    int firstrun;
 
     int debugLuaLibs;   /* Open IO libraries etc. */
     int noCL;
