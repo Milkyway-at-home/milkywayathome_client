@@ -145,7 +145,10 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         return rc;
 
     #ifdef NBODY_BLENDER_OUTPUT
-        mkdir("./frames", S_IRWXU | S_IRWXG);
+        if(mkdir("./frames", S_IRWXU | S_IRWXG) < 0)
+        {
+          return NBODY_ERROR;
+        }
         deleteOldFiles(st);
         mwvector startCmPos;
         mwvector perpendicularCmPos;
