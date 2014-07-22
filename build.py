@@ -19,8 +19,8 @@ if len(sys.argv) != 3:
     exit(1)
 
 # Make sure os and architecture are valid
-os  = sys.argv[2]
-arch = sys.argv[3]
+os  = sys.argv[1]
+arch = sys.argv[2]
 assert os in ["win", "linux", "mac"], "ERROR: Unknown OS " + os
 assert arch in ["32", "64"], "ERROR: Unknown arch " + bit 
 
