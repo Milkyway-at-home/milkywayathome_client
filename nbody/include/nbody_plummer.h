@@ -29,6 +29,8 @@ extern "C" {
 
 int nbGeneratePlummer(lua_State* luaSt);
 void registerGeneratePlummer(lua_State* luaSt);
+    int nbGenerateBody(lua_State* luaSt);
+    void registerGenerateBody(lua_State* luaSt);
 
 #ifdef __cplusplus
 }
