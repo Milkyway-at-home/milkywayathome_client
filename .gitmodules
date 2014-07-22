@@ -12,4 +12,4 @@
 	ignore = dirty
 [submodule "mwtao/tao"]
 	path = mwtao/tao
-	url = git://github.com/travisdesell/tao.git
+	url = git://github.com/rolandjudd/tao.git
