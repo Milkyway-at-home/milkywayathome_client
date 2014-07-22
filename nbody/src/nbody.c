@@ -213,7 +213,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     NBodyLikelihoodMethod method;
 
     /* The likelihood only means something when matching a histogram */
-    mwbool calculateLikelihood = (nbf->histogramFileName != NULL);
+    mwbool calculateLikelihood = (nbf->histogramFileName != NULL && !nbf->firstrun);
 
     if (nbf->outFileName)
     {
@@ -295,6 +295,71 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     return NBODY_SUCCESS;
 }
 
+void write_lua_file(NBodyState* st){
+    FILE *outfile;
+    outfile=fopen("Temporary.lua", "w");
+    fprintf(outfile, "n=");
+    fprintf(outfile, "%u", st->nbody);
+    fprintf(outfile, "\nnbodies={}\nx0={");
+    for (int i=0; i<st->nbody; ++i){
+        mwvector position=st->bodytab[i].bodynode.pos;
+        fprintf(outfile,"%lf",position.x);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile, ",");
+        }
+    }
+    fprintf(outfile, "}\ny0={");
+    for (int i=0; i<st->nbody; ++i){
+        mwvector position=st->bodytab[i].bodynode.pos;
+        fprintf(outfile,"%lf",position.y);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile, ",");
+        }
+    }
+    fprintf(outfile, "}\nz0={");
+    for (int i=0; i<st->nbody; ++i){
+        mwvector position=st->bodytab[i].bodynode.pos;
+        fprintf(outfile,"%lf",position.z);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile, ",");
+        }
+    }
+    fprintf(outfile, "}\ndx0={");
+    for (int i=0; i<st->nbody; ++i){
+        mwvector velocity=st->bodytab[i].vel;
+        fprintf(outfile,"%lf",velocity.x);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile, ",");
+        }
+    }
+    fprintf(outfile, "}\ndy0={");
+    for (int i=0; i<st->nbody; ++i){
+        mwvector velocity=st->bodytab[i].vel;
+        fprintf(outfile,"%lf",velocity.y);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile, ",");
+        }
+    }
+    fprintf(outfile, "}\ndz0={");
+    for (int i=0; i<st->nbody; ++i){
+        mwvector velocity=st->bodytab[i].vel;
+        fprintf(outfile,"%lf",velocity.z);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile, ",");
+        }
+    }
+    fprintf(outfile, "}\nmass={");
+    for (int i=0; i<st->nbody;++i){
+        fprintf(outfile,"%lf",st->bodytab[i].bodynode.mass);
+        if (i!=(st->nbody-1)){
+            fprintf(outfile,",");
+        }
+    }
+    fprintf(outfile, "}\nfor i=1,n do\ntemp=predefinedModels.body{\nmass=mass[i],\nposition=Vector.create(x0[i],y0[i],z0[i]),\nvelocity=Vector.create(dx0[i],dy0[i],dz0[i]),\nignore=true\n}\nnbodies[i]=temp\nend\nnbodies[0]=n\n\nreturn(nbodies)");
+    fclose(outfile);
+
+}
+
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
 
@@ -334,6 +399,10 @@ int nbMain(const NBodyFlags* nbf)
 
     nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     nbSetStateFromFlags(st, nbf);
+    //mw_printf("%i\n", st->nbody);
+    //mw_printf("%s\n", nbf->inputFile);
+                              
+                              
 
     if (NBODY_OPENCL && !nbf->noCL)
     {
@@ -398,61 +467,9 @@ int nbMain(const NBodyFlags* nbf)
 
     rc = nbReportResults(ctx, st, nbf);
     if (nbf->firstrun){
-        FILE *outfile;
-        outfile=fopen("Temporary.lua", "w");
-        fprintf(outfile, "n=");
-        fprintf(outfile, "%u", nbf->number);
-        fprintf(outfile, "\nnbodies={}\nx0={");
-        for (int i=0; i<nbf->number; ++i){
-            mwvector position=st->bodytab[i].bodynode.pos;
-            fprintf(outfile,"%lf",position.x);
-            if (i!=(nbf->number-1)){
-                fprintf(outfile, ",");
-            }
-        }
-        fprintf(outfile, "}\ny0={");
-        for (int i=0; i<nbf->number; ++i){
-            mwvector position=st->bodytab[i].bodynode.pos;
-            fprintf(outfile,"%lf",position.y);
-            if (i!=(nbf->number-1)){
-                fprintf(outfile, ",");
-            }
-        }
-        fprintf(outfile, "}\nz0={");
-        for (int i=0; i<nbf->number; ++i){
-            mwvector position=st->bodytab[i].bodynode.pos;
-            fprintf(outfile,"%lf",position.z);
-            if (i!=(nbf->number-1)){
-                fprintf(outfile, ",");
-            }
-        }
-        fprintf(outfile, "}\ndx0={");
-        for (int i=0; i<nbf->number; ++i){
-            mwvector velocity=st->bodytab[i].vel;
-            fprintf(outfile,"%lf",velocity.x);
-            if (i!=(nbf->number-1)){
-                fprintf(outfile, ",");
-            }
-        }
-        fprintf(outfile, "}\ndy0={");
-        for (int i=0; i<nbf->number; ++i){
-            mwvector velocity=st->bodytab[i].vel;
-            fprintf(outfile,"%lf",velocity.y);
-            if (i!=(nbf->number-1)){
-                fprintf(outfile, ",");
-            }
-        }
-        fprintf(outfile, "}\ndz0={");
-        for (int i=0; i<nbf->number; ++i){
-            mwvector velocity=st->bodytab[i].vel;
-            fprintf(outfile,"%lf",velocity.z);
-            if (i!=(nbf->number-1)){
-                fprintf(outfile, ",");
-            }
-        }
-        fprintf(outfile, "}\nfor i=1,n do\ntemp=predefinedModels.body{\nmass=0.01,\nposition=Vector.create(x0[i],y0[i],z0[i]),\nvelocity=Vector.create(dx0[i],dy0[i],dz0[i]),\nignore=true\n}\nnbodies[i]=temp\nend\nnbodies[0]=n\n\nreturn(nbodies)");
-        fclose(outfile);
+        write_lua_file(st);
     }
+
 
     destroyNBodyState(st);
 

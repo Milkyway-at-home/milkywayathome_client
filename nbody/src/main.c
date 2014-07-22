@@ -301,11 +301,10 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             POPT_ARG_NONE, &nbf.firstrun,
             0, "First run of a multi-stage simulation", NULL
         },
-        
-        {
-            "Number", 'N',
-            POPT_ARG_INT, &nbf.number,
-            0, "Number of bodies for first run", NULL
+                {
+            "Input", 'I',
+            POPT_ARG_STRING, &nbf.inputFile2,
+            0, "Secondary Lua file used in a two-stage simulation", NULL
         },
         {
             "visualizer", 'u',
@@ -472,6 +471,13 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         poptFreeContext(context);
         return TRUE;
     }
+    
+    if(nbf.firstrun && !nbf.inputFile2)
+    {
+        mw_printf("Two-stage run requires a second input file\n");
+        poptFreeContext(context);
+        return TRUE;
+    }
 
     nbf.setSeed = !!(argRead & SEED_ARGUMENT);
 
@@ -628,8 +634,27 @@ int main(int argc, const char* argv[])
     }
     else
     {
+        int multi_stage=0;
+        if (nbf.firstrun){
+            multi_stage=1;
+            int changed_visualizer=0;
+            char* temp=nbf.inputFile;
+            if (nbf.visualizer){
+                nbf.visualizer=0;
+                changed_visualizer=1;
+            }
+            nbf.inputFile=nbf.inputFile2;
+            rc=nbMain(&nbf);
+            mw_remove(nbf.checkpointFileName);
+            nbf.firstrun=0;
+            nbf.inputFile=temp;
+            if(changed_visualizer) nbf.visualizer=1;
+        }
         rc = nbMain(&nbf);
         rc = nbStatusToRC(rc);
+        if (multi_stage){
+            remove("Temporary.lua");
+        }
 
         if (!nbf.noCleanCheckpoint)
         {
