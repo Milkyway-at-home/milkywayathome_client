@@ -6,12 +6,15 @@ import subprocess
 
 # Usage
 def usage():
-    print "Usage: python build.py (win,linux,mac) (32|64)"
+    print("Usage: python build.py (win,linux,mac) (32|64)")
 
 # Simple wrapper function
 def execute(args):
     proc = subprocess.Popen(args, shell=False)
     proc.communicate()
+    if proc.returncode != 0:
+        print("ERROR: \"" + " ".join(args) + "\" exited with a non-zero return code")
+        exit(1)
 
 # Check correct number of args
 if len(sys.argv) != 3:
