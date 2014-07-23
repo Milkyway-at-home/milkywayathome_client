@@ -27,3 +27,7 @@ assert arch in ["32", "64"], "ERROR: Unknown arch " + bit
 if os == "linux":
     execute(["cmake", "."])
     execute(["make"])
+
+if os == "win":
+    execute(["cmake", ".". "-G", "MinGW Makefiles"])
+    execute(["mingw32-make"])
