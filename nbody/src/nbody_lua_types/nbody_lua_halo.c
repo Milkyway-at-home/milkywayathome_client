@@ -42,6 +42,7 @@ static const MWEnumAssociation haloOptions[] =
     { "logarithmic", LogarithmicHalo },
     { "nfw",         NFWHalo,        },
     { "triaxial",    TriaxialHalo,   },
+    { "caustic",     CausticHalo,    },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -102,6 +103,20 @@ static int createNFWHalo(lua_State* luaSt)
     return createHalo(luaSt, argTable, &h);
 }
 
+static int createCausticHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "vhalo",       LUA_TNUMBER, NULL, TRUE, &h.vhalo      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = CausticHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
 static int toStringHalo(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
@@ -140,8 +155,9 @@ static const luaL_reg metaMethodsHalo[] =
 static const luaL_reg methodsHalo[] =
 {
     { "logarithmic", createLogarithmicHalo },
-    { "nfw",         createNFWHalo },
-    { "triaxial",    createTriaxialHalo },
+    { "nfw",         createNFWHalo         },
+    { "triaxial",    createTriaxialHalo    },
+    { "caustic",     createCausticHalo     },
     { NULL, NULL }
 };
 
@@ -196,6 +212,7 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createLogarithmicHalo, "logarithmic");
     setModelTableItem(luaSt, table, createNFWHalo, "nfw");
     setModelTableItem(luaSt, table, createTriaxialHalo, "triaxial");
+    setModelTableItem(luaSt, table, createCausticHalo, "caustic");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

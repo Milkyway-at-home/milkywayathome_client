@@ -122,7 +122,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody.c
                   ${NBODY_SRC_DIR}/nbody_plain.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
-		  ${NBODY_SRC_DIR}/nbody_isotropic.c
+		              ${NBODY_SRC_DIR}/nbody_isotropic.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_nfw.c
                   ${NBODY_SRC_DIR}/nbody_hernq.c
@@ -134,8 +134,10 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_util.c
                   ${NBODY_SRC_DIR}/nbody_emd.c
                   ${NBODY_SRC_DIR}/nbody_mass.c
-		  ${NBODY_SRC_DIR}/nbody_likelihood.c
-		  ${NBODY_SRC_DIR}/nbody_histogram.c)
+                  ${NBODY_SRC_DIR}/nbody_likelihood.c
+                  ${NBODY_SRC_DIR}/nbody_histogram.c
+                  ${NBODY_SRC_DIR}/nbody_caustic.c
+                  ${NBODY_SRC_DIR}/blender_visualizer.c)
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
@@ -146,7 +148,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
-		      ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
+		                  ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
                       ${NBODY_INCLUDE_DIR}/nbody_hernq.h
@@ -163,8 +165,11 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_graphics.h
                       ${NBODY_INCLUDE_DIR}/nbody_emd.h
                       ${NBODY_INCLUDE_DIR}/nbody_mass.h
-		      ${NBODY_INCLUDE_DIR}/nbody_likelihood.h
-		      ${NBODY_INCLUDE_DIR}/nbody_histogram.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_likelihood.h
+                      ${NBODY_INCLUDE_DIR}/nbody_histogram.h
+                      ${NBODY_INCLUDE_DIR}/nbody_caustic.h
+                      ${NBODY_INCLUDE_DIR}/blender_visualizer.h)
+                      
 
 
 if(NBODY_OPENCL)
@@ -247,6 +252,10 @@ endif()
 #
 
 set(nbody_link_libs )
+
+if(NBODY_BLENDER_OUTPUT)
+  add_definitions("-DNBODY_BLENDER_OUTPUT")
+endif()
 
 if(NBODY_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})

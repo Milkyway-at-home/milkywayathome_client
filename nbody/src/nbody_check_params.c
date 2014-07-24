@@ -89,7 +89,7 @@ mwbool checkHaloConstants(Halo* h)
     real phi, cp, cps, sp, sps;
     real qxs, qys;
 
-    /* Common to all 3 models */
+    /* Common to all 4 models */
     if (!isfinite(h->vhalo) || mwCheckNormalPosNum(h->scaleLength))
         return invalidHaloWarning(h->type);
 
@@ -126,6 +126,9 @@ mwbool checkHaloConstants(Halo* h)
 
             /* 2 * sin(x) * cos(x) == sin(2 * x) */
             h->c3 = mw_sin(2.0 * phi) * ((qys - qxs) / (qxs * qys));
+            break;
+
+        case CausticHalo:
             break;
 
         case InvalidHalo:

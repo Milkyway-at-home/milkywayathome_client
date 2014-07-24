@@ -21,6 +21,7 @@
 #include "nbody_priv.h"
 #include "nbody_potential.h"
 #include "milkyway_util.h"
+#include "nbody_caustic.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -120,7 +121,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
     const real r = mw_absv(pos);
-
+    /*Calculate the Disk Accelerations*/
     switch (pot->disk.type)
     {
         case ExponentialDisk:
@@ -133,7 +134,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         default:
             mw_fail("Invalid disk type in external acceleration\n");
     }
-
+    /*Calculate the Halo Accelerations*/
     switch (pot->halo.type)
     {
         case LogarithmicHalo:
@@ -145,15 +146,31 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         case TriaxialHalo:
             acctmp = triaxialHaloAccel(&pot->halo, pos, r);
             break;
+        case CausticHalo:
+            acctmp = causticHaloAccel(&pot->halo, pos, r);
+            break;
         case InvalidHalo:
         default:
             mw_fail("Invalid halo type in external acceleration\n");
     }
 
     mw_incaddv(acc, acctmp);
+    /*Calculate the Bulge Accelerations*/
     acctmp = sphericalAccel(&pot->sphere[0], pos, r);
     mw_incaddv(acc, acctmp);
 
     return acc;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
