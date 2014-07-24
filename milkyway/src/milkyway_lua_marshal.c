@@ -208,6 +208,18 @@ int setInt(lua_State* luaSt, void* v)
     return 0;
 }
 
+int getUInt(lua_State* luaSt, void* v)
+{
+    lua_pushnumber(luaSt, *(unsigned int*) v);
+    return 1;
+}
+
+int setUInt(lua_State* luaSt, void* v)
+{
+    *(unsigned int*) v = luaL_checkint(luaSt, 3);
+    return 0;
+}
+
 int getLong(lua_State* luaSt, void* v)
 {
     lua_pushinteger(luaSt, *(long*) v);
@@ -464,12 +476,56 @@ int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* nam
     return rc;
 }
 
-static void setValueFromType(lua_State* luaSt, void* v, int type, int idx)
+
+/* LUA_TNUMBER can be marshalled to multiple c data types */
+static void setNumberFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
 {
+    const char* userDataTypeName = p->userDataTypeName;
+    void* v = p->value;
+
+    /* Check if the user specified a numeric type */
+    if(userDataTypeName)
+    {
+        /* Integer */
+        if(strcmp(INT_TYPE, userDataTypeName) == 0)
+        {
+            *(int*) v = (int) lua_tonumber(luaSt, idx);
+            return;
+        }
+
+        /* Unsigned Integer */
+        if(strcmp(UINT_TYPE, userDataTypeName) == 0)
+        {        
+            *(unsigned int*) v = (unsigned int) lua_tonumber(luaSt, idx);
+            return;
+        }
+
+        /* Double or Float */
+        if(strcmp(REAL_TYPE, userDataTypeName) == 0)
+        {
+            *(real*) v = (real) lua_tonumber(luaSt, idx);
+            return;
+        }
+
+        mw_panic("Unknown userDataTypeName (%s) specified in MWNamedArg %s\n", userDataTypeName, p->name);
+        
+    }
+    
+    /* If userDataTypeName is NULL, the default data type is real */
+    *(real*) v = (real) lua_tonumber(luaSt, idx);
+    return;
+}
+    
+
+static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
+{
+    void* v = p->value;
+    int type = p->type;
+
     switch (type)
     {
-        case LUA_TNUMBER:
-            *(real*) v = (real) lua_tonumber(luaSt, idx);
+        case LUA_TNUMBER: 
+            setNumberFromType(luaSt, p, idx);
             break;
 
         case LUA_TBOOLEAN:
@@ -659,7 +715,7 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
             mw_panic("Unhandled named argument type lightuserdata\n");
         }
 
-        setValueFromType(luaSt, p->value, p->type, item);
+        setValueFromType(luaSt, p, item);
         lua_pop(luaSt, 2);
         ++p;
     }

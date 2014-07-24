@@ -324,16 +324,24 @@ typedef struct MW_ALIGN_TYPE
 
 typedef struct
 {
+    /* Center Point */
     real phi;
     real theta;
     real psi;
-    real startRaw;
-    real endRaw;
-    real binSize;
-    real center;
+
+    /* Lambda */
+    real lambdaStart;
+    real lambdaEnd;
+    unsigned int lambdaBins;
+
+    /* Beta */
+    real betaStart;
+    real betaEnd;
+    unsigned int betaBins;
+
 } HistogramParams;
 
-#define EMPTY_HISTOGRAM_PARAMS { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_HISTOGRAM_PARAMS { 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 0 }
 #define HISTOGRAM_PARAMS_TYPE "HistogramParams"
 
 
@@ -342,13 +350,15 @@ typedef struct
     int useBin;
     unsigned int rawCount;
     double lambda;
+    double beta;
     double count;
     double err;
 } HistData;
 
 typedef struct
 {
-    unsigned int nBin;
+    unsigned int lambdaBins;
+	unsigned int betaBins;
     unsigned int totalNum;
     unsigned int totalSimulated;
     int hasRawCounts;

@@ -502,21 +502,25 @@ char* showHistogramParams(const HistogramParams* hp)
     char* buf;
     if (0 > asprintf(&buf,
                      "histogram-params = {\n"
-                     "  phi      = %g\n"
-                     "  theta    = %g\n"
-                     "  psi      = %g\n"
-                     "  startRaw = %g\n"
-                     "  endRaw   = %g\n"
-                     "  binSize  = %g\n"
-                     "  center   = %g\n"
+                     "  phi         = %g\n"
+                     "  theta       = %g\n"
+                     "  psi         = %g\n"
+                     "  lambdaStart = %g\n"
+                     "  lambdaEnd   = %g\n"
+                     "  lambdaBins  = %u\n"
+                     "  betaStart   = %g\n"
+                     "  betaEnd     = %g\n"
+                     "  betaBins    = %u\n"
                      "};\n",
                      hp->phi,
                      hp->theta,
                      hp->psi,
-                     hp->startRaw,
-                     hp->endRaw,
-                     hp->binSize,
-                     hp->center))
+                     hp->lambdaStart,
+                     hp->lambdaEnd,
+                     hp->lambdaBins,
+                     hp->betaStart,
+                     hp->betaEnd,
+                     hp->betaBins))
 
     {
         mw_fail("asprintf() failed\n");
