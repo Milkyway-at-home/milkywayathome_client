@@ -235,6 +235,11 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->halo.flattenY,
                     p->halo.triaxAngle);
             break;
+        case CausticHalo:
+            fprintf(f,
+                    "# Halo: Caustic\n"
+                    "#\n");
+            break;
 
         case InvalidHalo:
         default:
@@ -317,7 +322,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
 {
     unsigned int i;
     unsigned int j;
-    unsigned int index;
+    unsigned int Histindex;
     double count;
 
     const HistogramParams* hp = &histogram->params;
@@ -337,14 +342,14 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     {
         for(j = 0; j < betaBins; ++j)
         {
-            index = i * betaBins + j;
-            count = (double) histData[index].rawCount;
+            Histindex = i * betaBins + j;
+            count = (double) histData[Histindex].rawCount;
             
             /* Report center of the bins */
-            histData[index].lambda = ((double) i + 0.5) * lambdaSize + lambdaStart;
-            histData[index].beta = ((double) j + 0.5) * betaSize + betaStart;
-            histData[index].count = count / totalNum;
-            histData[index].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex].lambda = ((double) i + 0.5) * lambdaSize + lambdaStart;
+            histData[Histindex].beta = ((double) j + 0.5) * betaSize + betaStart;
+            histData[Histindex].count = count / totalNum;
+            histData[Histindex].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
         }
     }
 }
@@ -367,7 +372,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     mwvector lambdaBetaR;
     unsigned int lambdaIndex;
     unsigned int betaIndex;
-    unsigned int index;
+    unsigned int Histindex;
     unsigned int totalNum = 0;
     Body* p;
     NBodyHistogram* histogram;
@@ -398,9 +403,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histData = histogram->data;
 
     /* It does not make sense to ignore bins in a generated histogram */
-    for (index = 0; index < nBin; ++index)
+    for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
-        histData[index].useBin = TRUE;
+        histData[Histindex].useBin = TRUE;
     }
 
 
@@ -422,8 +427,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             /* Check if the position is within the bounds of the histogram */
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
             {   
-                index = lambdaIndex * betaBins + betaIndex;
-                histData[index].rawCount++;
+                Histindex = lambdaIndex * betaBins + betaIndex;
+                histData[Histindex].rawCount++;
                 ++totalNum;
             }
         }
