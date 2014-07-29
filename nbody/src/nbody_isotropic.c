@@ -113,7 +113,7 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
 static inline real isotropicRandomV(dsfmt_t* dsfmtState,real r, real scaleRad1, real scaleRad2, real Mass1, real Mass2)
 {
 
-  real GMsolar = 1.327e20.0; //SI UNITS m^3 / sec^2
+  real GMsolar = 1.327e20; //SI UNITS m^3 / sec^2
   scaleRad1 *= 3.086e19; //meters
   scaleRad2 *= 3.086e19;  
   r *= 3.086e19;
