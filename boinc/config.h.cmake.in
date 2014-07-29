@@ -119,7 +119,7 @@
 #cmakedefine01 HAVE_OPENGL_GL_H
 
 /* Define to 1 if you have the <procfs.h> header file. */
-#cmakedefine01 HAVE_PROCFS_H
+#cmakedefine HAVE_PROCFS_H
 
 #cmakedefine01 HAVE__PROC_SELF_PSINFO
 
