@@ -120,7 +120,7 @@ static inline real isotropicRandomV(dsfmt_t* dsfmtState,real r, real scaleRad1, 
   real val;
   real x;
   x= plummerSelectFromG(dsfmtState);
-
+/*this calculates it in m/s. return val is converted to km/s thus mult by 0.001*/
   val = x * M_SQRT2* mw_sqrt(GMsolar *Mass1/mw_sqrt(sqr(r) + sqr(scaleRad1))
 			       + GMsolar * Mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)));
 
