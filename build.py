@@ -29,9 +29,9 @@ assert arch in ["32", "64"], "ERROR: Unknown arch " + bit
 
 if os == "linux":
     if arch == "64":
-        execute(["cmake", ".", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DCMAKE_C_FLAGS=-m64 --sysroot=/srv/chroot/hardy_amd64/", "-DCMAKE_CXX_FLAGS=-m64 --sysroot=/srv/chroot/hardy_amd64/"])
+        execute(["cmake", ".", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DCMAKE_C_FLAGS=-m64", "-DCMAKE_CXX_FLAGS=-m64", "-DCMAKE_SYSROOT=/srv/chroot/hardy_amd64/"])
     if arch == "32":
-        execute(["cmake", ".", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DCMAKE_C_FLAGS=-m32 --sysroot=/srv/chroot/hardy_i386/", "-DCMAKE_CXX_FLAGS=-m32 --sysroot=/srv/chroot/hardy_i386/"])
+        execute(["cmake", ".", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DCMAKE_C_FLAGS=-m32", "-DCMAKE_CXX_FLAGS=-m32", "-DCMAKE_SYSROOT=/srv/chroot/hardy_i386/"])
         
     execute(["make"])
 
