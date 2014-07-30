@@ -32,5 +32,5 @@ if os == "linux":
     execute(["make"])
 
 if os == "win":
-    execute(["cmake", ".", "-G", "MinGW Makefiles"])
+    execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"])
     execute(["mingw32-make"])
