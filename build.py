@@ -31,10 +31,13 @@ if os == "linux":
     if arch == "64":
         execute(["cmake", ".", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DCMAKE_C_FLAGS=-m64", "-DCMAKE_CXX_FLAGS=-m64", "-DCMAKE_SYSROOT=/srv/chroot/hardy_amd64/"])
     if arch == "32":
-        execute(["cmake", ".", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DCMAKE_C_FLAGS=-m32", "-DCMAKE_CXX_FLAGS=-m32", "-DCMAKE_SYSROOT=/srv/chroot/hardy_i386/"])
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DNBODY_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DCMAKE_C_FLAGS=-m32", "-DCMAKE_CXX_FLAGS=-m32", "-DCMAKE_SYSROOT=/srv/chroot/hardy_i386/"])
         
     execute(["make"])
 
 if os == "win":
-    execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF", "-DNBODY_STATIC=ON"])
+    if arch == "64":
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF", "-DNBODY_STATIC=ON"])
+    if arch == "32":
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=OFF", "-DNBODY_STATIC=ON"])
     execute(["mingw32-make"])
