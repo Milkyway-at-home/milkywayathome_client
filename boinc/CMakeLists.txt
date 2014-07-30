@@ -127,7 +127,6 @@ find_package(Threads)
 set(HAVE_PTHREAD ${CMAKE_USE_PTHREADS_INIT})
 check_library_exists("Xss" "XScreenSaverRegister" "/usr/lib" HAVE_XSS)
 
-
 # CHECKME: Is there a better way to check this?
 if(EXISTS "/proc/self/psinfo")
   set(HAVE__PROC_SELF_PSINFO TRUE)
@@ -170,8 +169,11 @@ include_directories(${BOINC_CLIENT_SRC_DIR})
 
 set(boinc_api_src ${BOINC_API_SRC_DIR}/boinc_api.cpp)
 set(boinc_api_headers ${BOINC_API_SRC_DIR}/boinc_api.h)
+set(boinc_api_link_libs)
 
-
+if(WIN32)
+    list(APPEND boinc_api_link_libs psapi)
+endif()
 
 set(boinc_lib_headers boinc/version.h
                       ${BOINC_LIB_SRC_DIR}/app_ipc.h
@@ -265,6 +267,8 @@ endif()
 add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
+
+milkyway_link(boinc_api "${boinc_api_link_libs}")
 
 maybe_disable_ssen(boinc_api boinc boinc_graphics2)
 
