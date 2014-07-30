@@ -268,7 +268,9 @@ add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
 
-milkyway_link(boinc_api "${boinc_api_link_libs}")
+if(WIN32)
+    target_link_libraries(boinc_api "${boinc_api_link_libs}")
+endif()
 
 maybe_disable_ssen(boinc_api boinc boinc_graphics2)
 
