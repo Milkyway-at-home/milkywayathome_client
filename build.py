@@ -30,6 +30,10 @@ assert arch in ["32", "64"], "ERROR: Unknown arch " + bit
 # CMake flags used for all platforms
 cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER"]
 
+# CMake flags used for windows
+cmake_windows_flags = ["-DNBODY_STATIC=ON"]
+
+# Linux
 if os == "linux":
 
     if arch == "64":
@@ -41,14 +45,14 @@ if os == "linux":
     execute(["make", "clean"])
     execute(["make"])
 
-
+# Windows
 if os == "win":
 
     if arch == "64":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"] + cmake_shared_flags)
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"] + cmake_shared_flags + cmake_windows_flags)
 
     if arch == "32":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=OFF"] + cmake_shared_flags)
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=OFF"] + cmake_shared_flags + cmake_windows_flags)
     
     execute(["mingw32-make", "clean"])
     execute(["mingw32-make"])
