@@ -27,17 +27,28 @@ arch = sys.argv[2]
 assert os in ["win", "linux", "mac"], "ERROR: Unknown OS " + os
 assert arch in ["32", "64"], "ERROR: Unknown arch " + bit 
 
+# CMake flags used for all platforms
+cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER"]
+
 if os == "linux":
+
     if arch == "64":
-        execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DCMAKE_C_FLAGS=-m64", "-DCMAKE_CXX_FLAGS=-m64"])
+        execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64"] + cmake_shared_flags)
+
     if arch == "32":
-        execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DCMAKE_C_FLAGS=-m32", "-DCMAKE_CXX_FLAGS=-m32", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER"])
-        
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386"] + cmake_shared_flags)
+    
+    execute(["make", "clean"])
     execute(["make"])
 
+
 if os == "win":
+
     if arch == "64":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"])
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"] + cmake_shared_flags)
+
     if arch == "32":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=OFF"])
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=OFF"] + cmake_shared_flags)
+    
+    execute(["mingw32-make", "clean"])
     execute(["mingw32-make"])
