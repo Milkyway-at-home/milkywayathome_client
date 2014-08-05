@@ -63,11 +63,11 @@ if os == "win":
 if os == "mac":
 
     if arch == "64":
-        execute(["cmake", "."] + cmake_shared_flags)
+        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags)
 
     if arch == "32":
         print("ERROR: Mac OSX 32 bit not supported")
 
-    execute(["make", "clean"])
-    execute(["make"])
+    execute(["/usr/bin/make", "clean"])
+    execute(["/usr/bin/make"])
 
