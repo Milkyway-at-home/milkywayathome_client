@@ -6,7 +6,7 @@ import subprocess
 
 # Usage
 def usage():
-    print("Usage: python build.py (win,linux,mac) (32|64)")
+    print("Usage: python build.py (win,linux,mac) (32|64) (ON|OFF)")
 
 # Simple wrapper function
 def execute(args):
@@ -17,18 +17,20 @@ def execute(args):
         exit(1)
 
 # Check correct number of args
-if len(sys.argv) != 3:
+if len(sys.argv) != 4:
     usage()
     exit(1)
 
 # Make sure os and architecture are valid
 os  = sys.argv[1]
 arch = sys.argv[2]
+nbody_openmp = sys.argv[3]
 assert os in ["win", "linux", "mac"], "ERROR: Unknown OS " + os
 assert arch in ["32", "64"], "ERROR: Unknown arch " + bit 
+assert nbody_openmp in ["ON", "OFF"], "ERROR: Set NBODY_OPENMP to ON or OFF"
 
 # CMake flags used for all platforms
-cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER"]
+cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp]
 
 # CMake flags used for windows
 cmake_windows_flags = ["-DNBODY_STATIC=ON"]
