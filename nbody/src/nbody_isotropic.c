@@ -17,6 +17,11 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+
+The minimum bracketing method is based on results from "Numerical Recipes 
+in C, 2nd ed." and conforms to the authors' defintion of intellectual
+property under their license, and as such does not conflict with
+their copyright to their programs which execute similar algorithms.
 */
 
 #include "nbody_priv.h"
@@ -76,28 +81,98 @@ static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
 }
 
 
-static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real scaleRad2,
-				    real Mass1, real Mass2)
+static inline real profile(real r, real mass1, real mass2, real scale1, real scale2)
+  {  
+    real prof = (mw_pow(r,2.0) *((mass1/mw_pow(scale1,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale1,2.0), -2.5) 
+				 + (mass2/mw_pow(scale2,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale2,2.0),-2.5)));
+    return (real) (-prof);
+  }
+
+real inverseParabolicInterpolateIsotropic(real ratio, real a, real b, real c,
+							real scale1, real scale2, real mass1,
+					  real mass2, real tolerance)
 {
-  // Rejection sampling radius generation
+  real RATIO = ratio;
+  real RATIO_COMPLEMENT = 1 - RATIO;
+  
+  real profile_x1,profile_x2,x0,x1,x2,x3;
+  x0 = a;
+  x3 = b;
+  
+  if (mw_fabs(b - c) > mw_fabs(c - a))
+    {
+      x1 = c;
+      x2 = c + (RATIO_COMPLEMENT * (b - c)); 
+    }
+  else
+    {
+      x2 = c;
+      x1 = c - (RATIO_COMPLEMENT * (c - a));
+    }
+
+  profile_x1 = (real)profile(x1,mass1,mass2,scale1,scale2);
+  profile_x2 = (real)profile(x2,mass1,mass2,scale1,scale2);
+  
+  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2))))
+    {
+      if (profile_x2 < profile_x1)
+	{
+	  x0 = x1;
+	  x1 = x2;
+	  x2 = RATIO * x1 + RATIO_COMPLEMENT * x3;
+	  profile_x1 = (real)profile_x2;
+	  profile_x2 = (real)profile(x2,mass1,mass2,scale1,scale2);
+	}
+      else
+	{
+	  x3 = x2;
+	  x2 = x1;
+	  x1 = RATIO * x2 + RATIO_COMPLEMENT * x0;
+	  profile_x2 = (real)profile_x1;
+	  profile_x1 = (real)profile(x1,mass1,mass2,scale1,scale2);
+	}
+    }
+
+  if (profile_x1 < profile_x2)
+    {
+      return (-profile_x1);
+    }
+  else
+    {
+      return (-profile_x2);
+    }
+}
+
+
+real computeRhoMax(real mass1, real mass2, real scale1, real scale2)
+{
+  real result =  inverseParabolicInterpolateIsotropic(0.61803399, 0, 5.0 * (scale1 + scale2), 
+				       scale2, scale1, scale2, mass1, mass2, 1e-4);  
+  mw_printf("RHO MAX IS %10.5f\n",result);
+  return result;
+}
+
+static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real scaleRad2,
+				    real Mass1, real Mass2,real max)
+{
+
   real scaleRad1Cube = cube(scaleRad1);
   real scaleRad2Cube = cube(scaleRad2);
-  real RHO_MAX = 3.0/(4.0*M_PI) * (Mass1/scaleRad1Cube + Mass2/scaleRad2Cube);
+
   mwbool GOOD_RADIUS = 0;
-  // Arbitrarily define sample range to be [0, 5(a1 + a2)]
 
   real r;
   real u, val;
 
   while (GOOD_RADIUS != 1)
     {
-      r = mwXrandom(dsfmtState,0.0, 3.0 * (scaleRad1 + scaleRad2));
+      r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
 
-      val = 3.0/(4.0 *M_PI)*(Mass1/scaleRad1Cube * mw_pow(1.0 + sqr(r)/ sqr(scaleRad1),-2.5) +
-			     Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5));
+      val = r*r * (3.0/(4.0 *M_PI)*(Mass1/scaleRad1Cube * mw_pow(1.0 + sqr(r)/ sqr(scaleRad1),-2.5) +
+					Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5)));
 
-      if (val/RHO_MAX > u)
+      if (val/max > u)
       {
        	GOOD_RADIUS = 1;
       }
@@ -198,12 +273,14 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
+    real RHO_MAX = computeRhoMax((real)mass1, (real)mass2, (real)radiusScale1, (real)radiusScale2);
+    mw_printf("%10.5f",RHO_MAX);
 
     for (i = 0; i < nbody; ++i)
     {
         do
         {
-          r = isotropicRandomR(prng, radiusScale1, radiusScale2, mass1, mass2);
+          r = isotropicRandomR(prng, radiusScale1, radiusScale2, mass1, mass2, RHO_MAX);
 	           /* FIXME: We should avoid the divide by 0.0 by multiplying
              * the original random number by 0.9999.. but I'm too lazy
              * to change the tests. Same with other models */
