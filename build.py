@@ -58,3 +58,16 @@ if os == "win":
     
     execute(["mingw32-make", "clean"])
     execute(["mingw32-make"])
+
+# Mac OS X
+if os == "mac":
+
+    if arch == "64":
+        execute(["cmake", "."] + cmake_shared_flags)
+
+    if arch == "32":
+        print("ERROR: Mac OSX 32 bit not supported")
+
+    execute(["make", "clean"])
+    execute(["make"])
+
