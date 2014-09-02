@@ -34,6 +34,7 @@ include(SpecialLibs)
 include(PrintInfo)
 include(CheckSSE2)
 include(BOINCPaths)
+include(BOINCBinNames)
 include(CMakeDependentOption)
 
 cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON

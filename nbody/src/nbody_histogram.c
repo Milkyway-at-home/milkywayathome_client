@@ -460,6 +460,8 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     mwbool readMass = FALSE; /*Read the mass per particle for the histogram*/
     mwbool readLambdaBins = FALSE; /* Read the number of bins in the lambda direction */
     mwbool readBetaBins = FALSE; /* Read the number of bins the beta direction */
+    mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
+    mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
     unsigned int nGen = 0;    /* Number of particles read from the histogram */
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
@@ -499,6 +501,25 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         /* Skip comments and blank lines */
         if (lineBuf[0] == '#' || lineBuf[0] == '\n')
             continue;
+
+        /* Skip <histogram> tags */
+        if(!readOpeningTag)
+        {
+            if(strcmp("<histogram>\n", lineBuf) == 0)
+            {
+                readOpeningTag = TRUE;
+                continue;
+            }
+        }
+
+        if(!readClosingTag)
+        {
+            if(strcmp("</histogram>\n", lineBuf) == 0)
+            {
+                readClosingTag = TRUE;
+                continue;
+            }
+        }
 
         if (!readParams)  /* One line is allowed for information on the histogram */
         {
