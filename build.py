@@ -54,7 +54,7 @@ if os == "win":
         execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"] + cmake_shared_flags + cmake_windows_flags)
 
     if arch == "32":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=OFF"] + cmake_shared_flags + cmake_windows_flags)
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=ON"] + cmake_shared_flags + cmake_windows_flags)
     
     execute(["mingw32-make", "clean"])
     execute(["mingw32-make"])
