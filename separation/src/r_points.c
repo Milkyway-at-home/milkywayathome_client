@@ -81,13 +81,15 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc, const Ast
 
     stdev_i = stdev;
 
-    g = rc->gPrime + dx;
+  /* This must be made minus in order to mirror the function accross the x-axis (Required for the
+	convolution theorem. */
+    g = rc->gPrime - dx;
 
 if (ap->modfit)
 /* Implement modified f_turnoff distribution described in Newby 2011*/
 {
     stdev_l = 0.36;
-    stdev_i = (g <= rc->gPrime) ? stdev_l : rc->stdev_r;
+    stdev_i = (dx <= 0.0) ? stdev_l : rc->stdev_r;
 }
     /* MAG2R */
     r_pt.r_point = distance_magnitude(g);
