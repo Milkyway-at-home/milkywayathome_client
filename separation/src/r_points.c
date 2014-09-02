@@ -121,7 +121,7 @@ RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
         const real beta = 12.0;
         const real gam = 0.76;
 
-        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
+        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - coords)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
     
         real tempr = distance_magnitude(rc.gPrime);
@@ -163,7 +163,7 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
         const real beta = 12.0;
         const real gam = 0.76;
 
-        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rc.gPrime)) + gam;
+        rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - rp.rPrime)) + gam;
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
 
         real tempr = distance_magnitude(rc.gPrime);

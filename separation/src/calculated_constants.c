@@ -187,11 +187,13 @@ StreamGauss getStreamGauss(int convolve)
 
     /*Using old (single-sided gaussian stdev = 0.6) to spread points.  This is a small simplification when using 
     modfit, but does not cause any problems since it is parameter independent.  The weights will be calculated 
-    later based on the two-sided gaussian.*/
+    later based on the two-sided gaussian.
+	This must be made negative in order to mirror the function accross the x-axis (Required for the
+	convolution theorem. */
 
     for (i = 0; i < convolve; ++i)
     {
-        sg.dx[i] = 3.0 * stdev * qgaus_X[i];
+        sg.dx[i] = -3.0 * stdev * qgaus_X[i];
     }
 
     mwFreeA(qgaus_X);
