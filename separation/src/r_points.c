@@ -81,13 +81,15 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, RConsts* rc, const Ast
 
     stdev_i = stdev;
 
-    g = rc->gPrime + dx;
+  /* This must be made minus in order to mirror the function accross the x-axis (Required for the
+	convolution theorem. */
+    g = rc->gPrime - dx;
 
 if (ap->modfit)
 /* Implement modified f_turnoff distribution described in Newby 2011*/
 {
     stdev_l = 0.36;
-    stdev_i = (g <= rc->gPrime) ? stdev_l : rc->stdev_r;
+    stdev_i = (dx <= 0.0) ? stdev_l : rc->stdev_r;
 }
     /* MAG2R */
     r_pt.r_point = distance_magnitude(g);
@@ -123,8 +125,8 @@ RConsts calcRConstsLik(real coords, const AstronomyParameters* ap)
         
         real tempr = distance_magnitude(rc.gPrime);
 
-
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - tempr)) + gam;
+
         stdev_o = 0.5 * (stdev_l + rc.stdev_r);
 
         //Curve Fit Parameters (un-normalized)
@@ -166,11 +168,9 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
 
         real tempr = distance_magnitude(rc.gPrime);
 
-
         rc.stdev_r = alpha * inv(1.0 + mw_exp(beta - tempr)) + gam;
-        stdev_o = 0.5 * (stdev_l + rc.stdev_r);
 
-        real tempr = distance_magnitude(rc.gPrime);
+        stdev_o = 0.5 * (stdev_l + rc.stdev_r);
         
         //Curve Fit Parameters (un-normalized)
         //Only works for 0 < r < 80 kpc
@@ -187,18 +187,6 @@ static RConsts calcRConstsInt(RPrime rp, const AstronomyParameters* ap)
     rc.coeff = 1.0 / (stdev_o * SQRT_2PI);
     
     return rc;
-}
-
-//Unused function.  Probably should be erased during code clean-up.
-void setRPoints(const AstronomyParameters* ap,
-                const StreamGauss sg,
-                RConsts* rc,
-                RPoints* r_pts)
-{
-    unsigned int i;
-
-    for (i = 0; i < ap->convolve; ++i)
-        r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], rc, ap);
 }
 
 void setSplitRPoints(const AstronomyParameters* ap,

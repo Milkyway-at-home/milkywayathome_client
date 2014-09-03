@@ -33,7 +33,10 @@
 /* All Lua allocations will be aligned to this */
 #define MW_LUA_ALIGN 16
 
-
+/* Numeric types for userDataTypeName in MWNamedArg */
+#define INT_TYPE "INT"
+#define UINT_TYPE "UINT"
+#define REAL_TYPE "REAL"
 
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
@@ -78,6 +81,9 @@ int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable);
 
 int getInt(lua_State* luaSt, void* v);
 int setInt(lua_State* luaSt, void* v);
+
+int getUInt(lua_State* luaSt, void* v);
+int setUInt(lua_State* luaSt, void* v);
 
 int getLong(lua_State* luaSt, void* v);
 int setLong(lua_State* luaSt, void* v);

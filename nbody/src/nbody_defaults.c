@@ -48,13 +48,15 @@ const NBodyCtx defaultNBodyCtx =
 
 const HistogramParams defaultHistogramParams =
 {
-    /* .phi      */  histogramPhi,
-    /* .theta    */  histogramTheta,
-    /* .psi      */  histogramPsi,
-    /* .startRaw */  histogramStartRaw,
-    /* .endRaw   */  histogramEndRaw,
-    /* .binSize  */  histogramBinSize,
-    /* .center   */  histogramCenter
+    /* .phi         */  histogramPhi,
+    /* .theta       */  histogramTheta,
+    /* .psi         */  histogramPsi,
+    /* .lambdaStart */  histogramlambdaStart,
+    /* .lambdaEnd   */  histogramlambdaEnd,
+    /* .lambdaBins  */  histogramlambdaBins,
+    /* .lambdaStart */  histogrambetaStart,
+    /* .lambdaEnd   */  histogrambetaEnd,
+    /* .lambdaBins  */  histogrambetaBins
 };
 
 

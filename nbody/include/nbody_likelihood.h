@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2011 Matthew Arsenault
- * Copyright (c) 2011 Rensselaer Polytechnic Institute
+ * Copyright (c) 2010, 2011 Ben Willett
+ * Copyright (c) 2010, 2011 Matthew Arsenault
+ * Copyright (c) 2010, 2011 Rensselaer Polytechnic Institute.
  *
  * This file is part of Milkway@Home.
  *
@@ -18,39 +19,27 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_EMD_H_
-#define _NBODY_EMD_H_
+#ifndef _NBODY_LIKELIHOOD_H_
+#define _NBODY_LIKELIHOOD_H_
 
-#include "milkyway_extra.h"
 #include "nbody_types.h"
-
-
-typedef struct
-{
-    float weight; /* Normalized Weight */
-    float lambda;    /* Lambda Position */
-    float beta; /* Beta Position */
-} WeightPos;
-
-
+#include "nbody.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-float emdCalc(const float* RESTRICT signature_arr1,
-              const float* RESTRICT signature_arr2,
-              unsigned int size1,
-              unsigned int size2,
-              float* RESTRICT lower_bound);
+double nbSystemLikelihood(const NBodyState* st,
+                     const NBodyHistogram* data,
+                     const NBodyHistogram* histogram,
+                     NBodyLikelihoodMethod method);
 
-double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram);
+int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method);
 
-double nbWorstCaseEMD(const NBodyHistogram* hist);
+double nbMatchHistogramFiles(const char* datHist, const char* matchHist);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NBODY_EMD_H_ */
-
+#endif /* _NBODY_LIKELIHOOD_H_ */

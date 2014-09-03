@@ -29,7 +29,7 @@ extern "C" {
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 
-#define DEFAULT_LIKELIHOOD_METHOD NBODY_ORIG_CHISQ
+#define DEFAULT_LIKELIHOOD_METHOD NBODY_EMD
 
 /* 15 minutes */
 #define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
@@ -51,10 +51,12 @@ extern "C" {
 #define histogramPhi 128.79
 #define histogramTheta 54.39
 #define histogramPsi 90.70
-#define histogramStartRaw ((real) -50.0)
-#define histogramEndRaw ((real) 50.0)
-#define histogramBinSize ((real) 2.9411764705882355)
-#define histogramCenter ((real) 0.0)
+#define histogramlambdaStart ((real) -50.0)
+#define histogramlambdaEnd ((real) 50.0)
+#define histogramlambdaBins ((unsigned int) 34)
+#define histogrambetaStart ((real) -25.0)
+#define histogrambetaEnd ((real) 25.0)
+#define histogrambetaBins ((unsigned int) 10)
 
 
 extern const NBodyCtx defaultNBodyCtx;

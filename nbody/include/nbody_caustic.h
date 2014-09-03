@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2010, 2011 Ben Willett
- * Copyright (c) 2010, 2011 Matthew Arsenault
- * Copyright (c) 2010, 2011 Rensselaer Polytechnic Institute.
+ * Copyright (c) 2014 Julie Dumas
+ * Copyright (c) 2014 Jake Weiss
+ * Copyright (c) 2014 Jake Weiss
  *
  * This file is part of Milkway@Home.
  *
@@ -19,25 +19,19 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_CHISQ_H_
-#define _NBODY_CHISQ_H_
+#ifndef _NBODY_CAUSTIC_H_
+#define _NBODY_CAUSTIC_H_
 
+
+#include <complex.h>
+#include "nbody_config.h"
 #include "nbody_types.h"
-#include "nbody.h"
+#include "nbody_lua.h"
+#include "nbody_util.h"
+#include "milkyway_math.h"
+#include "milkyway_extra.h"
+
+mwvector causticHaloAccel(const Halo* h, mwvector pos, real r);
 
 
-#ifdef __cplusplus
-extern "C" {
 #endif
-
-double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
-                   const NBodyHistogram* histogram,   /* Generated histogram */
-                   NBodyLikelihoodMethod method);
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_CHISQ_H_ */
-

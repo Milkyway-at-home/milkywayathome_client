@@ -189,7 +189,8 @@ StreamGauss getStreamGauss(int convolve)
 
     /*Using old (single-sided gaussian stdev = 0.6) to spread points.  This is a small simplification when using 
     modfit, but does not cause any problems since it is parameter independent.  The weights will be calculated 
-    later based on the two-sided gaussian.*/
+    later based on the two-sided gaussian.
+	*/
 
     for (i = 0; i < convolve; ++i)
     {

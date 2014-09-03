@@ -28,6 +28,10 @@
 #include "nbody_checkpoint.h"
 #include "nbody_tree.h"
 
+#ifdef NBODY_BLENDER_OUTPUT
+    #include "blender_visualizer.h"
+#endif
+
 /* We want to restrict this a bit to ensure we can get better occupancy.
    TODO: Option to raise the maximum depth at expense of performance.
  */
@@ -685,6 +689,8 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
     return buf;
 }
+
+/* Yo momma's so fat she has little mommas in orbit around her. */
 
 static cl_bool nbCreateKernels(cl_program program, NBodyKernels* kernels)
 {
@@ -1561,9 +1567,22 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         mwPerrorCL(err, "Error running pre step");
         return NBODY_CL_ERROR;
     }
+    #ifdef NBODY_BLENDER_OUTPUT
+        deleteOldFiles(st);
+        mwvector startCmPos;
+        mwvector perpendicularCmPos;
+        mwvector nextCmPos;
+        nbFindCenterOfMass(&startCmPos, st);
+        perpendicularCmPos=startCmPos;
+        printf("*Total frames: %d\n", kept_frames);
+    #endif
 
     while (st->step < ctx->nStep)
     {
+        #ifdef NBODY_BLENDER_OUTPUT
+            nbFindCenterOfMass(&nextCmPos, st);
+            blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
+        #endif
         rc = nbCheckKernelErrorCode(ctx, st);
         if (nbStatusIsFatal(rc))
         {
@@ -1583,7 +1602,19 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         }
 
         st->step++;
+        #ifdef NBODY_BLENDER_OUTPUT
+            if (frame_progress < st->step)
+            {
+                frame_progress+=blender_frame_skip;
+                blenderPrintBodies(st, ctx);
+                printf("Frame: %d\n", (int)(st->step/blender_frame_skip));
+            }
+        #endif
     }
+    #ifdef NBODY_BLENDER_OUTPUT
+        mwvector finalcmPos;
+        blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
+    #endif
 
     return rc;
 }

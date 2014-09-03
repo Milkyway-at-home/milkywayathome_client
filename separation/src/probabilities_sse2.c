@@ -93,6 +93,7 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
     {
         RI =  mw_load_pd(&r_point[i]);
 
+        /* Coordinate Transform to Galactic Central XYZ */
         xyz0 = mw_fms_pd(RI, COSBL, SUNR0);
         xyz1 = mw_mul_pd(RI, SINCOSBL);
         xyz2 = mw_mul_pd(RI, SINB);
@@ -100,18 +101,19 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
         mw_store_pd(&xs[i], xyz0);
         mw_store_pd(&ys[i], xyz1);
         mw_store_pd(&zs[i], xyz2);
-
+        /* Compute Radius from Galactic Center */
         tmp0 = mw_mul_pd(xyz2, QV_RECIP);
 
         xyz0 = mw_mul_pd(xyz0, xyz0);
         xyz1 = mw_mul_pd(xyz1, xyz1);
         tmp0 = mw_mul_pd(tmp0, tmp0);
 
+        /* Calculate R */
         PROD = mw_fsqrt_pd(mw_add_pd(xyz0, mw_add_pd(xyz1, tmp0)));
         tmp1 = mw_add_pd(PROD, R0);
 
         PBXV = mw_div_pd(DONE, mw_mul_pd(PROD, mw_mul_pd(tmp1, mw_mul_pd(tmp1, tmp1))));
-
+        /* Calculate background probability */
         BGP  = mw_fma_pd(mw_load_pd(&qw_r3_N[i]), PBXV, BGP);
     }
 
@@ -130,6 +132,7 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
     #pragma ivdep
     #pragma vector always
     #pragma vector aligned
+    /* Calculate Stream Probabilities */
     for (i = 0; i < nStreams; i++)
     {
      #ifdef STREAM_VEC
@@ -168,10 +171,12 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
         {
          #ifdef STREAM_VEC
          #pragma message("Using hand vectorized code path")
+            /* Difference of Two Vectors */
             xyzstr[0] = mw_sub_pd(mw_load_pd(&xs[j]),Xvec_c);
             xyzstr[1] = mw_sub_pd(mw_load_pd(&ys[j]),Yvec_c);
             xyzstr[2] = mw_sub_pd(mw_load_pd(&zs[j]),Zvec_c);
 
+            /* Dot Product */
             x0 = mw_mul_pd(Xvec_a,xyzstr[0]);
             x1 = mw_mul_pd(Yvec_a,xyzstr[1]);
             x2 = mw_mul_pd(Zvec_a,xyzstr[2]);
@@ -288,7 +293,7 @@ static real probabilities_intrinsics_BPL(const AstronomyParameters* ap,
     {
         RI =  mw_load_pd(&r_point[i]);
 
-        //Coordinate Transform to Galactic Central XYZ
+        /* Coordinate Transform to Galactic Central XYZ */
         xyz0 = mw_fms_pd(RI, COSBL, SUNR0);
         xyz1 = mw_mul_pd(RI, SINCOSBL);
         xyz2 = mw_mul_pd(RI, SINB);
@@ -297,17 +302,19 @@ static real probabilities_intrinsics_BPL(const AstronomyParameters* ap,
         mw_store_pd(&ys[i], xyz1);
         mw_store_pd(&zs[i], xyz2);
 
-        //Compute Radius from Galactic Center
+        /* Compute Radius from Galactic Center */
         tmp0 = mw_mul_pd(xyz2, QV_RECIP);
 
         xyz0 = mw_mul_pd(xyz0, xyz0);
         xyz1 = mw_mul_pd(xyz1, xyz1);
         tmp0 = mw_mul_pd(tmp0, tmp0);
 
-        PROD = mw_fsqrt_pd(mw_add_pd(xyz0, mw_add_pd(xyz1, tmp0))); //Calculate R
-
-        PBXV = mw_add_pd(INNER, mw_mul_pd(OUTER, _mm_and_pd(_mm_cmpge_pd(PROD, R0), DONE)));//Determine exponent
-        BGP  = mw_add_pd(BGP, mw_mul_pd(mw_load_pd(&qw_r3_N[i]), _mm_pow_pd(mw_div_pd(SUNR0, PROD), PBXV))); //Calculates Broken Power Law maybe there is a faster way to do this?
+        /* Calculate R */
+        PROD = mw_fsqrt_pd(mw_add_pd(xyz0, mw_add_pd(xyz1, tmp0))); 
+        /* Determine exponent */
+        PBXV = mw_add_pd(INNER, mw_mul_pd(OUTER, _mm_and_pd(_mm_cmpge_pd(PROD, R0), DONE)));
+        /* Calculates Broken Power Law maybe there is a faster way to do this? */
+        BGP  = mw_add_pd(BGP, mw_mul_pd(mw_load_pd(&qw_r3_N[i]), _mm_pow_pd(mw_div_pd(SUNR0, PROD), PBXV))); 
     }
 
     BGP = mw_mul_pd(BGP, REF_XR);

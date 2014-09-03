@@ -48,7 +48,7 @@ mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist);
 
 void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp);
 real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real runGCDist);
-
+mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real runGCDist);
 #ifdef __cplusplus
 }
 #endif

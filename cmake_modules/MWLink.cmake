@@ -50,7 +50,10 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
   if(use_static AND UNIX AND NOT APPLE)
     set(link_flags "-static ${link_flags}")
   endif()
-
+  
+  if(use_static AND WIN32 AND MINGW)
+    set(link_flags "-static ${link_flags}")
+  endif()
 
   if(HAVE_FLAG_STATIC_LIBSTDCPP)
     set(link_flags "${link_flags} -static-libstdc++ ")

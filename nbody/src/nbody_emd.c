@@ -59,8 +59,11 @@
 
 #include "milkyway_util.h"
 #include "nbody_emd.h"
+#include "nbody_defaults.h"
+#include "nbody_types.h"
+#include "nbody_mass.h"
 
-#define MAX_ITERATIONS 500
+#define MAX_ITERATIONS 2500
 #define EMD_INF   ((float)1.0e20)
 #define EMD_EPS   ((float)1.0e-5)
 #define EMD_INVALID NAN
@@ -242,7 +245,7 @@ static int emdFindBasicVariables(float** cost, char** is_x,
     v1_head.next = 0;
 
     /* there are ssize+dsize variables but only ssize+dsize-1 independent equations,
-       so set v[0]=0 */
+    so set v[0]=0 */
     v[0].val = 0;
     v1_head.next = v;
     v1_head.next->next = 0;
@@ -1121,7 +1124,7 @@ static void emdPrintFlowMatrix(const float* flow, int size1, int size2)
     {
         for (j = 0; j < size2; ++j)
         {
-            mw_printf("Flow[%d][%d] = %f\n", i, j, flow[flowStep * j + i]);
+            mw_printf("Flow[ % d][ % d] = % f\n", i, j, flow[flowStep * j + i]);
         }
     }
 }
@@ -1130,21 +1133,21 @@ static EMDDistanceFunction nbMetricDistanceFunction(EMDDistanceType distType)
 {
     switch (distType)
     {
-        case EMD_DIST_L1:
-            return emdDistL1;
-            break;
+    case EMD_DIST_L1:
+        return emdDistL1;
+        break;
 
-        case EMD_DIST_L2:
-            return emdDistL2;
-            break;
+    case EMD_DIST_L2:
+        return emdDistL2;
+        break;
 
-        case EMD_DIST_C:
-            return emdDistC;
-            break;
+    case EMD_DIST_C:
+        return emdDistC;
+        break;
 
-        default:
-            mw_panic("Bad or unsupported metric type");
-            return NULL;
+    default:
+        mw_panic("Bad or unsupported metric type");
+        return NULL;
     }
 }
 
@@ -1195,10 +1198,10 @@ float emdCalc(const float* RESTRICT signature_arr1,
     double totalCost = 0.0;
     int result = 0;
     EMDDistanceFunction dist_func = NULL;
-    const EMDDistanceType dist_type = EMD_DIST_L1;
+    const EMDDistanceType dist_type = EMD_DIST_L2;
     const mwbool debugFlow = FALSE;
     float* flow = NULL;
-    const int dims = 1; /* We only have 1 dimension, lambda */
+    const int dims = 2; /* We have 2 dimensions, lambda and beta */
     void* user_param = (void*) dims;
 
     memset(&state, 0, sizeof(state));
@@ -1242,5 +1245,111 @@ float emdCalc(const float* RESTRICT signature_arr1,
     emdReleaseEMD(&state);
 
     return emd;
+}
+
+
+double nbWorstCaseEMD(const NBodyHistogram* hist)
+{
+    //(This makes no sense to be defined this way now that histograms are not normalized.
+    //  return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
+    return DEFAULT_WORST_CASE;
+}
+
+double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    unsigned int k;
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int bins = lambdaBins * betaBins;
+    unsigned int n = histogram->totalSimulated;
+    unsigned int nObs = histogram->totalNum;
+    unsigned int nData = data->totalNum;
+    real pObs = (real) nObs / (real) n;
+    real histMass = histogram->massPerParticle;
+    real dataMass = data->massPerParticle;
+    unsigned int i;
+    WeightPos* hist;
+    WeightPos* dat;
+    real ratio;
+    double emd;
+    double likelihood;
+
+    if (data->lambdaBins != histogram->lambdaBins
+	|| data->betaBins != histogram->betaBins)
+    {
+        /* FIXME?: We could have mismatched histogram sizes, but I'm
+        * not sure what to do with ignored bins and
+        * renormalization */
+        return NAN;
+    }
+
+    if (nObs == 0 || nData == 0)
+    {
+        /* If the histogram is totally empty, it is worse than the worst case */
+        return INFINITY;
+    }
+
+    if (histMass <= 0.0 || dataMass <= 0.0)
+    {
+        /*In order to calculate likelihood the masses are necessary*/
+        return NAN;
+    }
+
+    /* This creates histograms that emdCalc can use */
+    hist = mwCalloc(bins, sizeof(WeightPos));
+    dat = mwCalloc(bins, sizeof(WeightPos));
+
+    for (i = 0; i < bins; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            dat[i].weight = (float) data->data[i].count;
+            hist[i].weight = (float) histogram->data[i].count;
+        }
+
+        hist[i].lambda = (float) histogram->data[i].lambda;
+        dat[i].lambda = (float) data->data[i].lambda;
+	
+	hist[i].beta = (float) histogram->data[i].beta;
+	dat[i].beta = (float) data->data[i].beta;
+    }
+
+    emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
+
+    if (emd > 50.0)
+    {
+        free(hist);
+        free(dat);
+        /* emd's max value is 50 */
+        return NAN;
+    }
+
+    ratio = 100000.0 * dataMass / (histMass * 100000.0);
+    k = (unsigned int) (ratio * (double)nData);
+
+    /* This calculates the likelihood as the combination of the
+    * probability distribution and (1.0 - emd / max_dist) */
+
+    /*
+    Previously, this calculation was wrong.  Fixed to reflect notes on
+    conversation with Magdon-Ismail and Newberg.  Confirmed to be a valid
+    metric for a metric space.
+
+    Some more notes about the revised calculation
+    */
+    double EMDComponent = 1 - emd / 50.0;
+    double CostComponent = probability_match(n, k, pObs)/probability_match(n,n*pObs,pObs);
+    likelihood = (mw_log(EMDComponent) +  mw_log(CostComponent));
+    //mw_printf("n = % 10.10f\n",(double)n);
+    //mw_printf("k = % 10.10f\n",(double)k);
+    //mw_printf("nData = % 10.10f\n",(double)nData);
+    //mw_printf("pObs = % 10.10f\n",(double)pObs);
+    //mw_printf("EMD = % 10.10f\n",EMDComponent);
+    //mw_printf("Cost = % 10.10f\n",mw_log(CostComponent));
+
+    free(hist);
+    free(dat);
+
+    return -likelihood;
 }
 
