@@ -109,13 +109,14 @@ HOT
 static inline real hernquist_prob_slow(const AstronomyParameters* ap, real qw_r3_N, real rg)
 {
     const real rs = rg + ap->r0;
-    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+    /* This is safe to do because we know if we are using slow hernquist the innerPower will be equal to the old alpha as it is checked elsewhere in the program */
+    return qw_r3_N / (mw_powr(rg, ap->innerPower) * mw_powr(rs, ap->alpha_delta3));
 }
 
 HOT
 static inline real broken_power_law_prob(const AstronomyParameters* ap, real qw_r3_N, real rg)  //p(R)=p0(R/R0)^-n  Power Law Equation (From a paper)
 {
-	const real n = 2.78 + (rg >= ap->r0) *  2.22; //Basically an if statement for checking if we are past R0
+	  const real n = ap->innerPower + (real)(rg >= ap->r0) *  ap->alpha_delta3; /* Basically an if statement for checking if we are past R0 ensuring proper cpu pipelining for efficiency */
     return qw_r3_N * mw_powr(ap->sun_r0 / rg, n);
 }
 

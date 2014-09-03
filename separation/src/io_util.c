@@ -187,8 +187,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  convolve              = %u\n"
            "  number_streams        = %u\n"
            "  aux_bg_profile        = %d\n"
-           "  alpha                 = %f\n"
-           "  delta                 = %f\n"
+           "  innerPower            = %f\n"
+           "  outerPower            = %f\n"
            "  alpha_delta           = %f\n"
            "  bg_a                  = %f\n"
            "  bg_b                  = %f\n"
@@ -196,7 +196,6 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  wedge                 = %d\n"
            "  sun_r0                = %f\n"
            "  q                     = %f\n"
-//           "  coeff                 = %f\n"
            "  total_calc_probs      = %f\n"
            "  number_integrals      = %u\n"
            "  exp_background_weight = %f\n"
@@ -209,8 +208,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->convolve,
            ap->number_streams,
            ap->aux_bg_profile,
-           ap->alpha,
-           ap->delta,
+           ap->innerPower,
+           ap->outerPower,
            ap->alpha_delta3,
            ap->bg_a, ap->bg_b, ap->bg_c,
            ap->wedge,

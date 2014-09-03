@@ -97,10 +97,10 @@ static IntegralArea* freadParameters(FILE* file,
     if (!tmpArr)
         return NULL;
 
-    bgp->alpha = tmpArr[0];
-    bgp->q     = tmpArr[1];
-    bgp->r0    = tmpArr[2];
-    bgp->delta = tmpArr[3];
+    bgp->innerPower = tmpArr[0];
+    bgp->q          = tmpArr[1];
+    bgp->r0         = tmpArr[2];
+    bgp->outerPower = tmpArr[3];
     free(tmpArr);
 
     free(fread_double_array(file, "background_step", NULL));

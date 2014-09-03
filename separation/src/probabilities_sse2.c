@@ -272,8 +272,8 @@ static real probabilities_intrinsics_BPL(const AstronomyParameters* ap,
     const __m128d SUNR0    = mw_set1_pd(ap->sun_r0);
     const __m128d R0       = mw_set1_pd(ap->r0);
     const __m128d QV_RECIP = mw_set1_pd(ap->q_inv);
-    const __m128d INNER    = mw_set1_pd(2.78); /* Exponent for the inner halo */
-	const __m128d OUTER    = mw_set1_pd(2.22); /* Change in exp value from inner to outer */
+    const __m128d INNER    = mw_set1_pd(ap->innerPower); //Exponent for the inner halo
+	const __m128d OUTER    = mw_set1_pd(ap->alpha_delta3); //Change in exp value from inner to outer
 
     (void) gPrime, (void) sg_dx;
 

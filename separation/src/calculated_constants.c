@@ -55,8 +55,8 @@ static inline mwvector streamC(const AstronomyParameters* ap, int wedge, real mu
 
 /*
 
-  background_parameters[0] = alpha = 1.0
-  background_parameters[3] = delta = 1.0
+  background_parameters[0] = innerPower
+  background_parameters[3] = outerPower
 
 
   background_parameters[1] = q
@@ -74,11 +74,11 @@ static inline mwvector streamC(const AstronomyParameters* ap, int wedge, real mu
 
 int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp)
 {
-    ap->alpha = bgp->alpha;
+    ap->innerPower = bgp->innerPower;
     ap->q     = bgp->q;
 
     ap->r0    = bgp->r0;
-    ap->delta = bgp->delta;
+    ap->outerPower = bgp->outerPower;
 
     ap->q_inv = inv(ap->q);
     ap->q_inv_sqr = inv(sqr(ap->q));
@@ -94,14 +94,12 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
         return 1;
     }
 
- //   ap->coeff = 1.0 / (stdev * SQRT_2PI);
-    ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
-
     ap->exp_background_weight = mw_exp(bgp->epsilon);
     //Check if we need to use fast or slow hernquist if we are not using Broken Power Law which doesn't care.
     if(ap->background_profile != BROKEN_POWER_LAW)
     {
-    	if(ap->alpha == 1.0 && ap->delta == 1.0)
+        ap->alpha_delta3 = 3.0 - ap->innerPower + ap->outerPower;
+    	if(ap->innerPower == 1.0 && ap->outerPower == 1.0)
     	{
     		ap->background_profile = FAST_HERNQUIST;
     	}
@@ -109,6 +107,10 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     	{
     		ap->background_profile = SLOW_HERNQUIST;
     	}
+    }
+    else
+    {
+        ap->alpha_delta3 = ap->outerPower - ap->innerPower;
     }
 
     ap->sun_r0 = const_sun_r0;
