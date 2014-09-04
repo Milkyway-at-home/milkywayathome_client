@@ -39,10 +39,10 @@ cmake_windows_flags = ["-DNBODY_STATIC=ON"]
 if os == "linux":
 
     if arch == "64":
-        execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64"] + cmake_shared_flags)
+        execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DOPENCL_LIBRARIES=/opt/AMDAPPSDK-2.9-1/lib/x86_64/libOpenCL.so"] + cmake_shared_flags)
 
     if arch == "32":
-        execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386"] + cmake_shared_flags)
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/opt/AMDAPPSDK-2.9-1/lib/x86/libOpenCL.so"] + cmake_shared_flags)
     
     execute(["make", "clean"])
     execute(["make"])
