@@ -91,11 +91,14 @@ static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
 }
 
 
-/*NEED TO CHANGE*/
+/*NEED TO CHANGE
+ *- changed the first profile
+ */
 static inline real profile(real r, real mass1, real mass2, real scale1, real scale2)
   {  
-    real prof = (mw_pow(r,2.0) *((mass1/mw_pow(scale1,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale1,2.0), -2.5) 
-				 + (mass2/mw_pow(scale2,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale2,2.0),-2.5)));
+    real p_crit= 3*H*H/(8*M_pi*G);//have to input values
+    real prof = (  r*r *(mass1*scale1/(p_crit*r)* mw_pow(1.0 + r/ scale1,-2.0) 
+				 + (mass2/mw_pow(scale2,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale2,2.0),-2.5) )   );
     return (real) (-prof);
   }
 
@@ -171,9 +174,9 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
 				    real Mass1, real Mass2,real max)
 {
 
-  real scaleRad1Cube = cube(scaleRad1);
   real scaleRad2Cube = cube(scaleRad2);
-
+  real p_crit= 3*H*H/(8*M_pi*G);//have to input values
+  real delta=1.0;//have to input value
   mwbool GOOD_RADIUS = 0;
 
   real r;
@@ -184,8 +187,8 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
 
-      val = r*r * (3.0/(4.0 *M_PI)*(Mass1/scaleRad1Cube * mw_pow(1.0 + sqr(r)/ sqr(scaleRad1),-2.5) +
-					Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5)));
+      val = r*r * (  Mass1*scaleRad1/(p_crit*r)* mw_pow(1.0 + r/ scaleRad1,-2.0) +
+					( 3.0/(4.0 *M_PI)*Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5) )  );
 
       if (val/max > u)
       {
