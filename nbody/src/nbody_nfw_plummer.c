@@ -37,13 +37,133 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
 
+
+/*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
+static inline real potential( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
+{
+  real scaleRad1Cube = cube(scaleRad1); 
+  real scaleRad2Cube = cube(scaleRad2);
+  real potential= -1.0*(mass1/mw_sqrt(sqr(r) + sqr(scaleRad1)) +  Mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)) );
+  
+  return (-1.0*potential);
+}
+
+
+static inline real density( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
+{
+  real scaleRad1Cube = cube(scaleRad1); 
+  real scaleRad2Cube = cube(scaleRad2);
+  real density= (3/(4 M_pi)) (mass1/scaleRad1Cube *pow(1+ sqr(r)/sqr(scaleRad1), -2.5)  
+			      + mass2/scaleRad2Cube *pow(1+ sqr(r)/sqr(scaleRad2), -2.5);
+  
+  return density;
+}
+
+
+static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2, real upperlimit)
+{
+ real first_deriv_psi;
+ real second_deriv_psi;
+ real first_deriv_density;
+ real second_deriv_density;
+ real dsqden_dpsisq;/*second derivative of density with respect to -potential */
+ real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
+ real func;
+ real h;
+ /*yes, this does in fact use a 5-point stencil*/
+ first_deriv_psi=( potential(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2)-8.0*potential(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)
+		      -potential(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+8.0*potential(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h);
+  
+  first_deriv_density=( density(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2)-8.0*density(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)
+		      -density(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+8.0*density(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h);
+
+/*yes, this also uses a five point stencil*/
+  second_deriv_density=( -1.0*density(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+16.0*density(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) -30.0*density(ri,mass1,mass2,scaleRad1,scaleRad2)
+		      +16.0*density(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)-1.0*density(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h*h);
+
+  second_deriv_psi= ( -1.0*potential(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+16.0*potential(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) -30.0*potential(ri,mass1,mass2,scaleRad1,scaleRad2)
+		      +16.0*potential(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)-1.0*potential(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h*h);
+
+	/*
+	 * Instead of calculating the second derivative of density with respect to -pot directly, 
+	 * did product rule since both density and pot are functions of radius. 
+	 */
+  dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(mw_sqr(first_deriv_psi));
+  demoninator= 1/mw_sqrt(upperlimit-potential(ri,mass1,mass2,scaleRad1,scaleRad2) );
+  func= first_deriv_psi* dsqden_dpsisq *denominator;
+
+  return func;
+  
+}
+  
+  
+/*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
+static inline real gauss_quad( real lowerlimit, real upperlimit, real mass1, real mass2, real scaleRad1, real scaleRad2)
+{
+  real Ng,hg,lowerg, upperg;
+  real intv;
+  real coef1,coef2;//parameters for gaussian quad
+  real c1,c2,c3;
+  real x1,x2,x3;
+  real x1n,x2n,x3n;
+  
+
+  intv=0;//initial value of integral
+  Ng=1001;
+  hg=(b-a)/(Ng-1);
+
+  lowerg=lowerlimit;
+  upperg=lowerlimit+hg;
+  coef2= (lowerg+upperg)/2;//initializes the first coeff to change the function limits
+  coef1= (upperg-lowerg)/2;//initializes the second coeff to change the function limits
+  c1=0.555555556;
+  c2=0.888888889;
+  c3=0.555555556;
+  x1=-0.774596669;
+  x2=0.000000000;
+  x3=0.774596669;
+  x1n=((coef1)*x1 +coef2);
+  x2n=((coef1)*x2 +coef2);
+  x3n=((coef1)*x3 +coef2);
+
+  while (1)
+  {
+
+      //gauss quad
+      intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, upperlimit)*coef1 +      
+		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, upperlimit)*coef1 + 
+		    c3*fun(x3n, mass1, mass2, scaleRad1, scaleRad2, upperlimit)*coef1);
+
+      lowerg=upperg;
+      upperg= upperg+hg;
+      coef2= (lowerg+ upperg)/2;//initializes the first coeff to change the function limits
+      coef1= (upperg-lowerg)/2;
+      x1n=((coef1)*x1 +coef2);
+      x2n=((coef1)*x2 +coef2);
+      x3n=((coef1)*x3 +coef2);
+
+      if (lowerg>=upperlimit)//loop termination clause
+        {break;}
+  }
+
+  return intv;
+}
+
+static inline real dist_fun(real mass1, real mass2, real scaleRad1, real scaleRad2, real lowerlimit, real upperlimit)
+{
+ real c= 1.0/(mw_sqrt(8)* cube(mw_pi));
+ real distribution_function;
+ distribution_function=c*gauss_quad(lowerlimit, upperlimit, mass1, mass2, scaleRad1, scaleRad2);
+  
+  return distribution_function;
+}
+
 /* pickshell: pick a random point on a sphere of specified radius. 
 *
 *   Changed this section to be in compliance with NEMO's initialization technique.
 *   Instead of assigning it a point on sphere, assigns angles. Allows for non-circular orbits.
 *
 */
-
 /*NEED TO PERHAPS CHANGE*/
 static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
 {
@@ -93,71 +213,17 @@ static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
 
 /*NEED TO CHANGE
  *- changed the first profile
+ * need to specify p_crit
  */
-static inline real profile(real r, real mass1, real mass2, real scale1, real scale2)
+static inline real profile(real r, real mass1, real mass2, real scale1, real scale2, real p_0)
   {  
-    real p_crit= 3*H*H/(8*M_pi*G);//have to input values
-    real prof = (  r*r *(mass1*scale1/(p_crit*r)* mw_pow(1.0 + r/ scale1,-2.0) 
+    //real p_crit= 3*H*H/(8*M_pi*G);//have to input values
+    real prof = (  r*r *( p_0*mass1*scale1/(r)* mw_pow(1.0 + r/ scale1,-2.0) 
 				 + (mass2/mw_pow(scale2,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale2,2.0),-2.5) )   );
     return (real) (-prof);
   }
 
   
-/*THIS IS A MAXIMUM FINDING FUNCTION*/
-real inverseParabolicInterpolateIsotropic(real ratio, real a, real b, real c,
-							real scale1, real scale2, real mass1,
-					  real mass2, real tolerance)
-{
-  real RATIO = ratio;
-  real RATIO_COMPLEMENT = 1 - RATIO;
-  
-  real profile_x1,profile_x2,x0,x1,x2,x3;
-  x0 = a;
-  x3 = b;
-  
-  if (mw_fabs(b - c) > mw_fabs(c - a))
-    {
-      x1 = c;
-      x2 = c + (RATIO_COMPLEMENT * (b - c)); 
-    }
-  else
-    {
-      x2 = c;
-      x1 = c - (RATIO_COMPLEMENT * (c - a));
-    }
-
-  profile_x1 = (real)profile(x1,mass1,mass2,scale1,scale2);
-  profile_x2 = (real)profile(x2,mass1,mass2,scale1,scale2);
-  
-  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2))))
-    {
-      if (profile_x2 < profile_x1)
-	{
-	  x0 = x1;
-	  x1 = x2;
-	  x2 = RATIO * x1 + RATIO_COMPLEMENT * x3;
-	  profile_x1 = (real)profile_x2;
-	  profile_x2 = (real)profile(x2,mass1,mass2,scale1,scale2);
-	}
-      else
-	{
-	  x3 = x2;
-	  x2 = x1;
-	  x1 = RATIO * x2 + RATIO_COMPLEMENT * x0;
-	  profile_x2 = (real)profile_x1;
-	  profile_x1 = (real)profile(x1,mass1,mass2,scale1,scale2);
-	}
-    }
-
-  if (profile_x1 < profile_x2)
-    {
-      return (-profile_x1);
-    }
-  else
-    {
-      return (-profile_x2);
-    }
-}
 
 
 /*NEED TO CHANGE*/
@@ -169,13 +235,16 @@ real computeRhoMax(real mass1, real mass2, real scale1, real scale2)
   return result;
 }
 
-/*NEED TO CHANGE*/
+/*NEED TO CHANGE
+ * changed thefirst profile. 
+ * need to specify p_crit and deltac
+ */
 static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real scaleRad2,
 				    real Mass1, real Mass2,real max)
 {
 
   real scaleRad2Cube = cube(scaleRad2);
-  real p_crit= 3*H*H/(8*M_pi*G);//have to input values
+  //real p_crit= 3*H*H/(8*M_pi*6.67e-11);//have to input values
   real delta=1.0;//have to input value
   mwbool GOOD_RADIUS = 0;
 
@@ -187,7 +256,7 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
 
-      val = r*r * (  Mass1*scaleRad1/(p_crit*r)* mw_pow(1.0 + r/ scaleRad1,-2.0) +
+      val = r*r * (  Mass1*scaleRad1/(r)* mw_pow(1.0 + r/ scaleRad1,-2.0) +
 					( 3.0/(4.0 *M_PI)*Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5) )  );
 
       if (val/max > u)
