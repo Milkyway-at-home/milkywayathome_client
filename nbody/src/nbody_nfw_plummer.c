@@ -43,12 +43,12 @@ static inline real potential( real r, real mass1, real mass2, real scaleRad1, re
 {
   real scaleRad1Cube = cube(scaleRad1); 
   real scaleRad2Cube = cube(scaleRad2);
-  real potential= -1.0*(mass1/mw_sqrt(sqr(r) + sqr(scaleRad1)) +  Mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)) );
+  real potential= -1.0*(mass1/mw_sqrt(sqr(r) + sqr(scaleRad1)) +  mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)) );
   
   return (-1.0*potential);
 }
 
-
+/*this is the density distribution function. Returns the density at a given radius.*/
 static inline real density( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   real scaleRad1Cube = cube(scaleRad1); 
@@ -69,7 +69,10 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
  real dsqden_dpsisq;/*second derivative of density with respect to -potential */
  real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
  real func;
- real h;
+ real h=0.01; /*This value is not completely arbitrary. Generally, lower the value of h the better. 
+ For the five point stencil, values lower than .001 ran into roundoff error.
+ 0.01 is a safe bet, with a calculation error of order 10^-10.*/
+ 
  /*yes, this does in fact use a 5-point stencil*/
  first_deriv_psi=( potential(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2)-8.0*potential(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)
 		      -potential(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+8.0*potential(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h);
@@ -98,7 +101,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   
   
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
-static inline real gauss_quad( real lowerlimit, real upperlimit, real mass1, real mass2, real scaleRad1, real scaleRad2)
+static inline real gauss_quad(  real upperlimit, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   real Ng,hg,lowerg, upperg;
   real intv;
@@ -111,9 +114,11 @@ static inline real gauss_quad( real lowerlimit, real upperlimit, real mass1, rea
   intv=0;//initial value of integral
   Ng=1001;
   hg=(b-a)/(Ng-1);
-
-  lowerg=lowerlimit;
-  upperg=lowerlimit+hg;
+/*I have set the lower limit to be zero. '
+ * This is in the definition of the distribution function. 
+ * If this is used for integrating other things, this will need to be changed.*/
+  lowerg=0.0;
+  upperg=lowerg+hg;
   coef2= (lowerg+upperg)/2;//initializes the first coeff to change the function limits
   coef1= (upperg-lowerg)/2;//initializes the second coeff to change the function limits
   c1=0.555555556;
@@ -149,23 +154,19 @@ static inline real gauss_quad( real lowerlimit, real upperlimit, real mass1, rea
   return intv;
 }
 
-static inline real dist_fun(real mass1, real mass2, real scaleRad1, real scaleRad2, real lowerlimit, real upperlimit)
+ /*This returns the value of the distribution function for a given energy*/
+static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real upperlimit)
 {
- real c= 1.0/(mw_sqrt(8)* cube(mw_pi));
+ real c= 1.0/(mw_sqrt(8)* sqr(mw_pi));
  real distribution_function;
- distribution_function=c*gauss_quad(lowerlimit, upperlimit, mass1, mass2, scaleRad1, scaleRad2);
+/*This calls guassian quad to integrate the function for a given energy*/
+ distribution_function=c*gauss_quad(upperlimit, mass1, mass2, scaleRad1, scaleRad2);
   
   return distribution_function;
 }
 
-/* pickshell: pick a random point on a sphere of specified radius. 
-*
-*   Changed this section to be in compliance with NEMO's initialization technique.
-*   Instead of assigning it a point on sphere, assigns angles. Allows for non-circular orbits.
-*
-*/
-/*NEED TO PERHAPS CHANGE*/
-static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
+/* assigns angles. Allows for non-circular orbits.*/
+static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
 {
     real rsq, rsc;
     mwvector vec;
@@ -187,40 +188,13 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-/*
-*   This code snippet is from nbody_plummer.c.
-*   This is a probability distribution which is used in NEMO.
-*   The parameter that is returned is a fraction that is used to sample the velocity.
-*   See Aarseth et al. (1974), eq. (A4,5).
-*/
-
 /*NEED TO CHANGE*/
-static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
-{
 
-    real x, y;
-
-    do                      /* select from fn g(x) */
-    {
-        x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
-        y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
-    }   /* using von Neumann tech */
-    while (y > x*x * mw_pow(1.0 - x*x, 3.5));
-
-    return x;
-}
-
-
-/*NEED TO CHANGE
- *- changed the first profile
- * need to specify p_crit
- */
 static inline real profile(real r, real mass1, real mass2, real scale1, real scale2, real p_0)
   {  
-    //real p_crit= 3*H*H/(8*M_pi*G);//have to input values
-    real prof = (  r*r *( p_0*mass1*scale1/(r)* mw_pow(1.0 + r/ scale1,-2.0) 
-				 + (mass2/mw_pow(scale2,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale2,2.0),-2.5) )   );
+    real prof = (  r*r *density( r,  mass1,  mass2,  scaleRad1,  scaleRad2));
     return (real) (-prof);
+    
   }
 
   
@@ -235,17 +209,10 @@ real computeRhoMax(real mass1, real mass2, real scale1, real scale2)
   return result;
 }
 
-/*NEED TO CHANGE
- * changed thefirst profile. 
- * need to specify p_crit and deltac
- */
-static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real scaleRad2,
-				    real Mass1, real Mass2,real max)
+
+static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2,real rho_max)
 {
 
-  real scaleRad2Cube = cube(scaleRad2);
-  //real p_crit= 3*H*H/(8*M_pi*6.67e-11);//have to input values
-  real delta=1.0;//have to input value
   mwbool GOOD_RADIUS = 0;
 
   real r;
@@ -256,10 +223,9 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
 
-      val = r*r * (  Mass1*scaleRad1/(r)* mw_pow(1.0 + r/ scaleRad1,-2.0) +
-					( 3.0/(4.0 *M_PI)*Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5) )  );
+      val = r*r * density(r,  mass1,  mass2,  scaleRad1,  scaleRad2);
 
-      if (val/max > u)
+      if (val/rho_max > u)
       {
        	GOOD_RADIUS = 1;
       }
@@ -267,50 +233,59 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
   return r;
 }
 
-/*
-*   Added the x value. This is a parameter that is used to sample the velocity.
-*   Though, the distribution function was originally used for one plummer sphere.
-*   We have two here. Though I think the distribution function can still be used.
-*/
 
 /*NEED TO CHANGE*/
-static inline real isotropicRandomV(dsfmt_t* dsfmtState,real r, real scaleRad1, real scaleRad2, real Mass1, real Mass2)
+static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real dist_max)
 {
 
   real GMsolar = 1.327e20; //SI UNITS m^3 / sec^2
   scaleRad1 *= 3.086e19; //meters
   scaleRad2 *= 3.086e19;  
   r *= 3.086e19;
-  real val;
-  real x;
-  x= plummerSelectFromG(dsfmtState);
+  real val,v;
+  /*there is a -1 there because potential actually returns the neg of potential*/
+  real v_esc= mw_sqrt( -2.0*potential(r, mass1, mass2, radiusScale1,radiusScale2)); 
+  real dist_max = max_finder(r, mass1, mass2, radiusScale1,radiusScale2);
 /*this calculates it in m/s. return val is converted to km/s thus mult by 0.001*/
-  val = x * M_SQRT2* mw_sqrt(GMsolar *Mass1/mw_sqrt(sqr(r) + sqr(scaleRad1))
-			       + GMsolar * Mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)));
 
+
+    while (GOOD_RADIUS != 1)
+    {
+      v = (real)mwXrandom(dsfmtState,0.0, v_esc);
+      u = (real)mwXrandom(dsfmtState,0.0,1.0);
+
+      val = 4*mw_pi*v*v* dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2);
+
+      if (val/dist_max > u)
+      {
+       	GOOD_RADIUS = 1;
+      }
+    }
+  
+  
   return 0.001* val; //km/s
 }
 
-/*NEED TO CHANGE*/
-static inline mwvector isotropicBodyPosition(dsfmt_t* dsfmtState, mwvector rshift,  real r)
+
+static inline mwvector r_vec(dsfmt_t* dsfmtState, mwvector rshift,  real r)
 {
     mwvector pos;
 
-    pos = pickShell(dsfmtState,  r);  /* pick scaled position */
+    pos = angles(dsfmtState,  r);  /* pick scaled position */
     mw_incaddv(pos, rshift);               /* move the position */
 
     return pos;
 }
 
-/*NEED TO CHANGE*/
-static inline mwvector isotropicBodyVelocity(dsfmt_t* dsfmtState,real r, mwvector vshift, real vsc,  real scaleRad1, real scaleRad2,
-					     real Mass1, real Mass2)
+
+static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift, real vsc,real r, real mass1, real mass2,
+			       real scaleRad1, real scaleRad2)
 {
     mwvector vel;
     real v;
 
-    v = isotropicRandomV(dsfmtState,r,scaleRad1,scaleRad2,Mass1,Mass2);
-    vel = pickShell(dsfmtState, vsc * v);   /* pick scaled velocity */
+    v = vel_mag(dsfmtState, r, mass1, mass2, scaleRad1, scaleRad2);
+    vel = angles(dsfmtState, vsc * v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);                /* move the velocity */
 
     return vel;
@@ -364,23 +339,24 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
-    /*NEED TO CHANGE*/ real RHO_MAX = computeRhoMax((real)mass1, (real)mass2, (real)radiusScale1, (real)radiusScale2);
+    real RHO_MAX = computeRhoMax((real)mass1, (real)mass2, (real)radiusScale1, (real)radiusScale2);
     mw_printf("%10.5f",RHO_MAX);
 
     for (i = 0; i < nbody; ++i)
     {
         do
         {
-         /*NEED TO CHANGE*/ r = isotropicRandomR(prng, radiusScale1, radiusScale2, mass1, mass2, RHO_MAX);
-	           /* FIXME: We should avoid the divide by 0.0 by multiplying
+         r = r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, RHO_MAX);
+	 
+	          /* FIXME: We should avoid the divide by 0.0 by multiplying
              * the original random number by 0.9999.. but I'm too lazy
              * to change the tests. Same with other models */
         }
         while (isinf(r));
 
-        /*NEED TO CHANGE*/b.bodynode.pos = isotropicBodyPosition(prng, rShift, r);
+        /*NEED TO CHANGE*/b.bodynode.pos = r_vec(prng, rShift, r);
 
-        /*NEED TO CHANGE*/b.vel = isotropicBodyVelocity(prng, r, vShift, velScale, radiusScale1, radiusScale2, mass1, mass2);
+        /*NEED TO CHANGE*/b.vel = vel_vec(prng,  vShift, velScale,r, mass1, mass2, radiusScale1, radiusScale2);
 
         assert(nbPositionValid(b.bodynode.pos));
 
