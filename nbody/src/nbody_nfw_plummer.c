@@ -24,8 +24,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
-The minimum bracketing method is based on results from "Numerical Recipes 
-in C, 2nd ed." and conforms to the authors' defintion of intellectual
+The minimum bracketing method is based on results from "Numerical Recipes,
+3rd ed." and conforms to the authors' defintion of intellectual
 property under their license, and as such does not conflict with
 their copyright to their programs which execute similar algorithms.
 */
@@ -60,7 +60,7 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
 }
 
 
-static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2, real upperlimit)
+static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
 {
  real first_deriv_psi;
  real second_deriv_psi;
@@ -92,7 +92,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 	 * did product rule since both density and pot are functions of radius. 
 	 */
   dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(mw_sqr(first_deriv_psi));
-  demoninator= 1/mw_sqrt(upperlimit-potential(ri,mass1,mass2,scaleRad1,scaleRad2) );
+  demoninator= 1/mw_sqrt(energy-potential(ri,mass1,mass2,scaleRad1,scaleRad2) );
   func= first_deriv_psi* dsqden_dpsisq *denominator;
 
   return func;
@@ -101,7 +101,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   
   
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
-static inline real gauss_quad(  real upperlimit, real mass1, real mass2, real scaleRad1, real scaleRad2)
+static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   real Ng,hg,lowerg, upperg;
   real intv;
@@ -135,9 +135,9 @@ static inline real gauss_quad(  real upperlimit, real mass1, real mass2, real sc
   {
 
       //gauss quad
-      intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, upperlimit)*coef1 +      
-		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, upperlimit)*coef1 + 
-		    c3*fun(x3n, mass1, mass2, scaleRad1, scaleRad2, upperlimit)*coef1);
+      intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 +      
+		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 + 
+		    c3*fun(x3n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1);
 
       lowerg=upperg;
       upperg= upperg+hg;
@@ -147,7 +147,7 @@ static inline real gauss_quad(  real upperlimit, real mass1, real mass2, real sc
       x2n=((coef1)*x2 +coef2);
       x3n=((coef1)*x3 +coef2);
 
-      if (lowerg>=upperlimit)//loop termination clause
+      if (lowerg>=energy)//loop termination clause
         {break;}
   }
 
@@ -155,12 +155,12 @@ static inline real gauss_quad(  real upperlimit, real mass1, real mass2, real sc
 }
 
  /*This returns the value of the distribution function for a given energy*/
-static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real upperlimit)
+static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
 {
  real c= 1.0/(mw_sqrt(8)* sqr(mw_pi));
  real distribution_function;
 /*This calls guassian quad to integrate the function for a given energy*/
- distribution_function=c*gauss_quad(upperlimit, mass1, mass2, scaleRad1, scaleRad2);
+ distribution_function=c*gauss_quad(energy, mass1, mass2, scaleRad1, scaleRad2);
   
   return distribution_function;
 }
@@ -188,26 +188,72 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-/*NEED TO CHANGE*/
-
-static inline real profile(real r, real mass1, real mass2, real scale1, real scale2, real p_0)
-  {  
-    real prof = (  r*r *density( r,  mass1,  mass2,  scaleRad1,  scaleRad2));
-    return (real) (-prof);
-    
-  }
-
-  
-
-
-/*NEED TO CHANGE*/
-real computeRhoMax(real mass1, real mass2, real scale1, real scale2)
+/*this serves the max finding routine*/
+real profile(real v, real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real part_mass)
 {
-  real result =  inverseParabolicInterpolateIsotropic(0.61803399, 0, 5.0 * (scale1 + scale2), 
-				       scale2, scale1, scale2, mass1, mass2, 1e-4);  
-  mw_printf("RHO MAX IS %10.5f\n",result);
+    real energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
+    real result =  dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
   return result;
 }
+  
+/*this is a maxfinding routine to find the maximum of the distribution function for a 
+ * given radius. It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
+ */
+real distmax_finder( real a, real b, real c,
+		     real r, real scaleRad1, real scaleRad2, real mass1,real mass2, real part_mass)
+{
+  real tolerance= 1e-4;
+  real RATIO = 0.61803399;
+  real RATIO_COMPLEMENT = 1 - RATIO;
+  
+  real profile_x1,profile_x2,x0,x1,x2,x3;
+  x0 = a;
+  x3 = c;
+  
+  if (mw_fabs(b - c) > mw_fabs(b - a))
+    {
+      x1 = b;
+      x2 = b + (RATIO_COMPLEMENT * (c - b)); 
+    }
+  else
+    {
+      x2 = b;
+      x1 = b - (RATIO_COMPLEMENT * (b - a));
+    }
+
+  profile_x1 = (real)profile(x1,r,mass1,mass2,scaleRad1,scaleRad2, part_mass);
+  profile_x2 = (real)profile(x2,r,mass1,mass2,scaleRad1,scaleRad2, part_mass);
+  
+  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
+    {
+      if (profile_x2 < profile_x1)
+	{
+	  x0 = x1;
+	  x1 = x2;
+	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
+	  profile_x1 = (real)profile_x2;
+	  profile_x2 = (real)profile(x2, r, mass1,mass2,scaleRad1,scaleRad2, part_mass);
+	}
+      else
+	{
+	  x3 = x2;
+	  x2 = x1;
+	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
+	  profile_x2 = (real)profile_x1;
+	  profile_x1 = (real)profile(x1,r,mass1,mass2,scaleRad1,scaleRad2, part_mass);
+	}
+    }
+
+  if (profile_x1 < profile_x2)
+    {
+      return (-profile_x1);
+    }
+  else
+    {
+      return (-profile_x2);
+    }
+}
+
 
 
 static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2,real rho_max)
@@ -235,7 +281,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
 
 
 /*NEED TO CHANGE*/
-static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real dist_max)
+static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real part_mass)
 {
 
   real GMsolar = 1.327e20; //SI UNITS m^3 / sec^2
@@ -243,9 +289,12 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   scaleRad2 *= 3.086e19;  
   r *= 3.086e19;
   real val,v;
+  real energy;
   /*there is a -1 there because potential actually returns the neg of potential*/
   real v_esc= mw_sqrt( -2.0*potential(r, mass1, mass2, radiusScale1,radiusScale2)); 
-  real dist_max = max_finder(r, mass1, mass2, radiusScale1,radiusScale2);
+  
+  /*This is:	   distmax_finder(a,   b,           c,                       r, ... particle mass*/
+  real dist_max = distmax_finder(0,scaleRad2, 5.0 * (scaleRad1 + scaleRad2), r, scaleRad1, scaleRad2, mass1, mass2, part_mass);
 /*this calculates it in m/s. return val is converted to km/s thus mult by 0.001*/
 
 
@@ -253,8 +302,9 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
     {
       v = (real)mwXrandom(dsfmtState,0.0, v_esc);
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
-
-      val = 4*mw_pi*v*v* dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2);
+      
+      energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
+      val = 4*mw_pi*v*v* dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
 
       if (val/dist_max > u)
       {
@@ -279,12 +329,12 @@ static inline mwvector r_vec(dsfmt_t* dsfmtState, mwvector rshift,  real r)
 
 
 static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift, real vsc,real r, real mass1, real mass2,
-			       real scaleRad1, real scaleRad2)
+			       real scaleRad1, real scaleRad2, real part_mass)
 {
     mwvector vel;
     real v;
 
-    v = vel_mag(dsfmtState, r, mass1, mass2, scaleRad1, scaleRad2);
+    v = vel_mag(dsfmtState, r, mass1, mass2, scaleRad1, scaleRad2, part_mass);
     vel = angles(dsfmtState, vsc * v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);                /* move the velocity */
 
@@ -339,7 +389,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
-    real RHO_MAX = computeRhoMax((real)mass1, (real)mass2, (real)radiusScale1, (real)radiusScale2);
     mw_printf("%10.5f",RHO_MAX);
 
     for (i = 0; i < nbody; ++i)
@@ -356,7 +405,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
         /*NEED TO CHANGE*/b.bodynode.pos = r_vec(prng, rShift, r);
 
-        /*NEED TO CHANGE*/b.vel = vel_vec(prng,  vShift, velScale,r, mass1, mass2, radiusScale1, radiusScale2);
+        /*NEED TO CHANGE*/b.vel = vel_vec(prng,  vShift, velScale,r, mass1, mass2, radiusScale1, radiusScale2, b.bodynode.mass);
 
         assert(nbPositionValid(b.bodynode.pos));
 
