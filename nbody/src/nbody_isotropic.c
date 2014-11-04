@@ -49,11 +49,20 @@ static inline real potential( real r, real mass1, real mass2, real scaleRad1, re
 /*this is the density distribution function. Returns the density at a given radius.*/
 static inline real density( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
+
   real scaleRad1Cube = cube(scaleRad1); 
   real scaleRad2Cube = cube(scaleRad2);
   real density_result= (3/(4*(M_PI)))*(mass1/scaleRad1Cube *pow(1+ sqr(r)/sqr(scaleRad1), -2.5)+ mass2/scaleRad2Cube *pow(1+ sqr(r)/sqr(scaleRad2), -2.5));
   
   return density_result;
+}
+
+/*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
+static inline real mass_en( real r, real mass, real scaleRad)
+{
+  real mass_enclosed= mass* cube(r)*pow( (sqr(r)+ sqr(scaleRad)), -1.5);
+  
+  return mass_enclosed;
 }
 
 
@@ -196,7 +205,7 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
 /*this serves the max finding routine*/
 static inline real profile(real v, real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real part_mass)
 {
-    real energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
+    real energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
 //     mw_printf(" v= %f \n",  v);
 //     mw_printf("     getting distribution function for initial profiles...\n");
     real result =  dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
@@ -367,21 +376,28 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
 static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real part_mass)
 {
   mwbool GOOD_VAL= 0;
+   
 //   real GMsolar = 1.327e20; //SI UNITS m^3 / sec^2
 //   scaleRad1 *= 3.086e19; //meters
 //   scaleRad2 *= 3.086e19;  
 //   r *= 3.086e19;
-  real val,v,u;
+//   mass1 *=GMsolar;
+//   mass2 *=GMsolar;
+//   part_mass*=GMsolar;
+  
+  real val,v,u,d;
   real energy;
-  /*there is a -1 there because potential actually returns the neg of potential*/
-  real v_esc= mw_sqrt( mw_fabs(2.0*potential(r, mass1, mass2, scaleRad1,scaleRad2))); 
+  /*There is a absolute value there to make sure the number is a real numer and not a NAN*/
+  //real v_esc= mw_sqrt( mw_fabs(2.0*potential(r, mass1, mass2, scaleRad1,scaleRad2))); 
+  real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
 //   mw_printf("   vesc= %f \n", v_esc);
 //   mw_printf("   getting distribution_function max...\n");
+  //energy=part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v_esc*v_esc;
   /*This is:	   distmax_finder(a,   b,           c,                       r, ... particle mass*/
-  real dist_max = distmax_finder(0.0, 0.5*v_esc, 1.0 * v_esc, r, scaleRad1, scaleRad2, mass1, mass2, part_mass);
-//   mw_printf("   dist_max=%f \n", dist_max);
+  real dist_max =distmax_finder(0.0, 0.5*v_esc, 1.0 * v_esc, r, scaleRad1, scaleRad2, mass1, mass2, part_mass);
+  mw_printf("   dist_max=%.16f \n", dist_max);
   
-/*this calculates it in m/s. return val is converted to km/s thus mult by 0.001*/
+
 
 
     while (GOOD_VAL != 1)
@@ -390,12 +406,13 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
       
 //       mw_printf("   getting energy for distribution_function... \n");
-      energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
+      energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
 //       mw_printf("   done. energy= %f \n",energy);
       
 //       mw_printf("   getting value...");
-      val = 4*M_PI*v*v* dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
-//       mw_printf("   done. val= %f , val/dist_max= %f, u= %f \n" ,val, val/dist_max, u);
+      d=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
+      val = 4*M_PI*v*v* d;
+      mw_printf("   done. d= %.16f , val/dist_max= %f, u= %f \n" ,d, val/dist_max, u);
       if (mw_fabs( val/dist_max) > u)
       {
 // 	mw_printf("test complete...val/dist_max= %f, u= %f \n" , val/dist_max, u);
@@ -404,7 +421,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
     }
   
   
-  return 0.001* val; //km/s
+  return val; //km/s
 }
 
 
@@ -419,17 +436,11 @@ static inline mwvector r_vec(dsfmt_t* dsfmtState, mwvector rshift,  real r)
 }
 
 
-static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift, real vsc,real r, real mass1, real mass2,
-			       real scaleRad1, real scaleRad2, real part_mass)
+static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift,real v)
 {
     mwvector vel;
-    real v;
-    
-//     mw_printf("  getting velocity magnitude...\n");
-    v = vel_mag(dsfmtState, r, mass1, mass2, scaleRad1, scaleRad2, part_mass);
-//     mw_printf("  done. vel= %f \n", vel_mag);
-    
-    vel = angles(dsfmtState, vsc * v);   /* pick scaled velocity */
+
+    vel = angles(dsfmtState, v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);                /* move the velocity */
 
     return vel;
@@ -471,8 +482,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     unsigned int i;
     int table;
     Body b;
-    real r, velScale;
-
+    real r, v;
+    real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2;
     memset(&b, 0, sizeof(b));
     
@@ -480,7 +491,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real rho_max=-rhomax_finder(0,radiusScale2, 5.0 * (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
 //     mw_printf("done. rhomax= %f \n", rho_max);
     
-    /*NEED TO CHANGE*/velScale = 1000;// Conversion from km/s
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
     b.bodynode.mass = mass / nbody;    /* Mass per particle */
@@ -490,24 +500,31 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
     for (i = 0; i < nbody; ++i)
     {
-//       mw_printf("initalizing particle %i \n",i);
+      mw_printf("initalizing particle %i \n",i);
         do
         {
 // 	  mw_printf(" getting radius for particle %i...", i);
          r = r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
 	 
-	          /* FIXME: We should avoid the divide by 0.0 by multiplying
-             * the original random number by 0.9999.. but I'm too lazy
-             * to change the tests. Same with other models */
+	 /*to ensure that r is finite and nonzero*/
+	 if(isinf(r)==FALSE && r!=0.0){break;}
         }
-        while (isinf(r));
+        while (1);
 // 	  mw_printf(" done, r= %f \n",r);
 // 	mw_printf(" getting radius vector...");
-        /*NEED TO CHANGE*/b.bodynode.pos = r_vec(prng, rShift, r);
-// 	mw_printf(" done \n");
+	b.bodynode.pos = r_vec(prng, rShift, r);
+// 	mw_printf(" done \n");	
 	
-// 	mw_printf(" getting velocity vector...\n");
-        /*NEED TO CHANGE*/b.vel = vel_vec(prng,  vShift, velScale,r, mass1, mass2, radiusScale1, radiusScale2, b.bodynode.mass);
+	/*this calculates the mass enclosed in each sphere. 
+	 * velocity is determined by mass enclosed at that r not by the total mass of the system. 
+	 */
+	mass_en1= mass_en(r, mass1, radiusScale1);
+	mass_en2= mass_en(r, mass2, radiusScale2);	
+	
+	v = vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, b.bodynode.mass);
+		
+// 	mw_printf(" getting velocity...\n");
+	b.vel = vel_vec(prng,  vShift,v);
 // 	mw_printf(" done \n");
         assert(nbPositionValid(b.bodynode.pos));
 
