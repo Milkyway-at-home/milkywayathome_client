@@ -303,6 +303,10 @@ public:
             // open file
             std::ofstream fileStream( fname.str().c_str(),
                                   std::ifstream::out | std::ifstream::binary );
+            if(!fileStream.is_open())
+            {
+              return;
+            }
 
             glfwGetWindowSize(window, &width, &height);
 
