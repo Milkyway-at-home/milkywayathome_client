@@ -161,6 +161,7 @@ static const VisArgs defaultVisArgs =
     /* .width             */ 0,
     /* .height            */ 0,
     /* .eventPollPeriod   */ DEFAULT_EVENT_POLL_PERIOD,
+    /* .printFrames       */ DEFAULT_PRINTFRAMES,
 
     /* .quitOnComplete    */ DEFAULT_QUIT_ON_COMPLETE,
     /* .blockSimulation   */ DEFAULT_BLOCK_SIMULATION,
@@ -366,6 +367,13 @@ static int nbglHandleVisArguments(int argc, const char** argv, VisArgs* visOut)
             POPT_ARG_NONE, &visArgs.drawOrbitTrace,
             0, "Show path of center of mass", NULL
         },
+
+        {
+            "print-frames", 'y',
+            POPT_ARG_STRING, &visArgs.printFrames,
+            0, "Print frame images for making videos", NULL
+        },
+
 
         {
             "copyright", '\0',

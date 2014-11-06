@@ -37,6 +37,9 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include <sstream>
+#include <fstream>
+
 
 #ifdef _MSC_VER
   #pragma warning(disable : 4800)
@@ -65,7 +68,7 @@ static const float pointSizeChangeFactor = 1.05f;
 static const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 static const glm::fquat identityOrientation = glm::fquat(1.0f, 0.0f, 0.0f, 0.0f);
 
-static const float startRadius = 30.0f;
+static const float startRadius = 60.0f;
 
 // angular component only, degrees per second
 static const float minFloatSpeed = 1.0e-3f;
@@ -230,6 +233,7 @@ private:
     bool needsUpdate;
     bool paused;
     int eventPollPeriod;
+    bool printFrames;
 
     void loadShaders();
     void createBuffers();
@@ -272,6 +276,65 @@ public:
 
     void display();
     void mainLoop();
+    void printFrame()
+    {
+        static unsigned int frameCounter = 0;
+        unsigned int printFrequency = 5;
+        if(frameCounter % printFrequency == 0)
+        {
+            unsigned int frameNumber = frameCounter/printFrequency;
+            int width, height;
+            std::stringstream fname;
+            fname << "Frame";
+            if(frameNumber < 10)
+            {
+                fname << '0';
+            }
+            if(frameNumber < 100)
+            {
+                fname << '0';
+            }
+            if(frameNumber < 1000)
+            {
+                fname << '0';
+            }
+            fname << frameNumber << ".tga";
+
+            // open file
+            std::ofstream fileStream( fname.str().c_str(),
+                                  std::ifstream::out | std::ifstream::binary );
+
+            glfwGetWindowSize(window, &width, &height);
+
+            // Make the BYTE array, factor of 3 because it's RBG.
+            GLubyte* pixels = new GLubyte[ 3 * width * height];
+
+            glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+            GLchar BMPheader[18]= {
+            0,                                     // image identification field
+            0,                                     // colormap type
+            2,                                     // image type code
+            0,0,0,0,0,                             // color map spec (ignored here)
+            0,0,                                   // x origin of image
+            0,0,                                   // y origin of image
+            width & 255,  width >> 8 & 255,        // width of the image
+            height & 255, height >> 8 & 255,       // height of the image
+            24,                                    // bits per pixel
+            0                                      // image descriptor byte
+            };
+
+            fileStream.write(BMPheader, 18);
+            fileStream.write(reinterpret_cast<const GLchar*>(pixels),
+                         width*height*3);
+            fileStream.close();
+
+           
+            delete [] pixels;
+        }
+        frameCounter++;
+
+    }
 
     void stop()
     {
@@ -1348,6 +1411,10 @@ void NBodyGraphics::mainLoop()
         }
 
         this->display();
+        if(printFrames)
+        {
+            printFrame();
+        }
         glfwSwapBuffers(this->window);
     }
 }
