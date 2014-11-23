@@ -36,7 +36,10 @@ their copyright to their programs which execute similar algorithms.
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
-
+#include <time.h>
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
 
 
 
@@ -101,13 +104,9 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 	 * did product rule since both density and pot are functions of radius. 
 	 */
   dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(sqr(first_deriv_psi));
-  denominator= 1.0/mw_sqrt(mw_fabs(-potential(ri,mass1,mass2,scaleRad1,scaleRad2) ));
+  denominator= 1.0/mw_sqrt(mw_fabs(energy-potential(ri,mass1,mass2,scaleRad1,scaleRad2) ));
   func= first_deriv_psi* dsqden_dpsisq *denominator;
-//   mw_printf("first_deriv_psi= %f \n",first_deriv_psi);
-//   mw_printf("first_deriv_density  = %f \n",first_deriv_density);
-//   mw_printf("second_deriv_density  = %f \n",second_deriv_density);
-//   mw_printf("second_deriv_psi  = %f \n",second_deriv_psi);
-//   mw_printf("function  = %f \n",func);
+
   return func;
   
 }
@@ -134,7 +133,7 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
   lowerg=0.0;
   upperg=lowerg+hg;
   
-//   mw_printf("upper= %f  energy= %f \n", upperg, energy);
+
   coef2= (lowerg+upperg)/2;//initializes the first coeff to change the function limits
   coef1= (upperg-lowerg)/2;//initializes the second coeff to change the function limits
   c1=0.555555556;
@@ -320,10 +319,10 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   
   mwbool GOOD_VAL= 0;
       
-//   real GMsolar =222288.47; //SI UNITS m^3 / sec^2
-//   scaleRad1 *= 3.086e19; //meters
-//   scaleRad2 *= 3.086e19;  
-//   r *= 3.086e19;
+//   real GMsolar =222288.47; //convert from simulation to solar masses
+//   scaleRad1 *= 1000; //pc
+//   scaleRad2 *= 1000;  
+//   r *= 1000;
 //   mass1 *=GMsolar;
 //   mass2 *=GMsolar;
 // //   part_mass*=GMsolar;
@@ -336,8 +335,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
 //   mw_printf("   vesc= %f \n", v_esc);
 
   
-  /*This is:	   distmax_finder(a,   b,           c,                       r, ... particle mass*/
-  //real dist_max =distmax_finder(1.0 * v_esc,0.0 , 0.5*v_esc, r, scaleRad1, scaleRad2, mass1, mass2, part_mass);
+
   v=0.0;
   energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
   
@@ -370,9 +368,9 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
     }
   
   
-  val*=0.977813107;//changing from kpc/gy to km/s
-  
-  return val; //km/s
+  v*=0.977813107;//changing from kpc/gy to km/s
+//   mw_printf("   done. d= %.16f , v= %.16f, e= %.16f \n" ,d,v,energy);
+  return v; //km/s
 }
 
 
@@ -453,69 +451,61 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     int table;
     Body b;
     real r, v;
-
-  
     real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2;
     
     memset(&b, 0, sizeof(b));
     
-//     mw_printf("getting rhomax...");
     real rho_max=-rhomax_finder(0,radiusScale2, 5.0 * (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
-//     mw_printf("done. rhomax= %f \n", rho_max);
-    
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
     b.bodynode.mass = mass / nbody;    /* Mass per particle */
-
+    real p_mass=mass / nbody;
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
-    
+    real all_rs[nbody];
+    real all_vs[nbody];
+            
+    #ifdef _OPENMP
+    omp_set_num_threads(16);
+    #pragma omp parallel for\
+    shared(mass1,mass2,radiusScale1,radiusScale2,p_mass,rho_max,nbody)\
+    private(i,mass_en1,mass_en2,r) 
+    #endif
+     
+      for (i = 0; i < nbody; i++)
+      {
+	if(i==0){printf("Number of threads in parallel region: %d\n",omp_get_num_threads());}
+// 	printf("run by: %d\n",omp_get_thread_num());
+// 	 mw_printf("initalizing particle %i. \n",i);
+	  do
+	  {
+	   r= r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
+	  /*to ensure that r is finite and nonzero*/
+	  if(isinf(r)==FALSE && r!=0.0){break;}
+	  }
+	  while (1);
+	  all_rs[i]=r;
+	  /*this calculates the mass enclosed in each sphere. 
+	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
+	  */
+	  mass_en1= mass_en(r, mass1, radiusScale1);
+	  mass_en2= mass_en(r, mass2, radiusScale2);
+	  
+	  all_vs[i] = vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, p_mass);
+      }
+      
 
-
     
-    for (i = 0; i < nbody; ++i)
+    for(i=0;i<nbody;i++)
     {
-      mw_printf("initalizing particle %i. \n",i);
-        do
-        {
-// 	  mw_printf(" getting radius for particle %i...", i);
-         r = r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
-	 
-	 /*to ensure that r is finite and nonzero*/
-	 if(isinf(r)==FALSE && r!=0.0){break;}
-        }
-        while (1);
-	
-	
-// 	  mw_printf(" done, r= %f \n",r);
-// 	mw_printf(" getting radius vector...");
-	b.bodynode.pos = r_vec(prng, rShift, r);
-// 	mw_printf(" done \n");	
-	
-	/*this calculates the mass enclosed in each sphere. 
-	* velocity is determined by mass enclosed at that r not by the total mass of the system. 
-	*/
-	mass_en1= mass_en(r, mass1, radiusScale1);
-	mass_en2= mass_en(r, mass2, radiusScale2);
-// 	mw_printf(" making dist plot...");
-// 	if(i==0){dist_func_plot( r, mass1, mass2, radiusScale1, radiusScale2,b.bodynode.mass);}
-// 	mw_printf(" done \n");	
-	
-// 	mw_printf(" getting velocity mag...\n");
-	
-	v = vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, b.bodynode.mass);
-// 	mw_printf(" done \n");	
-// 	mw_printf("radius= %f. vel= %f \n", r, v);
-// 	mw_printf(" getting velocity...\n");
-	b.vel = vel_vec(prng,  vShift,v);
-// 	mw_printf(" done \n");
-        assert(nbPositionValid(b.bodynode.pos));
-
-        pushBody(luaSt, &b);
-        lua_rawseti(luaSt, table, i + 1);
-	
-// 	mw_printf("finished particle %i.", i);
+      r=all_rs[i];
+      v=all_vs[i];
+      b.bodynode.pos = r_vec(prng, rShift, r);
+      b.vel = vel_vec(prng,  vShift,v);
+      assert(nbPositionValid(b.bodynode.pos));
+      pushBody(luaSt, &b);
+      lua_rawseti(luaSt, table, i + 1);
     }
 
     return 1;
