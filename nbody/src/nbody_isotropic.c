@@ -343,9 +343,6 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   real dist_max=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
   
 //   mw_printf("   dist_max=%.16f  \n", dist_max);
-  
-
-
 
     while (1)
     {
@@ -456,7 +453,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     
     memset(&b, 0, sizeof(b));
     
-    real rho_max=-rhomax_finder(0,radiusScale2, 5.0 * (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
+    real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
     b.bodynode.mass = mass / nbody;    /* Mass per particle */
@@ -465,7 +462,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     table = lua_gettop(luaSt);	
     real all_rs[nbody];
     real all_vs[nbody];
-            
+
     #ifdef _OPENMP
     omp_set_num_threads(16);
     #pragma omp parallel for\
@@ -475,8 +472,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
      
       for (i = 0; i < nbody; i++)
       {
-	if(i==0){printf("Number of threads in parallel region: %d\n",omp_get_num_threads());}
-// 	printf("run by: %d\n",omp_get_thread_num());
 // 	 mw_printf("initalizing particle %i. \n",i);
 	  do
 	  {
@@ -486,6 +481,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	  while (1);
 	  all_rs[i]=r;
+	  
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
 	  */
@@ -494,8 +490,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  
 	  all_vs[i] = vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, p_mass);
       }
-      
-
     
     for(i=0;i<nbody;i++)
     {
@@ -511,7 +505,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     return 1;
 }
 
-/*NEED TO CHANGE LUA FILE*/
+
 int nbGenerateIsotropic(lua_State* luaSt)
 {
     static dsfmt_t* prng;
@@ -544,10 +538,9 @@ int nbGenerateIsotropic(lua_State* luaSt)
                                  *position, *velocity, radiusScale1, radiusScale2);
 }
 
-/*NEED TO CHANGE*/
 void registerGenerateIsotropic(lua_State* luaSt)
 {
-    /*NEED TO CHANGE*/lua_register(luaSt, "generateIsotropic", nbGenerateIsotropic);
+    lua_register(luaSt, "generateIsotropic", nbGenerateIsotropic);
 }
 
 
