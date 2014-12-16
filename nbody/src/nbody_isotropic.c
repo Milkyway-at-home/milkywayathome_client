@@ -146,7 +146,6 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
   x2n=((coef1)*x2 +coef2);
   x3n=((coef1)*x3 +coef2);
 
-//   mw_printf("       integrating...\n");
   while (1)
   {
       
@@ -163,12 +162,10 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
       x2n=((coef1)*x2 +coef2);
       x3n=((coef1)*x3 +coef2);
       
-//    mw_printf("lower= %f  energy= %f", lowerg, energy);
 
       if (lowerg>=energy)//loop termination clause
         {break;}
   }
-//       mw_printf("       done integrating. int val=%.16f \n", intv);
   return intv;
 }
 
@@ -178,9 +175,7 @@ static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real
  real c= 1.0/(mw_sqrt(8)* sqr(M_PI));
  real distribution_function;
 /*This calls guassian quad to integrate the function for a given energy*/
-//   mw_printf("      entering integrating routine... \n");
  distribution_function=c*gauss_quad(energy, mass1, mass2, scaleRad1, scaleRad2);
-//  mw_printf("      finished routine. dist_func= %.16f \n",distribution_function);
   
   return distribution_function;
 }
@@ -217,6 +212,11 @@ static inline real profile2(real r, real mass1, real mass2, real scaleRad1, real
   return result;
 }
   
+  static inline real profile(real v, real mass1, real mass2, real r, real scaleRad1, real scaleRad2, real energy)
+{
+    real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
+  return -result;
+}
 /*this is a maxfinding routine to find the maximum of the density.
  * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
  */
@@ -276,6 +276,64 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
     }
 }
 
+static inline real distmax_finder( real a, real b, real c, real r, real scaleRad1, real scaleRad2, real mass1,real mass2, real energy)
+{
+  real tolerance= 1e-2;
+  real RATIO = 0.61803399;
+  real RATIO_COMPLEMENT = 1 - RATIO;
+  int counter=0;
+  
+  real profile_x1,profile_x2,x0,x1,x2,x3;
+  x0 = a;
+  x3 = c;
+  
+  if (mw_fabs(b - c) > mw_fabs(b - a))
+    {
+      x1 = b;
+      x2 = b + (RATIO_COMPLEMENT * (c - b)); 
+    }
+  else
+    {
+      x2 = b;
+      x1 = b - (RATIO_COMPLEMENT * (b - a));
+    }
+
+  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2, energy);
+  profile_x2 = (real)profile(x2,mass1,mass2,r, scaleRad1,scaleRad2, energy);
+  
+  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
+    {
+      counter++;
+      if (profile_x2 < profile_x1)
+	{
+	  x0 = x1;
+	  x1 = x2;
+	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
+	  profile_x1 = (real)profile_x2;
+	  profile_x2 = (real)profile(x2, mass1,mass2,r, scaleRad1,scaleRad2,energy);
+	}
+      else
+	{
+	  x3 = x2;
+	  x2 = x1;
+	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
+	  profile_x2 = (real)profile_x1;
+	  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2,energy);
+	}
+	
+      if(counter>9){break;}
+    }
+//   mw_printf("counter = %i \n",counter);
+  if (profile_x1 < profile_x2)
+    {
+      return (-profile_x1);
+    }
+  else
+    {
+      return (-profile_x2);
+    }
+}
+
 static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2, real rho_max)
 {
 
@@ -289,9 +347,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
 
-//       mw_printf("getting density at r...");
       val = r*r * density(r,  mass1,  mass2,  scaleRad1,  scaleRad2);
-//       mw_printf("done. val= %f \n",val/rho_max);
   
       if (val/rho_max > u)
       {
@@ -325,48 +381,37 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
 //   r *= 1000;
 //   mass1 *=GMsolar;
 //   mass2 *=GMsolar;
-// //   part_mass*=GMsolar;
+//   part_mass*=GMsolar;
   
   real val,v,u,d;
   real energy;
   /*There is a absolute value there to make sure the number is a real numer and not a NAN*/
   //real v_esc= mw_sqrt( mw_fabs(2.0*potential(r, mass1, mass2, scaleRad1,scaleRad2))); 
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
-//   mw_printf("   vesc= %f \n", v_esc);
 
-  
-
+  /*the max of the distribution function occurs at v=0.0*/
   v=0.0;
   energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
-  
-//   mw_printf("   getting distribution_function max...\n");
-  real dist_max=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
-  
-//   mw_printf("   dist_max=%.16f  \n", dist_max);
-
+//   mw_printf("finding dist max...");
+  real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2, energy);
+//   mw_printf("done \n");
     while (1)
     {
       v = (real)mwXrandom(dsfmtState,0.0, v_esc);
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
       
-//       mw_printf("   getting energy for distribution_function... \n");
       energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
-//       mw_printf("   done. energy= %f \n",energy);
       
-//       mw_printf("   getting value...");
       d=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
-      val =4*M_PI*v*v* d;
-//       mw_printf("   done. d= %.16f , v= %.16f, e= %.16f \n" ,d,v,energy);
-      if (mw_fabs( d/dist_max) > u)
+      val =v*v* d;
+      if (mw_fabs( val/dist_max) > u)
       {
-// 	mw_printf("test complete...val/dist_max= %f, u= %f \n" , val/dist_max, u);
        	break;
       }
     }
   
   
   v*=0.977813107;//changing from kpc/gy to km/s
-//   mw_printf("   done. d= %.16f , v= %.16f, e= %.16f \n" ,d,v,energy);
   return v; //km/s
 }
 
@@ -405,7 +450,7 @@ static inline void dist_func_plot(real r, real mass1, real mass2, real scaleRad1
     energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
     d=dist_fun(r,mass1,mass2, scaleRad1, scaleRad2, energy);
     
-    fprintf(fp, "%.16f \t %.16f %.16f %.16f \n", v, d,r, energy);
+    fprintf(fp, "%.16f \t %.16f %.16f %.16f \n", v, v*v*d,r, energy);
     v+=0.001;
     if(v>=v_esc){break;}
   }
@@ -464,7 +509,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real all_vs[nbody];
 
     #ifdef _OPENMP
-    omp_set_num_threads(16);
+    omp_set_num_threads(1);
     #pragma omp parallel for\
     shared(mass1,mass2,radiusScale1,radiusScale2,p_mass,rho_max,nbody)\
     private(i,mass_en1,mass_en2,r) 
@@ -472,15 +517,16 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
      
       for (i = 0; i < nbody; i++)
       {
-// 	 mw_printf("initalizing particle %i. \n",i);
+	 mw_printf(" \r initalizing particle %i. ",i);
 	  do
 	  {
-	   r= r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
-	  /*to ensure that r is finite and nonzero*/
-	  if(isinf(r)==FALSE && r!=0.0){break;}
+	    r= r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
+	    /*to ensure that r is finite and nonzero*/
+	    if(isinf(r)==FALSE && r!=0.0){break;}
 	  }
 	  while (1);
 	  all_rs[i]=r;
+// 	  if(i==4){dist_func_plot(r, mass1, mass2, radiusScale1, radiusScale2,p_mass);}
 	  
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
