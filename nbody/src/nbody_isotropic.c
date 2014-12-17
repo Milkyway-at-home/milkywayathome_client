@@ -374,7 +374,6 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
    */
   
   
-  mwbool GOOD_VAL= 0;
       
 //   real GMsolar =222288.47; //convert from simulation to solar masses
 //   scaleRad1 *= 1000; //pc
