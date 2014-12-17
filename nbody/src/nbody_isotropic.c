@@ -225,7 +225,7 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
   real tolerance= 1e-4;
   real RATIO = 0.61803399;
   real RATIO_COMPLEMENT = 1 - RATIO;
-//   int counter=0;
+  int counter=0;
   
   real profile_x1,profile_x2,x0,x1,x2,x3;
   x0 = a;
@@ -247,7 +247,7 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
   
   while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
-//       counter++;
+      counter++;
       if (profile_x2 < profile_x1)
 	{
 	  x0 = x1;
@@ -264,6 +264,7 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
 	  profile_x2 = (real)profile_x1;
 	  profile_x1 = (real)profile2(x1,mass1,mass2,scaleRad1,scaleRad2);
 	}
+	if(counter>20){break;}
     }
 //   mw_printf("counter = %i \n",counter);
   if (profile_x1 < profile_x2)
