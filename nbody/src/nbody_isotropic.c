@@ -509,7 +509,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real all_vs[nbody];
 
     #ifdef _OPENMP
-    omp_set_num_threads(1);
     #pragma omp parallel for\
     shared(mass1,mass2,radiusScale1,radiusScale2,p_mass,rho_max,nbody)\
     private(i,mass_en1,mass_en2,r) 
