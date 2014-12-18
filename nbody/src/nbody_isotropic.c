@@ -504,7 +504,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
      
       for (i = 0; i < nbody; i++)
       {
-	 mw_printf(" \r initalizing particle %i. ",i);
+// 	 mw_printf(" \r initalizing particle %i. ",i);
 	  do
 	  {
 	    r= r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
