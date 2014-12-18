@@ -535,6 +535,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     }
 
     return 1;
+
 }
 
 
