@@ -1,9 +1,3 @@
-/*THIS FILE IS IN DEVELOPMENT, NOT READY TO IMPLEMENT
- * -SIDD
- */
-
-
-
 /* Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
    Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
