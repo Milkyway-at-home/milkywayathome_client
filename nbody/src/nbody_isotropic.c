@@ -58,7 +58,8 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
 
   real scaleRad1Cube = cube(scaleRad1); 
   real scaleRad2Cube = cube(scaleRad2);
-  real density_result= (3.0/(4.0*(M_PI)))*(mass1/scaleRad1Cube *mw_pow(1+ sqr(r)/sqr(scaleRad1), -2.5)+ mass2/scaleRad2Cube *mw_pow(1+ sqr(r)/sqr(scaleRad2), -2.5));
+  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) *mw_pow(1.0 + sqr(r)/sqr(scaleRad1), -2.5)
+						  + (mass2/scaleRad2Cube) *mw_pow(1.0 + sqr(r)/sqr(scaleRad2), -2.5));
   
   return density_result;
 }
@@ -78,7 +79,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
  real second_deriv_psi;
  real first_deriv_density;
  real second_deriv_density;
- real dsqden_dpsisq;/*second derivative of density with respect to -potential */
+ real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
  real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
  real func;
  real h=0.01; /*This value is not completely arbitrary. Generally, lower the value of h the better. 
@@ -196,9 +197,10 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
     Y(vec) = rad*sin( theta )*sin( phi );    /*y component*/
     Z(vec) = rad*cos( theta );               /*z component*/
 
-    rsq = mw_sqrv(vec);             /* compute radius squared */
-    rsc = rad / mw_sqrt(rsq);       /* compute scaling factor */
-    mw_incmulvs(vec, rsc);          /* rescale to radius given */
+    /*legacy code*/
+//     rsq = mw_sqrv(vec);             /* compute radius squared */
+//     rsc = rad / mw_sqrt(rsq);       /* compute scaling factor */
+//     mw_incmulvs(vec, rsc);          /* rescale to radius given */
 
     return vec;
 }
@@ -212,14 +214,17 @@ static inline real profile2(real r, real mass1, real mass2, real scaleRad1, real
   return result;
 }
   
-  static inline real profile(real v, real mass1, real mass2, real r, real scaleRad1, real scaleRad2, real energy)
+  static inline real profile(real v, real mass1, real mass2, real r, real scaleRad1, real scaleRad2 )
 {
-    real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
+  real energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
+  real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
   return -result;
 }
+
 /*this is a maxfinding routine to find the maximum of the density.
  * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
  */
+
 static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real scaleRad2, real mass1,real mass2)
 {
   real tolerance= 1e-4;
@@ -277,7 +282,7 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
     }
 }
 
-static inline real distmax_finder( real a, real b, real c, real r, real scaleRad1, real scaleRad2, real mass1,real mass2, real energy)
+static inline real distmax_finder( real a, real b, real c, real r, real scaleRad1, real scaleRad2, real mass1,real mass2)
 {
   real tolerance= 1e-2;
   real RATIO = 0.61803399;
@@ -299,8 +304,8 @@ static inline real distmax_finder( real a, real b, real c, real r, real scaleRad
       x1 = b - (RATIO_COMPLEMENT * (b - a));
     }
 
-  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2, energy);
-  profile_x2 = (real)profile(x2,mass1,mass2,r, scaleRad1,scaleRad2, energy);
+  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2);
+  profile_x2 = (real)profile(x2,mass1,mass2,r, scaleRad1,scaleRad2);
   
   while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
@@ -311,7 +316,7 @@ static inline real distmax_finder( real a, real b, real c, real r, real scaleRad
 	  x1 = x2;
 	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
 	  profile_x1 = (real)profile_x2;
-	  profile_x2 = (real)profile(x2, mass1,mass2,r, scaleRad1,scaleRad2,energy);
+	  profile_x2 = (real)profile(x2, mass1,mass2,r, scaleRad1,scaleRad2);
 	}
       else
 	{
@@ -319,10 +324,10 @@ static inline real distmax_finder( real a, real b, real c, real r, real scaleRad
 	  x2 = x1;
 	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
 	  profile_x2 = (real)profile_x1;
-	  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2,energy);
+	  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2);
 	}
 	
-      if(counter>9){break;}
+      if(counter>10){break;}
     }
 //   mw_printf("counter = %i \n",counter);
   if (profile_x1 < profile_x2)
@@ -359,7 +364,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
 }
 
 
-/*NEED TO CHANGE*/
+
 static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real part_mass)
 {
   
@@ -385,16 +390,10 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   
   real val,v,u,d;
   real energy;
-  /*There is a absolute value there to make sure the number is a real numer and not a NAN*/
+
   //real v_esc= mw_sqrt( mw_fabs(2.0*potential(r, mass1, mass2, scaleRad1,scaleRad2))); 
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
-
-  /*the max of the distribution function occurs at v=0.0*/
-  v=0.0;
-  energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
-//   mw_printf("finding dist max...");
-  real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2, energy);
-//   mw_printf("done \n");
+  real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2);
     while (1)
     {
       v = (real)mwXrandom(dsfmtState,0.0, v_esc);
@@ -437,43 +436,31 @@ static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift,real v)
     return vel;
 }
 
-static inline void dist_func_plot(real r, real mass1, real mass2, real scaleRad1, real scaleRad2,real part_mass)
-{
-  
-  real energy,d;
-  real v=0.0;
-  real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));  
-  FILE *fp;
-  fp= fopen("dist.dat", "w");  
-  while(1)
-  {
-    energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
-    d=dist_fun(r,mass1,mass2, scaleRad1, scaleRad2, energy);
-    
-    fprintf(fp, "%.16f \t %.16f %.16f %.16f \n", v, v*v*d,r, energy);
-    v+=0.001;
-    if(v>=v_esc){break;}
-  }
-  fclose(fp);
-}
+// static inline void dist_func_plot(real r, real mass1, real mass2, real scaleRad1, real scaleRad2,real part_mass)
+// {
+//   
+//   real energy,d;
+//   real v=0.0;
+//   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));  
+//   FILE *fp;
+//   fp= fopen("dist.dat", "w");  
+//   while(1)
+//   {
+//     energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
+//     d=dist_fun(r,mass1,mass2, scaleRad1, scaleRad2, energy);
+//     
+//     fprintf(fp, "%.16f \t %.16f %.16f %.16f \n", v, v*v*d,r, energy);
+//     v+=0.001;
+//     if(v>=v_esc){break;}
+//   }
+//   fclose(fp);
+// }
+
 /* generatePlummer: generate Plummer model initial conditions for test
  * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-
-/*
-* I have chosen not to use Henon units for the reason that the distribution
-* function is not easily decomposed into a function of the system mass and
-* Newton's gravitational constant.  Instead, SI units are used and then
-* converted to km/s for the velocities at the end. Properly, one should use
-* CGS units as this would conform to the standards of theoretical astrophysics,
-* but I am lazy and leave this as an exercise to a future graduate student :)))
-*
-* Lots of love and rainbows,
-*
-* Jake B.
-*/
 
 static int nbGenerateIsotropicCore(lua_State* luaSt,
 
@@ -509,6 +496,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real all_vs[nbody];
 
     #ifdef _OPENMP
+
     #pragma omp parallel for\
     shared(mass1,mass2,radiusScale1,radiusScale2,p_mass,rho_max,nbody)\
     private(i,mass_en1,mass_en2,r) 
@@ -525,8 +513,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	  while (1);
 	  all_rs[i]=r;
-// 	  if(i==4){dist_func_plot(r, mass1, mass2, radiusScale1, radiusScale2,p_mass);}
-	  
+
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
 	  */
