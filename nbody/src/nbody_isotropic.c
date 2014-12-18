@@ -18,8 +18,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
-The minimum bracketing method is based on results from "Numerical Recipes 
-in C, 2nd ed." and conforms to the authors' defintion of intellectual
+The minimum bracketing method is based on results from "Numerical Recipes,
+3rd ed." and conforms to the authors' defintion of intellectual
 property under their license, and as such does not conflict with
 their copyright to their programs which execute similar algorithms.
 */
@@ -30,14 +30,153 @@ their copyright to their programs which execute similar algorithms.
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
+#include <time.h>
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
 
-/* pickshell: pick a random point on a sphere of specified radius. 
-*
-*   Changed this section to be in compliance with NEMO's initialization technique.
-*   Instead of assigning it a point on sphere, assigns angles. Allows for non-circular orbits.
-*
-*/
-static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
+
+
+
+/*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
+static inline real potential( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
+{
+  real potential_result= -1.0*(mass1/mw_sqrt(sqr(r) + sqr(scaleRad1)) +  mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)) );
+  
+  return (-1.0*potential_result);
+}
+
+/*this is the density distribution function. Returns the density at a given radius.*/
+static inline real density( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
+{
+
+  real scaleRad1Cube = cube(scaleRad1); 
+  real scaleRad2Cube = cube(scaleRad2);
+  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) *mw_pow(1.0 + sqr(r)/sqr(scaleRad1), -2.5)
+						  + (mass2/scaleRad2Cube) *mw_pow(1.0 + sqr(r)/sqr(scaleRad2), -2.5));
+  
+  return density_result;
+}
+
+/*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
+static inline real mass_en( real r, real mass, real scaleRad)
+{
+  real mass_enclosed= mass* cube(r)*pow( (sqr(r)+ sqr(scaleRad)), -1.5);
+  
+  return mass_enclosed;
+}
+
+
+static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
+{
+ real first_deriv_psi;
+ real second_deriv_psi;
+ real first_deriv_density;
+ real second_deriv_density;
+ real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
+ real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
+ real func;
+ real h=0.01; /*This value is not completely arbitrary. Generally, lower the value of h the better. 
+ For the five point stencil, values lower than .001 ran into roundoff error.
+ 0.01 is a safe bet, with a calculation error of order 10^-10.*/
+ 
+ /*yes, this does in fact use a 5-point stencil*/
+ first_deriv_psi=( potential(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2)-8.0*potential(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)
+		      -potential(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+8.0*potential(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h);
+  
+  first_deriv_density=( density(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2)-8.0*density(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)
+		      -density(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+8.0*density(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h);
+
+/*yes, this also uses a five point stencil*/
+  second_deriv_density=( -1.0*density(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+16.0*density(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) -30.0*density(ri,mass1,mass2,scaleRad1,scaleRad2)
+		      +16.0*density(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)-1.0*density(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h*h);
+
+  second_deriv_psi= ( -1.0*potential(ri+2.0*h,mass1,mass2,scaleRad1,scaleRad2)+16.0*potential(ri+1.0*h,mass1,mass2,scaleRad1,scaleRad2) -30.0*potential(ri,mass1,mass2,scaleRad1,scaleRad2)
+		      +16.0*potential(ri-1.0*h,mass1,mass2,scaleRad1,scaleRad2)-1.0*potential(ri-2.0*h,mass1,mass2,scaleRad1,scaleRad2) ) /(12*h*h);
+
+	/*
+	 * Instead of calculating the second derivative of density with respect to -pot directly, 
+	 * did product rule since both density and pot are functions of radius. 
+	 */
+  dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(sqr(first_deriv_psi));
+  denominator= 1.0/mw_sqrt(mw_fabs(energy-potential(ri,mass1,mass2,scaleRad1,scaleRad2) ));
+  func= first_deriv_psi* dsqden_dpsisq *denominator;
+
+  return func;
+  
+}
+  
+  
+/*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
+static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
+{
+  real Ng,hg,lowerg, upperg;
+  real intv;
+  real coef1,coef2;//parameters for gaussian quad
+  real c1,c2,c3;
+  real x1,x2,x3;
+  real x1n,x2n,x3n;
+  real a=0.0;
+  real b=energy;
+
+  intv=0;//initial value of integral
+  Ng=1001;
+  hg=(b-a)/(Ng-1);
+/*I have set the lower limit to be zero. '
+ * This is in the definition of the distribution function. 
+ * If this is used for integrating other things, this will need to be changed.*/
+  lowerg=0.0;
+  upperg=lowerg+hg;
+  
+
+  coef2= (lowerg+upperg)/2;//initializes the first coeff to change the function limits
+  coef1= (upperg-lowerg)/2;//initializes the second coeff to change the function limits
+  c1=0.555555556;
+  c2=0.888888889;
+  c3=0.555555556;
+  x1=-0.774596669;
+  x2=0.000000000;
+  x3=0.774596669;
+  x1n=((coef1)*x1 +coef2);
+  x2n=((coef1)*x2 +coef2);
+  x3n=((coef1)*x3 +coef2);
+
+  while (1)
+  {
+      
+      //gauss quad
+      intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 +      
+		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 + 
+		    c3*fun(x3n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1);
+
+      lowerg=upperg;
+      upperg= upperg+hg;
+      coef2= (lowerg+ upperg)/2;//initializes the first coeff to change the function limits
+      coef1= (upperg-lowerg)/2;
+      x1n=((coef1)*x1 +coef2);
+      x2n=((coef1)*x2 +coef2);
+      x3n=((coef1)*x3 +coef2);
+      
+
+      if (lowerg>=energy)//loop termination clause
+        {break;}
+  }
+  return intv;
+}
+
+ /*This returns the value of the distribution function for a given energy*/
+static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
+{
+ real c= 1.0/(mw_sqrt(8)* sqr(M_PI));
+ real distribution_function;
+/*This calls guassian quad to integrate the function for a given energy*/
+ distribution_function=c*gauss_quad(energy, mass1, mass2, scaleRad1, scaleRad2);
+  
+  return distribution_function;
+}
+
+/* assigns angles. Allows for non-circular orbits.*/
+static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
 {
     real rsq, rsc;
     mwvector vec;
@@ -52,87 +191,81 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
     Y(vec) = rad*sin( theta )*sin( phi );    /*y component*/
     Z(vec) = rad*cos( theta );               /*z component*/
 
-    rsq = mw_sqrv(vec);             /* compute radius squared */
-    rsc = rad / mw_sqrt(rsq);       /* compute scaling factor */
-    mw_incmulvs(vec, rsc);          /* rescale to radius given */
+    /*legacy code*/
+//     rsq = mw_sqrv(vec);             /* compute radius squared */
+//     rsc = rad / mw_sqrt(rsq);       /* compute scaling factor */
+//     mw_incmulvs(vec, rsc);          /* rescale to radius given */
 
     return vec;
 }
 
-/*
-*   This code snippet is from nbody_plummer.c.
-*   This is a probability distribution which is used in NEMO.
-*   The parameter that is returned is a fraction that is used to sample the velocity.
-*   See Aarseth et al. (1974), eq. (A4,5).
-*/
-static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
+ 
+
+/*this serves the max finding routine*/
+static inline real profile2(real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
-
-    real x, y;
-
-    do                      /* select from fn g(x) */
-    {
-        x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
-        y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
-    }   /* using von Neumann tech */
-    while (y > x*x * mw_pow(1.0 - x*x, 3.5));
-
-    return x;
+    real result =  r*r*density( r, mass1, mass2, scaleRad1, scaleRad2);  
+  return result;
+}
+  
+  static inline real profile(real v, real mass1, real mass2, real r, real scaleRad1, real scaleRad2 )
+{
+  real energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
+  real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
+  return -result;
 }
 
+/*this is a maxfinding routine to find the maximum of the density.
+ * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
+ */
 
-static inline real profile(real r, real mass1, real mass2, real scale1, real scale2)
-  {  
-    real prof = (mw_pow(r,2.0) *((mass1/mw_pow(scale1,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale1,2.0), -2.5) 
-				 + (mass2/mw_pow(scale2,3.0)) * mw_pow(1 + mw_pow(r,2.0) / mw_pow(scale2,2.0),-2.5)));
-    return (real) (-prof);
-  }
-
-real inverseParabolicInterpolateIsotropic(real ratio, real a, real b, real c,
-							real scale1, real scale2, real mass1,
-					  real mass2, real tolerance)
+static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real scaleRad2, real mass1,real mass2)
 {
-  real RATIO = ratio;
+  real tolerance= 1e-4;
+  real RATIO = 0.61803399;
   real RATIO_COMPLEMENT = 1 - RATIO;
+  int counter=0;
   
   real profile_x1,profile_x2,x0,x1,x2,x3;
   x0 = a;
-  x3 = b;
+  x3 = c;
   
-  if (mw_fabs(b - c) > mw_fabs(c - a))
+  if (mw_fabs(b - c) > mw_fabs(b - a))
     {
-      x1 = c;
-      x2 = c + (RATIO_COMPLEMENT * (b - c)); 
+      x1 = b;
+      x2 = b + (RATIO_COMPLEMENT * (c - b)); 
     }
   else
     {
-      x2 = c;
-      x1 = c - (RATIO_COMPLEMENT * (c - a));
+      x2 = b;
+      x1 = b - (RATIO_COMPLEMENT * (b - a));
     }
 
-  profile_x1 = (real)profile(x1,mass1,mass2,scale1,scale2);
-  profile_x2 = (real)profile(x2,mass1,mass2,scale1,scale2);
+  profile_x1 = (real)profile2(x1,mass1,mass2,scaleRad1,scaleRad2);
+  profile_x2 = (real)profile2(x2,mass1,mass2,scaleRad1,scaleRad2);
   
-  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2))))
+  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
+      counter++;
       if (profile_x2 < profile_x1)
 	{
 	  x0 = x1;
 	  x1 = x2;
-	  x2 = RATIO * x1 + RATIO_COMPLEMENT * x3;
+	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
 	  profile_x1 = (real)profile_x2;
-	  profile_x2 = (real)profile(x2,mass1,mass2,scale1,scale2);
+	  profile_x2 = (real)profile2(x2, mass1,mass2,scaleRad1,scaleRad2);
 	}
       else
 	{
 	  x3 = x2;
 	  x2 = x1;
-	  x1 = RATIO * x2 + RATIO_COMPLEMENT * x0;
+	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
 	  profile_x2 = (real)profile_x1;
-	  profile_x1 = (real)profile(x1,mass1,mass2,scale1,scale2);
+	  profile_x1 = (real)profile2(x1,mass1,mass2,scaleRad1,scaleRad2);
 	}
+	if(counter>20){break;}
     }
-
+//   mw_printf("counter = %i \n",counter);
   if (profile_x1 < profile_x2)
     {
       return (-profile_x1);
@@ -143,21 +276,66 @@ real inverseParabolicInterpolateIsotropic(real ratio, real a, real b, real c,
     }
 }
 
-
-real computeRhoMax(real mass1, real mass2, real scale1, real scale2)
+static inline real distmax_finder( real a, real b, real c, real r, real scaleRad1, real scaleRad2, real mass1,real mass2)
 {
-  real result =  inverseParabolicInterpolateIsotropic(0.61803399, 0, 5.0 * (scale1 + scale2), 
-				       scale2, scale1, scale2, mass1, mass2, 1e-4);  
-  mw_printf("RHO MAX IS %10.5f\n",result);
-  return result;
+  real tolerance= 1e-2;
+  real RATIO = 0.61803399;
+  real RATIO_COMPLEMENT = 1 - RATIO;
+  int counter=0;
+  
+  real profile_x1,profile_x2,x0,x1,x2,x3;
+  x0 = a;
+  x3 = c;
+  
+  if (mw_fabs(b - c) > mw_fabs(b - a))
+    {
+      x1 = b;
+      x2 = b + (RATIO_COMPLEMENT * (c - b)); 
+    }
+  else
+    {
+      x2 = b;
+      x1 = b - (RATIO_COMPLEMENT * (b - a));
+    }
+
+  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2);
+  profile_x2 = (real)profile(x2,mass1,mass2,r, scaleRad1,scaleRad2);
+  
+  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
+    {
+      counter++;
+      if (profile_x2 < profile_x1)
+	{
+	  x0 = x1;
+	  x1 = x2;
+	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
+	  profile_x1 = (real)profile_x2;
+	  profile_x2 = (real)profile(x2, mass1,mass2,r, scaleRad1,scaleRad2);
+	}
+      else
+	{
+	  x3 = x2;
+	  x2 = x1;
+	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
+	  profile_x2 = (real)profile_x1;
+	  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2);
+	}
+	
+      if(counter>10){break;}
+    }
+//   mw_printf("counter = %i \n",counter);
+  if (profile_x1 < profile_x2)
+    {
+      return (-profile_x1);
+    }
+  else
+    {
+      return (-profile_x2);
+    }
 }
 
-static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real scaleRad2,
-				    real Mass1, real Mass2,real max)
+static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2, real rho_max)
 {
-
-  real scaleRad1Cube = cube(scaleRad1);
-  real scaleRad2Cube = cube(scaleRad2);
 
   mwbool GOOD_RADIUS = 0;
 
@@ -169,10 +347,9 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
 
-      val = r*r * (3.0/(4.0 *M_PI)*(Mass1/scaleRad1Cube * mw_pow(1.0 + sqr(r)/ sqr(scaleRad1),-2.5) +
-					Mass2/scaleRad2Cube * mw_pow(1.0 + sqr(r)/sqr(scaleRad2),-2.5)));
-
-      if (val/max > u)
+      val = r*r * density(r,  mass1,  mass2,  scaleRad1,  scaleRad2);
+  
+      if (val/rho_max > u)
       {
        	GOOD_RADIUS = 1;
       }
@@ -180,69 +357,104 @@ static inline real isotropicRandomR(dsfmt_t* dsfmtState, real scaleRad1, real sc
   return r;
 }
 
-/*
-*   Added the x value. This is a parameter that is used to sample the velocity.
-*   Though, the distribution function was originally used for one plummer sphere.
-*   We have two here. Though I think the distribution function can still be used.
-*/
-static inline real isotropicRandomV(dsfmt_t* dsfmtState,real r, real scaleRad1, real scaleRad2, real Mass1, real Mass2)
+
+
+static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real part_mass)
 {
+  
+  /*
+   * WE TOOK IN 
+   * MASS IN SIMULATION UNITS, WHICH HAVE THE UNITS OF KPC^3/GY^2 
+   * LENGTH IN KPC
+   * AND TIME IN GY
+   * THEREFORE, THE velocities ARE OUTPUTING IN KPC/GY
+   * THIS IS EQUAL TO 0.977813107 KM/S
+   * 
+   */
+  
+  
+      
+//   real GMsolar =222288.47; //convert from simulation to solar masses
+//   scaleRad1 *= 1000; //pc
+//   scaleRad2 *= 1000;  
+//   r *= 1000;
+//   mass1 *=GMsolar;
+//   mass2 *=GMsolar;
+//   part_mass*=GMsolar;
+  
+  real val,v,u,d;
+  real energy;
 
-  real GMsolar = 1.327e20; //SI UNITS m^3 / sec^2
-  scaleRad1 *= 3.086e19; //meters
-  scaleRad2 *= 3.086e19;  
-  r *= 3.086e19;
-  real val;
-  real x;
-  x= plummerSelectFromG(dsfmtState);
-/*this calculates it in m/s. return val is converted to km/s thus mult by 0.001*/
-  val = x * M_SQRT2* mw_sqrt(GMsolar *Mass1/mw_sqrt(sqr(r) + sqr(scaleRad1))
-			       + GMsolar * Mass2/mw_sqrt(sqr(r) + sqr(scaleRad2)));
-
-  return 0.001* val; //km/s
+  //real v_esc= mw_sqrt( mw_fabs(2.0*potential(r, mass1, mass2, scaleRad1,scaleRad2))); 
+  real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
+  real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2);
+    while (1)
+    {
+      v = (real)mwXrandom(dsfmtState,0.0, v_esc);
+      u = (real)mwXrandom(dsfmtState,0.0,1.0);
+      
+      energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
+      
+      d=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
+      val =v*v* d;
+      if (mw_fabs( val/dist_max) > u)
+      {
+       	break;
+      }
+    }
+  
+  
+  v*=0.977813107;//changing from kpc/gy to km/s
+  return v; //km/s
 }
 
-static inline mwvector isotropicBodyPosition(dsfmt_t* dsfmtState, mwvector rshift,  real r)
+
+static inline mwvector r_vec(dsfmt_t* dsfmtState, mwvector rshift,  real r)
 {
     mwvector pos;
 
-    pos = pickShell(dsfmtState,  r);  /* pick scaled position */
+    pos = angles(dsfmtState,  r);  /* pick scaled position */
     mw_incaddv(pos, rshift);               /* move the position */
 
     return pos;
 }
 
-static inline mwvector isotropicBodyVelocity(dsfmt_t* dsfmtState,real r, mwvector vshift, real vsc,  real scaleRad1, real scaleRad2,
-					     real Mass1, real Mass2)
+
+static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift,real v)
 {
     mwvector vel;
-    real v;
 
-    v = isotropicRandomV(dsfmtState,r,scaleRad1,scaleRad2,Mass1,Mass2);
-    vel = pickShell(dsfmtState, vsc * v);   /* pick scaled velocity */
+    vel = angles(dsfmtState, v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);                /* move the velocity */
 
     return vel;
 }
+
+// static inline void dist_func_plot(real r, real mass1, real mass2, real scaleRad1, real scaleRad2,real part_mass)
+// {
+//   
+//   real energy,d;
+//   real v=0.0;
+//   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));  
+//   FILE *fp;
+//   fp= fopen("dist.dat", "w");  
+//   while(1)
+//   {
+//     energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
+//     d=dist_fun(r,mass1,mass2, scaleRad1, scaleRad2, energy);
+//     
+//     fprintf(fp, "%.16f \t %.16f %.16f %.16f \n", v, v*v*d,r, energy);
+//     v+=0.001;
+//     if(v>=v_esc){break;}
+//   }
+//   fclose(fp);
+// }
 
 /* generatePlummer: generate Plummer model initial conditions for test
  * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-
-/*
-* I have chosen not to use Henon units for the reason that the distribution
-* function is not easily decomposed into a function of the system mass and
-* Newton's gravitational constant.  Instead, SI units are used and then
-* converted to km/s for the velocities at the end. Properly, one should use
-* CGS units as this would conform to the standards of theoretical astrophysics,
-* but I am lazy and leave this as an exercise to a future graduate student :)))
-*
-* Lots of love and rainbows,
-*
-* Jake B.
-*/
 
 static int nbGenerateIsotropicCore(lua_State* luaSt,
 
@@ -261,44 +473,65 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     unsigned int i;
     int table;
     Body b;
-    real r, velScale;
-
+    real r, v;
+    real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2;
+    
     memset(&b, 0, sizeof(b));
-
-    velScale = 1000;// Conversion from km/s
+    
+    real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
     b.bodynode.mass = mass / nbody;    /* Mass per particle */
-
+    real p_mass=mass / nbody;
     lua_createtable(luaSt, nbody, 0);
-    table = lua_gettop(luaSt);
-    real RHO_MAX = computeRhoMax((real)mass1, (real)mass2, (real)radiusScale1, (real)radiusScale2);
-    mw_printf("%10.5f",RHO_MAX);
+    table = lua_gettop(luaSt);	
+    real all_rs[nbody];
+    real all_vs[nbody];
 
-    for (i = 0; i < nbody; ++i)
+    #ifdef _OPENMP
+
+    #pragma omp parallel for\
+    shared(mass1,mass2,radiusScale1,radiusScale2,p_mass,rho_max,nbody)\
+    private(i,mass_en1,mass_en2,r) 
+    #endif
+     
+      for (i = 0; i < nbody; i++)
+      {
+// 	 mw_printf(" \r initalizing particle %i. ",i);
+	  do
+	  {
+	    r= r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
+	    /*to ensure that r is finite and nonzero*/
+	    if(isinf(r)==FALSE && r!=0.0){break;}
+	  }
+	  while (1);
+	  all_rs[i]=r;
+
+	  /*this calculates the mass enclosed in each sphere. 
+	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
+	  */
+	  mass_en1= mass_en(r, mass1, radiusScale1);
+	  mass_en2= mass_en(r, mass2, radiusScale2);
+	  
+	  all_vs[i] = vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, p_mass);
+      }
+    
+    for(i=0;i<nbody;i++)
     {
-        do
-        {
-          r = isotropicRandomR(prng, radiusScale1, radiusScale2, mass1, mass2, RHO_MAX);
-	           /* FIXME: We should avoid the divide by 0.0 by multiplying
-             * the original random number by 0.9999.. but I'm too lazy
-             * to change the tests. Same with other models */
-        }
-        while (isinf(r));
-
-        b.bodynode.pos = isotropicBodyPosition(prng, rShift, r);
-
-        b.vel = isotropicBodyVelocity(prng, r, vShift, velScale, radiusScale1, radiusScale2, mass1, mass2);
-
-        assert(nbPositionValid(b.bodynode.pos));
-
-        pushBody(luaSt, &b);
-        lua_rawseti(luaSt, table, i + 1);
+      r=all_rs[i];
+      v=all_vs[i];
+      b.bodynode.pos = r_vec(prng, rShift, r);
+      b.vel = vel_vec(prng,  vShift,v);
+      assert(nbPositionValid(b.bodynode.pos));
+      pushBody(luaSt, &b);
+      lua_rawseti(luaSt, table, i + 1);
     }
 
     return 1;
+
 }
+
 
 int nbGenerateIsotropic(lua_State* luaSt)
 {
@@ -313,7 +546,7 @@ int nbGenerateIsotropic(lua_State* luaSt)
         {
 	  { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
 	  { "mass1",        LUA_TNUMBER,   NULL,          TRUE,  &mass1       },
-    { "mass2",        LUA_TNUMBER,   NULL,          TRUE,  &mass2       },
+	  { "mass2",        LUA_TNUMBER,   NULL,          TRUE,  &mass2       },
 	  { "scaleRadius1", LUA_TNUMBER,   NULL,          TRUE,  &radiusScale1},
 	  { "scaleRadius2", LUA_TNUMBER,   NULL,          TRUE,  &radiusScale2},
 	  { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
