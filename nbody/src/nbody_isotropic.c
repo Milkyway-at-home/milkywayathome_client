@@ -344,9 +344,10 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
 
   while (GOOD_RADIUS != 1)
     {
+      
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
-
+//       mw_printf(" \n  %f      %f ",r, u);
       val = r*r * density(r,  mass1,  mass2,  scaleRad1,  scaleRad2);
   
       if (val/rho_max > u)
@@ -489,12 +490,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real all_rs[nbody];
     real all_vs[nbody];
 
-    #ifdef _OPENMP
 
-    #pragma omp parallel for\
-    shared(mass1,mass2,radiusScale1,radiusScale2,p_mass,rho_max,nbody)\
-    private(i,mass_en1,mass_en2,r) 
-    #endif
      
       for (i = 0; i < nbody; i++)
       {
