@@ -268,11 +268,19 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
           infinities (not errors) to be the worst case.  The worst case is now the actual
           worst thing that can happen.
         */
-        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1*DEFAULT_WORST_CASE) || likelihood == 0.0)
+	/*
+	 * It previous returned the worse case when the likelihood==0. 
+	 * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
+	 */
+        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1*DEFAULT_WORST_CASE) )
         {
             mw_printf("Poor likelihood.  Returning worst case.\n");
             likelihood = DEFAULT_WORST_CASE;
         }
+        else if(likelihood == 0.0)
+	{
+	  likelihood=DEFAULT_BEST_CASE;
+	}
     }
 
     free(histogram);

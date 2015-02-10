@@ -47,6 +47,10 @@ extern "C" {
     Return this when a big likelihood is needed.
   */
 #define DEFAULT_WORST_CASE ((double) 9999999.9)
+ /*
+    Return this when a small likelihood is needed.
+  */
+#define DEFAULT_BEST_CASE ((double) 1e-9)
 
 #define histogramPhi 128.79
 #define histogramTheta 54.39
