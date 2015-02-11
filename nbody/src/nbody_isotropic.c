@@ -52,8 +52,9 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
 
   real scaleRad1Cube = cube(scaleRad1); 
   real scaleRad2Cube = cube(scaleRad2);
-  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) *mw_pow(1.0 + sqr(r)/sqr(scaleRad1), -2.5)
-						  + (mass2/scaleRad2Cube) *mw_pow(1.0 + sqr(r)/sqr(scaleRad2), -2.5));
+  /*this weird sqrt(fifth(x) notation is used because it was determined that pow() ate up a lot of comp time*/
+  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) * (1.0/mw_sqrt( fifth(1.0 + sqr(r)/sqr(scaleRad1) ) ) )
+						  + (mass2/scaleRad2Cube) *(1.0/mw_sqrt( fifth(1.0 + sqr(r)/sqr(scaleRad2) ) ) ) );
   
   return density_result;
 }
@@ -61,7 +62,7 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
 static inline real mass_en( real r, real mass, real scaleRad)
 {
-  real mass_enclosed= mass* cube(r)*pow( (sqr(r)+ sqr(scaleRad)), -1.5);
+  real mass_enclosed= mass* cube(r)* 1.0/mw_sqrt( cube(sqr(r)+ sqr(scaleRad) ) );
   
   return mass_enclosed;
 }
@@ -487,11 +488,11 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real p_mass=mass / nbody;
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
-    real all_rs[nbody];
-    real all_vs[nbody];
+//     real all_rs[nbody];
+//     real all_vs[nbody];
 
 
-     
+
       for (i = 0; i < nbody; i++)
       {
 // 	 mw_printf(" \r initalizing particle %i. ",i);
@@ -502,7 +503,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	    if(isinf(r)==FALSE && r!=0.0){break;}
 	  }
 	  while (1);
-	  all_rs[i]=r;
+// 	  all_rs[i]=r;
 
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
@@ -510,19 +511,26 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  mass_en1= mass_en(r, mass1, radiusScale1);
 	  mass_en2= mass_en(r, mass2, radiusScale2);
 	  
-	  all_vs[i] = vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, p_mass);
+	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, p_mass);
+	  
+	  b.bodynode.pos = r_vec(prng, rShift, r);
+	  b.vel = vel_vec(prng,  vShift,v);
+	  assert(nbPositionValid(b.bodynode.pos));
+	  pushBody(luaSt, &b);
+	  lua_rawseti(luaSt, table, i + 1);
       }
-    
-    for(i=0;i<nbody;i++)
-    {
-      r=all_rs[i];
-      v=all_vs[i];
-      b.bodynode.pos = r_vec(prng, rShift, r);
-      b.vel = vel_vec(prng,  vShift,v);
-      assert(nbPositionValid(b.bodynode.pos));
-      pushBody(luaSt, &b);
-      lua_rawseti(luaSt, table, i + 1);
-    }
+      
+    /*old code left over from previous multithreading. Left it incase threading is revisited*/
+//     for(i=0;i<nbody;i++)
+//     {
+//       r=all_rs[i];
+//       v=all_vs[i];
+//       b.bodynode.pos = r_vec(prng, rShift, r);
+//       b.vel = vel_vec(prng,  vShift,v);
+//       assert(nbPositionValid(b.bodynode.pos));
+//       pushBody(luaSt, &b);
+//       lua_rawseti(luaSt, table, i + 1);
+//     }
 
     return 1;
 

@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 /* simple math macros */
+#define fifth(x) ((x) * (x) * (x) * (x) * (x))
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x)  ((x) * (x))
 #define inv(x)  ((real) 1.0 / (x))
