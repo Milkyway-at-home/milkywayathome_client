@@ -196,7 +196,7 @@ typedef struct
 
 
 
-typedef struct MW_ALIGN_TYPE_V(128)
+typedef struct
 {
     mwvector a;
     mwvector c;
@@ -208,7 +208,7 @@ typedef struct MW_ALIGN_TYPE_V(128)
 
 /* Parameter related types */
 
-typedef struct MW_ALIGN_TYPE_V(128)
+typedef struct
 {
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
@@ -218,7 +218,7 @@ typedef struct MW_ALIGN_TYPE_V(128)
 
 
 /* Kitchen sink of constants, etc. */
-typedef struct MW_ALIGN_TYPE_V(256)
+typedef struct
 {
     /* Constants determined by other parameters */
     real m_sun_r0;
