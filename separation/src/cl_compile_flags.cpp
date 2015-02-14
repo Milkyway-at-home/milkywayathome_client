@@ -61,7 +61,6 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool 
     /* Math options for CL compiler */
     flags << "-cl-mad-enable ";
     flags << "-cl-no-signed-zeros ";
-    flags << "-cl-strict-aliasing ";
     flags << "-cl-finite-math-only ";
 
     /* Get constant definitions */
