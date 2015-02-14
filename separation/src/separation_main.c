@@ -598,7 +598,7 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
     /* Try the new file first. If that doesn't work, try the old one. */
     if (!ias)
     {
-        mw_printf("Switching to Parameter File\n", sf->ap_file);
+        mw_printf("Switching to Parameter File '%s'\n", sf->ap_file);
         ias = readParameters(sf->ap_file, ap, bgp, streams);
     }
 
