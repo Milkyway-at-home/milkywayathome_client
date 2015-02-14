@@ -31,7 +31,7 @@
 #include "milkyway_math.h"
 
 /* All Lua allocations will be aligned to this */
-#define MW_LUA_ALIGN 16
+#define MW_LUA_ALIGN 32
 
 /* Numeric types for userDataTypeName in MWNamedArg */
 #define INT_TYPE "INT"
