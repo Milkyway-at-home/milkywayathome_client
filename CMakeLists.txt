@@ -248,9 +248,8 @@ set(gcc_extra_flags "-fno-common -funswitch-loops ")
 set(gcc_only_extra_flags "-freg-struct-return ")
 
 
-if(SYSTEM_IS_X86)
-  list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
-endif()
+
+add_flag_if_supported("-maccumulate-outgoing-args")
 
 
 # ICC does bad things by default
