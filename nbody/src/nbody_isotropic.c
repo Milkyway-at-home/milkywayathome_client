@@ -30,13 +30,6 @@ their copyright to their programs which execute similar algorithms.
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
-#include <time.h>
-#ifdef _OPENMP
-  #include <omp.h>
-#endif /* _OPENMP */
-
-
-
 
 /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
 static inline real potential( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
@@ -106,7 +99,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   return func;
   
 }
-  
+ 
   
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
 static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
@@ -121,8 +114,8 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
   real b=energy;
 
   intv=0;//initial value of integral
-  Ng=1001;
-  hg=(b-a)/(Ng-1);
+  Ng=1001.0;//integral resolution
+  hg=(b-a)/(Ng-1.0);
 /*I have set the lower limit to be zero. '
  * This is in the definition of the distribution function. 
  * If this is used for integrating other things, this will need to be changed.*/
@@ -130,8 +123,8 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
   upperg=lowerg+hg;
   
 
-  coef2= (lowerg+upperg)/2;//initializes the first coeff to change the function limits
-  coef1= (upperg-lowerg)/2;//initializes the second coeff to change the function limits
+  coef2= (lowerg+upperg)/2.0;//initializes the first coeff to change the function limits
+  coef1= (upperg-lowerg)/2.0;//initializes the second coeff to change the function limits
   c1=0.555555556;
   c2=0.888888889;
   c3=0.555555556;
@@ -152,8 +145,8 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
 
       lowerg=upperg;
       upperg= upperg+hg;
-      coef2= (lowerg+ upperg)/2;//initializes the first coeff to change the function limits
-      coef1= (upperg-lowerg)/2;
+      coef2= (lowerg+ upperg)/2.0;//initializes the first coeff to change the function limits
+      coef1= (upperg-lowerg)/2.0;
       x1n=((coef1)*x1 +coef2);
       x2n=((coef1)*x2 +coef2);
       x3n=((coef1)*x3 +coef2);
@@ -162,8 +155,20 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
       if (lowerg>=energy)//loop termination clause
         {break;}
   }
+  
+//   real perc_diff;
+//   real value;
+//   value= guass_quad_less(energy, mass1, mass2, scaleRad1,scaleRad2);
+//   perc_diff= fabs(intv-value)/fabs(intv)*100; 
+//   FILE * fp;
+//    fp = fopen ("percerror.txt", "a");
+//    fprintf(fp, "%1.9f     %1.9f    %1.9f  \n", perc_diff, intv, value);
+//    
+//    fclose(fp);
   return intv;
 }
+
+
 
  /*This returns the value of the distribution function for a given energy*/
 static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
@@ -191,11 +196,6 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
     X(vec) = rad*sin( theta )*cos( phi );    /*x component*/
     Y(vec) = rad*sin( theta )*sin( phi );    /*y component*/
     Z(vec) = rad*cos( theta );               /*z component*/
-
-    /*legacy code*/
-//     rsq = mw_sqrv(vec);             /* compute radius squared */
-//     rsc = rad / mw_sqrt(rsq);       /* compute scaling factor */
-//     mw_incmulvs(vec, rsc);          /* rescale to radius given */
 
     return vec;
 }
@@ -266,7 +266,7 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
 	}
 	if(counter>20){break;}
     }
-//   mw_printf("counter = %i \n",counter);
+
   if (profile_x1 < profile_x2)
     {
       return (-profile_x1);
@@ -324,7 +324,7 @@ static inline real distmax_finder( real a, real b, real c, real r, real scaleRad
 	
       if(counter>10){break;}
     }
-//   mw_printf("counter = %i \n",counter);
+
   if (profile_x1 < profile_x2)
     {
       return (-profile_x1);
@@ -348,7 +348,6 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
       
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
-//       mw_printf(" \n  %f      %f ",r, u);
       val = r*r * density(r,  mass1,  mass2,  scaleRad1,  scaleRad2);
   
       if (val/rho_max > u)
@@ -361,7 +360,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
 
 
 
-static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2,  real part_mass)
+static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   
   /*
@@ -382,12 +381,10 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
 //   r *= 1000;
 //   mass1 *=GMsolar;
 //   mass2 *=GMsolar;
-//   part_mass*=GMsolar;
   
   real val,v,u,d;
   real energy;
 
-  //real v_esc= mw_sqrt( mw_fabs(2.0*potential(r, mass1, mass2, scaleRad1,scaleRad2))); 
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
   real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2);
     while (1)
@@ -432,26 +429,6 @@ static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift,real v)
     return vel;
 }
 
-// static inline void dist_func_plot(real r, real mass1, real mass2, real scaleRad1, real scaleRad2,real part_mass)
-// {
-//   
-//   real energy,d;
-//   real v=0.0;
-//   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));  
-//   FILE *fp;
-//   fp= fopen("dist.dat", "w");  
-//   while(1)
-//   {
-//     energy= part_mass*potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*part_mass*v*v;
-//     d=dist_fun(r,mass1,mass2, scaleRad1, scaleRad2, energy);
-//     
-//     fprintf(fp, "%.16f \t %.16f %.16f %.16f \n", v, v*v*d,r, energy);
-//     v+=0.001;
-//     if(v>=v_esc){break;}
-//   }
-//   fclose(fp);
-// }
-
 /* generatePlummer: generate Plummer model initial conditions for test
  * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
@@ -478,20 +455,15 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real r, v;
     real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2;
-    
+    real mass_light_particle = mass1 / (nbody *.5);//half the particles are light matter
+    real mass_dark_particle = mass2 / (nbody *.5);//half dark matter
     memset(&b, 0, sizeof(b));
     
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
-    b.bodynode.mass = mass / nbody;    /* Mass per particle */
-    real p_mass=mass / nbody;
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
-//     real all_rs[nbody];
-//     real all_vs[nbody];
-
-
 
       for (i = 0; i < nbody; i++)
       {
@@ -503,7 +475,20 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	    if(isinf(r)==FALSE && r!=0.0){break;}
 	  }
 	  while (1);
-// 	  all_rs[i]=r;
+	  
+	  /*
+	   * assign the first half of the particles as dark matter, with dark matter mass,
+	   * second half as light matter, with light matter masses
+	   */
+	  if(i<(nbody*0.5))
+	  {
+	    b.bodynode.mass=mass_dark_particle;
+	  }
+	  else
+	  {
+	    b.bodynode.mass=mass_light_particle;
+	  }
+	  
 
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
@@ -511,7 +496,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  mass_en1= mass_en(r, mass1, radiusScale1);
 	  mass_en2= mass_en(r, mass2, radiusScale2);
 	  
-	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, p_mass);
+	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2);
 	  
 	  b.bodynode.pos = r_vec(prng, rShift, r);
 	  b.vel = vel_vec(prng,  vShift,v);
@@ -520,18 +505,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  lua_rawseti(luaSt, table, i + 1);
       }
       
-    /*old code left over from previous multithreading. Left it incase threading is revisited*/
-//     for(i=0;i<nbody;i++)
-//     {
-//       r=all_rs[i];
-//       v=all_vs[i];
-//       b.bodynode.pos = r_vec(prng, rShift, r);
-//       b.vel = vel_vec(prng,  vShift,v);
-//       assert(nbPositionValid(b.bodynode.pos));
-//       pushBody(luaSt, &b);
-//       lua_rawseti(luaSt, table, i + 1);
-//     }
-
     return 1;
 
 }
