@@ -372,16 +372,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
    * THIS IS EQUAL TO 0.977813107 KM/S
    * 
    */
-  
-  
-      
-//   real GMsolar =222288.47; //convert from simulation to solar masses
-//   scaleRad1 *= 1000; //pc
-//   scaleRad2 *= 1000;  
-//   r *= 1000;
-//   mass1 *=GMsolar;
-//   mass2 *=GMsolar;
-  
+   
   real val,v,u,d;
   real energy;
 
@@ -455,16 +446,30 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real r, v;
     real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2;
-    real mass_light_particle = mass1 / (nbody *.5);//half the particles are light matter
-    real mass_dark_particle = mass2 / (nbody *.5);//half dark matter
+    real half_bodies= 0.5*nbody;
+    real count=0;
+    real mass_light_particle = mass1 / (half_bodies);//half the particles are light matter
+    real mass_dark_particle = mass2 / (half_bodies);//half dark matter
+    mwbool isdark = TRUE;
+    mwbool islight = FALSE;
+  
+    
+    
     memset(&b, 0, sizeof(b));
     
+    real lightDensityToMaxRatio;
+    
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
-
-    b.bodynode.type = BODY(ignore);    /* Same for all in the model */
+    
+    
+    
+    b.bodynode.type = BODY(isdark);   /*starting them off as dark*/
+    
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
-
+    
+// mw_printf("%f \n", (real)random());
+      
       for (i = 0; i < nbody; i++)
       {
 // 	 mw_printf(" \r initalizing particle %i. ",i);
@@ -476,20 +481,24 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	  while (1);
 	  
-	  /*
-	   * assign the first half of the particles as dark matter, with dark matter mass,
-	   * second half as light matter, with light matter masses
-	   */
-	  if(i<(nbody*0.5))
+// 	  b.bodynode.type = BODY(isdark);
+
+	  lightDensityToMaxRatio= 1.0/( mw_sqrt( fifth( (1.0 + sqr(r)/sqr(radiusScale1)) ) ) );
+// 	  mw_printf("%f\n", lightDensityToMaxRatio);
+	  if((real)mwXrandom(prng,0.0,2.0*lightDensityToMaxRatio)> lightDensityToMaxRatio && count<(half_bodies))
 	  {
-	    b.bodynode.mass=mass_dark_particle;
+// 	    mw_printf("this ran \n");
+	    b.bodynode.type = BODY(islight);
+	    b.bodynode.mass=mass_light_particle;
+	    count++;
 	  }
 	  else
 	  {
-	    b.bodynode.mass=mass_light_particle;
+	    b.bodynode.type = BODY(isdark);
+	    b.bodynode.mass=mass_dark_particle;
 	  }
 	  
-
+	  
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
 	  */
