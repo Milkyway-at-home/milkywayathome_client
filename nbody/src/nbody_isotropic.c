@@ -445,31 +445,32 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     Body b;
     real r, v;
     real mass_en1, mass_en2; //mass enclosed within predetermined r
-    real mass = mass1 + mass2;
-    real half_bodies= 0.5*nbody;
-    real count=0;
+    real mass = mass1 + mass2; //total mass
+    real half_bodies= 0.5*nbody; //half the bodies
+    real count=0;//counter for the number of light particles assigned
     real mass_light_particle = mass1 / (half_bodies);//half the particles are light matter
     real mass_dark_particle = mass2 / (half_bodies);//half dark matter
-    mwbool isdark = TRUE;
-    mwbool islight = FALSE;
-  
+    mwbool isdark = TRUE;//is it dark matter?
+    mwbool islight = FALSE;//is it light matter?
+    int dark= 1;//integer version of is it dark matter?
+    int light=0;//integer version of is it light matter?
+    int N=nbody;//integer number of bodies
     
     
-    memset(&b, 0, sizeof(b));
+    real lightDensityToMaxRatio;//the max of the light matter density
+    real all_r[N];//array to store the radii
+    real all_v[N];//array to store the velocities
+    real mass_type[N];//array to store the type of particle it will be, light or dark
+    real all_mass[N];//array to store the mass body will have
     
-    real lightDensityToMaxRatio;
-    
+    /*getting the maximum of the density depending on the scale radii*/
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
     
-    
-    
-    b.bodynode.type = BODY(isdark);   /*starting them off as dark*/
-    
+    memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
     
-// mw_printf("%f \n", (real)random());
-      
+      /*getting the radii and velocities for the bodies*/
       for (i = 0; i < nbody; i++)
       {
 // 	 mw_printf(" \r initalizing particle %i. ",i);
@@ -480,17 +481,67 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	    if(isinf(r)==FALSE && r!=0.0){break;}
 	  }
 	  while (1);
-	  
-// 	  b.bodynode.type = BODY(isdark);
 
+	  /*this calculates the mass enclosed in each sphere. 
+	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
+	  */
+	  mass_en1= mass_en(r, mass1, radiusScale1);
+	  mass_en2= mass_en(r, mass2, radiusScale2);
+	  
+	  /*getting velocity*/
+	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2);
+	  
+	  /*storing r's, v's, mass type and mass*/
+	  all_r[i]=r;
+	  all_v[i]=v;
+	  mass_type[i]= dark; //starting them all off dark
+	  all_mass[i]= mass_dark_particle;//giving them all dark matter masses
+      }
+      
+      /*this section assigns bodies to be light if they are eligible.
+       * Not the most beautiful section of code in the world
+       * but for now it works.*/
+      
+      i=0;
+      count=0;
+      while(count<half_bodies)//only want half the bodies light matter
+      {
+	/*
+	 * This runs through all the assigned bodies.
+	 * If the mass type is dark, will test to see the probability it is a light matter particle.
+	 * If it is, its location in the array will be marked for light matter in type and mass and the count increases.
+	 * Will go through the array of bodies until it has enough light bodies.
+	 */
+	if(mass_type[i]==dark)
+	{
+	  r=all_r[i];
+	  /*NOTE: this is a weird test, and I should make sure it is correct. -Sidd*/
 	  lightDensityToMaxRatio= 1.0/( mw_sqrt( fifth( (1.0 + sqr(r)/sqr(radiusScale1)) ) ) );
-// 	  mw_printf("%f\n", lightDensityToMaxRatio);
-	  if((real)mwXrandom(prng,0.0,2.0*lightDensityToMaxRatio)> lightDensityToMaxRatio && count<(half_bodies))
+	  if( (real)mwXrandom(prng,0.0,2.0*lightDensityToMaxRatio)> lightDensityToMaxRatio)
 	  {
-// 	    mw_printf("this ran \n");
-	    b.bodynode.type = BODY(islight);
-	    b.bodynode.mass=mass_light_particle;
+	    mass_type[i]=light;
+	    all_mass[i]=mass_light_particle;
 	    count++;
+	  }
+	}
+	
+	if(i>= nbody){i=0;}
+	else{i++;}
+      }
+      
+      /*this actually gets the position and velocity vectors and pushes table of bodies*/
+      for (i = 0; i < nbody; i++)
+      {
+	  r=all_r[i];
+	  v=all_v[i];
+	  
+	  b.bodynode.pos = r_vec(prng, rShift, r);
+	  b.vel = vel_vec(prng,  vShift,v);
+	  
+	  if(mass_type[i]==light)
+	  {
+	    b.bodynode.mass=mass_light_particle;
+	    b.bodynode.type = BODY(islight);
 	  }
 	  else
 	  {
@@ -498,24 +549,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	    b.bodynode.mass=mass_dark_particle;
 	  }
 	  
-	  
-	  /*this calculates the mass enclosed in each sphere. 
-	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
-	  */
-	  mass_en1= mass_en(r, mass1, radiusScale1);
-	  mass_en2= mass_en(r, mass2, radiusScale2);
-	  
-	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2);
-	  
-	  b.bodynode.pos = r_vec(prng, rShift, r);
-	  b.vel = vel_vec(prng,  vShift,v);
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
 	  lua_rawseti(luaSt, table, i + 1);
       }
-      
-    return 1;
-
+       
+    return 1;       
+       
 }
 
 
