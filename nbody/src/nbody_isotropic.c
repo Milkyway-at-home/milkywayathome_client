@@ -103,6 +103,65 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   
 }
 
+
+// static inline real gauss_quad_N(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
+// {
+//   real Ng,hg,lowerg, upperg;
+//   real intv;
+//   real coef1,coef2;//parameters for gaussian quad
+//   real c1,c2,c3;
+//   real x1,x2,x3;
+//   real x1n,x2n,x3n;
+//   real a=0.0;
+//   real b=energy;
+// 
+//   intv=0;//initial value of integral
+//   Ng=2001.0;//integral resolution
+//   hg=(b-a)/(Ng-1.0);
+// /*I have set the lower limit to be zero. '
+//  * This is in the definition of the distribution function. 
+//  * If this is used for integrating other things, this will need to be changed.*/
+//   lowerg=0.0;
+//   upperg=lowerg+hg;
+//   
+// 
+//   coef2= (lowerg+upperg)/2.0;//initializes the first coeff to change the function limits
+//   coef1= (upperg-lowerg)/2.0;//initializes the second coeff to change the function limits
+//   c1=0.555555556;
+//   c2=0.888888889;
+//   c3=0.555555556;
+//   x1=-0.774596669;
+//   x2=0.000000000;
+//   x3=0.774596669;
+//   x1n=((coef1)*x1 +coef2);
+//   x2n=((coef1)*x2 +coef2);
+//   x3n=((coef1)*x3 +coef2);
+// 
+//   while (1)
+//   {
+// 
+//       //gauss quad
+//       intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 +      
+// 		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 + 
+// 		    c3*fun(x3n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1);
+// 
+//       lowerg=upperg;
+//       upperg= upperg+hg;
+//       coef2= (lowerg+ upperg)/2.0;//initializes the first coeff to change the function limits
+//       coef1= (upperg-lowerg)/2.0;
+//       
+//       x1n=((coef1)*x1 +coef2);
+//       x2n=((coef1)*x2 +coef2);
+//       x3n=((coef1)*x3 +coef2);
+// 
+//       
+//       if (lowerg>=energy)//loop termination clause
+//         {break;}
+//   }
+//   
+//   return intv;
+// }
+
  /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
   static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
@@ -116,7 +175,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   real b=energy;
 
   intv=0;//initial value of integral
-  Ng=501.0;//integral resolution
+  Ng=1001.0;//integral resolution
   hg=(b-a)/(Ng-1.0);
 /*I have set the lower limit to be zero. '
  * This is in the definition of the distribution function. 
@@ -159,8 +218,17 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
         {break;}
   }
   
+//   real integral_diff_N= gauss_quad_N(energy, mass1, mass2, scaleRad1, scaleRad2);
+//   real percent_diff=mw_fabs(intv - integral_diff_N)/mw_fabs(intv);
+//   percent_diff=percent_diff*100.0;
+//   FILE * fp;
+//   fp = fopen ("percerror.txt", "a");
+//   fprintf(fp, "%1.9f\n", percent_diff);
+//   
+//   fclose(fp);
   return intv;
 }
+
 
 
  /*This returns the value of the distribution function for a given energy*/
@@ -452,8 +520,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     
     mwbool isdark = TRUE;//is it dark matter?
     mwbool islight = FALSE;//is it light matter?
-    int dark= 1;//integer version of is it dark matter?
-    int light=0;//integer version of is it light matter?
+    int dark= 1;//integer version of above
+    int light=0;//integer version of above
     int N=nbody;//integer number of bodies
     real max_light_density;//the max of the light matter density
     real all_r[N];//array to store the radii
