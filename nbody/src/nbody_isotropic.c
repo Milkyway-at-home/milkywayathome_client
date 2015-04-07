@@ -30,6 +30,9 @@ their copyright to their programs which execute similar algorithms.
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
 
 /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
 static inline real potential( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
@@ -99,10 +102,9 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   return func;
   
 }
- 
-  
-/*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
-static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
+
+ /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
+  static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   real Ng,hg,lowerg, upperg;
   real intv;
@@ -114,7 +116,7 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
   real b=energy;
 
   intv=0;//initial value of integral
-  Ng=1001.0;//integral resolution
+  Ng=501.0;//integral resolution
   hg=(b-a)/(Ng-1.0);
 /*I have set the lower limit to be zero. '
  * This is in the definition of the distribution function. 
@@ -137,7 +139,7 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
 
   while (1)
   {
-      
+
       //gauss quad
       intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 +      
 		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 + 
@@ -147,27 +149,18 @@ static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleR
       upperg= upperg+hg;
       coef2= (lowerg+ upperg)/2.0;//initializes the first coeff to change the function limits
       coef1= (upperg-lowerg)/2.0;
+      
       x1n=((coef1)*x1 +coef2);
       x2n=((coef1)*x2 +coef2);
       x3n=((coef1)*x3 +coef2);
-      
 
+      
       if (lowerg>=energy)//loop termination clause
         {break;}
   }
   
-//   real perc_diff;
-//   real value;
-//   value= guass_quad_less(energy, mass1, mass2, scaleRad1,scaleRad2);
-//   perc_diff= fabs(intv-value)/fabs(intv)*100; 
-//   FILE * fp;
-//    fp = fopen ("percerror.txt", "a");
-//    fprintf(fp, "%1.9f     %1.9f    %1.9f  \n", perc_diff, intv, value);
-//    
-//    fclose(fp);
   return intv;
 }
-
 
 
  /*This returns the value of the distribution function for a given energy*/
@@ -375,11 +368,11 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
    
   real val,v,u,d;
   real energy;
-
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
   real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2);
-    while (1)
+    while(1)
     {
+
       v = (real)mwXrandom(dsfmtState,0.0, v_esc);
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
       
@@ -387,6 +380,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
       
       d=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
       val =v*v* d;
+      
       if (mw_fabs( val/dist_max) > u)
       {
        	break;
@@ -444,24 +438,27 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     int table;
     Body b;
     real r, v;
+    
     real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2; //total mass
+    real mass_all=mass/nbody;
     real half_bodies= 0.5*nbody; //half the bodies
-    real count=0;//counter for the number of light particles assigned
+    real light_count=0;//counter for the number of light particles assigned
     real mass_light_particle = mass1 / (half_bodies);//half the particles are light matter
     real mass_dark_particle = mass2 / (half_bodies);//half dark matter
+//     mw_printf("half bodies= %f \n", half_bodies);
+//     mw_printf("mass1= %f \t mass2= %f\n", mass1, mass2);
+//     mw_printf("mass per particle all= %f\nmass per dark matter= %f\nmass per light matter= %f\n", mass_all, mass_dark_particle ,mass_light_particle);
+    
     mwbool isdark = TRUE;//is it dark matter?
     mwbool islight = FALSE;//is it light matter?
     int dark= 1;//integer version of is it dark matter?
     int light=0;//integer version of is it light matter?
     int N=nbody;//integer number of bodies
-    
-    
-    real lightDensityToMaxRatio;//the max of the light matter density
+    real max_light_density;//the max of the light matter density
     real all_r[N];//array to store the radii
     real all_v[N];//array to store the velocities
     real mass_type[N];//array to store the type of particle it will be, light or dark
-    real all_mass[N];//array to store the mass body will have
     
     /*getting the maximum of the density depending on the scale radii*/
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
@@ -495,33 +492,32 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  all_r[i]=r;
 	  all_v[i]=v;
 	  mass_type[i]= dark; //starting them all off dark
-	  all_mass[i]= mass_dark_particle;//giving them all dark matter masses
       }
       
       /*this section assigns bodies to be light if they are eligible.
        * Not the most beautiful section of code in the world
-       * but for now it works.*/
+       * but for now it works.
+       */
       
       i=0;
-      count=0;
-      while(count<half_bodies)//only want half the bodies light matter
+      light_count=0;
+      real coeff= (3.0/2.0)*1.0/ (mw_sqrt( fifth(3.0/5.0 ) ) );
+      real u;
+      while(light_count<half_bodies)//only want half the bodies light matter
       {
-	/*
-	 * This runs through all the assigned bodies.
-	 * If the mass type is dark, will test to see the probability it is a light matter particle.
-	 * If it is, its location in the array will be marked for light matter in type and mass and the count increases.
-	 * Will go through the array of bodies until it has enough light bodies.
-	 */
+
 	if(mass_type[i]==dark)
 	{
+	  
 	  r=all_r[i];
 	  /*NOTE: this is a weird test, and I should make sure it is correct. -Sidd*/
-	  lightDensityToMaxRatio= 1.0/( mw_sqrt( fifth( (1.0 + sqr(r)/sqr(radiusScale1)) ) ) );
-	  if( (real)mwXrandom(prng,0.0,2.0*lightDensityToMaxRatio)> lightDensityToMaxRatio)
+	  max_light_density=coeff* sqr(r)/sqr(radiusScale1)*1.0/( mw_sqrt( fifth( (1.0 + sqr(r)/sqr(radiusScale1)) ) ) );
+	  u= (real)mwXrandom(prng,0.0,1.0);
+
+	  if( max_light_density > u)
 	  {
 	    mass_type[i]=light;
-	    all_mass[i]=mass_light_particle;
-	    count++;
+	    light_count++;
 	  }
 	}
 	
@@ -543,17 +539,15 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	    b.bodynode.mass=mass_light_particle;
 	    b.bodynode.type = BODY(islight);
 	  }
-	  else
+	  else if(mass_type[i]==dark)
 	  {
 	    b.bodynode.type = BODY(isdark);
 	    b.bodynode.mass=mass_dark_particle;
 	  }
-	  
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
 	  lua_rawseti(luaSt, table, i + 1);
       }
-       
     return 1;       
        
 }
