@@ -104,65 +104,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 }
 
 
-// static inline real gauss_quad_N(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
-// {
-//   real Ng,hg,lowerg, upperg;
-//   real intv;
-//   real coef1,coef2;//parameters for gaussian quad
-//   real c1,c2,c3;
-//   real x1,x2,x3;
-//   real x1n,x2n,x3n;
-//   real a=0.0;
-//   real b=energy;
-// 
-//   intv=0;//initial value of integral
-//   Ng=2001.0;//integral resolution
-//   hg=(b-a)/(Ng-1.0);
-// /*I have set the lower limit to be zero. '
-//  * This is in the definition of the distribution function. 
-//  * If this is used for integrating other things, this will need to be changed.*/
-//   lowerg=0.0;
-//   upperg=lowerg+hg;
-//   
-// 
-//   coef2= (lowerg+upperg)/2.0;//initializes the first coeff to change the function limits
-//   coef1= (upperg-lowerg)/2.0;//initializes the second coeff to change the function limits
-//   c1=0.555555556;
-//   c2=0.888888889;
-//   c3=0.555555556;
-//   x1=-0.774596669;
-//   x2=0.000000000;
-//   x3=0.774596669;
-//   x1n=((coef1)*x1 +coef2);
-//   x2n=((coef1)*x2 +coef2);
-//   x3n=((coef1)*x3 +coef2);
-// 
-//   while (1)
-//   {
-// 
-//       //gauss quad
-//       intv= intv +(c1*fun(x1n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 +      
-// 		    c2*fun(x2n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1 + 
-// 		    c3*fun(x3n, mass1, mass2, scaleRad1, scaleRad2, energy)*coef1);
-// 
-//       lowerg=upperg;
-//       upperg= upperg+hg;
-//       coef2= (lowerg+ upperg)/2.0;//initializes the first coeff to change the function limits
-//       coef1= (upperg-lowerg)/2.0;
-//       
-//       x1n=((coef1)*x1 +coef2);
-//       x2n=((coef1)*x2 +coef2);
-//       x3n=((coef1)*x3 +coef2);
-// 
-//       
-//       if (lowerg>=energy)//loop termination clause
-//         {break;}
-//   }
-//   
-//   return intv;
-// }
-
- /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
+/*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
   static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   real Ng,hg,lowerg, upperg;
@@ -602,15 +544,16 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  b.bodynode.pos = r_vec(prng, rShift, r);
 	  b.vel = vel_vec(prng,  vShift,v);
 	  
-	  if(mass_type[i]==light)
+	  if(mass_type[i] == light)
 	  {
-	    b.bodynode.mass=mass_light_particle;
+	    b.bodynode.mass = mass_all;
 	    b.bodynode.type = BODY(islight);
 	  }
 	  else if(mass_type[i]==dark)
 	  {
-	    b.bodynode.type = BODY(isdark);
-	    b.bodynode.mass=mass_dark_particle;
+	    /*HAVE TO CHANGE THIS BACK TO DARK*/
+	    b.bodynode.mass = mass_all;
+	    b.bodynode.type = BODY(islight);
 	  }
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
