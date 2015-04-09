@@ -470,6 +470,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real all_v[N];//array to store the velocities
     real mass_type[N];//array to store the type of particle it will be, light or dark
     
+    real light_needed= (radiusScale1/radiusScale2)*nbody;
+//     mw_printf("light needed= %f", light_needed);
     /*getting the maximum of the density depending on the scale radii*/
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
     
@@ -513,7 +515,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       light_count=0;
       real coeff= (3.0/2.0)*1.0/ (mw_sqrt( fifth(3.0/5.0 ) ) );
       real u;
-      while(light_count<half_bodies)//only want half the bodies light matter
+      while(light_count<light_needed)//only want half the bodies light matter
       {
 
 	if(mass_type[i]==dark)
@@ -553,7 +555,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  {
 	    /*HAVE TO CHANGE THIS BACK TO DARK*/
 	    b.bodynode.mass = mass_all;
-	    b.bodynode.type = BODY(islight);
+	    b.bodynode.type = BODY(isdark);
 	  }
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
