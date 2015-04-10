@@ -470,7 +470,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real all_v[N];//array to store the velocities
     real mass_type[N];//array to store the type of particle it will be, light or dark
     
-    real light_needed= (radiusScale1/radiusScale2)*nbody;
+    real light_needed= (mass1/mass)*nbody;
 //     mw_printf("light needed= %f", light_needed);
     /*getting the maximum of the density depending on the scale radii*/
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
