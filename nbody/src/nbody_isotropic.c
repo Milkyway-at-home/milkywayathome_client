@@ -30,9 +30,6 @@ their copyright to their programs which execute similar algorithms.
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
-#ifdef _OPENMP
-  #include <omp.h>
-#endif /* _OPENMP */
 
 /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
 static inline real potential( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
@@ -104,6 +101,8 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 }
 
 
+
+
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
   static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
@@ -159,15 +158,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
       if (lowerg>=energy)//loop termination clause
         {break;}
   }
-  
-//   real integral_diff_N= gauss_quad_N(energy, mass1, mass2, scaleRad1, scaleRad2);
-//   real percent_diff=mw_fabs(intv - integral_diff_N)/mw_fabs(intv);
-//   percent_diff=percent_diff*100.0;
-//   FILE * fp;
-//   fp = fopen ("percerror.txt", "a");
-//   fprintf(fp, "%1.9f\n", percent_diff);
-//   
-//   fclose(fp);
+
   return intv;
 }
 
@@ -363,7 +354,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scale
 
 
 
-static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
+static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real part_mass)
 {
   
   /*
@@ -452,26 +443,31 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real mass_en1, mass_en2; //mass enclosed within predetermined r
     real mass = mass1 + mass2; //total mass
     real mass_all=mass/nbody;
-    real half_bodies= 0.5*nbody; //half the bodies
+    real half_bodies= 0.5*nbody;
     real light_count=0;//counter for the number of light particles assigned
     real mass_light_particle = mass1 / (half_bodies);//half the particles are light matter
     real mass_dark_particle = mass2 / (half_bodies);//half dark matter
+    
 //     mw_printf("half bodies= %f \n", half_bodies);
 //     mw_printf("mass1= %f \t mass2= %f\n", mass1, mass2);
 //     mw_printf("mass per particle all= %f\nmass per dark matter= %f\nmass per light matter= %f\n", mass_all, mass_dark_particle ,mass_light_particle);
     
-    mwbool isdark = TRUE;//is it dark matter?
-    mwbool islight = FALSE;//is it light matter?
-    int dark= 1;//integer version of above
-    int light=0;//integer version of above
+    /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
+    mwbool isdark = TRUE;
+    mwbool islight = FALSE;
+    int dark= 1;
+    int light=0;
     int N=nbody;//integer number of bodies
     real max_light_density;//the max of the light matter density
     real all_r[N];//array to store the radii
-    real all_v[N];//array to store the velocities
-    real mass_type[N];//array to store the type of particle it will be, light or dark
+//     real all_v[N];//array to store the velocities
+    real mass_type[N];//array to store body type
+    real particle_mass;
     
+    /*the following calculates the massratio if needed:*/
     real light_needed= (mass1/mass)*nbody;
 //     mw_printf("light needed= %f", light_needed);
+    
     /*getting the maximum of the density depending on the scale radii*/
     real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
     
@@ -494,15 +490,15 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  /*this calculates the mass enclosed in each sphere. 
 	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
 	  */
-	  mass_en1= mass_en(r, mass1, radiusScale1);
-	  mass_en2= mass_en(r, mass2, radiusScale2);
+// 	  mass_en1= mass_en(r, mass1, radiusScale1);
+// 	  mass_en2= mass_en(r, mass2, radiusScale2);
 	  
 	  /*getting velocity*/
-	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2);
+// 	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2);
 	  
 	  /*storing r's, v's, mass type and mass*/
 	  all_r[i]=r;
-	  all_v[i]=v;
+// 	  all_v[i]=v;
 	  mass_type[i]= dark; //starting them all off dark
       }
       
@@ -515,18 +511,17 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       light_count=0;
       real coeff= (3.0/2.0)*1.0/ (mw_sqrt( fifth(3.0/5.0 ) ) );
       real u;
-      while(light_count<light_needed)//only want half the bodies light matter
+      while(light_count<half_bodies)//only want half the bodies light matter
       {
 
 	if(mass_type[i]==dark)
 	{
 	  
 	  r=all_r[i];
-	  /*NOTE: this is a weird test, and I should make sure it is correct. -Sidd*/
 	  max_light_density=coeff* sqr(r)/sqr(radiusScale1)*1.0/( mw_sqrt( fifth( (1.0 + sqr(r)/sqr(radiusScale1)) ) ) );
 	  u= (real)mwXrandom(prng,0.0,1.0);
 
-	  if( max_light_density > u)
+	  if( max_light_density < u)
 	  {
 	    mass_type[i]=light;
 	    light_count++;
@@ -541,22 +536,27 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       for (i = 0; i < nbody; i++)
       {
 	  r=all_r[i];
-	  v=all_v[i];
-	  
-	  b.bodynode.pos = r_vec(prng, rShift, r);
-	  b.vel = vel_vec(prng,  vShift,v);
+// 	  v=all_v[i];
 	  
 	  if(mass_type[i] == light)
 	  {
-	    b.bodynode.mass = mass_all;
+	    b.bodynode.mass = mass_light_particle;
 	    b.bodynode.type = BODY(islight);
 	  }
 	  else if(mass_type[i]==dark)
 	  {
-	    /*HAVE TO CHANGE THIS BACK TO DARK*/
-	    b.bodynode.mass = mass_all;
+	    b.bodynode.mass = mass_dark_particle;
 	    b.bodynode.type = BODY(isdark);
 	  }
+	  
+	  particle_mass=b.bodynode.mass;
+	  mass_en1= mass_en(r, mass1, radiusScale1);
+	  mass_en2= mass_en(r, mass2, radiusScale2);
+	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, particle_mass);
+	  
+	  b.vel = vel_vec(prng,  vShift,v);
+	  b.bodynode.pos = r_vec(prng, rShift, r);
+	  
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
 	  lua_rawseti(luaSt, table, i + 1);
