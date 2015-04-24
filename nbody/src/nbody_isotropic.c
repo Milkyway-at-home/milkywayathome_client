@@ -197,14 +197,25 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
  
 
 /*this serves the max finding routine*/
-static inline real profile2(real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
+static inline real profile_rho(real r, real * args)
 {
-    real result =  r*r*density( r, mass1, mass2, scaleRad1, scaleRad2);  
+  real mass1 = args[0];
+  real mass2 = args[1];
+  real scaleRad1 = args[2];
+  real scaleRad2 = args[3];
+  
+  real result =  r*r*density( r, mass1, mass2, scaleRad1, scaleRad2);  
   return result;
 }
   
-  static inline real profile(real v, real mass1, real mass2, real r, real scaleRad1, real scaleRad2 )
+  static inline real profile_dist(real v, real * args )
 {
+  real mass1 = args[0];
+  real mass2 = args[1];
+  real scaleRad1 = args[2];
+  real scaleRad2 = args[3];
+  real r= args[4];
+  
   real energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
   real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
   return -result;
@@ -214,9 +225,8 @@ static inline real profile2(real r, real mass1, real mass2, real scaleRad1, real
  * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
  */
 
-static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real scaleRad2, real mass1,real mass2)
+static inline real max_finder(real (*profile)(real , real*), real* profileParams, real a, real b, real c, int limit, real tolerance)
 {
-  real tolerance= 1e-4;
   real RATIO = 0.61803399;
   real RATIO_COMPLEMENT = 1 - RATIO;
   int counter=0;
@@ -236,8 +246,8 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
       x1 = b - (RATIO_COMPLEMENT * (b - a));
     }
 
-  profile_x1 = (real)profile2(x1,mass1,mass2,scaleRad1,scaleRad2);
-  profile_x2 = (real)profile2(x2,mass1,mass2,scaleRad1,scaleRad2);
+  profile_x1 = (*profile)(x1, profileParams);
+  profile_x2 = (*profile)(x2, profileParams);
   
   while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
@@ -248,7 +258,7 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
 	  x1 = x2;
 	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
 	  profile_x1 = (real)profile_x2;
-	  profile_x2 = (real)profile2(x2, mass1,mass2,scaleRad1,scaleRad2);
+	  profile_x2 = (*profile)(x2,profileParams);
 	}
       else
 	{
@@ -256,9 +266,9 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
 	  x2 = x1;
 	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
 	  profile_x2 = (real)profile_x1;
-	  profile_x1 = (real)profile2(x1,mass1,mass2,scaleRad1,scaleRad2);
+	  profile_x1 = (*profile)(x1, profileParams);
 	}
-	if(counter>20){break;}
+	if(counter>limit){break;}
     }
 
   if (profile_x1 < profile_x2)
@@ -271,63 +281,6 @@ static inline real rhomax_finder( real a, real b, real c, real scaleRad1, real s
     }
 }
 
-static inline real distmax_finder( real a, real b, real c, real r, real scaleRad1, real scaleRad2, real mass1,real mass2)
-{
-  real tolerance= 1e-2;
-  real RATIO = 0.61803399;
-  real RATIO_COMPLEMENT = 1 - RATIO;
-  int counter=0;
-  
-  real profile_x1,profile_x2,x0,x1,x2,x3;
-  x0 = a;
-  x3 = c;
-  
-  if (mw_fabs(b - c) > mw_fabs(b - a))
-    {
-      x1 = b;
-      x2 = b + (RATIO_COMPLEMENT * (c - b)); 
-    }
-  else
-    {
-      x2 = b;
-      x1 = b - (RATIO_COMPLEMENT * (b - a));
-    }
-
-  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2);
-  profile_x2 = (real)profile(x2,mass1,mass2,r, scaleRad1,scaleRad2);
-  
-  while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
-    {
-      counter++;
-      if (profile_x2 < profile_x1)
-	{
-	  x0 = x1;
-	  x1 = x2;
-	  x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
-	  profile_x1 = (real)profile_x2;
-	  profile_x2 = (real)profile(x2, mass1,mass2,r, scaleRad1,scaleRad2);
-	}
-      else
-	{
-	  x3 = x2;
-	  x2 = x1;
-	  x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
-	  profile_x2 = (real)profile_x1;
-	  profile_x1 = (real)profile(x1,mass1,mass2,r, scaleRad1,scaleRad2);
-	}
-	
-      if(counter>10){break;}
-    }
-
-  if (profile_x1 < profile_x2)
-    {
-      return (-profile_x1);
-    }
-  else
-    {
-      return (-profile_x2);
-    }
-}
 
 static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2, real rho_max)
 {
@@ -370,7 +323,9 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   real val,v,u,d;
   real energy;
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
-  real dist_max=distmax_finder( 0.0, .5*v_esc, v_esc, r, scaleRad1,  scaleRad2, mass1, mass2);
+  real args[5]={mass1,mass2, scaleRad1, scaleRad2, r};
+  real dist_max=max_finder(profile_dist, args, 0.0, .5*v_esc, v_esc, 10, 1e-2);
+  mw_printf("%f\n", dist_max);
     while(1)
     {
 
@@ -469,7 +424,9 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 //     mw_printf("light needed= %f", light_needed);
     
     /*getting the maximum of the density depending on the scale radii*/
-    real rho_max=-rhomax_finder(0,radiusScale2, (radiusScale1 + radiusScale2), radiusScale1, radiusScale2, mass1, mass2);
+    real args[4]= {mass1,mass2, radiusScale1, radiusScale2};
+    real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);
+    mw_printf("%f\n", rho_max);
     
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
@@ -602,5 +559,6 @@ void registerGenerateIsotropic(lua_State* luaSt)
 {
     lua_register(luaSt, "generateIsotropic", nbGenerateIsotropic);
 }
+
 
 
