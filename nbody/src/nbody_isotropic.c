@@ -103,8 +103,6 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 }
 
 
-
-
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
   static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
@@ -492,8 +490,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  
 	  b.vel = vel_vec(prng,  vShift, v);
 	  b.bodynode.pos = r_vec(prng, rShift, r);
-	  
-	  mw_printf("%f\t %f\n", r, v);
 	  
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
