@@ -31,6 +31,8 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
 
+/*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
+
 /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
 static inline real potential( real r, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
@@ -46,8 +48,8 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
   real scaleRad1Cube = cube(scaleRad1); 
   real scaleRad2Cube = cube(scaleRad2);
   /*this weird sqrt(fifth(x) notation is used because it was determined that pow() ate up a lot of comp time*/
-  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) * (1.0/mw_sqrt( fifth(1.0 + sqr(r)/sqr(scaleRad1) ) ) )
-						  + (mass2/scaleRad2Cube) *(1.0/mw_sqrt( fifth(1.0 + sqr(r)/sqr(scaleRad2) ) ) ) );
+  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) * (minusfivehalves( (1.0 + sqr(r)/sqr(scaleRad1)) )  )
+						  + (mass2/scaleRad2Cube) *(minusfivehalves( (1.0 + sqr(r)/sqr(scaleRad2))  ) ) );
   
   return density_result;
 }
@@ -55,7 +57,7 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
 static inline real mass_en( real r, real mass, real scaleRad)
 {
-  real mass_enclosed= mass* cube(r)* 1.0/mw_sqrt( cube(sqr(r)+ sqr(scaleRad) ) );
+  real mass_enclosed= mass* cube(r)* minushalf( cube(sqr(r)+ sqr(scaleRad) ) ) ;
   
   return mass_enclosed;
 }
@@ -93,7 +95,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 	 * did product rule since both density and pot are functions of radius. 
 	 */
   dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(sqr(first_deriv_psi));
-  denominator= 1.0/mw_sqrt(mw_fabs(energy-potential(ri,mass1,mass2,scaleRad1,scaleRad2) ));
+  denominator= minushalf( mw_fabs(energy-potential(ri,mass1,mass2,scaleRad1,scaleRad2) ));
   func= first_deriv_psi* dsqden_dpsisq *denominator;
 
   return func;
@@ -167,7 +169,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
  /*This returns the value of the distribution function for a given energy*/
 static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
 {
- real c= 1.0/(mw_sqrt(8)* sqr(M_PI));
+ real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
  real distribution_function;
 /*This calls guassian quad to integrate the function for a given energy*/
  distribution_function=c*gauss_quad(energy, mass1, mass2, scaleRad1, scaleRad2);
@@ -325,7 +327,6 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
   real args[5]={mass1,mass2, scaleRad1, scaleRad2, r};
   real dist_max=max_finder(profile_dist, args, 0.0, .5*v_esc, v_esc, 10, 1e-2);
-  mw_printf("%f\n", dist_max);
     while(1)
     {
 
@@ -403,10 +404,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real mass_light_particle = mass1 / (half_bodies);//half the particles are light matter
     real mass_dark_particle = mass2 / (half_bodies);//half dark matter
     
-//     mw_printf("half bodies= %f \n", half_bodies);
-//     mw_printf("mass1= %f \t mass2= %f\n", mass1, mass2);
-//     mw_printf("mass per particle all= %f\nmass per dark matter= %f\nmass per light matter= %f\n", mass_all, mass_dark_particle ,mass_light_particle);
-    
     /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
     mwbool isdark = TRUE;
     mwbool islight = FALSE;
@@ -415,18 +412,15 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     int N=nbody;//integer number of bodies
     real max_light_density;//the max of the light matter density
     real all_r[N];//array to store the radii
-//     real all_v[N];//array to store the velocities
     real mass_type[N];//array to store body type
     real particle_mass;
     
     /*the following calculates the massratio if needed:*/
     real light_needed= (mass1/mass)*nbody;
-//     mw_printf("light needed= %f", light_needed);
     
     /*getting the maximum of the density depending on the scale radii*/
     real args[4]= {mass1,mass2, radiusScale1, radiusScale2};
     real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);
-    mw_printf("%f\n", rho_max);
     
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
@@ -444,26 +438,12 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	  while (1);
 
-	  /*this calculates the mass enclosed in each sphere. 
-	  * velocity is determined by mass enclosed at that r not by the total mass of the system. 
-	  */
-// 	  mass_en1= mass_en(r, mass1, radiusScale1);
-// 	  mass_en2= mass_en(r, mass2, radiusScale2);
-	  
-	  /*getting velocity*/
-// 	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2);
-	  
-	  /*storing r's, v's, mass type and mass*/
+	  /*storing r's, mass type*/
 	  all_r[i]=r;
-// 	  all_v[i]=v;
 	  mass_type[i]= dark; //starting them all off dark
       }
       
-      /*this section assigns bodies to be light if they are eligible.
-       * Not the most beautiful section of code in the world
-       * but for now it works.
-       */
-      
+      /*testing for light matter*/
       i=0;
       light_count=0;
       real coeff= (3.0/2.0)*1.0/ (mw_sqrt( fifth(3.0/5.0 ) ) );
@@ -493,7 +473,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       for (i = 0; i < nbody; i++)
       {
 	  r=all_r[i];
-// 	  v=all_v[i];
 	  
 	  if(mass_type[i] == light)
 	  {
@@ -511,8 +490,10 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  mass_en2= mass_en(r, mass2, radiusScale2);
 	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, particle_mass);
 	  
-	  b.vel = vel_vec(prng,  vShift,v);
+	  b.vel = vel_vec(prng,  vShift, v);
 	  b.bodynode.pos = r_vec(prng, rShift, r);
+	  
+	  mw_printf("%f\t %f\n", r, v);
 	  
 	  assert(nbPositionValid(b.bodynode.pos));
 	  pushBody(luaSt, &b);
