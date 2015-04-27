@@ -444,7 +444,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       /*testing for light matter*/
       i=0;
       light_count=0;
-      real coeff= (3.0/2.0)*1.0/ (mw_sqrt( fifth(3.0/5.0 ) ) );
+      real coeff= (3.0/2.0)*(minusfivehalves( (3.0/5.0 ) ) );
       real u;
       while(light_count<half_bodies)//only want half the bodies light matter
       {
@@ -453,7 +453,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	{
 	  
 	  r=all_r[i];
-	  max_light_density=coeff* sqr(r)/sqr(radiusScale1)*1.0/( mw_sqrt( fifth( (1.0 + sqr(r)/sqr(radiusScale1)) ) ) );
+	  max_light_density=coeff* sqr(r)/sqr(radiusScale1)* minusfivehalves( (1.0 + sqr(r)/sqr(radiusScale1)) )  ;
 	  u= (real)mwXrandom(prng,0.0,1.0);
 
 	  if( max_light_density < u)
@@ -536,6 +536,5 @@ void registerGenerateIsotropic(lua_State* luaSt)
 {
     lua_register(luaSt, "generateIsotropic", nbGenerateIsotropic);
 }
-
 
 
