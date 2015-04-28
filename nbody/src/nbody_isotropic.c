@@ -57,7 +57,7 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
 static inline real mass_en( real r, real mass, real scaleRad)
 {
-  real mass_enclosed= mass* cube(r)* minushalf( cube(sqr(r)+ sqr(scaleRad) ) ) ;
+  real mass_enclosed= mass* cube(r)* minusthreehalves( (sqr(r)+ sqr(scaleRad) ) ) ;
   
   return mass_enclosed;
 }
@@ -282,6 +282,8 @@ static inline real max_finder(real (*profile)(real , real*), real* profileParams
 }
 
 
+
+
 static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2, real rho_max)
 {
 
@@ -418,8 +420,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     
     /*getting the maximum of the density depending on the scale radii*/
     real args[4]= {mass1,mass2, radiusScale1, radiusScale2};
-    real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);
-    
+    real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-6);
+       
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
