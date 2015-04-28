@@ -420,7 +420,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     
     /*getting the maximum of the density depending on the scale radii*/
     real args[4]= {mass1,mass2, radiusScale1, radiusScale2};
-    real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-6);
+    real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);
        
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
