@@ -54,6 +54,23 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
   return density_result;
 }
 
+real single_density(real r, real mass, real scalerad)
+{
+  real scaleradcube=cube(scalerad);
+  real density_result= (3.0/(4.0*(M_PI)))*(mass/scaleradcube) * (minusfivehalves( (1.0 + sqr(r)/sqr(scalerad)) )  );
+  return density_result;
+  
+}
+
+// real deriv_single_density(real r, real * args)
+// {
+//   real scaleradcube=cube(scalerad);
+//   real density_result= (3.0/(4.0*(M_PI)))*(mass/scaleradcube) * (minusfivehalves( (1.0 + sqr(r)/sqr(scalerad)) )  );
+//   return density_result;
+//   
+// }
+
+
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
 static inline real mass_en( real r, real mass, real scaleRad)
 {
@@ -61,6 +78,7 @@ static inline real mass_en( real r, real mass, real scaleRad)
   
   return mass_enclosed;
 }
+
 
 
 static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
@@ -104,7 +122,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
 
 
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
-  static inline real gauss_quad(  real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
+  static inline real gauss_quad(real upper, real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
 {
   real Ng,hg,lowerg, upperg;
   real intv;
@@ -112,12 +130,14 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   real c1,c2,c3;
   real x1,x2,x3;
   real x1n,x2n,x3n;
-  real a=0.0;
-  real b=energy;
+  
+  real a=10.0*(scaleRad1+scaleRad2);
+  real b=upper;
+  
 
   intv=0;//initial value of integral
   Ng=1001.0;//integral resolution
-  hg=(b-a)/(Ng-1.0);
+  hg=fabs(b-a)/(Ng-1.0);
 /*I have set the lower limit to be zero. '
  * This is in the definition of the distribution function. 
  * If this is used for integrating other things, this will need to be changed.*/
@@ -136,7 +156,7 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
   x1n=((coef1)*x1 +coef2);
   x2n=((coef1)*x2 +coef2);
   x3n=((coef1)*x3 +coef2);
-
+int counter=0;
   while (1)
   {
 
@@ -155,48 +175,117 @@ static inline real fun(real ri, real mass1, real mass2, real scaleRad1, real sca
       x3n=((coef1)*x3 +coef2);
 
       
-      if (lowerg>=energy)//loop termination clause
+      if (lowerg>=b)//loop termination clause
         {break;}
+        counter++;
   }
-
+//   mw_printf("%f\n", intv);
   return intv;
+}
+
+
+static real findRoot(real (*rootFunc)(real, real*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
+{
+  if(rootFuncParams == NULL || rootFunc == NULL)
+  {exit(-1);}
+  
+  real xo;
+  real fun, m, b, temp, tempf;
+  real forward, backward, central;
+  real h=0.001;
+  int N=5;
+  real roots[N];
+  int counter=0.0;
+  int counter2=0.0;
+  int found_root=0;
+  for(int i=0; i<N; i++)
+  {
+    xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
+    counter=0;
+    while(1)
+    {
+      counter2=0.0;
+      fun=(*rootFunc)(xo, rootFuncParams)- funcValue;
+
+      if(fabs(fun)<1e-6)
+      {
+	found_root++;
+	break;
+      }
+      if(counter>=1000){break;}
+       counter++;
+       
+      forward=(*rootFunc)(xo+h, rootFuncParams)- funcValue;
+      backward=(*rootFunc)(xo-h, rootFuncParams)- funcValue;
+      central=fun;
+      m= (forward-backward)/(2.0*h);
+      b= fun-(m*xo);
+      
+//       backtracking:
+      temp=-1.0*b/m;
+      tempf=(*rootFunc)(temp, rootFuncParams)-funcValue;
+      while(fabs(tempf)>fabs(fun))
+      {
+	counter2++;
+	if(counter2>=1000){break;}
+	temp=temp/2.0;
+	tempf=(*rootFunc)(temp, rootFuncParams)-funcValue;
+      }
+      xo=temp;
+    }
+    roots[i]=xo;
+  }
+  
+  if(found_root!=0)
+  {
+    real root=roots[(int)(mwXrandom(dsfmtState,0.0,.999999)*(int)N)];
+    return root;
+  }
+  else
+  {return 0.0;}
+  
 }
 
 
 
  /*This returns the value of the distribution function for a given energy*/
-static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
+static inline real dist_fun(real r, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy, real upper)
 {
  real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
  real distribution_function;
+ 
 /*This calls guassian quad to integrate the function for a given energy*/
- distribution_function=c*gauss_quad(energy, mass1, mass2, scaleRad1, scaleRad2);
+ distribution_function=c*gauss_quad(upper,energy, mass1, mass2, scaleRad1, scaleRad2);
   
   return distribution_function;
 }
 
-/* assigns angles. Allows for non-circular orbits.*/
-static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
+real profile_deriv_rho(real r, real * args)
 {
-    real rsq, rsc;
-    mwvector vec;
-    real phi, theta;
-
-    /*defining some angles*/
-    theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
-    phi =   mwXrandom( dsfmtState, 0.0, 2.0*M_PI );
-
-    /*this is standard formula for x,y,z components in spherical*/
-    X(vec) = rad*sin( theta )*cos( phi );    /*x component*/
-    Y(vec) = rad*sin( theta )*sin( phi );    /*y component*/
-    Z(vec) = rad*cos( theta );               /*z component*/
-
-    return vec;
+  real mass1 = args[0];
+  real mass2 = args[1];
+  real scaleRad1 = args[2];
+  real scaleRad2 = args[3];
+  real h=0.001;
+  real forward=sqr(r+h)*density( r+h, mass1, mass2, scaleRad1, scaleRad2);
+  real backward=sqr(r-h)*density( r-h, mass1, mass2, scaleRad1, scaleRad2); 
+  real deriv= (forward-backward)/(2.0*h);
+  return deriv;
 }
 
- 
+static inline real profile_psi(real r, real * args)
+{
+  real mass1 = args[0];
+  real mass2 = args[1];
+  real scaleRad1 = args[2];
+  real scaleRad2 = args[3];
+  real psi=potential(r, mass1, mass2,scaleRad1, scaleRad2);
+  return (psi);//psi is already the negative of the potential
+}
 
-/*this serves the max finding routine*/
+/* the profiles return the negative of the result because max_finder()
+ *is ACTUALLY meant for finding minima. max_finder() returns the negative 
+ * of the function value at the minima found, thus being the max of the function*/
 static inline real profile_rho(real r, real * args)
 {
   real mass1 = args[0];
@@ -205,7 +294,7 @@ static inline real profile_rho(real r, real * args)
   real scaleRad2 = args[3];
   
   real result =  r*r*density( r, mass1, mass2, scaleRad1, scaleRad2);  
-  return result;
+  return -result;
 }
   
   static inline real profile_dist(real v, real * args )
@@ -215,9 +304,9 @@ static inline real profile_rho(real r, real * args)
   real scaleRad1 = args[2];
   real scaleRad2 = args[3];
   real r= args[4];
-  
-  real energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
-  real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy);  
+  real upperlimit_r=args[5];
+  real energy= args[6];
+  real result =  v*v*dist_fun( r, mass1, mass2, scaleRad1, scaleRad2, energy,upperlimit_r);  
   return -result;
 }
 
@@ -283,6 +372,26 @@ static inline real max_finder(real (*profile)(real , real*), real* profileParams
 
 
 
+/* assigns angles. Allows for non-circular orbits.*/
+static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
+{
+    real rsq, rsc;
+    mwvector vec;
+    real phi, theta;
+
+    /*defining some angles*/
+    theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
+    phi =   mwXrandom( dsfmtState, 0.0, 2.0*M_PI );
+
+    /*this is standard formula for x,y,z components in spherical*/
+    X(vec) = rad*sin( theta )*cos( phi );    /*x component*/
+    Y(vec) = rad*sin( theta )*sin( phi );    /*y component*/
+    Z(vec) = rad*cos( theta );               /*z component*/
+
+    return vec;
+}
+
+
 
 static inline real r_mag(dsfmt_t* dsfmtState, real mass1, real mass2, real scaleRad1, real scaleRad2, real rho_max)
 {
@@ -321,11 +430,36 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
    * THIS IS EQUAL TO 0.977813107 KM/S
    * 
    */
-   
+  int counter=0;
   real val,v,u,d;
   real energy;
-  real v_esc= mw_sqrt( mw_fabs(2.0* (mass1+mass2)/r));
-  real args[5]={mass1,mass2, scaleRad1, scaleRad2, r};
+  mwbool returning=FALSE;
+  
+  real mass_en1= mass_en(r, mass1, scaleRad1);
+  real mass_en2= mass_en(r, mass2, scaleRad2);
+  real v_esc= mw_sqrt( mw_fabs(2.0* (mass_en1+mass_en2)/r));
+  
+  real test;
+  real parameters[4]= {mass1, mass2, scaleRad1, scaleRad2};
+  real upperlimit_r, lowerlimit_r;
+  energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
+  
+  /*want to make sure the root finder returns something proper*/
+  do
+  {
+    upperlimit_r=findRoot(profile_psi,parameters, energy, 0.0, 2.0*(scaleRad1+scaleRad2), dsfmtState); 
+    if(isinf(upperlimit_r)==FALSE && upperlimit_r!=0.0 && isnan(upperlimit_r)==FALSE){break;}
+    counter++;
+    if(counter>=10)
+    {
+      returning=TRUE;
+      break;
+    }
+  }
+  while(1);
+  if(returning==TRUE){return 0.0;}
+  
+  real args[7]={mass1,mass2, scaleRad1, scaleRad2, r, upperlimit_r, energy};
   real dist_max=max_finder(profile_dist, args, 0.0, .5*v_esc, v_esc, 10, 1e-2);
     while(1)
     {
@@ -334,8 +468,16 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
       
       energy= potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v;
+      counter=0;
+           
+      upperlimit_r=findRoot(profile_psi,parameters, energy, 0.0, 2.0*(scaleRad1+scaleRad2), dsfmtState); 
+      if(isinf(upperlimit_r)==TRUE || upperlimit_r==0.0 || isnan(upperlimit_r)==TRUE)
+      {continue;}
       
-      d=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy);
+//       test= potential(upperlimit_r, mass1, mass2, scaleRad1, scaleRad2);
+//       mw_printf("test= %f \t energy= %f\n", test, energy);
+      d=dist_fun( r,  mass1,  mass2,  scaleRad1,  scaleRad2, energy, upperlimit_r);
+//       mw_printf("%f\n", d);
       val =v*v* d;
       
       if (mw_fabs( val/dist_max) > u)
@@ -420,8 +562,95 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     
     /*getting the maximum of the density depending on the scale radii*/
     real args[4]= {mass1,mass2, radiusScale1, radiusScale2};
-    real rho_max=-max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);
-       
+    real rho_max;
+    
+    
+    /*what is happening here: 
+     * the r^2*rho function has 2 maxima and 1 minima. We use Newton Raph to 
+     * find the max of the density function for each individual component. We then 
+     * use the root for those as a starting point for NR to find the max of the combined
+     * function and compare to see which is larger. 
+     */
+    real parameters_light[4]= {mass1, 0.0, radiusScale1, radiusScale2};
+    real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
+//        /////////////////////////////////
+//     real w=0.0;
+//     FILE * rho;
+//     rho= fopen("rho.txt", "w");
+//     real de, de2, de3;
+//     while(1)
+//     {
+//       de=w*w*density(w, mass1, 0.0, radiusScale1, radiusScale2);
+//       de2=w*w*density(w, 0.0, mass2, radiusScale1, radiusScale2);
+//       de3=w*w*density(w, mass1, mass2, radiusScale1, radiusScale2);
+//       w=w+0.01;
+//       fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
+//       
+//       if(w>2*(radiusScale1+radiusScale2)){break;}
+//     }
+//         /////////////////////////////////
+
+    /*finding the max of the individual components*/
+    real rho_root_light=findRoot(profile_deriv_rho, parameters_light, 0.0, 0.0,radiusScale1+radiusScale2, prng);
+    real rho_max_light= sqr(rho_root_light)*density(rho_root_light,mass1, 0.0, radiusScale1, radiusScale2);
+    
+    real rho_root_dark=findRoot(profile_deriv_rho, parameters_dark, 0.0, 0.0,radiusScale1 + radiusScale2, prng);
+    real rho_max_dark= sqr(rho_root_dark)*density(rho_root_dark, 0.0, mass2, radiusScale1, radiusScale2);
+    
+    /*finding the max of the combined function starting at previous found roots*/
+    real rho_root_lightroot=findRoot(profile_deriv_rho, args, 0.0, rho_max_light,rho_max_light, prng);
+    real rho_max_lightroot= sqr(rho_root_lightroot)* density(rho_root_lightroot, mass1, mass2, radiusScale1, radiusScale2);
+    
+    real rho_root_darkroot=findRoot(profile_deriv_rho, args, 0.0, rho_max_dark,rho_max_dark, prng);
+    real rho_max_darkroot= sqr(rho_root_darkroot)* density(rho_root_darkroot, mass1, mass2, radiusScale1, radiusScale2);
+    
+    real check=max_finder(profile_rho, args, 0.0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);
+    
+    /////////////////////////////////
+    FILE * dist1;
+    dist1= fopen("dist_1.txt", "w");
+    real r_1, v_1, mass_en1_1, mass_en2_1, v_esc, energy_val_1, dist_val_1,upperlimit_r_1;
+    v_1=0.1;
+    while(1)
+    {
+      
+//       v_1=0.01;
+      mass_en1_1= mass_en(r_1, mass1, radiusScale1);
+      mass_en2_1= mass_en(r_1, mass2, radiusScale2);
+      v_esc= mw_sqrt( mw_fabs(2.0* (mass_en1_1+mass_en2_1)/r_1));
+//       while(1)
+//       {
+	
+	  energy_val_1= potential( r_1, mass1, mass2, radiusScale1, radiusScale2)-0.5*v_1*v_1;
+	  do
+	  {
+	    upperlimit_r_1=findRoot(profile_psi,args, energy_val_1, 0.0, 2.0*(radiusScale1+radiusScale2), prng); 
+	    if(isinf(upperlimit_r_1)==FALSE && upperlimit_r_1!=0.0 && isnan(upperlimit_r_1)==FALSE){break;}
+	  }
+	  while (1);
+	dist_val_1= v_1*v_1*dist_fun(r_1, mass1, mass2, radiusScale1, radiusScale2, energy_val_1, upperlimit_r_1);
+	
+	fprintf(dist1,"%f \t %f \t %f\t %f\n", dist_val_1, r_1, v_1, upperlimit_r_1);
+	
+	v_1=v_1+.1;
+// 	if(v_1>= v_esc){break;}
+//       }
+//       r_1=r_1+.001;
+      if(v_1>v_esc){break;}
+     
+    }
+    fclose(dist1);
+    /////////////////////////////////
+
+    
+    
+    
+    if(rho_max_lightroot>rho_max_darkroot)
+    {rho_max=rho_max_lightroot;}
+    else if(rho_max_lightroot<rho_max_darkroot)
+    {rho_max=rho_max_darkroot;}
+    else
+    {rho_max=max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4);}
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
@@ -434,9 +663,10 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  {
 	    r= r_mag(prng, mass1, mass2, radiusScale1, radiusScale2, rho_max);
 	    /*to ensure that r is finite and nonzero*/
-	    if(isinf(r)==FALSE && r!=0.0){break;}
+	    if(isinf(r)==FALSE && r!=0.0 && isnan(r)==FALSE){break;}
 	  }
 	  while (1);
+	  
 
 	  /*storing r's, mass type*/
 	  all_r[i]=r;
@@ -455,6 +685,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	{
 	  
 	  r=all_r[i];
+	  /*max_light_density is equal to r^2*rho(r)/ (r^2*rho(r))_max*/
 	  max_light_density=coeff* sqr(r)/sqr(radiusScale1)* minusfivehalves( (1.0 + sqr(r)/sqr(radiusScale1)) )  ;
 	  u= (real)mwXrandom(prng,0.0,1.0);
 
@@ -465,11 +696,23 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	}
 	
-	if(i>= nbody){i=0;}
+	if(i>= nbody-1){i=0;}
 	else{i++;}
       }
       
       /*this actually gets the position and velocity vectors and pushes table of bodies*/
+      
+//       //////////////
+//       FILE * rho2;
+//       rho2= fopen("rho2.txt", "w");
+//       real rho_val;
+//       
+//       FILE * dist;
+//       dist= fopen("dist.txt", "w");
+//       real dist_val;
+//       real energy_val;
+//       real upperlimit_r;
+//       //////////////
       for (i = 0; i < nbody; i++)
       {
 	  r=all_r[i];
@@ -486,9 +729,30 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	  
 	  particle_mass=b.bodynode.mass;
-	  mass_en1= mass_en(r, mass1, radiusScale1);
-	  mass_en2= mass_en(r, mass2, radiusScale2);
-	  v= vel_mag(prng, r, mass_en1, mass_en2, radiusScale1, radiusScale2, particle_mass);
+	  
+// 	  mw_printf(" \r initalizing particle vel %i. ",i);
+	  do
+	  {
+	    v= vel_mag(prng, r, mass1, mass2, radiusScale1, radiusScale2, particle_mass);
+	    if(isinf(v)==FALSE && v!=0.0 && isnan(v)==FALSE){break;}
+	  }
+	  while (1);
+// 	  ////////////////
+// 	  rho_val= r*r*density(r, mass1, mass2, radiusScale1, radiusScale2);
+// 	  fprintf(rho2, "%f \t %f\t %f\n", rho_val, r, v);
+// 	  
+// 	  energy_val= potential( r, mass1, mass2, radiusScale1, radiusScale2)-0.5*v*v;
+// 	  do
+// 	  {
+// 	    upperlimit_r=findRoot(profile_psi,args, energy_val, 0.0, 2.0*(radiusScale1+radiusScale2), prng); 
+// 	    if(isinf(upperlimit_r)==FALSE && upperlimit_r!=0.0 && isnan(upperlimit_r)==FALSE){break;}
+// 	  }
+// 	  while (1);
+// // 	  mw_printf("%f\n", upperlimit_r);
+// 	  dist_val= v*v*dist_fun(r, mass1, mass2, radiusScale1, radiusScale2, energy_val, upperlimit_r);
+// 	  fprintf(dist,"%f \t %f \t %f\t %f\n", dist_val, r, v, upperlimit_r);
+// 	  ////////////////
+	  
 	  
 	  b.vel = vel_vec(prng,  vShift, v);
 	  b.bodynode.pos = r_vec(prng, rShift, r);
@@ -497,6 +761,10 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  pushBody(luaSt, &b);
 	  lua_rawseti(luaSt, table, i + 1);
       }
+// 	 ////////////////
+//       fclose(rho2);
+//       fclose(dist);
+// 	 ////////////////
     return 1;       
        
 }
