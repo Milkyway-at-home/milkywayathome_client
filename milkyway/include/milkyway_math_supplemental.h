@@ -42,6 +42,12 @@ extern "C" {
 #define sqr(x)  ((x) * (x))
 #define inv(x)  ((real) 1.0 / (x))
 
+#define fivehalves(x) ( mw_sqrt(fifth(x) ) )
+#define threehalves(x) ( mw_sqrt(cube(x)  ) )
+
+#define minusfivehalves(x) (inv(fivehalves(x)))
+#define minusthreehalves(x) (inv(threehalves(x)) )
+#define minushalf(x) ( inv(mw_sqrt(x)) )
 
 /* TODO: Have fma */
 #define mw_fma(a, b, c) (((a) * (b)) + (c))

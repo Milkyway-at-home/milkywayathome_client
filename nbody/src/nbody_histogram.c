@@ -390,7 +390,11 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
     unsigned int nBin = lambdaBins * betaBins;
-
+    
+    double Nbodies= st->nbody;
+    mwbool isdark = TRUE;//is it dark matter?
+    mwbool islight = FALSE;//is it light matter?
+    
     nbGetHistTrig(&histTrig, hp);
 
     histogram = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
@@ -399,7 +403,16 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
     histogram->totalSimulated = (unsigned int) st->nbody;
-    histogram->massPerParticle = (double) st->bodytab->bodynode.mass;
+    
+    for (int i = 0; i < Nbodies; i++)
+    {
+        const Body* b = &st->bodytab[i];
+	if(Type(b)==BODY(islight))
+	{
+	  histogram->massPerParticle=Mass(b);
+	  break;
+	}
+    }
     histData = histogram->data;
 
     /* It does not make sense to ignore bins in a generated histogram */
