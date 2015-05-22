@@ -469,7 +469,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
   
   
   v*=0.977813107;//changing from kpc/gy to km/s
-  return v; //km/s
+  return v; //km/
 }
 
 
