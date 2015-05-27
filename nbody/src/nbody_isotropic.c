@@ -54,7 +54,6 @@ static inline real density( real r, real mass1, real mass2, real scaleRad1, real
   return density_result;
 }
 
-
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
 static inline real mass_en( real r, real mass, real scaleRad)
 {
@@ -62,8 +61,6 @@ static inline real mass_en( real r, real mass, real scaleRad)
   
   return mass_enclosed;
 }
-
-
 
 static  real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2, real energy)
 {
@@ -103,7 +100,6 @@ static  real fun(real ri, real mass1, real mass2, real scaleRad1, real scaleRad2
   return func;
   
 }
-
 
 /*This is a guassian quadrature routine. It uses 1000 steps, so it should be quite accurate*/
 static real gauss_quad(real upper, real energy, real mass1, real mass2, real scaleRad1, real scaleRad2)
@@ -298,6 +294,7 @@ static real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtState)
   int counter=0;
   mwbool limit_reached=FALSE;
   real upperlimit_r;
+  energy=fabs(energy);
   do
   {
     upperlimit_r=findRoot(profile_psi, args, energy, 0.0, 5.0*(scaleRad1+scaleRad2), dsfmtState); 
@@ -329,7 +326,7 @@ static inline real profile_dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   
   real energy= (potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v*v);  
   mw_printf("\n energy =%f  ", energy);
-  real upperlimit_r=find_upperlimit_r(args, fabs(energy), dsfmtState);
+  real upperlimit_r=find_upperlimit_r(args, energy, dsfmtState);
   mw_printf("r=%f\n", upperlimit_r);
   real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
   real distribution_function;
@@ -340,16 +337,11 @@ static inline real profile_dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   return v*v*distribution_function;
 }
 
-
-
-
 real test(real x, real * args, dsfmt_t* dsfmtState)
 {
  real f= exp(x) + sin(x) +x;
  return f;
 }
-
-
 
 /* the profiles return the negative of the result because max_finder()
  *is ACTUALLY meant for finding minima. max_finder() returns the negative 
@@ -507,7 +499,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real mass1, real mass2, r
 
   energy=( potential( r, mass1, mass2, scaleRad1, scaleRad2)-0.5*v_esc*v_esc);
 //   mw_printf("getting max upper limit...");
-  upperlimit_r=find_upperlimit_r(parameters, (energy), dsfmtState);
+  upperlimit_r=find_upperlimit_r(parameters, energy, dsfmtState);
 //   mw_printf("done.\n");
   
   real args[7]={mass1,mass2, scaleRad1, scaleRad2, r, upperlimit_r, energy};
