@@ -288,32 +288,33 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   real scaleRad1 = args[2];
   real scaleRad2 = args[3];
   real r= args[4];
-//   real energy_max=args[5];
-//   real upperlimit_r_max=args[6];
-//   real ifmax= args[7];
-  //   real upper= args[5];
+  real energy_max=args[5];
+  real upperlimit_r_max=args[6];
+  real ifmax= args[7];
+  real pm= args[8];
+//   real upper= args[5];
 //   real energy= args[6];
+  
   real energy;
   real upperlimit_r;
   
-//   if(ifmax==1)
-//   {
-//     energy= energy_max;//(potential( r, args, dsfmtState)-0.5*v_esc*v_esc);
-//     upperlimit_r= upperlimit_r_max;
-// //     mw_printf("this ran");
-//   }
-//   else if(ifmax==0)
-//   {
-//     energy= (potential( r, args,dsfmtState)-0.5*v*v);  
-//     upperlimit_r=find_upperlimit_r(args, energy, dsfmtState);
-// //     mw_printf("this ran");
-//   }
+  if(ifmax==1)
+  {
+    energy= energy_max;//(potential( r, args, dsfmtState)-0.5*v_esc*v_esc);
+    upperlimit_r= upperlimit_r_max;
+  }
+  else if(ifmax==0)
+  {
+    energy= (potential( r, args,dsfmtState)-0.5*v*v);  
+    upperlimit_r=find_upperlimit_r(args, energy, dsfmtState);
+  }
   
+  energy=pm*energy;
   
-  energy= (potential( r, args,dsfmtState)-0.5*v*v);
-//   mw_printf("\n energy =%f  ", energy);
-  upperlimit_r=find_upperlimit_r(args, energy, dsfmtState);
-//   mw_printf("up r=%f\n", upperlimit_r);
+//   energy= (potential( r, args,dsfmtState)-0.5*v*v);
+// //   mw_printf("\n energy =%f  ", energy);
+//   upperlimit_r=find_upperlimit_r(args, energy, dsfmtState);
+// //   mw_printf("up r=%f\n", upperlimit_r);
    
   real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
   real distribution_function;
@@ -477,35 +478,25 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real scaleRad1 = args[2];
   real scaleRad2 = args[3];
   
-  int counter=0;
   real v,u;
   real energy;
-  mwbool returning=FALSE;
   real upperlimit_r=0;
-//   real ifmax= 1;
+  real ifmax= 1;
   real mass_en1= mass_en(r, mass1, scaleRad1);
   real mass_en2= mass_en(r, mass2, scaleRad2);
   real v_esc= mw_sqrt( mw_fabs(2.0* (mass_en1+mass_en2)/r));
   
-
-//   energy=( potential( r, args, dsfmtState)-0.5*v_esc*v_esc);
+  energy=( potential( r, args, dsfmtState)-0.5*v_esc*v_esc);
+  upperlimit_r= find_upperlimit_r(args, energy, dsfmtState);
   
-//   mw_printf("getting max upper limit...");
-//   upperlimit_r= find_upperlimit_r(args, energy, dsfmtState);
-//   mw_printf("done.\n");
-  
-//  real parameters[8]= {mass1, mass2, scaleRad1, scaleRad2, r, energy, upperlimit_r, ifmax};
- real parameters[5]= {mass1, mass2, scaleRad1, scaleRad2, r};
- //   mw_printf("getting dist_max...");
+  real parameters[9]= {mass1, mass2, scaleRad1, scaleRad2, r, energy, upperlimit_r, ifmax, pm};
   real dist_max=max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
-//   mw_printf("done.\n");
-//   ifmax=0;
-//   parameters[7]=ifmax;
+  ifmax=0;
+  parameters[7]=ifmax;
+  
   u = (real)mwXrandom(dsfmtState,0.0,1.0)* dist_max;
   
-//   mw_printf("getting root...");
   v=findRoot(dist_fun, parameters, u, 0.0, 2.0 * v_esc, dsfmtState);
-//   mw_printf("done.\n");
 
   v*=0.977813107;//changing from kpc/gy to km/s
   return fabs(v); //km/s
@@ -579,7 +570,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real rho_max;
     
     real tst= findRoot(test, args, 0.0, -10.0, 10.0, prng);
-    mw_printf("test=%f\n", tst);
+//     mw_printf("test=%f\n", tst);
     
     /*what is happening here: 
      * the r^2*rho function has 2 maxima and 1 minima. We use Newton Raph to 
@@ -612,8 +603,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     {rho_max=rho_max_darkroot;}
     else
     {rho_max=rho_max_1;}
-    mw_printf("%.10f  %f  %f  \n", rho_max, rho_root_light, rho_root_dark);
-    mw_printf("%.10f  %f  %f  \n", rho_max_1, rho_root_lightroot, rho_root_darkroot);
+//     mw_printf("%.10f  %f  %f  \n", rho_max, rho_root_light, rho_root_dark);
+//     mw_printf("%.10f  %f  %f  \n", rho_max_1, rho_root_lightroot, rho_root_darkroot);
 //     ///////////////////////////////////////////////////////////////////////////////////////////////////
 //     
 //     real w=0.0;
@@ -713,7 +704,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       /*getting the radii and velocities for the bodies*/
       for (i = 0; i < nbody; i++)
       {
-// 	mw_printf(" \r initalizing particle %i. ",i);
+	mw_printf(" \r initalizing particle %i. ",i);
 	  do
 	  {
 	    r= r_mag(prng, args, rho_max);
