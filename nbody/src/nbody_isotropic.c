@@ -255,10 +255,12 @@ static real findRoot3(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
     exit(-1);
   }
   unsigned int i = 0;
+  /* Can find up to 20 roots, but may miss a root if they are too close together */
   int N=20;
   unsigned int numSteps = N;
   real interval;
   real * values = mwCalloc(N, sizeof(real));
+  /* Divide the function area up into bins in case there is more than one root */
   for(i = 0; i < numSteps; i++)
   {
     values[i] = (*rootFunc)(((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound, rootFuncParams, dsfmtState) - funcValue;
@@ -270,6 +272,7 @@ static real findRoot3(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
   real curLower = 0;
   int rootsFound = 0;
   real * roots =  mwCalloc(N, sizeof(real));
+  /* Find the roots using bisection because it was easy to code and good enough for our purposes */
   for(i = 0; i < numSteps; i++)
   {
     if((values[i] > 0 && values[i+1] < 0) || (values[i] < 0 && values[i+1] > 0))
@@ -304,7 +307,8 @@ static real findRoot3(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
       ++rootsFound;
     }
   }
-  //Lets assume each root is an equally probable answer so we pick one at random
+  /* Lets assume each root is an equally probable answer so we pick one at random  *
+   * Don't want to include 1.0 in our random set otherwise we may go out of bounds */
   midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.999999)*(real)rootsFound)];
   free(values);
   free(roots);
@@ -590,25 +594,6 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   return distribution_function;
 }
 
-static inline real profile_deriv_rho(real r, real * args, dsfmt_t* dsfmtState)
-{
-  real mass1 = args[0];
-  real mass2 = args[1];
-  real scaleRad1 = args[2];
-  real scaleRad2 = args[3];
-  real h=0.001;
-  real forward=sqr(r+h)*density( r+h, args, dsfmtState);
-  real backward=sqr(r-h)*density( r-h,args, dsfmtState); 
-  real deriv= (forward-backward)/(2.0*h);
-  return deriv;
-}
-
-real test(real x, real * args, dsfmt_t* dsfmtState)
-{
- real f= exp(x) + sin(x) +x;
- return f;
-}
-
 /* the profiles return the negative of the result because max_finder()
  *is ACTUALLY meant for finding minima. max_finder() returns the negative 
  * of the function value at the minima found, thus being the max of the function*/
@@ -622,6 +607,28 @@ static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
   real result =  r*r*density( r, args, dsfmtState);  
   return result;
 }
+
+static inline real profile_deriv_rho(real r, real * args, dsfmt_t* dsfmtState)
+{
+  real mass1 = args[0];
+  real mass2 = args[1];
+  real scaleRad1 = args[2];
+  real scaleRad2 = args[3];
+  real h=0.001;
+//   real forward=sqr(r+h)*density( r+h, args, dsfmtState);
+//   real backward=sqr(r-h)*density( r-h,args, dsfmtState); 
+//   real deriv= (forward-backward)/(2.0*h);
+  real deriv= first_deriv(profile_rho, args, r, dsfmtState);
+  return deriv;
+}
+
+real test(real x, real * args, dsfmt_t* dsfmtState)
+{
+ real f= exp(x) + sin(x) +x;
+ return f;
+}
+
+
   
 
 
@@ -853,17 +860,17 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
 
     /*finding the max of the individual components*/
-    real rho_root_light=findRoot(profile_deriv_rho, parameters_light, 0.0, 0.0,radiusScale1+radiusScale2, prng );
+    real rho_root_light=findRoot(profile_deriv_rho, parameters_light, 0.0, 0.0,radiusScale1, prng );
     real rho_max_light= sqr(rho_root_light)*density(rho_root_light,parameters_light, prng);
     
-    real rho_root_dark=findRoot(profile_deriv_rho, parameters_dark, 0.0, 0.0, 2.0*(radiusScale1+radiusScale2), prng );
+    real rho_root_dark=findRoot(profile_deriv_rho, parameters_dark, 0.0, radiusScale1, (radiusScale2), prng );
     real rho_max_dark= sqr(rho_root_dark)*density(rho_root_dark, parameters_dark, prng);
     
     /*finding the max of the combined function starting at previous found roots*/
-    real rho_root_lightroot=findRoot(profile_deriv_rho, args, 0.0, 0.5*rho_max_light,1.5*rho_max_light, prng );
+    real rho_root_lightroot=findRoot(profile_deriv_rho, args, 0.0, 0.25*rho_max_light,1.25*rho_max_light, prng );
     real rho_max_lightroot= sqr(rho_root_lightroot)* density(rho_root_lightroot, args, prng);
     
-    real rho_root_darkroot=findRoot(profile_deriv_rho, args, 0.0, 0.5*rho_max_dark,1.5*rho_max_dark, prng );
+    real rho_root_darkroot=findRoot(profile_deriv_rho, args, 0.0, 0.25*rho_max_dark,1.25*rho_max_dark, prng );
     real rho_max_darkroot= sqr(rho_root_darkroot)* density(rho_root_darkroot, args, prng);
     
     real rho_max_1=max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4, prng );
