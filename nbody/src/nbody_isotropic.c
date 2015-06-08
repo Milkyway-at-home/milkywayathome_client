@@ -63,6 +63,21 @@ static inline real density( real r, real * args, dsfmt_t* dsfmtState)
   return density_result;
 }
 
+
+
+static inline real single_density( real r, real * args, dsfmt_t* dsfmtState)
+{
+  real mass1 = args[0];
+  real scaleRad1 = args[1];
+  
+  real scaleRad1Cube = cube(scaleRad1); 
+  /*this weird sqrt(fifth(x) notation is used because it was determined that pow() ate up a lot of comp time*/
+  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) * (minusfivehalves( (1.0 + sqr(r)/sqr(scaleRad1)) )  ));
+  
+  return density_result;
+}
+
+
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
 static inline real mass_en( real r, real mass, real scaleRad)
 {
@@ -208,38 +223,48 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
   
   if((fun_lower > 0 && fun_upper < 0) || (fun_lower < 0 && fun_upper> 0))
   {
-    if(fun_lower<0)
-    {
-      x_lower= lowBound;
-      x_upper= upperBound;
-    }
-    else
-    {
-      x_lower= upperBound;
-      x_upper= lowBound;
-    }
-    
-    while(1)
-    {
-     x_mid= (x_lower+x_upper)/2.0;
-     fun_mid=(*rootFunc)(x_mid, rootFuncParams, dsfmtState) - funcValue;
-      
-     if(mw_fabs(fun_mid)<0.0001)
-     {break;}
-     
-     if(fun_mid<0)
-     {x_lower=x_mid;}
-     else
-     {x_upper=x_mid;}
-     
-     if(counter>10000)
-     {break;}
-     else
-     {counter++;}
-     
-    }
-    
-       
+	if(fun_lower<0)
+	{
+	  x_lower= lowBound;
+	  x_upper= upperBound;
+	}
+	else
+	{
+	  x_lower= upperBound;
+	  x_upper= lowBound;
+	}
+	
+	while(1)
+	{
+	      x_mid= (x_lower+x_upper)/2.0;
+	      fun_mid=(*rootFunc)(x_mid, rootFuncParams, dsfmtState) - funcValue;
+		
+	      if(mw_fabs(fun_mid)<0.0001)
+	      {
+		break;
+	      }
+	      
+	      if(fun_mid<0)
+	      {
+		x_lower=x_mid;
+	      }
+	      else
+	      {
+		x_upper=x_mid;
+		
+	      }
+	      
+	      if(counter>10000)
+	      {
+// 		mw_printf("this ran \n");
+		break;
+	      }
+	      else
+	      {
+		counter++;
+	      }
+	
+	}
   }
   
   return x_mid;
@@ -247,7 +272,7 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
 
 
 
-static real findRoot3(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
+static real findRoot2(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
 {
   //requires lowBound and upperBound to evaluate to opposite sign when rootFunc-funcValue
   if(rootFuncParams == NULL || rootFunc == NULL)
@@ -256,7 +281,7 @@ static real findRoot3(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
   }
   unsigned int i = 0;
   /* Can find up to 20 roots, but may miss a root if they are too close together */
-  int N=20;
+  int N=4;
   unsigned int numSteps = N;
   real interval;
   real * values = mwCalloc(N, sizeof(real));
@@ -309,212 +334,10 @@ static real findRoot3(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
   }
   /* Lets assume each root is an equally probable answer so we pick one at random  *
    * Don't want to include 1.0 in our random set otherwise we may go out of bounds */
-  midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.999999)*(real)rootsFound)];
+  midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.9999)*(real)(rootsFound))];
   free(values);
   free(roots);
   return midPoint;
-}
-
-
-/* A root finding function used to invert probability functions allows for direct calculation of positions instead of sampling */
-static real findRoot2(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
-{
-  if(rootFuncParams == NULL || rootFunc == NULL)
-  {exit(-1);}
-  
-  real xo;
-  real fun, m, b, temp, tempf, tempf2;
-  int counter=0.0;
-  int counter2=0.0;
-  int found_root=0;
-  
-  xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
-  //mw_printf("\n\tinitial xo=%f\n", xo);
-  counter=0;
-  
-  while(1)
-  {
-    counter2=0.0;
-    //mw_printf("\tgetting func: \n");
-    
-    fun=(*rootFunc)(xo, rootFuncParams, dsfmtState)-funcValue;
-    if(fun==(-funcValue))
-    {
-      //mw_printf("velocity too high. resetting xo\n");
-      xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
-      continue;
-    }
-    
-    //mw_printf("\tdone.\n");
-    if(fabs(fun)<1e-2)
-    {
-      found_root++;
-      break;
-    }
-    if(counter>=10000)
-    {
-      break;
-    }
-      counter++;
-    //mw_printf("------------------derivative of dist------------------------------");
-    m= first_deriv(rootFunc, rootFuncParams, xo, dsfmtState);
-    //mw_printf("------------------end of derivative of dist------------------------------");
-    
-    if(fabs(m)<1e-4)
-    {
-      //mw_printf("possibly at a maxima");
-      xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
-      continue;
-    }
-    
-    
-    b= fun-(m*xo);
-    //mw_printf("\tfun=%f m=%0.10f  b=%f\n", fun, m,b);
-    
-    //backtracking:
-    
-    temp=(-1.0*b/m);
-//     do
-//     {
-//       if(temp<upperBound){break;}
-//       else{temp=temp/2.0;}
-//       
-//     }while(1);
-    
-    
-    //mw_printf("\tgetting tempf:\n");
-    tempf=(*rootFunc)(temp, rootFuncParams, dsfmtState)-funcValue;
-    if(tempf==(-funcValue))
-    {
-      //mw_printf("new velocity too high. resetting xo\n");
-      xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
-      continue;
-    }
-    tempf2=tempf;
-    
-    //mw_printf("\tdone.\n");
-    //mw_printf("\t temp=%f   tempf=%.10f\n", temp, tempf);
-    
-    while(mw_fabs(tempf)>mw_fabs(fun))
-    {
-      counter2++;
-      if(counter2>=100)
-      {
-	break;
-      }
-      temp=temp/2.0;
-	//mw_printf("backtracking ");
-      tempf2=(*rootFunc)(temp, rootFuncParams, dsfmtState)-funcValue;
-      
-//       if(mw_fabs(mw_fabs(tempf2)-mw_fabs(tempf))<1.0 ){break;}
-//       else{tempf=tempf2;}
-	//mw_printf("\t \t temp=%f   tempf=%.10f\n", temp, tempf);
-    }
-    xo=temp;
-//       xo=(xo);
-      //mw_printf("\txo=%f\n\n ", xo);
-    }
-  
-  real root=0.0;
-  if(found_root!=0){root=xo;}
-  else{
-    //mw_printf("\t this ran\n");
-    root=0.0;}
-  
-  return root;
-}
-
-
-static real findRoot1(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
-{
-  if(rootFuncParams == NULL || rootFunc == NULL)
-  {exit(-1);}
-  
-  real xo;
-  real fun, m, b, temp, tempf, tempf2;
-  int counter=0.0;
-  int counter2=0.0;
-  int found_root=0;
-  
-  xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
-  //mw_printf("\n\tinitial for potential xo=%f\n", xo);
-  counter=0;
-  
-  while(1)
-  {
-    counter2=0.0;
-    //mw_printf("\tgetting potential value: \n");
-    
-    fun=(*rootFunc)(xo, rootFuncParams, dsfmtState)- funcValue;
-//     if(fun==mw_fabs(funcValue))
-//     {
-//       //mw_printf("resetting xo\n");
-//       xo= mwXrandom(dsfmtState,0.0,1.0)*(upperBound-lowBound) +lowBound;
-//       continue;
-//     }
-    
-    //mw_printf("\tdone.\n");
-    if(fabs(fun)<1e-2)
-    {
-      found_root++;
-      break;
-    }
-    if(counter>=10000)
-    {
-      break;
-    }
-      counter++;
-    
-    m= first_deriv(rootFunc, rootFuncParams, xo, dsfmtState);
-    
-    b= fun-(m*xo);
-    //mw_printf("\t pot=%f m=%0.10f  b=%f\n", fun, m,b);
-    
-    //backtracking:
-    
-    temp=(-1.0*b/m);
-//     do
-//     {
-//       if(temp<upperBound){break;}
-//       else{temp=temp/2.0;}
-//       
-//     }while(1);
-    
-    
-    //mw_printf("\tgetting tempf potential:\n");
-    tempf=(*rootFunc)(temp, rootFuncParams, dsfmtState)-funcValue;
-    tempf2=tempf;
-    
-    //mw_printf("\tdone.\n");
-    //mw_printf("\t for potential: temp=%f   tempf=%.10f\n", temp, tempf);
-    
-    while(mw_fabs(tempf)>mw_fabs(fun))
-    {
-      counter2++;
-      if(counter2>=100)
-      {
-	break;
-      }
-      temp=temp/2.0;
-	//mw_printf("backtracking potential  ");
-      tempf2=(*rootFunc)(temp, rootFuncParams, dsfmtState)-funcValue;
-      
-//       if(mw_fabs(mw_fabs(tempf2)-mw_fabs(tempf))<1.0 ){break;}
-//       else{tempf=tempf2;}
-	//mw_printf("\t \t for potential: temp=%f   tempf=%.10f\n", temp, tempf);
-    }
-    xo=temp;
-//       xo=(xo);
-      //mw_printf("\tfor potential: xo=%f\n\n ", xo);
-    }
-  
-  real root=0.0;
-  if(found_root!=0){root=xo;}
-  else{
-    //mw_printf("\t this ran in the potential search\n");
-    root=0.0;}
-  
-  return root;
 }
 
 
@@ -531,17 +354,22 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
   int counter=0;
   mwbool limit_reached=FALSE;
   real upperlimit_r;
-  energy=fabs(energy);
+//   energy=fabs(energy);
   do
   {
-    //mw_printf("\t \t fetching root...\n");
-    upperlimit_r=findRoot3(potential, args, energy, 0.0, scaleRad2, dsfmtState); 
-    //mw_printf("\t \t done. got root. energy= %f energy_max=%f  v=%f  v_esc=%f root=%f\n",energy,energy_max,v, v_esc, upperlimit_r);
+//     mw_printf("\t \t fetching root...\n");
+    upperlimit_r=findRoot(potential, args, energy, 0.0, scaleRad2, dsfmtState); 
+//     mw_printf("\t \t done. got root. energy= %f energy_max=%f  v=%f  v_esc=%f root=%f\n",energy,energy_max,v, v_esc, upperlimit_r);
     if(isinf(upperlimit_r)==FALSE && upperlimit_r!=0.0 && isnan(upperlimit_r)==FALSE){break;}
     counter++;
+    if(counter>100)
+    {
+      upperlimit_r=0.0;
+      break;
+    }
   }
     while(1);
-    
+  mw_printf("upperlimit_r= %f \n", upperlimit_r);
   upperlimit_r=fabs(upperlimit_r);
   return upperlimit_r;
 }
@@ -561,8 +389,8 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   real distribution_function=0.0;
   real energy;
   real upperlimit_r;
-  //mw_printf("vel=%f\n", v);
-  //mw_printf("v=%f  v_esc=%f\n", v, v_esc);
+//   mw_printf("vel=%f\n", v);
+//   mw_printf("v=%f  v_esc=%f\n", v, v_esc);
   
 //   if(mw_fabs(v)>mw_fabs(2.0*v_esc)||isnan(v)==TRUE){return distribution_function;}
   
@@ -571,15 +399,15 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   {
     energy= energy_max;
     upperlimit_r= upperlimit_r_max;
-//     //mw_printf("\t max energy =%f  \t max upper r= %f\n ", energy, upperlimit_r);
+    //mw_printf("\t max energy =%f  \t max upper r= %f\n ", energy, upperlimit_r);
   }
   else if(ifmax==0)
   {
     energy= potential( r, args,dsfmtState)-0.5*v*v; 
-    //mw_printf("\t getting upper limit r...\n");
+//     mw_printf("\t getting upper limit r...\n");
     upperlimit_r=find_upperlimit_r(args, energy, dsfmtState, v);
-    //mw_printf("\t done. upper limit r found.\n");
-    //mw_printf("\t \t \tenergy =%f  \t upper r= %f\n ", energy, upperlimit_r);
+//     mw_printf("\t done. upper limit r found.\n");
+//     mw_printf("\t \t \tenergy =%f  \t upper r= %f\n ", energy, upperlimit_r);
   }
   
 //   //mw_printf("mass= %f\n", pm);
@@ -599,10 +427,10 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
  * of the function value at the minima found, thus being the max of the function*/
 static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 {
-  real mass1 = args[0];
-  real mass2 = args[1];
-  real scaleRad1 = args[2];
-  real scaleRad2 = args[3];
+//   real mass1 = args[0];
+//   real mass2 = args[1];
+//   real scaleRad1 = args[2];
+//   real scaleRad2 = args[3];
   
   real result =  r*r*density( r, args, dsfmtState);  
   return result;
@@ -610,10 +438,10 @@ static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 
 static inline real profile_deriv_rho(real r, real * args, dsfmt_t* dsfmtState)
 {
-  real mass1 = args[0];
-  real mass2 = args[1];
-  real scaleRad1 = args[2];
-  real scaleRad2 = args[3];
+//   real mass1 = args[0];
+//   real mass2 = args[1];
+//   real scaleRad1 = args[2];
+//   real scaleRad2 = args[3];
   real h=0.001;
 //   real forward=sqr(r+h)*density( r+h, args, dsfmtState);
 //   real backward=sqr(r-h)*density( r-h,args, dsfmtState); 
@@ -722,17 +550,34 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
   real scaleRad2 = args[3];
   
   real r;
-  real u;
+  real u, funcval;
+  real r1, r2, val;
   
-  u = (real)mwXrandom(dsfmtState,0.0,1.0) * rho_max;
-//   do
-//   {
-    r = findRoot(profile_rho, args, u, 0.0, 2.0 * (scaleRad1 + scaleRad2), dsfmtState );
-//     mw_printf("the initial r=%f\n", r);
-//     if(mw_fabs(r)< 2.0*(scaleRad1 + scaleRad2)){break;}
-//   }while(1);
-  //mw_printf("scaleRad1=%f  scaleRad2=%f\n", scaleRad1,scaleRad2);
-//   printf("%4f\n", r);
+  mwbool GOOD_RADIUS = 0;
+//   u = (real)mwXrandom(dsfmtState,0.0, 2.0 * (scaleRad1 + scaleRad2));
+//   funcval=u*u*density(u, args, dsfmtState);
+  
+  
+//   real turning_r=0.3;//findRoot(profile_rho, args, rho_max, 0.0, (scaleRad1), dsfmtState );
+//   mw_printf("turning_r= %f \n", turning_r);
+    while (GOOD_RADIUS != 1)
+    {
+      
+      r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
+      u = (real)mwXrandom(dsfmtState,0.0,1.0);
+      val = r*r * density(r,  args, dsfmtState);
+  
+      if (val/rho_max > u)
+      {
+       	GOOD_RADIUS = 1;
+      }
+    }
+    
+//     mw_printf("val= %f r=%f rho_max=%f \n", val, r, rho_max);
+  
+//   r = findRoot2(profile_rho, args, funcval, 0.0, (scaleRad2), dsfmtState );
+
+
   
   return fabs(r);
 }
@@ -756,7 +601,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real scaleRad1 = args[2];
   real scaleRad2 = args[3];
   
-  real v,u;
+  real v,u, d;
   real energy;
   real upperlimit_r=0;
   real ifmax= 1;
@@ -772,9 +617,23 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   ifmax=0;
   parameters[7]=ifmax;
   
-  u = (real)mwXrandom(dsfmtState,0.0,1.0)* dist_max;
+  while(1)
+    {
+
+      v = (real)mwXrandom(dsfmtState,0.0, v_esc);
+      u = (real)mwXrandom(dsfmtState,0.0,1.0);
+      
+      d=dist_fun(v, parameters,  dsfmtState);
+      
+      if (mw_fabs( d/dist_max) > u)
+      {
+       	break;
+      }
+    }
   
-  v=findRoot(dist_fun, parameters, u, 0.0, v_esc, dsfmtState);
+//   u = (real)mwXrandom(dsfmtState,0.0,1.0)* dist_max;
+  
+//   v=findRoot(dist_fun, parameters, u, 0.0, v_esc, dsfmtState);
 
   v*=0.977813107;//changing from kpc/gy to km/s
   return fabs(v); //km/s
@@ -850,43 +709,15 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real tst= findRoot(test, args, 4.0, 0.0, 5.0, prng);
     mw_printf("test=%f\n", tst);
     
-    /*what is happening here: 
-     * the r^2*rho function has 2 maxima and 1 minima. We use Newton Raph to 
-     * find the max of the density function for each individual component. We then 
-     * use the root for those as a starting point for NR to find the max of the combined
-     * function and compare to see which is larger. 
-     */
     real parameters_light[4]= {mass1, 0.0, radiusScale1, radiusScale2};
     real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
 
     /*finding the max of the individual components*/
-    real rho_root_light=findRoot(profile_deriv_rho, parameters_light, 0.0, 0.0,radiusScale1, prng );
-    real rho_max_light= sqr(rho_root_light)*density(rho_root_light,parameters_light, prng);
+    real rho_max_1=max_finder(profile_rho, args, 0,radiusScale1, (radiusScale2), 20, 1e-4, prng );
     
-    real rho_root_dark=findRoot(profile_deriv_rho, parameters_dark, 0.0, radiusScale1, (radiusScale2), prng );
-    real rho_max_dark= sqr(rho_root_dark)*density(rho_root_dark, parameters_dark, prng);
-    
-    /*finding the max of the combined function starting at previous found roots*/
-    real rho_root_lightroot=findRoot(profile_deriv_rho, args, 0.0, 0.25*rho_max_light,1.25*rho_max_light, prng );
-    real rho_max_lightroot= sqr(rho_root_lightroot)* density(rho_root_lightroot, args, prng);
-    
-    real rho_root_darkroot=findRoot(profile_deriv_rho, args, 0.0, 0.25*rho_max_dark,1.25*rho_max_dark, prng );
-    real rho_max_darkroot= sqr(rho_root_darkroot)* density(rho_root_darkroot, args, prng);
-    
-    real rho_max_1=max_finder(profile_rho, args, 0,radiusScale2, (radiusScale1 + radiusScale2), 20, 1e-4, prng );
-    
-    if(rho_max_lightroot>rho_max_darkroot)
-    {rho_max=rho_max_lightroot;}
-    else if(rho_max_lightroot<rho_max_darkroot)
-    {rho_max=rho_max_darkroot;}
-    else
     {rho_max=rho_max_1;}
-    mw_printf("%.10f  %f  %f  \n", rho_max, rho_root_light, rho_root_dark);
-    mw_printf("%.10f  %f  %f  \n", rho_max, rho_max_light, rho_max_dark);
-    mw_printf("%.10f  %f  %f  \n", rho_max_1, rho_root_lightroot, rho_root_darkroot);
-    mw_printf("%.10f  %f  %f  \n", rho_max_1, rho_max_lightroot, rho_max_darkroot);
-    
-    
+
+    mw_printf("rho_max= %.10f  \n", rho_max);
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     real w=0.0;
     FILE * rho;
@@ -903,6 +734,57 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       if(w>5*(radiusScale1+radiusScale2)){break;}
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    FILE * dist1;
+    dist1= fopen("dist_single_masses1.txt", "w");
+    FILE * dist2;
+    dist2= fopen("dist_single_masses2.txt", "w");
+    FILE * dist3;
+    dist3= fopen("dist_1.txt", "w");
+    real r_1, v_1, mass_en1_1, mass_en2_1, dist_val_1;
+    real v_2, dist_val_2;
+    real v_3, dist_val_3;
+    r_1=0.1;
+    real parameters_light_1[9]={mass1, 0.0, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
+    real parameters_dark_1[9]={0.0, mass2, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
+    real parameters_all_1[9]={mass1, mass2, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
+    
+    while(1)
+    {
+	  parameters_light_1[4]=r_1;
+	  parameters_light_1[4]=r_1;
+	  parameters_all_1[4]= r_1;
+	  
+	  
+	  mass_en1_1= mass_en(r_1, mass1, radiusScale1);
+	  mass_en2_1= mass_en(r_1, mass2, radiusScale2);
+	  v_1= mw_sqrt( mw_fabs(2.0* (mass_en1_1)/r_1));
+	  v_2= mw_sqrt( mw_fabs(2.0* (mass_en2_1)/r_1));
+	  v_3= mw_sqrt( mw_fabs(2.0* (mass_en2_1+mass_en1_1)/r_1));
+	
+// 	  mw_printf("Getting dis funs...");
+	  dist_val_1= v_1*v_1*dist_fun(v_1,  parameters_light_1, prng);
+// 	  mw_printf("done1...");
+	  dist_val_2= v_2*v_2*dist_fun(v_2,  parameters_dark_1, prng);
+// 	  mw_printf("done2...");
+	  dist_val_3= v_3*v_3*dist_fun(v_3,  parameters_all_1, prng);
+// 	  mw_printf("done3...\n");
+	  fprintf(dist1,"%f \t %f \t %f\n", dist_val_1, r_1, v_1);
+	  fprintf(dist2,"%f \t %f \t %f\n", dist_val_2, r_1, v_2);
+	  fprintf(dist3,"%f \t %f \t %f\n", dist_val_3, r_1, v_3);
+	  
+      r_1=r_1+.001;
+//       mw_printf("\r printing density functions: %f ", r_1/(2*(radiusScale1+radiusScale2))*100);
+      if(r_1>2*(radiusScale1 + radiusScale2)){break;}
+     
+    }
+    fclose(dist1);
+    fclose(dist2);
+    fclose(dist3);
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     
     memset(&b, 0, sizeof(b));
