@@ -213,66 +213,9 @@ static real first_deriv(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncP
   return deriv;
   
 }
+
+
 static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
-{
-  real x_lower, x_upper, x_mid;
-  real fun_lower, fun_upper, fun_mid;
-  int counter=0;
-  fun_lower=(*rootFunc)(lowBound, rootFuncParams, dsfmtState) - funcValue;
-  fun_upper=(*rootFunc)(upperBound, rootFuncParams, dsfmtState) - funcValue;
-  
-  if((fun_lower > 0 && fun_upper < 0) || (fun_lower < 0 && fun_upper> 0))
-  {
-	if(fun_lower<0)
-	{
-	  x_lower= lowBound;
-	  x_upper= upperBound;
-	}
-	else
-	{
-	  x_lower= upperBound;
-	  x_upper= lowBound;
-	}
-	
-	while(1)
-	{
-	      x_mid= (x_lower+x_upper)/2.0;
-	      fun_mid=(*rootFunc)(x_mid, rootFuncParams, dsfmtState) - funcValue;
-		
-	      if(mw_fabs(fun_mid)<0.0001)
-	      {
-		break;
-	      }
-	      
-	      if(fun_mid<0)
-	      {
-		x_lower=x_mid;
-	      }
-	      else
-	      {
-		x_upper=x_mid;
-		
-	      }
-	      
-	      if(counter>10000)
-	      {
-// 		mw_printf("this ran \n");
-		break;
-	      }
-	      else
-	      {
-		counter++;
-	      }
-	
-	}
-  }
-  
-  return x_mid;
-}
-
-
-
-static real findRoot2(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
 {
   //requires lowBound and upperBound to evaluate to opposite sign when rootFunc-funcValue
   if(rootFuncParams == NULL || rootFunc == NULL)
@@ -372,7 +315,7 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
   do
   {
 //     mw_printf("\t \t fetching root...\n");
-    upperlimit_r=findRoot2(potential, args, energy, 0.0, 10*scaleRad2, dsfmtState); 
+    upperlimit_r=findRoot(potential, args, energy, 0.0, 10*scaleRad2, dsfmtState); 
 //     mw_printf("\t \t done. got root. energy= %f energy_max=%f  v=%f  v_esc=%f root=%f\n",energy,energy_max,v, v_esc, upperlimit_r);
     if(isinf(upperlimit_r)==FALSE && upperlimit_r!=0.0 && isnan(upperlimit_r)==FALSE){break;}
     counter++;
@@ -729,8 +672,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real rho_max;
     
     real tst1= findRoot(test, args, 4.0, 0.0, 5.0, prng);
-    real tst2= findRoot2(test, args, 4.0, 0.0, 5.0, prng);
-    mw_printf("test_mine=%f \ntest_jakes=%f\n", tst1,tst2 );
+//     real tst2= findRoot2(test, args, 4.0, 0.0, 5.0, prng);
+    mw_printf("test=%f\n", tst1 );
     
     real parameters_light[4]= {mass1, 0.0, radiusScale1, radiusScale2};
     real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
