@@ -286,9 +286,13 @@ static real findRoot2(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
   real interval;
   real * values = mwCalloc(N, sizeof(real));
   /* Divide the function area up into bins in case there is more than one root */
-  for(i = 0; i < numSteps; i++)
+  /*numSteps+1 because you want to include the upperbound in the interval*/
+  for(i = 0; i < numSteps+1; i++)
   {
-    values[i] = (*rootFunc)(((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound, rootFuncParams, dsfmtState) - funcValue;
+    interval=((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound;
+//     mw_printf("interval= %f upperbound=%f low=%f \n", interval, upperBound, lowBound);
+    values[i] = (*rootFunc)(interval, rootFuncParams, dsfmtState) - funcValue;
+//     mw_printf("values= %f \n", values[i]);
   }
   real midPoint = 0;
   real midVal = 0;
@@ -302,22 +306,27 @@ static real findRoot2(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
   {
     if((values[i] > 0 && values[i+1] < 0) || (values[i] < 0 && values[i+1] > 0))
     {
-      if(values[i] < 0)
+      if(values[i] < 0 && values[i+1] > 0)
       {
 	curLower = ((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound;
 	curUpper = ((upperBound - lowBound) * (real)(i + 1))/(real)numSteps + lowBound;
       }
-      else
+      else if(values[i] > 0 && values[i+1] < 0)
       {
 	curLower = ((upperBound - lowBound) * (real)(i + 1))/(real)numSteps + lowBound;
 	curUpper = ((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound;
       }
+      else
+      {
+	continue;
+      }
       midVal = 1;
       nsteps=0;
-      while(midVal > .001 || nsteps >= 10000)
+      while(mw_fabs(midVal) > .00001 || nsteps >= 10000)
       {
 	midPoint = (curLower + curUpper)/2.0;
 	midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
+// 	mw_printf("midVal= %f \n", midVal);
 	if(midVal < 0.0)
 	{
 	  curLower = midPoint;
@@ -331,10 +340,15 @@ static real findRoot2(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPar
       roots[rootsFound] = midPoint;
       ++rootsFound;
     }
+    if(rootsFound!=0)
+    {
+      break;
+    }
   }
+//   mw_printf("rootsFound= %i\n", rootsFound);
   /* Lets assume each root is an equally probable answer so we pick one at random  *
    * Don't want to include 1.0 in our random set otherwise we may go out of bounds */
-  midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.9999)*(real)(rootsFound))];
+//   midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.9999)*(real)(rootsFound))];
   free(values);
   free(roots);
   return midPoint;
@@ -358,7 +372,7 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
   do
   {
 //     mw_printf("\t \t fetching root...\n");
-    upperlimit_r=findRoot(potential, args, energy, 0.0, scaleRad2, dsfmtState); 
+    upperlimit_r=findRoot2(potential, args, energy, 0.0, 10*scaleRad2, dsfmtState); 
 //     mw_printf("\t \t done. got root. energy= %f energy_max=%f  v=%f  v_esc=%f root=%f\n",energy,energy_max,v, v_esc, upperlimit_r);
     if(isinf(upperlimit_r)==FALSE && upperlimit_r!=0.0 && isnan(upperlimit_r)==FALSE){break;}
     counter++;
@@ -367,9 +381,9 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
       upperlimit_r=0.0;
       break;
     }
-  }
-    while(1);
-  mw_printf("upperlimit_r= %f \n", upperlimit_r);
+  }while(1);
+    
+//   mw_printf("upperlimit_r= %f \n", upperlimit_r);
   upperlimit_r=fabs(upperlimit_r);
   return upperlimit_r;
 }
@@ -414,7 +428,7 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 //   energy=energy;
 
   real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
-  
+//   mw_printf("upperlimit_r= %f \n", upperlimit_r);
   
   /*This calls guassian quad to integrate the function for a given energy*/
   distribution_function=v*v*c*gauss_quad(upperlimit_r,energy, args, dsfmtState);
@@ -548,7 +562,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
   real mass2 = args[1];
   real scaleRad1 = args[2];
   real scaleRad2 = args[3];
-  
+  int counter=0;
   real r;
   real u, funcval;
   real r1, r2, val;
@@ -562,14 +576,17 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
 //   mw_printf("turning_r= %f \n", turning_r);
     while (GOOD_RADIUS != 1)
     {
-      
       r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
       u = (real)mwXrandom(dsfmtState,0.0,1.0);
       val = r*r * density(r,  args, dsfmtState);
   
-      if (val/rho_max > u)
+      if (val/rho_max > u || counter>1000)
       {
        	GOOD_RADIUS = 1;
+      }
+      else
+      {
+	counter++;
       }
     }
     
@@ -600,7 +617,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real mass2 = args[1];
   real scaleRad1 = args[2];
   real scaleRad2 = args[3];
-  
+  int counter=0;
   real v,u, d;
   real energy;
   real upperlimit_r=0;
@@ -616,7 +633,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real dist_max=max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
   ifmax=0;
   parameters[7]=ifmax;
-  
+//   mw_printf("rejection sampling...");
   while(1)
     {
 
@@ -625,11 +642,16 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
       
       d=dist_fun(v, parameters,  dsfmtState);
       
-      if (mw_fabs( d/dist_max) > u)
+      if (mw_fabs( d/dist_max) > u || counter>1000)
       {
        	break;
       }
+      else
+      {
+	counter++;
+      }
     }
+    
   
 //   u = (real)mwXrandom(dsfmtState,0.0,1.0)* dist_max;
   
@@ -706,8 +728,9 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real args[4]= {mass1,mass2, radiusScale1, radiusScale2};
     real rho_max;
     
-    real tst= findRoot(test, args, 4.0, 0.0, 5.0, prng);
-    mw_printf("test=%f\n", tst);
+    real tst1= findRoot(test, args, 4.0, 0.0, 5.0, prng);
+    real tst2= findRoot2(test, args, 4.0, 0.0, 5.0, prng);
+    mw_printf("test_mine=%f \ntest_jakes=%f\n", tst1,tst2 );
     
     real parameters_light[4]= {mass1, 0.0, radiusScale1, radiusScale2};
     real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
@@ -790,16 +813,29 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);	
-    
+    int counter=0;
       /*getting the radii and velocities for the bodies*/
       for (i = 0; i < nbody; i++)
       {
-// 	mw_printf(" \r initalizing particle %i. ",i+1);
+	counter=0;
+	mw_printf(" \r initalizing particle %i. ",i+1);
 	  do
 	  {
 	    r= r_mag(prng, args, rho_max);
 	    /*to ensure that r is finite and nonzero*/
-	    if(isinf(r)==FALSE && r!=0.0 && isnan(r)==FALSE){break;}
+	    if(isinf(r)==FALSE && r!=0.0 && isnan(r)==FALSE)
+	    {
+	      break;
+	    }
+	    
+	    if(counter>1000)
+	    {
+	      exit(-1);
+	    }
+	    else
+	    {
+	      counter++;
+	    }
 	  }
 	  while (1);
 // 	  mw_printf(" particle %i  \t r= %f \n", i, r);
@@ -855,14 +891,24 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	    b.bodynode.type = BODY(isdark);
 	  }
 // 	  //mw_printf("mass %f\n",  b.bodynode.mass);
-// 	  mw_printf("\r velocity of particle %i", i+1);
+	  mw_printf("\r velocity of particle %i", i+1);
+	  counter=0;
 	  do
 	  {
 	    v= vel_mag(prng, r, args , b.bodynode.mass);
 	    if(isinf(v)==FALSE && v!=0.0 && isnan(v)==FALSE){break;}
+	    
+	    if(counter>1000)
+	    {
+	      exit(-1);
+	    }
+	    else
+	    {
+	      counter++;
+	    }
 	  }
 	  while (1);
-	  mw_printf(" vel %i  \t v= %f \t r=%f \n", i, v, r);
+// 	  mw_printf(" vel %i  \t v= %f \t r=%f \n", i, v, r);
 	  
 	  b.vel = vel_vec(prng,  vShift, v);
 	  b.bodynode.pos = r_vec(prng, rShift, r);
