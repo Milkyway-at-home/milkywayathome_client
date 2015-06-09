@@ -796,10 +796,9 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       int q;
       while(light_count<half_bodies)//only want half the bodies light matter
       {
-
-	if(mass_type[i]==dark)
+	q=(int)mwXrandom(prng,0.0,nbody-1);
+	if(mass_type[q]==dark)
 	{
-	  q=(int)mwXrandom(prng,0.0,nbody-1);
 	  r=all_r[q];
 	  /*max_light_density is equal to r^2*rho(r)/ (r^2*rho(r))_max*/
 	  max_light_density=coeff* sqr(r)/sqr(radiusScale1)* minusfivehalves( (1.0 + sqr(r)/sqr(radiusScale1)) )  ;
@@ -807,13 +806,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
 	  if( max_light_density < u)
 	  {
-	    mass_type[i]=light;
+	    mass_type[q]=light;
 	    light_count++;
 	  }
 	}
 	
-	if(i>= nbody-1){i=0;}
-	else{i++;}
+// 	if(i>= nbody-1){i=0;}
+// 	else{i++;}
       }
       
       /*this actually gets the position and velocity vectors and pushes table of bodies*/
