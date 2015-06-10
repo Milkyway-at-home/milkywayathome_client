@@ -56,26 +56,13 @@ static inline real density( real r, real * args, dsfmt_t* dsfmtState)
   
   real scaleRad1Cube = cube(scaleRad1); 
   real scaleRad2Cube = cube(scaleRad2);
-  /*this weird sqrt(fifth(x) notation is used because it was determined that pow() ate up a lot of comp time*/
+
   real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) * (minusfivehalves( (1.0 + sqr(r)/sqr(scaleRad1)) )  )
 						  + (mass2/scaleRad2Cube) *(minusfivehalves( (1.0 + sqr(r)/sqr(scaleRad2))  ) ) );
   
   return density_result;
 }
 
-
-
-static inline real single_density( real r, real * args, dsfmt_t* dsfmtState)
-{
-  real mass1 = args[0];
-  real scaleRad1 = args[1];
-  
-  real scaleRad1Cube = cube(scaleRad1); 
-  /*this weird sqrt(fifth(x) notation is used because it was determined that pow() ate up a lot of comp time*/
-  real density_result= (3.0/(4.0*(M_PI)))*( (mass1/scaleRad1Cube) * (minusfivehalves( (1.0 + sqr(r)/sqr(scaleRad1)) )  ));
-  
-  return density_result;
-}
 
 
 /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
@@ -88,6 +75,7 @@ static inline real mass_en( real r, real mass, real scaleRad)
 
 static  real fun(real ri, real * args, dsfmt_t* dsfmtState, real energy)
 {
+  
   real mass1 = args[0];
   real mass2 = args[1];
   real scaleRad1 = args[2];
@@ -122,7 +110,14 @@ static  real fun(real ri, real * args, dsfmt_t* dsfmtState, real energy)
 	  * Instead of calculating the second derivative of density with respect to -pot directly, 
 	  * did product rule since both density and pot are functions of radius. 
 	  */
-    dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(sqr(first_deriv_psi));
+    if(first_deriv_psi!=0.0)
+    {
+      dsqden_dpsisq=second_deriv_density/ first_deriv_psi - first_deriv_density*second_deriv_psi/(sqr(first_deriv_psi));
+    }
+    else
+    {
+      
+    }
     denominator= minushalf( mw_fabs(energy-potential(ri,args,dsfmtState) ));
     func= first_deriv_psi* dsqden_dpsisq *denominator;
 
@@ -197,23 +192,6 @@ int counter=0;
   return intv;
 }
 
-static real first_deriv(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real x, dsfmt_t* dsfmtState)
-{
- //does a five point stencil derivative
-  real h=0.01;
-//   real deriv=( (*rootFunc)(x-2.0*h, rootFuncParams, dsfmtState)
-//   - 8.0*(*rootFunc)(x-1.0*h, rootFuncParams, dsfmtState)
-//   - (*rootFunc)(x+2.0*h, rootFuncParams, dsfmtState)
-//   +8.0*(*rootFunc)(x+1.0*h, rootFuncParams, dsfmtState) ) /(12.0*h);
-  
-  real forward=(*rootFunc)(x+h, rootFuncParams, dsfmtState);
-  real backward=(*rootFunc)(x-h, rootFuncParams, dsfmtState) ;
-  real deriv= (forward-backward)/(2.0*h);
-  
-  return deriv;
-  
-}
-
 
 static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
 {
@@ -233,9 +211,7 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
   for(i = 0; i < numSteps+1; i++)
   {
     interval=((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound;
-//     mw_printf("interval= %f upperbound=%f low=%f \n", interval, upperBound, lowBound);
     values[i] = (*rootFunc)(interval, rootFuncParams, dsfmtState) - funcValue;
-//     mw_printf("values= %f \n", values[i]);
   }
   real midPoint = 0;
   real midVal = 0;
@@ -244,8 +220,11 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
   real curLower = 0;
   int rootsFound = 0;
   int q=0;
-//   real * roots =  mwCalloc(N, sizeof(real));
-  /* Find the roots using bisection because it was easy to code and good enough for our purposes */
+  
+  /* Find the roots using bisection because it was easy to code and good enough for our purposes 
+   * this will hope around the different intervals until it checks all of them. This way it does not 
+   * favor any root.
+   */
   for(i = 0; i < numSteps; i++)
   {
     q=(int)(mwXrandom(dsfmtState,0.0,numSteps-1));
@@ -271,7 +250,7 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
       {
 	midPoint = (curLower + curUpper)/2.0;
 	midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
-// 	mw_printf("midVal= %f \n", midVal);
+	
 	if(midVal < 0.0)
 	{
 	  curLower = midPoint;
@@ -282,7 +261,7 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
 	}
 	++nsteps;
       }
-//       roots[rootsFound] = midPoint;
+      
       if(nsteps<10000)
       {
 	++rootsFound;
@@ -300,11 +279,9 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
       }
   }
 //   mw_printf("rootsFound= %i\n", rootsFound);
-  /* Lets assume each root is an equally probable answer so we pick one at random  *
-   * Don't want to include 1.0 in our random set otherwise we may go out of bounds */
-//   midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.9999)*(real)(rootsFound))];
+
   free(values);
-//   free(roots);
+  
   return midPoint;
 }
 
@@ -322,7 +299,6 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
   int counter=0;
   mwbool limit_reached=FALSE;
   real upperlimit_r;
-//   energy=fabs(energy);
   do
   {
 //     mw_printf("\t \t fetching root...\n");
@@ -357,11 +333,7 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
   real distribution_function=0.0;
   real energy;
   real upperlimit_r;
-//   mw_printf("vel=%f\n", v);
 //   mw_printf("v=%f  v_esc=%f\n", v, v_esc);
-  
-//   if(mw_fabs(v)>mw_fabs(2.0*v_esc)||isnan(v)==TRUE){return distribution_function;}
-  
   
   if(ifmax==1)
   {
@@ -378,12 +350,8 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 //     mw_printf("\t \t \tenergy =%f  \t upper r= %f\n ", energy, upperlimit_r);
   }
   
-//   //mw_printf("mass= %f\n", pm);
-//   energy=energy;
-
   real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
-//   mw_printf("upperlimit_r= %f \n", upperlimit_r);
-  
+
   /*This calls guassian quad to integrate the function for a given energy*/
   distribution_function=v*v*c*gauss_quad(upperlimit_r,energy, args, dsfmtState);
     
@@ -395,27 +363,8 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
  * of the function value at the minima found, thus being the max of the function*/
 static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 {
-//   real mass1 = args[0];
-//   real mass2 = args[1];
-//   real scaleRad1 = args[2];
-//   real scaleRad2 = args[3];
-  
   real result =  r*r*density( r, args, dsfmtState);  
   return result;
-}
-
-static inline real profile_deriv_rho(real r, real * args, dsfmt_t* dsfmtState)
-{
-//   real mass1 = args[0];
-//   real mass2 = args[1];
-//   real scaleRad1 = args[2];
-//   real scaleRad2 = args[3];
-  real h=0.001;
-//   real forward=sqr(r+h)*density( r+h, args, dsfmtState);
-//   real backward=sqr(r-h)*density( r-h,args, dsfmtState); 
-//   real deriv= (forward-backward)/(2.0*h);
-  real deriv= first_deriv(profile_rho, args, r, dsfmtState);
-  return deriv;
 }
 
 real test(real x, real * args, dsfmt_t* dsfmtState)
@@ -423,10 +372,6 @@ real test(real x, real * args, dsfmt_t* dsfmtState)
  real f= exp(x) + sin(x) +x;
  return f;
 }
-
-
-  
-
 
 /*this is a maxfinding routine to find the maximum of the density.
  * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
@@ -522,34 +467,23 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
   real r1, r2, val;
   
   mwbool GOOD_RADIUS = 0;
-//   u = (real)mwXrandom(dsfmtState,0.0, 2.0 * (scaleRad1 + scaleRad2));
-//   funcval=u*u*density(u, args, dsfmtState);
   
-  
-//   real turning_r=0.3;//findRoot(profile_rho, args, rho_max, 0.0, (scaleRad1), dsfmtState );
-//   mw_printf("turning_r= %f \n", turning_r);
-    while (GOOD_RADIUS != 1)
+  while (GOOD_RADIUS != 1)
+  {
+    r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
+    u = (real)mwXrandom(dsfmtState,0.0,1.0);
+    val = r*r * density(r,  args, dsfmtState);
+
+    if (val/rho_max > u || counter>1000)
     {
-      r = (real)mwXrandom(dsfmtState,0.0, 5.0 * (scaleRad1 + scaleRad2));
-      u = (real)mwXrandom(dsfmtState,0.0,1.0);
-      val = r*r * density(r,  args, dsfmtState);
-  
-      if (val/rho_max > u || counter>1000)
-      {
-       	GOOD_RADIUS = 1;
-      }
-      else
-      {
-	counter++;
-      }
+      GOOD_RADIUS = 1;
     }
+    else
+    {
+      counter++;
+    }
+  }
     
-//     mw_printf("val= %f r=%f rho_max=%f \n", val, r, rho_max);
-  
-//   r = findRoot2(profile_rho, args, funcval, 0.0, (scaleRad2), dsfmtState );
-
-
-  
   return fabs(r);
 }
 
@@ -581,7 +515,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real v_esc= mw_sqrt( mw_fabs(2.0*potential( r, args, dsfmtState)));
   
   energy=(potential( r, args, dsfmtState)-0.5*v_esc*v_esc);
-  upperlimit_r= r;//find_upperlimit_r(args, energy, dsfmtState, v_esc);
+  upperlimit_r= r;
   
   real parameters[9]= {mass1, mass2, scaleRad1, scaleRad2, r, energy, upperlimit_r, ifmax, v_esc};
   real dist_max=max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
@@ -605,11 +539,6 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
 	counter++;
       }
     }
-    
-  
-//   u = (real)mwXrandom(dsfmtState,0.0,1.0)* dist_max;
-  
-//   v=findRoot(dist_fun, parameters, u, 0.0, v_esc, dsfmtState);
 
   v*=0.977813107;//changing from kpc/gy to km/s
   return fabs(v); //km/s
@@ -683,7 +612,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real rho_max;
     
     real tst1= findRoot(test, args, 4.0, 0.0, 5.0, prng);
-//     real tst2= findRoot2(test, args, 4.0, 0.0, 5.0, prng);
     mw_printf("test=%f\n", tst1 );
     
     real parameters_light[4]= {mass1, 0.0, radiusScale1, radiusScale2};
@@ -822,8 +750,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 	  }
 	}
 	
-// 	if(i>= nbody-1){i=0;}
-// 	else{i++;}
       }
       
       /*this actually gets the position and velocity vectors and pushes table of bodies*/
