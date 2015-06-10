@@ -116,7 +116,7 @@ static  real fun(real ri, real * args, dsfmt_t* dsfmtState, real energy)
     }
     else
     {
-      
+      dsqden_dpsisq=0.0;
     }
     denominator= minushalf( mw_fabs(energy-potential(ri,args,dsfmtState) ));
     func= first_deriv_psi* dsqden_dpsisq *denominator;
@@ -313,7 +313,7 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
     }
   }while(1);
     
-  mw_printf("upperlimit_r= %f energy=%f\n", upperlimit_r, energy);
+//   mw_printf("upperlimit_r= %f energy=%f\n", upperlimit_r, energy);
   upperlimit_r=fabs(upperlimit_r);
   return upperlimit_r;
 }
@@ -521,7 +521,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real dist_max=max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
   ifmax=0;
   parameters[7]=ifmax;
-  mw_printf("rejection sampling...");
+//   mw_printf("rejection sampling...");
   while(1)
     {
 
@@ -612,7 +612,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     real rho_max;
     
     real tst1= findRoot(test, args, 4.0, 0.0, 5.0, prng);
-    mw_printf("test=%f\n", tst1 );
+//     mw_printf("test=%f\n", tst1 );
     
     real parameters_light[4]= {mass1, 0.0, radiusScale1, radiusScale2};
     real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
@@ -700,7 +700,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       for (i = 0; i < nbody; i++)
       {
 	counter=0;
-// 	mw_printf(" \r initalizing particle %i. ",i+1);
+	mw_printf(" \r initalizing particle %i. ",i+1);
 	  do
 	  {
 	    r= r_mag(prng, args, rho_max);
