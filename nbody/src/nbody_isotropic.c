@@ -146,7 +146,7 @@ static real gauss_quad(real upper, real energy, real * args, dsfmt_t* dsfmtState
   real x1n,x2n,x3n;
   
   //this should be from infinity. But the dis func should be negligble here.
-  real a=10.0*(scaleRad1+scaleRad2);
+  real a=50.0*(scaleRad1+scaleRad2);
   real b=upper;
   
 
@@ -243,21 +243,23 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
   real curUpper = 0;
   real curLower = 0;
   int rootsFound = 0;
-  real * roots =  mwCalloc(N, sizeof(real));
+  int q=0;
+//   real * roots =  mwCalloc(N, sizeof(real));
   /* Find the roots using bisection because it was easy to code and good enough for our purposes */
   for(i = 0; i < numSteps; i++)
   {
-    if((values[i] > 0 && values[i+1] < 0) || (values[i] < 0 && values[i+1] > 0))
+    q=(int)(mwXrandom(dsfmtState,0.0,numSteps-1));
+    if((values[q] > 0 && values[q+1] < 0) || (values[q] < 0 && values[q+1] > 0))
     {
-      if(values[i] < 0 && values[i+1] > 0)
+      if(values[q] < 0 && values[q+1] > 0)
       {
-	curLower = ((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound;
-	curUpper = ((upperBound - lowBound) * (real)(i + 1))/(real)numSteps + lowBound;
+	curLower = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
+	curUpper = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
       }
-      else if(values[i] > 0 && values[i+1] < 0)
+      else if(values[q] > 0 && values[q+1] < 0)
       {
-	curLower = ((upperBound - lowBound) * (real)(i + 1))/(real)numSteps + lowBound;
-	curUpper = ((upperBound - lowBound) * (real)i)/(real)numSteps + lowBound;
+	curLower = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
+	curUpper = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
       }
       else
       {
@@ -265,7 +267,7 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
       }
       midVal = 1;
       nsteps=0;
-      while(mw_fabs(midVal) > .00001 || nsteps >= 10000)
+      while(mw_fabs(midVal) > .0001 || nsteps >= 10000)
       {
 	midPoint = (curLower + curUpper)/2.0;
 	midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
@@ -280,20 +282,29 @@ static real findRoot(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncPara
 	}
 	++nsteps;
       }
-      roots[rootsFound] = midPoint;
-      ++rootsFound;
+//       roots[rootsFound] = midPoint;
+      if(nsteps<10000)
+      {
+	++rootsFound;
+      }
+      else
+      {
+	return midPoint=0.0;
+      }
+      
     }
-    if(rootsFound!=0)
-    {
-      break;
-    }
+    
+      if(rootsFound!=0)
+      {
+	break;
+      }
   }
 //   mw_printf("rootsFound= %i\n", rootsFound);
   /* Lets assume each root is an equally probable answer so we pick one at random  *
    * Don't want to include 1.0 in our random set otherwise we may go out of bounds */
 //   midPoint = roots[(int)(mwXrandom(dsfmtState,0.0,.9999)*(real)(rootsFound))];
   free(values);
-  free(roots);
+//   free(roots);
   return midPoint;
 }
 
@@ -326,7 +337,7 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
     }
   }while(1);
     
-//   mw_printf("upperlimit_r= %f \n", upperlimit_r);
+  mw_printf("upperlimit_r= %f energy=%f\n", upperlimit_r, energy);
   upperlimit_r=fabs(upperlimit_r);
   return upperlimit_r;
 }
@@ -567,16 +578,16 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
   real ifmax= 1;
   real mass_en1= mass_en(r, mass1, scaleRad1);
   real mass_en2= mass_en(r, mass2, scaleRad2);
-  real v_esc= mw_sqrt( mw_fabs(2.0* (mass_en1+mass_en2)/r));
+  real v_esc= mw_sqrt( mw_fabs(2.0*potential( r, args, dsfmtState)));
   
   energy=(potential( r, args, dsfmtState)-0.5*v_esc*v_esc);
-  upperlimit_r= find_upperlimit_r(args, energy, dsfmtState, v_esc);
+  upperlimit_r= r;//find_upperlimit_r(args, energy, dsfmtState, v_esc);
   
   real parameters[9]= {mass1, mass2, scaleRad1, scaleRad2, r, energy, upperlimit_r, ifmax, v_esc};
   real dist_max=max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
   ifmax=0;
   parameters[7]=ifmax;
-//   mw_printf("rejection sampling...");
+  mw_printf("rejection sampling...");
   while(1)
     {
 
@@ -683,74 +694,74 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
     
     {rho_max=rho_max_1;}
 
-    mw_printf("rho_max= %.10f  \n", rho_max);
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    real w=0.0;
-    FILE * rho;
-    rho= fopen("rho.txt", "w");
-    real de, de2, de3;
-    while(1)
-    {
-      de=w*w*density(w, parameters_light, prng);
-      de2=w*w*density(w, parameters_dark, prng);
-      de3=w*w*density(w, args, prng);
-      w=w+0.01;
-      fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
-//       mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
-      if(w>5*(radiusScale1+radiusScale2)){break;}
-    }
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    
-    
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    FILE * dist1;
-    dist1= fopen("dist_single_masses1.txt", "w");
-    FILE * dist2;
-    dist2= fopen("dist_single_masses2.txt", "w");
-    FILE * dist3;
-    dist3= fopen("dist_1.txt", "w");
-    real r_1, v_1, mass_en1_1, mass_en2_1, dist_val_1;
-    real v_2, dist_val_2;
-    real v_3, dist_val_3;
-    r_1=0.1;
-    real parameters_light_1[9]={mass1, 0.0, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
-    real parameters_dark_1[9]={0.0, mass2, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
-    real parameters_all_1[9]={mass1, mass2, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
-    
-    while(1)
-    {
-	  parameters_light_1[4]=r_1;
-	  parameters_light_1[4]=r_1;
-	  parameters_all_1[4]= r_1;
-	  
-	  
-	  mass_en1_1= mass_en(r_1, mass1, radiusScale1);
-	  mass_en2_1= mass_en(r_1, mass2, radiusScale2);
-	  v_1= mw_sqrt( mw_fabs(2.0* (mass_en1_1)/r_1));
-	  v_2= mw_sqrt( mw_fabs(2.0* (mass_en2_1)/r_1));
-	  v_3= mw_sqrt( mw_fabs(2.0* (mass_en2_1+mass_en1_1)/r_1));
-	
-// 	  mw_printf("Getting dis funs...");
-	  dist_val_1= v_1*v_1*dist_fun(v_1,  parameters_light_1, prng);
-// 	  mw_printf("done1...");
-	  dist_val_2= v_2*v_2*dist_fun(v_2,  parameters_dark_1, prng);
-// 	  mw_printf("done2...");
-	  dist_val_3= v_3*v_3*dist_fun(v_3,  parameters_all_1, prng);
-// 	  mw_printf("done3...\n");
-	  fprintf(dist1,"%f \t %f \t %f\n", dist_val_1, r_1, v_1);
-	  fprintf(dist2,"%f \t %f \t %f\n", dist_val_2, r_1, v_2);
-	  fprintf(dist3,"%f \t %f \t %f\n", dist_val_3, r_1, v_3);
-	  
-      r_1=r_1+.001;
-//       mw_printf("\r printing density functions: %f ", r_1/(2*(radiusScale1+radiusScale2))*100);
-      if(r_1>2*(radiusScale1 + radiusScale2)){break;}
-     
-    }
-    fclose(dist1);
-    fclose(dist2);
-    fclose(dist3);
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+//     mw_printf("rho_max= %.10f  \n", rho_max);
+//     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//     real w=0.0;
+//     FILE * rho;
+//     rho= fopen("rho.txt", "w");
+//     real de, de2, de3;
+//     while(1)
+//     {
+//       de=w*w*density(w, parameters_light, prng);
+//       de2=w*w*density(w, parameters_dark, prng);
+//       de3=w*w*density(w, args, prng);
+//       w=w+0.01;
+//       fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
+// //       mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
+//       if(w>5*(radiusScale1+radiusScale2)){break;}
+//     }
+//     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+//     
+//     
+//     ///////////////////////////////////////////////////////////////////////////////////////////////////
+//     FILE * dist1;
+//     dist1= fopen("dist_single_masses1.txt", "w");
+//     FILE * dist2;
+//     dist2= fopen("dist_single_masses2.txt", "w");
+//     FILE * dist3;
+//     dist3= fopen("dist_1.txt", "w");
+//     real r_1, v_1, mass_en1_1, mass_en2_1, dist_val_1;
+//     real v_2, dist_val_2;
+//     real v_3, dist_val_3;
+//     r_1=0.1;
+//     real parameters_light_1[9]={mass1, 0.0, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
+//     real parameters_dark_1[9]={0.0, mass2, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
+//     real parameters_all_1[9]={mass1, mass2, radiusScale1, radiusScale2, r_1, 0.0, 0.0, 0, 0.0 };
+//     
+//     while(1)
+//     {
+// 	  parameters_light_1[4]=r_1;
+// 	  parameters_light_1[4]=r_1;
+// 	  parameters_all_1[4]= r_1;
+// 	  
+// 	  
+// 	  mass_en1_1= mass_en(r_1, mass1, radiusScale1);
+// 	  mass_en2_1= mass_en(r_1, mass2, radiusScale2);
+// 	  v_1= mw_sqrt( mw_fabs(2.0* (mass_en1_1)/r_1));
+// 	  v_2= mw_sqrt( mw_fabs(2.0* (mass_en2_1)/r_1));
+// 	  v_3= mw_sqrt( mw_fabs(2.0* (mass_en2_1+mass_en1_1)/r_1));
+// 	
+// // 	  mw_printf("Getting dis funs...");
+// 	  dist_val_1= v_1*v_1*dist_fun(v_1,  parameters_light_1, prng);
+// // 	  mw_printf("done1...");
+// 	  dist_val_2= v_2*v_2*dist_fun(v_2,  parameters_dark_1, prng);
+// // 	  mw_printf("done2...");
+// 	  dist_val_3= v_3*v_3*dist_fun(v_3,  parameters_all_1, prng);
+// // 	  mw_printf("done3...\n");
+// 	  fprintf(dist1,"%f \t %f \t %f\n", dist_val_1, r_1, v_1);
+// 	  fprintf(dist2,"%f \t %f \t %f\n", dist_val_2, r_1, v_2);
+// 	  fprintf(dist3,"%f \t %f \t %f\n", dist_val_3, r_1, v_3);
+// 	  
+//       r_1=r_1+.001;
+// //       mw_printf("\r printing density functions: %f ", r_1/(2*(radiusScale1+radiusScale2))*100);
+//       if(r_1>2*(radiusScale1 + radiusScale2)){break;}
+//      
+//     }
+//     fclose(dist1);
+//     fclose(dist2);
+//     fclose(dist3);
+//     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     
     memset(&b, 0, sizeof(b));
@@ -761,7 +772,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
       for (i = 0; i < nbody; i++)
       {
 	counter=0;
-	mw_printf(" \r initalizing particle %i. ",i+1);
+// 	mw_printf(" \r initalizing particle %i. ",i+1);
 	  do
 	  {
 	    r= r_mag(prng, args, rho_max);
