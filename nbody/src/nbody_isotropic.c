@@ -417,17 +417,17 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     if(ifmax==1)
     {
-        energy= potential( r, args,dsfmtState)-0.5*v_esc*v_esc;
-        upperlimit_r= energy;
+        energy= potential( r, args,dsfmtState);
+        upperlimit_r= r;
     }
     else if(ifmax==0)
     {
         energy= potential( r, args,dsfmtState)-0.5*v*v; 
-        upperlimit_r=energy;//find_upperlimit_r(args, energy, dsfmtState, v);
+        upperlimit_r=find_upperlimit_r(args, energy, dsfmtState, v);
     }
     
     real c= inv( (mw_sqrt(8)* sqr(M_PI)) );
-    real lowerlimit_r=0.0; //50.0*(scaleRad1+scaleRad2);
+    real lowerlimit_r=50.0*(scaleRad1+scaleRad2);
     
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function= v * v * c * gauss_quad(upperlimit_r, lowerlimit_r, energy, args, dsfmtState);
@@ -592,8 +592,9 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args, real pm)
     real v_esc= mw_sqrt( mw_fabs(2.0*potential( r, args, dsfmtState)));
     
     real parameters[6]= {mass1, mass2, scaleRad1, scaleRad2, r,ifmax};
-    real dist_max=max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
-    //dist_fun(v_esc,parameters, dsfmtState);
+    real dist_max=dist_fun(v_esc,parameters, dsfmtState);
+    //max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
+    
     
     ifmax=0;
     parameters[5]=ifmax;
@@ -651,17 +652,17 @@ static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift,real v)
 
 static int nbGenerateIsotropicCore(lua_State* luaSt,
 
-				     dsfmt_t* prng,
-				     unsigned int nbody,
-				     real mass1,
-				     real mass2,
+                                     dsfmt_t* prng,
+                                     unsigned int nbody,
+                                     real mass1,
+                                     real mass2,
 
-				     mwbool ignore,
+                                     mwbool ignore,
 
-				     mwvector rShift,
-				     mwvector vShift,
-				     real radiusScale1,
-				     real radiusScale2)
+                                     mwvector rShift,
+                                     mwvector vShift,
+                                     real radiusScale1,
+                                     real radiusScale2)
 {
         unsigned int i;
         int table;
@@ -712,34 +713,34 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
 //         mw_printf("rho_max= %.10f    \n", rho_max);
         
-//         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
 //         real root_test;
 //         root_test= findRoot(potential, args, energy, 0.0, 10*scaleRad2, dsfmtState); 
 //         
 //         
-//         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
 //         
-//         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//         real w=0.0;
-//         FILE * rho;
-//         rho= fopen("pot.txt", "w");
-//         real de, de2, de3;
-//         while(1)
-//         {
-//             de =potential(w, parameters_light, prng);
-//             de2=potential(w, parameters_dark, prng);
-//             de3=potential(w, args, prng);
-//             w=w+0.01;
-//             fprintf(rho, "%f \t %f \t %f\t %f\n", pt, w, pt2, pt3);
-// //             mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
-//             if(w>5*(radiusScale1+radiusScale2)){break;}
-//         }
-//         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
+        real w=0.0;
+        FILE * rho;
+        rho= fopen("pot.txt", "w");
+        real pt, pt2, pt3;
+        while(1)
+        {
+            pt =potential(w, parameters_light, prng);
+            pt2=potential(w, parameters_dark, prng);
+            pt3=potential(w, args, prng);
+            w=w+0.01;
+            fprintf(rho, "%f \t %f \t %f\t %f\n", pt, w, pt2, pt3);
+//             mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
+            if(w>5*(radiusScale1+radiusScale2)){break;}
+        }
+        ///////////////////////////////////////////////////////////
         
         
         
 
-//         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
 //         real w=0.0;
 //         FILE * rho;
 //         rho= fopen("rho.txt", "w");
@@ -754,11 +755,11 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 // //             mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
 //             if(w>5*(radiusScale1+radiusScale2)){break;}
 //         }
-//         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
 // 
 //         
 //         
-//         ///////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
 //         FILE * dist1;
 //         dist1= fopen("dist_single_masses1.txt", "w");
 //         FILE * dist2;
@@ -786,13 +787,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 //             v_2= mw_sqrt( mw_fabs(2.0* (mass_en2_1)/r_1));
 //             v_3= mw_sqrt( mw_fabs(2.0* (mass_en2_1+mass_en1_1)/r_1));
 //         
-// //     	    mw_printf("Getting dis funs...");
+// //               mw_printf("Getting dis funs...");
 //             dist_val_1= v_1*v_1*dist_fun(v_1,    parameters_light_1, prng);
-// //     	    mw_printf("done1...");
+// //               mw_printf("done1...");
 //             dist_val_2= v_2*v_2*dist_fun(v_2,    parameters_dark_1, prng);
-// //     	    mw_printf("done2...");
+// //               mw_printf("done2...");
 //             dist_val_3= v_3*v_3*dist_fun(v_3,    parameters_all_1, prng);
-// //     	    mw_printf("done3...\n");
+// //               mw_printf("done3...\n");
 //             fprintf(dist1,"%f \t %f \t %f\n", dist_val_1, r_1, v_1);
 //             fprintf(dist2,"%f \t %f \t %f\n", dist_val_2, r_1, v_2);
 //             fprintf(dist3,"%f \t %f \t %f\n", dist_val_3, r_1, v_3);
@@ -805,12 +806,12 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 //         fclose(dist1);
 //         fclose(dist2);
 //         fclose(dist3);
-//         ///////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////
 
         
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
-        table = lua_gettop(luaSt);	
+        table = lua_gettop(luaSt);      
         int counter=0;
             /*getting the radii and velocities for the bodies*/
             for (i = 0; i < nbody; i++)
