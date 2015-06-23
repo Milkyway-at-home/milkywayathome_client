@@ -515,15 +515,15 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
 {
     mwvector vec;
     real phi, theta;
-
+    
     /*defining some angles*/
     theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
     phi = mwXrandom( dsfmtState, 0.0, 2.0 * M_PI );
 
     /*this is standard formula for x,y,z components in spherical*/
-    X(vec) = rad*sin( theta )*cos( phi );        /*x component*/
-    Y(vec) = rad*sin( theta )*sin( phi );        /*y component*/
-    Z(vec) = rad*cos( theta );                             /*z component*/
+    X(vec) = rad * sin( theta ) * cos( phi );        /*x component*/
+    Y(vec) = rad * sin( theta ) * sin( phi );        /*y component*/
+    Z(vec) = rad * cos( theta );                   /*z component*/
 
     return vec;
 }
@@ -665,7 +665,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
         real r, v;
         
         real half_bodies = 0.5 * nbody;
-        real light_count = 0;//counter for the number of light particles assigned
         real mass_light_particle = mass1 / (half_bodies);//half the particles are light matter
         real mass_dark_particle = mass2 / (half_bodies);//half dark matter
         
@@ -674,267 +673,126 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
         mwbool islight = FALSE;
         int dark = 1;
         int light = 0;
-        int N = nbody;//integer number of bodies
-        real max_light_density;//the max of the light matter density
-        real * all_r = mwCalloc(N, sizeof(real));
-        real * mass_type = mwCalloc(N, sizeof(real));
-//         real all_r[N];//array to store the radii
-//         real mass_type[N];//array to store body type
         
-        
-        /*getting the maximum of the density depending on the scale radii*/
+        real * dark_r = mwCalloc(half_bodies, sizeof(real));
+        real * light_r = mwCalloc(half_bodies, sizeof(real));
+       
         real args[4] = {mass1,mass2, radiusScale1, radiusScale2};
-        real rho_max;
+        real parameters_light[4] = {mass1, 0.0, radiusScale1, radiusScale2};
+        real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
         
 //         real tst1= findRoot(test, args, 4.0, 0.0, 5.0, prng);
 //         mw_printf("test=%f\n", tst1 );
         
-        real parameters_light[4] = {mass1, 0.0, radiusScale1, radiusScale2};
-        real parameters_dark[4] = {0.0, mass2, radiusScale1, radiusScale2};
-
         /*finding the max of the individual components*/
-        real rho_max_1 = max_finder(profile_rho, args, 0, radiusScale1, (radiusScale2), 20, 1e-4, prng );
+        real rho_max_light = max_finder(profile_rho, parameters_light, 0, radiusScale1, 2.0*(radiusScale1), 20, 1e-4, prng );
+        real rho_max_dark =  max_finder(profile_rho, parameters_dark, 0, radiusScale2, 2.0*(radiusScale2), 20, 1e-4, prng );
+        real rho_max = max_finder(profile_rho, args, 0, radiusScale1, (radiusScale2), 20, 1e-4, prng );
+        mw_printf("light max= %f \t dark max= %f\n", rho_max_light, rho_max_dark);
         
-        rho_max=rho_max_1;
-        
-//         mw_printf("doing test: \n"); 
-//         real tests[4]={6,7,8,9};
-//         shuffle(tests, 4, prng);
-//         for(int we=0; we<4;we++)
-//         {
-//                 mw_printf("test= %f \t", tests[we]);
-//         }
-//         mw_printf("\n finished test\n");
-
-//         mw_printf("rho_max= %.10f    \n", rho_max);
-        
-        ///////////////////////////////////////////////////////////
-//         real root_test;
-//         root_test= findRoot(potential, args, energy, 0.0, 10*scaleRad2, dsfmtState); 
-//         
-//         
-        ///////////////////////////////////////////////////////////
-//         
-//         ///////////////////////////////////////////////////////////
-//         real w=0.0;
-//         FILE * rho;
-//         rho= fopen("pot.txt", "w");
-//         real pt, pt2, pt3;
-//         while(1)
-//         {
-//             pt =potential(w, parameters_light, prng);
-//             pt2=potential(w, parameters_dark, prng);
-//             pt3=potential(w, args, prng);
-//             w=w+0.01;
-//             fprintf(rho, "%f \t %f \t %f\t %f\n", pt, w, pt2, pt3);
-// //             mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
-//             if(w>5*(radiusScale1+radiusScale2)){break;}
-//         }
-//         ///////////////////////////////////////////////////////////
-        
-        
-        
-
-        ///////////////////////////////////////////////////////////
-//         real w=0.0;
-//         FILE * rho;
-//         rho= fopen("rho.txt", "w");
-//         real de, de2, de3;
-//         while(1)
-//         {
-//             de=w*w*density(w, parameters_light, prng);
-//             de2=w*w*density(w, parameters_dark, prng);
-//             de3=w*w*density(w, args, prng);
-//             w=w+0.01;
-//             fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
-// //             mw_printf("\r printing density functions: %f %", w/(5*(radiusScale1+radiusScale2))*100);
-//             if(w>5*(radiusScale1+radiusScale2)){break;}
-//         }
-        ///////////////////////////////////////////////////////////
-
-        
-        
-//         /////////////////////////////////////////////////////////
-//         FILE * dist1;
-//         dist1= fopen("dist_single_masses1.txt", "w");
-//         FILE * dist2;
-//         dist2= fopen("dist_single_masses2.txt", "w");
-//         FILE * dist3;
-//         dist3= fopen("dist_1.txt", "w");
-//         real r_1, mass_en1_1, mass_en2_1, dist_val_1;
-//         real dist_val_2;
-//         real dist_val_3;
-//         real v_esc_1 = mw_sqrt( mw_fabs(2.0 * potential( r, args, prng) ) );
-//         r_1=0.1;
-//         real parameters_light_1[6]={mass1, 0.0, radiusScale1, radiusScale2, r_1, 1};
-//         real parameters_dark_1[6]={0.0, mass2, radiusScale1, radiusScale2, r_1, 1 };
-//         real parameters_all_1[6]={mass1, mass2, radiusScale1, radiusScale2, r_1, 1};
-//         
-//         while(1)
-//         {
-//             parameters_light_1[4]=r_1;
-//             parameters_light_1[4]=r_1;
-//             parameters_all_1[4]= r_1;
-//             
-// //               mw_printf("Getting dis funs...");
-//             dist_val_1 = dist_fun(v_esc_1, parameters_light_1, prng);
-// //               mw_printf("done1...");
-//             dist_val_2 = dist_fun(v_esc_1, parameters_dark_1, prng);
-// //               mw_printf("done2...");
-//             dist_val_3 = dist_fun(v_esc_1, parameters_all_1, prng);
-// //               mw_printf("done3...\n");
-//             fprintf(dist1,"%f \t %f \n", dist_val_1, r_1);
-//             fprintf(dist2,"%f \t %f \n", dist_val_2, r_1);
-//             fprintf(dist3,"%f \t %f \n", dist_val_3, r_1);
-//             
-//             r_1=r_1+.001;
-//             mw_printf("\r printing density functions: %f ", r_1/(2*(radiusScale1+radiusScale2))*100);
-//             if(r_1>2*(radiusScale1 + radiusScale2)){break;}
-//            
-//         }
-//         fclose(dist1);
-//         fclose(dist2);
-//         fclose(dist3);
-//         /////////////////////////////////////////////////////////
-
-        
+      
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
         int counter = 0;
-            /*getting the radii and velocities for the bodies*/
-            for (i = 0; i < nbody; i++)
+        int j=0;
+        /*getting the radii and velocities for the bodies*/
+        for (i = 0; i < nbody; i++)
+        {
+            counter = 0;
+//             mw_printf(" \r initalizing particle %i. ", i+1);
+            do
             {
-                counter = 0;
-//                 mw_printf(" \r initalizing particle %i. ",i+1);
-                do
+                
+                if(i < half_bodies)
                 {
-                    r = r_mag(prng, args, rho_max);
-                    /*to ensure that r is finite and nonzero*/
-                    if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE)
-                    {
-                        break;
-                    }
-                    
-                    if(counter > 1000)
-                    {
-                        exit(-1);
-                        
-                    }
-                    else
-                    {
-                        counter++;
-                    }
-                    
-                }while (1);
+                    r = r_mag(prng, parameters_light, rho_max_light);
+                }
+                else if(i >= half_bodies)
+                {
+                    r = r_mag(prng, parameters_dark, rho_max_dark);
+                }
+                /*to ensure that r is finite and nonzero*/
+                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE)
+                {
+                    break;
+                }
+                
+                if(counter > 1000)
+                {
+                    exit(-1);
+                }
+                else
+                {
+                    counter++;
+                }
+                
+            }while (1);
 //                 mw_printf(" particle %i    \t r= %f \n", i, r);
 
-                /*storing r's, mass type*/
-                all_r[i] = r;
-                mass_type[i] = dark; //starting them all off dark
-            }
-            
-            /*testing for light matter*/
-            i = 0;
-            light_count = 0;
-            real coeff = (3.0/2.0) * (minusfivehalves( (3.0/5.0) ) );
-            real den_l;
-            real den_total;
-            real u;
-            int q;
-            while(light_count < half_bodies)//only want half the bodies light matter
+            /*storing r's, mass type*/
+            if(i < half_bodies)
             {
-                q = (int)mwXrandom(prng, 0.0, nbody-1);
-                if(mass_type[q] == dark)
-                {
-                    r = all_r[q];
-                    den_l = density(r, parameters_light, prng);
-                    den_total = density(r, args, prng);
-                    /*max_light_density is equal to r^2*rho(r)/ (r^2*rho(r))_max*/
-//                     max_light_density = coeff * sqr(r)/sqr(radiusScale1) * minusfivehalves( (1.0 + sqr(r)/sqr(radiusScale1)) );
-                    u = (real)mwXrandom(prng, 0.0, 1.0);
-                    
-                    if( den_l/den_total > u)
-                    {
-                        mass_type[q] = light;
-                        light_count++;
-                    }
-                }
+                light_r[i] = r;
             }
-            
-            /*this actually gets the position and velocity vectors and pushes table of bodies*/
-            mw_printf("\n");
-            //////////////////////////////////////////
-            FILE * rho2;
-            rho2= fopen("rho2.txt", "w");
-            real rho_val;
+            else if(i >= half_bodies)
+            {
+                dark_r[j] = r;
+                j++;
+            }
+        }
+        
 
-            FILE * dist;
-            dist= fopen("dist.txt", "w");
-            real dist_val;
-            real energy_val;
-            real upperlimit_r;
-            real paras_1[6]={mass1,mass2, radiusScale1, radiusScale2, r, 0};
-            //////////////////////////////////////////
-            for (i = 0; i < nbody; i++)
+        
+        
+        /*this actually gets the position and velocity vectors and pushes table of bodies*/
+        j=0;
+        mw_printf("\n");
+        for (i = 0; i < nbody; i++)
+        {
+            if(i < half_bodies)
             {
-                r = all_r[i];
-                
-                if(mass_type[i] == light)
-                {
-                    b.bodynode.mass = mass_light_particle;
-                    b.bodynode.type = BODY(islight);
-                }
-                else if(mass_type[i] == dark)
-                {
-                    b.bodynode.mass = mass_dark_particle;
-                    b.bodynode.type = BODY(isdark);
-                }
-//                 mw_printf("mass %f\n",    b.bodynode.mass);
-//                 mw_printf("\r velocity of particle %i", i+1);
-                counter = 0;
-                do
-                {
-                    v = vel_mag(prng, r, args);
-                    if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
-                    
-                    if(counter > 1000)
-                    {
-                        exit(-1);
-                    }
-                    else
-                    {
-                        counter++;
-                        
-                    }
-                    
-                }while (1);
-//                 mw_printf(" vel %i    \t v= %f \t r=%f \n", i, v, r);
-                
-                ////////////////////////////////////////////////
-                rho_val= r*r*density(r, args, prng);
-                fprintf(rho2, "%f \t %f\t %f\n", rho_val, r, v);
-                paras_1[4]= r;
-                dist_val= v*v*dist_fun(v, paras_1, prng);
-                fprintf(dist,"%f \t %f \t %f\n", dist_val, r, v);
-                ////////////////////////////////////////////////
-                        
-                
-                b.vel = vel_vec(prng, vShift, v);
-                b.bodynode.pos = r_vec(prng, rShift, r);
-                
-                assert(nbPositionValid(b.bodynode.pos));
-                pushBody(luaSt, &b);
-                lua_rawseti(luaSt, table, i + 1);
+                r = light_r[i];
+                b.bodynode.mass = mass_light_particle;
+                b.bodynode.type = BODY(islight);
+            }
+            else if(i >= half_bodies)
+            {
+                r = dark_r[j];
+                b.bodynode.mass = mass_dark_particle;
+                b.bodynode.type = BODY(isdark);
+                j++;
             }
             
-            ////////////////
-            fclose(rho2);
-            fclose(dist);
-            ////////////////
-            free(all_r);
-            free(mass_type);
-            return 1;             
+//             mw_printf("\r velocity of  particle %i", i+1);
+            counter = 0;
+            do
+            {
+                v = vel_mag(prng, r, args);
+                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+                
+                if(counter > 1000)
+                {
+                    exit(-1);
+                }
+                else
+                {
+                    counter++;
+                }
+                
+            }while (1);
+//                 mw_printf(" vel %i    \t v= %f \t r=%f \n", i, v, r);
+            
+            b.vel = vel_vec(prng, vShift, v);
+            b.bodynode.pos = r_vec(prng, rShift, r);
+            
+            assert(nbPositionValid(b.bodynode.pos));
+            pushBody(luaSt, &b);
+            lua_rawseti(luaSt, table, i + 1);
+        }
+        free(light_r);
+        free(dark_r);
+        return 1;             
              
 }
 
