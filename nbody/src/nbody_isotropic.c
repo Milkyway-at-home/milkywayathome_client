@@ -737,20 +737,24 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
 
                                      dsfmt_t* prng,
                                      unsigned int nbody,
-                                     real mass_l,
-                                     real mass_d,
+                                     real mass1,
+                                     real mass2,
 
                                      mwbool ignore,
 
                                      mwvector rShift,
                                      mwvector vShift,
-                                     real rscale_l,
-                                     real rscale_d)
+                                     real radiusScale1,
+                                     real radiusScale2)
 {
         unsigned int i;
         int table;
         Body b;
         real r, v;
+        real mass_l = mass1;
+        real mass_d = mass2;
+        real rscale_l = radiusScale1;
+        real rscale_d = radiusScale2;
         
         real half_bodies = 0.5 * nbody;
         real mass_light_particle = mass_l / (half_bodies);//half the particles are light matter
@@ -765,7 +769,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt,
         real * dark_r = mwCalloc(half_bodies, sizeof(real));
         real * light_r = mwCalloc(half_bodies, sizeof(real));
        
-        real args[4] = {mass_l,mass_d, rscale_l, rscale_d};
+        real args[4] = {mass_l, mass_d, rscale_l, rscale_d};
         real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
         real parameters_dark[4] = {0.0, mass_d, rscale_l, rscale_d};
         
@@ -931,16 +935,16 @@ int nbGenerateIsotropic(lua_State* luaSt)
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
         static mwbool ignore;
-        static real mass_l = 0.0, nbodyf = 0.0, rscale_l = 0.0;
-        static real mass_d = 0.0, rscale_d = 0.0;
+        static real mass1 = 0.0, nbodyf = 0.0, radiusScale1 = 0.0;
+        static real mass2 = 0.0, radiusScale2 = 0.0;
 
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "mass_l",                LUA_TNUMBER,     NULL,                    TRUE,    &mass_l             },
-            { "mass_d",                LUA_TNUMBER,     NULL,                    TRUE,    &mass_d             },
-            { "scaleRadius1", LUA_TNUMBER,     NULL,                    TRUE,    &rscale_l},
-            { "scaleRadius2", LUA_TNUMBER,     NULL,                    TRUE,    &rscale_d},
+            { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
+            { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
+            { "scaleRadius1", LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1},
+            { "scaleRadius2", LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2},
             { "position",         LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,    &position        },
             { "velocity",         LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,    &velocity        },
             { "ignore",             LUA_TBOOLEAN,    NULL,                    FALSE, &ignore            },
@@ -954,8 +958,8 @@ int nbGenerateIsotropic(lua_State* luaSt)
         
         handleNamedArgumentTable(luaSt, argTable, 1);
         
-        return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, mass_l, mass_d, ignore,
-                                                                 *position, *velocity, rscale_l, rscale_d);
+        return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, mass1, mass2, ignore,
+                                                                 *position, *velocity, radiusScale1, radiusScale2);
 }
 
 void registerGenerateIsotropic(lua_State* luaSt)
