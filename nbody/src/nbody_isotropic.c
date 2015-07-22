@@ -43,9 +43,9 @@ static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
     real rscale_l = args[2];
     real rscale_d = args[3];
 
-    real potential_result = -1.0 * (mass_l/mw_sqrt(sqr(r) + sqr(rscale_l)) + mass_d/mw_sqrt(sqr(r) + sqr(rscale_d)) );
+    real potential_result = -(mass_l/mw_sqrt(sqr(r) + sqr(rscale_l)) + mass_d/mw_sqrt(sqr(r) + sqr(rscale_d)) );
 
-    return (-1.0 * potential_result);
+    return (-potential_result);
 }
 
 static inline real density( real r, real * args, dsfmt_t* dsfmtState)
@@ -81,7 +81,7 @@ static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 
 
 
-/*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS  */
+/*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
 static inline real first_derivative(real (*rootFunc)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this does in fact use a 5-point stencil*/
@@ -115,7 +115,7 @@ static inline real second_derivative(real (*rootFunc)(real, real *, dsfmt_t*), r
     return deriv;
 }
 
-static real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real lower, real upper, real * funcargs, dsfmt_t* dsfmtState)
+static inline real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real lower, real upper, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*This is a guassian quadrature routine. */
     real Ng,hg,lowerg, upperg;
@@ -376,7 +376,7 @@ static inline void shuffle(real * init_vec, int length,dsfmt_t* dsfmtState )
         free(store);
 }
 
-static real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
+static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
 {
     //requires lowBound and upperBound to evaluate to opposite sign when rootFunc-funcValue
     if(rootFuncParams == NULL || rootFunc == NULL)
@@ -483,10 +483,6 @@ static real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncP
 static real fun(real ri, real * args, dsfmt_t* dsfmtState)
 {
     
-    real mass_l   = args[0];
-    real mass_d   = args[1];
-    real rscale_l = args[2];
-    real rscale_d = args[3];
     real energy   = args[4];
 
     real first_deriv_psi;
@@ -497,21 +493,20 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
     real func;
 
-
     first_deriv_psi      = first_derivative(potential, ri, args, dsfmtState);
-    first_deriv_density  = first_derivative(density, ri, args, dsfmtState);
-
+    first_deriv_density  = first_derivative(density,   ri, args, dsfmtState);
 
     second_deriv_psi     = second_derivative(potential, ri, args, dsfmtState);
-    second_deriv_density = second_derivative(density, ri, args, dsfmtState);
+    second_deriv_density = second_derivative(density,   ri, args, dsfmtState);
     
-    
-
     /*
     * Instead of calculating the second derivative of density with respect to -pot directly, 
     * did product rule since both density and pot are functions of radius. 
     */
-    if(first_deriv_psi != 0.0)
+    
+    denominator = minushalf( mw_fabs(energy - potential(ri, args, dsfmtState) ) );
+    
+    if(first_deriv_psi != 0.0  && denominator != 0.0)
     {
             dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
     }
@@ -519,8 +514,8 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     {
             dsqden_dpsisq = 0.0;
     }
-//     mw_printf("%0.10f \t %0.10f\t%0.10f\t%0.10f\n", first_deriv_psi, first_deriv_density, second_deriv_density, second_deriv_psi);
-    denominator = minushalf( mw_fabs(energy - potential(ri,args,dsfmtState) ) );
+    
+    
     func = first_deriv_psi * dsqden_dpsisq * denominator;
     return func;
         
@@ -528,39 +523,29 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
 
 static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtState, real v, real search_range)
 {
-    real mass_l   = args[0];
-    real mass_d   = args[1];
-    real rscale_l = args[2];
-    real rscale_d = args[3];
-    real r        = args[4];
-    real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
-    real energy_max = potential(r, args,dsfmtState);
+    real r = args[4];
+    
     int counter = 0;
-    mwbool limit_reached = FALSE;
     real upperlimit_r = 0.0;
+    
     do
     {
-//         mw_printf("\t \t fetching root...\n");
         upperlimit_r = root_finder(potential, args, energy, 0.0, search_range, dsfmtState); 
         
         if(isinf(upperlimit_r) == FALSE && upperlimit_r != 0.0 && isnan(upperlimit_r) == FALSE){break;}
+        
         counter++;
+        
         if(counter > 100)
         {
-//             mw_printf("this ran \n");
-//             mw_printf("\t \t  v=%f v_esc=%f root=%f energy=%f en_max=%f\n",v, v_esc, upperlimit_r, energy, energy_max);
             upperlimit_r = r;
-//             mw_printf("potential range = %f \n ", potential(10 * rscale_d, args,dsfmtState));
-//             mw_printf("\t \t  v=%f v_esc=%f root=%f energy=%f en_max=%f\n",v, v_esc, upperlimit_r, energy, energy_max);
             break;
         }
+        
     }while(1);
         
-//     mw_printf("upperlimit_r= %f energy=%f\n", upperlimit_r, energy);
-    upperlimit_r = mw_fabs(upperlimit_r);
-    return upperlimit_r;
+    return mw_fabs(upperlimit_r);
 }
-
  
 static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 {
@@ -587,7 +572,7 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     }
     else if(ifmax == 0)
     {
-        energy = potential(r, args,dsfmtState) - 0.5 * v * v; 
+        energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
         search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d/energy) - sqr(rscale_d) ));
         
         /*dynamic search range*/
@@ -605,9 +590,8 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     }
     
     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
-    lowerlimit_r = 50.0 * (rscale_d);
-   
-//     mw_printf("upper: %f \t lower: %f\n", upperlimit_r, lowerlimit_r);
+    lowerlimit_r = 100.0 * (upperlimit_r);
+
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, funcargs, dsfmtState);
         
@@ -656,16 +640,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
     real val;
     real bound;
     
-    mwbool GOOD_RADIUS = 0;
-    if(mass_l = 0.0)
-    {
-        bound = 5.0 * ( rscale_d);
-    }
-    else if(mass_d = 0.0)
-    {
-        bound = 5.0 * (rscale_l );
-    }
-    while (GOOD_RADIUS != 1)
+    while (1)
     {
         r = (real)mwXrandom(dsfmtState, 0.0, 5.0 * (rscale_l + rscale_d) );
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
@@ -673,7 +648,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
 
         if(val/rho_max > u || counter > 1000)
         {
-            GOOD_RADIUS = 1;
+            break;
         }
         else
         {
@@ -684,7 +659,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
     return r;
 }
 
-static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args)
+static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
 {
     
     /*
@@ -702,18 +677,16 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args)
     real rscale_d = args[3];
     
     int counter = 0;
-    real v,u, d;
+    real v, u, d;
     real ifmax = 1;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
     real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, ifmax};
     real dist_max = dist_fun(v_esc, parameters, dsfmtState);
     //max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
-    
-    
     ifmax = 0;
     parameters[5] = ifmax;
-    
+   
 //     mw_printf("rejection sampling...");
     while(1)
     {
@@ -722,9 +695,14 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args)
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
         d = dist_fun(v, parameters, dsfmtState);
-        
-        if(mw_fabs(d/dist_max) > u || counter > 1000)
+        if(mw_fabs(d/dist_max) > u)
         {
+            break;
+        }
+        
+        if(counter > 1000)
+        {
+            v = 0;
             break;
         }
         else
@@ -732,64 +710,49 @@ static inline real vel_mag(dsfmt_t* dsfmtState,real r, real * args)
             counter++;
         }
     }
+    
 
     v *= 0.977813107;//changing from kpc/gy to km/s
-    return fabs(v); //km/s
+    return mw_fabs(v); //km/s
 }
 
-static inline mwvector r_vec(dsfmt_t* dsfmtState, mwvector rshift, real r)
+static inline mwvector get_vec(dsfmt_t* dsfmtState, mwvector shift, real x)
 {
-    mwvector pos;
+    mwvector vec;
 
-    pos = angles(dsfmtState, r);    /* pick scaled position */
-    mw_incaddv(pos, rshift);                             /* move the position */
+    vec = angles(dsfmtState, x);    /* pick scaled position */
+    mw_incaddv(vec, shift);                             /* move the position */
 
-    return pos;
-}
-
-
-static inline mwvector vel_vec(dsfmt_t* dsfmtState, mwvector vshift, real v)
-{
-    mwvector vel;
-
-    vel = angles(dsfmtState, v);     /* pick scaled velocity */
-    mw_incaddv(vel, vshift);                                /* move the velocity */
-
-    return vel;
+    return vec;
 }
 
 
 /*      DWARF GENERATION        */
-/* generatePlummer: generate Plummer model initial conditions for test
- * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
- * etc).    See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
- * 183.
- */
-
-static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, 
-                                   real mass1, real mass2, 
-                                   mwbool ignore, mwvector rShift, mwvector vShift, 
-                                   real radiusScale1, real radiusScale2)
+static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
 {
+    /* generatePlummer: generate Plummer model initial conditions for test
+    * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
+    * etc).    See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
+    * 183.
+    */
         unsigned int i;
         int table;
         Body b;
         real r, v;
-        real mass_l   = mass1;
-        real mass_d   = mass2;
-        real rscale_l = radiusScale1;
-        real rscale_d = radiusScale2;
+        real mass_l   = mass1; /*mass of the light component*/
+        real mass_d   = mass2; /*mass of the dark component*/
+        real rscale_l = radiusScale1; /*scale radius of the light component*/
+        real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
-        real half_bodies = 0.5 * nbody;
-        real mass_light_particle = mass_l / (half_bodies);//half the particles are light matter
-        real mass_dark_particle = mass_d / (half_bodies);//half dark matter
+        int half_bodies = nbody / 2;
+        real mass_light_particle = mass_l / (real)(half_bodies);//half the particles are light matter
+        real mass_dark_particle = mass_d / (real)(half_bodies);//half dark matter
         
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
-        int dark = 1;
-        int light = 0;
         
+        real * all_r = mwCalloc(nbody, sizeof(real));
         real * dark_r = mwCalloc(half_bodies, sizeof(real));
         real * light_r = mwCalloc(half_bodies, sizeof(real));
        
@@ -797,112 +760,79 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
         real parameters_dark[4] = {0.0, mass_d, rscale_l, rscale_d};
         
-//         real tst1 = root_finder(test, args, 4.0, 0.0, 5.0, prng);
-//         mw_printf("test=%f\n", tst1 );
+        /*finding the max of the individual components*/
+        real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
+        real rho_max_dark =  max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
-        real tst1 = gauss_quad(test, 1.0, 5.0, args, prng);
+        real rho_max = max_finder(profile_rho, args, 0, rscale_l, (rscale_d), 20, 1e-4, prng );
+        mw_printf("light max= %f \t dark max= %f\n", rho_max_light, rho_max_dark);
+        
+        
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                /*DEBUGGING CODE*/
+
+        
+        real tst1 = root_finder(test, args, 4.0, 0.0, 5.0, prng);
+        mw_printf("test=%f\n", tst1 );
+        
+        tst1 = gauss_quad(test, 1.0, 5.0, args, prng);
         real tst2 = gauss_quad(test, 5.0, 1.0, args, prng);
         mw_printf("test = %f  %f\n", tst1, tst2);
+      
         real dtst1 = first_derivative(test, 4.0, args, prng);
         real dtst2 = second_derivative(test, 4.0, args, prng);
         mw_printf("test = %f  %f\n", dtst1, dtst2);
         
-        /*finding the max of the individual components*/
-        real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0*(rscale_l), 20, 1e-4, prng );
-        real rho_max_dark =  max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0*(rscale_d), 20, 1e-4, prng );
-        real rho_max = max_finder(profile_rho, args, 0, rscale_l, (rscale_d), 20, 1e-4, prng );
-//         mw_printf("light max= %f \t dark max= %f\n", rho_max_light, rho_max_dark);
+        ///////////////////////////////////////////////////////////
+        real w1 = 0.0;
+        FILE * pot;
+        pot = fopen("pot.txt", "w");
+        real pt, pt2, pt3;
+        while(1)
+        {
+            pt  = potential(w1, parameters_light, prng);
+            pt2 = potential(w1, parameters_dark, prng);
+            pt3 = potential(w1, args, prng);
+            w1  = w1 + 0.01;
+            fprintf(pot, "%f \t %f \t %f\t %f\n", pt, w1, pt2, pt3);
+//             mw_printf("\r printing density functions: %f %", w/(5*(rscale_l+rscale_d))*100);
+            if(w1 > 5 * (rscale_l+rscale_d)){break;}
+        }
+        fclose(pot);
+        ///////////////////////////////////////////////////////////
+        
+        /////////////////////////////////////////////////////////
+        real w = 0.0;
+        FILE * rho;
+        rho = fopen("rho.txt", "w");
+        real de, de2, de3;
+        while(1)
+        {
+            de  = w * w * density(w, parameters_light, prng);
+            de2 = w * w * density(w, parameters_dark, prng);
+            de3 = de + de2;//w * w * density(w, args, prng);
+            w   = w + 0.01;
+            fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
+//             mw_printf("\r printing density functions: %f %", w/(5*(rscale_l+rscale_d))*100);
+            if(w > 5 * (rscale_l+rscale_d)){break;}
+        }
+        fclose(rho);
+        /////////////////////////////////////////////////////////
         
         
-//         ///////////////////////////////////////////////////////////
-//         real w1 = 0.0;
-//         FILE * pot;
-//         pot = fopen("pot.txt", "w");
-//         real pt, pt2, pt3;
-//         while(1)
-//         {
-//             pt  = potential(w1, parameters_light, prng);
-//             pt2 = potential(w1, parameters_dark, prng);
-//             pt3 = potential(w1, args, prng);
-//             w1  = w1 + 0.01;
-//             fprintf(pot, "%f \t %f \t %f\t %f\n", pt, w1, pt2, pt3);
-// //             mw_printf("\r printing density functions: %f %", w/(5*(rscale_l+rscale_d))*100);
-//             if(w1 > 5 * (rscale_l+rscale_d)){break;}
-//         }
-//         fclose(pot);
-//         ///////////////////////////////////////////////////////////
-//         
-//         /////////////////////////////////////////////////////////
-//         real w = 0.0;
-//         FILE * rho;
-//         rho = fopen("rho.txt", "w");
-//         real de, de2, de3;
-//         while(1)
-//         {
-//             de  = w * w * density(w, parameters_light, prng);
-//             de2 = w * w * density(w, parameters_dark, prng);
-//             de3 = w * w * density(w, args, prng);
-//             w   = w + 0.01;
-//             fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
-// //             mw_printf("\r printing density functions: %f %", w/(5*(rscale_l+rscale_d))*100);
-//             if(w > 5 * (rscale_l+rscale_d)){break;}
-//         }
-//         fclose(rho);
-//         /////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
-//         /////////////////////////////////////////////////////////
-//         real w2 = 0.1;
-//         FILE * dist;
-//         dist = fopen("dist.txt", "w");
-//         real dsl, dsd, dsb;
-//         real breakrange = 100 * (rscale_l+rscale_d);
-//         int ifmax = 0;
-//         real tst_l[6] = {mass_l, 0.0,    rscale_l, rscale_d, w2, ifmax};
-//         real tst_d[6] = {0.0,    mass_d, rscale_l, rscale_d, w2, ifmax};
-//         real tst_b[6] = {mass_l, mass_d, rscale_l, rscale_d, w2, ifmax};
-//         real vtst = 0;
-//         real vsc_l, vsc_d, vsc_b;
-//         
-//         while(1)
-//         {
-//             vsc_l = mw_sqrt( mw_fabs(2.0 * potential( w2, tst_l, prng) ) );
-//             vsc_d = mw_sqrt( mw_fabs(2.0 * potential( w2, tst_d, prng) ) );
-//             vsc_b = mw_sqrt( mw_fabs(2.0 * potential( w2, tst_b, prng) ) );
-//             vtst = 0.0;
-//             while(1)
-//             {
-//                 tst_l[4] = w2;
-//                 tst_d[4] = w2;
-//                 tst_b[4] = w2;
-//                 dsl = dist_fun(vtst, tst_l, prng);
-//                 dsd = dist_fun(vtst, tst_d, prng);
-//                 dsb = dist_fun(vtst, tst_b, prng);
-//                 fprintf(dist, "%f \t %f \t %f \t %f \t %f \n", w2, vtst,  dsl, dsd, dsb);
-//                 vtst = vtst + .1;
-//                 
-//                  if(vtst > (vsc_b)){break;}
-//             }
-//             mw_printf("\r printing density functions: %f %", (w2 / breakrange) * 100);
-//             w2  = w2 + .01;
-//             if(w2 > breakrange){break;}
-//         }
-//         fclose(dist);
-//         /////////////////////////////////////////////////////////
-        
-        
-        
-        
-      
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
         int counter = 0;
-        int j=0;
+        int j = 0;
+        
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
         {
             counter = 0;
-//             mw_printf(" \r initalizing particle %i. ", j+1);
+//             mw_printf(" \r initalizing particle %i. ", i+1);
             do
             {
                 
@@ -930,43 +860,32 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 }
                 
             }while (1);
-//                 mw_printf(" particle %i    \t r= %f \n", i, r);
 
-            /*storing r's, mass type*/
-            if(i < half_bodies)
-            {
-                light_r[i] = r;
-            }
-            else if(i >= half_bodies)
-            {
-                dark_r[j] = r;
-                j++;
-            }
+            /*storing r's*/
+            all_r[i] = r;
         }
         
 
 //         mw_printf("\n");
         
         /*this actually gets the position and velocity vectors and pushes table of bodies*/
-        j=0;
-//         mw_printf("\n");
         for (i = 0; i < nbody; i++)
         {
+            r = all_r[i];
             if(i < half_bodies)
             {
-                r = light_r[i];
+                
                 b.bodynode.mass = mass_light_particle;
                 b.bodynode.type = BODY(islight);
+
             }
             else if(i >= half_bodies)
             {
-                r = dark_r[j];
                 b.bodynode.mass = mass_dark_particle;
                 b.bodynode.type = BODY(isdark);
-                j++;
             }
             
-//             mw_printf("\r velocity of  particle %i", i+1);
+            mw_printf("\r velocity of particle %i", i+1);
             counter = 0;
             do
             {
@@ -985,15 +904,17 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             }while (1);
 //                 mw_printf(" vel %i    \t v= %f \t r=%f \n", i, v, r);
             
-            b.vel = vel_vec(prng, vShift, v);
-            b.bodynode.pos = r_vec(prng, rShift, r);
-//             mw_printf("%f\n", mw_acos(b.bodynode.pos.z/r));
+            /*vShift and rShift are both zero here. They are meant to give the dwarf an initial position and vel*/
+            b.vel = get_vec(prng, vShift, v);
+            b.bodynode.pos = get_vec(prng, rShift, r);
+            
             assert(nbPositionValid(b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
         free(light_r);
         free(dark_r);
+        free(all_r);
         return 1;             
              
 }
@@ -1013,12 +934,12 @@ int nbGenerateIsotropic(lua_State* luaSt)
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
             { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
             { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
-            { "scaleRadius1", LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1},
-            { "scaleRadius2", LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2},
-            { "position",         LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,    &position        },
-            { "velocity",         LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,    &velocity        },
-            { "ignore",             LUA_TBOOLEAN,    NULL,                    FALSE, &ignore            },
-            { "prng",                 LUA_TUSERDATA, DSFMT_TYPE,        TRUE,    &prng                },
+            { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
+            { "scaleRadius2",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2      },
+            { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
+            { "velocity",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &velocity          },
+            { "ignore",               LUA_TBOOLEAN,    NULL,                    FALSE,   &ignore            },
+            { "prng",                 LUA_TUSERDATA,   DSFMT_TYPE,              TRUE,    &prng              },
             END_MW_NAMED_ARG
             
         };
