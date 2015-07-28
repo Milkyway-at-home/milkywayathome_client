@@ -82,58 +82,68 @@ static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative(real (*rootFunc)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
+static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this does in fact use a 5-point stencil*/
-    real h = 0.01;
+    real h = 0.1;
     real deriv;
     real p1, p2, p3, p4, denom;
     
-    p1 =   1.0 * (*rootFunc)( (x - 2.0 * h), funcargs, dsfmtState);
-    p2 = - 8.0 * (*rootFunc)( (x - h)      , funcargs, dsfmtState);
-    p3 = - 1.0 * (*rootFunc)( (x + 2.0 * h), funcargs, dsfmtState);
-    p4 =   8.0 * (*rootFunc)( (x + h)      , funcargs, dsfmtState);
+    p1 =   1.0 * (*func)( (x - 2.0 * h), funcargs, dsfmtState);
+    p2 = - 8.0 * (*func)( (x - h)      , funcargs, dsfmtState);
+    p3 = - 1.0 * (*func)( (x + 2.0 * h), funcargs, dsfmtState);
+    p4 =   8.0 * (*func)( (x + h)      , funcargs, dsfmtState);
     denom = inv( 12.0 * h);
     deriv =   (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
 
-static inline real second_derivative(real (*rootFunc)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
+static inline real second_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this also uses a five point stencil*/
-    real h = 0.01;
+    real h = 0.1;
     real deriv;
     real p1, p2, p3, p4, p5, denom;
 
-    p1 = - 1.0 * (*rootFunc)( (x + 2.0 * h) , funcargs, dsfmtState);
-    p2 =  16.0 * (*rootFunc)( (x + h)       , funcargs, dsfmtState);
-    p3 = -30.0 * (*rootFunc)( (x)           , funcargs, dsfmtState);
-    p4 =  16.0 * (*rootFunc)( (x - h)       , funcargs, dsfmtState);
-    p5 = - 1.0 * (*rootFunc)( (x - 2.0 * h) , funcargs, dsfmtState);
+    p1 = - 1.0 * (*func)( (x + 2.0 * h) , funcargs, dsfmtState);
+    p2 =  16.0 * (*func)( (x + h)       , funcargs, dsfmtState);
+    p3 = -30.0 * (*func)( (x)           , funcargs, dsfmtState);
+    p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
+    p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
     denom = inv( 12.0 * h * h);
     deriv =   (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
 
-static inline real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real lower, real upper, real * funcargs, dsfmt_t* dsfmtState)
+static inline real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real upper, real * funcargs, dsfmt_t* dsfmtState)
 {
-    /*This is a guassian quadrature routine. */
+    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
+     * If switching the order of the limits was needed to do this then the negative of the integral is returned.
+     */
     real Ng,hg,lowerg, upperg;
     real intv;
     real coef1,coef2;//parameters for gaussian quad
     real c1,c2,c3;
     real x1,x2,x3;
     real x1n,x2n,x3n;
+    real a, b;
     
-    real a = lower; 
-    real b = upper;
+    if(lower > upper)
+    {
+        a = upper;
+        b = lower;
+    }
+    else
+    {
+        a = lower; 
+        b = upper;
+    }
     
     intv = 0;//initial value of integral
-    Ng = 20.0;//integral resolution
+    Ng = 100.0;//integral resolution
     hg = (b-a)/(Ng);
-    
     lowerg = a;
-    upperg = lowerg+hg;
+    upperg = lowerg + hg;
     
 
     coef2 = (lowerg+upperg)/2.0;//initializes the first coeff to change the function limits
@@ -143,17 +153,18 @@ static inline real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real low
     c3 = 5.0/9.0;
     x1 = -sqrt(3.0/5.0);
     x2 = 0.0;
-    x3 = sqrt(3.0/5.0);
+    x3 = sqrt(3.0/5.0);//= -0.093201
     x1n = (coef1 * x1 + coef2);
     x2n = (coef1 * x2 + coef2);
     x3n = (coef1 * x3 + coef2);
-    int counter=0;
+    int counter = 0;
     while (1)
     {
                 //gauss quad
-        intv= intv + c1 * (*rootFunc)(x1n, funcargs, dsfmtState) * coef1 +
-                     c2 * (*rootFunc)(x2n, funcargs, dsfmtState) * coef1 + 
-                     c3 * (*rootFunc)(x3n, funcargs, dsfmtState) * coef1;
+//         mw_printf("\nx1 = %f  x2 = %f x3 = %f low = %f  upp = %f upper = %f lower = %f\n", x1n, x2n, x3n, lowerg, upperg, upper, lower);
+        intv = intv + c1 * (*func)(x1n, funcargs, dsfmtState) * coef1 +
+                      c2 * (*func)(x2n, funcargs, dsfmtState) * coef1 + 
+                      c3 * (*func)(x3n, funcargs, dsfmtState) * coef1;
 
         lowerg = upperg;
         upperg = upperg + hg;
@@ -164,7 +175,7 @@ static inline real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real low
         x2n = ((coef1) * x2 + coef2);
         x3n = ((coef1) * x3 + coef2);
 
-
+        
         if(upper > lower)
         {
             if(lowerg >= upper)//loop termination clause
@@ -174,7 +185,7 @@ static inline real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real low
         }
         else if(lower > upper)
         {
-            if(lowerg <= upper)//loop termination clause
+            if(lowerg >= lower)//loop termination clause
             {
                 break;
             }
@@ -192,11 +203,23 @@ static inline real gauss_quad(real (*rootFunc)(real, real *, dsfmt_t*), real low
         
     }
     
+    if(lower > upper)
+    {
+        a = upper;
+        b = lower;
+        intv *= -1.0;
+    }
+    else
+    {
+        a = lower; 
+        b = upper;
+    }
     
+//     mw_printf("int = %0.20f\n", intv);
     return intv;
 }
 
-static real simpson( real (*rootFunc)(real, real *, dsfmt_t*), real lower_limit, real upper_limit, real * args, dsfmt_t* dsfmtState)
+static real simpson( real (*func)(real, real *, dsfmt_t*), real lower_limit, real upper_limit, real * args, dsfmt_t* dsfmtState)
 {
     real a,b,N,h;
     real intv = 0.0;
@@ -212,9 +235,9 @@ static real simpson( real (*rootFunc)(real, real *, dsfmt_t*), real lower_limit,
     while (1)
     {
     //simpsons rule
-        intv = intv + coef * (   (*rootFunc)(lower, args, dsfmtState) + 
-                             4 * (*rootFunc)(mid, args, dsfmtState) +
-                                 (*rootFunc)(upper, args, dsfmtState) );//gets the integral value for the interval
+        intv = intv + coef * (   (*func)(lower, args, dsfmtState) + 
+                             4 * (*func)(mid, args, dsfmtState) +
+                                 (*func)(upper, args, dsfmtState) );//gets the integral value for the interval
         lower = upper;//iterates the lower limit
         upper = upper + h;//iterates the upper limit
         mid = (lower + upper)/2;//gets midpoint of new interval
@@ -303,78 +326,6 @@ static inline real max_finder(real (*profile)(real , real*, dsfmt_t*), real* pro
         return (-profile_x2);
     }
 }
-static inline void shuffle(real * init_vec, int length,dsfmt_t* dsfmtState )
-{
-    /*a quick array shuffling algorithm */
-    real * test = mwCalloc(length, sizeof(real));/*new array to return*/
-    int * store = mwCalloc(length, sizeof(real));/*stores array coordinates*/
-    mwbool good_q = FALSE;
-    mwbool dropped_the_cards = FALSE;
-    int matches = 0;
-    int q;
-    int counter = 0;
-    /*picks a random array element and assigns that array element of the input
-     * array into the new array. To avoid repetition, the assigned array coordinate is stored. 
-     * All future coordinates are tested to make sure they were not already assigned.*/
-    for(int i = 0; i < length; i++)
-        {
-            /*The first array element obviously would not have been assigned already*/
-            if(i == 0)
-            {
-                q = (int)(mwXrandom(dsfmtState,0.0,length));
-                store[i] = q;
-                test[i] = init_vec[q];
-            }
-            else 
-            {
-                /*Chooses an array coordinate and checks to see if it has been used already*/
-                while(1)
-                {
-                    q = (int)(mwXrandom(dsfmtState,0.0,length));
-                    matches = 0;
-                    for(int j = 0; j < i; j++)
-                    {
-                        if(store[j] == q)
-                        {
-                            matches++;
-                            break;
-                        }
-                    }
-                    
-                    /*if that coordinate was not already used, then its good*/
-                    if(matches == 0)
-                    {
-                        good_q = TRUE;
-                        break;
-                    }
-                    /*I do not like infinite loops*/
-                    if(counter > 10000)
-                    {
-                        dropped_the_cards = TRUE;
-                        break;
-                    }
-                    else
-                    {
-                        counter++;
-                    }
-                }
-                /*stores the choice of coordinate and assigns that element to the new array*/
-                store[i] = q;
-                test[i] = init_vec[q];
-            }
-        }
-    
-        for(int k = 0; k < length; k++)
-        {
-            /*if loop counter was hit, then shuffling did not work. In that case return original array*/
-            if(dropped_the_cards == FALSE)
-            {
-                init_vec[k] = test[k];
-            }
-        }
-        free(test);
-        free(store);
-}
 
 static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
 {
@@ -385,26 +336,19 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
     }
     unsigned int i = 0;
     /* Can find up to 20 roots, but may miss a root if they are too close together */
-    int N=4;
+    int N = 4;
     unsigned int numSteps = N;
     real interval;
     real * values = mwCalloc(numSteps, sizeof(real));
-    int * deck = mwCalloc(numSteps, sizeof(real));
-    
-    for(int k = 0; k < N; k++)
-    {
-        deck[k] = k;
-    }
-    shuffle(deck, numSteps, dsfmtState);
-    
     
     /* Divide the function area up into bins in case there is more than one root */
     /*numSteps+1 because you want to include the upperbound in the interval*/
-    for(i = 0; i < numSteps+1; i++)
+    for(i = 0; i < numSteps + 1; i++)
     {
         interval = ((upperBound - lowBound) * (real)i) / (real)numSteps + lowBound;
         values[i] = (*rootFunc)(interval, rootFuncParams, dsfmtState) - funcValue;
     }
+    
     real midPoint = 0;
     real midVal = 0;
     unsigned int nsteps = 0;
@@ -419,10 +363,10 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
      */
     for(i = 0; i < numSteps; i++)
     {
-        q = deck[i];
-        if((values[q] > 0 && values[q+1] < 0) || (values[q] < 0 && values[q+1] > 0))
+        q = i;
+        if((values[q] > 0 && values[q + 1] < 0) || (values[q] < 0 && values[q + 1] > 0))
         {
-            if(values[q] < 0 && values[q+1] > 0)
+            if(values[q] < 0 && values[q + 1] > 0)
             {
                 curLower = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
                 curUpper = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
@@ -473,10 +417,26 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
 //     mw_printf("rootsFound= %i\n", rootsFound);
 
     free(values);
-    free(deck);
+
     return midPoint;
 }
 
+static inline real check(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
+{
+    real h = 0.1;
+    real funct;
+    real p1, p2, p3, p4, p5, denom;
+
+    p1 = - 1.0 * (*func)( (x + 2.0 * h) , funcargs, dsfmtState);
+    p2 =  16.0 * (*func)( (x + h)       , funcargs, dsfmtState);
+    p3 = -30.0 * (*func)( (x)           , funcargs, dsfmtState);
+    p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
+    p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
+    denom = inv( 12.0 * h * h);
+    funct = ( density(p1, funcargs, dsfmtState) + density(p2, funcargs, dsfmtState) + density(p3, funcargs, dsfmtState) + density(p4, funcargs, dsfmtState) + density(p5, funcargs, dsfmtState) ) * denom;
+    
+    return funct;
+}
 
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
@@ -490,6 +450,7 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     real first_deriv_density;
     real second_deriv_density;
     real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
+    real dsqden_dpsisq1;
     real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
     real func;
 
@@ -509,19 +470,23 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     if(first_deriv_psi != 0.0  && denominator != 0.0)
     {
             dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
+            dsqden_dpsisq *= inv(first_deriv_psi);
     }
     else
     {
-            dsqden_dpsisq = 0.0;
+//             dsqden_dpsisq = 0.0;
     }
     
     
     func = first_deriv_psi * dsqden_dpsisq * denominator;
+//     mw_printf("%f  %f\n", dsqden_dpsisq, dsqden_dpsisq1);
+//     mw_printf("\nfunc = %0.20f f_psi = %0.20f s_psi = %0.20f  f_den = %0.20f s_den = %0.20f  denom = %f, dsdendpsi = %0.20f \n", func, first_deriv_psi, second_deriv_psi, first_deriv_density,second_deriv_density, denominator, dsqden_dpsisq); 
+    
     return func;
         
 }
 
-static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtState, real v, real search_range)
+static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtState, real search_range)
 {
     real r = args[4];
     
@@ -547,6 +512,17 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
     return mw_fabs(upperlimit_r);
 }
  
+ 
+real distribution(real mass, real r_scale, real v, real r, real * args, dsfmt_t* dsfmtState)
+{
+    
+    real coeff = 24.0 * mw_sqrt(2.0) * inv( 7.0 * cube(M_PI) );
+    real energy = potential(r, args, dsfmtState) - 0.5 * sqr(v) ;
+    real f = v * v * coeff * inv( mw_pow(mass, 4.0 )) * sqr(r_scale) * mw_pow(fabs(energy), 3.5);
+    
+    return f;
+} 
+
 static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 {
     /*This returns the value of the distribution function*/
@@ -556,6 +532,7 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     real rscale_d = args[3];
     real r        = args[4];
     real ifmax    = args[5];
+//     mw_printf("ml= %f  md= %f  rl= %f   rd= %f  r= %f  ifmax=%f\n", mass_l, mass_d, rscale_l, rscale_d, r, ifmax);
     
     real distribution_function = 0.0;
     real c = inv( (mw_sqrt(8) * sqr(M_PI)) );
@@ -586,15 +563,15 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
             }
             counter++;
         }
-        upperlimit_r = find_upperlimit_r(args, energy, dsfmtState, v, search_range);
+        upperlimit_r = find_upperlimit_r(args, energy, dsfmtState, search_range);
+//         mw_printf("\nenergy = %0.20f\t rnew = %0.20f\n", energy, upperlimit_r);
     }
     
     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
-    lowerlimit_r = 100.0 * (upperlimit_r);
+    lowerlimit_r = 5.0 * (upperlimit_r);
 
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, funcargs, dsfmtState);
-        
     return mw_fabs(distribution_function);
 }
 
@@ -629,8 +606,6 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
 
 static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
 {
-    real mass_l   = args[0];
-    real mass_d   = args[1];
     real rscale_l = args[2];
     real rscale_d = args[3];
     
@@ -638,7 +613,6 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max)
     real r;
     real u;
     real val;
-    real bound;
     
     while (1)
     {
@@ -684,6 +658,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, ifmax};
     real dist_max = dist_fun(v_esc, parameters, dsfmtState);
     //max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
+//     mw_printf("\n%f\n", dist_max);
     ifmax = 0;
     parameters[5] = ifmax;
    
@@ -744,89 +719,302 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_l = radiusScale1; /*scale radius of the light component*/
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
-        int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(half_bodies);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(half_bodies);//half dark matter
+        /*for normal*/
+//         int half_bodies = nbody / 2;
+//         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
+//         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+        
+        
+        /*for all dark*/
+        unsigned int half_bodies = 0; 
+        mass_l = 0.0;
+        
+        /*for all light*/
+//         int half_bodies = nbody; 
+//         mass_d = 0.0;
+        
+        real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
+        real mass_dark_particle = mass_d /  (real)(nbody);//half dark matter
         
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
         
         real * all_r = mwCalloc(nbody, sizeof(real));
-        real * dark_r = mwCalloc(half_bodies, sizeof(real));
-        real * light_r = mwCalloc(half_bodies, sizeof(real));
        
         real args[4] = {mass_l, mass_d, rscale_l, rscale_d};
         real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
-        real parameters_dark[4] = {0.0, mass_d, rscale_l, rscale_d};
+        real parameters_dark[4]  = {0.0, mass_d, rscale_l, rscale_d};
         
         /*finding the max of the individual components*/
         real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
-        real rho_max_dark =  max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
+        real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
-        real rho_max = max_finder(profile_rho, args, 0, rscale_l, (rscale_d), 20, 1e-4, prng );
-        mw_printf("light max= %f \t dark max= %f\n", rho_max_light, rho_max_dark);
+//         mw_printf("light max= %f \t dark max= %f\n", rho_max_light, rho_max_dark);
         
-        
+ 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                 /*DEBUGGING CODE*/
-
-        
-        real tst1 = root_finder(test, args, 4.0, 0.0, 5.0, prng);
-        mw_printf("test=%f\n", tst1 );
-        
-        tst1 = gauss_quad(test, 1.0, 5.0, args, prng);
+{
+//         
+//         real tst1 = root_finder(test, args, 4.0, 0.0, 5.0, prng);
+//         mw_printf("test=%f\n", tst1 );
+//         
+        real tst1 = gauss_quad(test, 1.0, 5.0, args, prng);
         real tst2 = gauss_quad(test, 5.0, 1.0, args, prng);
         mw_printf("test = %f  %f\n", tst1, tst2);
       
-        real dtst1 = first_derivative(test, 4.0, args, prng);
-        real dtst2 = second_derivative(test, 4.0, args, prng);
-        mw_printf("test = %f  %f\n", dtst1, dtst2);
+//         real dtst1 = first_derivative(test, 4.0, args, prng);
+//         real dtst2 = second_derivative(test, 4.0, args, prng);
+//         mw_printf("test = %f  %f\n", dtst1, dtst2);
+
+//         mw_printf("ml = %f md = %f  rl = %f  rd = %f\n", mass_l, mass_d, rscale_l, rscale_d);
+//         real tst1 = fun(3.0, args, prng);
+//         real tst2 = fun(321.310376, args, prng);
+//         mw_printf("test = %0.20f  %0.20f\n", tst1, tst2);
         
         ///////////////////////////////////////////////////////////
-        real w1 = 0.0;
+        real r_pot = 0.0;
+        real breakrange = 100 * (rscale_l + rscale_d);
         FILE * pot;
         pot = fopen("pot.txt", "w");
         real pt, pt2, pt3;
         while(1)
         {
-            pt  = potential(w1, parameters_light, prng);
-            pt2 = potential(w1, parameters_dark, prng);
-            pt3 = potential(w1, args, prng);
-            w1  = w1 + 0.01;
-            fprintf(pot, "%f \t %f \t %f\t %f\n", pt, w1, pt2, pt3);
-//             mw_printf("\r printing density functions: %f %", w/(5*(rscale_l+rscale_d))*100);
-            if(w1 > 5 * (rscale_l+rscale_d)){break;}
+            pt  = potential(r_pot, parameters_light, prng);
+            pt2 = potential(r_pot, parameters_dark, prng);
+            pt3 = potential(r_pot, args, prng);
+            r_pot  = r_pot + 0.01;
+            fprintf(pot, "%f \t %f \t %f\t %f\n", pt, r_pot, pt2, pt3);
+//             mw_printf("\r printing density functions: %f %", r_pot / (breakrange) * 100);
+            if(r_pot > 0.1 * breakrange){break;}
         }
         fclose(pot);
         ///////////////////////////////////////////////////////////
         
         /////////////////////////////////////////////////////////
-        real w = 0.0;
+        real r_den = 0.0;
         FILE * rho;
         rho = fopen("rho.txt", "w");
-        real de, de2, de3;
+        real den, den2, den3;
         while(1)
         {
-            de  = w * w * density(w, parameters_light, prng);
-            de2 = w * w * density(w, parameters_dark, prng);
-            de3 = de + de2;//w * w * density(w, args, prng);
-            w   = w + 0.01;
-            fprintf(rho, "%f \t %f \t %f\t %f\n", de, w, de2, de3);
-//             mw_printf("\r printing density functions: %f %", w/(5*(rscale_l+rscale_d))*100);
-            if(w > 5 * (rscale_l+rscale_d)){break;}
+            den  = r_den * r_den * density(r_den, parameters_light, prng);
+            den2 = r_den * r_den * density(r_den, parameters_dark, prng);
+            den3 = den + den2;//r_den * r_den * density(r_den, args, prng);
+            r_den   = r_den + 0.01;
+            fprintf(rho, "%f \t %f \t %f\t %f\n", den, r_den, den2, den3);
+//             mw_printf("\r printing density functions: %f %", r_den / (breakrange) * 100);
+            if(r_den > 0.1 * breakrange){break;}
         }
         fclose(rho);
         /////////////////////////////////////////////////////////
         
+        /////////////////////////////////////////////////////////
+        real r_dist = 0.1;
+        int ifmax = 0;
+        real dsl, dsd, dsb, dsb2;
         
+
+        real dis_tst_l[6] = {mass_l, 0.0,    rscale_l, rscale_d, r_dist, ifmax};
+        real dis_tst_d[6] = {0.0,    mass_d, rscale_l, rscale_d, r_dist, ifmax};
+        real dis_tst_b[6] = {mass_l, mass_d, rscale_l, rscale_d, r_dist, ifmax};
+
+        real v_dist = 0;
+        real vsc_l, vsc_d, vsc_b;
+        
+// /*         3D        */
+//         FILE * dist;
+//         dist = fopen("dist.txt", "w");
+//         
+//         while(1)
+//         {
+//             vsc_l = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_l, prng) ) );
+//             vsc_d = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_d, prng) ) );
+//             vsc_b = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_b, prng) ) );
+//             v_dist = 0.0;
+//             while(1)
+//             {
+//                 dis_tst_l[4] = r_dist;
+//                 dis_tst_d[4] = r_dist;
+//                 dis_tst_b[4] = r_dist;
+//                 dsl = dist_fun(v_dist, dis_tst_l, prng);
+//                 dsd = dist_fun(v_dist, dis_tst_d, prng);
+//                 dsb = dist_fun(v_dist, dis_tst_b, prng);
+//                 fprintf(dist, "%f \t %f \t %f \t %f \t %f \n", r_dist, v_dist,  dsl, dsd, dsb);
+//                 v_dist = v_dist + .1;
+//                 
+//                  if(v_dist > (vsc_b)){break;}
+//             }
+// //             mw_printf("\r printing density functions 1/3: %f %",  (r_dist / breakrange) * 100);
+//             r_dist  = r_dist + .1;
+//             if(r_dist > breakrange){break;}
+//         }
+//         fclose(dist);
+        
+/*         function of r        */
+        FILE * dist2;
+        dist2 = fopen("dist2.txt", "w");
+        ifmax = 0;
+        r_dist = 0.01;
+        dis_tst_b[4] = r_dist;
+        while(1)
+        {
+            vsc_b = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_b, prng) ) );
+            
+            dsb  = dist_fun(vsc_b, dis_tst_b, prng);
+            dsb2 = distribution(mass_d, rscale_d, vsc_b, r_dist, args, prng);
+            fprintf(dist2, "%f\t %f \t  %f\n", r_dist, dsb, dsb2);
+            
+//             mw_printf("\r printing density functions 2/3: %f %", (r_dist / breakrange) * 100);
+            r_dist  = r_dist + .01;
+            dis_tst_l[4] = r_dist;
+            if(r_dist > breakrange){break;}
+        }
+        fclose(dist2);
+        
+        
+/*         function of v        */
+        FILE * dist3;
+        dist3 = fopen("dist3.txt", "w");
+        ifmax = 0;
+        r_dist = rscale_d;
+        dis_tst_b[4] = r_dist;
+        vsc_b = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_b, prng) ) );
+        v_dist = 0.0;
+//         mw_printf("vesc = %f\n", vsc_b);
+        while(1)
+        {
+            dsb  = dist_fun(v_dist, dis_tst_b, prng);
+            dsb2 = distribution(mass_d, rscale_d, v_dist, r_dist, args, prng);
+//             mw_printf("v = %f\n", v_dist);
+            fprintf(dist3, "%0.20f \t %2.20f \t %0.20f\n", v_dist, dsb, dsb2);
+            v_dist = v_dist + .001;
+                if(v_dist > (vsc_b)){break;}
+                
+//             mw_printf("\r printing density functions 3/3: %f %", (v_dist / vsc_b) * 100);
+        }
+        fclose(dist3);
+        
+        
+        /////////////////////////////////////////////////////////
+/*         function of r        */        
+        real en_fun_tst = 0.0;
+        real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, en_fun_tst};
+        FILE * func;
+        func = fopen("fun.txt", "w");
+        real r_fun_tst = 0.0;
+        real fun_tst;
+        real v_fun_tst;
+        
+        while(1)
+        {
+            v_fun_tst = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
+            
+            en_fun_tst = potential(r_fun_tst, args, prng) - 0.5 * v_fun_tst * v_fun_tst;
+            funcargs[4] = en_fun_tst;
+            fun_tst = fun(r_fun_tst, funcargs, prng);
+            fprintf(func, "%f \t %f \n", r_fun_tst, fun_tst);
+            r_fun_tst += 0.01;
+            
+            if(r_fun_tst > breakrange){break;}
+//             mw_printf("\r printing density function integrand 1/2: %f %", (r_fun_tst / breakrange) * 100);
+        }
+        fclose(func);
+        
+        
+/*         function of v        */       
+        FILE * func2;
+        func2 = fopen("fun2.txt", "w");
+        
+        r_fun_tst = rscale_d;
+        real v_fun_tst_esc = mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
+        v_fun_tst = 0.00;
+        while(1)
+        {
+            en_fun_tst = potential(r_fun_tst, args, prng) - 0.5 * v_fun_tst * v_fun_tst;
+            funcargs[4] = en_fun_tst;
+            
+            fun_tst = fun(r_fun_tst, funcargs, prng);
+            fprintf(func2, "%f \t %f \n", v_fun_tst, fun_tst);
+            v_fun_tst += 0.01;
+            
+            if(v_fun_tst > v_fun_tst_esc){break;}
+//             mw_printf("\r printing density function integrand 2/2: %f %", (v_fun_tst / v_fun_tst_esc) * 100);
+        }
+        fclose(func2);
+        
+        
+/*         denominator of r      */
+        FILE * denom;
+        denom = fopen("denom.txt", "w");
+        real denominator;
+        r_fun_tst = rscale_d;
+        v_fun_tst = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
+        en_fun_tst = potential(r_fun_tst, args, prng) - 0.5 * v_fun_tst * v_fun_tst;
+        
+        real upperlimit_r = root_finder(potential, args, en_fun_tst, 0.0, 100 * rscale_d, prng);
+        mw_printf("up r = %f en = %f\n", upperlimit_r, en_fun_tst);
+        r_fun_tst = 50 * rscale_d;
+        while(1)
+        {
+            
+            denominator = minushalf( (en_fun_tst - potential(r_fun_tst, args, prng) ) );
+            fprintf(denom, "%f \t %f \n", r_fun_tst, denominator);
+            
+            r_fun_tst -= 0.01;
+            if(r_fun_tst < upperlimit_r){break;}
+            
+        }
+        fclose(denom);
+        
+/*         numerator of r        */
+        FILE * num;
+        num = fopen("num.txt", "w");
+        r_fun_tst = breakrange;
+        
+        real first_deriv_psi      = first_derivative(potential, r_fun_tst, args, prng);
+        real first_deriv_density  = first_derivative(density,   r_fun_tst, args, prng);
+        real second_deriv_psi     = second_derivative(potential, r_fun_tst, args, prng);
+        real second_deriv_density = second_derivative(density,   r_fun_tst, args, prng);
+        
+        real dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
+        
+        dsqden_dpsisq *= inv(first_deriv_psi);
+        
+        v_fun_tst_esc = mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
+        v_fun_tst = 0.00;
+        
+        while(1)
+        {
+            
+            first_deriv_psi      = first_derivative(potential, r_fun_tst, args, prng);
+            first_deriv_density  = first_derivative(density,   r_fun_tst, args, prng);
+            second_deriv_psi     = second_derivative(potential, r_fun_tst, args, prng);
+            second_deriv_density = second_derivative(density,   r_fun_tst, args, prng);
+            
+            denominator = minushalf( mw_fabs(en_fun_tst - potential(r_fun_tst, args, prng) ) );
+            
+            dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
+            dsqden_dpsisq *= (first_deriv_psi) * denominator;
+            
+            fprintf(num, "%f \t %f \n", r_fun_tst, dsqden_dpsisq);
+            
+            if(r_fun_tst < -breakrange ){break;}
+            r_fun_tst -= 0.001;
+            
+        }
+        fclose(num);
+        
+        
+        
+}        
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+       
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
         int counter = 0;
-        int j = 0;
         
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
@@ -912,8 +1100,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
-        free(light_r);
-        free(dark_r);
         free(all_r);
         return 1;             
              
