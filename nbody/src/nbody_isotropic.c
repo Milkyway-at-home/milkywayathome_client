@@ -465,6 +465,15 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     * did product rule since both density and pot are functions of radius. 
     */
     
+    
+    
+    /*
+     * we take the absolute value in the squareroot even though we shouldn't. We do this because there is a singularity in the
+     * denom. After this occurs, the numbers in the squareroot become negative or: E-psi = neg because psi > E after the singularity.
+     * we took the absolute value to avoid NANs from this. It is ok to do this because the alternative would be stopping the procedure
+     * just before it goes to the singlularity. Either way, we over estimate or under estimate the denom by the same amount (the step size)
+     */
+    
     denominator = minushalf( mw_fabs(energy - potential(ri, args, dsfmtState) ) );
     
     if(first_deriv_psi != 0.0  && denominator != 0.0)
@@ -474,7 +483,7 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     }
     else
     {
-//             dsqden_dpsisq = 0.0;
+        denominator = minushalf( mw_fabs(energy - potential(ri + 0.01, args, dsfmtState) ) );
     }
     
     
@@ -513,9 +522,10 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
 }
  
  
-real distribution(real mass, real r_scale, real v, real r, real * args, dsfmt_t* dsfmtState)
+real distribution(real v, real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
 {
-    
+    real mass    = dwarfargs[0];
+    real r_scale = dwarfargs[1];
     real coeff = 24.0 * mw_sqrt(2.0) * inv( 7.0 * cube(M_PI) );
     real energy = potential(r, args, dsfmtState) - 0.5 * sqr(v) ;
     real f = v * v * coeff * inv( mw_pow(mass, 4.0 )) * sqr(r_scale) * mw_pow(fabs(energy), 3.5);
@@ -523,15 +533,14 @@ real distribution(real mass, real r_scale, real v, real r, real * args, dsfmt_t*
     return f;
 } 
 
-static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
+static real dist_fun(real v, real r, real * args, dsfmt_t* dsfmtState)
 {
     /*This returns the value of the distribution function*/
     real mass_l   = args[0];
     real mass_d   = args[1];
     real rscale_l = args[2];
     real rscale_d = args[3];
-    real r        = args[4];
-    real ifmax    = args[5];
+    real ifmax    = args[4];
 //     mw_printf("ml= %f  md= %f  rl= %f   rd= %f  r= %f  ifmax=%f\n", mass_l, mass_d, rscale_l, rscale_d, r, ifmax);
     
     real distribution_function = 0.0;
@@ -541,10 +550,11 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     real lowerlimit_r = 0.0; 
     int counter = 0.0;
     real search_range = 0.0;   
+    
 
     if(ifmax == 1)
     {
-        energy = potential(r, args,dsfmtState);
+        energy = potential(r, args, dsfmtState);
         upperlimit_r = r;
     }
     else if(ifmax == 0)
@@ -569,7 +579,7 @@ static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
     lowerlimit_r = 5.0 * (upperlimit_r);
-
+    
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, funcargs, dsfmtState);
     return mw_fabs(distribution_function);
@@ -583,6 +593,17 @@ real test(real x, real * args, dsfmt_t* dsfmtState)
  return f;
 }
 
+real calc_vesc(real r, real * args, dsfmt_t* dsfmtState)
+{
+    real vesc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
+    return vesc;
+}
+
+real calc_energy(real v, real r, real * args, dsfmt_t* dsfmtState)
+{
+    real e = potential(r, args, dsfmtState) - 0.5 * v * v;
+    return e;
+}
 
 
 /*      SAMPLING FUNCTIONS      */
@@ -655,12 +676,12 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     real ifmax = 1;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
-    real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, ifmax};
-    real dist_max = dist_fun(v_esc, parameters, dsfmtState);
+    real parameters[5] = {mass_l, mass_d, rscale_l, rscale_d, ifmax};
+    real dist_max = dist_fun(v_esc, r, parameters, dsfmtState);
     //max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
 //     mw_printf("\n%f\n", dist_max);
     ifmax = 0;
-    parameters[5] = ifmax;
+    parameters[4] = ifmax;
    
 //     mw_printf("rejection sampling...");
     while(1)
@@ -669,7 +690,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
         v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
-        d = dist_fun(v, parameters, dsfmtState);
+        d = dist_fun(v, r, parameters, dsfmtState);
         if(mw_fabs(d/dist_max) > u)
         {
             break;
@@ -720,7 +741,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
         /*for normal*/
-//         int half_bodies = nbody / 2;
+//         unsigned int half_bodies = nbody / 2;
 //         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
 //         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
         
@@ -728,10 +749,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         /*for all dark*/
         unsigned int half_bodies = 0; 
         mass_l = 0.0;
+        real dwarfargs[2] = {mass_d, rscale_d};
         
         /*for all light*/
 //         int half_bodies = nbody; 
 //         mass_d = 0.0;
+//         real dwarfargs[2] = {mass_l, rscale_l};
+        
         
         real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
         real mass_dark_particle = mass_d /  (real)(nbody);//half dark matter
@@ -753,21 +777,21 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         mw_printf("light max= %f \t dark max= %f\n", rho_max_light, rho_max_dark);
         
  
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                 /*DEBUGGING CODE*/
 {
-//         
+        
 //         real tst1 = root_finder(test, args, 4.0, 0.0, 5.0, prng);
 //         mw_printf("test=%f\n", tst1 );
 //         
-        real tst1 = gauss_quad(test, 1.0, 5.0, args, prng);
-        real tst2 = gauss_quad(test, 5.0, 1.0, args, prng);
-        mw_printf("test = %f  %f\n", tst1, tst2);
-      
+//         real tst1 = gauss_quad(test, 1.0, 5.0, args, prng);
+//         real tst2 = gauss_quad(test, 5.0, 1.0, args, prng);
+//         mw_printf("test = %f  %f\n", tst1, tst2);
+//       
 //         real dtst1 = first_derivative(test, 4.0, args, prng);
 //         real dtst2 = second_derivative(test, 4.0, args, prng);
 //         mw_printf("test = %f  %f\n", dtst1, dtst2);
-
+// 
 //         mw_printf("ml = %f md = %f  rl = %f  rd = %f\n", mass_l, mass_d, rscale_l, rscale_d);
 //         real tst1 = fun(3.0, args, prng);
 //         real tst2 = fun(321.310376, args, prng);
@@ -812,204 +836,100 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
         /////////////////////////////////////////////////////////
         real r_dist = 0.1;
-        int ifmax = 0;
-        real dsl, dsd, dsb, dsb2;
-        
-
-        real dis_tst_l[6] = {mass_l, 0.0,    rscale_l, rscale_d, r_dist, ifmax};
-        real dis_tst_d[6] = {0.0,    mass_d, rscale_l, rscale_d, r_dist, ifmax};
-        real dis_tst_b[6] = {mass_l, mass_d, rscale_l, rscale_d, r_dist, ifmax};
-
         real v_dist = 0;
-        real vsc_l, vsc_d, vsc_b;
         
-// /*         3D        */
-//         FILE * dist;
-//         dist = fopen("dist.txt", "w");
-//         
-//         while(1)
-//         {
-//             vsc_l = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_l, prng) ) );
-//             vsc_d = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_d, prng) ) );
-//             vsc_b = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_b, prng) ) );
-//             v_dist = 0.0;
-//             while(1)
-//             {
-//                 dis_tst_l[4] = r_dist;
-//                 dis_tst_d[4] = r_dist;
-//                 dis_tst_b[4] = r_dist;
-//                 dsl = dist_fun(v_dist, dis_tst_l, prng);
-//                 dsd = dist_fun(v_dist, dis_tst_d, prng);
-//                 dsb = dist_fun(v_dist, dis_tst_b, prng);
-//                 fprintf(dist, "%f \t %f \t %f \t %f \t %f \n", r_dist, v_dist,  dsl, dsd, dsb);
-//                 v_dist = v_dist + .1;
-//                 
-//                  if(v_dist > (vsc_b)){break;}
-//             }
-// //             mw_printf("\r printing density functions 1/3: %f %",  (r_dist / breakrange) * 100);
-//             r_dist  = r_dist + .1;
-//             if(r_dist > breakrange){break;}
-//         }
-//         fclose(dist);
+        int ifmax = 0;
+        real dsb, dsb_theory;
+        real dis_tst_b[6] = {mass_l, mass_d, rscale_l, rscale_d, ifmax};
         
-/*         function of r        */
+       
+/*         distribution function as a function of r        */
         FILE * dist2;
         dist2 = fopen("dist2.txt", "w");
+        
         ifmax = 0;
-        r_dist = 0.01;
-        dis_tst_b[4] = r_dist;
+        
+        r_dist = dwarfargs[1];
+        v_dist = 0.5 * calc_vesc(r_dist, args, prng); 
+        
+        r_dist = 10 * rscale_d;
+        
         while(1)
         {
-            vsc_b = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_b, prng) ) );
+            dsb  = dist_fun(v_dist, r_dist, dis_tst_b, prng);
             
-            dsb  = dist_fun(vsc_b, dis_tst_b, prng);
-            dsb2 = distribution(mass_d, rscale_d, vsc_b, r_dist, args, prng);
-            fprintf(dist2, "%f\t %f \t  %f\n", r_dist, dsb, dsb2);
+            dsb_theory = distribution(v_dist, r_dist, dwarfargs, args, prng);
             
-//             mw_printf("\r printing density functions 2/3: %f %", (r_dist / breakrange) * 100);
-            r_dist  = r_dist + .01;
-            dis_tst_l[4] = r_dist;
-            if(r_dist > breakrange){break;}
+            fprintf(dist2, "%f\t %f \t  %f\n", r_dist, dsb, dsb_theory);
+            
+            mw_printf("\r printing density functions 1/2: %f %", (0.01 / r_dist ) * 100);
+            r_dist  -= .1;
+            if(r_dist < 0.1){break;}
         }
         fclose(dist2);
         
         
-/*         function of v        */
+/*         distribution function as a function of v        */
         FILE * dist3;
         dist3 = fopen("dist3.txt", "w");
+        
         ifmax = 0;
-        r_dist = rscale_d;
-        dis_tst_b[4] = r_dist;
-        vsc_b = mw_sqrt( mw_fabs(2.0 * potential( r_dist, dis_tst_b, prng) ) );
+        
+        r_dist = dwarfargs[1];
+        real v_dist_esc = calc_vesc(r_dist, args, prng); 
+        
         v_dist = 0.0;
-//         mw_printf("vesc = %f\n", vsc_b);
         while(1)
         {
-            dsb  = dist_fun(v_dist, dis_tst_b, prng);
-            dsb2 = distribution(mass_d, rscale_d, v_dist, r_dist, args, prng);
-//             mw_printf("v = %f\n", v_dist);
-            fprintf(dist3, "%0.20f \t %2.20f \t %0.20f\n", v_dist, dsb, dsb2);
-            v_dist = v_dist + .001;
-                if(v_dist > (vsc_b)){break;}
+            dsb  = dist_fun(v_dist, r_dist, dis_tst_b, prng);
+            
+            dsb_theory = distribution(v_dist, r_dist, dwarfargs, args, prng);
+
+            fprintf(dist3, "%0.20f \t %2.20f \t %0.20f\n", v_dist, dsb, dsb_theory);
+
+            v_dist += .001;
+                if(v_dist > (v_dist_esc)){break;}
                 
-//             mw_printf("\r printing density functions 3/3: %f %", (v_dist / vsc_b) * 100);
+            mw_printf("\r printing density functions 2/2: %f %", (v_dist / v_dist_esc) * 100);
         }
         fclose(dist3);
         
         
         /////////////////////////////////////////////////////////
-/*         function of r        */        
-        real en_fun_tst = 0.0;
-        real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, en_fun_tst};
+        
+        ///////////////////////////////////////////////////////
+/*         integrand as a function of r prime       */
+        real fun_tst;
+        real energy_fun = 0.0;
+        real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy_fun};
+        
+        real r_fun = .5; //dwarfargs[1];
+        real v_fun = .5 * calc_vesc(r_fun, args, prng); 
+        energy_fun = calc_energy(v_fun, r_fun, args, prng);
+        real upperlimit_r = root_finder(potential, args, energy_fun, 0.0, 10, prng); 
+        mw_printf("energy = %f  r= %f\n", energy_fun, upperlimit_r);
+        funcargs[4] = energy_fun;
+        
+        real r_fun_p = 50 * rscale_d;
+        
         FILE * func;
         func = fopen("fun.txt", "w");
-        real r_fun_tst = 0.0;
-        real fun_tst;
-        real v_fun_tst;
-        
+        mw_printf("\n printing density function integrand");
         while(1)
         {
-            v_fun_tst = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
+            fun_tst = fun(r_fun_p, funcargs, prng);
+            fprintf(func, "%f \t %f \n", r_fun_p, fun_tst);
+            r_fun_p -= 0.01;
             
-            en_fun_tst = potential(r_fun_tst, args, prng) - 0.5 * v_fun_tst * v_fun_tst;
-            funcargs[4] = en_fun_tst;
-            fun_tst = fun(r_fun_tst, funcargs, prng);
-            fprintf(func, "%f \t %f \n", r_fun_tst, fun_tst);
-            r_fun_tst += 0.01;
-            
-            if(r_fun_tst > breakrange){break;}
-//             mw_printf("\r printing density function integrand 1/2: %f %", (r_fun_tst / breakrange) * 100);
+//             if(potential(r_fun_p, args, prng) > energy_fun){break;}
+            if(r_fun_p < 0.01){break;}
         }
         fclose(func);
         
         
-/*         function of v        */       
-        FILE * func2;
-        func2 = fopen("fun2.txt", "w");
         
-        r_fun_tst = rscale_d;
-        real v_fun_tst_esc = mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
-        v_fun_tst = 0.00;
-        while(1)
-        {
-            en_fun_tst = potential(r_fun_tst, args, prng) - 0.5 * v_fun_tst * v_fun_tst;
-            funcargs[4] = en_fun_tst;
-            
-            fun_tst = fun(r_fun_tst, funcargs, prng);
-            fprintf(func2, "%f \t %f \n", v_fun_tst, fun_tst);
-            v_fun_tst += 0.01;
-            
-            if(v_fun_tst > v_fun_tst_esc){break;}
-//             mw_printf("\r printing density function integrand 2/2: %f %", (v_fun_tst / v_fun_tst_esc) * 100);
-        }
-        fclose(func2);
-        
-        
-/*         denominator of r      */
-        FILE * denom;
-        denom = fopen("denom.txt", "w");
-        real denominator;
-        r_fun_tst = rscale_d;
-        v_fun_tst = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
-        en_fun_tst = potential(r_fun_tst, args, prng) - 0.5 * v_fun_tst * v_fun_tst;
-        
-        real upperlimit_r = root_finder(potential, args, en_fun_tst, 0.0, 100 * rscale_d, prng);
-        mw_printf("up r = %f en = %f\n", upperlimit_r, en_fun_tst);
-        r_fun_tst = 50 * rscale_d;
-        while(1)
-        {
-            
-            denominator = minushalf( (en_fun_tst - potential(r_fun_tst, args, prng) ) );
-            fprintf(denom, "%f \t %f \n", r_fun_tst, denominator);
-            
-            r_fun_tst -= 0.01;
-            if(r_fun_tst < upperlimit_r){break;}
-            
-        }
-        fclose(denom);
-        
-/*         numerator of r        */
-        FILE * num;
-        num = fopen("num.txt", "w");
-        r_fun_tst = breakrange;
-        
-        real first_deriv_psi      = first_derivative(potential, r_fun_tst, args, prng);
-        real first_deriv_density  = first_derivative(density,   r_fun_tst, args, prng);
-        real second_deriv_psi     = second_derivative(potential, r_fun_tst, args, prng);
-        real second_deriv_density = second_derivative(density,   r_fun_tst, args, prng);
-        
-        real dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
-        
-        dsqden_dpsisq *= inv(first_deriv_psi);
-        
-        v_fun_tst_esc = mw_sqrt( mw_fabs(2.0 * potential( r_fun_tst, args, prng) ) );
-        v_fun_tst = 0.00;
-        
-        while(1)
-        {
-            
-            first_deriv_psi      = first_derivative(potential, r_fun_tst, args, prng);
-            first_deriv_density  = first_derivative(density,   r_fun_tst, args, prng);
-            second_deriv_psi     = second_derivative(potential, r_fun_tst, args, prng);
-            second_deriv_density = second_derivative(density,   r_fun_tst, args, prng);
-            
-            denominator = minushalf( mw_fabs(en_fun_tst - potential(r_fun_tst, args, prng) ) );
-            
-            dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
-            dsqden_dpsisq *= (first_deriv_psi) * denominator;
-            
-            fprintf(num, "%f \t %f \n", r_fun_tst, dsqden_dpsisq);
-            
-            if(r_fun_tst < -breakrange ){break;}
-            r_fun_tst -= 0.001;
-            
-        }
-        fclose(num);
-        
-        
-        
-}        
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
        
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
