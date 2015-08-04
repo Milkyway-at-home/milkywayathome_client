@@ -780,7 +780,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
         
-        real * all_r = mwCalloc(nbody, sizeof(real));
        
         real args[4] = {mass_l, mass_d, rscale_l, rscale_d};
         real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
@@ -849,7 +848,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         }
 //         fclose(rho);
 //         /////////////////////////////////////////////////////////
-//         
+        
 //         /////////////////////////////////////////////////////////
 //         real r_dist = 0.1;
 //         real v_dist = 0;
@@ -913,6 +912,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         fclose(dist3);
 //         
 //         
+//         real distmax1 = max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
+//         
 //         /////////////////////////////////////////////////////////
 //         
 //         ///////////////////////////////////////////////////////
@@ -965,10 +966,14 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 if(i < half_bodies)
                 {
                     r = r_mag(prng, parameters_light, rho_max_light);
+                    b.bodynode.mass = mass_light_particle;
+                    b.bodynode.type = BODY(islight);
                 }
                 else if(i >= half_bodies)
                 {
                     r = r_mag(prng, parameters_dark, rho_max_dark);
+                    b.bodynode.mass = mass_dark_particle;
+                    b.bodynode.type = BODY(isdark);
                 }
                 /*to ensure that r is finite and nonzero*/
                 if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE)
@@ -986,30 +991,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 }
                 
             }while (1);
-
-            /*storing r's*/
-            all_r[i] = r;
-        }
-        
-
-//         mw_printf("\n");
-        
-        /*this actually gets the position and velocity vectors and pushes table of bodies*/
-        for (i = 0; i < nbody; i++)
-        {
-            r = all_r[i];
-            if(i < half_bodies)
-            {
-                
-                b.bodynode.mass = mass_light_particle;
-                b.bodynode.type = BODY(islight);
-
-            }
-            else if(i >= half_bodies)
-            {
-                b.bodynode.mass = mass_dark_particle;
-                b.bodynode.type = BODY(isdark);
-            }
+            
+            
             
             mw_printf("\r velocity of particle %i", i+1);
             counter = 0;
@@ -1029,7 +1012,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
             }while (1);
 //                 mw_printf(" vel %i    \t v= %f \t r=%f \n", i, v, r);
-            
+
+            /*this actually gets the position and velocity vectors and pushes table of bodies*/
             /*vShift and rShift are both zero here. They are meant to give the dwarf an initial position and vel*/
             b.vel = get_vec(prng, vShift, v);
             b.bodynode.pos = get_vec(prng, rShift, r);
@@ -1037,8 +1021,9 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             assert(nbPositionValid(b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
+
         }
-        free(all_r);
+        
         return 1;             
              
 }
