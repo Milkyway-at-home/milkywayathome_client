@@ -447,6 +447,79 @@ static inline real check(real (*func)(real, real *, dsfmt_t*), real x, real * fu
 }
 
 
+
+
+/*      NEMO            */
+real distribution(real v, real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
+{
+    real mass    = dwarfargs[0];
+    real r_scale = dwarfargs[1];
+    real coeff = 24.0 * mw_sqrt(2.0) * inv( 7.0 * cube(M_PI) );
+    real energy = potential(r, args, dsfmtState) - 0.5 * sqr(v) ;
+    real f = v * v * coeff * inv( mw_pow(mass, 4.0 )) * sqr(r_scale) * mw_pow(fabs(energy), 3.5);
+    
+    return f;
+} 
+
+real get_x(dsfmt_t* dsfmtState)
+{
+    real x = 0.0;
+    real y = 0.1;
+    real u = sqr(x) * pow( (1.0 - sqr(x)), 3.5 );
+    while(y > u)
+    {
+        
+        x = (real)mwXrandom(dsfmtState, 0.0, 1.0);
+        y = (real)mwXrandom(dsfmtState, 0.0, 0.1); 
+        u = sqr(x) * pow( (1.0 - sqr(x)), 3.5 );
+    }
+    
+    return x;
+}
+
+real nemo_vel(real r, dsfmt_t* dsfmtState)
+{
+    real x = get_x(dsfmtState);
+    real v = x * sqrt(2.0) * mw_pow( (1.0 + sqr(r)), -0.25 );
+    v *= 0.977813107;
+    return mw_fabs(v);
+}
+
+
+real  vel_dist_theory(real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
+{
+    real mass_l   = args[0];
+    real mass_d   = args[1];
+    real rscale_l = args[2];
+    real rscale_d = args[3];
+    
+    double v, u, f;
+    double v_esc, v_mx;
+    double fmax;
+    
+    v_esc = mw_sqrt( 2.0 * mw_fabs( potential(r, args, dsfmtState) ));
+    v_mx = (2.0/3.0) * mw_sqrt( mw_fabs( potential(r, args, dsfmtState) ));
+    fmax = distribution(v_mx, r, dwarfargs, args, dsfmtState);
+    while(1)
+    {
+        v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
+        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
+        f = distribution(v, r, dwarfargs, args, dsfmtState);
+//             printf("f = %f fmax = %f  f/fmax = %f\n", f, fmax, f/fmax);
+        if(mw_fabs(f/fmax) > u)
+        {
+            v *= 0.977813107;
+            break;
+        }
+    }
+    
+    return v;
+    
+}
+
+
+
+
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
 static real fun(real ri, real * args, dsfmt_t* dsfmtState)
 {
@@ -491,8 +564,17 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     }
     else
     {
+        dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
+        dsqden_dpsisq *= inv(first_deriv_psi);
         denominator = minushalf( mw_fabs(energy - potential(ri + 0.01, args, dsfmtState) ) );
     }
+    
+    
+    /*
+     * the second derivative term should be divided by the first derivate of psi. 
+     * However, from changing from dpsi to dr we multiply by first derivative of psi. 
+     * Since these undo eachother, 
+     */
     
     
     func = first_deriv_psi * dsqden_dpsisq * denominator;
@@ -529,19 +611,8 @@ static inline real find_upperlimit_r(real * args, real energy, dsfmt_t* dsfmtSta
     return mw_fabs(upperlimit_r);
 }
  
- 
-real distribution(real v, real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
-{
-    real mass    = dwarfargs[0];
-    real r_scale = dwarfargs[1];
-    real coeff = 24.0 * mw_sqrt(2.0) * inv( 7.0 * cube(M_PI) );
-    real energy = potential(r, args, dsfmtState) - 0.5 * sqr(v) ;
-    real f = v * v * coeff * inv( mw_pow(mass, 4.0 )) * sqr(r_scale) * mw_pow(fabs(energy), 3.5);
-    
-    return f;
-} 
 
-static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
+static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 {
     /*This returns the value of the distribution function*/
     real mass_l   = args[0];
@@ -691,11 +762,9 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
     real parameters[7] = {mass_l, mass_d, rscale_l, rscale_d, ifmax, r, v_esc};
-    real dist_max = dist_fun(0.5 * v_esc, parameters, dsfmtState);
-    //max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
+    real dist_max = max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
+//      dist_fun(0.5 * v_esc, parameters, dsfmtState);
     
-    //
-//     mw_printf("\n%f\n", dist_max);
     ifmax = 0;
     parameters[4] = ifmax;
    
@@ -763,14 +832,14 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
         
         /*for all dark*/
-        unsigned int half_bodies = 0; 
-        mass_l = 0.0;
-        real dwarfargs[2] = {mass_d, rscale_d};
+//         unsigned int half_bodies = 0; 
+//         mw_printf("mass = %f    rscale = %f\n", mass_d, rscale_d);
+//         real dwarfargs[2] = {mass_d, rscale_d};
         
         /*for all light*/
-//         int half_bodies = nbody; 
-//         mass_d = 0.0;
-//         real dwarfargs[2] = {mass_l, rscale_l};
+        int half_bodies = nbody; 
+        mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
+        real dwarfargs[2] = {mass_l, rscale_l};
         
         
         real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
@@ -794,7 +863,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
  
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                 /*DEBUGGING CODE*/
-// {
+{
 //         
 // //         real tst1 = root_finder(test, args, 4.0, 0.0, 5.0, prng);
 // //         mw_printf("test=%f\n", tst1 );
@@ -848,7 +917,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         }
 //         fclose(rho);
 //         /////////////////////////////////////////////////////////
-        
+//         
 //         /////////////////////////////////////////////////////////
 //         real r_dist = 0.1;
 //         real v_dist = 0;
@@ -912,7 +981,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         fclose(dist3);
 //         
 //         
-//         real distmax1 = max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
+// //         real distmax1 = max_finder(dist_fun, parameters, 0.0, .5*v_esc, v_esc, 10, 1e-2, dsfmtState);
 //         
 //         /////////////////////////////////////////////////////////
 //         
@@ -947,9 +1016,11 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         
 //         
 //         
-// }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-       
+     
+     /*initializing particles:*/
+     {
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
@@ -994,11 +1065,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             
             
             
-            mw_printf("\r velocity of particle %i", i+1);
+//             mw_printf("\r velocity of particle %i", i+1);
             counter = 0;
             do
             {
                 v = vel_mag(prng, r, args);
+//                 v = nemo_vel(r, prng); 
+//                 v = vel_dist_theory(r, dwarfargs, args, prng);
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
                 if(counter > 1000)
@@ -1011,7 +1084,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 }
                 
             }while (1);
-//                 mw_printf(" vel %i    \t v= %f \t r=%f \n", i, v, r);
 
             /*this actually gets the position and velocity vectors and pushes table of bodies*/
             /*vShift and rShift are both zero here. They are meant to give the dwarf an initial position and vel*/
@@ -1025,7 +1097,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         }
         
         return 1;             
-             
+     }    
 }
 
 
