@@ -115,7 +115,7 @@ static inline real second_derivative(real (*func)(real, real *, dsfmt_t*), real 
     return deriv;
 }
 
-static inline real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real upper, real benchmark, real * funcargs, dsfmt_t* dsfmtState)
+static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real upper, real benchmark, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
@@ -488,11 +488,7 @@ real nemo_vel(real r, dsfmt_t* dsfmtState)
 
 real  vel_dist_theory(real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
 {
-    real mass_l   = args[0];
-    real mass_d   = args[1];
-    real rscale_l = args[2];
-    real rscale_d = args[3];
-    
+
     double v, u, f;
     double v_esc, v_mx;
     double fmax;
@@ -521,7 +517,7 @@ real  vel_dist_theory(real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState
 
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static real fun(real ri, real * args, dsfmt_t* dsfmtState)
+static inline real fun(real ri, real * args, dsfmt_t* dsfmtState)
 {
     
     real energy   = args[4];
@@ -560,12 +556,12 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     if(first_deriv_psi != 0.0  && denominator != 0.0)
     {
             dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
-            dsqden_dpsisq *= inv(first_deriv_psi);
+//             dsqden_dpsisq *= inv(first_deriv_psi);
     }
     else
     {
         dsqden_dpsisq = second_deriv_density / first_deriv_psi - first_deriv_density * second_deriv_psi / (sqr(first_deriv_psi));
-        dsqden_dpsisq *= inv(first_deriv_psi);
+//         dsqden_dpsisq *= inv(first_deriv_psi);
         denominator = minushalf( mw_fabs(energy - potential(ri + 0.01, args, dsfmtState) ) );
     }
     
@@ -573,11 +569,11 @@ static real fun(real ri, real * args, dsfmt_t* dsfmtState)
     /*
      * the second derivative term should be divided by the first derivate of psi. 
      * However, from changing from dpsi to dr we multiply by first derivative of psi. 
-     * Since these undo eachother, 
+     * Since these undo each other we left them out completely.
      */
     
     
-    func = first_deriv_psi * dsqden_dpsisq * denominator;
+    func = dsqden_dpsisq * denominator;
 //     mw_printf("%f  %f\n", dsqden_dpsisq, dsqden_dpsisq1);
 //     mw_printf("\nfunc = %0.20f f_psi = %0.20f s_psi = %0.20f  f_den = %0.20f s_den = %0.20f  denom = %f, dsdendpsi = %0.20f \n", func, first_deriv_psi, second_deriv_psi, first_deriv_density,second_deriv_density, denominator, dsqden_dpsisq); 
     
@@ -825,26 +821,27 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_l = radiusScale1; /*scale radius of the light component*/
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
+//---------------------------------------------------------------------------------------------------        
         /*for normal*/
-//         unsigned int half_bodies = nbody / 2;
-//         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
-//         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
-        
-        
+        unsigned int half_bodies = nbody / 2;
+        real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
+        real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+
         /*for all dark*/
 //         unsigned int half_bodies = 0; 
 //         mw_printf("mass = %f    rscale = %f\n", mass_d, rscale_d);
 //         real dwarfargs[2] = {mass_d, rscale_d};
         
         /*for all light*/
-        int half_bodies = nbody; 
-        mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
-        real dwarfargs[2] = {mass_l, rscale_l};
+//         unsigned int half_bodies = nbody; 
+//         mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
+//         real dwarfargs[2] = {mass_l, rscale_l};
         
         
-        real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d /  (real)(nbody);//half dark matter
-        
+//         real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
+//         real mass_dark_particle = mass_d /  (real)(nbody);//half dark matter
+//----------------------------------------------------------------------------------------------------
+
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
@@ -1047,10 +1044,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                     b.bodynode.type = BODY(isdark);
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE)
-                {
-                    break;
-                }
+                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
