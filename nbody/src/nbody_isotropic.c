@@ -650,7 +650,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real rs
     
     while (1)
     {
-        r = (real)mwXrandom(dsfmtState, 0.0, 20.0 * (rscale_l + rscale_d) );
+        r = (real)mwXrandom(dsfmtState, 0.0, 50.0 * (rscale_l + rscale_d) );
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * density(r, args, dsfmtState);
 
