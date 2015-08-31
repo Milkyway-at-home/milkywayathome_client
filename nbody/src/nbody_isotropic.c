@@ -402,77 +402,8 @@ static inline real check(real (*func)(real, real *, dsfmt_t*), real x, real * fu
 }
 
 
-
-
-/*      single plum dist            */
-real distribution(real v, real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
-{
-    real mass    = dwarfargs[0];
-    real r_scale = dwarfargs[1];
-    real coeff = 24.0 * mw_sqrt(2.0) * inv( 7.0 * cube(M_PI) );
-    real energy = potential(r, args, dsfmtState) - 0.5 * sqr(v) ;
-    real f = v * v * coeff * inv( mw_pow(mass, 4.0 )) * sqr(r_scale) * mw_pow(fabs(energy), 3.5);
-    
-    return f;
-} 
-
-real  vel_dist_theory(real r, real * dwarfargs, real * args, dsfmt_t* dsfmtState)
-{
-
-    double v, u, f;
-    double v_esc, v_mx;
-    double fmax;
-    
-    v_esc = mw_sqrt( 2.0 * mw_fabs( potential(r, args, dsfmtState) ));
-    v_mx = (2.0/3.0) * mw_sqrt( mw_fabs( potential(r, args, dsfmtState) ));
-    fmax = distribution(v_mx, r, dwarfargs, args, dsfmtState);
-    while(1)
-    {
-        v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
-        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
-        f = distribution(v, r, dwarfargs, args, dsfmtState);
-//             printf("f = %f fmax = %f  f/fmax = %f\n", f, fmax, f/fmax);
-        if(mw_fabs(f/fmax) > u)
-        {
-            v *= 0.977813107;
-            break;
-        }
-    }
-    
-    return v;
-    
-}
-
-/*      NEMO            */
-real get_x(dsfmt_t* dsfmtState)
-{
-    real x = 0.0;
-    real y = 0.1;
-    real u = sqr(x) * pow( (1.0 - sqr(x)), 3.5 );
-    while(y > u)
-    {
-        
-        x = (real)mwXrandom(dsfmtState, 0.0, 1.0);
-        y = (real)mwXrandom(dsfmtState, 0.0, 0.1); 
-        u = sqr(x) * pow( (1.0 - sqr(x)), 3.5 );
-    }
-    
-    return x;
-}
-
-real nemo_vel(real r, dsfmt_t* dsfmtState)
-{
-    real x = get_x(dsfmtState);
-    real v = x * sqrt(2.0) * mw_pow( (1.0 + sqr(r)), -0.25 );
-    v *= 0.977813107;
-    return mw_fabs(v);
-}
-
-
-
-
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static inline real fun(real ri, real * args, dsfmt_t* dsfmtState)
+real fun(real ri, real * args, dsfmt_t* dsfmtState)
 {
     
     real energy   = args[4];
@@ -583,7 +514,7 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     /*if the v chosen is the escape v, then it should use the max for the limits*/
     if(v == v_esc)
     {
-        ifmax == 1;
+        ifmax = 1;
     }
     
     if(ifmax == 1)
@@ -629,20 +560,9 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 
 
 
-real test(real x, real * args, dsfmt_t* dsfmtState)
-{
- real f = exp(x) * sin(x) * x;
- return f;
-}
-
-
-
 /*      SAMPLING FUNCTIONS      */
-static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real rscale)
+static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound)
 {
-    real rscale_l = args[2];
-    real rscale_d = args[3];
-    
     int counter = 0;
     real r;
     real u;
@@ -650,7 +570,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real rs
     
     while (1)
     {
-        r = (real)mwXrandom(dsfmtState, 0.0, 50.0 * (rscale_l + rscale_d) );
+        r = (real)mwXrandom(dsfmtState, 0.0, bound );
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * density(r, args, dsfmtState);
 
@@ -773,6 +693,16 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_l = radiusScale1; /*scale radius of the light component*/
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
+        real bound = 20.0 * (rscale_l + rscale_d);
+        real light_enc = mass_en(bound, mass_l, rscale_l);
+        real dark_enc  = mass_en(bound, mass_d, rscale_d);
+        
+        mass_l -= (mass_l - light_enc);
+        mass_d -= (mass_d - dark_enc);
+        
+        mw_printf("light_enc = %f \t dark_enc = %f\n", light_enc, dark_enc);
+        mw_printf("massl = %f \t massd = %f\n", mass_l, mass_d);
+        
 //---------------------------------------------------------------------------------------------------        
         /*for normal*/
 //         unsigned int half_bodies = nbody / 2;
@@ -825,7 +755,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
                 if(i < half_bodies)
                 {
-                    r = r_mag(prng, parameters_light, rho_max_light, rscale_l);
+                    r = r_mag(prng, parameters_light, rho_max_light, bound);
                     b.bodynode.mass = mass_light_particle;
                     b.bodynode.type = BODY(islight);
                 }
@@ -856,8 +786,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             do
             {
                 v = vel_mag(prng, r, args);
-//                 v = nemo_vel(r, prng); 
-//                 v = vel_dist_theory(r, dwarfargs, args, prng);
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
                 if(counter > 1000)
