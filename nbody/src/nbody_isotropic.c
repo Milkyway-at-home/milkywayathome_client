@@ -44,8 +44,9 @@ static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
     real rscale_l = args[2];
     real rscale_d = args[3];
     //-------------------------------
-    
-    real potential_result = -(mass_l/mw_sqrt(sqr(r) + sqr(rscale_l)) + mass_d/mw_sqrt(sqr(r) + sqr(rscale_d)) );
+    real potential_light  = mass_l/mw_sqrt(sqr(r) + sqr(rscale_l));
+    real potential_dark   = mass_d/mw_sqrt(sqr(r) + sqr(rscale_d));
+    real potential_result = -(potential_light + potential_dark);
 
     return (-potential_result);
 }
@@ -716,7 +717,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real args[4] = {mass_l, mass_d, rscale_l, rscale_d};
         real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
         real parameters_dark[4]  = {0.0, mass_d, rscale_l, rscale_d};
-        
+
         /*finding the max of the individual components*/
         real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
         real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
@@ -733,7 +734,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         for (i = 0; i < nbody; i++)
         {
             counter = 0;
-//             mw_printf(" \r initalizing particle %i. ", i+1);
             do
             {
                 
