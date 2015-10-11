@@ -516,10 +516,10 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     
     /*if the v chosen is the escape v, then it should use the max for the limits*/
-    if(v == v_esc)
-    {
-        ifmax = 1;
-    }
+//     if(v == v_esc)
+//     {
+//         ifmax = 1;
+//     }
     
     if(ifmax == 1)
     {
@@ -614,12 +614,12 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     
     int counter = 0;
     real v, u, d;
-    real ifmax = 1;
+    real ifmax = 0;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
     real parameters[7] = {mass_l, mass_d, rscale_l, rscale_d, ifmax, r, v_esc};
     real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
-    
+//     printf("%f \n", dist_max);
     ifmax = 0;
     parameters[4] = ifmax;
    
@@ -680,6 +680,21 @@ static inline mwvector get_vec(dsfmt_t* dsfmtState, mwvector shift, real x)
 }
 
 
+/*   Theoretical Functions    */
+static inline real single_plum_dist(real v, real r, real * args, real * dwarfargs, dsfmt_t* dsfmtState)
+{
+    real mass    = dwarfargs[0];
+    real r_scale = dwarfargs[1];
+    
+    real coeff = 24.0 * sqrt(2.0) * inv( 7.0 * cube(M_PI) );
+    real energy = potential(r, args, dsfmtState) - 0.5 * sqr(v) ;
+    
+    real f = v * v * coeff * inv( pow(mass, 4.0) ) * sqr(r_scale) * pow(fabs(energy), 3.5);
+    
+    return f;
+}
+
+
 /*      DWARF GENERATION        */
 static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
 {
@@ -704,6 +719,20 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+        
+        /*for all dark*/
+//         unsigned int half_bodies = 0; 
+//         mw_printf("mass = %f    rscale = %f\n", mass_d, rscale_d);
+//         real dwarfargs[2] = {mass_d, rscale_d};
+        
+        /*for all light*/
+//         int half_bodies = nbody; 
+//         mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
+//         real dwarfargs[2] = {mass_l, rscale_l};
+        
+        
+//         real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
+//         real mass_dark_particle  = mass_d / (real)(nbody);//half dark matter
 
     //----------------------------------------------------------------------------------------------------
 
@@ -723,6 +752,43 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
      
+               
+//         /////////////////////////////////////////////////////////
+//         FILE * dist;
+//         dist = fopen("dist.txt", "w");
+//         
+//         real r_test = 1.0 * (rscale_l);
+//         real df_b = 0.0;
+//         real f = 0.0;
+//         real v_esc_b = mw_sqrt( mw_fabs(2.0 * potential( r_test, args, prng) ) );
+//         real breakrange = v_esc_b;
+//         
+//         int ifmax = 1;
+//         real tst_b[6] = {mass_l, mass_d, rscale_l, rscale_d, ifmax, r_test, v_esc_b};
+//         real dist_max_test = max_finder(dist_fun, tst_b, 0.0, 0.5 * v_esc_b, v_esc_b, 10, 1e-2, prng);
+//         ifmax = 0;
+//         tst_b[4] = ifmax;
+//         real dist_max_test1 = max_finder(dist_fun, tst_b, 0.0, 0.5 * v_esc_b, v_esc_b, 10, 1e-2, prng);
+//         printf("%f \t %f \n", dist_max_test1, dist_max_test);
+//         
+//         
+//         real v_tst = 0.0;
+//         
+//         while(1)
+//         {
+//             df_b = dist_fun(v_tst, tst_b, prng);
+//             f = single_plum_dist(v_tst, r_test, tst_b, dwarfargs, prng);
+//             fprintf(dist, "%f \t %f \t %f\n", v_tst, df_b, f);
+//             v_tst += 0.001;
+// 
+//             mw_printf("\r printing density functions: %f %", (v_tst / breakrange) * 100);
+//             if(v_tst > breakrange){break;}
+//         }
+//         fclose(dist);
+//         /////////////////////////////////////////////////////////
+        
+        
+        
      /*initializing particles:*/
     
         memset(&b, 0, sizeof(b));
