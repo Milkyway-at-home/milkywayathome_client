@@ -500,9 +500,8 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     real mass_d   = args[1];
     real rscale_l = args[2];
     real rscale_d = args[3];
-    real ifmax    = args[4];
-    real r        = args[5];
-    real v_esc    = args[6];
+    real r        = args[4];
+    real v_esc    = args[5];
     //-------------------------------
     
     
@@ -514,41 +513,26 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     int counter = 0.0;
     real search_range = 0.0;   
     
+    /*energy as defined in binney*/
+    energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
     
-    /*if the v chosen is the escape v, then it should use the max for the limits*/
-//     if(v == v_esc)
-//     {
-//         ifmax = 1;
-//     }
+    /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
+    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d/energy) - sqr(rscale_d) ));
     
-    if(ifmax == 1)
+    /*dynamic search range*/
+    /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
+    while(potential(search_range, args, dsfmtState) > energy)
     {
-        energy = potential(r, args, dsfmtState);
-        upperlimit_r = r;
-    }
-    else if(ifmax == 0)
-    {
-        /*energy as defined in binney*/
-        energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
-        
-        /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
-        search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d/energy) - sqr(rscale_d) ));
-        
-        /*dynamic search range*/
-        /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
-        while(potential(search_range, args, dsfmtState) > energy)
+        search_range = 100.0 * search_range;
+        if(counter > 100)
         {
-            search_range = 100.0 * search_range;
-            if(counter > 100)
-            {
-                search_range = 100.0 * (rscale_l + rscale_d);//default
-                break;
-            }
-            counter++;
+            search_range = 100.0 * (rscale_l + rscale_d);//default
+            break;
         }
-        
-        upperlimit_r = find_upperlimit_r(dsfmtState, args, energy, search_range, r);
+        counter++;
     }
+    
+    upperlimit_r = find_upperlimit_r(dsfmtState, args, energy, search_range, r);
     
     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
     
@@ -614,14 +598,10 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     
     int counter = 0;
     real v, u, d;
-    real ifmax = 0;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
-    real parameters[7] = {mass_l, mass_d, rscale_l, rscale_d, ifmax, r, v_esc};
+    real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, v_esc};
     real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
-//     printf("%f \n", dist_max);
-    ifmax = 0;
-    parameters[4] = ifmax;
    
     while(1)
     {
@@ -701,9 +681,9 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
-        unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+//         unsigned int half_bodies = nbody / 2;
+//         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
+//         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
         
         /*for all dark*/
 //         unsigned int half_bodies = 0; 
@@ -711,13 +691,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 //         real dwarfargs[2] = {mass_d, rscale_d};
         
         /*for all light*/
-//         int half_bodies = nbody; 
-//         mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
-//         real dwarfargs[2] = {mass_l, rscale_l};
+        int half_bodies = nbody; 
+        mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
+        real dwarfargs[2] = {mass_l, rscale_l};
         
         
-//         real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
-//         real mass_dark_particle  = mass_d / (real)(nbody);//half dark matter
+        real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
+        real mass_dark_particle  = mass_d / (real)(nbody);//half dark matter
 
     //----------------------------------------------------------------------------------------------------
 
