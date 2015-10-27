@@ -299,7 +299,7 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
     int N = 4;
     unsigned int numSteps = N;
     real interval;
-    real * values = mwCalloc(numSteps, sizeof(real));
+    real * values = mwCalloc(numSteps + 1, sizeof(real));
     
     /* Divide the function area up into bins in case there is more than one root */
     /*numSteps+1 because you want to include the upperbound in the interval*/
@@ -331,7 +331,7 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
                 curLower = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
                 curUpper = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
             }
-            else if(values[q] > 0 && values[q+1] < 0)
+            else if(values[q] > 0 && values[q + 1] < 0)
             {
                 curLower = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
                 curUpper = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
@@ -342,9 +342,9 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
             }
             midVal = 1;
             nsteps = 0;
-            while(mw_fabs(midVal) > .0001 || nsteps >= 10000)
+            while(mw_fabs(midVal) > .0001)
             {
-                midPoint = (curLower + curUpper)/2.0;
+                midPoint = (curLower + curUpper) / 2.0;
                 midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
                 
                 if(midVal < 0.0)
@@ -356,6 +356,11 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
                     curUpper = midPoint;
                 }
                 ++nsteps;
+                
+                if(nsteps > 10000)
+                {
+                    break;
+                }
             }
             
             if(nsteps < 10000)
@@ -681,10 +686,24 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
-        unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+//         unsigned int half_bodies = nbody / 2;
+//         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
+//         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
         
+        /*for all dark*/
+//         unsigned int half_bodies = 0; 
+//         mw_printf("mass = %f    rscale = %f\n", mass_d, rscale_d);
+//         real dwarfargs[2] = {mass_d, rscale_d};
+        
+        /*for all light*/
+        int half_bodies = nbody; 
+        mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
+        real dwarfargs[2] = {mass_l, rscale_l};
+        
+        
+        real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
+        real mass_dark_particle  = mass_d / (real)(nbody);//half dark matter
+
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
