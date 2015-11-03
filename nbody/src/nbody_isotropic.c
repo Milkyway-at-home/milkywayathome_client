@@ -295,13 +295,12 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
         exit(-1);
     }
     unsigned int i = 0;
-    /* Can find up to 20 roots, but may miss a root if they are too close together */
+
     int N = 4;
     unsigned int numSteps = N;
     real interval;
     real * values = mwCalloc(numSteps + 1, sizeof(real));
     
-    /* Divide the function area up into bins in case there is more than one root */
     /*numSteps+1 because you want to include the upperbound in the interval*/
     for(i = 0; i < numSteps + 1; i++)
     {
@@ -363,14 +362,8 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
                 }
             }
             
-            if(nsteps < 10000)
-            {
-                ++rootsFound;
-            }
-            else
-            {
-                return midPoint = 0.0;
-            }
+            /* If it found a sign change, then the root finder definitly got close. So it will always say it found one. */
+            ++rootsFound;
             
         }
         
@@ -379,28 +372,15 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
             break;
         }
     }
-//     mw_printf("rootsFound= %i\n", rootsFound);
 
+    if(rootsFound == 0)
+    {
+        midPoint = 0.0;
+    }
+    
     free(values);
 
     return midPoint;
-}
-
-static inline real check(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
-{
-    real h = 0.1;
-    real funct;
-    real p1, p2, p3, p4, p5, denom;
-
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , funcargs, dsfmtState);
-    p2 =  16.0 * (*func)( (x + h)       , funcargs, dsfmtState);
-    p3 = -30.0 * (*func)( (x)           , funcargs, dsfmtState);
-    p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
-    denom = inv( 12.0 * h * h);
-    funct = ( density(p1, funcargs, dsfmtState) + density(p2, funcargs, dsfmtState) + density(p3, funcargs, dsfmtState) + density(p4, funcargs, dsfmtState) + density(p5, funcargs, dsfmtState) ) * denom;
-    
-    return funct;
 }
 
 
@@ -553,7 +533,6 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 }
 
 
-
 /*      SAMPLING FUNCTIONS      */
 static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound)
 {
@@ -686,23 +665,10 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
-//         unsigned int half_bodies = nbody / 2;
-//         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
-//         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+        unsigned int half_bodies = nbody / 2;
+        real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
+        real mass_dark_particle = mass_d / (real)(0.5 * nbody);
         
-        /*for all dark*/
-//         unsigned int half_bodies = 0; 
-//         mw_printf("mass = %f    rscale = %f\n", mass_d, rscale_d);
-//         real dwarfargs[2] = {mass_d, rscale_d};
-        
-        /*for all light*/
-        int half_bodies = nbody; 
-        mw_printf("mass = %f    rscale = %f\n", mass_l, rscale_l);
-        real dwarfargs[2] = {mass_l, rscale_l};
-        
-        
-        real mass_light_particle = mass_l / (real)(nbody);//half the particles are light matter
-        real mass_dark_particle  = mass_d / (real)(nbody);//half dark matter
 
     //----------------------------------------------------------------------------------------------------
 
