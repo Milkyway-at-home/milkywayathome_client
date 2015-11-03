@@ -295,13 +295,12 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
         exit(-1);
     }
     unsigned int i = 0;
-    /* Can find up to 20 roots, but may miss a root if they are too close together */
+
     int N = 4;
     unsigned int numSteps = N;
     real interval;
-    real * values = mwCalloc(numSteps, sizeof(real));
+    real * values = mwCalloc(numSteps + 1, sizeof(real));
     
-    /* Divide the function area up into bins in case there is more than one root */
     /*numSteps+1 because you want to include the upperbound in the interval*/
     for(i = 0; i < numSteps + 1; i++)
     {
@@ -331,7 +330,7 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
                 curLower = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
                 curUpper = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
             }
-            else if(values[q] > 0 && values[q+1] < 0)
+            else if(values[q] > 0 && values[q + 1] < 0)
             {
                 curLower = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
                 curUpper = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
@@ -342,9 +341,9 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
             }
             midVal = 1;
             nsteps = 0;
-            while(mw_fabs(midVal) > .0001 || nsteps >= 10000)
+            while(mw_fabs(midVal) > .0001)
             {
-                midPoint = (curLower + curUpper)/2.0;
+                midPoint = (curLower + curUpper) / 2.0;
                 midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
                 
                 if(midVal < 0.0)
@@ -356,16 +355,15 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
                     curUpper = midPoint;
                 }
                 ++nsteps;
+                
+                if(nsteps > 10000)
+                {
+                    break;
+                }
             }
             
-            if(nsteps < 10000)
-            {
-                ++rootsFound;
-            }
-            else
-            {
-                return midPoint = 0.0;
-            }
+            /* If it found a sign change, then the root finder definitly got close. So it will always say it found one. */
+            ++rootsFound;
             
         }
         
@@ -374,28 +372,15 @@ static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* ro
             break;
         }
     }
-//     mw_printf("rootsFound= %i\n", rootsFound);
 
+    if(rootsFound == 0)
+    {
+        midPoint = 0.0;
+    }
+    
     free(values);
 
     return midPoint;
-}
-
-static inline real check(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
-{
-    real h = 0.1;
-    real funct;
-    real p1, p2, p3, p4, p5, denom;
-
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , funcargs, dsfmtState);
-    p2 =  16.0 * (*func)( (x + h)       , funcargs, dsfmtState);
-    p3 = -30.0 * (*func)( (x)           , funcargs, dsfmtState);
-    p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
-    denom = inv( 12.0 * h * h);
-    funct = ( density(p1, funcargs, dsfmtState) + density(p2, funcargs, dsfmtState) + density(p3, funcargs, dsfmtState) + density(p4, funcargs, dsfmtState) + density(p5, funcargs, dsfmtState) ) * denom;
-    
-    return funct;
 }
 
 
@@ -500,9 +485,8 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     real mass_d   = args[1];
     real rscale_l = args[2];
     real rscale_d = args[3];
-    real ifmax    = args[4];
-    real r        = args[5];
-    real v_esc    = args[6];
+    real r        = args[4];
+    real v_esc    = args[5];
     //-------------------------------
     
     
@@ -514,41 +498,26 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     int counter = 0.0;
     real search_range = 0.0;   
     
+    /*energy as defined in binney*/
+    energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
     
-    /*if the v chosen is the escape v, then it should use the max for the limits*/
-    if(v == v_esc)
-    {
-        ifmax = 1;
-    }
+    /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
+    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d/energy) - sqr(rscale_d) ));
     
-    if(ifmax == 1)
+    /*dynamic search range*/
+    /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
+    while(potential(search_range, args, dsfmtState) > energy)
     {
-        energy = potential(r, args, dsfmtState);
-        upperlimit_r = r;
-    }
-    else if(ifmax == 0)
-    {
-        /*energy as defined in binney*/
-        energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
-        
-        /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
-        search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d/energy) - sqr(rscale_d) ));
-        
-        /*dynamic search range*/
-        /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
-        while(potential(search_range, args, dsfmtState) > energy)
+        search_range = 100.0 * search_range;
+        if(counter > 100)
         {
-            search_range = 100.0 * search_range;
-            if(counter > 100)
-            {
-                search_range = 100.0 * (rscale_l + rscale_d);//default
-                break;
-            }
-            counter++;
+            search_range = 100.0 * (rscale_l + rscale_d);//default
+            break;
         }
-        
-        upperlimit_r = find_upperlimit_r(dsfmtState, args, energy, search_range, r);
+        counter++;
     }
+    
+    upperlimit_r = find_upperlimit_r(dsfmtState, args, energy, search_range, r);
     
     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
     
@@ -562,7 +531,6 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     return distribution_function;
 }
-
 
 
 /*      SAMPLING FUNCTIONS      */
@@ -614,14 +582,10 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     
     int counter = 0;
     real v, u, d;
-    real ifmax = 1;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
-    real parameters[7] = {mass_l, mass_d, rscale_l, rscale_d, ifmax, r, v_esc};
+    real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, v_esc};
     real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
-    
-    ifmax = 0;
-    parameters[4] = ifmax;
    
     while(1)
     {
@@ -704,6 +668,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+        
 
     //----------------------------------------------------------------------------------------------------
 
