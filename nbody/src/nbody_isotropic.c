@@ -287,103 +287,264 @@ static inline real max_finder(real (*profile)(real , real*, dsfmt_t*), real* pro
     }
 }
 
-static inline real root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
+
+static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* function_parameters, real function_value, real lower_bound, real upper_bound, dsfmt_t* dsfmtState)
 {
-    //requires lowBound and upperBound to evaluate to opposite sign when rootFunc-funcValue
-    if(rootFuncParams == NULL || rootFunc == NULL)
+    //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
+    if(function_parameters == NULL || func == NULL)
     {
         exit(-1);
     }
-    unsigned int i = 0;
+    int i = 0;
 
     int N = 4;
-    unsigned int numSteps = N;
-    real interval;
-    real * values = mwCalloc(numSteps + 1, sizeof(real));
-    
-    /*numSteps+1 because you want to include the upperbound in the interval*/
-    for(i = 0; i < numSteps + 1; i++)
+    int intervals = N;
+    real interval_bound;
+
+    /*interval + 1 because for N intervals there are N + 1 values*/
+    real * values = mwCalloc(intervals + 1, sizeof(real));
+    real * interval_bounds = mwCalloc(intervals + 1, sizeof(real));
+    /*intervals+1 because you want to include the upperbound in the interval*/
+    for(i = 0; i < intervals + 1; i++)
     {
-        interval = ((upperBound - lowBound) * (real)i) / (real)numSteps + lowBound;
-        values[i] = (*rootFunc)(interval, rootFuncParams, dsfmtState) - funcValue;
+        /* breaking up the range between bounds into smaller intervals*/
+        interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
+        interval_bounds[i] = interval_bound;
+        /*function value at those intervals*/
+        values[i] = (*func)(interval_bound, function_parameters, dsfmtState) - function_value;
     }
     
-    real midPoint = 0;
-    real midVal = 0;
-    unsigned int nsteps = 0;
-    real curUpper = 0;
-    real curLower = 0;
-    int rootsFound = 0;
+    real mid_point = 0;
+    real mid_point_funcval = 0;
+    int counter = 0;
+    real new_upper_bound = 0;
+    real new_lower_bound = 0;
+    int roots_found = 0;
     int q = 0;
     
     /* Find the roots using bisection because it was easy to code and good enough for our purposes 
      * this will hope around the different intervals until it checks all of them. This way it does not 
      * favor any root.
      */
-    for(i = 0; i < numSteps; i++)
+    for(i = 0; i < intervals; i++)
     {
         q = i;
         if((values[q] > 0 && values[q + 1] < 0) || (values[q] < 0 && values[q + 1] > 0))
         {
             if(values[q] < 0 && values[q + 1] > 0)
             {
-                curLower = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
-                curUpper = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
+                
+                new_lower_bound = interval_bounds[q];
+                new_upper_bound = interval_bounds[q + 1];
             }
             else if(values[q] > 0 && values[q + 1] < 0)
             {
-                curLower = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
-                curUpper = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
+                
+                new_lower_bound = interval_bounds[q + 1];
+                new_upper_bound = interval_bounds[q];
             }
             else
             {
                 continue;
             }
-            midVal = 1;
-            nsteps = 0;
-            while(mw_fabs(midVal) > .0001)
+            mid_point_funcval = 1;
+            counter = 0;
+            while(mw_fabs(mid_point_funcval) > .001)
             {
-                midPoint = (curLower + curUpper) / 2.0;
-                midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
+                mid_point = (new_lower_bound + new_upper_bound) / 2.0;
+                mid_point_funcval = (*func)(mid_point, function_parameters, dsfmtState) - function_value;
                 
-                if(midVal < 0.0)
+                if(mid_point_funcval < 0.0)
                 {
-                    curLower = midPoint;
+                    new_lower_bound = mid_point;
                 }
                 else
                 {
-                    curUpper = midPoint;
+                    new_upper_bound = mid_point;
                 }
-                ++nsteps;
+                counter++;
                 
-                if(nsteps > 10000)
+                if(counter > 10000)
                 {
                     break;
                 }
             }
             
             /* If it found a sign change, then the root finder definitly got close. So it will always say it found one. */
-            ++rootsFound;
+            roots_found++;
             
         }
         
-        if(rootsFound != 0)
+        if(roots_found != 0)
         {
             break;
         }
     }
 
-    if(rootsFound == 0)
+    if(roots_found == 0)
     {
-        midPoint = 0.0;
+        mid_point = 0.0;
     }
     
     free(values);
+    free(interval_bounds);
 
-    return midPoint;
+    return mid_point;
 }
 
+static inline real ss_root_finder(real (*func)(real, real*, dsfmt_t*), real* function_parameters, real function_value, real lower_bound, real upper_bound, dsfmt_t* dsfmtState)
+{
+    //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
+    if(function_parameters == NULL || func == NULL)
+    {
+        exit(-1);
+    }
+    int i = 0;
 
+    int N = 20;
+    int intervals = N;
+    real interval_bound;
+
+    /*interval + 1 because for N intervals there are N + 1 values*/
+    real * values = mwCalloc(intervals + 1, sizeof(real));
+    real * interval_bounds = mwCalloc(intervals + 1, sizeof(real));
+    /*intervals+1 because you want to include the upperbound in the interval*/
+    for(i = 0; i < intervals + 1; i++)
+    {
+        /* breaking up the range between bounds into smaller intervals*/
+        interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
+        interval_bounds[i] = interval_bound;
+        /*function value at those intervals*/
+        values[i] = (*func)(interval_bound, function_parameters, dsfmtState) - function_value;
+        mw_printf("%f %f\n", interval_bound, values[i]);
+    }
+    
+    real mid_point = 0;
+    real mid_point_funcval = 0;
+    int counter = 0;
+    real new_upper_bound = 0;
+    real new_lower_bound = 0;
+    int roots_found = 0;
+    int q = 0;
+    real x_n, x_n_1, func_eval_n, func_eval_n_1;
+    real der_funceval_n_1;
+    int run_bisection = 0;
+    
+    /* Find the roots using bisection because it was easy to code and good enough for our purposes 
+     * this will hope around the different intervals until it checks all of them. This way it does not 
+     * favor any root.
+     */
+    for(i = 0; i < intervals; i++)
+    {
+        q = i;
+//         q = (int)((real)mwXrandom(dsfmtState, 0, 1) * intervals); 
+        mw_printf("%i\n", q);
+        if((values[q] > 0 && values[q + 1] < 0) || (values[q] < 0 && values[q + 1] > 0) || mw_fabs(values[q]) < 0.001)
+        {
+            if(values[q] < 0 && values[q + 1] > 0)
+            {
+                new_lower_bound = interval_bounds[q];
+                new_upper_bound = interval_bounds[q + 1];
+            }
+            else if(values[q] > 0 && values[q + 1] < 0)
+            {
+                new_lower_bound = interval_bounds[q + 1];
+                new_upper_bound = interval_bounds[q];
+            }
+            else if(mw_fabs(values[i]) < 0.001)
+            {
+                x_n = interval_bounds[q];
+                roots_found++;
+                break;
+            }
+            else
+            {
+                continue;
+            }
+            
+            x_n_1 = (new_upper_bound + new_lower_bound) / 2.0;
+            func_eval_n_1 = (*func)(x_n_1, function_parameters, dsfmtState) - function_value;
+            der_funceval_n_1 = first_derivative(func, x_n_1, function_parameters, dsfmtState);
+            mw_printf("%f %f %f %f\n\n", func_eval_n_1, x_n_1, new_upper_bound, new_lower_bound );
+            mw_printf("here\n");
+            while(1)
+            {
+                x_n = x_n_1 - func_eval_n_1 / der_funceval_n_1;
+                func_eval_n = (*func)(x_n, function_parameters, dsfmtState) - function_value;
+                mw_printf("%f %f %f %f\n", x_n, func_eval_n, x_n_1, denom);
+                
+                if(mw_fabs(func_eval_n) < 0.001)
+                {
+                    roots_found++;
+                    break;
+                }
+                else
+                {
+                    x_n_1 = x_n;
+                    func_eval_n_1 = func_eval_n;
+                    der_funceval_n_1 = first_derivative(func, x_n, function_parameters, dsfmtState);
+                    counter++;
+                }
+                
+                if(counter > 1000)
+                {
+//                     mw_printf("this ran\n");
+//                     run_bisection = 1;
+                    break;
+                }
+            }
+            
+            /* because bisection is slow, it will only run if Newton Raphson cannot find a root */
+            if(run_bisection == 1)
+            {
+                mw_printf("running bisection\n");
+                mid_point_funcval = 1;
+                counter = 0;
+               
+                while(mw_fabs(mid_point_funcval) > .001)
+                {
+                    mid_point = (new_lower_bound + new_upper_bound) / 2.0;
+                    mid_point_funcval = (*func)(mid_point, function_parameters, dsfmtState) - function_value;
+                    
+                    if(mid_point_funcval < 0.0)
+                    {
+                        new_lower_bound = mid_point;
+                    }
+                    else
+                    {
+                        new_upper_bound = mid_point;
+                    }
+                    counter++;
+                    
+                    if(counter > 10000)
+                    {
+                        break;
+                    }
+                }
+                
+                x_n = mid_point;
+                /* If it found a sign change, then the bisection definitly got close. So it will always say it found one. */
+                roots_found++;
+            }
+            
+        }//ifstatement
+        
+        if(roots_found != 0)
+        {
+            break;
+        }
+    }
+
+    if(roots_found == 0)
+    {
+//         x_n = 0.0;
+    }
+    
+    free(values);
+    free(interval_bounds);
+
+    return x_n;
+}
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
 real fun(real ri, real * args, dsfmt_t* dsfmtState)
 {
@@ -534,6 +695,24 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 
 
 /*      SAMPLING FUNCTIONS      */
+// static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound)
+// {
+// //     int counter = 0;
+//     real r, u, val;
+//     //-------------------------------
+//     real mass_l   = args[0];
+//     real mass_d   = args[1];
+//     real rscale_l = args[2];
+//     real rscale_d = args[3];
+//     //-------------------------------
+//     
+//         
+//     u = (real)mwXrandom(dsfmtState, 0.0, 1.0) * rho_max;
+//     r = root_finder(profile_rho, args, u, bound, 5.0 * (rscale_l + rscale_d), dsfmtState);
+//         
+//     return r;
+// }
+
 static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound)
 {
     int counter = 0;
@@ -586,34 +765,74 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     
     real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, v_esc};
     real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
-   
-    while(1)
-    {
 
-        v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
-        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
-        
-        d = dist_fun(v, parameters, dsfmtState);
-        if(mw_fabs(d/dist_max) > u)
-        {
-            break;
-        }
-        
-        if(counter > 1000)
-        {
-            v = 0;
-            break;
-        }
-        else
-        {
-            counter++;
-        }
-    }
+    u = (real)mwXrandom(dsfmtState, 0.0, 1.0) * dist_max;
+    v = root_finder(dist_fun, parameters, u, 0.0, v_esc, dsfmtState);
     
-
-    v *= 0.977813107;//changing from kpc/gy to km/s
+    v *= 0.977813107 ;//changing from kpc/gy to km/s
     return v; //km/s
 }
+
+
+// real testing(real r, real * args, dsfmt_t* dsfmtState)
+// {
+//     //-------------------------------
+//     real mass_l   = args[0];
+//     real mass_d   = args[1];
+//     real rscale_l = args[2];
+//     real rscale_d = args[3];
+//     //-------------------------------
+// 
+//     real u, f, u_r_l, u_r_d;
+//     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
+//     real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, v_esc};
+//     real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
+// 
+//     real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
+//     real parameters_dark[4]  = {0.0, mass_d, rscale_l, rscale_d};
+//     real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, dsfmtState );
+//     real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, dsfmtState );
+//     
+//     
+//     u_r_l = (real)mwXrandom(dsfmtState, 0.0, 1.0) * rho_max_light;
+//     u_r_d = (real)mwXrandom(dsfmtState, 0.0, 1.0) * rho_max_dark;
+//     u = (real)mwXrandom(dsfmtState, 0.0, 1.0) * dist_max;
+//     FILE * file;
+//     file = fopen("./invertfunc.txt", "w");
+//     real v = 0.0;
+//     while(1)
+//     {
+//         
+//         f = u - dist_fun(v, parameters, dsfmtState);
+//         fprintf(file, "%f \t %f\n", v, f);
+//         
+//         v += 0.01;
+//         if(v >= v_esc){break;}
+//         
+//     }
+//     
+//     file = fopen("./invertfunc_den.txt", "w");
+//     real rad = 0.0;
+//     real den_l, den_d;
+//         while(1)
+//     {
+//         den_l = u_r_l - profile_rho(rad, parameters_light, dsfmtState);
+//         den_d = u_r_d - profile_rho(rad, parameters_dark, dsfmtState);
+//         fprintf(file, "%f \t %f \t %f\n", rad, den_l, den_d);
+//         
+//         rad += 0.01;
+//         if(rad >= 10.0 * (rscale_l + rscale_d)){break;}
+//         
+//     }
+//     
+// 
+//     real test1 = dist_fun(v_esc, parameters, dsfmtState);
+//     mw_printf("\t %f %f %f\n", test1, v_esc, u - test1);
+//     fclose(file);
+//     return v;
+// }
+
+
 
 static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
 {
@@ -644,6 +863,14 @@ static inline mwvector get_vec(dsfmt_t* dsfmtState, mwvector shift, real x)
 }
 
 
+real test(real x, real * args, dsfmt_t* dsfmtState)
+{
+//     real func = x * x * exp(x) * exp(2.0 * x);
+    real func = x * x - 6.0 * x + 8.0;
+    return func;
+}
+
+
 /*      DWARF GENERATION        */
 static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
 {
@@ -671,7 +898,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
 
     //----------------------------------------------------------------------------------------------------
-
+        
+        
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
@@ -687,6 +915,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
         real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
+        real test1 = ss_root_finder(test, args, 0.0, 0.0, 6.0, prng);
+        mw_printf("%f \n", test1);
      
      /*initializing particles:*/
     
@@ -694,7 +924,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
         int counter = 0;
-        
+//         mw_printf("Hello world");
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
         {
@@ -728,23 +958,28 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
             }while (1);
             
+//             if(i == 0)
+//             {
+//                 real ss_t;
+//                 ss_t = testing(r, args, prng);
+//             }
             
-            
-//             mw_printf("\r velocity of particle %i", i+1);
+            mw_printf("\r velocity of particle %i", i + 1);
             counter = 0;
             do
             {
                 v = vel_mag(prng, r, args);
+//                 mw_printf("\t %f\n", v);
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
-                if(counter > 1000)
-                {
-                    exit(-1);
-                }
-                else
-                {
-                    counter++;
-                }
+//                 if(counter > 1000)
+//                 {
+//                     exit(-1);
+//                 }
+//                 else
+//                 {
+//                     counter++;
+//                 }
                 
             }while (1);
 
