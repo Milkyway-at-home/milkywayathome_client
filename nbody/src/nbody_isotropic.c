@@ -408,15 +408,23 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
     /*newton raphson*/
     real der_funceval_n_1;
     real x_n, x_n_1, func_eval_n, func_eval_n_1;
-    x_n_1 = (lower_bound + upper_bound) / 2.0;
-    func_eval_n_1 = (*func)(x_n_1, function_parameters, dsfmtState) - function_value;
-    der_funceval_n_1 = first_derivative(func, x_n_1, function_parameters, dsfmtState);
+    real x_n_2, func_eval_n_2;
+    real num, denom;
+    x_n_2 = (real)mwXrandom(dsfmtState, lower_bound, upper_bound) ;
+    x_n_1 = (real)mwXrandom(dsfmtState, lower_bound, upper_bound) ;
+    func_eval_n_1 = function_value - (*func)(x_n_1, function_parameters, dsfmtState);
+    func_eval_n_2 = function_value - (*func)(x_n_2, function_parameters, dsfmtState);
+//     der_funceval_n_1 = first_derivative(func, x_n_1, function_parameters, dsfmtState);
+//     mw_printf("\t\tfunc_ev_n-1 and n-2 %f %f\n", x_n_1, x_n_2); 
     while(1)
     {
-        x_n = x_n_1 - func_eval_n_1 / der_funceval_n_1;
+//         x_n = x_n_1 - func_eval_n_1 / der_funceval_n_1;
+        num = func_eval_n_1 * ( x_n_1 - x_n_2);
+        denom = func_eval_n_1 - func_eval_n_2;
+        x_n = x_n_1 - num / denom;
         func_eval_n = (*func)(x_n, function_parameters, dsfmtState) - function_value;
         
-        if(mw_fabs(func_eval_n) < 0.01)
+        if(mw_fabs(func_eval_n) < 0.001)
         {
             roots_found++;
             break;
@@ -424,17 +432,19 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
 
         else
         {
+            x_n_2 = x_n_1;
             x_n_1 = x_n;
+            func_eval_n_2 = func_eval_n_1;
             func_eval_n_1 = func_eval_n;
-            der_funceval_n_1 = first_derivative(func, x_n, function_parameters, dsfmtState);
+//             der_funceval_n_1 = first_derivative(func, x_n, function_parameters, dsfmtState);
             counter++;
         }
         
 //         mw_printf("%f %f \n", func_eval_n, x_n);
-        if(counter > 100)
+        if(counter > 1000)
         {
 //             mw_printf("this ran\n");
-            run_bisection = 1;
+//             run_bisection = 1;
             break;
         }
     }
@@ -763,7 +773,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
     real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, v_esc};
-    real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
+    real dist_max = 2.670713;// max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
 
     u = (real)mwXrandom(dsfmtState, 0.0, 1.0) * dist_max;
 //     mw_printf("\t%f\t%f\t%f\n", u, dist_max, v_esc);
@@ -927,10 +937,10 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
         real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
-        real test1 = root_finder(test, args, 6.0, 0.0, 10.0, prng);
-        real answer = 0.354249;
-        real answer2 = 5.64575;
-        mw_printf("%f %f %f\n", test1, answer, answer2);
+//         real test1 = root_finder(test, args, 6.0, 0.0, 10.0, prng);
+//         real answer = 0.354249;
+//         real answer2 = 5.64575;
+//         mw_printf("%f %f %f\n", test1, answer, answer2);
         
      /*initializing particles:*/
     
@@ -985,6 +995,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 v = vel_mag(prng, r, args);
 //                 mw_printf("\t %f\n", v);
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+                else{mw_printf("trying again\n");}
                 
                 if(counter > 1000)
                 {
