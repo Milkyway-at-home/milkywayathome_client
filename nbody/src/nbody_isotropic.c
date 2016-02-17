@@ -392,6 +392,7 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
 
     return mid_point;
 }
+
 static inline real unchanged_names_root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
 {
     //requires lowBound and upperBound to evaluate to opposite sign when rootFunc-funcValue
