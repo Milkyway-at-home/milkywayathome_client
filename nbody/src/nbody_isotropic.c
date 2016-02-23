@@ -745,7 +745,7 @@ static inline mwvector get_vec(dsfmt_t* dsfmtState, mwvector shift, real x)
 
     vec = angles(dsfmtState, x);    /* pick scaled position */
     mw_incaddv(vec, shift);                             /* move the position */
-
+    
     return vec;
 }
 
@@ -768,7 +768,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
         real bound = 50.0 * (rscale_l + rscale_d);
-        
+        mw_printf("shift: %f\t%f\t%f\n", X(rShift), Y(rShift), Z(rShift));
+        mw_printf("shift: %f\t%f\t%f\n", X(vShift), Y(vShift), Z(vShift));
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int half_bodies = nbody / 2;
@@ -859,10 +860,11 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             b.vel = get_vec(prng, vShift, v);
             b.bodynode.pos = get_vec(prng, rShift, r);
             
+//             mw_printf("%.10f\n", b.bodynode.mass);
+            
             assert(nbPositionValid(b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
-
         }
         
         return 1;             
