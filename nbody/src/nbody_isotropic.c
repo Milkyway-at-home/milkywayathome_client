@@ -157,9 +157,9 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
     c1 = 5.0 / 9.0;
     c2 = 8.0 / 9.0;
     c3 = 5.0 / 9.0;
-    x1 = -sqrt(3.0 / 5.0);
+    x1 = -0.77459666924; //sqrt(3.0 / 5.0);
     x2 = 0.0;
-    x3 = sqrt(3.0 / 5.0);
+    x3 = 0.77459666924; //sqrt(3.0 / 5.0);
     x1n = (coef1 * x1 + coef2);
     x2n = (coef1 * x2 + coef2);
     x3n = (coef1 * x3 + coef2);
@@ -173,8 +173,8 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
 
         lowerg = upperg;
         upperg = upperg + hg;
-        coef2 = (lowerg + upperg)/2.0;//initializes the first coeff to change the function limits
-        coef1 = (upperg - lowerg)/2.0;
+        coef2 = (lowerg + upperg) / 2.0;//initializes the first coeff to change the function limits
+        coef1 = (upperg - lowerg) / 2.0;
 
         x1n = ((coef1) * x1 + coef2);
         x2n = ((coef1) * x2 + coef2);
@@ -186,9 +186,6 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
             hg = (b - benchmark) / (Ng);
         }
             
-        
-        
-        
         if(upper > lower)
         {
             if(lowerg >= upper)//loop termination clause
@@ -233,7 +230,7 @@ static inline real max_finder(real (*profile)(real , real*, dsfmt_t*), real* pro
     real RATIO_COMPLEMENT = 1 - RATIO;
     int counter = 0;
     
-    real profile_x1,profile_x2,x0,x1,x2,x3;
+    real profile_x1, profile_x2, x0, x1, x2, x3;
     x0 = a;
     x3 = c;
     
@@ -295,10 +292,10 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
     {
         exit(-1);
     }
-    int i = 0;
+    unsigned int i = 0;
 
     int N = 4;
-    int intervals = N;
+    unsigned int intervals = N;
     real interval_bound;
 
     /*interval + 1 because for N intervals there are N + 1 values*/
@@ -316,7 +313,7 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
     
     real mid_point = 0;
     real mid_point_funcval = 0;
-    int counter = 0;
+    unsigned int counter = 0;
     real new_upper_bound = 0;
     real new_lower_bound = 0;
     int roots_found = 0;
@@ -350,7 +347,7 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
             
             mid_point_funcval = 1;
             counter = 0;
-            while(mw_fabs(mid_point_funcval) > .001)
+            while(mw_fabs(mid_point_funcval) > .0001)
             {
                 mid_point = (new_lower_bound + new_upper_bound) / 2.0;
                 mid_point_funcval = (*func)(mid_point, function_parameters, dsfmtState) - function_value;
@@ -392,103 +389,6 @@ static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* functi
 
     return mid_point;
 }
-
-static inline real unchanged_names_root_finder(real (*rootFunc)(real, real*, dsfmt_t*), real* rootFuncParams, real funcValue, real lowBound, real upperBound, dsfmt_t* dsfmtState)
-{
-    //requires lowBound and upperBound to evaluate to opposite sign when rootFunc-funcValue
-    if(rootFuncParams == NULL || rootFunc == NULL)
-    {
-        exit(-1);
-    }
-    unsigned int i = 0;
-
-    int N = 4;
-    unsigned int numSteps = N;
-    real interval;
-    real * values = mwCalloc(numSteps + 1, sizeof(real));
-    
-    /*numSteps+1 because you want to include the upperbound in the interval*/
-    for(i = 0; i < numSteps + 1; i++)
-    {
-        interval = ((upperBound - lowBound) * (real)i) / (real)numSteps + lowBound;
-        values[i] = (*rootFunc)(interval, rootFuncParams, dsfmtState) - funcValue;
-    }
-    
-    real midPoint = 0;
-    real midVal = 0;
-    unsigned int nsteps = 0;
-    real curUpper = 0;
-    real curLower = 0;
-    int rootsFound = 0;
-    int q = 0;
-    
-    /* Find the roots using bisection because it was easy to code and good enough for our purposes 
-     * this will hope around the different intervals until it checks all of them. This way it does not 
-     * favor any root.
-     */
-    for(i = 0; i < numSteps; i++)
-    {
-        q = i;
-        if((values[q] > 0 && values[q + 1] < 0) || (values[q] < 0 && values[q + 1] > 0))
-        {
-            if(values[q] < 0 && values[q + 1] > 0)
-            {
-                curLower = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
-                curUpper = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
-            }
-            else if(values[q] > 0 && values[q + 1] < 0)
-            {
-                curLower = ((upperBound - lowBound) * (real)(q + 1))/(real)numSteps + lowBound;
-                curUpper = ((upperBound - lowBound) * (real)q)/(real)numSteps + lowBound;
-            }
-            else
-            {
-                continue;
-            }
-            midVal = 1;
-            nsteps = 0;
-            while(mw_fabs(midVal) > .0001)
-            {
-                midPoint = (curLower + curUpper) / 2.0;
-                midVal = (*rootFunc)(midPoint, rootFuncParams, dsfmtState) - funcValue;
-                
-                if(midVal < 0.0)
-                {
-                    curLower = midPoint;
-                }
-                else
-                {
-                    curUpper = midPoint;
-                }
-                ++nsteps;
-                
-                if(nsteps > 10000)
-                {
-                    break;
-                }
-            }
-            
-            /* If it found a sign change, then the root finder definitly got close. So it will always say it found one. */
-            ++rootsFound;
-            
-        }
-        
-        if(rootsFound != 0)
-        {
-            break;
-        }
-    }
-
-    if(rootsFound == 0)
-    {
-        midPoint = 0.0;
-    }
-    
-    free(values);
-
-    return midPoint;
-}
-
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
 real fun(real ri, real * args, dsfmt_t* dsfmtState)
@@ -566,7 +466,7 @@ static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * args, real ener
     do
     {
         upperlimit_r = root_finder(potential, args, energy, 0.0, search_range, dsfmtState); 
-        
+
         if(isinf(upperlimit_r) == FALSE && upperlimit_r != 0.0 && isnan(upperlimit_r) == FALSE){break;}
         
         counter++;
@@ -651,7 +551,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bo
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * density(r, args, dsfmtState);
 
-        if(val/rho_max > u)
+        if(val / rho_max > u)
         {
             break;
         }
@@ -700,7 +600,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
         d = dist_fun(v, parameters, dsfmtState);
-        if(mw_fabs(d/dist_max) > u)
+        if(mw_fabs(d / dist_max) > u)
         {
             break;
         }
@@ -732,9 +632,9 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
     phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
 
     /*this is standard formula for x,y,z components in spherical*/
-    X(vec) = rad * sin( theta ) * cos( phi );        /*x component*/
-    Y(vec) = rad * sin( theta ) * sin( phi );        /*y component*/
-    Z(vec) = rad * cos( theta );                   /*z component*/
+    X(vec) = rad * mw_sin( theta ) * mw_cos( phi );        /*x component*/
+    Y(vec) = rad * mw_sin( theta ) * mw_sin( phi );        /*y component*/
+    Z(vec) = rad * mw_cos( theta );                   /*z component*/
 
     return vec;
 }
