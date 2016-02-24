@@ -44,8 +44,8 @@ static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
     real rscale_l = args[2];
     real rscale_d = args[3];
     //-------------------------------
-    real potential_light  = mass_l/mw_sqrt(sqr(r) + sqr(rscale_l));
-    real potential_dark   = mass_d/mw_sqrt(sqr(r) + sqr(rscale_d));
+    real potential_light  = mass_l / mw_sqrt(sqr(r) + sqr(rscale_l));
+    real potential_dark   = mass_d / mw_sqrt(sqr(r) + sqr(rscale_d));
     real potential_result = -(potential_light + potential_dark);
 
     return (-potential_result);
@@ -63,9 +63,9 @@ static inline real density( real r, real * args, dsfmt_t* dsfmtState)
     
     real rscale_lCube = cube(rscale_l); 
     real rscale_dCube = cube(rscale_d);
-    real density_light = (mass_l/rscale_lCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_l)) ) );
-    real density_dark  = (mass_d/rscale_dCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_d)) ) ); 
-    real density_result = (3.0/(4.0 * M_PI)) * ( density_light + density_dark );
+    real density_light = (mass_l / rscale_lCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_l)) ) );
+    real density_dark  = (mass_d / rscale_dCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_d)) ) ); 
+    real density_result = (3.0 / (4.0 * M_PI)) * ( density_light + density_dark );
 
     return density_result;
 }
@@ -125,12 +125,12 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
      */
-    real Ng,hg,lowerg, upperg;
+    real Ng, hg, lowerg, upperg;
     real intv = 0;//initial value of integral
-    real coef1,coef2;//parameters for gaussian quad
-    real c1,c2,c3;
-    real x1,x2,x3;
-    real x1n,x2n,x3n;
+    real coef1, coef2;//parameters for gaussian quad
+    real c1, c2, c3;
+    real x1, x2, x3;
+    real x1n, x2n, x3n;
     real a, b;
     real benchmark;
     
@@ -768,8 +768,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
         real bound = 50.0 * (rscale_l + rscale_d);
-        mw_printf("shift: %f\t%f\t%f\n", X(rShift), Y(rShift), Z(rShift));
-        mw_printf("shift: %f\t%f\t%f\n", X(vShift), Y(vShift), Z(vShift));
+//         mw_printf("shift: %f\t%f\t%f\n", X(rShift), Y(rShift), Z(rShift));
+//         mw_printf("shift: %f\t%f\t%f\n", X(vShift), Y(vShift), Z(vShift));
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int half_bodies = nbody / 2;
