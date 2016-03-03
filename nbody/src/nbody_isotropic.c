@@ -99,7 +99,7 @@ static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x
     p3 = - 1.0 * (*func)( (x + 2.0 * h), funcargs, dsfmtState);
     p4 =   8.0 * (*func)( (x + h)      , funcargs, dsfmtState);
     denom = inv( 12.0 * h);
-    deriv =   (p1 + p2 + p3 + p4) * denom;
+    deriv = (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
 
@@ -116,7 +116,7 @@ static inline real second_derivative(real (*func)(real, real *, dsfmt_t*), real 
     p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
     p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
     denom = inv( 12.0 * h * h);
-    deriv =   (p1 + p2 + p3 + p4 + p5) * denom;
+    deriv = (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
 
@@ -126,7 +126,7 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
      */
     real Ng, hg, lowerg, upperg;
-    real intv = 0;//initial value of integral
+    real intv = 0.0;//initial value of integral
     real coef1, coef2;//parameters for gaussian quad
     real c1, c2, c3;
     real x1, x2, x3;
@@ -154,14 +154,15 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
 
     coef2 = (lowerg + upperg) / 2.0;//initializes the first coeff to change the function limits
     coef1 = (upperg - lowerg) / 2.0;//initializes the second coeff to change the function limits
-    c1 = 5.0 / 9.0;
-    c2 = 8.0 / 9.0;
-    c3 = 5.0 / 9.0;
-    x1 = -0.77459666924; //sqrt(3.0 / 5.0);
+    c1 = 0.55555555555; //5.0 / 9.0;
+    c2 = 0.88888888888; //8.0 / 9.0;
+    c3 = 0.55555555555; //5.0 / 9.0;
+    x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
     x2 = 0.0;
     x3 = 0.77459666924; //sqrt(3.0 / 5.0);
     x1n = (coef1 * x1 + coef2);
-    x2n = (coef1 * x2 + coef2);
+    /*should be: x2n = (coef1 * x2 + coef2);*/
+    x2n = (coef2);
     x3n = (coef1 * x3 + coef2);
     int counter = 0;
     while (1)
@@ -177,7 +178,8 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
         coef1 = (upperg - lowerg) / 2.0;
 
         x1n = ((coef1) * x1 + coef2);
-        x2n = ((coef1) * x2 + coef2);
+        /*should be: x2n = (coef1 * x2 + coef2);*/
+        x2n = (coef2);
         x3n = ((coef1) * x3 + coef2);
 
         if(lowerg > benchmark)
@@ -257,7 +259,7 @@ static inline real max_finder(real (*profile)(real , real*, dsfmt_t*), real* pro
             x1 = x2;
             x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
             profile_x1 = (real)profile_x2;
-            profile_x2 = -(*profile)(x2,profileParams, dsfmtState);
+            profile_x2 = -(*profile)(x2, profileParams, dsfmtState);
         }
         else
         {
@@ -492,23 +494,22 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     real rscale_l = args[2];
     real rscale_d = args[3];
     real r        = args[4];
-    real v_esc    = args[5];
     //-------------------------------
     
     
     real distribution_function = 0.0;
     real c = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
-    real energy = 0;
+    real energy = 0.0;
     real upperlimit_r = 0.0;
     real lowerlimit_r = 0.0; 
-    int counter = 0.0;
+    int counter = 0;
     real search_range = 0.0;   
     
     /*energy as defined in binney*/
     energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
     
     /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
-    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d/energy) - sqr(rscale_d) ));
+    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
     
     /*dynamic search range*/
     /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
@@ -590,7 +591,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     real v, u, d;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
-    real parameters[6] = {mass_l, mass_d, rscale_l, rscale_d, r, v_esc};
+    real parameters[5] = {mass_l, mass_d, rscale_l, rscale_d, r};
     real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
    
     while(1)
@@ -621,7 +622,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     return v; //km/s
 }
 
-static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
+static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
     mwvector vec;
@@ -639,16 +640,69 @@ static inline mwvector angles(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-static inline mwvector get_vec(dsfmt_t* dsfmtState, mwvector shift, real x)
+
+static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real dwarf_mass, int nbody)
 {
-    mwvector vec;
-
-    vec = angles(dsfmtState, x);    /* pick scaled position */
-    mw_incaddv(vec, shift);                             /* move the position */
+    /*  
+     * This function takes the table of bodies produced and zeroes the center of mass 
+     * and center of momentum. It then shifts the center of mass and center of momentum
+     * to the expected value for its position in the orbit.
+     */
+    real cm_x = 0.0;
+    real cm_y = 0.0;
+    real cm_z = 0.0;
+    real cm_vx = 0.0;
+    real cm_vy = 0.0;
+    real cm_vz = 0.0;
+    int i;
+    int correcting = 0;
+    for(i = 0; i < nbody; i++)
+    {
+        cm_x += mass[i] * x[i];
+        cm_y += mass[i] * y[i];
+        cm_z += mass[i] * z[i];
+        
+        cm_vx += mass[i] * vx[i];
+        cm_vy += mass[i] * vy[i];
+        cm_vz += mass[i] * vz[i];
+    }
+     
+    cm_x = cm_x / (dwarf_mass);
+    cm_y = cm_y / (dwarf_mass);
+    cm_z = cm_z / (dwarf_mass);
     
-    return vec;
+    cm_vx = cm_vx / (dwarf_mass);
+    cm_vy = cm_vy / (dwarf_mass);
+    cm_vz = cm_vz / (dwarf_mass);
+    
+    if(correcting == 1)
+    {
+        for(i = 0; i < nbody; i++)
+        {
+            x[i] = x[i] - cm_x + rShift.x;
+            y[i] = y[i] - cm_y + rShift.y;
+            z[i] = z[i] - cm_z + rShift.z;
+            
+            vx[i] = vx[i] - cm_vx + vShift.x;
+            vy[i] = vy[i] - cm_vy + vShift.y;
+            vz[i] = vz[i] - cm_vz + vShift.z;
+        }
+    }
+    else
+    {
+        for(i = 0; i < nbody; i++)
+        {
+            x[i] = x[i] + rShift.x;
+            y[i] = y[i] + rShift.y;
+            z[i] = z[i] + rShift.z;
+            
+            vx[i] = vx[i] + vShift.x;
+            vy[i] = vy[i] + vShift.y;
+            vz[i] = vz[i] + vShift.z;
+        } 
+    }
+    return 1;
 }
-
 
 /*      DWARF GENERATION        */
 static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
@@ -662,21 +716,31 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         int table;
         Body b;
         real r, v;
+ 
+        real * x  = mwCalloc(nbody, sizeof(real));
+        real * y  = mwCalloc(nbody, sizeof(real));
+        real * z  = mwCalloc(nbody, sizeof(real));
+        real * vx = mwCalloc(nbody, sizeof(real));
+        real * vy = mwCalloc(nbody, sizeof(real));
+        real * vz = mwCalloc(nbody, sizeof(real));
+        real * masses = mwCalloc(nbody, sizeof(real));
+        
+        mwvector vec;
+        real dwarf_mass = mass1 + mass2;
+        
+        
         real mass_l   = mass1; /*mass of the light component*/
         real mass_d   = mass2; /*mass of the dark component*/
         real rscale_l = radiusScale1; /*scale radius of the light component*/
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
         real bound = 50.0 * (rscale_l + rscale_d);
-//         mw_printf("shift: %f\t%f\t%f\n", X(rShift), Y(rShift), Z(rShift));
-//         mw_printf("shift: %f\t%f\t%f\n", X(vShift), Y(vShift), Z(vShift));
+
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * nbody);
-        
-
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -696,7 +760,6 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         
      
      /*initializing particles:*/
-    
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
@@ -712,14 +775,12 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 if(i < half_bodies)
                 {
                     r = r_mag(prng, parameters_light, rho_max_light, bound);
-                    b.bodynode.mass = mass_light_particle;
-                    b.bodynode.type = BODY(islight);
+                    masses[i] = mass_light_particle;
                 }
                 else if(i >= half_bodies)
                 {
                     r = r_mag(prng, parameters_dark, rho_max_dark, bound);
-                    b.bodynode.mass = mass_dark_particle;
-                    b.bodynode.type = BODY(isdark);
+                    masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
                 if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
@@ -755,22 +816,62 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
             }while (1);
 
-            /*this actually gets the position and velocity vectors and pushes table of bodies*/
-            /*vShift and rShift are both zero here. They are meant to give the dwarf an initial position and vel*/
-            b.vel = get_vec(prng, vShift, v);
-            b.bodynode.pos = get_vec(prng, rShift, r);
+            vec = get_components(prng, v);   
+            vx[i] = vec.x;
+            vy[i] = vec.y;
+            vz[i] = vec.z;
             
-//             mw_printf("%.10f\n", b.bodynode.mass);
+            vec = get_components(prng, r);  
+            x[i] = vec.x;
+            y[i] = vec.y;
+            z[i] = vec.z;
+        }
+        
+        /* getting the center of mass and momentum correction */
+        cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
+
+
+        /* pushing the bodies */
+        for (i = 0; i < nbody; i++)
+        {
+            if(i < half_bodies)
+            {
+                b.bodynode.type = BODY(islight);
+            }
+            else if(i >= half_bodies)
+            {
+                b.bodynode.type = BODY(isdark);
+            }
+            
+            b.bodynode.mass = masses[i];
+            /*this actually gets the position and velocity vectors and pushes table of bodies*/
+            /*They are meant to give the dwarf an initial position and vel*/
+            /* you have to work for your bodynode */
+            b.bodynode.pos.x = x[i];
+            b.bodynode.pos.y = y[i];
+            b.bodynode.pos.z = z[i];
+            
+            b.vel.x = vx[i];
+            b.vel.y = vy[i];
+            b.vel.z = vz[i];
             
             assert(nbPositionValid(b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
         
+        /* go now and be free!*/
+        free(x);
+        free(y);
+        free(z);
+        free(vx);
+        free(vy);
+        free(vz);
+        free(masses);
+        
         return 1;             
         
 }
-
 
 int nbGenerateIsotropic(lua_State* luaSt)
 {
@@ -801,6 +902,7 @@ int nbGenerateIsotropic(lua_State* luaSt)
         
         handleNamedArgumentTable(luaSt, argTable, 1);
         
+        
         return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, mass1, mass2, ignore,
                                                                  *position, *velocity, radiusScale1, radiusScale2);
 }
@@ -811,3 +913,4 @@ void registerGenerateIsotropic(lua_State* luaSt)
 }
 
 
+// As this code runs, know that it is running on the rotting corpses of a thousand bugs.
