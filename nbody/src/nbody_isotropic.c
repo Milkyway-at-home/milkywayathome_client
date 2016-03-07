@@ -655,7 +655,6 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
     real cm_vy = 0.0;
     real cm_vz = 0.0;
     int i;
-    int correcting = 0;
     for(i = 0; i < nbody; i++)
     {
         cm_x += mass[i] * x[i];
@@ -675,32 +674,18 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
     cm_vy = cm_vy / (dwarf_mass);
     cm_vz = cm_vz / (dwarf_mass);
     
-    if(correcting == 1)
+    for(i = 0; i < nbody; i++)
     {
-        for(i = 0; i < nbody; i++)
-        {
-            x[i] = x[i] - cm_x + rShift.x;
-            y[i] = y[i] - cm_y + rShift.y;
-            z[i] = z[i] - cm_z + rShift.z;
-            
-            vx[i] = vx[i] - cm_vx + vShift.x;
-            vy[i] = vy[i] - cm_vy + vShift.y;
-            vz[i] = vz[i] - cm_vz + vShift.z;
-        }
+        x[i] = x[i] - cm_x + rShift.x;
+        y[i] = y[i] - cm_y + rShift.y;
+        z[i] = z[i] - cm_z + rShift.z;
+        
+        vx[i] = vx[i] - cm_vx + vShift.x;
+        vy[i] = vy[i] - cm_vy + vShift.y;
+        vz[i] = vz[i] - cm_vz + vShift.z;
     }
-    else
-    {
-        for(i = 0; i < nbody; i++)
-        {
-            x[i] = x[i] + rShift.x;
-            y[i] = y[i] + rShift.y;
-            z[i] = z[i] + rShift.z;
-            
-            vx[i] = vx[i] + vShift.x;
-            vy[i] = vy[i] + vShift.y;
-            vz[i] = vz[i] + vShift.z;
-        } 
-    }
+    
+
     return 1;
 }
 
