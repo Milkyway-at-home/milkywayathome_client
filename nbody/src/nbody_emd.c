@@ -1267,6 +1267,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     real pObs = (real) nObs / (real) n;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
+    mw_printf("histmass = %f \t datamass = %f\n", histMass, dataMass);
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
