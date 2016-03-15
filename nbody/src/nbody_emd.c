@@ -1267,7 +1267,6 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     real pObs = (real) nObs / (real) n;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
-    mw_printf("histmass = %f \t datamass = %f\n", histMass, dataMass);
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
@@ -1310,9 +1309,9 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
         hist[i].lambda = (float) histogram->data[i].lambda;
         dat[i].lambda = (float) data->data[i].lambda;
-	
-	hist[i].beta = (float) histogram->data[i].beta;
-	dat[i].beta = (float) data->data[i].beta;
+        
+        hist[i].beta = (float) histogram->data[i].beta;
+        dat[i].beta = (float) data->data[i].beta;
     }
 
     emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
