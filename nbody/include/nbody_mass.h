@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-real probability_match(int n, int k, real pobs);
+real probability_match(int n, real k, real pobs);
 
 #ifdef __cplusplus
 }
