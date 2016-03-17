@@ -87,7 +87,7 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     L(lbr), B(lbr), R(lbr),
                     X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }

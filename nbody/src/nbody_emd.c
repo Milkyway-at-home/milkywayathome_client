@@ -1346,8 +1346,8 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     // mw_printf("nData = % 10.10f\n",(double)nData);
     // mw_printf("pObs = % 10.10f\n",(double)pObs);
     // mw_printf("emd = % 10.10f\n", emd);
-    mw_printf("EMDComponent = % 10.10f\n",EMDComponent);
-    mw_printf("CostComponent = % 10.10f\n",mw_log(CostComponent));
+    //mw_printf("EMDComponent = % 10.10f\n",EMDComponent);
+    //mw_printf("CostComponent = % 10.10f\n",mw_log(CostComponent));
 
     free(hist);
     free(dat);
