@@ -52,13 +52,14 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
 
 static void nbPrintBodyOutputHeader(FILE* f, int cartesian)
 {
-    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s\n",
+    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
             cartesian ? "x" : "l",
             cartesian ? "y" : "b",
             cartesian ? "z" : "r",
             "v_x",
             "v_y",
-            "v_z"
+            "v_z",
+            "mass"
         );
 }
 
@@ -78,17 +79,17 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)));
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
         else
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)));
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
     }
 

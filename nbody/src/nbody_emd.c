@@ -1309,9 +1309,9 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
         hist[i].lambda = (float) histogram->data[i].lambda;
         dat[i].lambda = (float) data->data[i].lambda;
-	
-	hist[i].beta = (float) histogram->data[i].beta;
-	dat[i].beta = (float) data->data[i].beta;
+        
+        hist[i].beta = (float) histogram->data[i].beta;
+        dat[i].beta = (float) data->data[i].beta;
     }
 
     emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
@@ -1337,15 +1337,17 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
     Some more notes about the revised calculation
     */
-    double EMDComponent = 1 - emd / 50.0;
-    double CostComponent = probability_match(n, k, pObs)/probability_match(n,n*pObs,pObs);
+    double EMDComponent = 1.0 - emd / 50.0;
+    double CostComponent = probability_match(n, (real) k, pObs) / probability_match(n, (real)n  * pObs, pObs);
     likelihood = (mw_log(EMDComponent) +  mw_log(CostComponent));
-    //mw_printf("n = % 10.10f\n",(double)n);
-    //mw_printf("k = % 10.10f\n",(double)k);
-    //mw_printf("nData = % 10.10f\n",(double)nData);
-    //mw_printf("pObs = % 10.10f\n",(double)pObs);
-    //mw_printf("EMD = % 10.10f\n",EMDComponent);
-    //mw_printf("Cost = % 10.10f\n",mw_log(CostComponent));
+    // mw_printf("n = % 10.10f\n",(double)n);
+    // mw_printf("k = % 10.10f\n",(double)k);
+    // mw_printf("n * pObs = % 10.10f\n", (n * pObs));
+    // mw_printf("nData = % 10.10f\n",(double)nData);
+    // mw_printf("pObs = % 10.10f\n",(double)pObs);
+    // mw_printf("emd = % 10.10f\n", emd);
+    //mw_printf("EMDComponent = % 10.10f\n",EMDComponent);
+    //mw_printf("CostComponent = % 10.10f\n",mw_log(CostComponent));
 
     free(hist);
     free(dat);

@@ -407,11 +407,11 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (int i = 0; i < Nbodies; i++)
     {
         const Body* b = &st->bodytab[i];
-	if(Type(b)==BODY(islight))
-	{
-	  histogram->massPerParticle=Mass(b);
-	  break;
-	}
+        if(Type(b) == BODY(islight))
+        {
+            histogram->massPerParticle = Mass(b);
+            break;
+        }
     }
     histData = histogram->data;
 
