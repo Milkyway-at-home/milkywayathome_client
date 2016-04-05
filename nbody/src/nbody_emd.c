@@ -1257,25 +1257,25 @@ double nbWorstCaseEMD(const NBodyHistogram* hist)
 
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-    unsigned int k;
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
     unsigned int n = histogram->totalSimulated;
-    unsigned int nObs = histogram->totalNum;
+    unsigned int nSim = histogram->totalNum;
     unsigned int nData = data->totalNum;
-    real pObs = (real) nObs / (real) n;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
+    real k;/* k was previously defined as an int. There was no need for this */
+    real p; /* probability of observing an event */
+    
+    real ratio = 100000.0 * dataMass / (histMass * 100000.0);;
+    
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
-    real ratio;
     double emd;
     double likelihood;
-
-    if (data->lambdaBins != histogram->lambdaBins
-	|| data->betaBins != histogram->betaBins)
+    if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and
@@ -1283,7 +1283,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         return NAN;
     }
 
-    if (nObs == 0 || nData == 0)
+    if (nSim == 0 || nData == 0)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
         return INFINITY;
@@ -1324,9 +1324,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         return NAN;
     }
 
-    ratio = 100000.0 * dataMass / (histMass * 100000.0);
-    k = (unsigned int) (ratio * (double)nData);
-
+    
     /* This calculates the likelihood as the combination of the
     * probability distribution and (1.0 - emd / max_dist) */
 
@@ -1338,16 +1336,43 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     Some more notes about the revised calculation
     */
     double EMDComponent = 1.0 - emd / 50.0;
-    double CostComponent = probability_match(n, (real) k, pObs) / probability_match(n, (real)n  * pObs, pObs);
-    likelihood = (mw_log(EMDComponent) +  mw_log(CostComponent));
+    
+    /* prob of observing k things given n events where the prob of obs is p */
+    k = (nData);
+    p = ((real) nSim / (real) n) * ratio;
+//             mw_printf("total baryons: %i\n", n);
+            mw_printf("nSim: %i\n", nSim);
+            mw_printf("nData: %i\n", nData);
+//             mw_printf("p = %f\n", p);
+//             mw_printf("k = %f\n\n", k);
+//             mw_printf("datamass = %f \t histmass = %f\n", dataMass, histMass);
+//             mw_printf("ratio = %f\n", ratio);
+    double num = probability_match(n, k, p);
+    
+    /* max of the prob function */
+    k = (real) nSim;
+    p = (real) nSim / (real) n; /* the ratio is excluded because we want the max ratio=1 */
+//             mw_printf("p = %f\n", p);
+//             mw_printf("k = %f\n\n", k);
+    double denom = probability_match(n, k, p);
+    
+    /* cost comp normalized to max of cost function */
+    double CostComponent = num / denom;
+//     mw_printf("num = %10.50f \t denom = %10.20f\n", num, denom);
+   
+    /* the 100 is there to add weight to the EMD component */
+    likelihood = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent));
     // mw_printf("n = % 10.10f\n",(double)n);
     // mw_printf("k = % 10.10f\n",(double)k);
-    // mw_printf("n * pObs = % 10.10f\n", (n * pObs));
+    // mw_printf("n * p = % 10.10f\n", (n * p));
     // mw_printf("nData = % 10.10f\n",(double)nData);
-    // mw_printf("pObs = % 10.10f\n",(double)pObs);
+    // mw_printf("p = % 10.10f\n",(double)p);
     // mw_printf("emd = % 10.10f\n", emd);
-    //mw_printf("EMDComponent = % 10.10f\n",EMDComponent);
-    //mw_printf("CostComponent = % 10.10f\n",mw_log(CostComponent));
+
+    mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
+    mw_printf("CostComponent = %10.20f\n", CostComponent);
+    mw_printf("log(EMDComponent) = %10.10f\n", 100.0 * mw_log(EMDComponent));
+    mw_printf("log(CostComponent) = %10.10f\n", mw_log(CostComponent));
 
     free(hist);
     free(dat);
