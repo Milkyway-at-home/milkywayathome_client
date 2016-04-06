@@ -138,27 +138,27 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
     real sinth = ht->sinth;
 
     /* Define the rotation matrix from the Euler angles */
-    real rot11=cospsi*cosphi-costh*sinphi*sinpsi;
-    real rot12=cospsi*sinphi+costh*cosphi*sinpsi;
-    real rot13=sinpsi*sinth;
-    real rot21=-sinpsi*cosphi-costh*sinphi*cospsi;
-    real rot22=-sinpsi*sinphi+costh*cosphi*cospsi;
-    real rot23=cospsi*sinth;
-    real rot31=sinth*sinphi;
-    real rot32=-sinth*cosphi;
-    real rot33=costh;
+    real rot11 = cospsi * cosphi - costh * sinphi * sinpsi;
+    real rot12 = cospsi * sinphi + costh * cosphi * sinpsi;
+    real rot13 = sinpsi * sinth;
+    real rot21 = -sinpsi * cosphi - costh * sinphi * cospsi;
+    real rot22 = -sinpsi * sinphi + costh * cosphi * cospsi;
+    real rot23 = cospsi * sinth;
+    real rot31 = sinth * sinphi;
+    real rot32 = -sinth * cosphi;
+    real rot33 = costh;
 
-    X(xyz)=X(xyz)+sunGCDist;
+    X(xyz) = X(xyz) + sunGCDist;
 
     /* Calculate X,Y,Z,distance in the Sgr system */
-    tempX=rot11*X(xyz)+rot12*Y(xyz)+rot13*Z(xyz);
-    tempY=rot21*X(xyz)+rot22*Y(xyz)+rot23*Z(xyz);
-    tempZ=rot31*X(xyz)+rot32*Y(xyz)+rot33*Z(xyz);
-    R(lambdabetar)=mw_sqrt(tempX*tempX+tempY*tempY+tempZ*tempZ);
+    tempX = rot11 * X(xyz) + rot12 * Y(xyz) + rot13 * Z(xyz);
+    tempY = rot21 * X(xyz) + rot22 * Y(xyz) + rot23 * Z(xyz);
+    tempZ = rot31 * X(xyz) + rot32 * Y(xyz) + rot33 * Z(xyz);
+    R(lambdabetar) = mw_sqrt(tempX * tempX + tempY * tempY + tempZ * tempZ);
 
     tempZ=-tempZ;
     /* Calculate the angular coordinates lambda,beta */
-    L(lambdabetar)=r2d(mw_atan2(tempY,tempX));
-    B(lambdabetar)=r2d(asin(tempZ/R(lambdabetar)));
+    L(lambdabetar) = r2d(mw_atan2(tempY,tempX));
+    B(lambdabetar) = r2d(mw_asin(tempZ / R(lambdabetar)));
     return lambdabetar;
 }

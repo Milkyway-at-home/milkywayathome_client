@@ -62,13 +62,13 @@ static double nbSahaTerm(double m, double s)
        ln(0!0!) - ln(0!) - ln(0!) == 0
      */
 
-    if (fabs(m) < 1.0e-10 || fabs(s) < 1.0e-10)
+    if (mw_fabs(m) < 1.0e-10 || mw_fabs(s) < 1.0e-10)
     {
         return 0.0;
     }
     else
     {
-        return -0.5 * log(M_2PI) + (m + s + 0.5) * log(m + s) - (m + 0.5) * log(m) - (s + 0.5) * log(s);
+        return -0.5 * mw_log(M_2PI) + (m + s + 0.5) * mw_log(m + s) - (m + 0.5) * mw_log(m) - (s + 0.5) * mw_log(s);
     }
 }
 
@@ -80,13 +80,13 @@ static double nbPoissonTerm(double f, double y)
       2 sum(f_i - y_i) - sum(i != 1, y_i != 0) y_i * ln(f_i / y_i))
      */
 
-    if (fabs(f) < 1.0e-10 || fabs(y) < 1.0e-10)
+    if (mw_fabs(f) < 1.0e-10 || mw_fabs(y) < 1.0e-10)
     {
         return 2.0 * f;
     }
     else
     {
-        return 2.0 * ((f - y) - y * log(f / y));
+        return 2.0 * ((f - y) - y * mw_log(f / y));
     }
 }
 
@@ -95,14 +95,14 @@ static double nbKullbackLeiblerTerm(double h, double k)
     /* Symmetrized version. (Jeffrey divergence?) */
     double m;
 
-    if (fabs(h) < 1.0e-10 || fabs(k) < 1.0e-10)
+    if (mw_fabs(h) < 1.0e-10 || mw_fabs(k) < 1.0e-10)
     {
         return 0.0;
     }
     else
     {
         m = (h + k) / 2.0;
-        return h * log(h / m) + k * log(k / m);
+        return h * mw_log(h / m) + k * mw_log(k / m);
     }
 
 

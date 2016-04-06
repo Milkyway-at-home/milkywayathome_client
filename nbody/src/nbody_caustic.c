@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
+/* WARNING THIS CODE DOES NOT USE MILKYWAY@HOME LIBRARIES. BEWARE WHEN RUNNING IT ON MULTIPLE SYSTEMS*/
 #include "nbody_caustic.h"
 
 const double G = 1.0;
