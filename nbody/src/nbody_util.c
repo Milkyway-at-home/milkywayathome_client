@@ -115,7 +115,7 @@ double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
         f *= 3.0;
     }
 
-    quadTerm = cQ * n * f * (mw_log8(n / f) - 1.0);
+    quadTerm = cQ * n * f * (log8(n / f) - 1.0);
     baseTerm = d * n * f;
 
     /* Total flops is then this times the number of timesteps */
