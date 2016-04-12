@@ -129,7 +129,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
 
 static real nbCalculateTimestep(real mass, real r0)
 {
-    return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
+    return sqr(1.0/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
 }
 
 static int luaCalculateTimestep(lua_State* luaSt)

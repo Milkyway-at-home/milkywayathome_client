@@ -52,7 +52,7 @@ static real nbHistogramBetaBinSize(const HistogramParams* hp)
 
 double nbNormalizedHistogramError(unsigned int n, double total)
 {
-    return (n == 0) ? inv(total) : sqrt((double) n) / total;
+    return (n == 0) ? inv(total) : mw_sqrt((double) n) / total;
 }
 
 double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
@@ -434,8 +434,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             beta = B(lambdaBetaR);
 
             /* Find the indices */
-            lambdaIndex = (unsigned int) floor((lambda - lambdaStart) / lambdaSize);
-            betaIndex = (unsigned int) floor((beta - betaStart) / betaSize);
+            lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
+            betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
 
             /* Check if the position is within the bounds of the histogram */
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   

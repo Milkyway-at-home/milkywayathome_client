@@ -174,7 +174,7 @@ static float emdDistL1(const float* x, const float* y, void* user_param)
     {
         double t = x[i] - y[i];
 
-        s += fabs(t);
+        s += mw_fabs(t);
     }
 
     return (float) s;
@@ -193,7 +193,7 @@ static float emdDistL2(const float* x, const float* y, void* user_param)
         s += t * t;
     }
 
-    return sqrtf((float) s);
+    return mw_sqrt((float) s);
 }
 
 static float emdDistC(const float* x, const float* y, void* user_param)
@@ -546,7 +546,7 @@ static void emdRussel(EMDState* state)
                     diff = max_val - cur_v->val;
                     cur_v->val = max_val;
 
-                    if (fabs(diff) < eps)
+                    if (mw_fabs(diff) < eps)
                     {
                         for (cur_u = u_head.next; cur_u != NULL; cur_u = cur_u->next)
                         {
@@ -581,7 +581,7 @@ static void emdRussel(EMDState* state)
                     diff = max_val - cur_u->val;
                     cur_u->val = max_val;
 
-                    if (fabs(diff) < eps)
+                    if (mw_fabs(diff) < eps)
                     {
                         for (cur_v = v_head.next; cur_v != NULL; cur_v = cur_v->next)
                         {
@@ -679,7 +679,7 @@ static int emdInitEMD(const float* signature1, int size1,
     /* if supply different than the demand, add a zero-cost dummy cluster */
     diff = s_sum - d_sum;
 
-    if (fabs(diff) >= EMD_EPS * s_sum)
+    if (mw_fabs(diff) >= EMD_EPS * s_sum)
     {
         equal_sums = 0;
 
@@ -1358,7 +1358,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     k = (nData);
     p = ((real) nSim / (real) n) * ratio;
             // mw_printf("total baryons: %i\n", n);
-            // mw_printf("nSim: %i\n", nSim);
+            mw_printf("nSim: %i\n", nSim);
             // mw_printf("nData: %i\n", nData);
             // mw_printf("p = %f\n", p);
             // mw_printf("k = %f\n\n", k);
@@ -1377,13 +1377,17 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /////////////////////////////
     
     /* cost comp normalized to max of cost function */
+    p = (real) nSim / (real) n; 
     num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
-    denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim);
+    
+    denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
+//     denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim);
     double CostComponent = num / denom;
             // mw_printf("num = %10.50f \t denom = %10.20f\n", num, denom);
    
     /* the 100 is there to add weight to the EMD component */
-    likelihood = (100.0 * mw_log(EMDComponent) +  (CostComponent));
+    double emd_component = 300.0 * mw_log(EMDComponent); 
+    likelihood = emd_component +  (CostComponent);
     double likelihood2 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_updated_old));
     double likelihood3 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_old));
             // mw_printf("n = % 10.10f\n",(double)n);
@@ -1395,15 +1399,15 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
 //             mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
 //             mw_printf("CostComponent = %10.20f\n", mw_exp(CostComponent));
-            mw_printf("log(EMDComponent) = %10.10f\n", 100.0 * mw_log(EMDComponent));
+            mw_printf("log(EMDComponent) = %10.10f\n", emd_component);
             
 //             mw_printf("\nOld CostComponent = %10.20f\n", CostComponent_updated_old);
-            mw_printf("\nOld log(CostComponent) = %10.10f\n", mw_log(CostComponent_old));
-            mw_printf("Updated Old log(CostComponent) = %10.10f\n", mw_log(CostComponent_updated_old));
-            mw_printf("New log(CostComponent) = %10.10f\n", (CostComponent));
+//             mw_printf("\nOld log(CostComponent) = %10.10f\n", mw_log(CostComponent_old));
+//             mw_printf("Updated Old log(CostComponent) = %10.10f\n", mw_log(CostComponent_updated_old));
+            mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
             
-            mw_printf("\nOld likelihood = %10.20f\n", likelihood3);
-            mw_printf("Updated Old likelihood = %10.20f\n\n", likelihood2);
+//             mw_printf("\nOld likelihood = %10.20f\n", likelihood3);
+//             mw_printf("Updated Old likelihood = %10.20f\n\n", likelihood2);
 
     free(hist);
     free(dat);

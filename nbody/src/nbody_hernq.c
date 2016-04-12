@@ -31,7 +31,7 @@ static real hernqMassInsideRadius(real radius, real radius_scale, real a, real m
     radius = radius / radius_scale;
 
     //Integration terms
-    mass = mass * radius * radius / ((a+radius) * (a+radius)) ;
+    mass = mass * radius * radius / ((a + radius) * (a + radius)) ;
     return mass;
 
 }
