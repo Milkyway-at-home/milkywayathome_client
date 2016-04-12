@@ -229,7 +229,7 @@ static inline real max_finder(real (*profile)(real , real*, dsfmt_t*), real* pro
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
      */
     real RATIO = 0.61803399;
-    real RATIO_COMPLEMENT = 1 - RATIO;
+    real RATIO_COMPLEMENT = 1.0 - RATIO;
     int counter = 0;
     
     real profile_x1, profile_x2, x0, x1, x2, x3;
@@ -724,8 +724,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(0.5 * nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * nbody);
+        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
+        real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/

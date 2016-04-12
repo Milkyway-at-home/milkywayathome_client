@@ -64,7 +64,7 @@ mwvector nbCenterOfMass(const NBodyState* st)
 
 static inline double log8(double x)
 {
-    return log(x) / log(8.0);
+    return mw_log(x) / mw_log(8.0);
 }
 
 /* The estimate formula has the unfortunate property of being negative
@@ -73,11 +73,11 @@ static inline double log8(double x)
  */
 static double worstFlops(double cQ, double d, double f)
 {
-    double a = pow(2.0, 3.0 - 3.0 * d / cQ);
-    double b = (cQ - d) * log(8.0);
-    double c = cQ * log(pow(8.0, 1.0 - d / cQ));
+    double a = mw_pow(2.0, 3.0 - 3.0 * d / cQ);
+    double b = (cQ - d) * mw_log(8.0);
+    double c = cQ * mw_log(mw_pow(8.0, 1.0 - d / cQ));
 
-    return -a * sqr(f) * (cQ + b - c) / (M_E * log(8.0));
+    return -a * sqr(f) * (cQ + b - c) / (M_E * mw_log(8.0));
 }
 
 /* Estimate number of operations based on formula derived in
@@ -115,7 +115,7 @@ double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
         f *= 3.0;
     }
 
-    quadTerm = cQ * n * f * (log8(n / f) - 1.0);
+    quadTerm = cQ * n * f * (mw_log8(n / f) - 1.0);
     baseTerm = d * n * f;
 
     /* Total flops is then this times the number of timesteps */

@@ -1386,7 +1386,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
             // mw_printf("num = %10.50f \t denom = %10.20f\n", num, denom);
    
     /* the 100 is there to add weight to the EMD component */
-    double emd_component = 300.0 * mw_log(EMDComponent); 
+    double emd_component = 100.0 * mw_log(EMDComponent); 
     likelihood = emd_component +  (CostComponent);
     double likelihood2 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_updated_old));
     double likelihood3 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_old));
