@@ -1341,13 +1341,8 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /* prob of observing k things given n events where the prob of obs is p */
     k = ratio * (double) nData;
     p = ((real) nSim / (real) n);
-            // mw_printf("total baryons: %i\n", n);
-            // mw_printf("nSim: %i\n", nSim);
-            // mw_printf("nData: %i\n", nData);
             // mw_printf("p = %f\n", p);
             // mw_printf("k = %f\n\n", k);
-            // mw_printf("datamass = %f \t histmass = %f\n", dataMass, histMass);
-            // mw_printf("ratio = %f\n", ratio);
     double num = probability_match(n, k, p);
     double denom = probability_match(n, (real) nSim, p);
     double CostComponent_old = num / denom;
@@ -1376,8 +1371,14 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     double CostComponent_updated_old = num / denom;
     /////////////////////////////
     
+    
+    /* this is the newest version of the cost function
+     * it uses a combination of the binomial error for sim 
+     * and the poisson error for the data
+     */
+    
     /* cost comp normalized to max of cost function */
-    p = (real) nSim / (real) n; 
+    p = ((real) nSim / (real) n) ;
     num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
     
     denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
@@ -1386,22 +1387,15 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
             // mw_printf("num = %10.50f \t denom = %10.20f\n", num, denom);
    
     /* the 100 is there to add weight to the EMD component */
-    double emd_component = 100.0 * mw_log(EMDComponent); 
+    double emd_component = 300.0 * mw_log(EMDComponent); 
     likelihood = emd_component +  (CostComponent);
     double likelihood2 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_updated_old));
     double likelihood3 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_old));
-            // mw_printf("n = % 10.10f\n",(double)n);
-            // mw_printf("k = % 10.10f\n",(double)k);
-            // mw_printf("n * p = % 10.10f\n", (n * p));
-            // mw_printf("nData = % 10.10f\n",(double)nData);
-            // mw_printf("p = % 10.10f\n",(double)p);
-            // mw_printf("emd = % 10.10f\n", emd);
 
 //             mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
 //             mw_printf("CostComponent = %10.20f\n", mw_exp(CostComponent));
             mw_printf("log(EMDComponent) = %10.10f\n", emd_component);
             
-//             mw_printf("\nOld CostComponent = %10.20f\n", CostComponent_updated_old);
 //             mw_printf("\nOld log(CostComponent) = %10.10f\n", mw_log(CostComponent_old));
 //             mw_printf("Updated Old log(CostComponent) = %10.10f\n", mw_log(CostComponent_updated_old));
             mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
