@@ -1265,10 +1265,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     unsigned int nData = data->totalNum;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
-    real k;/* k was previously defined as an int. There was no need for this */
     real p; /* probability of observing an event */
-    
-    real ratio = 100000.0 * dataMass / (histMass * 100000.0);
     
     unsigned int i;
     WeightPos* hist;
@@ -1337,71 +1334,22 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     */
     double EMDComponent = 1.0 - emd / 50.0;
     
-    ///////////////////////////// old method
-    /* prob of observing k things given n events where the prob of obs is p */
-    k = ratio * (double) nData;
-    p = ((real) nSim / (real) n);
-            // mw_printf("p = %f\n", p);
-            // mw_printf("k = %f\n\n", k);
-    double num = probability_match(n, k, p);
-    double denom = probability_match(n, (real) nSim, p);
-    double CostComponent_old = num / denom;
-    /////////////////////////////
-    
-    ///////////////////////////// updated old method
-    /* prob of observing k things given n events where the prob of obs is p */
-    k = (nData);
-    p = ((real) nSim / (real) n) * ratio;
-            // mw_printf("total baryons: %i\n", n);
-            mw_printf("nSim: %i\n", nSim);
-            // mw_printf("nData: %i\n", nData);
-            // mw_printf("p = %f\n", p);
-            // mw_printf("k = %f\n\n", k);
-            // mw_printf("datamass = %f \t histmass = %f\n", dataMass, histMass);
-            // mw_printf("ratio = %f\n", ratio);
-    num = probability_match(n, k, p);
-    
-    /* max of the prob function */
-    /* the ratio is excluded because we want the max ratio=1 */
-    k = (real) nSim;
-    p = (real) nSim / (real) n; 
-            // mw_printf("p = %f\n", p);
-            // mw_printf("k = %f\n\n", k);
-    denom = probability_match(n, k, p);
-    double CostComponent_updated_old = num / denom;
-    /////////////////////////////
-    
-    
     /* this is the newest version of the cost function
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
      */
     
-    /* cost comp normalized to max of cost function */
     p = ((real) nSim / (real) n) ;
-    num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
-    
-    denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
-//     denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim);
-    double CostComponent = num / denom;
-            // mw_printf("num = %10.50f \t denom = %10.20f\n", num, denom);
-   
-    /* the 100 is there to add weight to the EMD component */
-    double emd_component = 300.0 * mw_log(EMDComponent); 
-    likelihood = emd_component +  (CostComponent);
-    double likelihood2 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_updated_old));
-    double likelihood3 = (100.0 * mw_log(EMDComponent) +  mw_log(CostComponent_old));
+    double num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
+    double denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
+    double CostComponent = num / denom; //this is the log of the cost component
 
-//             mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
-//             mw_printf("CostComponent = %10.20f\n", mw_exp(CostComponent));
-            mw_printf("log(EMDComponent) = %10.10f\n", emd_component);
-            
-//             mw_printf("\nOld log(CostComponent) = %10.10f\n", mw_log(CostComponent_old));
-//             mw_printf("Updated Old log(CostComponent) = %10.10f\n", mw_log(CostComponent_updated_old));
-            mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
-            
-//             mw_printf("\nOld likelihood = %10.20f\n", likelihood3);
-//             mw_printf("Updated Old likelihood = %10.20f\n\n", likelihood2);
+    /* the 300 is there to add weight to the EMD component */
+    likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
+
+    //mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
+    //mw_printf("log(EMDComponent) = %10.10f\n", emd_component);
+    //mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
 
     free(hist);
     free(dat);

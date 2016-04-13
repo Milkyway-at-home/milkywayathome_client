@@ -58,7 +58,6 @@ static real choose(int n, int c)
 real probability_match(int n, real ktmp, real pobs)
 {
     real result = 0.0;
-    real result1, result2, result3;
 
     /*
      * Previously, this function took in k as an int. Bad move.

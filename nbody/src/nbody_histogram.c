@@ -392,7 +392,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
     double Nbodies= st->nbody;
-    mwbool isdark = TRUE;//is it dark matter?
     mwbool islight = FALSE;//is it light matter?
     
     nbGetHistTrig(&histTrig, hp);
