@@ -52,7 +52,7 @@ static real nbHistogramBetaBinSize(const HistogramParams* hp)
 
 double nbNormalizedHistogramError(unsigned int n, double total)
 {
-    return (n == 0) ? inv(total) : sqrt((double) n) / total;
+    return (n == 0) ? inv(total) : mw_sqrt((double) n) / total;
 }
 
 double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
@@ -390,9 +390,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
     unsigned int nBin = lambdaBins * betaBins;
-    
+    unsigned int body_count = 0;
     double Nbodies= st->nbody;
-    mwbool isdark = TRUE;//is it dark matter?
     mwbool islight = FALSE;//is it light matter?
     
     nbGetHistTrig(&histTrig, hp);
@@ -402,7 +401,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->betaBins = betaBins;
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
-    histogram->totalSimulated = (unsigned int) st->nbody;
     
     for (int i = 0; i < Nbodies; i++)
     {
@@ -410,9 +408,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         if(Type(b) == BODY(islight))
         {
             histogram->massPerParticle = Mass(b);
-            break;
+            body_count++;
         }
     }
+    histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
 
     /* It does not make sense to ignore bins in a generated histogram */
@@ -434,8 +433,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             beta = B(lambdaBetaR);
 
             /* Find the indices */
-            lambdaIndex = (unsigned int) floor((lambda - lambdaStart) / lambdaSize);
-            betaIndex = (unsigned int) floor((beta - betaStart) / betaSize);
+            lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
+            betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
 
             /* Check if the position is within the bounds of the histogram */
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   

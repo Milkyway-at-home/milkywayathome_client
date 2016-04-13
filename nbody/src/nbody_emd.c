@@ -174,7 +174,7 @@ static float emdDistL1(const float* x, const float* y, void* user_param)
     {
         double t = x[i] - y[i];
 
-        s += fabs(t);
+        s += mw_fabs(t);
     }
 
     return (float) s;
@@ -193,7 +193,7 @@ static float emdDistL2(const float* x, const float* y, void* user_param)
         s += t * t;
     }
 
-    return sqrtf((float) s);
+    return mw_sqrt((float) s);
 }
 
 static float emdDistC(const float* x, const float* y, void* user_param)
@@ -546,7 +546,7 @@ static void emdRussel(EMDState* state)
                     diff = max_val - cur_v->val;
                     cur_v->val = max_val;
 
-                    if (fabs(diff) < eps)
+                    if (mw_fabs(diff) < eps)
                     {
                         for (cur_u = u_head.next; cur_u != NULL; cur_u = cur_u->next)
                         {
@@ -581,7 +581,7 @@ static void emdRussel(EMDState* state)
                     diff = max_val - cur_u->val;
                     cur_u->val = max_val;
 
-                    if (fabs(diff) < eps)
+                    if (mw_fabs(diff) < eps)
                     {
                         for (cur_v = v_head.next; cur_v != NULL; cur_v = cur_v->next)
                         {
@@ -679,7 +679,7 @@ static int emdInitEMD(const float* signature1, int size1,
     /* if supply different than the demand, add a zero-cost dummy cluster */
     diff = s_sum - d_sum;
 
-    if (fabs(diff) >= EMD_EPS * s_sum)
+    if (mw_fabs(diff) >= EMD_EPS * s_sum)
     {
         equal_sums = 0;
 
@@ -1257,25 +1257,22 @@ double nbWorstCaseEMD(const NBodyHistogram* hist)
 
 double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-    unsigned int k;
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
     unsigned int n = histogram->totalSimulated;
-    unsigned int nObs = histogram->totalNum;
+    unsigned int nSim = histogram->totalNum;
     unsigned int nData = data->totalNum;
-    real pObs = (real) nObs / (real) n;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
+    real p; /* probability of observing an event */
+    
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
-    real ratio;
     double emd;
     double likelihood;
-
-    if (data->lambdaBins != histogram->lambdaBins
-	|| data->betaBins != histogram->betaBins)
+    if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and
@@ -1283,7 +1280,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         return NAN;
     }
 
-    if (nObs == 0 || nData == 0)
+    if (nSim == 0 || nData == 0)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
         return INFINITY;
@@ -1324,9 +1321,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         return NAN;
     }
 
-    ratio = 100000.0 * dataMass / (histMass * 100000.0);
-    k = (unsigned int) (ratio * (double)nData);
-
+    
     /* This calculates the likelihood as the combination of the
     * probability distribution and (1.0 - emd / max_dist) */
 
@@ -1338,16 +1333,23 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     Some more notes about the revised calculation
     */
     double EMDComponent = 1.0 - emd / 50.0;
-    double CostComponent = probability_match(n, (real) k, pObs) / probability_match(n, (real)n  * pObs, pObs);
-    likelihood = (mw_log(EMDComponent) +  mw_log(CostComponent));
-    // mw_printf("n = % 10.10f\n",(double)n);
-    // mw_printf("k = % 10.10f\n",(double)k);
-    // mw_printf("n * pObs = % 10.10f\n", (n * pObs));
-    // mw_printf("nData = % 10.10f\n",(double)nData);
-    // mw_printf("pObs = % 10.10f\n",(double)pObs);
-    // mw_printf("emd = % 10.10f\n", emd);
-    //mw_printf("EMDComponent = % 10.10f\n",EMDComponent);
-    //mw_printf("CostComponent = % 10.10f\n",mw_log(CostComponent));
+    
+    /* this is the newest version of the cost function
+     * it uses a combination of the binomial error for sim 
+     * and the poisson error for the data
+     */
+    
+    p = ((real) nSim / (real) n) ;
+    double num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
+    double denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
+    double CostComponent = num / denom; //this is the log of the cost component
+
+    /* the 300 is there to add weight to the EMD component */
+    likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
+
+    //mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
+    //mw_printf("log(EMDComponent) = %10.10f\n", emd_component);
+    //mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
 
     free(hist);
     free(dat);
