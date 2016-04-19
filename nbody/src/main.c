@@ -255,7 +255,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
         
         {
-            "output-cartesian", 'b',
+            "output-lbrcartesian", 'b',
             POPT_ARG_NONE, &nbf.outputlbrCartesian,
             0, "Output both lbr and Cartesian coordinates", NULL
         },
