@@ -62,6 +62,7 @@ typedef struct
     int visualizer;
     int debugBOINC;
     int outputCartesian;
+    int outputlbrCartesian;
     int printTiming;
     int verifyOnly;
     int printHistogram;  /* Print histogram at end */
