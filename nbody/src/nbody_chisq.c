@@ -28,7 +28,7 @@
 #include "nbody_defaults.h"
 #include "nbody_histogram.h"
 
-static double nbSahaTerm(double m, double s)
+static real nbSahaTerm(real m, real s)
 {
     /*
       W = product_{i = 1 .. B }
@@ -72,7 +72,7 @@ static double nbSahaTerm(double m, double s)
     }
 }
 
-static double nbPoissonTerm(double f, double y)
+static real nbPoissonTerm(real f, real y)
 {
     /*
       Fitting a data set y(y1, y2, .. yn)  to a model function f(f1, f2, .. fn)
@@ -90,10 +90,10 @@ static double nbPoissonTerm(double f, double y)
     }
 }
 
-static double nbKullbackLeiblerTerm(double h, double k)
+static real nbKullbackLeiblerTerm(real h, real k)
 {
     /* Symmetrized version. (Jeffrey divergence?) */
-    double m;
+    real m;
 
     if (mw_fabs(h) < 1.0e-10 || mw_fabs(k) < 1.0e-10)
     {
@@ -107,8 +107,8 @@ static double nbKullbackLeiblerTerm(double h, double k)
 
 
 #if 0
-    double p = h;
-    double q = k;
+    real p = h;
+    real q = k;
     /* Non-symmetrized version */
     if (fabs(p) < 1.0e-10 || fabs(q) < 1.0e-10)
     {
@@ -122,24 +122,24 @@ static double nbKullbackLeiblerTerm(double h, double k)
 #endif
 }
 
-static double nbChisqAlt(double p, double q)
+static real nbChisqAlt(real p, real q)
 {
     return 0.5 * sqr(p - q) / (p + q);
 }
 
 /* Calculate chisq from read data histogram and the generated histogram */
-double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
+real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                    const NBodyHistogram* histogram,   /* Generated histogram */
                    NBodyLikelihoodMethod method)
 {
     unsigned int i;
-    double tmp;
-    double effTotalNum;
-    double chiSq = 0.0;
-    double n;
-    double err;
-    double simErr;
-    double scale = 1.0;
+    real tmp;
+    real effTotalNum;
+    real chiSq = 0.0;
+    real n;
+    real err;
+    real simErr;
+    real scale = 1.0;
     unsigned int nBin = data->lambdaBins * histogram->lambdaBins;
 
     assert(data->lambdaBins == histogram->lambdaBins);
@@ -156,7 +156,7 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     {
         /* We need to have the total number to scale to the correct
          * numbers for Saha likelihood */
-        scale = (double) data->totalNum;
+        scale = (real) data->totalNum;
         if (data->totalNum == 0 || histogram->totalNum == 0)
         {
             mw_printf("Histogram scales required for Saha likelihood but missing\n");
@@ -169,13 +169,13 @@ double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
         return INFINITY;
     }
 
-    effTotalNum = (double) nbCorrectTotalNumberInHistogram(histogram, data);
+    effTotalNum = (real) nbCorrectTotalNumberInHistogram(histogram, data);
 
     for (i = 0; i < nBin; ++i)
     {
         if (data->data[i].useBin)  /* Skip bins with missing data */
         {
-            n = (double) histogram->data[i].rawCount;
+            n = (real) histogram->data[i].rawCount;
             err = data->data[i].err;
 
             switch (method)

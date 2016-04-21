@@ -168,11 +168,11 @@ static float emdDistL1(const float* x, const float* y, void* user_param)
 {
     int i;
     int dims = (int)(size_t)user_param;
-    double s = 0.0;
+    real s = 0.0;
 
     for (i = 0; i < dims; i++)
     {
-        double t = x[i] - y[i];
+        real t = x[i] - y[i];
 
         s += mw_fabs(t);
     }
@@ -184,11 +184,11 @@ static float emdDistL2(const float* x, const float* y, void* user_param)
 {
     int i;
     int dims = (int)(size_t)user_param;
-    double s = 0.0;
+    real s = 0.0;
 
     for (i = 0; i < dims; i++)
     {
-        double t = x[i] - y[i];
+        real t = x[i] - y[i];
 
         s += t * t;
     }
@@ -200,11 +200,11 @@ static float emdDistC(const float* x, const float* y, void* user_param)
 {
     int i;
     int dims = (int)(size_t)user_param;
-    double s = 0.0;
+    real s = 0.0;
 
     for (i = 0; i < dims; i++)
     {
-        double t = fabs(x[i] - y[i]);
+        real t = fabs(x[i] - y[i]);
 
         if (s < t)
         {
@@ -1151,10 +1151,10 @@ static EMDDistanceFunction nbMetricDistanceFunction(EMDDistanceType distType)
     }
 }
 
-static double emdComputeTotalFlow(EMDState* state, float* flow)
+static real emdComputeTotalFlow(EMDState* state, float* flow)
 {
     EMDNode2D* xp = NULL;
-    double totalCost = 0.0;
+    real totalCost = 0.0;
     const int flowStep = 1;
 
     for (xp = state->_x; xp < state->end_x; xp++)
@@ -1174,7 +1174,7 @@ static double emdComputeTotalFlow(EMDState* state, float* flow)
 
         if (ci >= 0 && cj >= 0)
         {
-            totalCost += (double) val * state->cost[i][j];
+            totalCost += (real) val * state->cost[i][j];
 
             if (flow)
             {
@@ -1195,7 +1195,7 @@ float emdCalc(const float* RESTRICT signature_arr1,
 {
     EMDState state;
     float emd = (float) EMD_INVALID;
-    double totalCost = 0.0;
+    real totalCost = 0.0;
     int result = 0;
     EMDDistanceFunction dist_func = NULL;
     const EMDDistanceType dist_type = EMD_DIST_L2;
@@ -1248,14 +1248,14 @@ float emdCalc(const float* RESTRICT signature_arr1,
 }
 
 
-double nbWorstCaseEMD(const NBodyHistogram* hist)
+real nbWorstCaseEMD(const NBodyHistogram* hist)
 {
     //(This makes no sense to be defined this way now that histograms are not normalized.
     //  return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
     return DEFAULT_WORST_CASE;
 }
 
-double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
+real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
@@ -1270,8 +1270,8 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
-    double emd;
-    double likelihood;
+    real emd;
+    real likelihood;
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
@@ -1332,7 +1332,7 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
     Some more notes about the revised calculation
     */
-    double EMDComponent = 1.0 - emd / 50.0;
+    real EMDComponent = 1.0 - emd / 50.0;
     
     /* this is the newest version of the cost function
      * it uses a combination of the binomial error for sim 
@@ -1340,9 +1340,9 @@ double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
      */
     
     p = ((real) nSim / (real) n) ;
-    double num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
-    double denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
-    double CostComponent = num / denom; //this is the log of the cost component
+    real num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
+    real denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
+    real CostComponent = num / denom; //this is the log of the cost component
 
     /* the 300 is there to add weight to the EMD component */
     likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);

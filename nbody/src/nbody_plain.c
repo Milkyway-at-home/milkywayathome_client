@@ -32,7 +32,7 @@
 
 static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
 {
-    double frac = (double) st->step / (double) ctx->nStep;
+    real frac = (real) st->step / (real) ctx->nStep;
 
     mw_fraction_done(frac);
 

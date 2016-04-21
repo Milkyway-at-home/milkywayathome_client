@@ -260,9 +260,9 @@ typedef struct
 {
     size_t factors[8];
     size_t threads[8];
-    double timings[8];        /* In a single iteration */
-    double chunkTimings[8];   /* Average time per chunk */
-    double kernelTimings[8];  /* Running totals */
+    real timings[8];        /* In a single iteration */
+    real chunkTimings[8];   /* Average time per chunk */
+    real kernelTimings[8];  /* Running totals */
 
     size_t global[8];
     size_t local[8];
@@ -349,10 +349,10 @@ typedef struct
 {
     int useBin;
     unsigned int rawCount;
-    double lambda;
-    double beta;
-    double count;
-    double err;
+    real lambda;
+    real beta;
+    real count;
+    real err;
 } HistData;
 
 typedef struct
@@ -363,7 +363,7 @@ typedef struct
     unsigned int totalSimulated;
     int hasRawCounts;
     HistogramParams params;
-    double massPerParticle;
+    real massPerParticle;
 
     /* This is used as a variable length struct. Do not add any fields
      * after data. */

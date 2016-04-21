@@ -82,7 +82,7 @@ static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
     static const char* criterionName = NULL;
-    double nStepf = 0.0;
+    real nStepf = 0.0;
 
     static const MWNamedArg argTable[] =
         {
@@ -126,7 +126,7 @@ static int createNBodyCtx(lua_State* luaSt)
     }
 
     nStepf = mw_ceil(ctx.timeEvolve / ctx.timestep);
-    if (nStepf >= (double) UINT_MAX)
+    if (nStepf >= (real) UINT_MAX)
     {
         luaL_error(luaSt,
                    "Number of timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",

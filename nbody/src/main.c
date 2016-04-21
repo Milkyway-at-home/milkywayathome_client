@@ -614,7 +614,7 @@ int main(int argc, const char* argv[])
     }
     else if (nbf.matchHistogram)
     {
-        double emd;
+        real emd;
 
         emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);

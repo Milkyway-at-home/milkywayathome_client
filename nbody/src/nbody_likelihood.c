@@ -60,11 +60,11 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
     return FALSE;
 }
 
-double nbMatchHistogramFiles(const char* datHist, const char* matchHist)
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist)
 {
     NBodyHistogram* dat;
     NBodyHistogram* match;
-    double emd = NAN;
+    real emd = NAN;
 
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
@@ -82,7 +82,7 @@ double nbMatchHistogramFiles(const char* datHist, const char* matchHist)
 
 
 /* Calculate the likelihood from the final state of the simulation */
-double nbSystemLikelihood(const NBodyState* st,
+real nbSystemLikelihood(const NBodyState* st,
                      const NBodyHistogram* data,
                      const NBodyHistogram* histogram,
                      NBodyLikelihoodMethod method)
@@ -111,9 +111,9 @@ double nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->totalNum < 0.0001 * (double) st->nbody)
+        if (histogram->totalNum < 0.0001 * (real) st->nbody)
         {
-            double worstEMD;
+            real worstEMD;
 
             mw_printf("Number of particles in bins is very small compared to total. "
                       "(%u << %u). Skipping distance calculation\n",

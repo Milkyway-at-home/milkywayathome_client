@@ -44,9 +44,9 @@ float emdCalc(const float* RESTRICT signature_arr1,
               unsigned int size2,
               float* RESTRICT lower_bound);
 
-double nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram);
+real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
-double nbWorstCaseEMD(const NBodyHistogram* hist);
+real nbWorstCaseEMD(const NBodyHistogram* hist);
 
 #ifdef __cplusplus
 }
