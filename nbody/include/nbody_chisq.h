@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-double nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
+real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                    const NBodyHistogram* histogram,   /* Generated histogram */
                    NBodyLikelihoodMethod method);
 

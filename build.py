@@ -33,16 +33,16 @@ assert nbody_openmp_sep_opencl in ["ON", "OFF"], "ERROR: Set NBODY_OPENMP to ON 
 cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp_sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
 
 # CMake flags used for windows
-cmake_windows_flags = ["-DNBODY_STATIC=ON"]
+cmake_static_flag = ["-DNBODY_STATIC=ON"]
 
 # Linux
 if os == "linux":
 
     if arch == "64":
-        execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_amd64/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_amd64/usr/local/cuda/include/"] + cmake_shared_flags)
+        execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_amd64/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_amd64/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
 
     if arch == "32":
-        execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_i386/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_i386/usr/local/cuda/include/"] + cmake_shared_flags)
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_i386/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_i386/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
     
     execute(["make", "clean"])
     execute(["make"])
@@ -51,10 +51,10 @@ if os == "linux":
 if os == "win":
 
     if arch == "64":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"] + cmake_shared_flags + cmake_windows_flags)
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DSEPARATION=OFF"] + cmake_shared_flags + cmake_static_flag)
 
     if arch == "32":
-        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=ON"] + cmake_shared_flags + cmake_windows_flags)
+        execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON","-DSEPARATION=ON"] + cmake_shared_flags + cmake_static_flag)
     
     execute(["mingw32-make", "clean"])
     execute(["mingw32-make"])
@@ -63,7 +63,7 @@ if os == "win":
 if os == "mac":
 
     if arch == "64":
-        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags)
+        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags + cmake_static_flag)
 
     if arch == "32":
         print("ERROR: Mac OSX 32 bit not supported")

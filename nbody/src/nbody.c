@@ -209,7 +209,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 {
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
-    double likelihood = NAN;
+    real likelihood = NAN;
     NBodyLikelihoodMethod method;
 
     /* The likelihood only means something when matching a histogram */
@@ -313,7 +313,7 @@ int nbMain(const NBodyFlags* nbf)
     CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
-    double ts = 0.0, te = 0.0;
+    real ts = 0.0, te = 0.0;
 
     if (!nbOutputIsUseful(nbf))
     {

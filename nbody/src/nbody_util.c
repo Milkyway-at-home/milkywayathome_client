@@ -62,7 +62,7 @@ mwvector nbCenterOfMass(const NBodyState* st)
     return cm;
 }
 
-static inline double log8(double x)
+static inline real log8(real x)
 {
     return mw_log(x) / mw_log(8.0);
 }
@@ -71,11 +71,11 @@ static inline double log8(double x)
    for small n.  This will be the most negative. Add this as an extra
    boost to prevent negative flops estimates.
  */
-static double worstFlops(double cQ, double d, double f)
+static real worstFlops(real cQ, real d, real f)
 {
-    double a = mw_pow(2.0, 3.0 - 3.0 * d / cQ);
-    double b = (cQ - d) * mw_log(8.0);
-    double c = cQ * mw_log(mw_pow(8.0, 1.0 - d / cQ));
+    real a = mw_pow(2.0, 3.0 - 3.0 * d / cQ);
+    real b = (cQ - d) * mw_log(8.0);
+    real c = cQ * mw_log(mw_pow(8.0, 1.0 - d / cQ));
 
     return -a * sqr(f) * (cQ + b - c) / (M_E * mw_log(8.0));
 }
@@ -90,21 +90,21 @@ static double worstFlops(double cQ, double d, double f)
 
    Does not account for newer opening criteria.
  */
-double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
+real nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
 {
-    double quadTerm, baseTerm;
+    real quadTerm, baseTerm;
 
-    double n = (double) nbody;
-    double nSteps = ctx->timeEvolve / ctx->timestep;
+    real n = (real) nbody;
+    real nSteps = ctx->timeEvolve / ctx->timestep;
 
     /* Cost of interaction for a cell using a quadrupole moment. */
-    const double cQ = ctx->useQuad ? 50.0 : 0;
+    const real cQ = ctx->useQuad ? 50.0 : 0;
 
     /* Cost of a direct interaction */
-    const double d = 13;
+    const real d = 13;
 
     /* Based on BH86 opening criterion. */
-    double f = 28.0 * M_PI / (3.0 * cube(ctx->theta));
+    real f = 28.0 * M_PI / (3.0 * cube(ctx->theta));
 
     /* FIXME: Don't be lazy and try rederiving for these. It should be
      * some number larger than for BH86. Somewhere I remember
@@ -123,17 +123,17 @@ double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
 }
 
 /* These estimates seem to sometimes work OK but very often not */
-double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops)
+real nbEstimateTime(const NBodyCtx* ctx, int nbody, real flops)
 {
     /* Spends < ~5% of the time in tree construction. Spends about
      * half the time in tree traversal / memory access as actually
      * calculating forces. */
-    const double factor = 2.05;
+    const real factor = 2.05;
 
     /* Not 100% efficient. Bullshit number */
-    const double efficiency = 0.95;
+    const real efficiency = 0.95;
 
-    double nflop = nbEstimateNumberFlops(ctx, nbody);
+    real nflop = nbEstimateNumberFlops(ctx, nbody);
 
     return factor * nflop / (efficiency * flops);
 }
@@ -151,7 +151,7 @@ void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
                 mw_printf("[tree-incest detected at step %u / %u (%f%%)]\n",
                           st->step,
                           ctx->nStep,
-                          100.0 * (double) st->step / (double) ctx->nStep
+                          100.0 * (real) st->step / (real) ctx->nStep
                     );
             }
             else
@@ -159,7 +159,7 @@ void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
                 mw_printf("tree-incest detected (fatal) at step %u / %u (%f%%)\n",
                           st->step,
                           ctx->nStep,
-                          100.0 * (double) st->step / (double) ctx->nStep
+                          100.0 * (real) st->step / (real) ctx->nStep
                     );
             }
         }

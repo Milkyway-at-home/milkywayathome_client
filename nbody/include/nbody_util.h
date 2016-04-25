@@ -37,8 +37,8 @@ extern "C" {
 real nbCorrectTimestep(real timeEvolve, real dt);
 mwvector nbCenterOfMass(const NBodyState* st);
 
-double nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
-double nbEstimateTime(const NBodyCtx* ctx, int nbody, double flops);
+real nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
+real nbEstimateTime(const NBodyCtx* ctx, int nbody, real flops);
 
 void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st);
 

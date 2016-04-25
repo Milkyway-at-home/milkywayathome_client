@@ -41,26 +41,47 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
 
     fprintf(f,
             "cartesian    = %d\n"
+            "lbr & xyz    = %d\n"
             "hasMilkyway  = %d\n"
             "centerOfMass = %f, %f, %f\n",
             nbf->outputCartesian,
+            nbf->outputlbrCartesian,
             (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT),
             X(cmPos), Y(cmPos), Z(cmPos)
         );
 
 }
 
-static void nbPrintBodyOutputHeader(FILE* f, int cartesian)
+static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
-    fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
-            cartesian ? "x" : "l",
-            cartesian ? "y" : "b",
-            cartesian ? "z" : "r",
-            "v_x",
-            "v_y",
-            "v_z",
-            "mass"
-        );
+    if (both)
+    {
+        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+                "x", 
+                "y",  
+                "z",  
+                "l",
+                "b",
+                "r",
+                "v_x",
+                "v_y",
+                "v_z",
+                "mass"
+            );
+    }
+    else
+    {
+        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
+                cartesian ? "x" : "l",
+                cartesian ? "y" : "b",
+                cartesian ? "z" : "r",
+                "v_x",
+                "v_y",
+                "v_z",
+                "mass"
+            );
+    }
+    
 }
 
 /* output: Print bodies */
@@ -71,7 +92,7 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
     const Body* endp = st->bodytab + st->nbody;
 
     nbPrintSimInfoHeader(f, nbf, ctx, st);
-    nbPrintBodyOutputHeader(f, nbf->outputCartesian);
+    nbPrintBodyOutputHeader(f, nbf->outputCartesian, nbf->outputlbrCartesian);
 
     for (p = st->bodytab; p < endp; p++)
     {
@@ -82,6 +103,15 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
                     " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+        }
+        else if (nbf->outputlbrCartesian)
+        {
+            lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
+            fprintf(f,
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
+                    L(lbr), B(lbr), R(lbr),
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));   
         }
         else
         {

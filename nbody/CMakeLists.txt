@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 1
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 60
+set(nbody_VERSION_MINOR 62
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
@@ -46,7 +46,7 @@ if(NBODY_GL)
   include_directories(${GLM_INCLUDE_DIR})
 endif()
 
-cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
+cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
                                       "NOT NBODY_OPENCL;NOT ENABLE_CURSES" OFF)
 mark_as_advanced(NBODY_STATIC)
 maybe_static(${NBODY_STATIC})

@@ -41,9 +41,9 @@ void nbWriteHistogram(const char* histoutFileName,
                       const NBodyState* st,
                       const NBodyHistogram* histogram);
 
-double nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data);
+real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data);
 
-double nbNormalizedHistogramError(unsigned int n, double total);
+real nbNormalizedHistogramError(unsigned int n, real total);
 
 unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generated histogram */
 					     const NBodyHistogram* data);      /* Data histogram */

@@ -633,8 +633,8 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     if (OPA_load_int(&scene->blockSimulationOnGraphics))
     {
         int updated = FALSE;
-        double dt = -1.0;
-        double startTime = mwGetTime();
+        real dt = -1.0;
+        real startTime = mwGetTime();
 
         /* FIXME: This needs to change if we allow changing
          * whether the simulation should block
