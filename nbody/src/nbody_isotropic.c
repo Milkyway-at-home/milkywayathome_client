@@ -526,6 +526,7 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     upperlimit_r = find_upperlimit_r(dsfmtState, args, energy, search_range, r);
     
+    
     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
     
     /*This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
@@ -618,7 +619,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     }
     
 
-    v *= 0.977813107;//changing from kpc/gy to km/s
+//     v *= 0.977813107;//changing from kpc/gy to km/s
     return v; //km/s
 }
 
