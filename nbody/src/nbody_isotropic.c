@@ -158,7 +158,7 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
     c2 = 0.88888888888; //8.0 / 9.0;
     c3 = 0.55555555555; //5.0 / 9.0;
     x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
-    x2 = 0.0;
+    x2 = 0.00000000000;
     x3 = 0.77459666924; //sqrt(3.0 / 5.0);
     x1n = (coef1 * x1 + coef2);
     /*should be: x2n = (coef1 * x2 + coef2);*/
@@ -592,7 +592,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
     real parameters[5] = {mass_l, mass_d, rscale_l, rscale_d, r};
-    real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1e-2, dsfmtState);
+    real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2, dsfmtState);
    
     while(1)
     {
