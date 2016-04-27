@@ -29,13 +29,16 @@
 static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx* ctx, const NBodyState* st)
 {
     mwvector cmPos;
-
+    mwvector cmVel;
+    cmVel = nbCenterOfMom(st);
     if (st->tree.root)
     {
+        mw_printf(" called\n");
         cmPos = Pos(st->tree.root);
     }
     else
     {
+        mw_printf("this called\n");
         cmPos = nbCenterOfMass(st);
     }
 
@@ -43,11 +46,12 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
             "cartesian    = %d\n"
             "lbr & xyz    = %d\n"
             "hasMilkyway  = %d\n"
-            "centerOfMass = %f, %f, %f\n",
+            "centerOfMass = %f, %f, %f,   centerOfMomentum = %f, %f, %f,\n",
             nbf->outputCartesian,
             nbf->outputlbrCartesian,
             (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT),
-            X(cmPos), Y(cmPos), Z(cmPos)
+            X(cmPos), Y(cmPos), Z(cmPos),
+            X(cmVel), Y(cmVel), Z(cmVel)
         );
 
 }

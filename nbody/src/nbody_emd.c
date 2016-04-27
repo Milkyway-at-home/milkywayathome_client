@@ -64,8 +64,8 @@
 #include "nbody_mass.h"
 
 #define MAX_ITERATIONS 2500
-#define EMD_INF   ((float)1.0e20)
-#define EMD_EPS   ((float)1.0e-5)
+#define EMD_INF   ((real)1.0e20)
+#define EMD_EPS   ((real)1.0e-5)
 #define EMD_INVALID NAN
 
 typedef enum
@@ -75,19 +75,19 @@ typedef enum
     EMD_DIST_C
 } EMDDistanceType;
 
-typedef float (*EMDDistanceFunction)(const float* a, const float* b, void* user_param);
+typedef real (*EMDDistanceFunction)(const real* a, const real* b, void* user_param);
 
 /* EMDNode1D is used for lists, representing 1D sparse array */
 typedef struct EMDNode1D
 {
-    float val;
+    real val;
     struct EMDNode1D* next;
 } EMDNode1D;
 
 /* EMDNode2D is used for lists, representing 2D sparse matrix */
 typedef struct EMDNode2D
 {
-    float val;
+    real val;
     struct EMDNode2D* next[2];  /* next row & next column */
     int i, j;
 } EMDNode2D;
@@ -98,7 +98,7 @@ typedef struct EMDState
     int ssize;
     int dsize;
 
-    float** cost;
+    real** cost;
     EMDNode2D* _x;
     EMDNode2D* end_x;
     EMDNode2D* enter_x;
@@ -118,11 +118,11 @@ typedef struct EMDState
     char* is_used;
 
     /* russel buffers */
-    float* s;
-    float* d;
-    float** delta;
+    real* s;
+    real* d;
+    real** delta;
 
-    float weight, max_cost;
+    real weight, max_cost;
     char* buffer;
 } EMDState;
 
@@ -133,20 +133,20 @@ static size_t emdAllocateStateBuffer(EMDState* state, int size1, int size2, int 
     size_t bufferSize;
 
     /* calculate buffer size */
-    bufferSize = (size1 + 1) * (size2 + 1) * (sizeof(float) +   /* cost */
+    bufferSize = (size1 + 1) * (size2 + 1) * (sizeof(real) +   /* cost */
                  sizeof(char) +       /* is_x */
-                 sizeof(float)) +     /* delta matrix */
+                 sizeof(real)) +     /* delta matrix */
                  (size1 + size2 + 2) * (sizeof(EMDNode2D) +   /* _x */
                                         sizeof(EMDNode2D*) +  /* cols_x & rows_x */
                                         sizeof(EMDNode1D) +   /* u & v */
-                                        sizeof(float) +      /* s & d */
+                                        sizeof(real) +      /* s & d */
                                         sizeof(int) + sizeof(EMDNode2D*)) +    /* idx1 & idx2 */
-                 (size1 + 1) * (sizeof(float*) + sizeof(char*) +     /* rows pointers for */
-                                sizeof(float*)) + 256;               /*  cost, is_x and delta */
+                 (size1 + 1) * (sizeof(real*) + sizeof(char*) +     /* rows pointers for */
+                                sizeof(real*)) + 256;               /*  cost, is_x and delta */
 
-    if (bufferSize < dims * 2 * sizeof(float))
+    if (bufferSize < dims * 2 * sizeof(real))
     {
-        bufferSize = dims * 2 * sizeof(float);
+        bufferSize = dims * 2 * sizeof(real);
     }
 
 
@@ -164,7 +164,7 @@ static void emdReleaseEMD(EMDState* state)
 /****************************************************************************************\
 *                                  standard  metrics                                     *
 \****************************************************************************************/
-static float emdDistL1(const float* x, const float* y, void* user_param)
+static real emdDistL1(const real* x, const real* y, void* user_param)
 {
     int i;
     int dims = (int)(size_t)user_param;
@@ -177,10 +177,10 @@ static float emdDistL1(const float* x, const float* y, void* user_param)
         s += mw_fabs(t);
     }
 
-    return (float) s;
+    return (real) s;
 }
 
-static float emdDistL2(const float* x, const float* y, void* user_param)
+static real emdDistL2(const real* x, const real* y, void* user_param)
 {
     int i;
     int dims = (int)(size_t)user_param;
@@ -193,10 +193,10 @@ static float emdDistL2(const float* x, const float* y, void* user_param)
         s += t * t;
     }
 
-    return mw_sqrt((float) s);
+    return mw_sqrt((real) s);
 }
 
-static float emdDistC(const float* x, const float* y, void* user_param)
+static real emdDistC(const real* x, const real* y, void* user_param)
 {
     int i;
     int dims = (int)(size_t)user_param;
@@ -212,10 +212,10 @@ static float emdDistC(const float* x, const float* y, void* user_param)
         }
     }
 
-    return (float) s;
+    return (real) s;
 }
 
-static int emdFindBasicVariables(float** cost, char** is_x,
+static int emdFindBasicVariables(real** cost, char** is_x,
                                  EMDNode1D* u, EMDNode1D* v, int ssize, int dsize)
 {
     int i, j, found;
@@ -264,7 +264,7 @@ static int emdFindBasicVariables(float** cost, char** is_x,
 
             for (found |= (cur_v = v1_head.next) != NULL; cur_v != NULL; cur_v = cur_v->next)
             {
-                float cur_v_val = cur_v->val;
+                real cur_v_val = cur_v->val;
 
                 j = (int)(cur_v - v);
                 /* find the variables in column j */
@@ -303,8 +303,8 @@ static int emdFindBasicVariables(float** cost, char** is_x,
 
             for (found |= (cur_u = u1_head.next) != NULL; cur_u != NULL; cur_u = cur_u->next)
             {
-                float cur_u_val = cur_u->val;
-                float* _cost;
+                real cur_u_val = cur_u->val;
+                real* _cost;
                 char* _is_x;
 
                 i = (int)(cur_u - u);
@@ -352,7 +352,7 @@ static void emdAddBasicVariable(EMDState* state,
                                 int min_i, int min_j,
                                 EMDNode1D* prev_u_min_i, EMDNode1D* prev_v_min_j, EMDNode1D* u_head)
 {
-    float temp;
+    real temp;
     EMDNode2D* end_x = state->end_x;
 
     if (state->s[min_i] < state->d[min_j] + state->weight * EMD_EPS)
@@ -395,7 +395,7 @@ static void emdAddBasicVariable(EMDState* state,
 static void emdRussel(EMDState* state)
 {
     int i, j, min_i = -1, min_j = -1;
-    float min_delta, diff;
+    real min_delta, diff;
 
     EMDNode1D u_head;
     EMDNode1D* cur_u;
@@ -414,9 +414,9 @@ static void emdRussel(EMDState* state)
 
     int ssize = state->ssize;
     int dsize = state->dsize;
-    float eps = EMD_EPS * state->max_cost;
-    float** cost = state->cost;
-    float** delta = state->delta;
+    real eps = EMD_EPS * state->max_cost;
+    real** cost = state->cost;
+    real** delta = state->delta;
 
     /* initialize the rows list (ur), and the columns list (vr) */
     u_head.next = u;
@@ -441,12 +441,12 @@ static void emdRussel(EMDState* state)
     /* find the maximum row and column values (ur[i] and vr[j]) */
     for (i = 0; i < ssize; i++)
     {
-        float u_val = -EMD_INF;
-        float* cost_row = cost[i];
+        real u_val = -EMD_INF;
+        real* cost_row = cost[i];
 
         for (j = 0; j < dsize; j++)
         {
-            float temp = cost_row[j];
+            real temp = cost_row[j];
 
             if (u_val < temp)
             {
@@ -465,9 +465,9 @@ static void emdRussel(EMDState* state)
     /* compute the delta matrix */
     for (i = 0; i < ssize; i++)
     {
-        float u_val = u[i].val;
-        float* delta_row = delta[i];
-        float* cost_row = cost[i];
+        real u_val = u[i].val;
+        real* delta_row = delta[i];
+        real* cost_row = cost[i];
 
         for (j = 0; j < dsize; j++)
         {
@@ -485,7 +485,7 @@ static void emdRussel(EMDState* state)
 
         for (cur_u = u_head.next; cur_u != NULL; cur_u = cur_u->next)
         {
-            float* delta_row;
+            real* delta_row;
 
             i = (int)(cur_u - u);
             delta_row = delta[i];
@@ -529,12 +529,12 @@ static void emdRussel(EMDState* state)
 
                 if (cur_v->val == cost[min_i][j])      /* column j needs updating */
                 {
-                    float max_val = -EMD_INF;
+                    real max_val = -EMD_INF;
 
                     /* find the new maximum value in the column */
                     for (cur_u = u_head.next; cur_u != NULL; cur_u = cur_u->next)
                     {
-                        float temp = cost[cur_u - u][j];
+                        real temp = cost[cur_u - u][j];
 
                         if (max_val < temp)
                         {
@@ -564,12 +564,12 @@ static void emdRussel(EMDState* state)
 
                 if (cur_u->val == cost[i][min_j])      /* row i needs updating */
                 {
-                    float max_val = -EMD_INF;
+                    real max_val = -EMD_INF;
 
                     /* find the new maximum value in the row */
                     for (cur_v = v_head.next; cur_v != NULL; cur_v = cur_v->next)
                     {
-                        float temp = cost[i][cur_v - v];
+                        real temp = cost[i][cur_v - v];
 
                         if (max_val < temp)
                         {
@@ -598,25 +598,25 @@ static void emdRussel(EMDState* state)
 /************************************************************************************\
 *          initialize structure, allocate buffers and generate initial golution      *
 \************************************************************************************/
-static int emdInitEMD(const float* signature1, int size1,
-                      const float* signature2, int size2,
+static int emdInitEMD(const real* signature1, int size1,
+                      const real* signature2, int size2,
                       int dims, EMDDistanceFunction dist_func, void* user_param,
-                      const float* cost, int cost_step,
-                      EMDState* state, float* lower_bound)
+                      const real* cost, int cost_step,
+                      EMDState* state, real* lower_bound)
 {
-    float s_sum = 0.0, d_sum = 0.0, diff;
+    real s_sum = 0.0, d_sum = 0.0, diff;
     int i, j;
     int ssize = 0;
     int dsize = 0;
     int equal_sums = 1;
     size_t buffer_size;
-    float max_cost = 0.0;
+    real max_cost = 0.0;
     char* buffer;
     char* buffer_end;
 
     memset(state, 0, sizeof(*state));
-    assert(cost_step % sizeof(float) == 0);
-    cost_step /= sizeof(float);
+    assert(cost_step % sizeof(real) == 0);
+    cost_step /= sizeof(real);
 
     buffer_size = emdAllocateStateBuffer(state, size1, size2, dims);
     buffer = state->buffer;
@@ -628,16 +628,16 @@ static int emdInitEMD(const float* signature1, int size1,
     state->idx2 = (int*) buffer;
     buffer += (size2 + 1) * sizeof(int);
 
-    state->s = (float*) buffer;
-    buffer += (size1 + 1) * sizeof(float);
+    state->s = (real*) buffer;
+    buffer += (size1 + 1) * sizeof(real);
 
-    state->d = (float*) buffer;
-    buffer += (size2 + 1) * sizeof(float);
+    state->d = (real*) buffer;
+    buffer += (size2 + 1) * sizeof(real);
 
     /* sum up the supply and demand */
     for (i = 0; i < size1; i++)
     {
-        float weight = signature1[i * (dims + 1)];
+        real weight = signature1[i * (dims + 1)];
 
         if (weight > 0.0)
         {
@@ -655,7 +655,7 @@ static int emdInitEMD(const float* signature1, int size1,
 
     for (i = 0; i < size2; i++)
     {
-        float weight = signature2[i * (dims + 1)];
+        real weight = signature2[i * (dims + 1)];
 
         if (weight > 0.0)
         {
@@ -703,17 +703,17 @@ static int emdInitEMD(const float* signature1, int size1,
     {
         int sz1 = size1 * (dims + 1);
         int sz2 = size2 * (dims + 1);
-        float lb = 0.0;
+        real lb = 0.0;
 
-        float* xs = (float*) buffer;
-        float* xd = xs + dims;
+        real* xs = (real*) buffer;
+        real* xd = xs + dims;
 
         memset(xs, 0, dims * sizeof(xs[0]));
         memset(xd, 0, dims * sizeof(xd[0]));
 
         for (j = 0; j < sz1; j += dims + 1)
         {
-            float weight = signature1[j];
+            real weight = signature1[j];
 
             for (i = 0; i < dims; i++)
             {
@@ -723,7 +723,7 @@ static int emdInitEMD(const float* signature1, int size1,
 
         for (j = 0; j < sz2; j += dims + 1)
         {
-            float weight = signature2[j];
+            real weight = signature2[j];
 
             for (i = 0; i < dims; i++)
             {
@@ -744,13 +744,13 @@ static int emdInitEMD(const float* signature1, int size1,
     /* assign pointers */
     state->is_used = (char*) buffer;
     /* init delta matrix */
-    state->delta = (float**) buffer;
-    buffer += ssize * sizeof(float*);
+    state->delta = (real**) buffer;
+    buffer += ssize * sizeof(real*);
 
     for (i = 0; i < ssize; i++)
     {
-        state->delta[i] = (float*) buffer;
-        buffer += dsize * sizeof(float);
+        state->delta[i] = (real*) buffer;
+        buffer += dsize * sizeof(real);
     }
 
     state->loop = (EMDNode2D**) buffer;
@@ -760,16 +760,16 @@ static int emdInitEMD(const float* signature1, int size1,
     buffer += (ssize + dsize) * sizeof(EMDNode2D);
 
     /* init cost matrix */
-    state->cost = (float**) buffer;
-    buffer += ssize * sizeof(float*);
+    state->cost = (real**) buffer;
+    buffer += ssize * sizeof(real*);
 
     /* compute the distance matrix */
     for (i = 0; i < ssize; i++)
     {
         int ci = state->idx1[i];
 
-        state->cost[i] = (float*) buffer;
-        buffer += dsize * sizeof(float);
+        state->cost[i] = (real*) buffer;
+        buffer += dsize * sizeof(real);
 
         if (ci >= 0)
         {
@@ -783,7 +783,7 @@ static int emdInitEMD(const float* signature1, int size1,
                 }
                 else
                 {
-                    float val;
+                    real val;
 
                     if (dist_func)
                     {
@@ -849,10 +849,10 @@ static int emdInitEMD(const float* signature1, int size1,
     return 0;
 }
 
-static float emdIsOptimal(float** cost, char** is_x,
+static real emdIsOptimal(real** cost, char** is_x,
                           EMDNode1D* u, EMDNode1D* v, int ssize, int dsize, EMDNode2D* enter_x)
 {
-    float delta, min_delta = EMD_INF;
+    real delta, min_delta = EMD_INF;
     int i, j;
     int min_i = 0;
     int min_j = 0;
@@ -860,8 +860,8 @@ static float emdIsOptimal(float** cost, char** is_x,
     /* find the minimal cij-ui-vj over all i,j */
     for (i = 0; i < ssize; i++)
     {
-        float u_val = u[i].val;
-        float* _cost = cost[i];
+        real u_val = u[i].val;
+        real* _cost = cost[i];
         char* _is_x = is_x[i];
 
         for (j = 0; j < dsize; j++)
@@ -970,7 +970,7 @@ static int emdFindLoop(EMDState* state)
 static mwbool emdNewSolution(EMDState* state)
 {
     int i, j;
-    float min_val = EMD_INF;
+    real min_val = EMD_INF;
     int steps;
     EMDNode2D head;
     EMDNode2D* cur_x;
@@ -1000,7 +1000,7 @@ static mwbool emdNewSolution(EMDState* state)
     /* find the largest value in the loop */
     for (i = 1; i < steps; i += 2)
     {
-        float temp = loop[i]->val;
+        real temp = loop[i]->val;
 
         if (min_val > temp)
         {
@@ -1017,8 +1017,8 @@ static mwbool emdNewSolution(EMDState* state)
     /* update the loop */
     for (i = 0; i < steps; i += 2)
     {
-        float temp0 = loop[i]->val + min_val;
-        float temp1 = loop[i + 1]->val - min_val;
+        real temp0 = loop[i]->val + min_val;
+        real temp1 = loop[i + 1]->val - min_val;
 
         loop[i]->val = temp0;
         loop[i + 1]->val = temp1;
@@ -1062,8 +1062,8 @@ static mwbool emdNewSolution(EMDState* state)
 static int emdIterateSolution(EMDState* state)
 {
     int result;
-    float min_delta;
-    float eps = EMD_EPS * state->max_cost;
+    real min_delta;
+    real eps = EMD_EPS * state->max_cost;
 
     /* if ssize = 1 or dsize = 1 then we are done, else ... */
     if (state->ssize > 1 && state->dsize > 1)
@@ -1109,7 +1109,7 @@ static int emdIterateSolution(EMDState* state)
     return 0;
 }
 
-static void emdPrintFlowMatrix(const float* flow, int size1, int size2)
+static void emdPrintFlowMatrix(const real* flow, int size1, int size2)
 {
     int i, j;
     const int flowStep = 1;
@@ -1151,7 +1151,7 @@ static EMDDistanceFunction nbMetricDistanceFunction(EMDDistanceType distType)
     }
 }
 
-static real emdComputeTotalFlow(EMDState* state, float* flow)
+static real emdComputeTotalFlow(EMDState* state, real* flow)
 {
     EMDNode2D* xp = NULL;
     real totalCost = 0.0;
@@ -1160,7 +1160,7 @@ static real emdComputeTotalFlow(EMDState* state, float* flow)
     for (xp = state->_x; xp < state->end_x; xp++)
     {
         int ci, cj;
-        float val = xp->val;
+        real val = xp->val;
         int i = xp->i;
         int j = xp->j;
 
@@ -1187,20 +1187,20 @@ static real emdComputeTotalFlow(EMDState* state, float* flow)
 }
 
 /* The main function */
-float emdCalc(const float* RESTRICT signature_arr1,
-              const float* RESTRICT signature_arr2,
+real emdCalc(const real* RESTRICT signature_arr1,
+              const real* RESTRICT signature_arr2,
               unsigned int size1,
               unsigned int size2,
-              float* RESTRICT lower_bound)
+              real* RESTRICT lower_bound)
 {
     EMDState state;
-    float emd = (float) EMD_INVALID;
+    real emd = (real) EMD_INVALID;
     real totalCost = 0.0;
     int result = 0;
     EMDDistanceFunction dist_func = NULL;
     const EMDDistanceType dist_type = EMD_DIST_L2;
     const mwbool debugFlow = FALSE;
-    float* flow = NULL;
+    real* flow = NULL;
     const int dims = 2; /* We have 2 dimensions, lambda and beta */
     void* user_param = (void*) dims;
 
@@ -1222,18 +1222,18 @@ float emdCalc(const float* RESTRICT signature_arr1,
     else if (result < 0)
     {
         emdReleaseEMD(&state);
-        return (float) EMD_INVALID;
+        return (real) EMD_INVALID;
     }
 
     if (debugFlow)
     {
-        flow = mwCalloc(size1 * size2, sizeof(float));
+        flow = mwCalloc(size1 * size2, sizeof(real));
     }
 
     if (!emdIterateSolution(&state))
     {
         totalCost = emdComputeTotalFlow(&state, flow);
-        emd = (float)(totalCost / state.weight);
+        emd = (real)(totalCost / state.weight);
     }
 
     if (debugFlow)
@@ -1300,18 +1300,18 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     {
         if (data->data[i].useBin)
         {
-            dat[i].weight = (float) data->data[i].count;
-            hist[i].weight = (float) histogram->data[i].count;
+            dat[i].weight = (real) data->data[i].count;
+            hist[i].weight = (real) histogram->data[i].count;
         }
 
-        hist[i].lambda = (float) histogram->data[i].lambda;
-        dat[i].lambda = (float) data->data[i].lambda;
+        hist[i].lambda = (real) histogram->data[i].lambda;
+        dat[i].lambda = (real) data->data[i].lambda;
         
-        hist[i].beta = (float) histogram->data[i].beta;
-        dat[i].beta = (float) data->data[i].beta;
+        hist[i].beta = (real) histogram->data[i].beta;
+        dat[i].beta = (real) data->data[i].beta;
     }
 
-    emd = emdCalc((const float*) dat, (const float*) hist, bins, bins, NULL);
+    emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
 
     if (emd > 50.0)
     {
