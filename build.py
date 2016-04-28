@@ -33,7 +33,7 @@ assert nbody_openmp_sep_opencl in ["ON", "OFF"], "ERROR: Set NBODY_OPENMP to ON 
 cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp_sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
 
 # CMake flags used for windows
-cmake_static_flag = ["-DNBODY_STATIC=ON", "-DBOINC_APPLICATION=OFF"]
+cmake_static_flag = ["-DNBODY_STATIC=ON"]
 
 # Linux
 if os == "linux":
