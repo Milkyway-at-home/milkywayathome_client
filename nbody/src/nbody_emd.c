@@ -1266,7 +1266,7 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
-    
+    mw_printf("Nbins %i %i\n", betaBins, lambdaBins);
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
@@ -1306,6 +1306,7 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
         hist[i].lambda = (real) histogram->data[i].lambda;
         dat[i].lambda = (real) data->data[i].lambda;
+//         mw_printf("%f %f %i\n", dat[i].lambda, hist[i].lambda, i);
         
         hist[i].beta = (real) histogram->data[i].beta;
         dat[i].beta = (real) data->data[i].beta;
@@ -1325,13 +1326,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /* This calculates the likelihood as the combination of the
     * probability distribution and (1.0 - emd / max_dist) */
 
-    /*
-    Previously, this calculation was wrong.  Fixed to reflect notes on
-    conversation with Magdon-Ismail and Newberg.  Confirmed to be a valid
-    metric for a metric space.
-
-    Some more notes about the revised calculation
-    */
     real EMDComponent = 1.0 - emd / 50.0;
     
     /* this is the newest version of the cost function
@@ -1347,10 +1341,10 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /* the 300 is there to add weight to the EMD component */
     likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
 
-    //mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
-    //mw_printf("log(EMDComponent) = %10.10f\n", emd_component);
-    //mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
-
+    mw_printf("EMDComponent = % 10.10f\n", EMDComponent);
+    mw_printf("log(EMDComponent) = %10.10f\n", mw_log(EMDComponent));
+    mw_printf("log(CostComponent) = %10.10f\n", (CostComponent));
+    mw_printf("num = %f \t denom = %f\n", num, denom);
     free(hist);
     free(dat);
 
