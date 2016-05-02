@@ -36,6 +36,7 @@ extern "C" {
 
 real nbCorrectTimestep(real timeEvolve, real dt);
 mwvector nbCenterOfMass(const NBodyState* st);
+mwvector nbCenterOfMom(const NBodyState* st);
 
 real nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
 real nbEstimateTime(const NBodyCtx* ctx, int nbody, real flops);

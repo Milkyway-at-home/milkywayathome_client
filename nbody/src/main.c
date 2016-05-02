@@ -577,7 +577,6 @@ int main(int argc, const char* argv[])
     NBodyFlags nbf;
     int rc = 0;
     const char** argvCopy = mwFixArgv(argc, argv);
-
     nbSpecialSetup();
 
     if (nbReadParameters(argc, argvCopy ? argvCopy : argv, &nbf))

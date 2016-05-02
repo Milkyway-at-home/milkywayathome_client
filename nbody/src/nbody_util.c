@@ -62,6 +62,38 @@ mwvector nbCenterOfMass(const NBodyState* st)
     return cm;
 }
 
+mwvector nbCenterOfMom(const NBodyState* st)
+{
+    int i;
+    const Body* b;
+    int nbody = st->nbody;
+    mwvector cm = ZERO_VECTOR;
+    mwvector tmp;
+    Kahan mass;
+    Kahan pos[3];
+
+    CLEAR_KAHAN(mass);
+    memset(pos, 0, sizeof(pos));
+
+    for (i = 0; i < nbody; ++i)
+    {
+        b = &st->bodytab[i];
+        tmp = mw_mulvs(Vel(b), Mass(b));
+
+        KAHAN_ADD(pos[0], tmp.x);
+        KAHAN_ADD(pos[1], tmp.y);
+        KAHAN_ADD(pos[2], tmp.z);
+        KAHAN_ADD(mass, Mass(b));
+    }
+
+    X(cm) = pos[0].sum / mass.sum;
+    Y(cm) = pos[1].sum / mass.sum;
+    Z(cm) = pos[2].sum / mass.sum;
+    W(cm) = mass.sum;
+
+    return cm;
+}
+
 static inline real log8(real x)
 {
     return mw_log(x) / mw_log(8.0);
