@@ -1342,10 +1342,10 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
 
     
-    mw_printf("EMDComponent = % 10.15f\n", EMDComponent);
-    mw_printf("log(EMDComponent) = %10.15f\n", mw_log(EMDComponent));
-    mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
-    mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
+//     mw_printf("EMDComponent = % 10.15f\n", EMDComponent);
+//     mw_printf("log(EMDComponent) = %10.15f\n", mw_log(EMDComponent));
+//     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
+//     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
     free(hist);
     free(dat);
 
