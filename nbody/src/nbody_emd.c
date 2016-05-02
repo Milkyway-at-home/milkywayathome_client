@@ -1266,7 +1266,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
-    mw_printf("Nbins %i %i\n", betaBins, lambdaBins);
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
