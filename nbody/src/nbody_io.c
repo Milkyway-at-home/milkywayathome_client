@@ -33,12 +33,10 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
     cmVel = nbCenterOfMom(st);
     if (st->tree.root)
     {
-        mw_printf(" called\n");
         cmPos = Pos(st->tree.root);
     }
     else
     {
-        mw_printf("this called\n");
         cmPos = nbCenterOfMass(st);
     }
 
