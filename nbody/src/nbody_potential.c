@@ -86,7 +86,9 @@ static inline mwvector nfwHaloAccel(const Halo* halo, mwvector pos, real r)
 {
     const real a  = halo->scaleLength;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * (r - ar * mw_log((r + a) / a)) / (0.2162165954 * cube(r) * ar);
+//     const real c  = a * sqr(halo->vhalo) * (r - ar * mw_log((r + a) / a)) / (0.2162165954 * cube(r) * ar);
+    /* this is done to agree with NEMO. IDK WHY. IDK where 0.2162165954 comes from */
+    const real c  = a * sqr(a) * 237.209949228 * (r - ar * mw_log((r + a) / a)) / ( cube(r) * ar);
 
     return mw_mulvs(pos, c);
 }

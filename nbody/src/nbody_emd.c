@@ -1163,7 +1163,8 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
         real val = xp->val;
         int i = xp->i;
         int j = xp->j;
-
+//         mw_printf("state->_x->val %0.15f\n", state->_x->val);
+//         mw_printf("xp->val        %0.15f\n\n", xp->val);
         if (xp == state->enter_x)
         {
             continue;
@@ -1175,6 +1176,7 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
         if (ci >= 0 && cj >= 0)
         {
             totalCost += (real) val * state->cost[i][j];
+//             mw_printf("i j = %i %i\n", i, j);
 
             if (flow)
             {
@@ -1182,7 +1184,6 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
             }
         }
     }
-
     return totalCost;
 }
 
@@ -1243,7 +1244,6 @@ real emdCalc(const real* RESTRICT signature_arr1,
 
     free(flow);
     emdReleaseEMD(&state);
-
     return emd;
 }
 
@@ -1271,6 +1271,7 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     WeightPos* dat;
     real emd;
     real likelihood;
+//     mw_printf("%i %i %i %i %i %i %f %f \n", lambdaBins, betaBins, bins, n, nSim, nData, histMass, dataMass);
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
@@ -1290,11 +1291,11 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         /*In order to calculate likelihood the masses are necessary*/
         return NAN;
     }
-
+    
     /* This creates histograms that emdCalc can use */
     hist = mwCalloc(bins, sizeof(WeightPos));
     dat = mwCalloc(bins, sizeof(WeightPos));
-
+    
     for (i = 0; i < bins; ++i)
     {
         if (data->data[i].useBin)
@@ -1340,14 +1341,15 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /* the 300 is there to add weight to the EMD component */
     likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
 
-    
+//     mw_printf("emd = % 10.15f\n", emd);
 //     mw_printf("EMDComponent = % 10.15f\n", EMDComponent);
 //     mw_printf("log(EMDComponent) = %10.15f\n", mw_log(EMDComponent));
 //     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
 //     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
     free(hist);
     free(dat);
-
+//     mw_printf("l = %.15f\n", p);
+//     mw_printf("l = %.15f\n", likelihood);
     return -likelihood;
 }
 

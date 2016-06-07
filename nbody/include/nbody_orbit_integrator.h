@@ -31,5 +31,14 @@ void nbReverseOrbit(mwvector* finalPos,
                     real tstop,
                     real dt);
 
+void nbPrintReverseOrbit(mwvector* finalPos,
+                         mwvector* finalVel,
+                         const Potential* pot,
+                         mwvector pos,
+                         mwvector vel,
+                         real tstop,
+                         real dt,
+                         real prt);
+    
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 
