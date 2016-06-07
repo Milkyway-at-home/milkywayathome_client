@@ -70,8 +70,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector pos,
                          mwvector vel,
                          real tstop,
-                         real dt,
-                         real prt)
+                         real dt)
 {
     mwvector acc, v, x;
     mwvector lbr;
@@ -94,19 +93,14 @@ void nbPrintReverseOrbit(mwvector* finalPos,
         mw_incaddv_s(v, acc, dt);
         mw_incaddv_s(x, v, dt);
         
-        if(prt == 1)
-        {
-            lbr = cartesianToLbr(x, DEFAULT_SUN_GC_DISTANCE);
-            fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(lbr), Y(lbr), Z(lbr), X(v), Y(v), Z(v));
-        }
+        lbr = cartesianToLbr(x, DEFAULT_SUN_GC_DISTANCE);
+        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(lbr), Y(lbr), Z(lbr), X(v), Y(v), Z(v));
+        
         // Compute the new acceleration
         acc = nbExtAcceleration(pot, x);
     }
 
-//     if(prt == 1)
-//     {
         fclose(fp);
-//     }
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
 
