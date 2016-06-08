@@ -37,6 +37,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector pos,
                          mwvector vel,
                          real tstop,
+                         real tstopforward,
                          real dt);
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */

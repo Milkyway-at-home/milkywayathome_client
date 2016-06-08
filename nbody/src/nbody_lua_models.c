@@ -222,17 +222,19 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
     mwvector finalPos, finalVel;
     static real dt = 0.0;
     static real tstop = 0.0;
+    static real tstopf = 0.0;
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
 
     static const MWNamedArg argTable[] =
         {
-            { "potential", LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
-            { "position",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
-            { "velocity",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
-            { "tstop",     LUA_TNUMBER,   NULL,           TRUE, &tstop },
-            { "dt",        LUA_TNUMBER,   NULL,           TRUE, &dt    },
+            { "potential", LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot    },
+            { "position",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos    },
+            { "velocity",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel    },
+            { "tstop",     LUA_TNUMBER,   NULL,           TRUE, &tstop  },
+            { "tstopf",    LUA_TNUMBER,   NULL,           TRUE, &tstopf },
+            { "dt",        LUA_TNUMBER,   NULL,           TRUE, &dt     },
             END_MW_NAMED_ARG
         };
 
@@ -242,23 +244,24 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 5:
+        case 6:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
             tstop = luaL_checknumber(luaSt, 4);
-            dt = luaL_checknumber(luaSt, 5);
+            tstopf = luaL_checknumber(luaSt, 5);
+            dt = luaL_checknumber(luaSt, 6);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 5 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 6 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbPrintReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
+    nbPrintReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, tstopf, dt);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
