@@ -413,10 +413,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     }
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
-    histData[Histindex].rawCount = 0;
     /* It does not make sense to ignore bins in a generated histogram */
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
+        histData[Histindex].rawCount = 0;
         histData[Histindex].useBin = TRUE;
     }
 
