@@ -1163,8 +1163,7 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
         real val = xp->val;
         int i = xp->i;
         int j = xp->j;
-//         mw_printf("state->_x->val %0.15f\n", state->_x->val);
-//         mw_printf("xp->val        %0.15f\n\n", xp->val);
+
         if (xp == state->enter_x)
         {
             continue;
@@ -1176,7 +1175,6 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
         if (ci >= 0 && cj >= 0)
         {
             totalCost += (real) val * state->cost[i][j];
-//             mw_printf("i j = %i %i\n", i, j);
 
             if (flow)
             {
@@ -1271,7 +1269,7 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     WeightPos* dat;
     real emd;
     real likelihood;
-//     mw_printf("%i %i %i %i %i %i %f %f \n", lambdaBins, betaBins, bins, n, nSim, nData, histMass, dataMass);
+
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
@@ -1306,7 +1304,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
         hist[i].lambda = (real) histogram->data[i].lambda;
         dat[i].lambda = (real) data->data[i].lambda;
-//         mw_printf("%f %f %i\n", dat[i].lambda, hist[i].lambda, i);
         
         hist[i].beta = (real) histogram->data[i].beta;
         dat[i].beta = (real) data->data[i].beta;
@@ -1314,6 +1311,10 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
     emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
 
+    emd *= 1.0e9;
+    emd = mw_round(emd);
+    emd *= 1.0e-9;
+    
     if (emd > 50.0)
     {
         free(hist);
@@ -1327,7 +1328,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     * probability distribution and (1.0 - emd / max_dist) */
 
     real EMDComponent = 1.0 - emd / 50.0;
-    
     /* this is the newest version of the cost function
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
