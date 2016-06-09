@@ -1182,7 +1182,6 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
             }
         }
     }
-
     return totalCost;
 }
 
@@ -1243,7 +1242,6 @@ real emdCalc(const real* RESTRICT signature_arr1,
 
     free(flow);
     emdReleaseEMD(&state);
-
     return emd;
 }
 
@@ -1271,6 +1269,7 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     WeightPos* dat;
     real emd;
     real likelihood;
+
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
@@ -1290,11 +1289,11 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         /*In order to calculate likelihood the masses are necessary*/
         return NAN;
     }
-
+    
     /* This creates histograms that emdCalc can use */
     hist = mwCalloc(bins, sizeof(WeightPos));
     dat = mwCalloc(bins, sizeof(WeightPos));
-
+    
     for (i = 0; i < bins; ++i)
     {
         if (data->data[i].useBin)
@@ -1305,7 +1304,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
         hist[i].lambda = (real) histogram->data[i].lambda;
         dat[i].lambda = (real) data->data[i].lambda;
-//         mw_printf("%f %f %i\n", dat[i].lambda, hist[i].lambda, i);
         
         hist[i].beta = (real) histogram->data[i].beta;
         dat[i].beta = (real) data->data[i].beta;
@@ -1313,6 +1311,10 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
     emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
 
+    emd *= 1.0e9;
+    emd = mw_round(emd);
+    emd *= 1.0e-9;
+    
     if (emd > 50.0)
     {
         free(hist);
@@ -1326,7 +1328,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     * probability distribution and (1.0 - emd / max_dist) */
 
     real EMDComponent = 1.0 - emd / 50.0;
-    
     /* this is the newest version of the cost function
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
@@ -1340,14 +1341,15 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /* the 300 is there to add weight to the EMD component */
     likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
 
-    
+//     mw_printf("emd = % 10.15f\n", emd);
 //     mw_printf("EMDComponent = % 10.15f\n", EMDComponent);
 //     mw_printf("log(EMDComponent) = %10.15f\n", mw_log(EMDComponent));
 //     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
 //     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
     free(hist);
     free(dat);
-
+//     mw_printf("l = %.15f\n", p);
+//     mw_printf("l = %.15f\n", likelihood);
     return -likelihood;
 }
 

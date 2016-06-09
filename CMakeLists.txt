@@ -407,7 +407,7 @@ if(NBODY_GL)
     add_library(gl3w STATIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/src/gl3w.c)
     set(GL3W_LIBRARY gl3w)
   endif()
-
+  
   if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glfw/CMakeLists.txt)
     message(FATAL_ERROR "GLFW submodule is missing. Did you forget to git submodule init; git submodule update?")
   endif()
