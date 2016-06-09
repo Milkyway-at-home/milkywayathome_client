@@ -265,7 +265,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 
     mw_boinc_print(f, "<histogram>\n");
     fprintf(f, "n = %u\n", histogram->totalNum);
-    fprintf(f, "massPerParticle = %12.10f\n", histogram->massPerParticle);
+    fprintf(f, "massPerParticle = %12.15f\n", histogram->massPerParticle);
     fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
     fprintf(f, "betaBins = %u\n", histogram->betaBins);
