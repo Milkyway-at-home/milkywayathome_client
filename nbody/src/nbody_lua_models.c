@@ -32,6 +32,7 @@
 #include "nbody_nfw.h"
 #include "nbody_hernq.h"
 #include "nbody_isotropic.h"
+#include "nbody_mixeddwarf.h"
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
@@ -109,7 +110,8 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     registerGenerateNFW(luaSt);
     registerGenerateHernq(luaSt);
     registerGenerateIsotropic(luaSt);
-
+    registerGenerateMixedDwarf(luaSt);
+    
     /* Create a table of predefined models, so we can use them like
      * predefinedModels.plummer() etc. */
     lua_newtable(luaSt);
@@ -119,6 +121,8 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     setModelTableItem(luaSt, table, nbGenerateNFW, "nfw");
     setModelTableItem(luaSt, table, nbGenerateHernq, "hernq");
     setModelTableItem(luaSt, table, nbGenerateIsotropic, "isotropic");
+    setModelTableItem(luaSt, table, nbGenerateMixedDwarf, "mixeddwarf");
+    
     /*
       setModelTableItem(luaSt, table, generateKing, "king");
       setModelTableItem(luaSt, table, generateDehnen, "dehnen");
