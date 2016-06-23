@@ -30,7 +30,7 @@ assert arch in ["32", "64"], "ERROR: Unknown arch " + bit
 assert nbody_openmp_sep_opencl in ["ON", "OFF"], "ERROR: Set NBODY_OPENMP to ON or OFF"
 
 # CMake flags used for all platforms
-cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DSEPARATION=OFF", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp_sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
+cmake_shared_flags = ["-DBOINC_RELEASE_NAMES=ON", "-DSEPARATION=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp_sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
 
 # CMake flags used for windows
 cmake_static_flag = ["-DNBODY_STATIC=ON",  "-DBOINC_APPLICATION=ON",  "-DCMAKE_BUILD_TYPE=Release"]
@@ -65,7 +65,7 @@ if os == "win":
 if os == "mac":
 
     if arch == "64":
-        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags + cmake_static_flag)
+        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags + cmake_static_flag + '-DCMAKE_C_FLAGS="-O3", -DCMAKE_CXX_FLAGS="-O3"')
 
     if arch == "32":
         print("ERROR: Mac OSX 32 bit not supported")
