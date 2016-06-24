@@ -65,7 +65,7 @@ if os == "win":
 if os == "mac":
 
     if arch == "64":
-        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags + cmake_static_flag + ['-DCMAKE_C_FLAGS="-O3" -DCMAKE_CXX_FLAGS="-O3"'])
+        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags + cmake_static_flag + ["-DCMAKE_C_FLAGS=\"-O3\" -DCMAKE_CXX_FLAGS=\"-O3\""])
 
     if arch == "32":
         print("ERROR: Mac OSX 32 bit not supported")
