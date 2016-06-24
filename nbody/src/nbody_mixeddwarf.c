@@ -34,6 +34,26 @@ their copyright to their programs which execute similar algorithms.
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
 
+static inline real plummer_pot(real r, real mass, real rscale)
+{
+    return mass / mw_sqrt(sqr(r) + sqr(rscale));
+}
+
+static inline real plummer_den(real r, real mass, real rscale)
+{
+    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;
+}
+
+static inline real nfw_den(real r, real mass, real rscale)
+{
+    return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));
+}
+
+static inline real nfw_pot(real r, real mass, real rscale)
+{
+    return (mass / r) * mw_log(1.0 + r / rscale);
+}
+
 /*      MODEL SPECIFIC FUNCTIONS       */
 static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
 {
@@ -44,11 +64,11 @@ static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
     real rscale_l = args[2];
     real rscale_d = args[3];
     //-------------------------------
-    real potential_light  = mass_l / mw_sqrt(sqr(r) + sqr(rscale_l));
-    real potential_dark   = (mass_d / r) * mw_log(1.0 + r / rscale_d);
-    real potential_result = -(potential_light + potential_dark);
+    real potential_light  = plummer_pot(r, mass_l, rscale_l);
+    real potential_dark   = nfw_pot(r, mass_d, rscale_d);
+    real potential_result = (potential_light + potential_dark);
 
-    return (-potential_result);
+    return (potential_result);
 }
 
 static inline real density( real r, real * args, dsfmt_t* dsfmtState)
@@ -61,12 +81,9 @@ static inline real density( real r, real * args, dsfmt_t* dsfmtState)
     real rscale_d = args[3];
     //-------------------------------
     
-    real rscale_lCube = cube(rscale_l); 
-    real coeff_light = (3.0 / (4.0 * M_PI));
-    real coeff_dark  = (1.0 / (4.0 * M_PI));
-    real density_light = (mass_l / rscale_lCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_l)) ) );
-    real density_dark  = (mass_d * rscale_d / r) * (1.0 / sqr(1.0 + r / rscale_d)); 
-    real density_result = (coeff_light * density_light + coeff_dark * density_dark );
+    real density_light = plummer_den(r, mass_l, rscale_l);
+    real density_dark  = nfw_den(r, mass_d, rscale_d);
+    real density_result = (density_light + density_dark );
 
     return density_result;
 }
@@ -91,7 +108,7 @@ static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this does in fact use a 5-point stencil*/
-    real h = 0.1;
+    real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, denom;
     
@@ -107,7 +124,7 @@ static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x
 static inline real second_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this also uses a five point stencil*/
-    real h = 0.1;
+    real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, p5, denom;
 
@@ -785,7 +802,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             
             
             
-//             mw_printf("\r velocity of particle %i", i+1);
+            mw_printf("\r velocity of particle %i", i+1);
             counter = 0;
             do
             {
