@@ -42,8 +42,8 @@ if os == "linux":
         execute(["cmake", ".", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_amd64/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_amd64/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
 
     if arch == "32":
-        print("ERROR: Linux 32 bit not supported")
-        #execute(["cmake", ".", "-DBUILD_32=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_i386/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_i386/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
+        print("Warning: Linux 32 bit not supported for Milky Way N-body")
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DNBODY=OFF", "-DSEPARATION_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_i386/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_i386/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
     
     execute(["make", "clean"])
     execute(["make"])
