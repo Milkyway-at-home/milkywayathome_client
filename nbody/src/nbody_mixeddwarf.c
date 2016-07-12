@@ -29,30 +29,11 @@ their copyright to their programs which execute similar algorithms.
 #include "milkyway_math.h"
 #include "milkyway_lua.h"
 #include "nbody_lua_types.h"
+#include "nbody_dwarf_potential.h"
 #include "nbody_mixeddwarf.h"
 
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
-
-static inline real plummer_pot(real r, real mass, real rscale)
-{
-    return mass / mw_sqrt(sqr(r) + sqr(rscale));
-}
-
-static inline real plummer_den(real r, real mass, real rscale)
-{
-    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;
-}
-
-static inline real nfw_den(real r, real mass, real rscale)
-{
-    return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));
-}
-
-static inline real nfw_pot(real r, real mass, real rscale)
-{
-    return (mass / r) * mw_log(1.0 + r / rscale);
-}
 
 /*      MODEL SPECIFIC FUNCTIONS       */
 static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
