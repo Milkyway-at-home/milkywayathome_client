@@ -22,30 +22,63 @@
 #include "nbody_types.h"
 
 
- real plummer_pot(real r, real mass, real rscale)
+ static real plummer_pot(real r, real mass, real rscale)
 {
     return mass / mw_sqrt(sqr(r) + sqr(rscale));
 }
 
- real plummer_den(real r, real mass, real rscale)
+ static real plummer_den(real r, real mass, real rscale)
 {
     return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;
 }
 
- real nfw_den(real r, real mass, real rscale)
+ static real nfw_den(real r, real mass, real rscale)
 {
     return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));
 }
 
- real nfw_pot(real r, real mass, real rscale)
+ static real nfw_pot(real r, real mass, real rscale)
 {
     return (mass / r) * mw_log(1.0 + r / rscale);
 }
 
 
-real potential(real r, real mass, real rscale, char* type)
+real get_potential(real r, real * args, int type)
 {
-    static const char* nfw = "nfw";
-    static const char* plum = "plummer";
-    
+    static int plum = 1;
+    static int nfw  = 2;
+    switch (type)
+    {
+        case plum:
+            real mass   = args[0];
+            real rscale = args[1];
+            return plummer_pot(r, mass, rscale);
+        case nfw:
+            real mass   = args[0];
+            real rscale = args[1];
+            return nfw_pot(r, mass, rscale);
+        default:
+            mw_fail("Invalid dwarf potential");
+    }
+}
+
+
+
+real get_density(real r, real * args, int type)
+{
+    static int plum = 1;
+    static int nfw  = 2;
+    switch (type)
+    {
+        case plum:
+            real mass   = args[0];
+            real rscale = args[1];
+            return plummer_den(r, mass, rscale);
+        case nfw:
+            real mass   = args[0];
+            real rscale = args[1];
+            return nfw_den(r, mass, rscale);
+        default:
+            mw_fail("Invalid dwarf density");
+    }
 }
