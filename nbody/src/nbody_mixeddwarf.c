@@ -46,7 +46,7 @@ static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
     real rscale_d = args[3];
     //-------------------------------
     real potential_light  = plummer_pot(r, mass_l, rscale_l);
-    real potential_dark   = nfw_pot(r, mass_d, rscale_d);
+    real potential_dark   = plummer_pot(r, mass_d, rscale_d);
     real potential_result = (potential_light + potential_dark);
 
     return (potential_result);
@@ -63,7 +63,7 @@ static inline real density( real r, real * args, dsfmt_t* dsfmtState)
     //-------------------------------
     
     real density_light = plummer_den(r, mass_l, rscale_l);
-    real density_dark  = nfw_den(r, mass_d, rscale_d);
+    real density_dark  = plummer_den(r, mass_d, rscale_d);
     real density_result = (density_light + density_dark );
 
     return density_result;
@@ -428,7 +428,6 @@ static inline real fun(real ri, real * args, dsfmt_t* dsfmtState)
     diff = mw_fabs(energy - potential(ri, args, dsfmtState));
     dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
     
-    
     /*just in case*/
     if(first_deriv_psi == 0.0)
     {
@@ -535,10 +534,45 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, funcargs, dsfmtState);
-    
     return distribution_function;
 }
 
+// static inline real function(real r, real * args,  dsfmt_t* dsfmtState)
+// {
+//     return r * r * first_derivative(potential, r, args, dsfmtState);
+//     
+// }
+// 
+// static inline real fun2(real r, real * args, dsfmt_t* dsfmtState)
+// {
+//     real lap;
+// 
+//     lap = first_derivative(function, r, args, dsfmtState) ;
+//     
+//     lap = lap / (r * r);
+//     
+//     return lap;
+//     
+// }
+// 
+// 
+// static inline real dist_fun2(real v, real * args, dsfmt_t* dsfmtState)
+// {
+//     /*This returns the value of the distribution function*/
+//     
+//     //-------------------------------
+//     real mass_l   = args[0];
+//     real mass_d   = args[1];
+//     real rscale_l = args[2];
+//     real rscale_d = args[3];
+//     real r        = args[4];
+//     //-------------------------------
+//     real distribution_function = 0.0;
+//     real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d};
+//     
+//     distribution_function = fun2(r, funcargs, dsfmtState);
+//     return distribution_function;
+// }
 
 /*      SAMPLING FUNCTIONS      */
 static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound)
@@ -690,7 +724,10 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 }
 
 /*      DWARF GENERATION        */
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
+static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, 
+                                    mwbool ignore, mwvector rShift, mwvector vShift, 
+                                    real radiusScale1, real radiusScale2,
+                                    const char* component1, const char* component2)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
@@ -713,7 +750,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         mwvector vec;
         real dwarf_mass = mass1 + mass2;
         
-        
+        mw_printf("%c\t %c\n", component1, component2);
         real mass_l   = mass1; /*mass of the light component*/
         real mass_d   = mass2; /*mass of the dark component*/
         real rscale_l = radiusScale1; /*scale radius of the light component*/
@@ -783,7 +820,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             
             
             
-            mw_printf("\r velocity of particle %i", i+1);
+//             mw_printf("\r velocity of particle %i", i+1);
             counter = 0;
             do
             {
@@ -866,7 +903,9 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         static mwbool ignore;
         static real mass1 = 0.0, nbodyf = 0.0, radiusScale1 = 0.0;
         static real mass2 = 0.0, radiusScale2 = 0.0;
-
+        static const char* component1 = NULL;
+        static const char* component2 = NULL;
+        
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
@@ -874,6 +913,8 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
             { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
             { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
             { "scaleRadius2",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2      },
+            { "component1",           LUA_TSTRING,     NULL,                    TRUE,    &component1        },
+            { "component2",           LUA_TSTRING,     NULL,                    TRUE,    &component2        },
             { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
             { "velocity",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &velocity          },
             { "ignore",               LUA_TBOOLEAN,    NULL,                    FALSE,   &ignore            },
@@ -889,7 +930,7 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         
         
         return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, mass1, mass2, ignore,
-                                                                 *position, *velocity, radiusScale1, radiusScale2);
+                                                                 *position, *velocity, radiusScale1, radiusScale2, component1, component2);
 }
 
 void registerGenerateMixedDwarf(lua_State* luaSt)
