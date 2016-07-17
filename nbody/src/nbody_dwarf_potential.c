@@ -22,22 +22,30 @@
 #include "nbody_types.h"
 
 
-real plummer_pot(real r, real mass, real rscale)
+ real plummer_pot(real r, real mass, real rscale)
 {
     return mass / mw_sqrt(sqr(r) + sqr(rscale));
 }
 
-real plummer_den(real r, real mass, real rscale)
+ real plummer_den(real r, real mass, real rscale)
 {
     return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;
 }
 
-real nfw_den(real r, real mass, real rscale)
+ real nfw_den(real r, real mass, real rscale)
 {
     return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));
 }
 
-real nfw_pot(real r, real mass, real rscale)
+ real nfw_pot(real r, real mass, real rscale)
 {
     return (mass / r) * mw_log(1.0 + r / rscale);
+}
+
+
+real potential(real r, real mass, real rscale, char* type)
+{
+    static const char* nfw = "nfw";
+    static const char* plum = "plummer";
+    
 }

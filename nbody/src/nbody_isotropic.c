@@ -90,7 +90,7 @@ static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this does in fact use a 5-point stencil*/
-    real h = 0.1;
+    real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, denom;
     
@@ -106,7 +106,7 @@ static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x
 static inline real second_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this also uses a five point stencil*/
-    real h = 0.1;
+    real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, p5, denom;
 
