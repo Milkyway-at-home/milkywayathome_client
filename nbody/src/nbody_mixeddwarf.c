@@ -35,70 +35,71 @@ their copyright to their programs which execute similar algorithms.
 
 
 /*      MODEL SPECIFIC FUNCTIONS       */
-static inline real potential( real r, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static inline real potential( real r, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
 {
     /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
-    real potential_light  = potential(r, argsl);
-    real potential_dark   = potential(r, argsd);
+    real potential_light  = get_potential(r, argsl, compl);
+    real potential_dark   = get_potential(r, argsd, compd);
     real potential_result = (potential_light + potential_dark);
 
     return (potential_result);
 }
 
-static inline real density( real r, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static inline real density( real r, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
 {
     /*this is the density distribution function. Returns the density at a given radius.*/
     
-    real density_light = plummer_den(r, argsl);
-    real density_dark  = plummer_den(r, argsd);
+    real density_light = get_density(r, argsl, compl);
+    real density_dark  = get_density(r, argsd, compd);
     real density_result = (density_light + density_dark );
 
     return density_result;
 }
 
-static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
+static inline real profile_rho(real r, real r_placeholder, 
+                               real * args, real * args_placeholder, 
+                               int comp, int comp_placeholder, dsfmt_t* dsfmtState)
 {
-    real result = r * r * get_density(r, args, type);    
+    //there are two place holders because max finder is also used for dis_fun
+    real result = r * r * get_density(r, args, comp);    
     return result;
 }
 
-
-
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative(real (*func)(real, real *, real * dsfmt_t*), real x, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static inline real first_derivative(real (*func)(real, real *, real *, int, int, dsfmt_t*), real x, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
 {
     /*yes, this does in fact use a 5-point stencil*/
     real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, denom;
     
-    p1 =   1.0 * (*func)( (x - 2.0 * h), argsl, argsd, dsfmtState);
-    p2 = - 8.0 * (*func)( (x - h)      , argsl, argsd, dsfmtState);
-    p3 = - 1.0 * (*func)( (x + 2.0 * h), argsl, argsd, dsfmtState);
-    p4 =   8.0 * (*func)( (x + h)      , argsl, argsd, dsfmtState);
+    p1 =   1.0 * (*func)( (x - 2.0 * h), argsl, argsd, compl, compd, dsfmtState);
+    p2 = - 8.0 * (*func)( (x - h)      , argsl, argsd, compl, compd, dsfmtState);
+    p3 = - 1.0 * (*func)( (x + 2.0 * h), argsl, argsd, compl, compd, dsfmtState);
+    p4 =   8.0 * (*func)( (x + h)      , argsl, argsd, compl, compd, dsfmtState);
     denom = inv( 12.0 * h);
     deriv = (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
 
-static inline real second_derivative(real (*func)(real, real *, real * , dsfmt_t*), real x, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static inline real second_derivative(real (*func)(real, real *, real * , int, int, dsfmt_t*), real x, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
 {
     /*yes, this also uses a five point stencil*/
     real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, p5, denom;
 
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , argsl, argsd, dsfmtState);
-    p2 =  16.0 * (*func)( (x + h)       , argsl, argsd, dsfmtState);
-    p3 = -30.0 * (*func)( (x)           , argsl, argsd, dsfmtState);
-    p4 =  16.0 * (*func)( (x - h)       , argsl, argsd, dsfmtState);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , argsl, argsd, dsfmtState);
+    p1 = - 1.0 * (*func)( (x + 2.0 * h) , argsl, argsd, compl, compd, dsfmtState);
+    p2 =  16.0 * (*func)( (x + h)       , argsl, argsd, compl, compd, dsfmtState);
+    p3 = -30.0 * (*func)( (x)           , argsl, argsd, compl, compd, dsfmtState);
+    p4 =  16.0 * (*func)( (x - h)       , argsl, argsd, compl, compd, dsfmtState);
+    p5 = - 1.0 * (*func)( (x - 2.0 * h) , argsl, argsd, compl, compd, dsfmtState);
     denom = inv( 12.0 * h * h);
     deriv = (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
 
-static real gauss_quad(real (*func)(real, real *, real *, dsfmt_t*), real lower, real upper, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static real gauss_quad(real (*func)(real, real *, real *, int, int, real, dsfmt_t*), real lower, real upper, real * argsl, real * argsd, int compl, int compd, real energy, dsfmt_t* dsfmtState)
 {
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
@@ -146,9 +147,9 @@ static real gauss_quad(real (*func)(real, real *, real *, dsfmt_t*), real lower,
     while (1)
     {
                 //gauss quad
-        intv = intv + c1 * (*func)(x1n, argsl, argsd, dsfmtState) * coef1 +
-                      c2 * (*func)(x2n, argsl, argsd, dsfmtState) * coef1 + 
-                      c3 * (*func)(x3n, argsl, argsd, dsfmtState) * coef1;
+        intv = intv + c1 * (*func)(x1n, argsl, argsd, compl, compd, energy, dsfmtState) * coef1 +
+                      c2 * (*func)(x2n, argsl, argsd, compl, compd, energy, dsfmtState) * coef1 + 
+                      c3 * (*func)(x3n, argsl, argsd, compl, compd, energy, dsfmtState) * coef1;
 
         lowerg = upperg;
         upperg = upperg + hg;
@@ -201,7 +202,7 @@ static real gauss_quad(real (*func)(real, real *, real *, dsfmt_t*), real lower,
     return intv;
 }
 
-static inline real max_finder(real (*profile)(real , real *, real *, dsfmt_t*), real * argsl, real * argsd, real a, real b, real c, int limit, real tolerance, dsfmt_t* dsfmtState)
+static inline real max_finder(real (*profile)(real , real , real *, real *, int, int, dsfmt_t*), real r, real * argsl, real * argsd, int comp1, int comp2, real a, real b, real c, int limit, real tolerance, dsfmt_t* dsfmtState)
 {
     /*this is a maxfinding routine to find the maximum of the density.
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
@@ -225,8 +226,8 @@ static inline real max_finder(real (*profile)(real , real *, real *, dsfmt_t*), 
         x1 = b - (RATIO_COMPLEMENT * (b - a));
     }
 
-    profile_x1 = -(*profile)(x1, argsl, argsd, dsfmtState);
-    profile_x2 = -(*profile)(x2, argsl, argsd, dsfmtState);
+    profile_x1 = -(*profile)(x1, r, argsl, argsd, comp1, comp2, dsfmtState);
+    profile_x2 = -(*profile)(x2, r, argsl, argsd, comp1, comp2, dsfmtState);
     
     while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
@@ -237,7 +238,7 @@ static inline real max_finder(real (*profile)(real , real *, real *, dsfmt_t*), 
             x1 = x2;
             x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
             profile_x1 = (real)profile_x2;
-            profile_x2 = -(*profile)(x2, argsl, argsd, dsfmtState);
+            profile_x2 = -(*profile)(x2, r, argsl, argsd, comp1, comp2, dsfmtState);
         }
         else
         {
@@ -245,7 +246,7 @@ static inline real max_finder(real (*profile)(real , real *, real *, dsfmt_t*), 
             x2 = x1;
             x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
             profile_x2 = (real)profile_x1;
-            profile_x1 = -(*profile)(x1, argsl, argsd, dsfmtState);
+            profile_x1 = -(*profile)(x1, r, argsl, argsd, comp1, comp2, dsfmtState);
         }
         
         if(counter > limit)
@@ -265,13 +266,9 @@ static inline real max_finder(real (*profile)(real , real *, real *, dsfmt_t*), 
 }
 
 
-static inline real root_finder(real (*func)(real, real *, real *, dsfmt_t*), real * argsl, real * argsd, real function_value, real lower_bound, real upper_bound, dsfmt_t* dsfmtState)
+static inline real root_finder(real (*func)(real, real *, real *, int, int, dsfmt_t*), real * argsl, real * argsd, int comp1, int comp2, real function_value, real lower_bound, real upper_bound, dsfmt_t* dsfmtState)
 {
     //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
-    if(function_parameters == NULL || func == NULL)
-    {
-        exit(-1);
-    }
     unsigned int i = 0;
 
     int N = 4;
@@ -288,7 +285,7 @@ static inline real root_finder(real (*func)(real, real *, real *, dsfmt_t*), rea
         interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
         interval_bounds[i] = interval_bound;
         /*function value at those intervals*/
-        values[i] = (*func)(interval_bound, argsl, argsd, dsfmtState) - function_value;
+        values[i] = (*func)(interval_bound, argsl, argsd, comp1, comp2, dsfmtState) - function_value;
     }
     
     real mid_point = 0;
@@ -330,7 +327,7 @@ static inline real root_finder(real (*func)(real, real *, real *, dsfmt_t*), rea
             while(mw_fabs(mid_point_funcval) > .0001)
             {
                 mid_point = (new_lower_bound + new_upper_bound) / 2.0;
-                mid_point_funcval = (*func)(mid_point, argsl, argsd, dsfmtState) - function_value;
+                mid_point_funcval = (*func)(mid_point, argsl, argsd, comp1, comp2, dsfmtState) - function_value;
                 
                 if(mid_point_funcval < 0.0)
                 {
@@ -371,11 +368,8 @@ static inline real root_finder(real (*func)(real, real *, real *, dsfmt_t*), rea
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static inline real fun(real ri, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd, real energy, dsfmt_t* dsfmtState)
 {
-    //-------------------------------    
-    real energy   = args[4];
-    //-------------------------------
     
     real first_deriv_psi;
     real second_deriv_psi;
@@ -386,11 +380,11 @@ static inline real fun(real ri, real * argsl, real * argsd, dsfmt_t* dsfmtState)
     real diff;
     real func;
 
-    first_deriv_psi      = first_derivative(potential, ri, argsl, argsd, dsfmtState);
-    first_deriv_density  = first_derivative(density,   ri, argsl, argsd, dsfmtState);
+    first_deriv_psi      = first_derivative(potential, ri, argsl, argsd, compl, compd, dsfmtState);
+    first_deriv_density  = first_derivative(density,   ri, argsl, argsd, compl, compd, dsfmtState);
 
-    second_deriv_psi     = second_derivative(potential, ri, argsl, argsd, dsfmtState);
-    second_deriv_density = second_derivative(density,   ri, argsl, argsd, dsfmtState);
+    second_deriv_psi     = second_derivative(potential, ri, argsl, argsd, compl, compd, dsfmtState);
+    second_deriv_density = second_derivative(density,   ri, argsl, argsd, compl, compd, dsfmtState);
     
     /*
     * Instead of calculating the second derivative of density with respect to -pot directly, 
@@ -404,7 +398,7 @@ static inline real fun(real ri, real * argsl, real * argsd, dsfmt_t* dsfmtState)
      * just before it goes to the singlularity. Either way, we over estimate or under estimate the denom by the same amount (the step size)
      */
     
-    diff = mw_fabs(energy - potential(ri, argsl, argsd, dsfmtState));
+    diff = mw_fabs(energy - potential(ri, argsl, argsd, compl, compd, dsfmtState));
     dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
     
     /*just in case*/
@@ -416,12 +410,12 @@ static inline real fun(real ri, real * argsl, real * argsd, dsfmt_t* dsfmtState)
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
     {
-        denominator = minushalf( mw_fabs(energy - potential(ri, argsl, argsd, dsfmtState) ) );
+        denominator = minushalf( mw_fabs(energy - potential(ri, argsl, argsd, compl, compd, dsfmtState) ) );
     }
     else
     {
         /*if the r is exactly at the singularity then move it a small amount.*/
-        denominator = minushalf( mw_fabs(energy - potential(ri + 0.0001, argsl, argsd, dsfmtState) ) );
+        denominator = minushalf( mw_fabs(energy - potential(ri + 0.0001, argsl, argsd, compl, compd, dsfmtState) ) );
     }
     
     
@@ -437,14 +431,14 @@ static inline real fun(real ri, real * argsl, real * argsd, dsfmt_t* dsfmtState)
         
 }
 
-static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * argsl, real * argsd, real energy, real search_range, real r)
+static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * argsl, real * argsd, int compl, int compd, real energy, real search_range, real r)
 {
     int counter = 0;
     real upperlimit_r = 0.0;
     
     do
     {
-        upperlimit_r = root_finder(potential, argsl, argsd, energy, 0.0, search_range, dsfmtState); 
+        upperlimit_r = root_finder(potential, argsl, argsd, compl, compd, energy, 0.0, search_range, dsfmtState); 
 
         if(isinf(upperlimit_r) == FALSE && upperlimit_r != 0.0 && isnan(upperlimit_r) == FALSE){break;}
         
@@ -461,7 +455,7 @@ static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * argsl, real * a
     return mw_fabs(upperlimit_r);
 }
  
-static inline real dist_fun(real r, real v, real * argsl, real * argsd, dsfmt_t* dsfmtState)
+static inline real dist_fun(real v, real r, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
 {
     /*This returns the value of the distribution function*/
     
@@ -482,14 +476,14 @@ static inline real dist_fun(real r, real v, real * argsl, real * argsd, dsfmt_t*
     real search_range = 0.0;   
     
     /*energy as defined in binney*/
-    energy = potential(r, argsl, argsd, dsfmtState) - 0.5 * v * v; 
+    energy = potential(r, argsl, argsd, compl, compd, dsfmtState) - 0.5 * v * v; 
     
     /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
     search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
     
     /*dynamic search range*/
     /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
-    while(potential(search_range, argsl, argsd, dsfmtState) > energy)
+    while(potential(search_range, argsl, argsd, compl, compd, dsfmtState) > energy)
     {
         search_range = 100.0 * search_range;
         if(counter > 100)
@@ -500,10 +494,7 @@ static inline real dist_fun(real r, real v, real * argsl, real * argsd, dsfmt_t*
         counter++;
     }
     
-    upperlimit_r = find_upperlimit_r(dsfmtState, argsl, argsd, energy, search_range, r);
-    
-    
-    real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
+    upperlimit_r = find_upperlimit_r(dsfmtState, argsl, argsd, compl, compd, energy, search_range, r);
     
     /*This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
      * then 5 times it is already where the integrand is close to 0 since it goes to 0 quickly. 
@@ -511,7 +502,7 @@ static inline real dist_fun(real r, real v, real * argsl, real * argsd, dsfmt_t*
     lowerlimit_r = 5.0 * (upperlimit_r);
     
     /*This calls guassian quad to integrate the function for a given energy*/
-    distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, argsl, argsd, dsfmtState);
+    distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, argsl, argsd, compl, compd, energy, dsfmtState);
     return distribution_function;
 }
 
@@ -546,7 +537,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bo
     return r;
 }
 
-static inline real vel_mag( real r, real * argsl, real * argsd, dsfmt_t* dsfmtState,)
+static inline real vel_mag(real r, real * argsl, real * argsd, int compl, int compd,  dsfmt_t* dsfmtState)
 {
     
     /*
@@ -555,27 +546,20 @@ static inline real vel_mag( real r, real * argsl, real * argsd, dsfmt_t* dsfmtSt
      * THIS IS EQUAL TO 0.977813107 KM/S
      */
     
-    //-------------------------------
-    real mass_l   = argsl[0];
-    real mass_d   = argsd[0];
-    real rscale_l = argsl[1];
-    real rscale_d = argsd[1];
-    //-------------------------------
     
     int counter = 0;
     real v, u, d;
-    real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, argsl, argsd, dsfmtState) ) );
+    real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, argsl, argsd, compl, compd, dsfmtState) ) );
     
-    real parameters[5] = {mass_l, mass_d, rscale_l, rscale_d, r};
-    real dist_max = max_finder(dist_fun, argsl, argsd, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2, dsfmtState);
-   
+    real dist_max = max_finder(dist_fun, r, argsl, argsd, compl, compd, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2, dsfmtState);
+    
     while(1)
     {
 
         v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
-        d = dist_fun(v, argsl, argsd, dsfmtState);
+        d = dist_fun(v, r, argsl, argsd, compl, compd, dsfmtState);
         if(mw_fabs(d / dist_max) > u)
         {
             break;
@@ -667,9 +651,9 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 
 
 /*      DWARF GENERATION        */
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, 
+static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, 
+                                    real * argsl, real * argsd, 
                                     mwbool ignore, mwvector rShift, mwvector vShift, 
-                                    real radiusScale1, real radiusScale2,
                                     int component1, int component2)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
@@ -690,19 +674,20 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real * vz = mwCalloc(nbody, sizeof(real));
         real * masses = mwCalloc(nbody, sizeof(real));
         
+        
+        mwvector vec;
+        real mass_l   = argsl[0]; /*mass of the light component*/
+        real mass_d   = argsd[0]; /*mass of the dark component*/
+        real rscale_l = argsl[1]; /*scale radius of the light component*/
+        real rscale_d = argsd[1]; /*scale radius of the dark component*/
+        
         int pl = 1;
         mw_printf("comps: %i\t %i  \n", component1, component2);
         if(component1 == pl)
         {
-            mw_printf("this ran\n");
+            mw_printf("this ran: %f\t%f\t%f\t%f\n", mass_l, mass_d, rscale_l, rscale_d);
         }
-        
-        mwvector vec;
-        real dwarf_mass = mass1 + mass2;
-        real mass_l   = mass1; /*mass of the light component*/
-        real mass_d   = mass2; /*mass of the dark component*/
-        real rscale_l = radiusScale1; /*scale radius of the light component*/
-        real rscale_d = radiusScale2; /*scale radius of the dark component*/
+        real dwarf_mass = mass_l + mass_d;
         
         real bound = 50.0 * (rscale_l + rscale_d);
 
@@ -717,16 +702,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
         
-       /*since the potential and density are a sum of the two components, setting the mass of one 
-        * component to zero effectively gives a single component potential and density. 
-        */
-        real args[4] = {mass_l, mass_d, rscale_l, rscale_d};
-//         real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
-//         real parameters_dark[4]  = {0.0, mass_d, rscale_l, rscale_d};
-
         /*finding the max of the individual components*/
-        real rho_max_light = max_finder(profile_rho, argsl, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
-        real rho_max_dark  = max_finder(profile_rho, argsd, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
+        int place_holder = 0;
+        real rho_max_light = max_finder(profile_rho, place_holder, argsl, argsl, component1, place_holder, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
+        real rho_max_dark  = max_finder(profile_rho, place_holder, argsd, argsd, component2, place_holder, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
      
      /*initializing particles:*/
@@ -772,7 +751,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             counter = 0;
             do
             {
-                v = vel_mag(prng, r, argsl, argsd);
+                v = vel_mag(r, argsl, argsd, component1, component2, prng);
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
                 if(counter > 1000)
@@ -849,18 +828,16 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
         static mwbool ignore;
-        static real mass1 = 0.0, nbodyf = 0.0, radiusScale1 = 0.0;
-        static real mass2 = 0.0, radiusScale2 = 0.0;
+        static real nbodyf = 0.0;
         static real component1 = 0;
         static real component2 = 0;
-        
+        static real * argsl  = NULL;
+        static real * argsd  = NULL;
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
-            { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
-            { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
-            { "scaleRadius2",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2      },
+            { "argsl",                LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &argsl             },
+            { "argsd",                LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &argsd             },
             { "component1",           LUA_TNUMBER,     NULL,                    TRUE,    &component1        },
             { "component2",           LUA_TNUMBER,     NULL,                    TRUE,    &component2        },
             { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
@@ -877,9 +854,8 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         handleNamedArgumentTable(luaSt, argTable, 1);
         
         
-        return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, mass1, mass2, ignore,
-                                                                 *position, *velocity, radiusScale1, radiusScale2, 
-                                        (unsigned int) component1, (unsigned int) component2);
+        return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, argsl, argsd, ignore,
+                                                                 *position, *velocity, (unsigned int) component1, (unsigned int) component2);
 }
 
 void registerGenerateMixedDwarf(lua_State* luaSt)

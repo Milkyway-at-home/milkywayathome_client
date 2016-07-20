@@ -43,42 +43,49 @@
 }
 
 
-real get_potential(real r, real * args, int type)
+real get_potential(real r, real * args, const int type)
 {
-    static int plum = 1;
-    static int nfw  = 2;
-    switch (type)
+    const int plum = 1;
+    const int nfw  = 2;
+    if(type == plum)
     {
-        case plum:
-            real mass   = args[0];
-            real rscale = args[1];
-            return plummer_pot(r, mass, rscale);
-        case nfw:
-            real mass   = args[0];
-            real rscale = args[1];
-            return nfw_pot(r, mass, rscale);
-        default:
-            mw_fail("Invalid dwarf potential");
+        real mass   = args[0];
+        real rscale = args[1];
+        return plummer_pot(r, mass, rscale);
+    }
+    else if(type == nfw)
+    {
+        real mass   = args[0];
+        real rscale = args[1];
+        return nfw_pot(r, mass, rscale);
+    }
+    else
+    {
+        mw_fail("Invalid dwarf potential");
     }
 }
 
 
 
-real get_density(real r, real * args, int type)
+real get_density(real r, real * args, const int type)
 {
-    static int plum = 1;
-    static int nfw  = 2;
-    switch (type)
+    const int plum = 1;
+    const int nfw  = 2;
+    
+    if(type == plum)
     {
-        case plum:
-            real mass   = args[0];
-            real rscale = args[1];
-            return plummer_den(r, mass, rscale);
-        case nfw:
-            real mass   = args[0];
-            real rscale = args[1];
-            return nfw_den(r, mass, rscale);
-        default:
-            mw_fail("Invalid dwarf density");
+        real mass   = args[0];
+        real rscale = args[1];
+        return plummer_pot(r, mass, rscale);
+    }
+    else if(type == nfw)
+    {
+        real mass   = args[0];
+        real rscale = args[1];
+        return nfw_pot(r, mass, rscale);
+    }
+    else
+    {
+        mw_fail("Invalid dwarf potential");
     }
 }
