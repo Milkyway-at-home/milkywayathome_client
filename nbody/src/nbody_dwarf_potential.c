@@ -49,7 +49,7 @@
                             /* GENERAL HERNQUIST */
 static real gen_hern_den(real r, real mass, real rscale)
 {
-    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + a));
+    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + rscale));
 }
 
 static real gen_hern_pot(real r, real mass, real rscale)
@@ -60,14 +60,14 @@ static real gen_hern_pot(real r, real mass, real rscale)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                             /* EINASTO */
 
-static real einasto_den(real r, real A, real alpha)
-{
-    return mw_exp(-A * mw_pow(r, alpha));
-}
-
-static real einasto_pot(real r, real mass, real rscale)
-{
-}
+// static real einasto_den(real r, real A, real alpha)
+// {
+//     return mw_exp(-A * mw_pow(r, alpha));
+// }
+// 
+// static real einasto_pot(real r, real A, real alpha)
+// {
+// }
 
 
 
@@ -97,12 +97,12 @@ real get_potential(real r, real * args, const int type)
         real rscale = args[1];
         return gen_hern_pot(r, mass, rscale);
     }
-    else if(type == einasto)
-    {
-        real A     = args[0];
-        real alpha = args[1];
-        return einasto_pot(r, mass, rscale);
-    }
+//     else if(type == einasto)
+//     {
+//         real A     = args[0];
+//         real alpha = args[1];
+//         return einasto_pot(r, mass, rscale);
+//     }
     else
     {
         mw_fail("Invalid dwarf potential");
@@ -135,12 +135,12 @@ real get_density(real r, real * args, const int type)
         real rscale = args[1];
         return gen_hern_den(r, mass, rscale);
     }
-        else if(type == einasto)
-    {
-        real A     = args[0];
-        real alpha = args[1];
-        return einasto_den(r, A, alpha);
-    }
+//         else if(type == einasto)
+//     {
+//         real A     = args[0];
+//         real alpha = args[1];
+//         return einasto_den(r, A, alpha);
+//     }
     else
     {
         mw_fail("Invalid dwarf potential");
