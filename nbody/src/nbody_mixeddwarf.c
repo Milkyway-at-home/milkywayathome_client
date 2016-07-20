@@ -35,7 +35,7 @@ their copyright to their programs which execute similar algorithms.
 
 
 /*      MODEL SPECIFIC FUNCTIONS       */
-static inline real potential( real r, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
+static inline real potential( real r, real * argsl, real * argsd, int compl, int compd)
 {
     /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
     real potential_light  = get_potential(r, argsl, compl);
@@ -45,7 +45,7 @@ static inline real potential( real r, real * argsl, real * argsd, int compl, int
     return (potential_result);
 }
 
-static inline real density( real r, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
+static inline real density( real r, real * argsl, real * argsd, int compl, int compd)
 {
     /*this is the density distribution function. Returns the density at a given radius.*/
     
@@ -58,7 +58,7 @@ static inline real density( real r, real * argsl, real * argsd, int compl, int c
 
 static inline real profile_rho(real r, real r_placeholder, 
                                real * args, real * args_placeholder, 
-                               int comp, int comp_placeholder, dsfmt_t* dsfmtState)
+                               int comp, int comp_placeholder)
 {
     //there are two place holders because max finder is also used for dis_fun
     real result = r * r * get_density(r, args, comp);    
@@ -66,40 +66,40 @@ static inline real profile_rho(real r, real r_placeholder,
 }
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative(real (*func)(real, real *, real *, int, int, dsfmt_t*), real x, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
+static inline real first_derivative(real (*func)(real, real *, real *, int, int), real x, real * argsl, real * argsd, int compl, int compd)
 {
     /*yes, this does in fact use a 5-point stencil*/
     real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, denom;
     
-    p1 =   1.0 * (*func)( (x - 2.0 * h), argsl, argsd, compl, compd, dsfmtState);
-    p2 = - 8.0 * (*func)( (x - h)      , argsl, argsd, compl, compd, dsfmtState);
-    p3 = - 1.0 * (*func)( (x + 2.0 * h), argsl, argsd, compl, compd, dsfmtState);
-    p4 =   8.0 * (*func)( (x + h)      , argsl, argsd, compl, compd, dsfmtState);
+    p1 =   1.0 * (*func)( (x - 2.0 * h), argsl, argsd, compl, compd);
+    p2 = - 8.0 * (*func)( (x - h)      , argsl, argsd, compl, compd);
+    p3 = - 1.0 * (*func)( (x + 2.0 * h), argsl, argsd, compl, compd);
+    p4 =   8.0 * (*func)( (x + h)      , argsl, argsd, compl, compd);
     denom = inv( 12.0 * h);
     deriv = (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
 
-static inline real second_derivative(real (*func)(real, real *, real * , int, int, dsfmt_t*), real x, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
+static inline real second_derivative(real (*func)(real, real *, real * , int, int), real x, real * argsl, real * argsd, int compl, int compd)
 {
     /*yes, this also uses a five point stencil*/
     real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, p5, denom;
 
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , argsl, argsd, compl, compd, dsfmtState);
-    p2 =  16.0 * (*func)( (x + h)       , argsl, argsd, compl, compd, dsfmtState);
-    p3 = -30.0 * (*func)( (x)           , argsl, argsd, compl, compd, dsfmtState);
-    p4 =  16.0 * (*func)( (x - h)       , argsl, argsd, compl, compd, dsfmtState);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , argsl, argsd, compl, compd, dsfmtState);
+    p1 = - 1.0 * (*func)( (x + 2.0 * h) , argsl, argsd, compl, compd);
+    p2 =  16.0 * (*func)( (x + h)       , argsl, argsd, compl, compd);
+    p3 = -30.0 * (*func)( (x)           , argsl, argsd, compl, compd);
+    p4 =  16.0 * (*func)( (x - h)       , argsl, argsd, compl, compd);
+    p5 = - 1.0 * (*func)( (x - 2.0 * h) , argsl, argsd, compl, compd);
     denom = inv( 12.0 * h * h);
     deriv = (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
 
-static real gauss_quad(real (*func)(real, real *, real *, int, int, real, dsfmt_t*), real lower, real upper, real * argsl, real * argsd, int compl, int compd, real energy, dsfmt_t* dsfmtState)
+static real gauss_quad(real (*func)(real, real *, real *, int, int, real), real lower, real upper, real * argsl, real * argsd, int compl, int compd, real energy)
 {
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
@@ -147,9 +147,9 @@ static real gauss_quad(real (*func)(real, real *, real *, int, int, real, dsfmt_
     while (1)
     {
                 //gauss quad
-        intv = intv + c1 * (*func)(x1n, argsl, argsd, compl, compd, energy, dsfmtState) * coef1 +
-                      c2 * (*func)(x2n, argsl, argsd, compl, compd, energy, dsfmtState) * coef1 + 
-                      c3 * (*func)(x3n, argsl, argsd, compl, compd, energy, dsfmtState) * coef1;
+        intv = intv + c1 * (*func)(x1n, argsl, argsd, compl, compd, energy) * coef1 +
+                      c2 * (*func)(x2n, argsl, argsd, compl, compd, energy) * coef1 + 
+                      c3 * (*func)(x3n, argsl, argsd, compl, compd, energy) * coef1;
 
         lowerg = upperg;
         upperg = upperg + hg;
@@ -202,7 +202,7 @@ static real gauss_quad(real (*func)(real, real *, real *, int, int, real, dsfmt_
     return intv;
 }
 
-static inline real max_finder(real (*profile)(real , real , real *, real *, int, int, dsfmt_t*), real r, real * argsl, real * argsd, int comp1, int comp2, real a, real b, real c, int limit, real tolerance, dsfmt_t* dsfmtState)
+static inline real max_finder(real (*profile)(real , real , real *, real *, int, int), real r, real * argsl, real * argsd, int comp1, int comp2, real a, real b, real c, int limit, real tolerance)
 {
     /*this is a maxfinding routine to find the maximum of the density.
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
@@ -226,8 +226,8 @@ static inline real max_finder(real (*profile)(real , real , real *, real *, int,
         x1 = b - (RATIO_COMPLEMENT * (b - a));
     }
 
-    profile_x1 = -(*profile)(x1, r, argsl, argsd, comp1, comp2, dsfmtState);
-    profile_x2 = -(*profile)(x2, r, argsl, argsd, comp1, comp2, dsfmtState);
+    profile_x1 = -(*profile)(x1, r, argsl, argsd, comp1, comp2);
+    profile_x2 = -(*profile)(x2, r, argsl, argsd, comp1, comp2);
     
     while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
@@ -238,7 +238,7 @@ static inline real max_finder(real (*profile)(real , real , real *, real *, int,
             x1 = x2;
             x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
             profile_x1 = (real)profile_x2;
-            profile_x2 = -(*profile)(x2, r, argsl, argsd, comp1, comp2, dsfmtState);
+            profile_x2 = -(*profile)(x2, r, argsl, argsd, comp1, comp2);
         }
         else
         {
@@ -246,7 +246,7 @@ static inline real max_finder(real (*profile)(real , real , real *, real *, int,
             x2 = x1;
             x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
             profile_x2 = (real)profile_x1;
-            profile_x1 = -(*profile)(x1, r, argsl, argsd, comp1, comp2, dsfmtState);
+            profile_x1 = -(*profile)(x1, r, argsl, argsd, comp1, comp2);
         }
         
         if(counter > limit)
@@ -266,7 +266,7 @@ static inline real max_finder(real (*profile)(real , real , real *, real *, int,
 }
 
 
-static inline real root_finder(real (*func)(real, real *, real *, int, int, dsfmt_t*), real * argsl, real * argsd, int comp1, int comp2, real function_value, real lower_bound, real upper_bound, dsfmt_t* dsfmtState)
+static inline real root_finder(real (*func)(real, real *, real *, int, int), real * argsl, real * argsd, int comp1, int comp2, real function_value, real lower_bound, real upper_bound)
 {
     //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
     unsigned int i = 0;
@@ -285,7 +285,7 @@ static inline real root_finder(real (*func)(real, real *, real *, int, int, dsfm
         interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
         interval_bounds[i] = interval_bound;
         /*function value at those intervals*/
-        values[i] = (*func)(interval_bound, argsl, argsd, comp1, comp2, dsfmtState) - function_value;
+        values[i] = (*func)(interval_bound, argsl, argsd, comp1, comp2) - function_value;
     }
     
     real mid_point = 0;
@@ -327,7 +327,7 @@ static inline real root_finder(real (*func)(real, real *, real *, int, int, dsfm
             while(mw_fabs(mid_point_funcval) > .0001)
             {
                 mid_point = (new_lower_bound + new_upper_bound) / 2.0;
-                mid_point_funcval = (*func)(mid_point, argsl, argsd, comp1, comp2, dsfmtState) - function_value;
+                mid_point_funcval = (*func)(mid_point, argsl, argsd, comp1, comp2) - function_value;
                 
                 if(mid_point_funcval < 0.0)
                 {
@@ -368,7 +368,7 @@ static inline real root_finder(real (*func)(real, real *, real *, int, int, dsfm
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd, real energy, dsfmt_t* dsfmtState)
+static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd, real energy)
 {
     
     real first_deriv_psi;
@@ -380,11 +380,11 @@ static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd
     real diff;
     real func;
 
-    first_deriv_psi      = first_derivative(potential, ri, argsl, argsd, compl, compd, dsfmtState);
-    first_deriv_density  = first_derivative(density,   ri, argsl, argsd, compl, compd, dsfmtState);
+    first_deriv_psi      = first_derivative(potential, ri, argsl, argsd, compl, compd);
+    first_deriv_density  = first_derivative(density,   ri, argsl, argsd, compl, compd);
 
-    second_deriv_psi     = second_derivative(potential, ri, argsl, argsd, compl, compd, dsfmtState);
-    second_deriv_density = second_derivative(density,   ri, argsl, argsd, compl, compd, dsfmtState);
+    second_deriv_psi     = second_derivative(potential, ri, argsl, argsd, compl, compd);
+    second_deriv_density = second_derivative(density,   ri, argsl, argsd, compl, compd);
     
     /*
     * Instead of calculating the second derivative of density with respect to -pot directly, 
@@ -398,7 +398,7 @@ static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd
      * just before it goes to the singlularity. Either way, we over estimate or under estimate the denom by the same amount (the step size)
      */
     
-    diff = mw_fabs(energy - potential(ri, argsl, argsd, compl, compd, dsfmtState));
+    diff = mw_fabs(energy - potential(ri, argsl, argsd, compl, compd));
     dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
     
     /*just in case*/
@@ -410,12 +410,12 @@ static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
     {
-        denominator = minushalf( mw_fabs(energy - potential(ri, argsl, argsd, compl, compd, dsfmtState) ) );
+        denominator = minushalf( mw_fabs(energy - potential(ri, argsl, argsd, compl, compd) ) );
     }
     else
     {
         /*if the r is exactly at the singularity then move it a small amount.*/
-        denominator = minushalf( mw_fabs(energy - potential(ri + 0.0001, argsl, argsd, compl, compd, dsfmtState) ) );
+        denominator = minushalf( mw_fabs(energy - potential(ri + 0.0001, argsl, argsd, compl, compd) ) );
     }
     
     
@@ -431,14 +431,14 @@ static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd
         
 }
 
-static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * argsl, real * argsd, int compl, int compd, real energy, real search_range, real r)
+static inline real find_upperlimit_r(real * argsl, real * argsd, int compl, int compd, real energy, real search_range, real r)
 {
     int counter = 0;
     real upperlimit_r = 0.0;
     
     do
     {
-        upperlimit_r = root_finder(potential, argsl, argsd, compl, compd, energy, 0.0, search_range, dsfmtState); 
+        upperlimit_r = root_finder(potential, argsl, argsd, compl, compd, energy, 0.0, search_range); 
 
         if(isinf(upperlimit_r) == FALSE && upperlimit_r != 0.0 && isnan(upperlimit_r) == FALSE){break;}
         
@@ -455,7 +455,7 @@ static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * argsl, real * a
     return mw_fabs(upperlimit_r);
 }
  
-static inline real dist_fun(real v, real r, real * argsl, real * argsd, int compl, int compd, dsfmt_t* dsfmtState)
+static inline real dist_fun(real v, real r, real * argsl, real * argsd, int compl, int compd)
 {
     /*This returns the value of the distribution function*/
     
@@ -476,14 +476,14 @@ static inline real dist_fun(real v, real r, real * argsl, real * argsd, int comp
     real search_range = 0.0;   
     
     /*energy as defined in binney*/
-    energy = potential(r, argsl, argsd, compl, compd, dsfmtState) - 0.5 * v * v; 
+    energy = potential(r, argsl, argsd, compl, compd) - 0.5 * v * v; 
     
     /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
     search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
     
     /*dynamic search range*/
     /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
-    while(potential(search_range, argsl, argsd, compl, compd, dsfmtState) > energy)
+    while(potential(search_range, argsl, argsd, compl, compd) > energy)
     {
         search_range = 100.0 * search_range;
         if(counter > 100)
@@ -494,7 +494,7 @@ static inline real dist_fun(real v, real r, real * argsl, real * argsd, int comp
         counter++;
     }
     
-    upperlimit_r = find_upperlimit_r(dsfmtState, argsl, argsd, compl, compd, energy, search_range, r);
+    upperlimit_r = find_upperlimit_r(argsl, argsd, compl, compd, energy, search_range, r);
     
     /*This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
      * then 5 times it is already where the integrand is close to 0 since it goes to 0 quickly. 
@@ -502,7 +502,7 @@ static inline real dist_fun(real v, real r, real * argsl, real * argsd, int comp
     lowerlimit_r = 5.0 * (upperlimit_r);
     
     /*This calls guassian quad to integrate the function for a given energy*/
-    distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, argsl, argsd, compl, compd, energy, dsfmtState);
+    distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, argsl, argsd, compl, compd, energy);
     return distribution_function;
 }
 
@@ -549,9 +549,9 @@ static inline real vel_mag(real r, real * argsl, real * argsd, int compl, int co
     
     int counter = 0;
     real v, u, d;
-    real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, argsl, argsd, compl, compd, dsfmtState) ) );
+    real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, argsl, argsd, compl, compd) ) );
     
-    real dist_max = max_finder(dist_fun, r, argsl, argsd, compl, compd, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2, dsfmtState);
+    real dist_max = max_finder(dist_fun, r, argsl, argsd, compl, compd, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     
     while(1)
     {
@@ -559,7 +559,7 @@ static inline real vel_mag(real r, real * argsl, real * argsd, int compl, int co
         v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
-        d = dist_fun(v, r, argsl, argsd, compl, compd, dsfmtState);
+        d = dist_fun(v, r, argsl, argsd, compl, compd);
         if(mw_fabs(d / dist_max) > u)
         {
             break;
@@ -681,12 +681,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real rscale_l = argsl[1]; /*scale radius of the light component*/
         real rscale_d = argsd[1]; /*scale radius of the dark component*/
         
-        int pl = 1;
-        mw_printf("comps: %i\t %i  \n", component1, component2);
-        if(component1 == pl)
-        {
-            mw_printf("this ran: %f\t%f\t%f\t%f\n", mass_l, mass_d, rscale_l, rscale_d);
-        }
+        
         real dwarf_mass = mass_l + mass_d;
         
         real bound = 50.0 * (rscale_l + rscale_d);
@@ -704,10 +699,9 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         
         /*finding the max of the individual components*/
         int place_holder = 0;
-        real rho_max_light = max_finder(profile_rho, place_holder, argsl, argsl, component1, place_holder, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
-        real rho_max_dark  = max_finder(profile_rho, place_holder, argsd, argsd, component2, place_holder, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
-        
-     
+        real rho_max_light = max_finder(profile_rho, place_holder, argsl, argsl, component1, place_holder, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4 );
+        real rho_max_dark  = max_finder(profile_rho, place_holder, argsd, argsd, component2, place_holder, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4 );
+
      /*initializing particles:*/
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);
@@ -744,7 +738,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
-            
             
             
 //             mw_printf("\r velocity of particle %i", i+1);
