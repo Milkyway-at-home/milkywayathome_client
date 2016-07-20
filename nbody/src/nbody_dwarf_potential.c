@@ -22,31 +22,63 @@
 #include "nbody_types.h"
 
 
- static real plummer_pot(real r, real mass, real rscale)
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*                             PLUMMER                                                                                   */
+ static real plummer_pot(real r, real mass, real rscale)                                                                 //
+{                                                                                                                        //
+    return mass / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
+}                                                                                                                        //
+                                                                                                                         //
+ static real plummer_den(real r, real mass, real rscale)                                                                 //
+{                                                                                                                        //
+    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;               //
+}                                                                                                                        //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*                            NFW                                                                                        */
+ static real nfw_den(real r, real mass, real rscale)                                                                     //
+{                                                                                                                        //
+    return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));                                   //
+}                                                                                                                        //
+                                                                                                                         //
+ static real nfw_pot(real r, real mass, real rscale)                                                                     //
+{                                                                                                                        //
+    return (mass / r) * mw_log(1.0 + r / rscale);                                                                        //
+}                                                                                                                        //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            /* GENERAL HERNQUIST */
+static real gen_hern_den(real r, real mass, real rscale)
 {
-    return mass / mw_sqrt(sqr(r) + sqr(rscale));
+    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + a));
 }
 
- static real plummer_den(real r, real mass, real rscale)
+static real gen_hern_pot(real r, real mass, real rscale)
 {
-    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;
+    return mass / (r + rscale);
 }
 
- static real nfw_den(real r, real mass, real rscale)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            /* EINASTO */
+
+static real einasto_den(real r, real A, real alpha)
 {
-    return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));
+    return mw_exp(-A * mw_pow(r, alpha));
 }
 
- static real nfw_pot(real r, real mass, real rscale)
+static real einasto_pot(real r, real mass, real rscale)
 {
-    return (mass / r) * mw_log(1.0 + r / rscale);
 }
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 real get_potential(real r, real * args, const int type)
 {
-    const int plum = 1;
-    const int nfw  = 2;
+    const int plum      = 1;
+    const int nfw       = 2;
+    const int gen_hern  = 3;
+    const int einasto   = 4;
     if(type == plum)
     {
         real mass   = args[0];
@@ -58,6 +90,18 @@ real get_potential(real r, real * args, const int type)
         real mass   = args[0];
         real rscale = args[1];
         return nfw_pot(r, mass, rscale);
+    }
+    else if(type == gen_hern)
+    {
+        real mass   = args[0];
+        real rscale = args[1];
+        return gen_hern_pot(r, mass, rscale);
+    }
+    else if(type == einasto)
+    {
+        real A     = args[0];
+        real alpha = args[1];
+        return einasto_pot(r, mass, rscale);
     }
     else
     {
@@ -69,20 +113,33 @@ real get_potential(real r, real * args, const int type)
 
 real get_density(real r, real * args, const int type)
 {
-    const int plum = 1;
-    const int nfw  = 2;
-    
+    const int plum      = 1;
+    const int nfw       = 2;
+    const int gen_hern  = 3;
+    const int einasto   = 4;
     if(type == plum)
     {
         real mass   = args[0];
         real rscale = args[1];
-        return plummer_pot(r, mass, rscale);
+        return plummer_den(r, mass, rscale);
     }
     else if(type == nfw)
     {
         real mass   = args[0];
         real rscale = args[1];
-        return nfw_pot(r, mass, rscale);
+        return nfw_den(r, mass, rscale);
+    }
+        else if(type == gen_hern)
+    {
+        real mass   = args[0];
+        real rscale = args[1];
+        return gen_hern_den(r, mass, rscale);
+    }
+        else if(type == einasto)
+    {
+        real A     = args[0];
+        real alpha = args[1];
+        return einasto_den(r, A, alpha);
     }
     else
     {
