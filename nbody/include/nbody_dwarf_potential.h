@@ -29,10 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-real plummer_pot(real r, real mass, real rscale);
-real plummer_den(real r, real mass, real rscale);
-real nfw_den(real r, real mass, real rscale);
-real nfw_pot(real r, real mass, real rscale);
+real get_potential(real r, real * args, const int type);
+real get_density(real r, real * args, const int type);
 
 #ifdef __cplusplus
 }
