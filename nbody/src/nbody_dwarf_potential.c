@@ -129,7 +129,7 @@ real get_density(real r, real * args, const int type)
         real rscale = args[1];
         return nfw_den(r, mass, rscale);
     }
-        else if(type == gen_hern)
+    else if(type == gen_hern)
     {
         real mass   = args[0];
         real rscale = args[1];
