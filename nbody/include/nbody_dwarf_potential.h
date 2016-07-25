@@ -36,5 +36,5 @@ real get_density(real r, real * args, const int type);
 }
 #endif
 
-#endif /* _NBODY_MIXEDDWARF_H_ */
+#endif /* _NBODY_DWARF_POTENTIAL_H_ */
 
