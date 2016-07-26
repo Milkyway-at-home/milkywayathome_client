@@ -209,6 +209,7 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_dwarf.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
 

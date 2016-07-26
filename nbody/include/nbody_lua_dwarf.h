@@ -1,6 +1,5 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/*
+Copyright (C) 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -18,23 +17,24 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_DWARF_POTENTIAL_H_
-#define _NBODY_DWARF_POTENTIAL_H_
+#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
+  #error "Only nbody_lua_types.h can be included directly."
+#endif
+
+#ifndef _NBODY_LUA_DWARF_H_
+#define _NBODY_LUA_DWARF_H_
 
 #include <lua.h>
 #include "nbody_types.h"
-#include "milkyway_math.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+Dwarf* checkDwarf(lua_State* luaSt, int idx);
+int pushDwarf(lua_State* luaSt, const Dwarf* h);
+int registerDwarf(lua_State* luaSt);
 
-real get_potential(const Dwarf* args, real r);
-real get_density(const Dwarf* args, real r);
+int getDwarf(lua_State* luaSt, void* v);
+int setDwarf(lua_State* luaSt, void* v);
 
-#ifdef __cplusplus
-}
-#endif
+int registerDwarfKinds(lua_State* luaSt);
 
-#endif /* _NBODY_DWARF_POTENTIAL_H_ */
+#endif /* _NBODY_LUA_DWARF_H_ */
 

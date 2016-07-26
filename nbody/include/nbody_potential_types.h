@@ -135,15 +135,6 @@ typedef struct MW_ALIGN_TYPE
 
 #define POTENTIAL_TYPE "Potential"
 
-typedef struct MW_ALIGN_TYPE
-{
-    Dwarf component1;
-    Dwarf component2;
-} DwarfPotential;
-
-#define DWARF_POTENTIAL_TYPE "DwarfPotential"
-
-
 
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
@@ -151,6 +142,5 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
-#define EMPTY_DWARFPOTENTIAL { EMPTY_DWARF, EMPTY_DWARF}
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
 
