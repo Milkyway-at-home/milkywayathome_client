@@ -32,7 +32,10 @@ void registerNBodyTypes(lua_State* luaSt)
     registerHalo(luaSt);
     registerDisk(luaSt);
     registerSpherical(luaSt);
-
+    
+    registerDwarf(luaSt);
+    registerDwarfPotential(luaSt);
+    
     registerPotential(luaSt);
     registerHistogramParams(luaSt);
 
