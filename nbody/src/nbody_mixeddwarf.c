@@ -30,43 +30,44 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_lua_types.h"
 #include "nbody_dwarf_potential.h"
 #include "nbody_mixeddwarf.h"
+#include "nbody_types.h"
 
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
 
 /*      MODEL SPECIFIC FUNCTIONS       */
-static inline real potential( real r, real * argsl, real * argsd, int compl, int compd)
+static inline real potential( real r, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd)
 {
     /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
-    real potential_light  = get_potential(r, argsl, compl);
-    real potential_dark   = get_potential(r, argsd, compd);
+    real potential_light  = get_potential(argsd, r);
+    real potential_dark   = get_potential(argsd, r);
     real potential_result = (potential_light + potential_dark);
 
     return (potential_result);
 }
 
-static inline real density( real r, real * argsl, real * argsd, int compl, int compd)
+static inline real density( real r, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd)
 {
     /*this is the density distribution function. Returns the density at a given radius.*/
     
-    real density_light = get_density(r, argsl, compl);
-    real density_dark  = get_density(r, argsd, compd);
+    real density_light = get_density(argsl, r);
+    real density_dark  = get_density(argsd, r);
     real density_result = (density_light + density_dark );
 
     return density_result;
 }
 
 static inline real profile_rho(real r, real r_placeholder, 
-                               real * args, real * args_placeholder, 
+                               const Dwarf* args, const Dwarf* args_placeholder, 
                                int comp, int comp_placeholder)
 {
     //there are two place holders because max finder is also used for dis_fun
-    real result = r * r * get_density(r, args, comp);    
+    real result = r * r * get_density(args, r);    
     return result;
 }
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative(real (*func)(real, real *, real *, int, int), real x, real * argsl, real * argsd, int compl, int compd)
+static inline real first_derivative(real (*func)(real, const Dwarf*, const Dwarf*, int, int), real x, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd)
 {
     /*yes, this does in fact use a 5-point stencil*/
     real h = 0.001;
@@ -82,7 +83,7 @@ static inline real first_derivative(real (*func)(real, real *, real *, int, int)
     return deriv;
 }
 
-static inline real second_derivative(real (*func)(real, real *, real * , int, int), real x, real * argsl, real * argsd, int compl, int compd)
+static inline real second_derivative(real (*func)(real, const Dwarf*, const Dwarf* , int, int), real x, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd)
 {
     /*yes, this also uses a five point stencil*/
     real h = 0.001;
@@ -99,7 +100,7 @@ static inline real second_derivative(real (*func)(real, real *, real * , int, in
     return deriv;
 }
 
-static real gauss_quad(real (*func)(real, real *, real *, int, int, real), real lower, real upper, real * argsl, real * argsd, int compl, int compd, real energy)
+static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, int, int, real), real lower, real upper, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd, real energy)
 {
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
@@ -202,7 +203,7 @@ static real gauss_quad(real (*func)(real, real *, real *, int, int, real), real 
     return intv;
 }
 
-static inline real max_finder(real (*profile)(real , real , real *, real *, int, int), real r, real * argsl, real * argsd, int comp1, int comp2, real a, real b, real c, int limit, real tolerance)
+static inline real max_finder(real (*profile)(real , real , const Dwarf*, const Dwarf*, int, int), real r, const Dwarf* argsl, const Dwarf* argsd, int comp1, int comp2, real a, real b, real c, int limit, real tolerance)
 {
     /*this is a maxfinding routine to find the maximum of the density.
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
@@ -266,7 +267,7 @@ static inline real max_finder(real (*profile)(real , real , real *, real *, int,
 }
 
 
-static inline real root_finder(real (*func)(real, real *, real *, int, int), real * argsl, real * argsd, int comp1, int comp2, real function_value, real lower_bound, real upper_bound)
+static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*, int, int), const Dwarf* argsl, const Dwarf* argsd, int comp1, int comp2, real function_value, real lower_bound, real upper_bound)
 {
     //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
     unsigned int i = 0;
@@ -368,7 +369,7 @@ static inline real root_finder(real (*func)(real, real *, real *, int, int), rea
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd, real energy)
+static inline real fun(real ri, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd, real energy)
 {
     
     real first_deriv_psi;
@@ -431,7 +432,7 @@ static inline real fun(real ri, real * argsl, real * argsd, int compl, int compd
         
 }
 
-static inline real find_upperlimit_r(real * argsl, real * argsd, int compl, int compd, real energy, real search_range, real r)
+static inline real find_upperlimit_r(const Dwarf* argsl, const Dwarf* argsd, int compl, int compd, real energy, real search_range, real r)
 {
     int counter = 0;
     real upperlimit_r = 0.0;
@@ -455,15 +456,15 @@ static inline real find_upperlimit_r(real * argsl, real * argsd, int compl, int 
     return mw_fabs(upperlimit_r);
 }
  
-static inline real dist_fun(real v, real r, real * argsl, real * argsd, int compl, int compd)
+static inline real dist_fun(real v, real r, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd)
 {
     /*This returns the value of the distribution function*/
     
     //-------------------------------
-    real mass_l   = argsl[0];
-    real mass_d   = argsd[0];
-    real rscale_l = argsl[1];
-    real rscale_d = argsd[1];
+    real mass_l   = argsl->mass; //argsl[0]; /*mass of the light component*/
+    real mass_d   = argsd->mass; //argsd[0]; /*mass of the dark component*/
+    real rscale_l = argsl->scaleLength; //argsl[1]; /*scale radius of the light component*/
+    real rscale_d = argsd->scaleLength; //argsd[1]; /*scale radius of the dark component*/
     //-------------------------------
     
     
@@ -507,7 +508,7 @@ static inline real dist_fun(real v, real r, real * argsl, real * argsd, int comp
 }
 
 /*      SAMPLING FUNCTIONS      */
-static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound, int type)
+static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* args, real rho_max, real bound, int type)
 {
     int counter = 0;
     real r, u, val;
@@ -516,7 +517,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bo
     {
         r = (real)mwXrandom(dsfmtState, 0.0, bound);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
-        val = r * r * get_density(r, args, type);
+        val = r * r * get_density(args, r);
 
         if(val / rho_max > u)
         {
@@ -537,7 +538,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bo
     return r;
 }
 
-static inline real vel_mag(real r, real * argsl, real * argsd, int compl, int compd,  dsfmt_t* dsfmtState)
+static inline real vel_mag(real r, const Dwarf* argsl, const Dwarf* argsd, int compl, int compd,  dsfmt_t* dsfmtState)
 {
     
     /*
@@ -652,7 +653,7 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 
 /*      DWARF GENERATION        */
 static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, 
-                                    real * argsl, real * argsd, 
+                                    const Dwarf* argsl, const Dwarf* argsd, 
                                     mwbool ignore, mwvector rShift, mwvector vShift, 
                                     int component1, int component2)
 {
@@ -676,10 +677,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         
         
         mwvector vec;
-        real mass_l   = argsl[0]; /*mass of the light component*/
-        real mass_d   = argsd[0]; /*mass of the dark component*/
-        real rscale_l = argsl[1]; /*scale radius of the light component*/
-        real rscale_d = argsd[1]; /*scale radius of the dark component*/
+        real mass_l   = argsl->mass; //argsl[0]; /*mass of the light component*/
+        real mass_d   = argsd->mass; //argsd[0]; /*mass of the dark component*/
+        real rscale_l = argsl->scaleLength; //argsl[1]; /*scale radius of the light component*/
+        real rscale_d = argsd->scaleLength; //argsd[1]; /*scale radius of the dark component*/
         
         
         real dwarf_mass = mass_l + mass_d;
@@ -824,13 +825,13 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         static real nbodyf = 0.0;
         static real component1 = 0;
         static real component2 = 0;
-        static real * argsl  = NULL;
-        static real * argsd  = NULL;
+        static Dwarf* argsl = NULL;
+        static Dwarf* argsd = NULL;
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "argsl",                LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &argsl             },
-            { "argsd",                LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &argsd             },
+            { "argsl",                LUA_TUSERDATA,   DWARF_TYPE,              TRUE,    &argsl             },
+            { "argsd",                LUA_TUSERDATA,   DWARF_TYPE,              TRUE,    &argsd             },
             { "component1",           LUA_TNUMBER,     NULL,                    TRUE,    &component1        },
             { "component2",           LUA_TNUMBER,     NULL,                    TRUE,    &component2        },
             { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
@@ -850,6 +851,7 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, argsl, argsd, ignore,
                                                                  *position, *velocity, (unsigned int) component1, (unsigned int) component2);
 }
+
 
 void registerGenerateMixedDwarf(lua_State* luaSt)
 {
