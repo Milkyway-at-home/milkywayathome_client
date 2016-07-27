@@ -229,6 +229,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_halo.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_dwarf.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
 
