@@ -118,8 +118,8 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     dwarf_t type;
-    real mass;         /* common to all 3 halos */
-    real scaleLength;   /* common to all 3 halos */
+    real mass;        
+    real scaleLength;   
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"

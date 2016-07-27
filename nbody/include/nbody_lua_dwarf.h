@@ -26,6 +26,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <lua.h>
 #include "nbody_types.h"
+#include "nbody_config.h"
+#include "nbody_lua.h"
+#include "nbody_util.h"
 
 Dwarf* checkDwarf(lua_State* luaSt, int idx);
 int pushDwarf(lua_State* luaSt, const Dwarf* h);
