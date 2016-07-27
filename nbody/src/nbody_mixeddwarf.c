@@ -682,7 +682,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real mass_d   = argsd->mass; //argsd[0]; /*mass of the dark component*/
         real rscale_l = argsl->scaleLength; //argsl[1]; /*scale radius of the light component*/
         real rscale_d = argsd->scaleLength; //argsd[1]; /*scale radius of the dark component*/
-        mw_printf("%f\t%f\t%f\t%f\t%i\t%i\n", mass_l, mass_d, rscale_l, rscale_d, argsl->type, argsd->type);
         
         real dwarf_mass = mass_l + mass_d;
         
@@ -741,7 +740,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
             }while (1);
             
-            mw_printf("%0.15f\n", r);
 //             mw_printf("\r velocity of particle %i", i + 1);
             counter = 0;
             do
@@ -848,7 +846,6 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         
         handleNamedArgumentTable(luaSt, argTable, 1);
         
-        mw_printf("this ran 1\n");
         return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, argsl, argsd, ignore,
                                                                  *position, *velocity, (unsigned int) component1, (unsigned int) component2);
 }
