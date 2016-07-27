@@ -22,22 +22,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 #include "nbody_show.h"
-#include "nbody_lua_halo.h"
+#include "nbody_lua_dwarf.h"
 #include "nbody_check_params.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 
 Dwarf* checkDwarf(lua_State* luaSt, int idx)
 {
-    return (Dwarf*) mw_checknamedudata(luaSt, idx, HALO_TYPE);
+    return (Dwarf*) mw_checknamedudata(luaSt, idx, DWARF_TYPE);
 }
 
-int pushHalo(lua_State* luaSt, const Dwarf* p)
+int pushDwarf(lua_State* luaSt, const Dwarf* p)
 {
     return pushType(luaSt, DWARF_TYPE, sizeof(Dwarf), (void*) p);
 }
 
-static const MWEnumAssociation haloOptions[] =
+static const MWEnumAssociation dwarfOptions[] =
 {
     { "plummer",              Plummer              },
     { "nfw",                  NFW,                 },
@@ -49,7 +49,7 @@ static const MWEnumAssociation haloOptions[] =
 static int createDwarf(lua_State* luaSt, const MWNamedArg* argTable, Dwarf* h)
 {
     oneTableArgument(luaSt, argTable);
-    pushHalo(luaSt, h);
+    pushDwarf(luaSt, h);
     return 1;
 }
 
@@ -146,14 +146,14 @@ static const luaL_reg metaMethodsDwarf[] =
 
 static const luaL_reg methodsDwarf[] =
 {
-    { "plummer",     createPlummerDwarf    },
-    { "nfw",         createNFWDwarf        },
-    { "gen_hern",    createGen_HernDwarf   },
-    { "einasto",     createEinastoDwarf    },
+    { "plummer",              createPlummerDwarf    },
+    { "nfw",                  createNFWDwarf        },
+    { "general_hernquist",    createGen_HernDwarf   },
+    { "einasto",              createEinastoDwarf    },
     { NULL, NULL }
 };
 
-/* TODO Error when writing to fields a halo type doesn't have */
+/* TODO Error when writing to fields a Dwarf type doesn't have */
 static const Xet_reg_pre gettersDwarf[] =
 {
     { "type",        getDwarfT, offsetof(Dwarf, type) },
@@ -169,7 +169,7 @@ static const Xet_reg_pre settersDwarf[] =
     { NULL, NULL, 0 }
 };
 
-int registerHalo(lua_State* luaSt)
+int registerDwarf(lua_State* luaSt)
 {
     return registerStruct(luaSt,
                           DWARF_TYPE,
@@ -179,8 +179,8 @@ int registerHalo(lua_State* luaSt)
                           methodsDwarf);
 }
 
-/* Add a table with available halo models */
-int registerHaloKinds(lua_State* luaSt)
+/* Add a table with available Dwarf models */
+int registerDwarfKinds(lua_State* luaSt)
 {
     int table;
 

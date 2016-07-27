@@ -36,6 +36,7 @@ extern "C" {
 #include "nbody_lua_halo.h"
 #include "nbody_lua_disk.h"
 #include "nbody_lua_spherical.h"
+#include "nbody_lua_dwarf.h"
 #include "nbody_lua_potential.h"
 #include "nbody_lua_histogram_params.h"
 

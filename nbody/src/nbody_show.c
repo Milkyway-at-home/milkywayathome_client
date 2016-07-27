@@ -102,6 +102,27 @@ const char* showHaloT(halo_t x)
     }
 }
 
+
+const char* showDwarfT(dwarf_t x)
+{
+    switch (x)
+    {
+        case Plummer:
+            return "Plummer";
+        case NFW:
+            return "NFW";
+        case General_Hernquist:
+            return "General_Hernquist";
+        case Einasto:
+            return "Einasto";
+        case InvalidDwarf:
+            return "InvalidDwarf";
+        default:
+            return "Bad dwarf_t";
+    }
+}
+
+
 const char* showNBodyStatus(NBodyStatus x)
 {
     switch (x)
@@ -301,6 +322,28 @@ char* showDisk(const Disk* d)
     return buf;
 }
 
+char* showDwarf(const Dwarf* h)
+{
+    char* buf;
+
+    if (!h)
+        return NULL;
+
+    if (0 > asprintf(&buf,
+                     "{\n"
+                     "      type         = %s\n"
+                     "      mass        = %g\n"
+                     "      scaleLength  = %g\n"
+                     "    };\n",
+                     showDwarfT(h->type),
+                     h->mass,
+                     h->scaleLength))
+    {
+        mw_fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
 char* showCell(const NBodyCell* c)
 {
     char* buf;

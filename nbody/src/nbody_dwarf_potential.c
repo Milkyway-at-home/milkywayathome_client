@@ -28,14 +28,14 @@
  static real plummer_pot(const Dwarf* model, real r)                                                                     //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
-    const real rscale = model->r_scale;                                                                                  //
+    const real rscale = model->scaleLength;                                                                                  //
     return mass / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
 }                                                                                                                        //
                                                                                                                          //
  static real plummer_den(const Dwarf* model, real r)                                                                     //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
-    const real rscale = model->r_scale;                                                                                  //
+    const real rscale = model->scaleLength;                                                                                  //
     return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;               //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,14 +43,14 @@
  static real nfw_den(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
-    const real rscale = model->r_scale;                                                                                  //
+    const real rscale = model->scaleLength;                                                                                  //
     return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));                                   //
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
-    const real rscale = model->r_scale;                                                                                  //
+    const real rscale = model->scaleLength;                                                                                  //
     return (mass / r) * mw_log(1.0 + r / rscale);                                                                        //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,14 +58,14 @@
 static real gen_hern_den(const Dwarf* model, real r)
 {
     const real mass = model->mass;                                                                                       //
-    const real rscale = model->r_scale;                                                                                  //
+    const real rscale = model->scaleLength;                                                                                  //
     return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + rscale));
 }
 
 static real gen_hern_pot(const Dwarf* model, real r)
 {
     const real mass = model->mass;                                                                                       //
-    const real rscale = model->r_scale;                                                                                  //
+    const real rscale = model->scaleLength;                                                                                  //
     return mass / (r + rscale);
 }
 
@@ -94,7 +94,7 @@ real get_potential(const Dwarf* model, real r)
     real pot_temp;
     
     
-    switch(model.type)
+    switch(model->type)
     {
         case Plummer:
             pot_temp = plummer_pot(&model, r);
@@ -153,7 +153,7 @@ real get_density(const Dwarf* model, real r)
     const int einasto   = 4;
     real den_temp;
     
-    switch(model.type)
+    switch(model->type)
     {
         case Plummer:
             den_temp = plummer_den(&model, r);

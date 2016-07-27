@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 #include "milkyway_math.h"
+#include "nbody_potential_types.h"
 
 #ifdef __cplusplus
 extern "C" {
