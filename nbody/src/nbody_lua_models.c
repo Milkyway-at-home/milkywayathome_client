@@ -36,7 +36,8 @@
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
-
+#include "nbody_potential_types.h"
+#include "nbody_lua_dwarf.h"
 
 /* For using a combination of light and dark models to generate timestep */
 static real plummerTimestepIntegral(real smalla, real biga, real Md, real step)

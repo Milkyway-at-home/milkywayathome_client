@@ -566,13 +566,6 @@ int equalSpherical(const Spherical* s1, const Spherical* s2)
         && feqWithNan(s1->scale, s2->scale);
 }
 
-int equalDwarf(const Dwarf* h1, const Dwarf* h2)
-{
-    return (h1->type == h2->type)
-        && feqWithNan(h1->mass, h2->mass)
-        && feqWithNan(h1->scaleLength, h2->scaleLength);
-}
-
 int equalPotential(const Potential* p1, const Potential* p2)
 {
     return equalSpherical(&p1->sphere[0], &p2->sphere[0])

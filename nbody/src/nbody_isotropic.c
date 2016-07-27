@@ -782,7 +782,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
             }while (1);
             
-            
+            mw_printf("%0.15f\n", r);
             
 //             mw_printf("\r velocity of particle %i", i+1);
             counter = 0;

@@ -109,16 +109,16 @@ static int createEinastoDwarf(lua_State* luaSt)
     return createDwarf(luaSt, argTable, &h);
 }
 
-static int toStringDwarf(lua_State* luaSt)
-{
-    return toStringType(luaSt, (StructShowFunc) showDwarf, (LuaTypeCheckFunc) checkDwarf);
-}
+// static int toStringDwarf(lua_State* luaSt)
+// {
+//     return toStringType(luaSt, (StructShowFunc) showDwarf, (LuaTypeCheckFunc) checkDwarf);
+// }
 
-static int eqDwarf(lua_State* luaSt)
-{
-    lua_pushboolean(luaSt, equalDwarf(checkDwarf(luaSt, 1), checkDwarf(luaSt, 2)));
-    return 1;
-}
+// static int eqDwarf(lua_State* luaSt)
+// {
+//     lua_pushboolean(luaSt, equalDwarf(checkDwarf(luaSt, 1), checkDwarf(luaSt, 2)));
+//     return 1;
+// }
 
 int getDwarfT(lua_State* luaSt, void* v)
 {
@@ -139,8 +139,8 @@ int setDwarf(lua_State* luaSt, void* v)
 
 static const luaL_reg metaMethodsDwarf[] =
 {
-    { "__tostring", toStringDwarf },
-    { "__eq",       eqDwarf       },
+//     { "__tostring", toStringDwarf },
+//     { "__eq",       eqDwarf       },
     { NULL, NULL }
 };
 
@@ -189,7 +189,7 @@ int registerDwarfKinds(lua_State* luaSt)
 
     setModelTableItem(luaSt, table, createPlummerDwarf, "plummer");
     setModelTableItem(luaSt, table, createNFWDwarf, "nfw");
-    setModelTableItem(luaSt, table, createGen_HernDwarf, "gen_hern");
+    setModelTableItem(luaSt, table, createGen_HernDwarf, "general_hernquist");
     setModelTableItem(luaSt, table, createEinastoDwarf, "einasto");
 
     /* Getting the number of keys in a table is a pain */
