@@ -286,7 +286,7 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
         interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
         interval_bounds[i] = interval_bound;
         /*function value at those intervals*/
-        values[i] = (*func)(interval_bound, comp1, comp2, comp1, comp2) - function_value;
+        values[i] = (*func)(interval_bound, comp1, comp2) - function_value;
     }
     
     real mid_point = 0;
