@@ -1,7 +1,11 @@
-/* Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
-     Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/* Copyright (c) 2016 Siddhartha Shelton
+  
+  Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
+  Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
+   Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
+   Rensselaer Polytechnic Institute.
+
+
 
 This file is part of Milkway@Home.
 
