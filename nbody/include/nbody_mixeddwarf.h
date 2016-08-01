@@ -2,6 +2,8 @@
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
 Rensselaer Polytechnic Institute.
 
+Copyright 2016 Siddhartha Shelton
+
 This file is part of Milkway@Home.
 
 Milkyway@Home is free software: you can redistribute it and/or modify
