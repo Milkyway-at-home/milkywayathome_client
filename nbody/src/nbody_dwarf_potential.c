@@ -125,11 +125,11 @@ static real IncompleteGammaFunc(real a, real x)
     //Therefore, we subtract it from GammaFunc which is from 0 to INF
     //The continued frac approx is already from X to INF
     
-    static const real max_a = 100;
+//     static const real max_a = 100;
     real gamma = GammaFunc(a);
     
     
-    if (x == 0.0) return 0.0;
+    if (x == 0.0) return gamma;
     // Use the series representation. 
     return gamma - series_approx(a,x);
     
@@ -138,10 +138,11 @@ static real IncompleteGammaFunc(real a, real x)
                             
 static real einasto_den(const Dwarf* model, real r)
 {
-    const real mass = model->mass;
-    const real h = model->h;
-    const real s = 
-    return mw_exp(-A * mw_pow(r, alpha));
+//     const real mass = model->mass;
+//     const real h = model->h;
+//     const real s = 
+//     mw_printf("%0.15f\t%0.15f\n", IncompleteGammaFunc(4.0, 0.0), GammaFunc(4));
+    return 0;
 }
 // 
 // static real einasto_pot(real r, real A, real alpha)
@@ -187,6 +188,7 @@ real get_density(const Dwarf* model, real r)
     {
         case Plummer:
             den_temp = plummer_den(model, r);
+            einasto_den(model, r);
             break;
         case NFW:
             den_temp = nfw_den(model, r );
