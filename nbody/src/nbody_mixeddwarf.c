@@ -437,7 +437,7 @@ static inline real find_upperlimit_r(const Dwarf* comp1, const Dwarf* comp2, rea
 {
     int counter = 0;
     real upperlimit_r = 0.0;
-    
+    mw_printf("this ran\n");
     do
     {
         upperlimit_r = root_finder(potential, comp1, comp2, energy, 0.0, search_range); 
@@ -480,14 +480,40 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     /*energy as defined in binney*/
     energy = potential(r, comp1, comp2) - 0.5 * v * v; 
     
+    real v_esc = 0.99 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
+    real v_esc2 = mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
+    
     /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
     search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
     
+    real en_esc = potential(r, comp1, comp2) - 0.5 * v_esc * v_esc;
+    real sr_esc = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / en_esc) - sqr(rscale_d) ));
+    real pot_r  = potential(r, comp1, comp2);
+    real en_ke_esc = 0.5 * v_esc * v_esc;
+    
+    mw_printf("inside dist_fun\n");
+    mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\n", en_esc, pot_r, en_ke_esc, sr_esc, v_esc);
+    mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\n", r, v, search_range, energy, v_esc2);
+    mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\n", mass_l, mass_d, rscale_l, rscale_d, energy, potential(search_range, comp1, comp2),  search_range);
+    mw_printf("here1\n");
+    
     /*dynamic search range*/
-    /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
+    /* This is done this way because we are searching for the r' where:
+     * psi(r') = energy = psi(r) - .5 v^2
+     * since psi is a positive quantity, the right hand side is always less than/equal to psi(r),
+     * this corresponds to larger r (smaller psi). Therefore,
+     * as long as the psi(r') > energy we continue to expand the search range
+     * in order to have that energy inside the search range,
+     * we want to be able to find a root within the search range, so we make sure that the range includes the root.
+     * By this, we mean that we want to find a root within a range (r1, r2), where 
+     * psi(r1) > energy and psi(r2) < energy
+     */
+    
+    
     while(potential(search_range, comp1, comp2) > energy)
     {
         search_range = 100.0 * search_range;
+        
         if(counter > 100)
         {
             search_range = 100.0 * (rscale_l + rscale_d);//default
@@ -495,16 +521,17 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
         }
         counter++;
     }
-    
+    mw_printf("here2\n");
     upperlimit_r = find_upperlimit_r(comp1, comp2, energy, search_range, r);
-    
+    mw_printf("here3\n");
     /*This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
      * then 5 times it is already where the integrand is close to 0 since it goes to 0 quickly. 
      */
     lowerlimit_r = 5.0 * (upperlimit_r);
-    
+    mw_printf("here4\n");
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
+    mw_printf("here5\n");
     return distribution_function;
 }
 
@@ -552,16 +579,16 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     int counter = 0;
     real v, u, d;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
-    
     real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
+    mw_printf("dist_max = %0.15f\n\n", dist_max);
     
     while(1)
     {
 
         v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
-        
         d = dist_fun(v, r, comp1, comp2);
+        mw_printf("here6 %0.15f\t%0.15f\t%0.15f\t %i\n\n", d, mw_fabs(d / dist_max), u, counter);
         if(mw_fabs(d / dist_max) > u)
         {
             break;
@@ -684,7 +711,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         
         real dwarf_mass = mass_l + mass_d;
         
-        real bound = 50.0 * (rscale_l + rscale_d);
+        // a large dwarf galaxy is about 3 kpc. no matter the scale radii of the two component, this should be adequate
+        real bound = 10.0;
 
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
@@ -711,6 +739,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
         {
+            mw_printf("pos of particle %i\n", i + 1);
             counter = 0;
             do
             {
@@ -739,7 +768,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
             }while (1);
             
-//             mw_printf("\r velocity of particle %i", i + 1);
+            mw_printf("velocity of particle %i\n", i + 1);
             counter = 0;
             do
             {

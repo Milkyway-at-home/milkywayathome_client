@@ -29,6 +29,10 @@ extern "C" {
 
 real probability_match(int n, real k, real pobs);
 
+real GammaFunc(const real z);
+
+real IncompleteGammaFunc(real a, real x);
+
 #ifdef __cplusplus
 }
 #endif

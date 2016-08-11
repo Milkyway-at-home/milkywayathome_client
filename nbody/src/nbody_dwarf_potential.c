@@ -21,7 +21,7 @@
 #include "milkyway_math.h"
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
-
+#include "nbody_mass.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             PLUMMER                                                                                   */
@@ -71,83 +71,32 @@ static real gen_hern_pot(const Dwarf* model, real r)                            
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                             /* EINASTO */
 
-static real GammaFunc(const real z) 
-{
-    //Alogrithm for the calculation of the Lanczos Approx of the complete Gamma function 
-    //as implemented in Numerical Recipes 3rd ed, 2007.
-    real g = 4.7421875; //g parameter for the gamma function
-    real x, tmp, y, A_g;
-    
-    //these are the cn's
-    static const real coeff[14] = {57.1562356658629235,-59.5979603554754912,
-                                14.1360979747417471,-0.491913816097620199,.339946499848118887e-4,
-                                .465236289270485756e-4,-.983744753048795646e-4,.158088703224912494e-3,
-                                -.210264441724104883e-3,.217439618115212643e-3,-.164318106536763890e-3,
-                                .844182239838527433e-4,-.261908384015814087e-4,.368991826595316234e-5};
-    y = x = z;
-    tmp = x + g + 0.5;
-    tmp = (x + 0.5) * mw_log(tmp) - tmp;
-    A_g = 0.999999999999997092; //this is c0
-    
-    for (int j = 0; j < 14; j++) 
-    {
-        A_g += coeff[j] / ++y;
-    } //calculates the series approx sum
-        
-    //sqrt(2 * pi) = 2.5066282746310005
-    tmp += mw_log(2.5066282746310005 * A_g / x);//returns the log of the gamma function
-    
-    return mw_exp(tmp);
-}
-
-static real series_approx(real a, real x)
-{
-
-    real sum, del, ap;
-    ap = a;
-    del = sum = 1.0 / a;//starting: gammma(a) / gamma(a+1) = 1/a
-    for (;;) 
-    {
-        ++ap;
-        del *= x / ap;
-        sum += del;
-        if (mw_fabs(del) < mw_fabs(sum) * 1.0e-15) 
-        {
-            return sum * exp(-x + a * log(x));
-        }
-    }
-    
-}
-                            
-static real IncompleteGammaFunc(real a, real x)
-{
-    //the series approx returns gamma from 0 to X but we want from X to INF
-    //Therefore, we subtract it from GammaFunc which is from 0 to INF
-    //The continued frac approx is already from X to INF
-    
-//     static const real max_a = 100;
-    real gamma = GammaFunc(a);
-    
-    
-    if (x == 0.0) return gamma;
-    // Use the series representation. 
-    return gamma - series_approx(a,x);
-    
-
-}                  
-                            
 static real einasto_den(const Dwarf* model, real r)
 {
-//     const real mass = model->mass;
-//     const real h = model->h;
-//     const real s = 
-//     mw_printf("%0.15f\t%0.15f\n", IncompleteGammaFunc(4.0, 0.0), GammaFunc(4));
-    return 0;
+    const real mass = model->mass;
+    const real h = model->scaleLength;
+    const real n = model->n;
+//     mw_printf("PRINTING GAMMA TEST:\n");
+//     mw_printf("GAMMA FUNC: %0.15f\t%0.15f\n", IncompleteGammaFunc(4.0, 0.0), GammaFunc(4));
+//     mw_printf("DONE\n");
+    real coeff = mass / ( 4.0 * M_PI * cube(h) * n * GammaFunc(3.0 * n));
+    real thing = mw_pow(r, inv(n));
+    return coeff * mw_exp(-thing);
 }
-// 
-// static real einasto_pot(real r, real A, real alpha)
-// {
-// }
+
+static real einasto_pot(const Dwarf* model, real r)
+{
+    const real mass = model->mass;
+    const real h = model->scaleLength;
+    const real n = model->n;
+    
+    real coeff = mass / (h * r);
+    real thing = mw_pow(r, 1.0 / n);
+    
+//     mw_printf("r and thing %0.15f\t %0.15f\n", r, thing);
+    real term = 1.0 - (   IncompleteGammaFunc(3.0 * n, thing) +  r * IncompleteGammaFunc(2.0 * n, thing)   ) / GammaFunc(3.0 * n);
+    return coeff * term;
+}
 
 
 
@@ -161,6 +110,7 @@ real get_potential(const Dwarf* model, real r)
     {
         case Plummer:
             pot_temp = plummer_pot(model, r);
+            einasto_den(model, r);
             break;
         case NFW:
             pot_temp = nfw_pot(model, r );
@@ -168,8 +118,9 @@ real get_potential(const Dwarf* model, real r)
         case General_Hernquist:
             pot_temp = gen_hern_pot(model, r );
             break;
-//         case Einasto:
-        
+        case Einasto:
+            einasto_pot(model, r);
+            break;
         case InvalidDwarf:
         default:
             mw_fail("Invalid dwarf type\n");
@@ -188,7 +139,6 @@ real get_density(const Dwarf* model, real r)
     {
         case Plummer:
             den_temp = plummer_den(model, r);
-            einasto_den(model, r);
             break;
         case NFW:
             den_temp = nfw_den(model, r );
@@ -196,8 +146,9 @@ real get_density(const Dwarf* model, real r)
         case General_Hernquist:
             den_temp = gen_hern_den(model, r );
             break;
-//         case Einasto:
-        
+        case Einasto:
+            einasto_den(model, r);
+            break;
         case InvalidDwarf:
         default:
             mw_fail("Invalid dwarf type");
