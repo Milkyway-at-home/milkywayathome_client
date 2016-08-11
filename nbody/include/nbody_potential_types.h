@@ -120,6 +120,7 @@ typedef struct MW_ALIGN_TYPE
     dwarf_t type;
     real mass;        
     real scaleLength;   
+    real n; //used by einasto
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"
@@ -139,7 +140,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0 }
+#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */

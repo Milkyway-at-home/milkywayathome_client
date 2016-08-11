@@ -100,25 +100,15 @@ static int createEinastoDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass        },
             { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "n"          , LUA_TNUMBER, NULL, TRUE, &h.n           }, 
             END_MW_NAMED_ARG
         };
 
     h.type = Einasto;
     return createDwarf(luaSt, argTable, &h);
 }
-
-// static int toStringDwarf(lua_State* luaSt)
-// {
-//     return toStringType(luaSt, (StructShowFunc) showDwarf, (LuaTypeCheckFunc) checkDwarf);
-// }
-
-// static int eqDwarf(lua_State* luaSt)
-// {
-//     lua_pushboolean(luaSt, equalDwarf(checkDwarf(luaSt, 1), checkDwarf(luaSt, 2)));
-//     return 1;
-// }
 
 int getDwarfT(lua_State* luaSt, void* v)
 {
