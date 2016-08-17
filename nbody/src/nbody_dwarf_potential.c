@@ -76,9 +76,7 @@ static real einasto_den(const Dwarf* model, real r)
     const real mass = model->mass;
     const real h = model->scaleLength;
     const real n = model->n;
-//     mw_printf("PRINTING GAMMA TEST:\n");
-//     mw_printf("GAMMA FUNC: %0.15f\t%0.15f\n", IncompleteGammaFunc(4.0, 0.0), GammaFunc(4));
-//     mw_printf("DONE\n");
+
     real coeff = mass / ( 4.0 * M_PI * cube(h) * n * GammaFunc(3.0 * n));
     real thing = mw_pow(r, inv(n));
     return coeff * mw_exp(-thing);
@@ -93,7 +91,6 @@ static real einasto_pot(const Dwarf* model, real r)
     real coeff = mass / (h * r);
     real thing = mw_pow(r, 1.0 / n);
     
-//     mw_printf("r and thing %0.15f\t %0.15f\n", r, thing);
     real term = 1.0 - (   IncompleteGammaFunc(3.0 * n, thing) +  r * IncompleteGammaFunc(2.0 * n, thing)   ) / GammaFunc(3.0 * n);
     return coeff * term;
 }
@@ -118,9 +115,9 @@ real get_potential(const Dwarf* model, real r)
         case General_Hernquist:
             pot_temp = gen_hern_pot(model, r );
             break;
-        case Einasto:
-            einasto_pot(model, r);
-            break;
+//         case Einasto:
+//             einasto_pot(model, r);
+//             break;
         case InvalidDwarf:
         default:
             mw_fail("Invalid dwarf type\n");

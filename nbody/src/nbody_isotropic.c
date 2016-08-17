@@ -516,7 +516,16 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
     
     /*dynamic search range*/
-    /*we want to be able to find a root within the search range. so we make sure that the range includes the root*/
+    /* This is done this way because we are searching for the r' where:
+     * psi(r') = energy = psi(r) - .5 v^2
+     * since psi is a positive quantity, the right hand side is always less than/equal to psi(r),
+     * this corresponds to larger r (smaller psi). Therefore,
+     * as long as the psi(r') > energy we continue to expand the search range
+     * in order to have that energy inside the search range,
+     * we want to be able to find a root within the search range, so we make sure that the range includes the root.
+     * By this, we mean that we want to find a root within a range (r1, r2), where 
+     * psi(r1) > energy and psi(r2) < energy
+     */
     while(potential(search_range, args, dsfmtState) > energy)
     {
         search_range = 100.0 * search_range;
@@ -724,7 +733,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_l = radiusScale1; /*scale radius of the light component*/
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
-        real bound = 50.0 * (rscale_l + rscale_d);
+        real bound = 2.0 * (rscale_l + rscale_d);
 
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
