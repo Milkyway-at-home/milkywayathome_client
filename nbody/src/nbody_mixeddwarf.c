@@ -370,7 +370,7 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static inline real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
+static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
 {
     
     real first_deriv_psi;
@@ -516,6 +516,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     lowerlimit_r = 5.0 * (upperlimit_r);
 
     /*This calls guassian quad to integrate the function for a given energy*/
+//     mw_printf("this\n");
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
 
     return distribution_function;
@@ -752,7 +753,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
             }while (1);
             
-//             mw_printf("velocity of particle %i\n", i + 1);
+//             mw_printf("\rvelocity of particle %i", i + 1);
             counter = 0;
             do
             {
