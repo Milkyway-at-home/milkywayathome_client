@@ -143,9 +143,9 @@ real get_density(const Dwarf* model, real r)
         case General_Hernquist:
             den_temp = gen_hern_den(model, r );
             break;
-        case Einasto:
-            einasto_den(model, r);
-            break;
+//         case Einasto:
+//             einasto_den(model, r);
+//             break;
         case InvalidDwarf:
         default:
             mw_fail("Invalid dwarf type");
