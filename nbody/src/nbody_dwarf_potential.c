@@ -107,7 +107,6 @@ real get_potential(const Dwarf* model, real r)
     {
         case Plummer:
             pot_temp = plummer_pot(model, r);
-            einasto_den(model, r);
             break;
         case NFW:
             pot_temp = nfw_pot(model, r );
@@ -154,34 +153,4 @@ real get_density(const Dwarf* model, real r)
     
     return den_temp;
 }
-
-
-
-// static real IncompleteGammaFunc1(real a, real x)
-// {
-//     //the series approx returns gamma from 0 to X but we want from X to INF
-//     //Therefore, we subtract it from GammaFunc which is from 0 to INF
-//     //The continued frac approx is already from X to INF
-//     
-//     static const real max_a = 100;
-//     real gamma = GammaFunc(a);
-//     if (x == 0.0) return 0.0;
-//     // Use the series representation. 
-//     return gamma - series_approx(a,x);
-//     
-// //     else if (a >= max_a) 
-// //     {
-// //         return gamm_approx_integral(a, x, 1); //Quadrature.
-// //     }
-// //     else if (x < a + 1.0) 
-// //     {
-// //         // Use the series representation. 
-// //         return gamma - series_approx(a,x);
-// //     }
-// //     else 
-// //     {
-// //         //Use the continued fraction representation.
-// //         return continued_frac_approx(a,x);
-// //     }
-// }
 
