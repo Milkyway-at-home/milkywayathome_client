@@ -516,7 +516,6 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     lowerlimit_r = 5.0 * (upperlimit_r);
 
     /*This calls guassian quad to integrate the function for a given energy*/
-//     mw_printf("this\n");
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
 
     return distribution_function;
@@ -698,13 +697,14 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real dwarf_mass = mass_l + mass_d;
         
         // a large dwarf galaxy is about 3 kpc. no matter the scale radii of the two component, this should be adequate
-        real bound = 2.0 * (rscale_l + rscale_d);
+        real bound = 100.0 * (rscale_l + rscale_d);
 
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
+        mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\n", mass_l, mass_d, mass_light_particle, mass_dark_particle);
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -753,7 +753,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
             }while (1);
             
-//             mw_printf("\rvelocity of particle %i", i + 1);
+            mw_printf("\rvelocity of particle %i", i + 1);
             counter = 0;
             do
             {

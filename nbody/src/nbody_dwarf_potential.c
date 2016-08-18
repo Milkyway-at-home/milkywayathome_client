@@ -29,7 +29,7 @@
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return mass / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
+    return 1.0 / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
 }                                                                                                                        //
                                                                                                                          //
  static real plummer_den(const Dwarf* model, real r)                                                                     //
@@ -44,14 +44,14 @@
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return (1.0 / (4.0 * M_PI)) * (mass * rscale / r) * (1.0 / sqr(1.0 + r / rscale));                                   //
+    return (1.0 / (2.0 * M_PI)) * (mass / (r * sqr(rscale))) * (1.0 / sqr(1.0 + r / rscale));                                   //
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return (mass / r) * mw_log(1.0 + r / rscale);                                                                        //
+    return (mass / (2.0 * r)) * mw_log(1.0 + r / rscale);                                                                        //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             GENERAL HERNQUIST                                                                         */
