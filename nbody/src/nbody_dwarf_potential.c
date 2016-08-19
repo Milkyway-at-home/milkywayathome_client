@@ -23,20 +23,26 @@
 #include "nbody_potential_types.h"
 #include "nbody_mass.h"
 
+/* NOTE
+ * these density functions are massless. They return the term nu, which is a massless version of the density. 
+ * the potential functions return the negative version of the potential, psi, which is what is needed. 
+ */
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             PLUMMER                                                                                   */
- static real plummer_pot(const Dwarf* model, real r)                                                                     //
-{                                                                                                                        //
-    const real mass = model->mass;                                                                                       //
-    const real rscale = model->scaleLength;                                                                              //
-    return 1.0 / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
-}                                                                                                                        //
-                                                                                                                         //
  static real plummer_den(const Dwarf* model, real r)                                                                     //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;               //
+    return  (3.0 / (4.0 * M_PI)) * (1.0 / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;                //
+}                                                                                                                        //
+                                                                                                                         //
+ static real plummer_pot(const Dwarf* model, real r)                                                                     //
+{                                                                                                                        //
+    const real mass = model->mass;                                                                                       //
+    const real rscale = model->scaleLength;                                                                              //
+    return mass / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                            NFW                                                                                        */
@@ -44,14 +50,14 @@
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return (1.0 / (2.0 * M_PI)) * (mass / (r * sqr(rscale))) * (1.0 / sqr(1.0 + r / rscale));                                   //
+    return (1.0 / (2.0 * M_PI)) * (1.0 / (r * sqr(rscale))) * (1.0 / sqr(1.0 + r / rscale));                             //
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return (mass / (2.0 * r)) * mw_log(1.0 + r / rscale);                                                                        //
+    return (mass / (2.0 * r)) * mw_log(1.0 + r / rscale);                                                                //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             GENERAL HERNQUIST                                                                         */
@@ -59,7 +65,7 @@ static real gen_hern_den(const Dwarf* model, real r)                            
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + rscale));                                                    //
+    return inv(2.0 * M_PI) * 1.0 * rscale / ( r * cube(r + rscale));                                                     //
 }                                                                                                                        //
                                                                                                                          //
 static real gen_hern_pot(const Dwarf* model, real r)                                                                     //
@@ -69,34 +75,32 @@ static real gen_hern_pot(const Dwarf* model, real r)                            
     return mass / (r + rscale);                                                                                          //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                            /* EINASTO */
-
-static real einasto_den(const Dwarf* model, real r)
-{
-    const real mass = model->mass;
-    const real h = model->scaleLength;
-    const real n = model->n;
-
-    real coeff = mass / ( 4.0 * M_PI * cube(h) * n * GammaFunc(3.0 * n));
-    real thing = mw_pow(r, inv(n));
-    return coeff * mw_exp(-thing);
-}
-
-static real einasto_pot(const Dwarf* model, real r)
-{
-    const real mass = model->mass;
-    const real h = model->scaleLength;
-    const real n = model->n;
-    
-    real coeff = mass / (h * r);
-    real thing = mw_pow(r, 1.0 / n);
-    
-    real term = 1.0 - (   IncompleteGammaFunc(3.0 * n, thing) +  r * IncompleteGammaFunc(2.0 * n, thing)   ) / GammaFunc(3.0 * n);
-    return coeff * term;
-}
-
-
-
+/*                             EINASTO                                                                                   */
+static real einasto_den(const Dwarf* model, real r)                                                                      //
+{                                                                                                                        //
+    const real mass = model->mass;                                                                                       //
+    const real h = model->scaleLength;                                                                                   //
+    const real n = model->n;                                                                                             //
+                                                                                                                         //
+    real coeff = 1.0 / ( 4.0 * M_PI * cube(h) * n * GammaFunc(3.0 * n));                                                 //
+    real thing = mw_pow(r, inv(n));                                                                                      //
+    return coeff * mw_exp(-thing);                                                                                       //
+}                                                                                                                        //
+                                                                                                                         //
+static real einasto_pot(const Dwarf* model, real r)                                                                      //
+{                                                                                                                        //
+    const real mass = model->mass;                                                                                       //
+    const real h = model->scaleLength;                                                                                   //
+    const real n = model->n;                                                                                             //
+                                                                                                                         //
+    real coeff = mass / (h * r);                                                                                         //
+    real thing = mw_pow(r, 1.0 / n);                                                                                     //
+                                                                                                                         //
+    real term1 = IncompleteGammaFunc(3.0 * n, thing);                                                                    //
+    real term2 = r * IncompleteGammaFunc(2.0 * n, thing);                                                                //
+    real term = 1.0 - ( term1 + term2 ) / GammaFunc(3.0 * n);                                                            //
+    return coeff * term;                                                                                                 //
+}                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 real get_potential(const Dwarf* model, real r)
