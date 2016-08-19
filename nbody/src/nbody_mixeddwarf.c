@@ -526,7 +526,9 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
 {
     int counter = 0;
     real r, u, val;
-    
+    //this technically calls the massless density but that is fine because
+    //the masses would cancel in the denom since 
+    //we are sampling the one component model.
     while (1)
     {
         r = (real)mwXrandom(dsfmtState, 0.0, bound);
@@ -704,7 +706,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
-        mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\n", mass_l, mass_d, mass_light_particle, mass_dark_particle);
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
