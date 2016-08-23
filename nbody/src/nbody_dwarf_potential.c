@@ -39,7 +39,7 @@
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;                //
+    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r)/sqr(rscale)) ) ;               //
 }                                                                                                                        //
                                                                                                                          //
  static real plummer_pot(const Dwarf* model, real r)                                                                     //
@@ -54,14 +54,18 @@
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return (1.0 / (2.0 * M_PI)) * (mass / (r * sqr(rscale))) * (1.0 / sqr(1.0 + r / rscale));                             //
+    real R = r / rscale;
+    real p0 = inv(4.0 * M_PI * cube(rscale)) * inv(log(1.0 + R) - R / ( 1.0 + R) );                                      //
+    return p0 * (mass * inv(R)) * (1.0 / sqr(1.0 + R));                                                                  //
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return (mass / (2.0 * r)) * mw_log(1.0 + r / rscale);                                                                //
+    real R = r / rscale;
+    real p0 = inv(log(1.0 + R) - R / ( 1.0 + R) );
+    return  p0 * (mass / r) * mw_log(1.0 + R);                                                                           //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             GENERAL HERNQUIST                                                                         */
@@ -69,7 +73,7 @@ static real gen_hern_den(const Dwarf* model, real r)                            
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + rscale));                                                     //
+    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + rscale));                                                    //
 }                                                                                                                        //
                                                                                                                          //
 static real gen_hern_pot(const Dwarf* model, real r)                                                                     //
