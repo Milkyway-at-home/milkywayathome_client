@@ -55,7 +55,7 @@
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
     real R = r / rscale;
-    real p0 = inv(4.0 * M_PI * cube(rscale)) * inv(log(1.0 + R) - R / ( 1.0 + R) );                                      //
+    real p0 = inv(4.0 * M_PI * cube(rscale)) * inv(mw_log(1.0 + R) - R / ( 1.0 + R) );                                      //
     return p0 * (mass * inv(R)) * (1.0 / sqr(1.0 + R));                                                                  //
 }                                                                                                                        //
                                                                                                                          //
@@ -64,7 +64,7 @@
     const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
     real R = r / rscale;
-    real p0 = inv(log(1.0 + R) - R / ( 1.0 + R) );
+    real p0 = inv(mw_log(1.0 + R) - R / ( 1.0 + R) );
     return  p0 * (mass / r) * mw_log(1.0 + R);                                                                           //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
