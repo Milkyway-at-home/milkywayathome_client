@@ -600,17 +600,36 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
 static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
-    mwvector vec;
-    real phi, theta;
-    
-    /*defining some angles*/
-    theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
-    phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
+//     mwvector vec;
+//     real phi, theta;
+//     
+//     /*defining some angles*/
+//     theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
+//     phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
+// 
+//     /*this is standard formula for x,y,z components in spherical*/
+//     X(vec) = rad * mw_sin( theta ) * mw_cos( phi );        /*x component*/
+//     Y(vec) = rad * mw_sin( theta ) * mw_sin( phi );        /*y component*/
+//     Z(vec) = rad * mw_cos( theta );                   /*z component*/
 
-    /*this is standard formula for x,y,z components in spherical*/
-    X(vec) = rad * mw_sin( theta ) * mw_cos( phi );        /*x component*/
-    Y(vec) = rad * mw_sin( theta ) * mw_sin( phi );        /*y component*/
-    Z(vec) = rad * mw_cos( theta );                   /*z component*/
+//     return vec;
+    
+    /* have to sample in this way because sampling angles and then converting
+     * to xyz leads to strong dependence on the rad, which could lead to bunching 
+     * at the poles.
+     */
+    real r_sq, r_scaling;
+    mwvector vec;
+
+    do                                       /* pick point in NDIM-space */
+    {
+        vec = mwRandomUnitPoint(dsfmtState);
+        r_sq = mw_sqrv(vec);                 /* compute radius squared */
+    }
+    while (r_sq > 1.0);                      /* reject if outside sphere */
+
+    r_scaling = rad / mw_sqrt(r_sq);         /* compute scaling factor */
+    mw_incmulvs(vec, r_scaling);             /* rescale to radius given */
 
     return vec;
 }
