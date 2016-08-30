@@ -507,9 +507,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
         }
         counter++;
     }
-    
     upperlimit_r = find_upperlimit_r(comp1, comp2, energy, search_range, r);
-
     /*This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
      * then 5 times it is already where the integrand is close to 0 since it goes to 0 quickly. 
      */
@@ -517,7 +515,6 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
 
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
-
     return distribution_function;
 }
 
@@ -534,7 +531,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
         r = (real)mwXrandom(dsfmtState, 0.0, bound);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * get_density(comp, r);
-
+        mw_printf("%0.15f \t %0.15f\n", val, rho_max);
         if(val / rho_max > u)
         {
             break;
@@ -568,7 +565,6 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     real v, u, d;
     real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
     real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
-    
     while(1)
     {
 
@@ -764,6 +760,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
                 if(counter > 1000)
                 {
+                    mw_printf("this running\n");
                     exit(-1);
                 }
                 else
@@ -790,12 +787,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
-
             vec = get_components(prng, v);   
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
-            
             vec = get_components(prng, r);  
             x[i] = vec.x;
             y[i] = vec.y;
