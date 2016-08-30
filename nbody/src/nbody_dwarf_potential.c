@@ -52,7 +52,7 @@
 /*                            NFW                                                                                        */
  static real nfw_den(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
-    const real rho_0 = model->rho_0;                                                                                      //
+    const real rho_0 = model->mass;                                                                                      //
     const real rscale = model->scaleLength;                                                                              //
     real R = r / rscale;
     real ans = rho_0 * inv(R) * (1.0 / sqr(1.0 + R));  
@@ -61,7 +61,7 @@
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
-    const real rho_0 = model->rho_0;                                                                                      //
+    const real rho_0 = model->mass;                                                                                      //
     const real rscale = model->scaleLength;                                                                              //
     real R = r / rscale;
     real p0 = 4.0 * M_PI * cube(rscale) * rho_0;
