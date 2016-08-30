@@ -52,24 +52,21 @@
 /*                            NFW                                                                                        */
  static real nfw_den(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
-    const real mass = model->mass;                                                                                       //
+    const real rho_0 = model->rho_0;                                                                                      //
     const real rscale = model->scaleLength;                                                                              //
     real R = r / rscale;
-    real p0 = inv(4.0 * M_PI * cube(rscale)) * inv(mw_log(1.0 + R) - R / ( 1.0 + R) );                                   //
-    real ans = p0 * (mass * inv(R)) * (1.0 / sqr(1.0 + R));  
-//     mw_printf("den = %0.15f\n", ans);
-    return ans;                                                              //
+    real ans = rho_0 * inv(R) * (1.0 / sqr(1.0 + R));  
+    return ans;                                                                                                          //
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
-    const real mass = model->mass;                                                                                       //
+    const real rho_0 = model->rho_0;                                                                                      //
     const real rscale = model->scaleLength;                                                                              //
     real R = r / rscale;
-    real p0 = inv(mw_log(1.0 + R) - R / ( 1.0 + R) );
-    real ans = p0 * (mass / r) * mw_log(1.0 + R);      
-//     mw_printf("pot = %0.15f\n", ans);
-    return  ans;                                                                       //
+    real p0 = 4.0 * M_PI * cube(rscale) * rho_0;
+    real ans = p0 * (1.0 / r) * mw_log(1.0 + R);      
+    return  ans;                                                                                                         //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             GENERAL HERNQUIST                                                                         */

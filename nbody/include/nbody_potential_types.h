@@ -121,6 +121,7 @@ typedef struct MW_ALIGN_TYPE
     real mass;        
     real scaleLength;   
     real n; //used by einasto
+    real rho_0; //used by nfw
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"
