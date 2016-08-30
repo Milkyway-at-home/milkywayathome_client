@@ -72,7 +72,7 @@ static int createNFWDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
+            { "rho_0",        LUA_TNUMBER, NULL, TRUE, &h.rho_0       },
             { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
             END_MW_NAMED_ARG
         };

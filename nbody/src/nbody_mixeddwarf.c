@@ -531,7 +531,6 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
         r = (real)mwXrandom(dsfmtState, 0.0, bound);
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * get_density(comp, r);
-        mw_printf("%0.15f \t %0.15f\n", val, rho_max);
         if(val / rho_max > u)
         {
             break;
