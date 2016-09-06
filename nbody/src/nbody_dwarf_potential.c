@@ -52,20 +52,31 @@
 /*                            NFW                                                                                        */
  static real nfw_den(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
-    const real rho_0 = model->mass;                                                                                      //
+    const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    real R = r / rscale;
-    real ans = rho_0 * inv(R) * (1.0 / sqr(1.0 + R));  
+                                                                                                                         //
+    real r200 = mw_pow( mass / (200.0 * pcrit * PI_4_3) , 1.0 / 3.0);//as defined in Binney and Tremaine 2nd ed          //
+    real c = r200 / rscale; //halo concentration                                                                         //
+    real term = mw_log(1.0 + c) - c / (1.0 + c);                                                                         //
+    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997                         //
+    real R = r / rscale;                                                                                                 //
+                                                                                                                         //
+    real ans = p0 * inv(R) * inv(sqr(1.0 + R));                                                                          //
     return ans;                                                                                                          //
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
-    const real rho_0 = model->mass;                                                                                      //
+    const real mass = model->mass;                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
-    real R = r / rscale;
-    real p0 = 4.0 * M_PI * cube(rscale) * rho_0;
-    real ans = p0 * (1.0 / r) * mw_log(1.0 + R);      
+                                                                                                                         //
+    real r200 = mw_pow( mass / (200.0 * pcrit * PI_4_3) , 1.0 / 3.0);//as defined in Binney and Tremaine 2nd ed          //
+    real c = r200 / rscale;//halo concentration                                                                          //
+    real term = mw_log(1.0 + c) - c / (1.0 + c);                                                                         //
+    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term);//rho_0 as defined in Navarro et. al. 1997                          //
+                                                                                                                         //
+    real R = r / rscale;                                                                                                 //
+    real ans = 4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                 //
     return  ans;                                                                                                         //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

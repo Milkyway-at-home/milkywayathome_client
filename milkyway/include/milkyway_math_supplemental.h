@@ -49,6 +49,7 @@ extern "C" {
 #define minusthreehalves(x) (inv(threehalves(x)) )
 #define minushalf(x) ( inv(mw_sqrt(x)) )
 
+
 /* TODO: Have fma */
 #define mw_fma(a, b, c) (((a) * (b)) + (c))
 
@@ -212,6 +213,11 @@ typedef struct MW_ALIGN_TYPE_V(16)
 # define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
+
+
+/* current hubble parameter and cosmological critical density */
+#define hubble ((real) 73.8 / 1000.0) //km/s/kpc
+#define pcrit ((real) 3.0 * sqr(hubble) / (8.0 * M_PI) )
 
 
 #if !defined(NAN) && defined(_MSC_VER)

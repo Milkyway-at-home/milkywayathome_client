@@ -528,9 +528,10 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
     //we are sampling the one component model.
     while (1)
     {
-        r = (real)mwXrandom(dsfmtState, 0.0, bound);
+        r = (real)mwXrandom(dsfmtState, 0.0, 1.0) * bound;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * get_density(comp, r);
+//         mw_printf("r = %0.15f \t val = %0.15f \t rho_max = %0.15f, val/rho_max = %0.15f \t u = %0.15f\n", r, val, rho_max, val/rho_max, u); 
         if(val / rho_max > u)
         {
             break;
@@ -546,7 +547,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
             counter++;
         }
     }
-        
+//         mw_printf("r counter = %i\n", counter);
     return r;
 }
 
@@ -567,7 +568,7 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     while(1)
     {
 
-        v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
+        v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
 
         d = dist_fun(v, r, comp1, comp2);
@@ -586,8 +587,7 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
             counter++;
         }
     }
-    
-
+//     mw_printf("v counter = %i\n", counter);
     v *= 0.977813107;//changing from kpc/gy to km/s
     return v; //km/s
 }
@@ -730,6 +730,9 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         int place_holder = 0;
         real rho_max_light = max_finder(profile_rho, place_holder, comp1, comp1, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4 );
         real rho_max_dark  = max_finder(profile_rho, place_holder, comp2, comp2, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4 );
+        mw_printf("%0.15f \t %0.15f \n", rscale_l, rscale_d);
+        mw_printf("%0.15f \t %0.15f \n", mass_l, mass_d);
+        mw_printf("%0.15f \t %0.15f \n", rho_max_light, rho_max_dark);
 
      /*initializing particles:*/
         memset(&b, 0, sizeof(b));
@@ -759,7 +762,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
                 if(counter > 1000)
                 {
-                    mw_printf("this running\n");
                     exit(-1);
                 }
                 else
