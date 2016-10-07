@@ -177,7 +177,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
-
+    st->bestLikelihood = DEFAULT_WORST_CASE;
     /* We'll report the center of mass for each step + the initial one */
     st->nOrbitTrace = ctx->nStep + 1;
     st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace, sizeof(mwvector));

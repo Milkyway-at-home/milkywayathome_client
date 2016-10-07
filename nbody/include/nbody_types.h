@@ -295,7 +295,8 @@ typedef struct MW_ALIGN_TYPE
     int potentialEvalError;  /* Error occured in calling custom Lua potential */
 
     unsigned int maxDepth;   /* Maximum depth before overflow. Used for CL version */
-
+    real bestLikelihood;     /* new parameter for best likelihood eval*/
+    
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -319,7 +320,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 typedef struct
