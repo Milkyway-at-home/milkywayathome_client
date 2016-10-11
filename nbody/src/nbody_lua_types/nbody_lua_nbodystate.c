@@ -77,7 +77,7 @@ static int luaRunSystem(lua_State* luaSt)
     NBodyStatus rc;
     NBodyState* st;
     NBodyCtx ctx;
-
+    
     if (lua_gettop(luaSt) != 3)
     {
         return luaL_argerror(luaSt, 3, "Expected 3 arguments");
@@ -91,7 +91,7 @@ static int luaRunSystem(lua_State* luaSt)
         return luaL_argerror(luaSt, 3, "Expected potential as argument 3\n");
     }
 
-    rc = nbRunSystem(&ctx, st);
+    rc = nbRunSystem(&ctx, st, nbf);
     lua_pushstring(luaSt, showNBodyStatus(rc));
 
     return 1;

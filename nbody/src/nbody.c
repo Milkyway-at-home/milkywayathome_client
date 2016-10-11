@@ -190,7 +190,7 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
     return nbStepSystemPlain(ctx, st);
 }
 
-NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
   #if NBODY_OPENCL
     if (st->usesCL)
@@ -199,7 +199,7 @@ NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st)
     }
   #endif
 
-    return nbRunSystemPlain(ctx, st);
+    return nbRunSystemPlain(ctx, st, nbf);
 }
 
 /* Output appropriate things depending on whether raw output, a
@@ -375,7 +375,7 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     ts = mwGetTime();
-    rc = nbRunSystem(ctx, st);
+    rc = nbRunSystem(ctx, st, nbf);
     te = mwGetTime();
 
     if (nbf->reportProgress)
