@@ -411,6 +411,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->nbody          = oldSt->nbody;
     st->effNBody       = oldSt->effNBody;
     st->bestLikelihood = oldSt->bestLikelihood;
+    st->bestHist       = oldSt->bestHist;
     
     st->ignoreResponsive = oldSt->ignoreResponsive;
     st->usesExact = oldSt->usesExact;

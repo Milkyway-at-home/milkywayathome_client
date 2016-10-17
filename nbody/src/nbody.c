@@ -240,10 +240,10 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) so write this first */
-    if (nbf->histoutFileName)
-    {
-        nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
-    }
+//     if (nbf->histoutFileName)
+//     {
+//         nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+//     }
 
     if (nbf->printHistogram)
     {
@@ -285,8 +285,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood))
         {
             likelihood = st->bestLikelihood;
-            nbWriteHistogram(nbf->histoutFileName, ctx, st, st->bestHist);
-            
+//             nbWriteHistogram(nbf->histoutFileName, ctx, st, st->bestHist);
+//             nbPrintHistogram(DEFAULT_OUTPUT_FILE, st->bestHist);
         }
         
     }
