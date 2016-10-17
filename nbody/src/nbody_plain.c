@@ -175,15 +175,15 @@ static inline void get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBo
         {
             likelihood = DEFAULT_BEST_CASE;
         }
-    
+
         if(mw_fabs(likelihood) < mw_fabs(st->bestLikelihood))
         {
             st->bestLikelihood = likelihood;
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
-            st->bestHist = histogram;
-//             nbPrintHistogram(DEFAULT_OUTPUT_FILE, st->bestHist);
+//             st->bestHist = histogram;
+            nbPrintHistogram(DEFAULT_OUTPUT_FILE, histogram);
+            nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
         }
-//         mw_printf("<search_likelihood>from getlike %.15f\t%.15f</search_likelihood>\n", likelihood, st->bestLikelihood_time);
     }
     
     free(histogram);
@@ -247,6 +247,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         if(curStep / Nstep >= .99)
         {
             get_likelihood(ctx, st, nbf);
+            
         }
     
         if (nbStatusIsFatal(rc))   /* advance N-body system */
