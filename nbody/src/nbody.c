@@ -281,6 +281,14 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             likelihood = DEFAULT_BEST_CASE;
         }
+        mw_printf("<search_likelihood>%.15f\t%.15f\t%.15f</search_likelihood>\n", likelihood, st->bestLikelihood, st->bestLikelihood_time);
+        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood))
+        {
+            likelihood = st->bestLikelihood;
+            nbWriteHistogram(nbf->histoutFileName, ctx, st, st->bestHist);
+            
+        }
+        
     }
 
     free(histogram);
@@ -305,6 +313,18 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
+
+static inline void hist_params(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method)
+{
+    if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
+    {
+        mw_printf("Failed to get likelihood information\n");
+        return NBODY_LIKELIHOOD_ERROR;
+    }
+
+
+}
+
 
 int nbMain(const NBodyFlags* nbf)
 {
@@ -375,7 +395,13 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     ts = mwGetTime();
+    
+    /* things i need from nbf: histogramFileName, method,hp */
+//     HistogramParams hp;
+//     NBodyLikelihoodMethod method;
+//     hist_params(ctx, st, nbf, &hp, &method);
     rc = nbRunSystem(ctx, st, nbf);
+    
     te = mwGetTime();
 
     if (nbf->reportProgress)

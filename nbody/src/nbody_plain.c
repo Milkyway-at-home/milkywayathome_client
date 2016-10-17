@@ -25,6 +25,8 @@
 #include "nbody_util.h"
 #include "nbody_checkpoint.h"
 #include "nbody_grav.h"
+#include "nbody_histogram.h"
+#include "nbody_likelihood.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -116,42 +118,41 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     }
 }
 
+
 static inline void get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     real likelihood = NAN;
     NBodyLikelihoodMethod method;
+    HistogramParams hp;
     
-    /* The likelihood only means something when matching a histogram */
     mwbool calculateLikelihood = (nbf->histogramFileName != NULL);
+    
     
     if (calculateLikelihood || nbf->histoutFileName || nbf->printHistogram)
     {
-        HistogramParams hp;
 
         if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
         {
             mw_printf("Failed to get likelihood information\n");
-            return NBODY_LIKELIHOOD_ERROR;
         }
-
+    }
+    
+    if (calculateLikelihood)
+    {
+//         mw_printf("%i\n", calculateLikelihood);
         histogram = nbCreateHistogram(ctx, st, &hp);
         if (!histogram)
         {
             mw_printf("Failed to create histogram\n");
-            return NBODY_LIKELIHOOD_ERROR;
         }
-    }
     
-    
-    if (calculateLikelihood)   /* We want to match or produce a histogram */
-    {
         data = nbReadHistogram(nbf->histogramFileName);
         if (!data)
         {
+            mw_printf("Failed to read histogram\n");
             free(histogram);
-            return NBODY_LIKELIHOOD_ERROR;
         }
 
         likelihood = nbSystemLikelihood(st, data, histogram, method);
@@ -178,11 +179,12 @@ static inline void get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBo
         if(mw_fabs(likelihood) < mw_fabs(st->bestLikelihood))
         {
             st->bestLikelihood = likelihood;
+            st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
+            st->bestHist = histogram;
+//             nbPrintHistogram(DEFAULT_OUTPUT_FILE, st->bestHist);
         }
-        
+//         mw_printf("<search_likelihood>from getlike %.15f\t%.15f</search_likelihood>\n", likelihood, st->bestLikelihood_time);
     }
-    
-    
     
     free(histogram);
     free(data);
@@ -231,7 +233,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         nbFindCenterOfMass(&startCmPos, st);
         perpendicularCmPos=startCmPos;
     #endif
-
+    real curStep = st->step;
+    real Nstep = ctx->nStep;
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
@@ -239,8 +242,12 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
         #endif
         rc |= nbStepSystemPlain(ctx, st);
-            
-        get_likelihood(ctx, st, nbf);
+        curStep = st->step;
+//         mw_printf("%0.15f\n", curStep / Nstep);
+        if(curStep / Nstep >= .99)
+        {
+            get_likelihood(ctx, st, nbf);
+        }
     
         if (nbStatusIsFatal(rc))   /* advance N-body system */
             return rc;
