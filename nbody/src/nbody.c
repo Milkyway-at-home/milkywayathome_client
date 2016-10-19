@@ -240,6 +240,9 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) so write this first */
+    /*
+     * this has been moved to the best likelihood calculation in nbody_plain.c
+     */
 //     if (nbf->histoutFileName)
 //     {
 //         nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
@@ -281,12 +284,27 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             likelihood = DEFAULT_BEST_CASE;
         }
-        mw_printf("<search_likelihood>%.15f\t%.15f\t%.15f</search_likelihood>\n", likelihood, st->bestLikelihood, st->bestLikelihood_time);
-        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood))
+        
+        mw_printf("<search_status>%.15f\t%.15f\t%.15f\t%i</search_status>\n", likelihood, st->bestLikelihood, st->bestLikelihood_time, st->bestLikelihood_count);
+        
+        /* if the end state likelihood is not better than the best likelihood then
+         * replace it with the best likelihood
+         */
+        if(mw_fabs(likelihood) >= mw_fabs(st->bestLikelihood))
         {
             likelihood = st->bestLikelihood;
-//             nbWriteHistogram(nbf->histoutFileName, ctx, st, st->bestHist);
-//             nbPrintHistogram(DEFAULT_OUTPUT_FILE, st->bestHist);
+        }
+        else
+        {
+            /* if the end state likelihood is better then write out the histogram */
+            /* i do not think this is entirely necessary because the best likelihood code
+             * should take care of this. even if the best likelihood occurred at
+             * the end state (thus the >= in the above code )
+             */
+            if(nbf->histoutFileName)
+            {
+                nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+            }
         }
         
     }

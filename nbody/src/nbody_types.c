@@ -179,7 +179,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->bodytab = bodies;
     st->bestLikelihood = DEFAULT_WORST_CASE;
     st->bestLikelihood_time = 0.0;
-    st->bestHist = NULL;
+    st->bestLikelihood_count = 0;
+    
     /* We'll report the center of mass for each step + the initial one */
     st->nOrbitTrace = ctx->nStep + 1;
     st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace, sizeof(mwvector));
@@ -411,7 +412,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->nbody          = oldSt->nbody;
     st->effNBody       = oldSt->effNBody;
     st->bestLikelihood = oldSt->bestLikelihood;
-    st->bestHist       = oldSt->bestHist;
+    st->bestLikelihood_count = oldSt->bestLikelihood_count;
     
     st->ignoreResponsive = oldSt->ignoreResponsive;
     st->usesExact = oldSt->usesExact;

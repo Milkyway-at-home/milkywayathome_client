@@ -347,7 +347,7 @@ typedef struct MW_ALIGN_TYPE
     
     real bestLikelihood;            /* new parameter for best likelihood eval*/
     real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
-    NBodyHistogram* bestHist;
+    int bestLikelihood_count;      /* count of how many times the likelihood improved */
     
     mwbool ignoreResponsive;
     mwbool usesExact;
@@ -372,7 +372,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 

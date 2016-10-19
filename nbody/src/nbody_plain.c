@@ -176,13 +176,19 @@ static inline void get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBo
             likelihood = DEFAULT_BEST_CASE;
         }
 
+        /* this checks to see if the likelihood is an improvement */
         if(mw_fabs(likelihood) < mw_fabs(st->bestLikelihood))
         {
             st->bestLikelihood = likelihood;
+            /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
-//             st->bestHist = histogram;
-            nbPrintHistogram(DEFAULT_OUTPUT_FILE, histogram);
-            nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+            /* checking how many times the likelihood was improved */
+            st->bestLikelihood_count++;
+            /* if it is an improvement then write out this histogram */
+            if (nbf->histoutFileName)
+            {
+                nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+            }
         }
     }
     
@@ -244,7 +250,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         rc |= nbStepSystemPlain(ctx, st);
         curStep = st->step;
 //         mw_printf("%0.15f\n", curStep / Nstep);
-        if(curStep / Nstep >= .99)
+        if(curStep / Nstep >= .95)
         {
             get_likelihood(ctx, st, nbf);
             
