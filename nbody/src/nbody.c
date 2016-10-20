@@ -243,10 +243,10 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     /*
      * this has been moved to the best likelihood calculation in nbody_plain.c
      */
-//     if (nbf->histoutFileName)
-//     {
-//         nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
-//     }
+    if (nbf->histoutFileName && !calculateLikelihood)
+    {
+        nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+    }
 
     if (nbf->printHistogram)
     {
@@ -308,7 +308,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         }
         
     }
-
+    
     free(histogram);
     free(data);
 
@@ -331,18 +331,6 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
-
-static inline void hist_params(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method)
-{
-    if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
-    {
-        mw_printf("Failed to get likelihood information\n");
-        return NBODY_LIKELIHOOD_ERROR;
-    }
-
-
-}
-
 
 int nbMain(const NBodyFlags* nbf)
 {
