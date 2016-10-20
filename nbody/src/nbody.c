@@ -290,16 +290,16 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         /* if the end state likelihood is not better than the best likelihood then
          * replace it with the best likelihood
          */
-        if(mw_fabs(likelihood) >= mw_fabs(st->bestLikelihood))
+        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood))
         {
             likelihood = st->bestLikelihood;
         }
         else
         {
-            /* if the end state likelihood is better then write out the histogram */
-            /* i do not think this is entirely necessary because the best likelihood code
-             * should take care of this. even if the best likelihood occurred at
-             * the end state (thus the >= in the above code )
+            /* If the end state likelihood is worse than best likelihood then replace it, and keep the hist that would have been written.
+             * If there was never an improvement, i.e. the likelihood stayed worse case the entire time, then 
+             * the likelihood each timestep and best like are always equal. Then the best like code would not have written a hist. 
+             * if the best like is worse than the end state likelihood, or if they are equal,  rewrite the hist.
              */
             if(nbf->histoutFileName)
             {
