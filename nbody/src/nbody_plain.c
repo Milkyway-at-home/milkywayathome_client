@@ -119,7 +119,7 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 }
 
 
-static inline NBodyStatus get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
@@ -153,9 +153,9 @@ static inline NBodyStatus get_likelihood(const NBodyCtx* ctx, NBodyState* st, co
             free(histogram);
             /* if the input histogram does not exist, I do not want the 
              * simulation to terminate as you can still get the output file
-             * from it. Therefore, this function will end here but with success
+             * from it. Therefore, this function will end here but with 0
              */
-            return NBODY_SUCCESS;
+            return 0;
         }
         likelihood = nbSystemLikelihood(st, data, histogram, method);
 
@@ -225,7 +225,6 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     NBodyStatus rc = NBODY_SUCCESS;
-    NBodyStatus rc2 = NBODY_SUCCESS;
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
     if (nbStatusIsFatal(rc))
         return rc;
@@ -255,9 +254,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
 //         mw_printf("%0.15f\n", curStep / Nstep);
         if(curStep / Nstep >= .95)
         {
-            rc2 = get_likelihood(ctx, st, nbf);
-            if(nbStatusIsFatal(rc2))
-                return rc2;
+            get_likelihood(ctx, st, nbf);
         }
     
         if (nbStatusIsFatal(rc))   /* advance N-body system */
