@@ -252,7 +252,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         rc |= nbStepSystemPlain(ctx, st);
         curStep = st->step;
 //         mw_printf("%0.15f\n", curStep / Nstep);
-        if(curStep / Nstep >= .90)
+        if(curStep / Nstep >= .95)
         {
             get_likelihood(ctx, st, nbf);
         }
