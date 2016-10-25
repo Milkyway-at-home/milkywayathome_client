@@ -395,7 +395,8 @@ typedef struct MW_ALIGN_TYPE
 
     criterion_t criterion;
     ExternalPotentialType potentialType;
-
+    
+    mwbool useBestLike;       /* use best likelihood return code */
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
