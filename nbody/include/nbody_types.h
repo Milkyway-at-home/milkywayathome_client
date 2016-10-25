@@ -475,7 +475,7 @@ typedef enum
 #define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
-                         FALSE, FALSE, FALSE,                           \
+                         FALSE, FALSE, FALSE, FALSE,                    \
                          0, 0,                                          \
                          EMPTY_POTENTIAL }
 
