@@ -1,6 +1,7 @@
 /*
 Copyright (C) 2011  Matthew Arsenault
 Copyright (C) 2016 Siddhartha Shelton
+
 This file is part of Milkway@Home.
 
 Milkyway@Home is free software: you can redistribute it and/or modify
@@ -17,42 +18,27 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_LUA_TYPES_H_
-#define _NBODY_LUA_TYPES_H_
-
-#define _NBODY_LUA_TYPES_H_INSIDE_
-
-#ifdef __cplusplus
-extern "C" {
+#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
+  #error "Only nbody_lua_types.h can be included directly."
 #endif
 
-#include "milkyway_lua.h"
-
-#include "nbody_lua_type_marshal.h"
-
-#include "nbody_lua_nbodyctx.h"
-#include "nbody_lua_nbodystate.h"
-#include "nbody_lua_body.h"
-#include "nbody_lua_halo.h"
-#include "nbody_lua_disk.h"
-#include "nbody_lua_spherical.h"
-    
-#include "nbody_lua_dwarf.h"
-    
-#include "nbody_lua_potential.h"
-#include "nbody_lua_histogram_params.h"
-
+#ifndef _NBODY_LUA_DWARF_H_
+#define _NBODY_LUA_DWARF_H_
 
 #include <lua.h>
+#include "nbody_types.h"
+#include "nbody_config.h"
+#include "nbody_lua.h"
+#include "nbody_util.h"
 
-void registerNBodyTypes(lua_State* luaSt);
-NBodyStatus readNBodyStatus(lua_State* luaSt, const char* name);
+Dwarf* checkDwarf(lua_State* luaSt, int idx);
+int pushDwarf(lua_State* luaSt, const Dwarf* h);
+int registerDwarf(lua_State* luaSt);
 
-#ifdef __cplusplus
-}
-#endif
+int getDwarf(lua_State* luaSt, void* v);
+int setDwarf(lua_State* luaSt, void* v);
 
-#undef _NBODY_LUA_TYPES_H_INSIDE_
+int registerDwarfKinds(lua_State* luaSt);
 
-#endif /* _NBODY_LUA_TYPES_H_ */
+#endif /* _NBODY_LUA_DWARF_H_ */
 

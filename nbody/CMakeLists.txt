@@ -124,6 +124,8 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_plain.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_isotropic.c
+                  ${NBODY_SRC_DIR}/nbody_mixeddwarf.c
+                  ${NBODY_SRC_DIR}/nbody_dwarf_potential.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_nfw.c
                   ${NBODY_SRC_DIR}/nbody_hernq.c
@@ -150,6 +152,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
+                      ${NBODY_INCLUDE_DIR}/nbody_mixeddwarf.h
+                      ${NBODY_INCLUDE_DIR}/nbody_dwarf_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
                       ${NBODY_INCLUDE_DIR}/nbody_hernq.h
@@ -195,6 +199,7 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_dwarf.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
 
@@ -214,6 +219,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_halo.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_dwarf.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
 

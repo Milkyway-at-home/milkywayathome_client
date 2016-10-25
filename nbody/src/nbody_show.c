@@ -102,6 +102,7 @@ const char* showHaloT(halo_t x)
     }
 }
 
+
 const char* showNBodyStatus(NBodyStatus x)
 {
     switch (x)
@@ -300,6 +301,7 @@ char* showDisk(const Disk* d)
 
     return buf;
 }
+
 
 char* showCell(const NBodyCell* c)
 {

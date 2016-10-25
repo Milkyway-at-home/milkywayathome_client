@@ -228,7 +228,9 @@ lua_State* nbLuaOpen(mwbool debug)
     registerSphericalKinds(luaSt);
     registerDiskKinds(luaSt);
     registerHaloKinds(luaSt);
-
+    
+    registerDwarfKinds(luaSt);
+    
     registerModelFunctions(luaSt);
     registerUtilityFunctions(luaSt);
     nbRegisterUtilityFunctions(luaSt);

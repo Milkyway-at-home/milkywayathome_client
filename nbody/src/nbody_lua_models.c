@@ -1,6 +1,6 @@
 /*
  *  Copyright (c) 2011 Matthew Arsenault
- *
+ *  Copyright (c) 2016 Siddhartha Shelton
  *  This file is part of Milkway@Home.
  *
  *  Milkway@Home is free software: you may copy, redistribute and/or modify it
@@ -32,10 +32,12 @@
 #include "nbody_nfw.h"
 #include "nbody_hernq.h"
 #include "nbody_isotropic.h"
+#include "nbody_mixeddwarf.h"
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
-
+#include "nbody_potential_types.h"
+#include "nbody_lua_dwarf.h"
 
 /* For using a combination of light and dark models to generate timestep */
 static real plummerTimestepIntegral(real smalla, real biga, real Md, real step)
@@ -109,7 +111,8 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     registerGenerateNFW(luaSt);
     registerGenerateHernq(luaSt);
     registerGenerateIsotropic(luaSt);
-
+    registerGenerateMixedDwarf(luaSt);
+    
     /* Create a table of predefined models, so we can use them like
      * predefinedModels.plummer() etc. */
     lua_newtable(luaSt);
@@ -119,6 +122,8 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     setModelTableItem(luaSt, table, nbGenerateNFW, "nfw");
     setModelTableItem(luaSt, table, nbGenerateHernq, "hernq");
     setModelTableItem(luaSt, table, nbGenerateIsotropic, "isotropic");
+    setModelTableItem(luaSt, table, nbGenerateMixedDwarf, "mixeddwarf");
+    
     /*
       setModelTableItem(luaSt, table, generateKing, "king");
       setModelTableItem(luaSt, table, generateDehnen, "dehnen");

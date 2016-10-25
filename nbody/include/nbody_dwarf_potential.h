@@ -20,27 +20,24 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_ORBIT_INTEGRATOR_H_
-#define _NBODY_ORBIT_INTEGRATOR_H_
+#ifndef _NBODY_DWARF_POTENTIAL_H_
+#define _NBODY_DWARF_POTENTIAL_H_
 
+#include <lua.h>
 #include "nbody_types.h"
+#include "milkyway_math.h"
+#include "nbody_potential_types.h"
 
-void nbReverseOrbit(mwvector* finalPos,
-                    mwvector* finalVel,
-                    const Potential* pot,
-                    mwvector pos,
-                    mwvector vel,
-                    real tstop,
-                    real dt);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void nbPrintReverseOrbit(mwvector* finalPos,
-                         mwvector* finalVel,
-                         const Potential* pot,
-                         mwvector pos,
-                         mwvector vel,
-                         real tstop,
-                         real tstopforward,
-                         real dt);
-    
-#endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
+real get_potential(const Dwarf* args, real r);
+real get_density(const Dwarf* args, real r);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _NBODY_DWARF_POTENTIAL_H_ */
 

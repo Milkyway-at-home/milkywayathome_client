@@ -508,6 +508,9 @@ void sortBodies(Body* bodies, int nbody);
 int equalSpherical(const Spherical* s1, const Spherical* s2);
 int equalHalo(const Halo* h1, const Halo* h2);
 int equalDisk(const Disk* d1, const Disk* d2);
+
+// int equalDwarf(const Dwarf* h1, const Dwarf* h2);
+
 int equalPotential(const Potential* p1, const Potential* p2);
 
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2);
