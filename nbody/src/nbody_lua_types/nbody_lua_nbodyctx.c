@@ -96,6 +96,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "useQuad",     LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad     },
             { "allowIncest", LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest },
             { "quietErrors", LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors },
+            { "useBestLike", LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike },
             END_MW_NAMED_ARG
         };
 
@@ -212,6 +213,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
+    { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
     { NULL, NULL, 0 }
 };
 
@@ -227,6 +229,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
+    { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
     { NULL, NULL, 0 }
 };
 

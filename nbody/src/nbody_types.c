@@ -177,7 +177,10 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
-
+    st->bestLikelihood = DEFAULT_WORST_CASE;
+    st->bestLikelihood_time = 0.0;
+    st->bestLikelihood_count = 0;
+    
     /* We'll report the center of mass for each step + the initial one */
     st->nOrbitTrace = ctx->nStep + 1;
     st->orbitTrace = (mwvector*) mwCallocA(st->nOrbitTrace, sizeof(mwvector));
@@ -408,7 +411,9 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->step           = oldSt->step;
     st->nbody          = oldSt->nbody;
     st->effNBody       = oldSt->effNBody;
-
+    st->bestLikelihood = oldSt->bestLikelihood;
+    st->bestLikelihood_count = oldSt->bestLikelihood_count;
+    
     st->ignoreResponsive = oldSt->ignoreResponsive;
     st->usesExact = oldSt->usesExact;
     st->usesQuad = oldSt->usesQuad,
@@ -598,6 +603,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && (ctx1->potentialType == ctx2->potentialType)
         && feqWithNan(ctx1->useQuad, ctx2->useQuad)
         && feqWithNan(ctx1->allowIncest, ctx2->allowIncest)
+        && feqWithNan(ctx1->useBestLike, ctx2->useBestLike)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)

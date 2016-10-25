@@ -190,7 +190,7 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
     return nbStepSystemPlain(ctx, st);
 }
 
-NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
   #if NBODY_OPENCL
     if (st->usesCL)
@@ -199,7 +199,7 @@ NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st)
     }
   #endif
 
-    return nbRunSystemPlain(ctx, st);
+    return nbRunSystemPlain(ctx, st, nbf);
 }
 
 /* Output appropriate things depending on whether raw output, a
@@ -240,7 +240,10 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 
     /* We want to write something whether or not the likelihood can be
      * calculated (i.e. given a histogram) so write this first */
-    if (nbf->histoutFileName)
+    /*
+     * this has been moved to the best likelihood calculation in nbody_plain.c
+     */
+    if (nbf->histoutFileName && !calculateLikelihood)
     {
         nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
     }
@@ -281,8 +284,31 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             likelihood = DEFAULT_BEST_CASE;
         }
+        
+//         mw_printf("<search_status>%.15f\t%.15f\t%.15f\t%i</search_status>\n", likelihood, st->bestLikelihood, st->bestLikelihood_time, st->bestLikelihood_count);
+        
+        /* if the end state likelihood is not better than the best likelihood then
+         * replace it with the best likelihood
+         */
+        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood))
+        {
+            likelihood = st->bestLikelihood;
+        }
+        else
+        {
+            /* If the end state likelihood is worse than best likelihood then replace it, and keep the hist that would have been written.
+             * If there was never an improvement, i.e. the likelihood stayed worse case the entire time, then 
+             * the likelihood each timestep and best like are always equal. Then the best like code would not have written a hist. 
+             * if the best like is worse than the end state likelihood, or if they are equal,  rewrite the hist.
+             */
+            if(nbf->histoutFileName)
+            {
+                nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+            }
+        }
+        
     }
-
+    
     free(histogram);
     free(data);
 
@@ -375,7 +401,9 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     ts = mwGetTime();
-    rc = nbRunSystem(ctx, st);
+    
+    rc = nbRunSystem(ctx, st, nbf);
+    
     te = mwGetTime();
 
     if (nbf->reportProgress)

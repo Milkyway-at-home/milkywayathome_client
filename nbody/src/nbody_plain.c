@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include "nbody.h"
 #include "nbody_plain.h"
 #include "nbody_shmem.h"
 #include "nbody_curses.h"
@@ -25,6 +25,8 @@
 #include "nbody_util.h"
 #include "nbody_checkpoint.h"
 #include "nbody_grav.h"
+#include "nbody_histogram.h"
+#include "nbody_likelihood.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -116,10 +118,94 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     }
 }
 
+
+static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+{
+    NBodyHistogram* data = NULL;
+    NBodyHistogram* histogram = NULL;
+    real likelihood = NAN;
+    NBodyLikelihoodMethod method;
+    HistogramParams hp;
+    
+    mwbool calculateLikelihood = (nbf->histogramFileName != NULL);
+    
+    
+    if (calculateLikelihood || nbf->histoutFileName || nbf->printHistogram)
+    {
+
+        if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
+        {
+            mw_printf("Failed to get likelihood information\n");
+        }
+    }
+    
+    if (calculateLikelihood)
+    {
+//         mw_printf("%i\n", calculateLikelihood);
+        histogram = nbCreateHistogram(ctx, st, &hp);
+        if (!histogram)
+        {
+            mw_printf("Failed to create histogram\n");
+        }
+        data = nbReadHistogram(nbf->histogramFileName);
+        if (!data)
+        {
+            free(histogram);
+            /* if the input histogram does not exist, I do not want the 
+             * simulation to terminate as you can still get the output file
+             * from it. Therefore, this function will end here but with 0
+             */
+            return 0;
+        }
+        likelihood = nbSystemLikelihood(st, data, histogram, method);
+
+        /*
+          Used to fix Windows platform issues.  Windows' infinity is expressed as:
+          1.#INF00000, -1.#INF00000, or 0.#INF000000.  The server reads these as -1, 1, and 0
+          respectively, accounting for the sign change.  Thus, I have changed overflow
+          infinities (not errors) to be the worst case.  The worst case is now the actual
+          worst thing that can happen.
+
+        * It previous returned the worse case when the likelihood == 0. 
+        * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
+        */
+        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1 * DEFAULT_WORST_CASE) || isnan(likelihood))
+        {
+            likelihood = DEFAULT_WORST_CASE;
+        }
+        else if(likelihood == 0.0)
+        {
+            likelihood = DEFAULT_BEST_CASE;
+        }
+
+        /* this checks to see if the likelihood is an improvement */
+        if(mw_fabs(likelihood) < mw_fabs(st->bestLikelihood))
+        {
+            st->bestLikelihood = likelihood;
+            /* Calculating the time that the best likelihood occurred */
+            st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
+            /* checking how many times the likelihood was improved */
+            st->bestLikelihood_count++;
+            /* if it is an improvement then write out this histogram */
+            if (nbf->histoutFileName)
+            {
+                nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+            }
+        }
+    }
+    
+    free(histogram);
+    free(data);
+    return NBODY_SUCCESS;
+    
+}
+
+
 /* stepSystem: advance N-body system one time-step. */
 NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc;
+    
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt);
@@ -136,10 +222,9 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
     return rc;
 }
 
-NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     NBodyStatus rc = NBODY_SUCCESS;
-
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
     if (nbStatusIsFatal(rc))
         return rc;
@@ -156,7 +241,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
         nbFindCenterOfMass(&startCmPos, st);
         perpendicularCmPos=startCmPos;
     #endif
-
+    real curStep = st->step;
+    real Nstep = ctx->nStep;
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
@@ -164,6 +250,13 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st)
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
         #endif
         rc |= nbStepSystemPlain(ctx, st);
+        curStep = st->step;
+
+        if(curStep / Nstep >= .95 && ctx->useBestLike)
+        {
+            get_likelihood(ctx, st, nbf);
+        }
+    
         if (nbStatusIsFatal(rc))   /* advance N-body system */
             return rc;
 
