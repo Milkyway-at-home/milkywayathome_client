@@ -34,7 +34,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .criterion       */  DEFAULT_CRITERION,
     /* .potentialType   */  EXTERNAL_POTENTIAL_DEFAULT,
 
-
+    /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,

@@ -269,57 +269,15 @@ typedef struct
 } NBodyWorkSizes;
 
 
-
-/* Mutable state used during an evaluation */
-typedef struct MW_ALIGN_TYPE
+typedef struct
 {
-    NBodyTree tree;
-    NBodyNode* freeCell;      /* list of free cells */
-    char* checkpointResolved;
-    Body* bodytab;            /* points to array of bodies */
-    mwvector* acctab;         /* Corresponding accelerations of bodies */
-    mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
-    scene_t* scene;
-
-    lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
-                                   We need one per thread in the general case. */
-    int* potEvalClosures;       /* Lua closure for each state */
-
-    size_t nOrbitTrace;         /* Number of items in orbitTrace */
-    time_t lastCheckpoint;
-
-    unsigned int step;
-    int nbody;
-    int effNBody;            /* Sometimes needed rounded up number of bodies. >= nbody are just padding */
-    int treeIncest;          /* Tree incest has occured */
-    int potentialEvalError;  /* Error occured in calling custom Lua potential */
-
-    unsigned int maxDepth;   /* Maximum depth before overflow. Used for CL version */
-
-    mwbool ignoreResponsive;
-    mwbool usesExact;
-    mwbool usesQuad;
-    mwbool usesConsistentMemory;
-    mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
-    mwbool usesCL;
-    mwbool useCLCheckpointing;
-    mwbool reportProgress;
-
-  #if NBODY_OPENCL
-    CLInfo* ci;
-    NBodyKernels* kernels;
-    NBodyBuffers* nbb;
-  #else
-    void* kernels;
-    void* ci;
-    void* nbb;
-  #endif /* NBODY_OPENCL */
-    NBodyWorkSizes* workSizes;
-} NBodyState;
-
-#define NBODYSTATE_TYPE "NBodyState"
-
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+    int useBin;
+    unsigned int rawCount;
+    real lambda;
+    real beta;
+    real count;
+    real err;
+} HistData;
 
 
 typedef struct
@@ -347,18 +305,8 @@ typedef struct
 
 typedef struct
 {
-    int useBin;
-    unsigned int rawCount;
-    real lambda;
-    real beta;
-    real count;
-    real err;
-} HistData;
-
-typedef struct
-{
     unsigned int lambdaBins;
-	unsigned int betaBins;
+     unsigned int betaBins;
     unsigned int totalNum;
     unsigned int totalSimulated;
     int hasRawCounts;
@@ -369,6 +317,67 @@ typedef struct
      * after data. */
     HistData data[1];
 } NBodyHistogram;
+
+
+/* Mutable state used during an evaluation */
+typedef struct MW_ALIGN_TYPE
+{
+    NBodyTree tree;
+    NBodyNode* freeCell;      /* list of free cells */
+    char* checkpointResolved;
+    Body* bodytab;            /* points to array of bodies */
+    mwvector* acctab;         /* Corresponding accelerations of bodies */
+    mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
+    scene_t* scene;
+
+    lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
+                                   We need one per thread in the general case. */
+    int* potEvalClosures;       /* Lua closure for each state */
+
+    size_t nOrbitTrace;         /* Number of items in orbitTrace */
+    time_t lastCheckpoint;
+
+    unsigned int step;
+    int nbody;
+    int effNBody;            /* Sometimes needed rounded up number of bodies. >= nbody are just padding */
+    int treeIncest;          /* Tree incest has occured */
+    int potentialEvalError;  /* Error occured in calling custom Lua potential */
+
+    unsigned int maxDepth;   /* Maximum depth before overflow. Used for CL version */
+    
+    real bestLikelihood;            /* new parameter for best likelihood eval*/
+    real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
+    int bestLikelihood_count;      /* count of how many times the likelihood improved */
+    
+    mwbool ignoreResponsive;
+    mwbool usesExact;
+    mwbool usesQuad;
+    mwbool usesConsistentMemory;
+    mwbool dirty;      /* Whether the view of the bodies is consistent with the view in the CL buffers */
+    mwbool usesCL;
+    mwbool useCLCheckpointing;
+    mwbool reportProgress;
+
+  #if NBODY_OPENCL
+    CLInfo* ci;
+    NBodyKernels* kernels;
+    NBodyBuffers* nbb;
+  #else
+    void* kernels;
+    void* ci;
+    void* nbb;
+  #endif /* NBODY_OPENCL */
+    NBodyWorkSizes* workSizes;
+} NBodyState;
+
+#define NBODYSTATE_TYPE "NBodyState"
+
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+
+
+
+
+
 
 
 /* The context tracks settings of the simulation.  It should be set
@@ -386,7 +395,8 @@ typedef struct MW_ALIGN_TYPE
 
     criterion_t criterion;
     ExternalPotentialType potentialType;
-
+    
+    mwbool useBestLike;       /* use best likelihood return code */
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
@@ -465,7 +475,7 @@ typedef enum
 #define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
-                         FALSE, FALSE, FALSE,                           \
+                         FALSE, FALSE, FALSE, FALSE,                    \
                          0, 0,                                          \
                          EMPTY_POTENTIAL }
 
