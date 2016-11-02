@@ -14,9 +14,9 @@ include(CheckTypeSize)
 include(CheckStructHasMember)
 include(CheckSSE2)
 
-set(BOINC_MAJOR_VERSION 6)
-set(BOINC_MINOR_VERSION 13)
-set(BOINC_RELEASE 0)
+set(BOINC_MAJOR_VERSION 7)
+set(BOINC_MINOR_VERSION 6)
+set(BOINC_RELEASE 33)
 
 set(BOINC_PRERELEASE TRUE)
 set(BOINC_BUGREPORT "")
@@ -31,6 +31,7 @@ check_include_files(dirent.h HAVE_DIRENT_H)
 check_include_files(dlfcn.h HAVE_DLFCN_H)
 check_include_files(errno.h HAVE_ERRNO_H)
 check_include_files(fcntl.h HAVE_FCNTL_H)
+check_include_files(winternl.h HAVE_WINTERNL_H)
 
 check_include_files(GLUT/glut.h HAVE_GLUT_GLUT_H)
 check_include_files(glut.h HAVE_GLUT_H)
@@ -198,14 +199,16 @@ set(boinc_lib_headers boinc/version.h
                       boinc/win_build/config.h
                       ${BOINC_LIB_SRC_DIR}/str_util.h
                       ${BOINC_LIB_SRC_DIR}/procinfo.h
-                      ${BOINC_LIB_SRC_DIR}/proc_control.h)
+                      ${BOINC_LIB_SRC_DIR}/hostinfo.h
+                      ${BOINC_LIB_SRC_DIR}/proc_control.h
+                      ${BOINC_LIB_SRC_DIR}/opencl_boinc.h)
 
 set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/app_ipc.cpp
                   ${BOINC_LIB_SRC_DIR}/diagnostics.cpp
                   ${BOINC_LIB_SRC_DIR}/filesys.cpp
                   ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
-                  ${BOINC_LIB_SRC_DIR}/md5.c
+                  ${BOINC_LIB_SRC_DIR}/md5.cpp
                   ${BOINC_LIB_SRC_DIR}/md5_file.cpp
                   ${BOINC_LIB_SRC_DIR}/mem_usage.cpp
                   ${BOINC_LIB_SRC_DIR}/mfile.cpp
@@ -218,8 +221,10 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/base64.cpp
                   ${BOINC_LIB_SRC_DIR}/url.cpp
                   ${BOINC_LIB_SRC_DIR}/coproc.cpp
+                  ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
                   ${BOINC_LIB_SRC_DIR}/procinfo.cpp
-                  ${BOINC_LIB_SRC_DIR}/proc_control.cpp)
+                  ${BOINC_LIB_SRC_DIR}/proc_control.cpp
+                  ${BOINC_LIB_SRC_DIR}/opencl_boinc.cpp)
 
 if(WIN32)
   list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/win_util.cpp

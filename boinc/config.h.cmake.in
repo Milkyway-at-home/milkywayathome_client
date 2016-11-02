@@ -293,6 +293,19 @@
 /* Define to 1 if /proc/self/stat exists */
 #cmakedefine01 HAVE__PROC_SELF_STAT
 
+/*********************************************************/
+/*                    CROSS COMPILE DEFINES!             */
+/*********************************************************/
+/* Define to 1 if _SYSTEM_THREADS struct exists (MINGW32) */
+#cmakedefine01 HAVE_SYSTEM_THREADS
+
+#cmakedefine01 HAVE_CLIENT_ID
+
+#cmakedefine01 HAVE_VM_COUNTERS
+
+#cmakedefine01 HAVE_THREAD_STATE
+
+#cmakedefine01 HAVE_WINTERNL_H
 
 /* Platform identification used to identify applications for this BOINC core
    client */

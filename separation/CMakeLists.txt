@@ -34,7 +34,7 @@ include(BOINCPaths)
 
 set(separation_VERSION_MAJOR 1
                CACHE INTERNAL "Separation version number")
-set(separation_VERSION_MINOR 37
+set(separation_VERSION_MINOR 39
                CACHE INTERNAL "Separation version number")
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
                CACHE INTERNAL "Separation version number")
@@ -168,6 +168,8 @@ set(separation_cl_headers include/setup_cl.h
                           include/run_cl.h
                           include/separation_cl_buffers.h)
 
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../boinc/boinc)
+
 if(SEPARATION_GRAPHICS)
   list(APPEND lib_source_file_list ${graphics_src_list})
   list(APPEND separation_headers ${graphics_hdr_list})
@@ -178,23 +180,42 @@ if(SEPARATION_OPENCL)
   list(APPEND lib_source_file_list ${cl_source_list})
   list(APPEND separation_headers ${separation_cl_headers})
   set(separation_inline_src "${LIBRARY_OUTPUT_PATH}/separation_kernel_inline.c")
-
-  add_custom_command(
-    OUTPUT "${separation_inline_src}"
-    COMMAND $<TARGET_FILE:xxd> -i "probabilities_kernel.cl" ${separation_inline_src}
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
-    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
-    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
-    COMMENT "Inlining separation kernel source")
+  if(CrossCompile)
+    add_custom_command(
+      OUTPUT "${separation_inline_src}"
+      COMMAND xxd -i "probabilities_kernel.cl" ${separation_inline_src}
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
+      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
+      COMMENT "Inlining separation kernel source")
+  else()
+    add_custom_command(
+      OUTPUT "${separation_inline_src}"
+      COMMAND $<TARGET_FILE:xxd> -i "probabilities_kernel.cl" ${separation_inline_src}
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
+      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/probabilities_kernel.cl"
+      COMMENT "Inlining separation kernel source")
+  endif()
 
   set(summarization_inline_src "${LIBRARY_OUTPUT_PATH}/summarization_kernel_inline.c")
-  add_custom_command(
-    OUTPUT "${summarization_inline_src}"
-    COMMAND $<TARGET_FILE:xxd> -i "summarization_kernel.cl" ${summarization_inline_src}
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
-    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
-    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
-    COMMENT "Inlining summarization kernel source")
+  if(CrossCompile)
+    add_custom_command(
+      OUTPUT "${summarization_inline_src}"
+      COMMAND xxd -i "summarization_kernel.cl" ${summarization_inline_src}
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
+      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
+      COMMENT "Inlining summarization kernel source")
+  else()
+    add_custom_command(
+      OUTPUT "${summarization_inline_src}"
+      COMMAND $<TARGET_FILE:xxd> -i "summarization_kernel.cl" ${summarization_inline_src}
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
+      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/summarization_kernel.cl"
+      COMMENT "Inlining summarization kernel source")
+  endif()
 
   set(kernel_srcs ${separation_inline_src} ${summarization_inline_src})
   add_library(separation_kernels STATIC ${kernel_srcs})

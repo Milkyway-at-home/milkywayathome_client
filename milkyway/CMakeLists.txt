@@ -171,7 +171,7 @@ if(WIN32 AND NOT HAVE_ASPRINTF)
     list(APPEND mw_lib_src src/milkyway_asprintf.c)
 endif()
 
-
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../boinc/boinc)
 
 add_library(milkyway_lua STATIC ${milkyway_lua_src} ${milkyway_lua_headers})
 set_target_properties(milkyway_lua PROPERTIES
