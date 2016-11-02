@@ -400,6 +400,8 @@ typedef struct MW_ALIGN_TYPE
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
+   
+    real BestLikeStart;       /* after what portion of the sim should the calc start */
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
@@ -476,7 +478,7 @@ typedef enum
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
                          FALSE, FALSE, FALSE, FALSE,                    \
-                         0, 0,                                          \
+                         0, 0, 0,                                          \
                          EMPTY_POTENTIAL }
 
 typedef enum
