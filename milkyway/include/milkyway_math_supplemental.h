@@ -217,7 +217,8 @@ typedef struct MW_ALIGN_TYPE_V(16)
 
 /* current hubble parameter and cosmological critical density */
 #define hubble ((real) 73.8 / 1000.0) //km/s/kpc
-#define pcrit ((real) 3.0 * sqr(hubble) / (8.0 * M_PI) )
+#define hubble_gyr ((real) hubble * 3.154 *inv(3.086) ) //conversion to 1/gyr -> (km/s/kpc * 3.15576e16s/gyr * 1kpc/3.086e16km)
+#define pcrit ((real) 3.0 * sqr(hubble_gyr) / (8.0 * M_PI) )
 
 
 #if !defined(NAN) && defined(_MSC_VER)

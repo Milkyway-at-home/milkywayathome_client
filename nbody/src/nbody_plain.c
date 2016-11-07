@@ -251,7 +251,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         #endif
         rc |= nbStepSystemPlain(ctx, st);
         curStep = st->step;
-
+        
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)
         {
             get_likelihood(ctx, st, nbf);
