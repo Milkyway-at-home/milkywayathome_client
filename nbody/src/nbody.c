@@ -322,7 +322,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
             return NBODY_SUCCESS;
         }
-        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
+        mw_printf("<search_likelihood0>%.15f</search_likelihood0>\n", -likelihood);
     }
 
 

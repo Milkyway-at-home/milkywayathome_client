@@ -60,7 +60,7 @@
     real term = mw_log(1.0 + c) - c / (1.0 + c);                                                                         //
     real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997                         //
     real R = r / rscale;                                                                                                 //
-                                                                                                                         //
+    mw_printf("den %0.15f\t%0.15f\t%0.15f\t%0.15f\n", r200, c, term, p0);                                                                                                                     //
     real ans = p0 * inv(R) * inv(sqr(1.0 + R));                                                                          //
     return ans;                                                                                                          //
 }                                                                                                                        //
@@ -76,6 +76,7 @@
     real p0 = 200.0 * cube(c) * pcrit / (3.0 * term);//rho_0 as defined in Navarro et. al. 1997                          //
                                                                                                                          //
     real R = r / rscale;                                                                                                 //
+    mw_printf("pot %0.15f\t%0.15f\t%0.15f\t%0.15f\n", r200, c, term , p0);   
     real ans = 4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                 //
     return  ans;                                                                                                         //
 }                                                                                                                        //
