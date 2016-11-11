@@ -180,6 +180,9 @@ void printStreamConstants(const StreamConstants* c, unsigned int n)
 void printAstronomyParameters(const AstronomyParameters* ap)
 {
     printf("astronomy-parameters {\n"
+           "  params_per_workunit   = %u\n"
+           "  currentWU             = %u\n"
+           "  totalWUs              = %u\n"
            "  m_sun_r0              = %f\n"
            "  q_inv                 = %f\n"
            "  q_inv_sqr             = %f\n"
@@ -201,6 +204,9 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  exp_background_weight = %f\n"
            "  modfit                = %u\n"
            "  background_profile    = %u\n",
+           ap->params_per_workunit,
+           ap->currentWU,
+           ap->totalWUs,
            ap->m_sun_r0,
            ap->q_inv,
            ap->q_inv_sqr,
@@ -223,7 +229,7 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->background_profile);
 }
 
-void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText)
+void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText, int WUnum)
 {
     unsigned int i;
 
@@ -231,22 +237,45 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     fflush(stdout);
 
-    /* Print integrals */
-    mw_printf("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
-    mw_printf("<stream_integral> ");
-    for (i = 0; i < numberStreams; ++i)
-        mw_printf(" %.15f ", results->streamIntegrals[i]);
-    mw_printf("</stream_integral>\n");
+    if(WUnum == 0) /*Required to maintain backwards compatibility*/
+    {
+        /* Print integrals */
+        mw_printf("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
+        mw_printf("<stream_integral> ");
+        for (i = 0; i < numberStreams; ++i)
+            mw_printf(" %.15f ", results->streamIntegrals[i]);
+        mw_printf("</stream_integral>\n");
 
-    /* Print individual likelihoods */
-    mw_printf("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
-    mw_printf("<stream_only_likelihood> ");
-    for (i = 0; i < numberStreams; ++i)
-        mw_printf(" %.15f ", results->streamLikelihoods[i]);
-    mw_printf("</stream_only_likelihood>\n");
+        /* Print individual likelihoods */
+        mw_printf("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
+        mw_printf("<stream_only_likelihood> ");
+        for (i = 0; i < numberStreams; ++i)
+            mw_printf(" %.15f ", results->streamLikelihoods[i]);
+        mw_printf("</stream_only_likelihood>\n");
 
-    /* Print overall likelihood */
-    mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+        /* Print overall likelihood */
+        mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+    }
+    else
+    {
+        /* Print integrals */
+        mw_printf("<background_integral%d> %.15f </background_integral%d>\n", WUnum, results->backgroundIntegral, WUnum);
+        mw_printf("<stream_integral%d> ", WUnum);
+        for (i = 0; i < numberStreams; ++i)
+            mw_printf(" %.15f ", results->streamIntegrals[i]);
+        mw_printf("</stream_integral%d>\n", WUnum);
+
+        /* Print individual likelihoods */
+        mw_printf("<background_likelihood%d> %.15f </background_likelihood%d>\n", WUnum, results->backgroundLikelihood, WUnum);
+        mw_printf("<stream_only_likelihood%d> ", WUnum);
+        for (i = 0; i < numberStreams; ++i)
+            mw_printf(" %.15f ", results->streamLikelihoods[i]);
+        mw_printf("</stream_only_likelihood%d>\n", WUnum);
+
+        /* Print overall likelihood */
+        mw_printf("<search_likelihood%d> %.15f </search_likelihood%d>\n", WUnum, results->likelihood, WUnum);
+
+    }
 
     if (LikelihoodToText)
     {

@@ -38,7 +38,7 @@ void printAstronomyParameters(const AstronomyParameters* ap);
 void printNuConstants(const NuConstants* c, unsigned int n);
 void printStreamGauss(const StreamGauss* c, unsigned int n);
 void printStreamConstants(const StreamConstants* c, unsigned int n);
-void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText);
+void printSeparationResults(const SeparationResults* results, unsigned int numberStreams, int LikelihoodToText, int WUnum);
 
 SeparationResults* readReferenceResults(const char* refFile, unsigned int nStream);
 

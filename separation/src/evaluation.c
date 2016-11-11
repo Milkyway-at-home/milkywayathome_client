@@ -167,14 +167,15 @@ static int calculateIntegrals(const AstronomyParameters* ap,
 }
 
 int evaluate(SeparationResults* results,
-             const AstronomyParameters* ap,
+             AstronomyParameters* ap,
              const IntegralArea* ias,
              const Streams* streams,
              const StreamConstants* sc,
+             int likelihoodToText,
              const char* starPointsFile,
              const CLRequest* clr,
              int do_separation,
-             int ignoreCheckpoint,
+             int *ignoreCheckpoint,
              const char* separation_outfile)
 {
     int rc = 0;
@@ -189,7 +190,7 @@ int evaluate(SeparationResults* results,
         return 1;
 
     es = newEvaluationState(ap);
-    sg = getStreamGauss(ap->convolve);
+    sg  = getStreamGauss(ap->convolve);
 
   #if SEPARATION_GRAPHICS
     if (separationInitSharedEvaluationState(es))
@@ -204,14 +205,41 @@ int evaluate(SeparationResults* results,
         goto error;
     }
 
-    if (!ignoreCheckpoint)
+    if (!(*ignoreCheckpoint))
     {
         rc = maybeResume(es);
         if (rc)
         {
             goto error;
         }
-
+        /*Check to see if we checkpointed and need to update parameters*/
+        if(es->currentWU > ap->currentWU)
+        {
+            if( es->WUPrinted )
+            {
+                ap->currentWU = es->currentWU - 1;
+                *ignoreCheckpoint = 1;
+            }
+            /*Set currentWU to currentWU found in checkpoint file*
+             * Account for +1 after loop */
+            else
+            {
+                ap->currentWU = es->currentWU - 1;
+            }
+            
+            /*Finish this call of evaluation so that correct ap parameters can be set*/
+            goto error;  /* Not actually an error just need to clean up and return */
+        }
+        else if( es->WUPrinted )
+        {
+            /* We have surpassed the current checkpoint, Ignore it and move on */
+            *ignoreCheckpoint = 1;
+            goto error;
+        }
+        else
+        {
+            *ignoreCheckpoint = 1;
+        }
         done = integralsAreDone(es);
     }
 
@@ -237,7 +265,8 @@ int evaluate(SeparationResults* results,
         if (finalCheckpoint(es))
         {
             /* If writing the final checkpoint failed just keep going */
-            deleteCheckpoint();
+            //deleteCheckpoint();
+            mw_printf("Warning: Final checkpoint writing failed\n");
         }
     }
 
@@ -257,6 +286,23 @@ int evaluate(SeparationResults* results,
     {
         results->likelihood = -999.0;
     }
+
+
+     mw_begin_critical_section();
+    /*Check to make sure evaluate did not change currentWU value indicating resume from checkpoint and that printSeparationResults should be skipped*/
+    
+    printSeparationResults(results, ap->number_streams, likelihoodToText, ap->currentWU);
+    es->WUPrinted = 1;
+    /*For Real Final checkpoint for this WU to update WUPrinted*/
+    if (writeCheckpoint(es))
+    {
+        /* If writing the final checkpoint failed just keep going */
+        //deleteCheckpoint();
+        mw_printf("Warning: Final checkpoint writing failed\n");
+    }
+    /* Add a printed flag for WU Result in ES */
+    /* End Critical Section */
+     mw_end_critical_section();
 
 error:
     freeEvaluationState(es);

@@ -220,12 +220,14 @@ typedef struct
 /* Kitchen sink of constants, etc. */
 typedef struct
 {
+    int params_per_workunit, currentWU, totalWUs;
     /* Constants determined by other parameters */
     real m_sun_r0;
     real q_inv;
     real q_inv_sqr;  /* 1 / q^2 */
     real r0;
-
+    int num_WUs;
+    
     int convolve;
     int number_streams;
     int background_profile; /*flag for using different background profiles*/
@@ -262,6 +264,9 @@ typedef struct
 
 typedef struct
 {
+    /* Current Work Unit */
+    int currentWU;
+    int WUPrinted;
     /* State for integral calculation. */
     Cut* cuts;
     Cut* cut;                        /* es->cuts[es->currentCut] */

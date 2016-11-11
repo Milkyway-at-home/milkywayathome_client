@@ -608,16 +608,10 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
         return NULL;
     }
 
-    if (sf->numArgs && setParameters(ap, bgp, streams, sf->numArgs, sf->nForwardedArgs))
-    {
-        mwFreeA(ias);
-        freeStreams(streams);
-        return NULL;
-    }
 
     return ias;
 }
-
+//Needs to loop to account for number of WUs being crunched
 static int worker(const SeparationFlags* sf)
 {
     AstronomyParameters ap;
@@ -644,41 +638,63 @@ static int worker(const SeparationFlags* sf)
     }
 
     setCLReqFlags(&clr, sf);
+    /*Assume we are crunching at least 1 work unit (These numbers will be properly set in prepareParameters when the parameter file is read)*/
+
     ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)
         return 1;
 
-    rc = setAstronomyParameters(&ap, &bgp);
-    if (rc)
+    if(sf->nForwardedArgs)
     {
-        mwFreeA(ias);
-        freeStreams(&streams);
-        return 1;
+        ap.totalWUs = sf->nForwardedArgs/ap.params_per_workunit;
     }
-
-    setExpStreamWeights(&ap, &streams);
-    sc = getStreamConstants(&ap, &streams);
-    if (!sc)
+    else
     {
-        mw_printf("Failed to get stream constants\n");
-        mwFreeA(ias);
-        freeStreams(&streams);
-        return 1;
+        ap.totalWUs = 1;
     }
+    mw_printf("<number_WUs> %d </number_WUs>\n", ap.totalWUs);
+    mw_printf("<number_params_per_WU> %d </number_params_per_WU>\n", ap.params_per_workunit);
+    int ignoreCheckpoint = sf->ignoreCheckpoint;
+    for(ap.currentWU = 0; ap.currentWU < ap.totalWUs; ap.currentWU++)
+    {
 
-    results = newSeparationResults(ap.number_streams);
+        if (sf->numArgs && setParameters(&ap, &bgp, &streams, &(sf->numArgs[ap.params_per_workunit * ap.currentWU]), ap.params_per_workunit))
+        {
+            mwFreeA(ias);
+            freeStreams(&streams);
+            return 1;
+        }
 
-    rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
-                  &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
-    if (rc)
-        mw_printf("Failed to calculate likelihood\n");
+        rc = setAstronomyParameters(&ap, &bgp);
+        if (rc)
+        {
+            mwFreeA(ias);
+            freeStreams(&streams);
+            return 1;
+        }
 
-    printSeparationResults(results, ap.number_streams, sf->LikelihoodToText);
+        setExpStreamWeights(&ap, &streams);
+        sc = getStreamConstants(&ap, &streams);
+        if (!sc)
+        {
+            mw_printf("Failed to get stream constants\n");
+            mwFreeA(ias);
+            freeStreams(&streams);
+            return 1;
+        }
 
+        results = newSeparationResults(ap.number_streams);
+        int currentWU = ap.currentWU;
+        rc = evaluate(results, &ap, ias, &streams, sc, sf->LikelihoodToText, sf->star_points_file,
+                  &clr, sf->do_separation, &ignoreCheckpoint, sf->separation_outfile);
+        if (rc)
+            mw_printf("Failed to calculate likelihood\n");
+    }
+    
     mwFreeA(ias);
     mwFreeA(sc);
     freeStreams(&streams);
-    freeSeparationResults(results);
+    if(results) freeSeparationResults(results);
 
     return rc;
 }

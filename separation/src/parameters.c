@@ -106,13 +106,20 @@ static IntegralArea* freadParameters(FILE* file,
     free(fread_double_array(file, "background_step", NULL));
     free(fread_double_array(file, "background_min", NULL));
     free(fread_double_array(file, "background_max", NULL));
-    free(fread_int_array(file, "optimize_parameter", NULL));
-
+    unsigned int opt_size = 0;
+    int *optimize_parameter = fread_int_array(file, "optimize_parameter", &opt_size);
+    int expected_input_params = 0;
+    for(unsigned int j = 0; j < opt_size; ++j)
+    {
+        if(optimize_parameter[j]) ++expected_input_params;
+    }
+    free(optimize_parameter);
     if (fscanf(file, "number_streams: %d, %u\n", &streams->number_streams, &temp) < 2)
         mw_fail("Error reading number_streams\n");
 
     ap->number_streams = streams->number_streams;
-
+    
+    
     streams->parameters = (StreamParameters*) mwCalloc(streams->number_streams, sizeof(StreamParameters));
 
     for (i = 0; i < streams->number_streams; ++i)
@@ -132,7 +139,10 @@ static IntegralArea* freadParameters(FILE* file,
 
         if (fscanf(file, "optimize_weight: %d\n", &iTmp) < 1)
             mw_fail("Error reading optimize_weight for stream %d\n", i);
-
+        if(iTmp)
+        {
+            ++expected_input_params;
+        }
         tmpArr = fread_double_array(file, "stream_parameters", NULL);
         if (!tmpArr)
             return NULL;
@@ -146,9 +156,15 @@ static IntegralArea* freadParameters(FILE* file,
         free(fread_double_array(file, "stream_step", NULL));
         free(fread_double_array(file, "stream_min", NULL));
         free(fread_double_array(file, "stream_max", NULL));
-        free(fread_int_array(file, "optimize_parameter", NULL));
+        optimize_parameter = fread_int_array(file, "optimize_parameter", &opt_size);
+        for(unsigned int j = 0; j < opt_size; ++j)
+        {
+            if(optimize_parameter[j]) ++expected_input_params;
+        }
+        free(optimize_parameter);
     }
 
+    ap->params_per_workunit = expected_input_params;
     if (fscanf(file, "convolve: %d\n", &ap->convolve) < 1)
         mw_fail("Error reading convolve\n");
 

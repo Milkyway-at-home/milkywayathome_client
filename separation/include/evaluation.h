@@ -31,15 +31,17 @@
 extern "C" {
 #endif
 
+
 int evaluate(SeparationResults* results,
-             const AstronomyParameters* ap,
+             AstronomyParameters* ap,
              const IntegralArea* ias,
              const Streams* streams,
              const StreamConstants* sc,
+             int likelihoodToText,
              const char* star_points_file,
              const CLRequest* clr,
              int do_separation,
-             int ignoreCheckpoint,
+             int *ignoreCheckpoint,
              const char* separation_outfile);
 
 #ifdef __cplusplus

@@ -43,7 +43,9 @@ void initializeCut(Cut* integral, unsigned int number_streams)
 static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
 {
     int i;
-
+    
+    es->currentWU = ap->currentWU;
+    es->WUPrinted = 0;
     es->currentCut = 0;
     es->cut = &es->cuts[0];
     es->numberStreams = ap->number_streams;
@@ -122,9 +124,13 @@ void printEvaluationState(const EvaluationState* es)
     int j;
 
     printf("evaluation-state {\n"
+           "  currentWU        = %u\n"
+           "  WUPrinted        = %u\n"
            "  nu_step          = %u\n"
            "  mu_step          = %u\n"
            "  currentCut       = %u\n",
+           es->currentWU,
+           es->WUPrinted,
            es->nu_step,
            es->mu_step,
            es->currentCut);
@@ -218,6 +224,8 @@ static int readState(FILE* f, EvaluationState* es)
     if (versionMismatch(&version))
         return 1;
 
+    fread(&es->currentWU, sizeof(es->currentWU), 1, f);
+    fread(&es->WUPrinted, sizeof(es->WUPrinted), 1, f);
     fread(&es->currentCut, sizeof(es->currentCut), 1, f);
     fread(&es->nu_step, sizeof(es->nu_step), 1, f);
     fread(&es->mu_step, sizeof(es->mu_step), 1, f);
@@ -276,6 +284,8 @@ static inline void writeState(FILE* f, const EvaluationState* es)
     fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
     fwrite(&versionHeader, sizeof(versionHeader), 1, f);
 
+    fwrite(&es->currentWU, sizeof(es->currentWU), 1, f);
+    fwrite(&es->WUPrinted, sizeof(es->WUPrinted), 1, f);
     fwrite(&es->currentCut, sizeof(es->currentCut), 1, f);
     fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
     fwrite(&es->mu_step, sizeof(es->mu_step), 1, f);
