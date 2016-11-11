@@ -73,7 +73,7 @@ static real progress(const EvaluationState* es, const IntegralArea* ia, real tot
     unsigned int i_prog =  ((uint64_t) es->nu_step * ia->mu_steps * ia->r_steps)
                         + ((uint64_t) es->mu_step * ia->r_steps); /* + es->r_step */
 
-    return (real)(i_prog + es->current_calc_probs) / totalCalcProbs;
+    return (real)(i_prog + es->current_calc_probs) * es->currentWU / totalCalcProbs;
 }
 
 
@@ -195,7 +195,7 @@ static inline void mu_sum(const AstronomyParameters* ap,
 
     for (; es->mu_step < ia->mu_steps; es->mu_step++)
     {
-        doBoincCheckpoint(es, ia, ap->total_calc_probs);
+        doBoincCheckpoint(es, ia, ap->total_calc_probs * ap->totalWUs);
 
         mu = mu_min + (((real) es->mu_step + 0.5) * mu_step_size);
 

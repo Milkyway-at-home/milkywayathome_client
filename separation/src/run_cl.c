@@ -292,7 +292,7 @@ static inline void reportProgress(const AstronomyParameters* ap,
 {
     cl_long prog;
     prog = es->current_calc_probs + (cl_ulong) ia->mu_steps * ia->r_steps * step;
-    mw_fraction_done((cl_double) prog / ap->total_calc_probs);
+    mw_fraction_done((cl_double) prog * es->currentWU / (ap->totalWUs * ap->total_calc_probs));
 
     if (!BOINC_APPLICATION)
     {
