@@ -60,11 +60,27 @@
     real term = mw_log(1.0 + c) - c / (1.0 + c);                                                                         //
     real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997                         //
     real R = r / rscale;                                                                                                 //
-    mw_printf("den %0.15f\t%0.15f\t%0.15f\t%0.15f\n", r200, c, term, p0);                                                                                                                     //
-    real ans = p0 * inv(R) * inv(sqr(1.0 + R));                                                                          //
+//     mw_printf("den %0.15f\t%0.15f\t%0.15f\t%0.15f\n", r200, c, term, p0);                                                                                                                     //
+    real ans;                                                                        //
+    
+    
+    /* this is for getting rid of the infinity at r = 0. If r < 1 pc from the center then 
+     * the density is sent as zero.
+     */
+    if(r <= 1e-3)
+    {
+        ans = 0.0;
+    }
+    else
+    {
+        ans = p0 * inv(R) * inv(sqr(1.0 + R));                                                     //
+    }
     return ans;                                                                                                          //
 }                                                                                                                        //
                                                                                                                          //
+/*
+ * the return value for when r <1pc is the limit of the potential when r->0
+ */                                                                                                                            
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real mass = model->mass;                                                                                       //
@@ -76,8 +92,18 @@
     real p0 = 200.0 * cube(c) * pcrit / (3.0 * term);//rho_0 as defined in Navarro et. al. 1997                          //
                                                                                                                          //
     real R = r / rscale;                                                                                                 //
-    mw_printf("pot %0.15f\t%0.15f\t%0.15f\t%0.15f\n", r200, c, term , p0);   
-    real ans = 4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                 //
+//     mw_printf("pot %0.15f\t%0.15f\t%0.15f\t%0.15f\n", r200, c, term , p0);   
+    real ans;
+    
+    if(r <= 1e-3)
+    {
+        ans = 4.0 * M_PI * sqr(rscale) * p0;
+    }
+    else
+    {
+        ans = 4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                  //
+    }
+    
     return  ans;                                                                                                         //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
