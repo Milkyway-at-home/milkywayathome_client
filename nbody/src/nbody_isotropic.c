@@ -733,7 +733,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real rscale_l = radiusScale1; /*scale radius of the light component*/
         real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
-        real bound = 100.0 * (rscale_l + rscale_d);
+        real bound = 50.0 * (rscale_l + rscale_d);
 
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
