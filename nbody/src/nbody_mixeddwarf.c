@@ -165,7 +165,7 @@ static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), rea
 
         if(lowerg > benchmark)
         {
-            Ng = 20.0;//integral resolution
+            Ng = 10.0;//integral resolution
             hg = (b - benchmark) / (Ng);
         }
             
@@ -412,7 +412,7 @@ static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
     {
-        denominator = minushalf( mw_fabs(energy - potential(ri, comp1, comp2) ) );
+        denominator = minushalf( diff );
     }
     else
     {
@@ -739,84 +739,154 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         int counter = 0;
         
         
-// // // // // // // // // // // // // // // // // //         
-// //         testing shit
-        
-        mw_printf("%0.15f \t %0.15f \n", rscale_l, rscale_d);
-        mw_printf("%0.15f \t %0.15f \n", mass_l, mass_d);
-        mw_printf("%0.15f \t %0.15f \n", rho_max_light, rho_max_dark);
-        real tst_r = 0.0;
-        real tst_den = tst_r * tst_r * density(tst_r, comp1, comp2);
-        real tst_pot = potential(tst_r, comp1, comp2);
-        mw_printf("%0.15f \t %0.15f \n", tst_den, tst_pot);
-        FILE * tst;
-        tst = fopen("dens_pots.out", "w");
-        while(1)
-        {
-            
-            fprintf(tst, "%.15f\t%.15f\t%.15f\n", tst_r, tst_den, tst_pot);
-            tst_r += 0.000001;
-            tst_den = tst_r * tst_r * density(tst_r, comp1, comp2);
-            tst_pot = potential(tst_r, comp1, comp2);
-            if(tst_r >= 10 * (rscale_l + rscale_d)){break;}
-            
-        }
-        fclose(tst);
-        
-        mw_printf("runnning 1d\n");
-        tst = fopen("dist_func.out", "w");
-        real tst_dist_r1 = 0.0000;
-        real tst_dist_v1 = 0.0;
-        real tst_dist_r2 = 0.1;
-        real tst_dist_v2 = 0.1;
-        real tst_vesc = mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r2, comp1, comp2) ) );
-        mw_printf("%0.15f\n", tst_vesc);
-        real tst_d1; //= dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);
-        real tst_d2; //= dist_fun(tst_dist_v2, tst_dist_r2, comp1, comp2);
-        while(1)
-        {
-            tst_dist_v1 = 0.1 * mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r1, comp1, comp2) ) );
-            tst_d1 = dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);//iterating r1
-            tst_d2 = dist_fun(tst_dist_v2, tst_dist_r2, comp1, comp2);//iterating v2
-            fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", tst_dist_r1, tst_dist_v1, tst_dist_r2, tst_dist_v2, tst_d1, tst_d2, rscale_l, rscale_d, (rscale_l + rscale_d));
-            if(tst_dist_r1 >= 5 * (rscale_l + rscale_d) && tst_dist_v2 >= tst_vesc){break;}
-            else
-            {
-                tst_dist_r1 += 0.001;
-                tst_dist_v2 += 0.001;
-            }
-            
-        }
-        fclose(tst);
-        
-        
-//         mw_printf("runnning 2d\n");
-//         tst = fopen("dist_func2D.out", "w");
-//         tst_dist_r1 = 0.01;
-//         real tst_vesc;
+// // // // // // // // // // // // // // // // // // //         
+// // //         testing shit
+//         
+//         mw_printf("%0.15f \t %0.15f \n", rscale_l, rscale_d);
+//         mw_printf("%0.15f \t %0.15f \n", mass_l, mass_d);
+//         mw_printf("%0.15f \t %0.15f \n", rho_max_light, rho_max_dark);
+//         real tst_r = 0.00001;
+//         real tst_den = tst_r * tst_r * density(tst_r, comp1, comp2);
+//         real tst_pot = potential(tst_r, comp1, comp2);
+//         mw_printf("%0.15f \t %0.15f \n", tst_den, tst_pot);
+//         FILE * tst;
+//         tst = fopen("dens_potsNFW.out", "w");
 //         while(1)
 //         {
 //             
-//             tst_dist_v1 = 0.01;
-//             tst_vesc = mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r1, comp1, comp2) ) );
-//             while(1)
-//             {
-//                 tst_d1 = dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);//iterating r1
-//                 
-//                 fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\n", tst_dist_r1, tst_dist_v1, tst_d1, tst_vesc);
-//                 
-//                 
-//                 if(tst_dist_v1 >= tst_vesc){break;}
-//                 else{tst_dist_v1 += 0.01;}
-//             }
-//             
-//             if(tst_dist_r1 >= 10 * (rscale_l + rscale_d)){break;}
-//             else{tst_dist_r1 += 0.01;}
+//             fprintf(tst, "%.15f\t%.15f\t%.15f\n", tst_r, tst_den, tst_pot);
+//             tst_r += 0.000001;
+//             tst_den = tst_r * tst_r * density(tst_r, comp1, comp2);
+//             tst_pot = potential(tst_r, comp1, comp2);
+//             if(tst_r >= 10 * (rscale_l + rscale_d)){break;}
 //             
 //         }
 //         fclose(tst);
+//         
+//         mw_printf("runnning 1d\n");
+//         tst = fopen("dist_funcNFW.out", "w");
+//         real tst_dist_r1 = 0.00001;
+//         real tst_dist_v1 = 0.01;
+//         
+//         real tst_dist_r2 = 0.1;
+//         real tst_dist_v2 = 0.1;
+//         real tst_vesc = mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r2, comp1, comp2) ) );
+//         mw_printf("%0.15f\n", tst_vesc);
+//         real tst_d1; //= dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);
+//         real tst_d2; //= dist_fun(tst_dist_v2, tst_dist_r2, comp1, comp2);
+//         while(1)
+//         {
+//             tst_dist_v1 = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r1, comp1, comp2) ) );
+//             tst_d1 = dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);//iterating r1
+//             
+//             tst_d2 = dist_fun(tst_dist_v2, tst_dist_r2, comp1, comp2);//iterating v2
+//             fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", tst_dist_r1, tst_dist_v1, tst_dist_r2, tst_dist_v2, tst_d1, tst_d2, tst_vesc);
+//             if(tst_dist_r1 >= 5 * (rscale_l + rscale_d) && tst_dist_v2 >= tst_vesc){break;}
+//             else
+//             {
+//                 tst_dist_r1 += 0.001;
+//                 tst_dist_v2 += 0.001;
+//             }
+//             
+//         }
+//         fclose(tst);
+//         
+//         
+// //         mw_printf("runnning 2d\n");
+// //         tst = fopen("dist_func2D.out", "w");
+// //         tst_dist_r1 = 0.01;
+// //         real tst_vesc;
+// //         while(1)
+// //         {
+// //             
+// //             tst_dist_v1 = 0.01;
+// //             tst_vesc = mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r1, comp1, comp2) ) );
+// //             while(1)
+// //             {
+// //                 tst_d1 = dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);//iterating r1
+// //                 
+// //                 fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\n", tst_dist_r1, tst_dist_v1, tst_d1, tst_vesc);
+// //                 
+// //                 
+// //                 if(tst_dist_v1 >= tst_vesc){break;}
+// //                 else{tst_dist_v1 += 0.01;}
+// //             }
+// //             
+// //             if(tst_dist_r1 >= 10 * (rscale_l + rscale_d)){break;}
+// //             else{tst_dist_r1 += 0.01;}
+// //             
+// //         }
+// //         fclose(tst);
+//         
+//         
+//         FILE * tst;
+//         tst = fopen("energyGH.out", "w");
+//         real tst_r = 0.0001;
+//         real tst_v;
+//         real tst_pot;
+//         real tst_energy;
+//         while(1)
+//         {
+//             tst_v = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( tst_r, comp1, comp2) ) );
+//             tst_pot = potential(tst_r, comp1, comp2);
+//             tst_energy = tst_pot - 0.5 * tst_v * tst_v;
+//             fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\n", tst_r, tst_pot, tst_energy, tst_v);
+//             
+//             if(tst_r >= 100 * (rscale_l + rscale_d)){break;}
+//             else{tst_r += 0.01;}
+//         }
+//         fclose(tst);
+//         
+//         
+//         
+//         
+       
+/*        
+        FILE * tst;
         
-        
+        tst = fopen("integrandGH.out", "w");
+        real tst_r = 0.0001;
+        real tst_v;
+        real tst_energy;
+        real tst_integrand;
+        real tst_pot;
+        real tst_differ;
+        real first_deriv_psi;
+        real first_deriv_density;
+        real second_deriv_psi;
+        real second_deriv_density;
+        real denom;
+        real tst_r1 = 0.5 * (rscale_d + rscale_l);
+        tst_v =  0.5 * mw_sqrt( mw_fabs(2.0 * potential( tst_r1, comp1, comp2) ) );
+        tst_pot = potential(tst_r1, comp1, comp2);
+        tst_energy = tst_pot - 0.5 * tst_v * tst_v;
+        while(1)
+        {
+            
+            first_deriv_psi      = first_derivative(potential, tst_r, comp1, comp2);
+            first_deriv_density  = first_derivative(density,   tst_r, comp1, comp2);
+            second_deriv_psi     = second_derivative(potential, tst_r, comp1, comp2);
+            second_deriv_density = second_derivative(density,   tst_r, comp1, comp2);
+            
+            if(first_deriv_psi == 0.0)
+            {
+                first_deriv_psi = 1.0e-6;//this should be small enough
+            }
+            
+            tst_differ = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
+            
+            
+            
+            denom = minushalf(mw_fabs(tst_energy - potential(tst_r, comp1, comp2)));
+            
+            tst_integrand = fun(tst_r, comp1, comp2, tst_energy);
+            fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", tst_r, tst_integrand, tst_energy, tst_pot, denom , tst_differ, denom * tst_differ);
+            
+            if(tst_r >= 100 * (rscale_l + rscale_d)){break;}
+            else{tst_r += 0.01;} 
+        }
+        fclose(tst);
+        */
 // // // // // // // // // // // // // // // // // //         
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)

@@ -73,7 +73,7 @@
     }
     else
     {
-        ans = p0 * inv(R) * inv(sqr(1.0 + R));                                                     //
+        ans = p0 * inv(R) * inv(sqr(1.0 + R));                                                                           //
     }
     return ans;                                                                                                          //
 }                                                                                                                        //
