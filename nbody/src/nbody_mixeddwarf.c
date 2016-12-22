@@ -126,7 +126,7 @@ static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), rea
         b = upper;
     }
     
-    benchmark = 1.2 * a;
+    benchmark = 1.5 * a;
     Ng = 100.0;//integral resolution
     hg = (benchmark - a) / (Ng);
     lowerg = a;
@@ -511,7 +511,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     /* This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
      * then 5 times it is already where the integrand is close to 0 since it goes to 0 quickly. 
      */
-    lowerlimit_r = 5.0 * (upperlimit_r);
+    lowerlimit_r = 10.0 * (upperlimit_r);
 
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
@@ -523,15 +523,22 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
 {
     int counter = 0;
     real r, u, val;
-    //this technically calls the massless density but that is fine because
-    //the masses would cancel in the denom since 
-    //we are sampling the one component model.
+    
+    /*this technically calls the massless density but that is fine because
+    * the masses would cancel in the denom since 
+    * we are sampling the one component model.
+    */
+    
+    /* the sampling is protected from r = 0. if profiles have a singularity there they would return inf or NANs
+     * this would not satisfy the break conidition so it would choose another r.
+     * if counter limit is reached r = 0 is returned which isn't accepted in the calling function so sampling is redone.
+     */
     while (1)
     {
         r = (real)mwXrandom(dsfmtState, 0.0, 1.0) * bound;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * get_density(comp, r);
-//         mw_printf("r = %0.15f \t val = %0.15f \t rho_max = %0.15f, val/rho_max = %0.15f \t u = %0.15f\n", r, val, rho_max, val/rho_max, u); 
+
         if(val / rho_max > u)
         {
             break;
@@ -547,7 +554,6 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
             counter++;
         }
     }
-//         mw_printf("r counter = %i\n", counter);
     return r;
 }
 
@@ -563,8 +569,10 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     
     int counter = 0;
     real v, u, d;
+    
     /* having the upper limit as exactly v_esc is bad since the dist fun seems to blow up there for small r. */
-    real v_esc = 0.99 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
+    real v_esc = 0.999 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
+    
     real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     while(1)
     {
@@ -588,7 +596,6 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
             counter++;
         }
     }
-//     mw_printf("v counter = %i\n", counter);
     v *= 0.977813107;//changing from kpc/gy to km/s
     return v; //km/s
 }
@@ -596,20 +603,6 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
 static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
-//     mwvector vec;
-//     real phi, theta;
-//     
-//     /*defining some angles*/
-//     theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
-//     phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
-// 
-//     /*this is standard formula for x,y,z components in spherical*/
-//     X(vec) = rad * mw_sin( theta ) * mw_cos( phi );        /*x component*/
-//     Y(vec) = rad * mw_sin( theta ) * mw_sin( phi );        /*y component*/
-//     Z(vec) = rad * mw_cos( theta );                   /*z component*/
-
-//     return vec;
-    
     /* have to sample in this way because sampling angles and then converting
      * to xyz leads to strong dependence on the rad, which could lead to bunching 
      * at the poles.
@@ -617,16 +610,22 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
     real r_sq, r_scaling;
     mwvector vec;
 
-    do                                       /* pick point in NDIM-space */
+    do                                       
     {
-        vec = mwRandomUnitPoint(dsfmtState);
+        vec = mwRandomUnitPoint(dsfmtState); /* pick point in NDIM-space */
         r_sq = mw_sqrv(vec);                 /* compute radius squared */
     }
-    while (r_sq > 1.0);                      /* reject if outside sphere */
+    while (r_sq > 1.0);                      /* reject if outside unit sphere */
 
     r_scaling = rad / mw_sqrt(r_sq);         /* compute scaling factor */
     mw_incmulvs(vec, r_scaling);             /* rescale to radius given */
-
+    
+    /* this is r * (u_vec / |u|). 
+     * the r gives the magnitude, rad.
+     * u_vec, which is the unit point original picked, vec, 
+     * divided by the magnitude |u|, which is sqrt(r_sq),
+     * gives it a direction (unit vector).
+     */
     return vec;
 }
 
@@ -681,9 +680,25 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 
 
 
+
+static inline real get_p0(real mass, real rscale)
+{
+    /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
+    /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
+    //as defined in Binney and Tremaine 2nd ed:
+    real r200 = mw_cbrt( mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
+    real c = r200 / rscale; //halo concentration
+    real term = mw_log(1.0 + c) - c / (1.0 + c);
+    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+    return p0;
+}
+
+
+
+
 /*      DWARF GENERATION        */
 static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, 
-                                    const Dwarf* comp1, const Dwarf* comp2, 
+                                     Dwarf* comp1,  Dwarf* comp2, 
                                     mwbool ignore, mwvector rShift, mwvector vShift)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
@@ -717,7 +732,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real bound = 100.0 * (rscale_l + rscale_d);
 
     //---------------------------------------------------------------------------------------------------        
-        /*for normal*/
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
@@ -738,156 +752,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         table = lua_gettop(luaSt);      
         int counter = 0;
         
-        
-// // // // // // // // // // // // // // // // // // //         
-// // //         testing shit
-//         
-//         mw_printf("%0.15f \t %0.15f \n", rscale_l, rscale_d);
-//         mw_printf("%0.15f \t %0.15f \n", mass_l, mass_d);
-//         mw_printf("%0.15f \t %0.15f \n", rho_max_light, rho_max_dark);
-//         real tst_r = 0.00001;
-//         real tst_den = tst_r * tst_r * density(tst_r, comp1, comp2);
-//         real tst_pot = potential(tst_r, comp1, comp2);
-//         mw_printf("%0.15f \t %0.15f \n", tst_den, tst_pot);
-//         FILE * tst;
-//         tst = fopen("dens_potsNFW.out", "w");
-//         while(1)
-//         {
-//             
-//             fprintf(tst, "%.15f\t%.15f\t%.15f\n", tst_r, tst_den, tst_pot);
-//             tst_r += 0.000001;
-//             tst_den = tst_r * tst_r * density(tst_r, comp1, comp2);
-//             tst_pot = potential(tst_r, comp1, comp2);
-//             if(tst_r >= 10 * (rscale_l + rscale_d)){break;}
-//             
-//         }
-//         fclose(tst);
-//         
-//         mw_printf("runnning 1d\n");
-//         tst = fopen("dist_funcNFW.out", "w");
-//         real tst_dist_r1 = 0.00001;
-//         real tst_dist_v1 = 0.01;
-//         
-//         real tst_dist_r2 = 0.1;
-//         real tst_dist_v2 = 0.1;
-//         real tst_vesc = mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r2, comp1, comp2) ) );
-//         mw_printf("%0.15f\n", tst_vesc);
-//         real tst_d1; //= dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);
-//         real tst_d2; //= dist_fun(tst_dist_v2, tst_dist_r2, comp1, comp2);
-//         while(1)
-//         {
-//             tst_dist_v1 = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r1, comp1, comp2) ) );
-//             tst_d1 = dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);//iterating r1
-//             
-//             tst_d2 = dist_fun(tst_dist_v2, tst_dist_r2, comp1, comp2);//iterating v2
-//             fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", tst_dist_r1, tst_dist_v1, tst_dist_r2, tst_dist_v2, tst_d1, tst_d2, tst_vesc);
-//             if(tst_dist_r1 >= 5 * (rscale_l + rscale_d) && tst_dist_v2 >= tst_vesc){break;}
-//             else
-//             {
-//                 tst_dist_r1 += 0.001;
-//                 tst_dist_v2 += 0.001;
-//             }
-//             
-//         }
-//         fclose(tst);
-//         
-//         
-// //         mw_printf("runnning 2d\n");
-// //         tst = fopen("dist_func2D.out", "w");
-// //         tst_dist_r1 = 0.01;
-// //         real tst_vesc;
-// //         while(1)
-// //         {
-// //             
-// //             tst_dist_v1 = 0.01;
-// //             tst_vesc = mw_sqrt( mw_fabs(2.0 * potential( tst_dist_r1, comp1, comp2) ) );
-// //             while(1)
-// //             {
-// //                 tst_d1 = dist_fun(tst_dist_v1, tst_dist_r1, comp1, comp2);//iterating r1
-// //                 
-// //                 fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\n", tst_dist_r1, tst_dist_v1, tst_d1, tst_vesc);
-// //                 
-// //                 
-// //                 if(tst_dist_v1 >= tst_vesc){break;}
-// //                 else{tst_dist_v1 += 0.01;}
-// //             }
-// //             
-// //             if(tst_dist_r1 >= 10 * (rscale_l + rscale_d)){break;}
-// //             else{tst_dist_r1 += 0.01;}
-// //             
-// //         }
-// //         fclose(tst);
-//         
-//         
-//         FILE * tst;
-//         tst = fopen("energyGH.out", "w");
-//         real tst_r = 0.0001;
-//         real tst_v;
-//         real tst_pot;
-//         real tst_energy;
-//         while(1)
-//         {
-//             tst_v = 0.5 * mw_sqrt( mw_fabs(2.0 * potential( tst_r, comp1, comp2) ) );
-//             tst_pot = potential(tst_r, comp1, comp2);
-//             tst_energy = tst_pot - 0.5 * tst_v * tst_v;
-//             fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\n", tst_r, tst_pot, tst_energy, tst_v);
-//             
-//             if(tst_r >= 100 * (rscale_l + rscale_d)){break;}
-//             else{tst_r += 0.01;}
-//         }
-//         fclose(tst);
-//         
-//         
-//         
-//         
+        comp1->p0 = get_p0(comp1->mass, comp1->scaleLength);
+        comp2->p0 = get_p0(comp2->mass, comp2->scaleLength);
        
-/*        
-        FILE * tst;
-        
-        tst = fopen("integrandGH.out", "w");
-        real tst_r = 0.0001;
-        real tst_v;
-        real tst_energy;
-        real tst_integrand;
-        real tst_pot;
-        real tst_differ;
-        real first_deriv_psi;
-        real first_deriv_density;
-        real second_deriv_psi;
-        real second_deriv_density;
-        real denom;
-        real tst_r1 = 0.5 * (rscale_d + rscale_l);
-        tst_v =  0.5 * mw_sqrt( mw_fabs(2.0 * potential( tst_r1, comp1, comp2) ) );
-        tst_pot = potential(tst_r1, comp1, comp2);
-        tst_energy = tst_pot - 0.5 * tst_v * tst_v;
-        while(1)
-        {
-            
-            first_deriv_psi      = first_derivative(potential, tst_r, comp1, comp2);
-            first_deriv_density  = first_derivative(density,   tst_r, comp1, comp2);
-            second_deriv_psi     = second_derivative(potential, tst_r, comp1, comp2);
-            second_deriv_density = second_derivative(density,   tst_r, comp1, comp2);
-            
-            if(first_deriv_psi == 0.0)
-            {
-                first_deriv_psi = 1.0e-6;//this should be small enough
-            }
-            
-            tst_differ = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
-            
-            
-            
-            denom = minushalf(mw_fabs(tst_energy - potential(tst_r, comp1, comp2)));
-            
-            tst_integrand = fun(tst_r, comp1, comp2, tst_energy);
-            fprintf(tst, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", tst_r, tst_integrand, tst_energy, tst_pot, denom , tst_differ, denom * tst_differ);
-            
-            if(tst_r >= 100 * (rscale_l + rscale_d)){break;}
-            else{tst_r += 0.01;} 
-        }
-        fclose(tst);
-        */
-// // // // // // // // // // // // // // // // // //         
+
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
         {
