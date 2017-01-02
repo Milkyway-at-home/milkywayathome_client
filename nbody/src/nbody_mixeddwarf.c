@@ -681,16 +681,20 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 
 
 
-static inline real get_p0(real mass, real rscale)
+static inline void get_p0(Dwarf* comp)
 {
     /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
     /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
     //as defined in Binney and Tremaine 2nd ed:
+    real mass = comp->mass; 
+    real rscale = comp->scaleLength;
     real r200 = mw_cbrt( mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
     real c = r200 / rscale; //halo concentration
     real term = mw_log(1.0 + c) - c / (1.0 + c);
     real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
-    return p0;
+    comp->r200 = r200;
+    comp->p0 = p0;
+//     return p0;
 }
 
 
@@ -725,11 +729,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        get_p0(comp1);
+        get_p0(comp2);
         
         real dwarf_mass = mass_l + mass_d;
-        
+        mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", mass_l, mass_d, rscale_l, rscale_d, dwarf_mass, comp1->p0, comp2->p0, comp1->r200, comp2->r200);
         // a large dwarf galaxy is about 3 kpc. no matter the scale radii of the two component, this should be adequate
-        real bound = 100.0 * (rscale_l + rscale_d);
 
     //---------------------------------------------------------------------------------------------------        
         unsigned int half_bodies = nbody / 2;
@@ -740,6 +745,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
+       
         
         /*finding the max of the individual components*/
         int place_holder = 0;
@@ -752,9 +758,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         table = lua_gettop(luaSt);      
         int counter = 0;
         
-        comp1->p0 = get_p0(comp1->mass, comp1->scaleLength);
-        comp2->p0 = get_p0(comp2->mass, comp2->scaleLength);
-       
 
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
@@ -765,12 +768,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
                 if(i < half_bodies)
                 {
-                    r = r_mag(prng, comp1, rho_max_light, bound);
+                    r = r_mag(prng, comp1, rho_max_light, comp1->r200);
                     masses[i] = mass_light_particle;
                 }
                 else if(i >= half_bodies)
                 {
-                    r = r_mag(prng, comp2, rho_max_dark, bound);
+                    r = r_mag(prng, comp2, rho_max_dark, comp2->r200);
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
