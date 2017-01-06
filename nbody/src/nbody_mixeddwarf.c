@@ -400,14 +400,15 @@ static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
      * just before it goes to the singlularity. Either way, we over estimate or under estimate the denom by the same amount (the step size)
      */
     
-    diff = mw_fabs(energy - potential(ri, comp1, comp2));
-    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
     
     /*just in case*/
     if(first_deriv_psi == 0.0)
     {
         first_deriv_psi = 1.0e-6;//this should be small enough
     }
+    
+    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
+    diff = mw_fabs(energy - potential(ri, comp1, comp2));
     
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
@@ -581,6 +582,7 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
 
         d = dist_fun(v, r, comp1, comp2);
+        
         if(mw_fabs(d / dist_max) > u)
         {
             break;
@@ -681,11 +683,12 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 
 
 
-static inline void get_p0(Dwarf* comp)
+static inline void set_p0(Dwarf* comp)
 {
     /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
     /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
     //as defined in Binney and Tremaine 2nd ed:
+    //the r200 is now used for all potentials to provide the bounds for density sampling
     real mass = comp->mass; 
     real rscale = comp->scaleLength;
     real r200 = mw_cbrt( mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
@@ -694,7 +697,6 @@ static inline void get_p0(Dwarf* comp)
     real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
     comp->r200 = r200;
     comp->p0 = p0;
-//     return p0;
 }
 
 
@@ -729,8 +731,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
-        get_p0(comp1);
-        get_p0(comp2);
+        set_p0(comp1);
+        set_p0(comp2);
         
         real dwarf_mass = mass_l + mass_d;
         mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", mass_l, mass_d, rscale_l, rscale_d, dwarf_mass, comp1->p0, comp2->p0, comp1->r200, comp2->r200);
