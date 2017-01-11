@@ -430,8 +430,6 @@ real fun(real ri, real * args, dsfmt_t* dsfmtState)
      * just before it goes to the singlularity. Either way, we over estimate or under estimate the denom by the same amount (the step size)
      */
     
-    diff = mw_fabs(energy - potential(ri, args, dsfmtState));
-    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
     
     
     /*just in case*/
@@ -439,6 +437,10 @@ real fun(real ri, real * args, dsfmt_t* dsfmtState)
     {
         first_deriv_psi = 1.0e-6;//this should be small enough
     }
+    
+    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
+    diff = mw_fabs(energy - potential(ri, args, dsfmtState));
+    
     
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
@@ -502,7 +504,8 @@ static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
     
     
     real distribution_function = 0.0;
-    real c = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+//     real c = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+    real c = 0.03582244801567226;
     real energy = 0.0;
     real upperlimit_r = 0.0;
     real lowerlimit_r = 0.0; 

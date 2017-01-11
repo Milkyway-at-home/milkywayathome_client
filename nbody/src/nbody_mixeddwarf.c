@@ -471,7 +471,8 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     
     
     real distribution_function = 0.0;
-    real c = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+//     real cons = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+    real cons = 0.03582244801567226;
     real energy = 0.0;
     real upperlimit_r = 0.0;
     real lowerlimit_r = 0.0; 
@@ -515,7 +516,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     lowerlimit_r = 10.0 * (upperlimit_r);
 
     /*This calls guassian quad to integrate the function for a given energy*/
-    distribution_function = v * v * c * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
+    distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
     return distribution_function;
 }
 
@@ -572,7 +573,7 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     real v, u, d;
     
     /* having the upper limit as exactly v_esc is bad since the dist fun seems to blow up there for small r. */
-    real v_esc = 0.999 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
+    real v_esc = 1.00 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
     
     real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     while(1)
@@ -681,8 +682,6 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 }
 
 
-
-
 static inline void set_p0(Dwarf* comp)
 {
     /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
@@ -694,12 +693,10 @@ static inline void set_p0(Dwarf* comp)
     real r200 = mw_cbrt( mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
     real c = r200 / rscale; //halo concentration
     real term = mw_log(1.0 + c) - c / (1.0 + c);
-    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+    real p0 = inv(2) * 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
     comp->r200 = r200;
     comp->p0 = p0;
 }
-
-
 
 
 /*      DWARF GENERATION        */
@@ -733,7 +730,9 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
         set_p0(comp1);
         set_p0(comp2);
-        
+        real bound_l = 50 * (rscale_l + rscale_d);
+        real bound_d = 9 * (rscale_l + rscale_d);
+//         real bound = 1.0 * (comp1->r200 + comp2->r200);
         real dwarf_mass = mass_l + mass_d;
         mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", mass_l, mass_d, rscale_l, rscale_d, dwarf_mass, comp1->p0, comp2->p0, comp1->r200, comp2->r200);
         // a large dwarf galaxy is about 3 kpc. no matter the scale radii of the two component, this should be adequate
@@ -742,6 +741,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
+        mw_printf("%0.15f\t%0.15f\n", mass_light_particle, mass_dark_particle);
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -770,12 +770,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
                 if(i < half_bodies)
                 {
-                    r = r_mag(prng, comp1, rho_max_light, comp1->r200);
+                    r = r_mag(prng, comp1, rho_max_light, bound_l);
                     masses[i] = mass_light_particle;
                 }
                 else if(i >= half_bodies)
                 {
-                    r = r_mag(prng, comp2, rho_max_dark, comp2->r200);
+                    r = r_mag(prng, comp2, rho_max_dark, bound_d);
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
