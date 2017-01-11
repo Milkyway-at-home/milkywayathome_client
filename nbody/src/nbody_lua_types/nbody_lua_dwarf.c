@@ -74,7 +74,6 @@ static int createNFWDwarf(lua_State* luaSt)
         {
             { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
             { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
-            { "p0",          LUA_TNUMBER, NULL, TRUE, &h.p0 },
             END_MW_NAMED_ARG
         };
 
