@@ -66,20 +66,21 @@ double _milkywaySeparationGlobalProgress = 0.0;
 #endif
 
 
-static real progress(const EvaluationState* es, const IntegralArea* ia, real totalCalcProbs)
+static real progress(const AstronomyParameters* ap, const EvaluationState* es, const IntegralArea* ia, real totalCalcProbs)
 {
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
     unsigned int i_prog =  ((uint64_t) es->nu_step * ia->mu_steps * ia->r_steps)
                         + ((uint64_t) es->mu_step * ia->r_steps); /* + es->r_step */
 
-    return (real)(i_prog + es->current_calc_probs) * es->currentWU / totalCalcProbs;
+    return ((real)(i_prog + es->current_calc_probs) + (es->currentWU * totalCalcProbs)) / (ap->totalWUs * totalCalcProbs);
 }
 
 
 #if MILKYWAY_IPHONE_APP
 
-static inline void doBoincCheckpoint(const EvaluationState* es,
+static inline void doBoincCheckpoint(const AstronomyParameters* ap,
+                                     const EvaluationState* es,
                                      const IntegralArea* ia,
                                      real total_calc_probs)
 {
@@ -94,12 +95,13 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
             mw_fail("Write checkpoint failed\n");
     }
 
-    _milkywaySeparationGlobalProgress = progress(es, ia, total_calc_probs);
+    _milkywaySeparationGlobalProgress = progress(ap, es, ia, total_calc_probs);
 }
 
 #else /* Plain */
 
-static inline void doBoincCheckpoint(EvaluationState* es,
+static inline void doBoincCheckpoint(const AstronomyParameters* ap,
+                                     EvaluationState* es,
                                      const IntegralArea* ia,
                                      real total_calc_probs)
 {
@@ -113,7 +115,7 @@ static inline void doBoincCheckpoint(EvaluationState* es,
         mw_checkpoint_completed();
     }
 
-    mw_fraction_done(progress(es, ia, total_calc_probs));
+    mw_fraction_done(progress(ap, es, ia, total_calc_probs));
 }
 
 #endif /* BOINC_APPLICATION */
@@ -195,7 +197,7 @@ static inline void mu_sum(const AstronomyParameters* ap,
 
     for (; es->mu_step < ia->mu_steps; es->mu_step++)
     {
-        doBoincCheckpoint(es, ia, ap->total_calc_probs * ap->totalWUs);
+        doBoincCheckpoint(ap, es, ia, ap->total_calc_probs);
 
         mu = mu_min + (((real) es->mu_step + 0.5) * mu_step_size);
 
