@@ -58,6 +58,7 @@
 
 #include "milkyway_util.h"
 #include "probabilities.h"
+#include "coordinates.h"
 
 
 static inline mwvector lbr2xyz_2(const AstronomyParameters* ap, real rPoint, LBTrig lbt)
@@ -113,6 +114,24 @@ static inline real hernquist_prob_slow(const AstronomyParameters* ap, real qw_r3
     return qw_r3_N / (mw_powr(rg, ap->innerPower) * mw_powr(rs, ap->alpha_delta3));
 }
 
+/* Takes cylindical r and z outputs thin disk probability from Xu et al. (2015) */
+HOT
+static inline real disk_prob_thin(const AstronomyParameters* ap, real qw_r3_N, mwvector rtz)
+{
+    const real ls = -0.44444444; /*scale length, -1/(2.25kpc) from Xu et al. (2015) */
+    const real hs = -4.0; /*scale height, -1/(0.25kpc) from Xu et al. (2015) */
+    return qw_r3_N * exp(CR(rtz)*ls + fabs(CZ(rtz))*hs);
+}
+
+/* Takes cylindical r and z outputs thick disk probability from Xu et al. (2015) */
+HOT
+static inline real disk_prob_thick(const AstronomyParameters* ap, real qw_r3_N, mwvector rtz)
+{
+    const real ls = -0.285714286; /*scale length, -1/(3.5kpc) from Xu et al. (2015) */
+    const real hs = -1.428571429; /*scale height, -1/(0.7kpc) from Xu et al. (2015) */
+    return qw_r3_N * exp(CR(rtz)*ls + fabs(CZ(rtz))*hs);
+}
+
 HOT
 static inline real broken_power_law_prob(const AstronomyParameters* ap, real qw_r3_N, real rg)  //p(R)=p0(R/R0)^-n  Power Law Equation (From a paper)
 {
@@ -149,6 +168,29 @@ static inline real aux_prob(const AstronomyParameters* ap,
     return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
+
+void calculate_background_weights(AstronomyParameters* ap)
+{
+
+    mwvector rtz;
+    CR(rtz) = ap->sun_r0;
+    CT(rtz) = 0.0;
+    CZ(rtz) = .027; /* Sun is 27pc above the midplane Xu et al. 2015 */
+
+    
+    /*Precalculate this stuff in the future to make faster*/
+    real solar_thick_density = disk_prob_thick(ap, 1.0, rtz);
+    real solar_thin_density = disk_prob_thin(ap, 1.0, rtz);
+    real solar_halo_density = hernquist_prob_slow(ap, 1.0, ap->sun_r0);
+    
+    /* 11.484375 = .91875 / .08 */
+    ap->thin_disk_weight =  11.484375 * (solar_thick_density) / solar_thin_density;
+
+    /* 11.484375 = .00125 / .99875 */
+    ap->bg_weight = 0.001251564 * (solar_thick_density + ap->thin_disk_weight * solar_thin_density) / solar_halo_density;
+}
+
+/*These functions are rarely every used.  Only if SSE2 and OpenCL are not working/not compiled*/
 HOT
 real probabilities_fast_hprob(const AstronomyParameters* ap,
                               const StreamConstants* sc,
@@ -162,18 +204,22 @@ real probabilities_fast_hprob(const AstronomyParameters* ap,
 {
     int i;
     real h_prob, g, rg;
-    mwvector xyz;
+    mwvector xyz, rtz;
     real bg_prob = 0.0;
     int convolve = ap->convolve;
     int aux_bg_profile = ap->aux_bg_profile;
+    real bg_weight = ap->bg_weight;
+    real thin_disk_weight = ap->thin_disk_weight;
 
     zero_st_probs(streamTmps, ap->number_streams);
     for (i = 0; i < convolve; ++i)
     {
         xyz = lbr2xyz_2(ap, r_point[i], lbt);
+        rtz = xyz2cyl(ap, xyz);
+
         rg = rg_calc(ap, xyz);
 
-        h_prob = hernquist_prob_fast(ap, qw_r3_N[i], rg);
+        h_prob = 0.00125 * bg_weight * hernquist_prob_fast(ap, qw_r3_N[i], rg) + 0.91875 * thin_disk_weight * disk_prob_thin(ap, qw_r3_N[i], rtz) + 0.08 * disk_prob_thick(ap, qw_r3_N[i], rtz);
 
         /* Add a quadratic term in g to the the Hernquist profile */
         if (aux_bg_profile)
@@ -206,20 +252,23 @@ real probabilities_slow_hprob(const AstronomyParameters* ap,
 {
     int i;
     real rg, g;
-    mwvector xyz;
+    mwvector xyz, rtz;
     real bg_prob = 0.0;
     int convolve = ap->convolve;
     int aux_bg_profile = ap->aux_bg_profile;
+    real bg_weight = ap->bg_weight;
+    real thin_disk_weight = ap->thin_disk_weight;
 
     zero_st_probs(streamTmps, ap->number_streams);
 
     for (i = 0; i < convolve; ++i)
     {
         xyz = lbr2xyz_2(ap, r_point[i], lbt);
-
+        rtz = xyz2cyl(ap, xyz);
+        
         rg = rg_calc(ap, xyz);
 
-        bg_prob += hernquist_prob_slow(ap, qw_r3_N[i], rg);
+        bg_prob += 0.00125 * bg_weight * hernquist_prob_slow(ap, qw_r3_N[i], rg) + 0.91875 * thin_disk_weight * disk_prob_thin(ap, qw_r3_N[i], rtz) + 0.08 * disk_prob_thick(ap, qw_r3_N[i], rtz);
         if (aux_bg_profile)
         {
             g = gPrime + sg_dx[i];

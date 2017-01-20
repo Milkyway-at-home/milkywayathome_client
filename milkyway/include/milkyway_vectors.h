@@ -39,6 +39,11 @@ typedef struct MW_ALIGN_TYPE_V(4 * sizeof(real))
 #define Z(v) ((v).z)
 #define W(v) ((v).w)
 
+/* Cylinderical Macros */
+#define CR(v) ((v).x)
+#define CT(v) ((v).y)
+#define CZ(v) ((v).z)
+
 
 #define mw_vec(x, y, z) { (x), (y), (z), 0.0 }
 

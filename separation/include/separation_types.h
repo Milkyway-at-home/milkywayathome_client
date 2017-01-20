@@ -248,6 +248,9 @@ typedef struct
     int number_integrals;
 
     real exp_background_weight;
+    
+    real bg_weight;  /*Renormalize the background to disk in the local stellar region*/
+    real thin_disk_weight;
 } AstronomyParameters;
 
 /*Options for Background*/

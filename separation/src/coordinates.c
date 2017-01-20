@@ -278,3 +278,18 @@ LB gc2lb(int wedge, real mu, real nu)
     return lbr2d(lb);
 }
 
+/*convert galacticocentric XYZ to galacticocentric cylindrical coordinated */
+mwvector xyz2cyl(const AstronomyParameters* ap, const mwvector xyz)
+{
+    mwvector rtz;
+    CR(rtz) = mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)));
+    CT(rtz) = acos(X(xyz) / CR(rtz));
+    CZ(rtz) = Z(xyz);
+    return rtz;
+}
+
+
+
+
+
+

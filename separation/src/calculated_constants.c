@@ -116,6 +116,10 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->sun_r0 = const_sun_r0;
     ap->m_sun_r0 = -ap->sun_r0;
 
+    /* Calculate the background weight */
+
+    calculate_background_weights(ap);
+
     return 0;
 }
 
