@@ -614,7 +614,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
     while(1)
     {
 
-        v = (real)mwXrandom(dsfmtState, 0.0, v_esc);
+        v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
         d = dist_fun(v, parameters, dsfmtState);
