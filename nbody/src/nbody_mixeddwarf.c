@@ -690,12 +690,22 @@ static inline void set_p0(Dwarf* comp)
     //the r200 is now used for all potentials to provide the bounds for density sampling
     real mass = comp->mass; 
     real rscale = comp->scaleLength;
-    real r200 = mw_cbrt( mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
+    real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
     real c = r200 / rscale; //halo concentration
     real term = mw_log(1.0 + c) - c / (1.0 + c);
-    real p0 = inv(2.0) * 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+    real p0 = inv(1.0) * 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
     comp->r200 = r200;
     comp->p0 = p0;
+}
+
+
+static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
+{
+    real rs = comp->scaleLength;
+    real r = bound;
+    real m = 4.0 * M_PI * comp->p0 * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r));
+    comp->mass = m;
+    
 }
 
 
@@ -724,8 +734,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         
         
         mwvector vec;
-        real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
-        real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
         set_p0(comp1);
@@ -733,6 +741,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real bound1 ;
         real bound2 ;
         
+        mw_printf("mass_l,d unchanged (%.15f , %.15f)\n", comp1->mass, comp2->mass);
         switch(comp1->type)
         {
             case Plummer:
@@ -740,7 +749,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 mw_printf("comp1 plummer %0.15f\n", bound1);
                 break;
             case NFW:
-                bound1 = (comp1->r200 );
+                bound1 = 10 * comp1->r200;
+                get_extra_nfw_mass(comp1, bound1);
                 mw_printf("comp1 NFW %0.15f\n", bound1);
                 break;
             case General_Hernquist:
@@ -756,7 +766,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 mw_printf("comp1 plummer %0.15f\n", bound2);
                 break;
             case NFW:
-                bound2 = (comp2->r200 );
+                bound2 = 10 * comp2->r200;
+                get_extra_nfw_mass(comp2, bound2);
                 mw_printf("comp1 NFW %0.15f\n", bound2);
                 break;
             case General_Hernquist:
@@ -766,8 +777,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         }
         
         
+        real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
+        real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real dwarf_mass = mass_l + mass_d;
-        mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", mass_l, mass_d, rscale_l, rscale_d, dwarf_mass, comp1->p0, comp2->p0, comp1->r200, comp2->r200);
+        mw_printf("mass_l,d (%.15f , %.15f)\nrscale_l,d (%.15f , %.15f)\nMass %.15f\np0_l,d (%.15f , %.15f)\nr200_l,d (%.15f , %.15f\n", mass_l, mass_d, rscale_l, rscale_d, dwarf_mass, comp1->p0, comp2->p0, comp1->r200, comp2->r200);
         // a large dwarf galaxy is about 3 kpc. no matter the scale radii of the two component, this should be adequate
 
     //---------------------------------------------------------------------------------------------------        
