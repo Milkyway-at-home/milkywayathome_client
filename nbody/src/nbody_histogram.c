@@ -662,7 +662,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].err,
                     &histData[fileCount].vdisp,
                     &histData[fileCount].vdisperr);
-        if (rc != 5)
+        if (rc != 7 && rc != 5)//for the ones with vel disp and without
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
             error = TRUE;

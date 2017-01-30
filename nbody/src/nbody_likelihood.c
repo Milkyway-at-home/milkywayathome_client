@@ -140,7 +140,10 @@ real nbSystemLikelihood(const NBodyState* st,
     }
     
     cost_component = nbCostComponent(data, histogram);
+
+    /* make sure you are comparing your output hist to a data hist with vel dispersions */
 //     velocity_dispersion_component = nbVelocityDispersion(st);
+
     return geometry_component + cost_component;
     
 }
