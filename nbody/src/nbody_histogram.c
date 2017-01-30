@@ -274,12 +274,14 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
                 data->count,
-                data->err);
+                data->err,
+                data->vdisp,
+                data->vdisperr);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -355,6 +357,45 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
 }
 
 
+/* Get the velocity dispersion in each bin*/
+static void nbCalcVelDisp(NBodyHistogram* histogram)
+{
+    unsigned int i;
+    unsigned int j;
+    unsigned int Histindex;
+    real count;
+    
+    unsigned int lambdaBins = histogram->lambdaBins;
+    unsigned int betaBins = histogram->betaBins;
+    
+    real totalNum = (real) histogram->totalNum;
+    HistData* histData = histogram->data;
+
+    real n_ratio;
+    real n_new;
+    real v, vsq;
+    
+    for (i = 0; i < lambdaBins; ++i)
+    {
+        for(j = 0; j < betaBins; ++j)
+        {
+            Histindex = i * betaBins + j;
+            count = (real) histData[Histindex].rawCount;
+            
+            if(count > 1.0)
+            {
+                n_ratio = count / (count - 1.0); //NOTE check these eqs
+                n_new = count - 1.0;
+                vsq = histData[Histindex].vsq_sum;
+                v = histData[Histindex].v_sum;
+                histData[Histindex].vdisp = (vsq / n_new) - n_ratio * (sqr(v) / sqr(count));
+            }
+        }
+    }
+}
+
+
+
 /*
 Takes a treecode position, converts it to (l,b), then to (lambda,
 beta), and then constructs a histogram of the density in lambda and beta.
@@ -402,6 +443,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
     
+    real v_line_of_sight;
+    
     for (int i = 0; i < Nbodies; i++)
     {
         const Body* b = &st->bodytab[i];
@@ -417,6 +460,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
+        histData[Histindex].v_sum    = 0.0;
+        histData[Histindex].vsq_sum  = 0.0;
+        histData[Histindex].vdisp    = 0.0;
+        histData[Histindex].vdisperr = 0.0;
         histData[Histindex].useBin = TRUE;
     }
 
@@ -442,14 +489,25 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 Histindex = lambdaIndex * betaBins + betaIndex;
                 histData[Histindex].rawCount++;
                 ++totalNum;
+                
+                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
+                histData[Histindex].v_sum += v_line_of_sight;
+                histData[Histindex].vsq_sum += sqr(v_line_of_sight);
+//                 mw_printf("HERE  %0.15f , %0.15f  \n", histData[Histindex].v_sum, histData[Histindex].vsq_sum );
             }
         }
     }
 
     histogram->totalNum = totalNum; /* Total particles in range */
-
+    
+    nbCalcVelDisp(histogram);
     nbNormalizeHistogram(histogram);
 
+    
+//     for (Histindex = 0; Histindex < nBin; ++Histindex)
+//     {
+//         mw_printf("HERE  %0.15f , %0.15f , %0.15f , %i\n", histData[Histindex].v_sum, histData[Histindex].vsq_sum,  histData[Histindex].vdisp, histData[Histindex].rawCount);
+//     }
     return histogram;
 }
 
@@ -596,12 +654,14 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf \n",
+                    "%d %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
                     &histData[fileCount].count,
-                    &histData[fileCount].err);
+                    &histData[fileCount].err,
+                    &histData[fileCount].vdisp,
+                    &histData[fileCount].vdisperr);
         if (rc != 5)
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
