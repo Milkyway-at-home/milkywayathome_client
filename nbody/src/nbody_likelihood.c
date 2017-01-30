@@ -65,6 +65,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist)
     NBodyHistogram* dat;
     NBodyHistogram* match;
     real emd = NAN;
+    real cost_component = NAN;
 
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
@@ -72,12 +73,13 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist)
     if (dat && match)
     {
         emd = nbMatchEMD(dat, match);
+        cost_component = nbCostComponent(dat, match);
     }
 
     free(dat);
     free(match);
 
-    return emd;
+    return emd + cost_component;
 }
 
 
@@ -87,6 +89,11 @@ real nbSystemLikelihood(const NBodyState* st,
                      const NBodyHistogram* histogram,
                      NBodyLikelihoodMethod method)
 {
+    
+    real geometry_component;
+    real cost_component;
+    real velocity_dispersion_component;
+    
     if (data->lambdaBins != histogram->lambdaBins)
     {
         mw_printf("Number of bins does not match those in histogram file. "
@@ -125,12 +132,17 @@ real nbSystemLikelihood(const NBodyState* st,
             return worstEMD; //Changed.  See above comment.
         }
 
-        return nbMatchEMD(data, histogram);
+        geometry_component = nbMatchEMD(data, histogram);
     }
     else
     {
-        return nbCalcChisq(data, histogram, method);
+        geometry_component = nbCalcChisq(data, histogram, method);
     }
+    
+    cost_component = nbCostComponent(data, histogram);
+//     velocity_dispersion_component = nbVelocityDispersion(st);
+    return geometry_component + cost_component;
+    
 }
 
 

@@ -168,7 +168,89 @@ real IncompleteGammaFunc(real a, real x)
 
 }    
 
+real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int n = histogram->totalSimulated;
+    unsigned int nSim = histogram->totalNum;
+    unsigned int nData = data->totalNum;
+    real histMass = histogram->massPerParticle;
+    real dataMass = data->massPerParticle;
+    real p; /* probability of observing an event */
+    real likelihood;
 
+    if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
+    {
+        /* FIXME?: We could have mismatched histogram sizes, but I'm
+        * not sure what to do with ignored bins and
+        * renormalization */
+        return NAN;
+    }
 
+    if (nSim == 0 || nData == 0)
+    {
+        /* If the histogram is totally empty, it is worse than the worst case */
+        return INFINITY;
+    }
+
+    if (histMass <= 0.0 || dataMass <= 0.0)
+    {
+        /*In order to calculate likelihood the masses are necessary*/
+        return NAN;
+    }
+    
+
+    
+
+    /* this is the newest version of the cost function
+     * it uses a combination of the binomial error for sim 
+     * and the poisson error for the data
+     */
+    
+    p = ((real) nSim / (real) n) ;
+    real num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
+    real denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
+    real CostComponent = num / denom; //this is the log of the cost component
+
+    
+    
+    
+
+//     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
+//     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
+//     mw_printf("l = %.15f\n", p);
+//     mw_printf("l = %.15f\n", likelihood);
+    return -CostComponent;
+    
+}
+
+real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
+{
+    real xsol = X(p) + sunGCdist;
+    real mag = mw_sqrt(xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p));
+    real vl = xsol * X(v) + Y(p) * Y(v) + Z(p) * Z(v);
+    vl = vl / mag;
+    
+//     mw_printf("HERE  %0.15f , %0.15f , %0.15f \n", vl, Y(v), Z(v));
+    return vl;
+}
+
+// real nbVelocityDispersion(const NBodyState* st)
+// {
+//     const int nbody = st->nbody;
+//     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
+//     mwvector v;
+//     Body b;
+    
+//     for (int i = 0; i < nbody; ++i)      /* loop over all bodies */
+//     {
+//         b = (bodies[i]);
+//         v = b.vel;
+//         mw_printf("%0.15f , %0.15f , %0.15f \n", X(v), Y(v), Z(v));
+//     }
+//     
+//     return 0.0;
+// }
 
 
