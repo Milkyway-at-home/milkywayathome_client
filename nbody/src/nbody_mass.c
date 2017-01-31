@@ -234,19 +234,31 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-//     const int nbody = st->nbody;
-//     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
-//     mwvector v;
-//     Body b;
+    int N;
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int nbins = lambdaBins * betaBins;
+    real count1 = 0;
+    real count2 = 0;
+    real chisq = 0.0;
+    real vdisp_data;
+    real vdisp_hist;
+    for (int i = 0; i < nbins; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            vdisp_data = (real) data->data[i].vdisp;
+            vdisp_hist = (real) histogram->data[i].vdisp;
+            chisq += sqr(vdisp_data - vdisp_hist);
+//             mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
+        }
+
+    }
     
-//     for (int i = 0; i < nbody; ++i)      /* loop over all bodies */
-//     {
-//         b = (bodies[i]);
-//         v = b.vel;
-//         mw_printf("%0.15f , %0.15f , %0.15f \n", X(v), Y(v), Z(v));
-//     }
-//     
-    return 0.0;
+    mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
+    chisq = chisq / (real) nbins;
+    mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
+    return chisq;
 }
 
 
