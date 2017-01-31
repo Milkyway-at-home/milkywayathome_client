@@ -97,6 +97,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
             { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors   },
             { "useBestLike",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike   },
+            { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
             { "BestLikeStart", LUA_TNUMBER,  NULL, TRUE,  &ctx.BestLikeStart },
             END_MW_NAMED_ARG
         };
@@ -215,6 +216,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
     { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
+    { "useVelDisp",      getBool,       offsetof(NBodyCtx, useVelDisp)  },
     { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { NULL, NULL, 0 }
 };
@@ -231,8 +233,9 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
-    { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
-    { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
+    { "useBestLike",     setBool,       offsetof(NBodyCtx, useBestLike) },
+    { "useVelDisp",      setBool,       offsetof(NBodyCtx, useVelDisp)  },
+    { "BestLikeStart",   setNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { NULL, NULL, 0 }
 };
 

@@ -233,7 +233,13 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             POPT_ARG_STRING, &nbf.matchHistogram,
             0, "Only match this histogram against other histogram (requires histogram argument)", NULL
         },
-
+        
+        {
+            "match-histogram-veldisp", 'S',
+            POPT_ARG_STRING, &nbf.matchHistVelDisp,
+            0, "Only match this histogram against other histogram (requires histogram argument) with vel disp comparison", NULL
+        },
+        
         {
             "output-file", 'o',
             POPT_ARG_STRING, &nbf.outFileName,
@@ -454,14 +460,14 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         exit(EXIT_SUCCESS);
     }
 
-    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram)
+    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistVelDisp)
     {
         mw_printf("An input file, checkpoint, or matching histogram argument is required\n");
         poptFreeContext(context);
         return TRUE;
     }
 
-    if (nbf.matchHistogram && !nbf.histogramFileName)
+    if ((nbf.matchHistogram || nbf.matchHistVelDisp) && !nbf.histogramFileName)
     {
         mw_printf("--match-histogram argument requires --histogram-file\n");
         poptFreeContext(context);
@@ -614,10 +620,21 @@ int main(int argc, const char* argv[])
     else if (nbf.matchHistogram)
     {
         real emd;
-
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram);
+        real vel_disp = FALSE; 
+        /* runs the comparison of two input hists without using vel dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram, vel_disp);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
+    }
+    else if(nbf.matchHistVelDisp)
+    {
+        real emd;
+        real vel_disp = TRUE; 
+        /* runs the comparison of two input hists using vel dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistVelDisp, vel_disp);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
+        rc = isnan(emd);
+        
     }
     else
     {

@@ -168,6 +168,19 @@ real IncompleteGammaFunc(real a, real x)
 
 }    
 
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
+
+real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
+{
+    real xsol = X(p) + sunGCdist;
+    real mag = mw_sqrt(xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p));
+    real vl = xsol * X(v) + Y(p) * Y(v) + Z(p) * Z(v);
+    vl = vl / mag;
+    
+    return vl;
+}
+
+
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int lambdaBins = data->lambdaBins;
@@ -200,9 +213,6 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
         return NAN;
     }
     
-
-    
-
     /* this is the newest version of the cost function
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
@@ -213,10 +223,6 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     real denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
     real CostComponent = num / denom; //this is the log of the cost component
 
-    
-    
-    
-
 //     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
 //     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
 //     mw_printf("l = %.15f\n", p);
@@ -225,19 +231,9 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
 }
 
-real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
-{
-    real xsol = X(p) + sunGCdist;
-    real mag = mw_sqrt(xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p));
-    real vl = xsol * X(v) + Y(p) * Y(v) + Z(p) * Z(v);
-    vl = vl / mag;
-    
-//     mw_printf("HERE  %0.15f , %0.15f , %0.15f \n", vl, Y(v), Z(v));
-    return vl;
-}
 
-// real nbVelocityDispersion(const NBodyState* st)
-// {
+real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
 //     const int nbody = st->nbody;
 //     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
 //     mwvector v;
@@ -250,7 +246,7 @@ real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 //         mw_printf("%0.15f , %0.15f , %0.15f \n", X(v), Y(v), Z(v));
 //     }
 //     
-//     return 0.0;
-// }
+    return 0.0;
+}
 
 

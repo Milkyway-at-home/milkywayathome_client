@@ -60,13 +60,14 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
     return FALSE;
 }
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist)
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp)
 {
     NBodyHistogram* dat;
     NBodyHistogram* match;
     real emd = NAN;
     real cost_component = NAN;
-
+    real vel_disp = NAN;
+    real likelihood = NAN;
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
 
@@ -74,12 +75,29 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist)
     {
         emd = nbMatchEMD(dat, match);
         cost_component = nbCostComponent(dat, match);
+        likelihood = emd + cost_component;
+        
+        if(use_veldisp)
+        {
+            vel_disp = nbVelocityDispersion(dat, match);
+            likelihood += vel_disp;
+        }
+        
+    }
+    
+    if(use_veldisp)
+    {
+        mw_printf("VEL DIS IS ON\n");
+    }
+    else
+    {
+        mw_printf("VEL DISP IS OFF\n");
     }
 
     free(dat);
     free(match);
 
-    return emd + cost_component;
+    return likelihood;
 }
 
 
@@ -93,6 +111,7 @@ real nbSystemLikelihood(const NBodyState* st,
     real geometry_component;
     real cost_component;
     real velocity_dispersion_component;
+    real likelihood = NAN;
     
     if (data->lambdaBins != histogram->lambdaBins)
     {
@@ -103,6 +122,8 @@ real nbSystemLikelihood(const NBodyState* st,
         return NAN;
     }
 
+    
+    /* likelihood due to shape of the histograms */
     if (method == NBODY_EMD)
     {
         /* We could have far crazier variations in the distance in cases
@@ -139,12 +160,26 @@ real nbSystemLikelihood(const NBodyState* st,
         geometry_component = nbCalcChisq(data, histogram, method);
     }
     
+    /* likelihood due to the amount of mass in the histograms */
+    
     cost_component = nbCostComponent(data, histogram);
 
-    /* make sure you are comparing your output hist to a data hist with vel dispersions */
-//     velocity_dispersion_component = nbVelocityDispersion(st);
+    likelihood = geometry_component + cost_component;
+    
+    /* likelihood due to the vel dispersion per bin of the two hist */
+    if(st->useVelDisp)
+    {
+        mw_printf("VEL DIS IS ON\n");
+        velocity_dispersion_component = nbVelocityDispersion(data, histogram);
+        likelihood += velocity_dispersion_component;
+    }
+    else
+    {
+        mw_printf("VEL DISP IS OFF\n");
+    }
 
-    return geometry_component + cost_component;
+    
+    return likelihood;
     
 }
 
