@@ -261,7 +261,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             free(histogram);
             return NBODY_LIKELIHOOD_ERROR;
         }
-
+        
+        
         likelihood = nbSystemLikelihood(st, data, histogram, method);
 
         /*
@@ -432,6 +433,7 @@ int nbMain(const NBodyFlags* nbf)
         }
     }
 
+    st->useVelDisp = ctx->useVelDisp;
     rc = nbReportResults(ctx, st, nbf);
 
     destroyNBodyState(st);

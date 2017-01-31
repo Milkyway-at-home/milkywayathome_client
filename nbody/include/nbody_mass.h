@@ -37,6 +37,8 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
 
+real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
+
 #ifdef __cplusplus
 }
 #endif
