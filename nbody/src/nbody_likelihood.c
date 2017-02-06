@@ -85,18 +85,9 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         
     }
     
-    if(use_veldisp)
-    {
-        mw_printf("VEL DIS IS ON\n");
-    }
-    else
-    {
-        mw_printf("VEL DISP IS OFF\n");
-    }
-
     free(dat);
     free(match);
-
+    mw_printf("%0.15f %0.15f %0.15f %0.15f\n", emd, cost_component, emd + cost_component, vel_disp);
     return likelihood;
 }
 
@@ -169,15 +160,10 @@ real nbSystemLikelihood(const NBodyState* st,
     /* likelihood due to the vel dispersion per bin of the two hist */
     if(st->useVelDisp)
     {
-        mw_printf("VEL DIS IS ON\n");
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
         likelihood += velocity_dispersion_component;
     }
-    else
-    {
-        mw_printf("VEL DISP IS OFF\n");
-    }
-
+    mw_printf("%0.15f %0.15f %0.15f %0.15f\n", geometry_component, cost_component, geometry_component + cost_component, velocity_dispersion_component);
     
     return likelihood;
     

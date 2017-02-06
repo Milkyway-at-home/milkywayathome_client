@@ -55,6 +55,11 @@ real nbNormalizedHistogramError(unsigned int n, real total)
     return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;
 }
 
+real nbVelDispError(unsigned int n, real total)
+{
+    return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;
+}
+
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
 {
     unsigned int i;
@@ -373,7 +378,7 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
 
     real n_ratio;
     real n_new;
-    real v, vsq;
+    real v_sum, vsq_sum, vdispsq;
     
     for (i = 0; i < lambdaBins; ++i)
     {
@@ -384,11 +389,14 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
             
             if(count > 1.0)
             {
-                n_ratio = count / (count - 1.0); //NOTE check these eqs
-                n_new = count - 1.0;
-                vsq = histData[Histindex].vsq_sum;
-                v = histData[Histindex].v_sum;
-                histData[Histindex].vdisp = (vsq / n_new) - n_ratio * (sqr(v) / sqr(count));
+                n_new = count - 1.0; //because the mean is calculated from the same populations set
+                n_ratio = count / (n_new); 
+                
+                vsq_sum = histData[Histindex].vsq_sum;
+                v_sum = histData[Histindex].v_sum;
+                
+                vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
+                histData[Histindex].vdisp = mw_sqrt(vdispsq);
             }
         }
     }
@@ -490,7 +498,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 histData[Histindex].rawCount++;
                 ++totalNum;
                 
-                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
+                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                
+                /* each of these are components of the vel disp */
                 histData[Histindex].v_sum += v_line_of_sight;
                 histData[Histindex].vsq_sum += sqr(v_line_of_sight);
 //                 mw_printf("HERE  %0.15f , %0.15f  \n", histData[Histindex].v_sum, histData[Histindex].vsq_sum );

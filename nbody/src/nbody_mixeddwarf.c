@@ -843,7 +843,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
             }while (1);
             
-//             mw_printf("\rvelocity of particle %i", i + 1);
+            mw_printf("\rvelocity of particle %i", i + 1);
             counter = 0;
             do
             {
