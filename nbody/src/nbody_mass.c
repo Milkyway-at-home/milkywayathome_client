@@ -243,14 +243,29 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
     real chisq = 0.0;
     real vdisp_data;
     real vdisp_hist;
+    real err;
     for (int i = 0; i < nbins; ++i)
     {
         if (data->data[i].useBin)
         {
-            vdisp_data = (real) data->data[i].vdisp;
-            vdisp_hist = (real) histogram->data[i].vdisp;
-            chisq += sqr(vdisp_data - vdisp_hist);
+            vdisp_data = data->data[i].vdisp;
+            /* the data may have incomplete vel disps. Where it does not have will have -1 */
+            if(vdisp_data >= 0)
+            {
+                err = data->data[i].vdisperr;
+                vdisp_hist = histogram->data[i].vdisp;
+                
+                /* the error in simulation veldisp is set to zero. */
+                if(err == 0.0)
+                {
+                    chisq += sqr( (vdisp_data - vdisp_hist));
+                }
+                else
+                {
+                    chisq += sqr( (vdisp_data - vdisp_hist) / err);//for when we start using actual data
+                }
 //             mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
+            }
         }
 
     }
