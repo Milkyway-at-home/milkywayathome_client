@@ -503,7 +503,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 /* each of these are components of the vel disp */
                 histData[Histindex].v_sum += v_line_of_sight;
                 histData[Histindex].vsq_sum += sqr(v_line_of_sight);
-//                 mw_printf("HERE  %0.15f , %0.15f  \n", histData[Histindex].v_sum, histData[Histindex].vsq_sum );
             }
         }
     }
@@ -514,10 +513,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     nbNormalizeHistogram(histogram);
 
     
-//     for (Histindex = 0; Histindex < nBin; ++Histindex)
-//     {
-//         mw_printf("HERE  %0.15f , %0.15f , %0.15f , %i\n", histData[Histindex].v_sum, histData[Histindex].vsq_sum,  histData[Histindex].vdisp, histData[Histindex].rawCount);
-//     }
     return histogram;
 }
 
