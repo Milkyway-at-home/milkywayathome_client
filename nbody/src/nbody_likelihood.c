@@ -87,7 +87,6 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
     
     free(dat);
     free(match);
-    mw_printf("%0.15f %0.15f %0.15f %0.15f\n", emd, cost_component, emd + cost_component, vel_disp);
     return likelihood;
 }
 

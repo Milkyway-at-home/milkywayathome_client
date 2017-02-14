@@ -227,6 +227,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 //     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
 //     mw_printf("l = %.15f\n", p);
 //     mw_printf("l = %.15f\n", likelihood);
+    /* the cost component is negative. Returning a postive value */
     return -CostComponent;
     
 }
@@ -264,15 +265,12 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
                 {
                     chisq += sqr( (vdisp_data - vdisp_hist) / err);//for when we start using actual data
                 }
-//             mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
             }
         }
 
     }
     
-    mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
     chisq = chisq / (real) nbins;
-    mw_printf("%0.15f %0.15f %0.15f\n", vdisp_data, vdisp_hist, chisq);
     return chisq;
 }
 

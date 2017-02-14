@@ -746,21 +746,17 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
          * will return to it at a later date. The Plummer and hern work.
          */
         
-//         mw_printf("mass_l,d unchanged (%.15f , %.15f)\n", comp1->mass, comp2->mass);
         switch(comp1->type)
         {
             case Plummer:
                 bound1 =  50.0 * (rscale_l + rscale_d);
-//                 mw_printf("comp1 plummer %0.15f\n", bound1);
                 break;
             case NFW:
                 bound1 = 5 * comp1->r200;
                 get_extra_nfw_mass(comp1, bound1);
-//                 mw_printf("comp1 NFW %0.15f\n", bound1);
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
-//                 mw_printf("comp1 General_Hernquist %0.15f\n", bound1);
                 break;
         }
 
@@ -768,16 +764,13 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         {
             case Plummer:
                 bound2 =  50.0 * (rscale_l + rscale_d);
-//                 mw_printf("comp1 plummer %0.15f\n", bound2);
                 break;
             case NFW:
                 bound2 = 5 * comp2->r200;
                 get_extra_nfw_mass(comp2, bound2);
-//                 mw_printf("comp1 NFW %0.15f\n", bound2);
                 break;
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
-//                 mw_printf("comp1 General_Hernquist %0.15f\n", bound2);
                 break;
         }
         
@@ -785,14 +778,11 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
         real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real dwarf_mass = mass_l + mass_d;
-//         mw_printf("mass_l,d (%.15f , %.15f)\nrscale_l,d (%.15f , %.15f)\nMass %.15f\np0_l,d (%.15f , %.15f)\nr200_l,d (%.15f , %.15f\n", mass_l, mass_d, rscale_l, rscale_d, dwarf_mass, comp1->p0, comp2->p0, comp1->r200, comp2->r200);
-        // a large dwarf galaxy is about 3 kpc. no matter the scale radii of the two component, this should be adequate
 
     //---------------------------------------------------------------------------------------------------        
         unsigned int half_bodies = nbody / 2;
         real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
-//         mw_printf("%0.15f\t%0.15f\n", mass_light_particle, mass_dark_particle);
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -843,7 +833,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
             }while (1);
             
-            mw_printf("\rvelocity of particle %i", i + 1);
+//             mw_printf("\rvelocity of particle %i", i + 1);
             counter = 0;
             do
             {
