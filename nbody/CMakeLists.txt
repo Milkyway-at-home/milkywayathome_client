@@ -87,13 +87,23 @@ print_separator()
 
 if(NBODY_OPENCL)
   set(nbody_inline_src "${LIBRARY_OUTPUT_PATH}/nbody_kernels_inline.c")
-  add_custom_command(
-    OUTPUT "${nbody_inline_src}"
-    COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
-    DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
-    MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
-    COMMENT "Inlining N-body kernel source")
+  if(CrossCompile)
+    add_custom_command(
+      OUTPUT "${nbody_inline_src}"
+      COMMAND xxd -i "nbody_kernels.cl" ${nbody_inline_src}
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+      COMMENT "Inlining N-body kernel source")
+  else()
+    add_custom_command(
+      OUTPUT "${nbody_inline_src}"
+      COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
+      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+      COMMENT "Inlining N-body kernel source")
+  endif()
   add_library(nbody_kernels STATIC ${nbody_inline_src})
 endif()
 
@@ -225,6 +235,7 @@ if(SYSTEM_IS_X86)
   enable_sse2(nbody_lua)
 endif()
 
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../boinc/boinc)
 
 #TODO: The tests dSFMT has
 
