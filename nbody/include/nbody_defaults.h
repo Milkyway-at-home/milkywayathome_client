@@ -42,10 +42,12 @@ extern "C" {
 #define DEFAULT_USE_QUADRUPOLE_MOMENTS TRUE
 #define DEFAULT_ALLOW_INCEST FALSE
 #define DEFAULT_QUIET_ERRORS FALSE
+
 #define DEFAULT_USE_BEST_LIKELIHOOD FALSE
 #define DEFAULT_USE_VEL_DISP TRUE
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
+
   /*
     Return this when a big likelihood is needed.
   */
