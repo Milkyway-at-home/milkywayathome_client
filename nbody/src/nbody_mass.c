@@ -255,7 +255,8 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
             {
                 err = data->data[i].vdisperr;
                 vdisp_hist = histogram->data[i].vdisp;
-                
+                int count = histogram->data[i].rawCount;
+                mw_printf("%i \t %0.15f \t %0.15f \n", count, vdisp_data, vdisp_hist);
                 /* the error in simulation veldisp is set to zero. */
                 if(err == 0.0)
                 {

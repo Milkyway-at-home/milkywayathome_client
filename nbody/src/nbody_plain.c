@@ -141,7 +141,6 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     
     if (calculateLikelihood)
     {
-//         mw_printf("%i\n", calculateLikelihood);
         histogram = nbCreateHistogram(ctx, st, &hp);
         if (!histogram)
         {
@@ -182,10 +181,13 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         if(mw_fabs(likelihood) < mw_fabs(st->bestLikelihood))
         {
             st->bestLikelihood = likelihood;
+            
             /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
+            
             /* checking how many times the likelihood was improved */
             st->bestLikelihood_count++;
+            
             /* if it is an improvement then write out this histogram */
             if (nbf->histoutFileName)
             {
@@ -243,6 +245,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     #endif
     real curStep = st->step;
     real Nstep = ctx->nStep;
+    
+    st->bestLikelihood = DEFAULT_WORST_CASE; //initializing it.
+
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT

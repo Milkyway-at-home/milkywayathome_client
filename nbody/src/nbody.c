@@ -286,12 +286,13 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             likelihood = DEFAULT_BEST_CASE;
         }
         
-        //mw_printf("<search_status>%.15f\t%.15f\t%.15f\t%i</search_status>\n", likelihood, st->bestLikelihood, st->bestLikelihood_time, st->bestLikelihood_count);
+//         mw_printf("<search_status>%.15f\t%.15f\t%.15f\t%i\t%.15f</search_status>\n", likelihood, st->bestLikelihood, st->bestLikelihood_time, st->bestLikelihood_count, ctx->BestLikeStart);
         
         /* if the end state likelihood is not better than the best likelihood then
-         * replace it with the best likelihood
+         * replace it with the best likelihood 
          */
-        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood))
+        /* only do the comparison if we are using the best likelihood code */
+        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood) && ctx->useBestLike)
         {
             likelihood = st->bestLikelihood;
         }
