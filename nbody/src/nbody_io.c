@@ -59,7 +59,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
     if (both)
     {
-        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 "x", 
                 "y",  
                 "z",  
