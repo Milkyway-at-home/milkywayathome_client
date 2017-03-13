@@ -284,7 +284,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->lambda,
                 data->beta,
                 data->count,
-                data->err,
+                (real) data->rawCount,
                 data->vdisp,
                 data->vdisperr);
 
