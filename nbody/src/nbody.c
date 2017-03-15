@@ -404,6 +404,7 @@ int nbMain(const NBodyFlags* nbf)
 
     ts = mwGetTime();
     
+    st->useVelDisp = ctx->useVelDisp;
     rc = nbRunSystem(ctx, st, nbf);
     
     te = mwGetTime();
@@ -434,7 +435,6 @@ int nbMain(const NBodyFlags* nbf)
         }
     }
 
-    st->useVelDisp = ctx->useVelDisp;
     rc = nbReportResults(ctx, st, nbf);
 
     destroyNBodyState(st);
