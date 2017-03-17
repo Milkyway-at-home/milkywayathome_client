@@ -468,8 +468,7 @@ else()
             RUNTIME DESTINATION bin)
 endif()
 
-get_target_property(NBODY_BIN_NAME milkyway_nbody LOCATION)
-get_filename_component(NBODY_BIN_NAME ${NBODY_BIN_NAME} NAME)
+set(NBODY_BIN_NAME "$<TARGET_FILE_NAME:milkyway_nbody>")
 
 if(SYSTEM_IS_X86)
   enable_sse2(milkyway_nbody)
@@ -484,8 +483,7 @@ if(NBODY_GL)
 #              RUNTIME DESTINATION bin)
   endif()
 
-  get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)
-  get_filename_component(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} NAME)
+  set(NBODY_GRAPHICS_BIN_NAME "$<TARGET_FILE_NAME:milkyway_nbody_graphics>")
 
   set_target_properties(milkyway_nbody_graphics PROPERTIES
                           COMPILE_FLAGS "${FAST_MATH_FLAGS}")
