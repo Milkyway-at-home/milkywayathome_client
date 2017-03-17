@@ -201,7 +201,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  q                     = %f\n"
            "  total_calc_probs      = %f\n"
            "  number_integrals      = %u\n"
-           "  exp_background_weight = %f\n"
+           "  background_weight     = %f\n"
+           "  thick_disk_weight     = %f\n"
            "  modfit                = %u\n"
            "  background_profile    = %u\n",
            ap->params_per_workunit,
@@ -224,7 +225,8 @@ void printAstronomyParameters(const AstronomyParameters* ap)
 //           ap->coeff,
            ap->total_calc_probs,
            ap->number_integrals,
-           ap->exp_background_weight,
+           ap->background_weight,
+           ap->thick_disk_weight,
            ap->modfit,
            ap->background_profile);
 }

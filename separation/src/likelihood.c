@@ -172,7 +172,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
     if (bgProb)
         *bgProb = es->bgTmp;
 
-    es->bgTmp = (es->bgTmp / results->backgroundIntegral) * ap->exp_background_weight;
+    es->bgTmp = es->bgTmp / results->backgroundIntegral;
 
     starProb = es->bgTmp; /* bg only */
     for (i = 0; i < ap->number_streams; ++i)

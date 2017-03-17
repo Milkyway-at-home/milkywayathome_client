@@ -64,22 +64,22 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool 
     flags << "-cl-finite-math-only ";
 
     /* Get constant definitions */
-    flags << "-D BACKGROUND_PROFILE="   << ap->background_profile   << " ";
-    flags << "-D AUX_BG_PROFILE="       << ap->aux_bg_profile       << " ";
-    flags << "-D NSTREAM="              << ap->number_streams       << " ";
-    flags << "-D CONVOLVE="             << ap->convolve             << " ";
-    flags << "-D R0="                   << ap->r0                   << " ";
-    flags << "-D SUN_R0="               << ap->sun_r0               << " ";
-    flags << "-D Q_INV_SQR="            << ap->q_inv_sqr            << " ";
-    flags << "-D BG_A="                 << ap->bg_a                 << " ";
-    flags << "-D BG_B="                 << ap->bg_b                 << " ";
-    flags << "-D BG_C="                 << ap->bg_c                 << " ";
-    flags << "-D BG_WEIGHT="            << ap->bg_weight            << " ";
-    flags << "-D THIN_DISK_WEIGHT="     << ap->thin_disk_weight     << " ";
+    flags << "-D BACKGROUND_PROFILE="   << ap->background_profile       << " ";
+    flags << "-D AUX_BG_PROFILE="       << ap->aux_bg_profile           << " ";
+    flags << "-D NSTREAM="              << ap->number_streams           << " ";
+    flags << "-D CONVOLVE="             << ap->convolve                 << " ";
+    flags << "-D R0="                   << ap->r0                       << " ";
+    flags << "-D SUN_R0="               << ap->sun_r0                   << " ";
+    flags << "-D Q_INV_SQR="            << ap->q_inv_sqr                << " ";
+    flags << "-D BG_A="                 << ap->bg_a                     << " ";
+    flags << "-D BG_B="                 << ap->bg_b                     << " ";
+    flags << "-D BG_C="                 << ap->bg_c                     << " ";
+    flags << "-D BG_WEIGHT="            << ap->background_weight        << " ";
+    flags << "-D THICK_DISK_WEIGHT="    << ap->thick_disk_weight        << " ";
 
-    flags << "-D INNERPOWER="           << ap->innerPower           << " ";
-    flags << "-D OUTERPOWER="           << ap->outerPower           << " ";
-    flags << "-D ALPHA_DELTA_3="        << ap->alpha_delta3         << " ";
+    flags << "-D INNERPOWER="           << ap->innerPower               << " ";
+    flags << "-D OUTERPOWER="           << ap->outerPower               << " ";
+    flags << "-D ALPHA_DELTA_3="        << ap->alpha_delta3             << " ";
 
     /* FIXME: Device vendor not necessarily the platform vendor */
     if (mwHasNvidiaCompilerFlags(di))

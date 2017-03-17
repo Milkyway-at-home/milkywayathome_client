@@ -59,7 +59,7 @@ ProbabilityFunc initProbabilities_SSE2(const AstronomyParameters* ap);
 #endif /* MW_IS_X86 */
 
 
-void calculate_background_weights(AstronomyParameters* ap);
+//void calculate_background_weights(AstronomyParameters* ap);
 
 real probabilities_fast_hprob(const AstronomyParameters* ap,
                               const StreamConstants* sc,

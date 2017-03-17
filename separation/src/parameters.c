@@ -341,7 +341,7 @@ int setParameters(AstronomyParameters* ap,
     }
 
     bgp->q = parameters[0];
-    bgp->r0 = parameters[1];
+    bgp->epsilon = parameters[1];
 
     for (i = 0; i < nStream; ++i)
     {

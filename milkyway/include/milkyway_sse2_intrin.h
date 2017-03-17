@@ -956,5 +956,13 @@ static __m128d _mm_pow_pd(__m128d base, __m128d power)
 {
 	return gmx_mm_exp_pd(power * gmx_mm_log_pd(base));
 }
+
+inline __m128d mw_abs_pd(__m128d x)
+{
+    /*Homemade absolute value function.  Should work */
+    const __m128d signmask  = _mm_castsi128_pd( _mm_set_epi32(0x7FFFFFFF,0xFFFFFFFF,0x7FFFFFFF,0xFFFFFFFF) );
+    __m128d sign   = _mm_andnot_pd(signmask,x);
+    return _mm_and_pd(x,signmask);
+}
 #endif /* _MILKYWAY_SSE2_INTRIN_H_ */
 
