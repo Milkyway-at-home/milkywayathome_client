@@ -1,0 +1,27 @@
+language: cpp
+addons:
+  apt:
+    packages:
+      - g++-multilib
+      - libssl-dev
+      - opencl-headers
+      - opencl-dev
+      - libreadline-dev
+      - libgmp-dev
+      - libmpfr-dev
+      - libncurses-dev 
+      - libglu-dev
+      - libglm-dev 
+      - libxrandr-dev 
+      - libxinerama-dev 
+      - libxcursor-dev
+      - nvidia-opencl-dev
+env:
+  - CMAKE_OPTS="-DBUILD_32=ON  -DSEPARATION=ON -DNBODY=OFF -DSEPARATION_OPENCL=ON"
+  - CMAKE_OPTS="-DBUILD_32=ON  -DSEPARATION=OFF -DNBODY=ON -DNBODY_OPENCL=ON"
+  - CMAKE_OPTS="-DBUILD_32=OFF -DSEPARATION=ON -DNBODY=OFF -DSEPARATION_OPENCL=ON"
+  - CMAKE_OPTS="-DBUILD_32=OFF -DSEPARATION=OFF -DNBODY=ON -DNBODY_OPENCL=ON"
+
+script:
+  - cmake ${CMAKE_OPTS}
+  - make
