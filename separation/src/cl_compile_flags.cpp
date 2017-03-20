@@ -74,7 +74,7 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool 
     flags << "-D BG_A="                 << ap->bg_a                     << " ";
     flags << "-D BG_B="                 << ap->bg_b                     << " ";
     flags << "-D BG_C="                 << ap->bg_c                     << " ";
-    flags << "-D BG_WEIGHT="            << ap->background_weight        << " ";
+    flags << "-D BACKGROUND_WEIGHT="    << ap->background_weight        << " ";
     flags << "-D THICK_DISK_WEIGHT="    << ap->thick_disk_weight        << " ";
 
     flags << "-D INNERPOWER="           << ap->innerPower               << " ";
