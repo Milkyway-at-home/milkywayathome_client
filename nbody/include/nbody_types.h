@@ -282,6 +282,8 @@ typedef struct
     real vsq_sum;
     real vdisp;
     real vdisperr;
+    real vlos_min;
+    real vlos_max;
 } HistData;
 
 
