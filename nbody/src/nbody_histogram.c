@@ -368,7 +368,6 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
     unsigned int i;
     unsigned int j;
     unsigned int Histindex;
-    real count;
     
     unsigned int lambdaBins = histogram->lambdaBins;
     unsigned int betaBins = histogram->betaBins;
@@ -376,6 +375,7 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
     real totalNum = (real) histogram->totalNum;
     HistData* histData = histogram->data;
 
+    real count;
     real n_ratio;
     real n_new;
     real v_sum, vsq_sum, vdispsq;
@@ -387,13 +387,14 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
             Histindex = i * betaBins + j;
             count = (real) histData[Histindex].rawCount;
             
-            if(count > 1.0)
+            if(count > 4.0)//need enough counts to remove the 2 outliers
             {
+                count -= 2.0; //removing the outliers from count
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
                 n_ratio = count / (n_new); 
                 
-                vsq_sum = histData[Histindex].vsq_sum;
-                v_sum = histData[Histindex].v_sum;
+                vsq_sum = histData[Histindex].vsq_sum - sqr(histData[Histindex].vlos_min) - sqr(histData[Histindex].vlos_max);
+                v_sum = histData[Histindex].v_sum - histData[Histindex].vlos_min - histData[Histindex].vlos_max;
                 
                 vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
                 histData[Histindex].vdisp = mw_sqrt(vdispsq);
@@ -472,6 +473,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
+        
+        histData[Histindex].vlos_min = 1.0e6; /* these numbers are ridiculous becuase it needs to always recognize a min and max, even if it is the same number. */
+        histData[Histindex].vlos_max = -1.0e6;/* No matter the VLOS of a body, it will be less than 1e6 and greater than -1e6*/
+        
         histData[Histindex].useBin = TRUE;
     }
 
@@ -499,6 +504,15 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 ++totalNum;
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                
+                if(v_line_of_sight < histData[Histindex].vlos_min)
+                {
+                    histData[Histindex].vlos_min = v_line_of_sight;
+                }
+                if(v_line_of_sight > histData[Histindex].vlos_max)
+                {
+                    histData[Histindex].vlos_max = v_line_of_sight;
+                }
                 
                 /* each of these are components of the vel disp */
                 histData[Histindex].v_sum += v_line_of_sight;
