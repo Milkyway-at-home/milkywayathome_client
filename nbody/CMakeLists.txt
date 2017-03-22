@@ -448,15 +448,17 @@ if(BOINC_RELEASE_NAMES)
   endif()
 
   get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
+  set(NBODY_BIN_NAME "${BOINC_BIN_NAME}" CACHE INTERNAL PARENT_SCOPE)
   set_target_properties(milkyway_nbody
                           PROPERTIES
-						    OUTPUT_NAME ${BOINC_BIN_NAME})
+                            OUTPUT_NAME ${NBODY_BIN_NAME})
 
   if(NBODY_GL)
     get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
+    set(NBODY_GL_BIN_NAME "${BOINC_BIN_NAME}" CACHE INTERNAL PARENT_SCOPE)
     set_target_properties(milkyway_nbody_graphics
                             PROPERTIES
-                              OUTPUT_NAME ${BOINC_BIN_NAME})
+                              OUTPUT_NAME ${NBODY_GL_BIN_NAME})
   endif()
 endif()
 
