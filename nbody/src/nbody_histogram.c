@@ -382,7 +382,7 @@ static void nbRemoveOutliers(NBodyCtx* ctx, NBodyState* st, NBodyHistogram* hist
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
     unsigned int nBin = lambdaBins * betaBins;
-    unsigned int cc = 0;
+    unsigned int counter = 0;
     
     real Nbodies = st->nbody;
     
@@ -392,6 +392,7 @@ static void nbRemoveOutliers(NBodyCtx* ctx, NBodyState* st, NBodyHistogram* hist
     real v_line_of_sight;
     real bin_ave;
     real bin_sigma;
+    real new_count;
     
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -414,24 +415,29 @@ static void nbRemoveOutliers(NBodyCtx* ctx, NBodyState* st, NBodyHistogram* hist
                 Histindex = lambdaIndex * betaBins + betaIndex;
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
-                bin_ave = histData[Histindex].v_sum / (real) histData[Histindex].rawCount;
+                
+                /* bin count minus what was already removed */
+                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
+                
+                /* average bin vel */
+                bin_ave = histData[Histindex].v_sum / new_count;
+                
+                /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].vdisp;
                 
                 
-                if(mw_fabs(bin_ave - v_line_of_sight) > 2.5 * bin_sigma && use_body[cc] == TRUE)//if it is outside of the sigma limit
+                if(mw_fabs(bin_ave - v_line_of_sight) > 2.5 * bin_sigma && use_body[counter] == TRUE)//if it is outside of the sigma limit
                 {
                     histData[Histindex].v_sum -= v_line_of_sight;//remove from vel dis sums
                     histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
                     histData[Histindex].outliersRemoved++;//keep track of how many are being removed
-                    use_body[cc] = FALSE;//marking the body as having been rejected as outlier
-//                     mw_printf("%.15f %.15f %.15f\n", histData[Histindex].v_sum, histData[Histindex].vsq_sum, histData[Histindex].outliersRemoved);
+                    use_body[counter] = FALSE;//marking the body as having been rejected as outlier
                 }
                  
             }
-            cc++;
+            counter++;
         }
     }
-//                 mw_printf("b: %.15f\t a: %.15f\t r: %.15f\n",(real) histData[Histindex].rawCount,  (real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved, histData[Histindex].outliersRemoved);
     
     
 }
@@ -592,28 +598,66 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
 
     histogram->totalNum = totalNum; /* Total particles in range */
     
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 10; i++)
     {
         nbCalcVelDisp(histogram);
         nbRemoveOutliers(ctx, st, histogram, hp, use_body);
         
     }
     nbCalcVelDisp(histogram);
-//     real count;
-//     real total = 0;
-//     for (int i = 0; i < lambdaBins; ++i)
-//     {
-//         for(int j = 0; j < betaBins; ++j)
-//         {
-//             Histindex = i * betaBins + j;
-//             count = (real) histData[Histindex].rawCount;
-//             count -= histData[Histindex].outliersRemoved;
-//             total += histData[Histindex].outliersRemoved;
-//             mw_printf("%.15f \t %.15f\t %.15f\t %.15f\n", histData[Histindex].vdisp, histData[Histindex].v_sum / (real) histData[Histindex].rawCount, (real) histData[Histindex].rawCount, histData[Histindex].outliersRemoved );
-//         }
-//     }
+    ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////
+    ////////////////////
+    real v_sum, vsq_sum, vlos, bin_ave, bin_sigma, new_count, outed;
+    int test_i;
+    test_i = 0;
+    for (p = st->bodytab; p < endp; ++p)
+    {
+        /* Only include bodies in models we aren't ignoring */
+        if (!ignoreBody(p))
+        {
+            
+            /* Get the position in lbr coorinates */
+            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
+            lambda = L(lambdaBetaR);
+            beta = B(lambdaBetaR);
+            
+            /* Find the indices */
+            lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
+            betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
+
+            /* Check if the position is within the bounds of the histogram */
+            if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
+            {   
+                
+                if(use_body[test_i] == FALSE)
+                {
+                    Histindex = lambdaIndex * betaBins + betaIndex;
+                    
+                    vlos = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
+                    
+                    v_sum   = histData[Histindex].v_sum;
+                    vsq_sum = histData[Histindex].vsq_sum;
+                    
+                    new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
+                    
+                    bin_ave = v_sum / new_count;
+                    bin_sigma = histData[Histindex].vdisp;
+                    
+                    outed = mw_fabs(bin_ave - vlos) - 2.5 * bin_sigma; 
+                    mw_printf("%.15f\t%.15f\t%.15f\t%.15f\n", vlos, bin_ave, bin_sigma, outed);
+                }
+                
+            }
+            test_i++;
+        }
+    }
     
-    
+        
+    ////////////////////
+    ////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+   
     nbNormalizeHistogram(histogram);
     free(use_body);
     
