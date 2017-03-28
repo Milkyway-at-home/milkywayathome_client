@@ -47,7 +47,7 @@ extern "C" {
 #define DEFAULT_USE_VEL_DISP TRUE
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
-
+#define DEFAULT_NOT_USE ((real) -1)
   /*
     Return this when a big likelihood is needed.
   */

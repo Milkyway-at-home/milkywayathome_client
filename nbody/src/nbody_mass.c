@@ -128,9 +128,6 @@ static real series_approx(real a, real x)
 
     real sum, del, ap;
     real pow_x = 1.0;
-    real ap2, del2;
-    real test1, test2;
-    test1 = 1.0 / a;
 //     ap = a;
     ap = 0.0;
     del = sum = 1.0 / a;//starting: gammma(a) / gamma(a+1) = 1/a
@@ -183,15 +180,12 @@ real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-    unsigned int lambdaBins = data->lambdaBins;
-    unsigned int betaBins = data->betaBins;
     unsigned int n = histogram->totalSimulated;
     unsigned int nSim = histogram->totalNum;
     unsigned int nData = data->totalNum;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
-    real likelihood;
 
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
@@ -235,17 +229,14 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-    int N;
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
-    real count1 = 0;
-    real count2 = 0;
     real chisq = 0.0;
     real vdisp_data;
     real vdisp_hist;
     real err;
-    for (int i = 0; i < nbins; ++i)
+    for (unsigned int i = 0; i < nbins; ++i)
     {
         if (data->data[i].useBin)
         {
@@ -255,8 +246,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
             {
                 err = data->data[i].vdisperr;
                 vdisp_hist = histogram->data[i].vdisp;
-                int count = histogram->data[i].rawCount;
-//                 mw_printf("%i \t %0.15f \t %0.15f \t %0.15f\n", count, vdisp_data, vdisp_hist, mw_fabs(vdisp_data - vdisp_hist));
+
                 /* the error in simulation veldisp is set to zero. */
                 if(err == 0.0)
                 {
