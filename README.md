@@ -1,39 +1,40 @@
+Linux: [![Linux Build](https://travis-ci.org/Milkyway-at-home/milkywayathome_client.svg?branch=master)](https://travis-ci.org/Milkyway-at-home/milkywayathome_client)
+MinGW: [![MinGW Build](https://travis-ci.org/Milkyway-at-home/milkywayathome_client.svg?branch=travis-xcompile)](https://travis-ci.org/Milkyway-at-home/milkywayathome_client)
+
+Separation
 --------------------------------------------------------------------------------
-Separation:
+- separation will do a separation after the integration if given an
+  output file. There is also an argument to set the random number seed.
 
-  - separation will do a separation after the integration if given an
-    output file. There is also an argument to set the random number seed.
-
+Nbody
 --------------------------------------------------------------------------------
-Nbody:
-
-  - Simulations are described with Lua input files which can be used
+- Simulations are described with Lua input files which can be used
   to produce an arbitrary initial configuration of particles.
 
-  - Various options are available for applying external potentials
+- Various options are available for applying external potentials
   to a system.
 
-  - Graphics can be run separately and attach to existing simulations,
+- Graphics can be run separately and attach to existing simulations,
   or can be launched at the same time with the --visualizer argument
   to the main process.
 
-  - N-body videos can be produced by using a separate program to
+- N-body videos can be produced by using a separate program to
   record OpenGL. A wrapper script that uses this can be used as
   the --visualizer-bin argument to record a video of the
   visualization. An example script is at tools/RecordNBodyVideo.sh
 
-
-
-  - Consistent N-body results between different systems require crlibm
+- Consistent N-body results between different systems require crlibm
   and SSE2 (at least on x86, not sure about other architectures)
 
-  - Returning nil from makePotential() for N-body will run the
+- Returning nil from makePotential() for N-body will run the
     simulation without an external potential
 
-  - Device information is exposed to the workunit through the
+- Device information is exposed to the workunit through the
     deviceInfo table if it is used.
 
-Tests can be run by running:
+Tests
+-----------------
+  Tests can be run by running:
   $ make test
 
   However this runs all of the tests, which takes forever. You can run
@@ -47,17 +48,18 @@ Tests can be run by running:
 
   Currently n = 100, 1024, 10000 are available.
 
+TAO
 --------------------------------------------------------------------------------
+TODO: update for latest tao version
 
-TAO:    *TODO: update for latest tao version
+- Maximum Likelihood Evaluation Code for running milkyway separation program
 
--Maximum Likelihood Evaluation Code for running milkyway separation program
+- Note: Lua files for TAO searches are different from those used by the separation code.
 
--Note: Lua files for TAO searches are different from those used by the separation code.
-
--The terminal output from this program appears confusing since it mixes the output of each separation run with that of TAO.  Using the linux ">" operator to port output to a file only takes the TAO output, making it much clearer.
+- The terminal output from this program appears confusing since it mixes the output of each separation run with that of TAO.  Using the linux ">" operator to port output to a file only takes the TAO output, making it much clearer.
 
 To run call:
+```
   $ ./TAO <options>
 
   General required options:
@@ -135,6 +137,7 @@ To run call:
         --min_threshold <double_1, double_2, ... , double_n>
                     (default:line search will not quit if the input direction is very small)
         --rand <double>     (randomizes the search parameters by +- the given percent)
+```
 
 ---------------------------------------------------------------------------------------------------
 
@@ -148,29 +151,28 @@ tarballs if git and xz are installed and found.
 - Make sure when building with MSVC to set built to use Multithreaded
   (/MT) for the builds of the various libraries
 
+Instructions for Cross Compiling (With BOINC on)
 ---------------------------------------------------------------------------------------------------
+Step 0.  Ensure proper packages are installed
+    (For Ubuntu) `sudo apt-get install mingw-w64 cmake`
 
-Instructions for Cross Compiling (With BOINC on)*:
-
-Step 0:  Ensure proper packages are installed
-(For Ubuntu)
-sudo apt-get install mingw-w64 cmake 
-
-
-Step 1:  Download all necessary files.
+Step 1.  Download all necessary files.
+```
 git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
 cd milkywayathome_client
-git submodule init
+git submodule init  
 git submodule update --recursive
-
-Step 2:  Set up build directory
+```
+Step 2.  Set up build directory
+```
 cd ../
 mkdir build
 cd build
-
-Step 3:  Set up build files with CMake and Compile
+```
+Step 3.  Set up build files with CMake and Compile
 (Only Confirmed to work with Separation)
-cmake -DCMAKE_TOOLCHAIN_FILE="../milkywayathome_client/cmake_modules/MinGW32-Cross-Toolchain.cmake" -DBUILD_32=<ON/OFF> -DSEPARATION_OPENCL=<ON/OFF> -DSEPARATION_STATIC=ON -DOPENCL_LIBRARIES=<Path to OpenCL.lib for 32 or 64 bit depending on build> -DOPENCL_INCLUDE_DIRS=<Path to OpenCL "include" files> ../milkywayathome_client/
+```
+cmake -DCMAKE_TOOLCHAIN_FILE="../milkywayathome_client/cmake_modules/MinGW32-Cross-Toolchain.cmake" -DBUILD_32=<ON/OFF> -       DSEPARATION_OPENCL=<ON/OFF> -DSEPARATION_STATIC=ON -DOPENCL_LIBRARIES=<Path to OpenCL.lib for 32 or 64 bit depending on build> -DOPENCL_INCLUDE_DIRS=<Path to OpenCL "include" files> ../milkywayathome_client/
 make
-
+```
 * These instructions may need to be updated as BOINC updates their software.
