@@ -486,9 +486,9 @@ endif()
 add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/tools/app_info.xml"
                     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/tools"
                     COMMAND ${LUA_INTERPRETER} "${PROJECT_SOURCE_DIR}/tools/GenerateAppInfo.lua"
-                                               "$<TARGET_FILE_NAME:milkyway_separation>"
-                                               "$<TARGET_FILE_NAME:milkyway_nbody>"
-                                               "$<TARGET_FILE_NAME:milkyway_nbody_graphics>")
+                                               "$SEPARATION_BIN_NAME"
+                                               "$NBODY_BIN_NAME"
+                                               "$NBODY_GL_BIN_NAME")
 
 
 

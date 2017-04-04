@@ -320,9 +320,10 @@ endif()
 
 if(BOINC_RELEASE_NAMES)
   get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "${CL_PLAN_CLASS}")
+  set(SEPARATION_BIN_NAME "${BOINC_BIN_NAME}" CACHE INTERNAL PARENT_SCOPE)
   set_target_properties(milkyway_separation
                           PROPERTIES
-                            OUTPUT_NAME "${BOINC_BIN_NAME}")
+                            OUTPUT_NAME "${SEPARATION_BIN_NAME}")
 endif()
 
 milkyway_link(milkyway_separation ${BOINC_APPLICATION}
