@@ -153,26 +153,26 @@ tarballs if git and xz are installed and found.
 
 Instructions for Cross Compiling (With BOINC on)
 ---------------------------------------------------------------------------------------------------
-0.  Ensure proper packages are installed
+Step 0.  Ensure proper packages are installed
     (For Ubuntu) `sudo apt-get install mingw-w64 cmake`
 
-1.  Download all necessary files.
-    ```
-    git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
-    cd milkywayathome_client
-    git submodule init  
-    git submodule update --recursive
-    ```
-2.  Set up build directory
-    ```
-    cd ../
-    mkdir build
-    cd build
-    ```
-3.  Set up build files with CMake and Compile
+Step 1.  Download all necessary files.
+```
+git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
+cd milkywayathome_client
+git submodule init  
+git submodule update --recursive
+```
+Step 2.  Set up build directory
+```
+cd ../
+mkdir build
+cd build
+```
+Step 3.  Set up build files with CMake and Compile
 (Only Confirmed to work with Separation)
-    ```
-    cmake -DCMAKE_TOOLCHAIN_FILE="../milkywayathome_client/cmake_modules/MinGW32-Cross-Toolchain.cmake" -DBUILD_32=<ON/OFF> -       DSEPARATION_OPENCL=<ON/OFF> -DSEPARATION_STATIC=ON -DOPENCL_LIBRARIES=<Path to OpenCL.lib for 32 or 64 bit depending on build> -DOPENCL_INCLUDE_DIRS=<Path to OpenCL "include" files> ../milkywayathome_client/
-    make
-    ```
+```
+cmake -DCMAKE_TOOLCHAIN_FILE="../milkywayathome_client/cmake_modules/MinGW32-Cross-Toolchain.cmake" -DBUILD_32=<ON/OFF> -       DSEPARATION_OPENCL=<ON/OFF> -DSEPARATION_STATIC=ON -DOPENCL_LIBRARIES=<Path to OpenCL.lib for 32 or 64 bit depending on build> -DOPENCL_INCLUDE_DIRS=<Path to OpenCL "include" files> ../milkywayathome_client/
+make
+```
 * These instructions may need to be updated as BOINC updates their software.
