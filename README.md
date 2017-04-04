@@ -59,6 +59,7 @@ TODO: update for latest tao version
 - The terminal output from this program appears confusing since it mixes the output of each separation run with that of TAO.  Using the linux ">" operator to port output to a file only takes the TAO output, making it much clearer.
 
 To run call:
+```
   $ ./TAO <options>
 
   General required options:
@@ -136,6 +137,7 @@ To run call:
         --min_threshold <double_1, double_2, ... , double_n>
                     (default:line search will not quit if the input direction is very small)
         --rand <double>     (randomizes the search parameters by +- the given percent)
+```
 
 ---------------------------------------------------------------------------------------------------
 
