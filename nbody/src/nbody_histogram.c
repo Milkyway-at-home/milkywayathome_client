@@ -453,7 +453,7 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
         }
     }
     
-    mw_printf("%i\n", total);
+//     mw_printf("%i\n", total);
 }
 
 
@@ -577,7 +577,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->totalNum = totalNum; /* Total particles in range */
     
     /* this converges somewhere between 3 and 6 iterations */
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 6; i++)
     {
         nbCalcVelDisp(histogram);
         nbRemoveOutliers(st, histogram, use_body, vlos);
