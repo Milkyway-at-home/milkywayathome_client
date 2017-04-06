@@ -439,7 +439,7 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
             count = (real) histData[Histindex].rawCount;
             count -= histData[Histindex].outliersRemoved;
             total += histData[Histindex].outliersRemoved;
-            if(count > 1.0)//need enough counts to remove the 2 outliers
+            if(count > 4.0)//need enough counts to remove the 2 outliers
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
                 n_ratio = count / (n_new); 
@@ -453,7 +453,7 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
         }
     }
     
-//     mw_printf("%i\n", total);
+    mw_printf("%i\n", total);
 }
 
 
