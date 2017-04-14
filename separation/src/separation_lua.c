@@ -330,11 +330,11 @@ static int evaluateBackground(lua_State* luaSt)
     static const MWNamedArg bgArgTable[] =
         {
             { "innerPower", LUA_TNUMBER, NULL, FALSE, &bg.innerPower    },
-            { "r0",         LUA_TNUMBER, NULL, TRUE,  &bg.r0            },
+            { "r0",         LUA_TNUMBER, NULL, FALSE,  &bg.r0            },
             { "q",          LUA_TNUMBER, NULL, TRUE,  &bg.q             },
             { "outerPower", LUA_TNUMBER, NULL, FALSE, &bg.outerPower    },
 
-            { "epsilon",    LUA_TNUMBER, NULL, FALSE, &bg.epsilon       },
+            { "epsilon",    LUA_TNUMBER, NULL, TRUE, &bg.epsilon       },
 
             { "a",          LUA_TNUMBER, NULL, FALSE, &bg.a             },
             { "b",          LUA_TNUMBER, NULL, FALSE, &bg.b             },
