@@ -430,7 +430,7 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
     real n_ratio;
     real n_new;
     real v_sum, vsq_sum, vdispsq;
-    int total = 0;
+
     for (i = 0; i < lambdaBins; ++i)
     {
         for(j = 0; j < betaBins; ++j)
@@ -438,8 +438,8 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
             Histindex = i * betaBins + j;
             count = (real) histData[Histindex].rawCount;
             count -= histData[Histindex].outliersRemoved;
-            total += histData[Histindex].outliersRemoved;
-            if(count > 4.0)//need enough counts to remove the 2 outliers
+            
+            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
                 n_ratio = count / (n_new); 
@@ -453,7 +453,6 @@ static void nbCalcVelDisp(NBodyHistogram* histogram)
         }
     }
     
-    mw_printf("%i\n", total);
 }
 
 
