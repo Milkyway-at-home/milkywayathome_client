@@ -785,7 +785,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
     //----------------------------------------------------------------------------------------------------
 
-        /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
+        /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
        

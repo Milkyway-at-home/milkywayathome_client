@@ -170,7 +170,7 @@ real IncompleteGammaFunc(real a, real x)
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 {
     real xsol = X(p) + sunGCdist;
-    real mag = mw_sqrt(xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p));
+    real mag = mw_sqrt( xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p) );
     real vl = xsol * X(v) + Y(p) * Y(v) + Z(p) * Z(v);
     vl = vl / mag;
     
@@ -250,7 +250,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
                 /* the error in simulation veldisp is set to zero. */
                 if(err == 0.0)
                 {
-                    chisq += sqr( (vdisp_data - vdisp_hist));
+                    chisq += sqr( (vdisp_data - vdisp_hist) );
                 }
                 else
                 {

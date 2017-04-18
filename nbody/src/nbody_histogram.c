@@ -55,10 +55,6 @@ real nbNormalizedHistogramError(unsigned int n, real total)
     return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;
 }
 
-real nbVelDispError(unsigned int n, real total)
-{
-    return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;//for now this is the same as the counter error
-}
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
 {
@@ -284,7 +280,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->lambda,
                 data->beta,
                 data->count,
-                (real) data->rawCount,
+                data->err,
                 data->vdisp,
                 data->vdisperr);
 
@@ -354,9 +350,9 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
             
             /* Report center of the bins */
             histData[Histindex].lambda = ((real) i + 0.5) * lambdaSize + lambdaStart;
-            histData[Histindex].beta = ((real) j + 0.5) * betaSize + betaStart;
-            histData[Histindex].count = count / totalNum;
-            histData[Histindex].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex].beta   = ((real) j + 0.5) * betaSize + betaStart;
+            histData[Histindex].count  = count / totalNum;
+            histData[Histindex].err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
         }
     }
 }

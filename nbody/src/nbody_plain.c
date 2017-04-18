@@ -132,21 +132,32 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     
     if (calculateLikelihood || nbf->histoutFileName || nbf->printHistogram)
     {
-
         if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
         {
-            mw_printf("Failed to get likelihood information\n");
+            /* this would normally return a print statement 
+             * but I do not want to overload the output since 
+             * this would run every time step.
+             */
+            return 0;
         }
     }
     
     if (calculateLikelihood)
     {
+        
         histogram = nbCreateHistogram(ctx, st, &hp);
+ 
         if (!histogram)
         {
-            mw_printf("Failed to create histogram\n");
+            /* this would normally return a print statement 
+             * but I do not want to overload the output since 
+             * this would run every time step.
+             */
+            return 0;
         }
+        
         data = nbReadHistogram(nbf->histogramFileName);
+        
         if (!data)
         {
             free(histogram);
