@@ -92,6 +92,10 @@ static IntegralArea* freadParameters(FILE* file,
         mw_fail("Error reading background_weight\n");
 
     bgp->epsilon = (real) tmp1;
+    
+    fscanf(file, "background_weight_step: %lf\n", &tmp1);
+    fscanf(file, "background_weight_min: %lf\n", &tmp1);
+    fscanf(file, "background_weight_max: %lf\n", &tmp1);    
 
     tmpArr = fread_double_array(file, "background_parameters", NULL);
     if (!tmpArr)
