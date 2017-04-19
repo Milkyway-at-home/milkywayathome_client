@@ -29,6 +29,16 @@ extern "C" {
 
 real probability_match(int n, real k, real pobs);
 
+real GammaFunc(const real z);
+
+real IncompleteGammaFunc(real a, real x);
+
+real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
+
+real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
+
+real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
+
 #ifdef __cplusplus
 }
 #endif

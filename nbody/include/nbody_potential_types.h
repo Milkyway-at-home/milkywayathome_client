@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2010-2011 Matthew Arsenault
  *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
- *
+ *  Copyright (c) 2016 Siddhartha Shelton
  *  This file is part of Milkway@Home.
  *
  *  Milkway@Home is free software: you may copy, redistribute and/or modify it
@@ -101,6 +101,33 @@ typedef struct MW_ALIGN_TYPE
 
 #define HALO_TYPE "Halo"
 
+ /* Supported Dwarf Galaxy models */
+#define _PLUMMER_DWARF 0
+#define _NFW_DWARF 1
+#define _GEN_HERN_DWARF 2
+#define _EINASTO_DWARF 3
+typedef enum
+{
+    InvalidDwarf       = InvalidEnum,
+    Plummer            = _PLUMMER_DWARF,
+    NFW                = _NFW_DWARF,
+    General_Hernquist  = _GEN_HERN_DWARF,
+    Einasto            = _EINASTO_DWARF
+} dwarf_t;
+
+typedef struct MW_ALIGN_TYPE
+{
+    dwarf_t type;
+    real mass;        
+    real scaleLength;   
+    real n; //used by einasto
+    real p0; //used by nfw
+    real r200; // virial radius
+} Dwarf;
+
+#define DWARF_TYPE "Dwarf"
+
+
 typedef struct MW_ALIGN_TYPE
 {
     Spherical sphere[1];
@@ -112,12 +139,11 @@ typedef struct MW_ALIGN_TYPE
 #define POTENTIAL_TYPE "Potential"
 
 
-
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
-
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
 

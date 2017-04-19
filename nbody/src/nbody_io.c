@@ -2,7 +2,7 @@
  * Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
  * Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.
  * Copyright (c) 2010-2012 Matthew Arsenault
- *
+ * Copyright (c) 2016 Siddhartha Shelton
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 #include "nbody_io.h"
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
+#include "nbody_mass.h"
 
 static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx* ctx, const NBodyState* st)
 {
@@ -58,7 +59,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
     if (both)
     {
-        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 "x", 
                 "y",  
                 "z",  
@@ -68,7 +69,8 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
                 "v_x",
                 "v_y",
                 "v_z",
-                "mass"
+                "mass", 
+                "v_los"
             );
     }
     else
@@ -91,6 +93,7 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
 {
     Body* p;
     mwvector lbr;
+    real vLOS;
     const Body* endp = st->bodytab + st->nbody;
 
     nbPrintSimInfoHeader(f, nbf, ctx, st);
@@ -109,11 +112,12 @@ static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, co
         else if (nbf->outputlbrCartesian)
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
+            vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));   
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
         }
         else
         {

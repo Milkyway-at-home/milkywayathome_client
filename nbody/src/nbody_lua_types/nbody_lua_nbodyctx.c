@@ -86,16 +86,19 @@ static int createNBodyCtx(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "timestep",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep    },
-            { "timeEvolve",  LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve  },
-            { "theta",       LUA_TNUMBER,  NULL, FALSE, &ctx.theta       },
-            { "eps2",        LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2        },
-            { "treeRSize",   LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize   },
-            { "sunGCDist",   LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist   },
-            { "criterion",   LUA_TSTRING,  NULL, FALSE, &criterionName   },
-            { "useQuad",     LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad     },
-            { "allowIncest", LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest },
-            { "quietErrors", LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors },
+            { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
+            { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
+            { "theta",         LUA_TNUMBER,  NULL, FALSE, &ctx.theta         },
+            { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
+            { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
+            { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
+            { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName     },
+            { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad       },
+            { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
+            { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors   },
+            { "useBestLike",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike   },
+            { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
+            { "BestLikeStart", LUA_TNUMBER,  NULL, TRUE,  &ctx.BestLikeStart },
             END_MW_NAMED_ARG
         };
 
@@ -212,6 +215,9 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
+    { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
+    { "useVelDisp",      getBool,       offsetof(NBodyCtx, useVelDisp)  },
+    { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { NULL, NULL, 0 }
 };
 
@@ -227,6 +233,9 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)     },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest) },
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
+    { "useBestLike",     setBool,       offsetof(NBodyCtx, useBestLike) },
+    { "useVelDisp",      setBool,       offsetof(NBodyCtx, useVelDisp)  },
+    { "BestLikeStart",   setNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { NULL, NULL, 0 }
 };
 

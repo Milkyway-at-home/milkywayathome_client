@@ -37,7 +37,9 @@ extern "C" {
 #endif
 
 /* simple math macros */
+#define sixth(x) ((x) * (x) * (x) * (x) * (x) * (x))
 #define fifth(x) ((x) * (x) * (x) * (x) * (x))
+#define fourth(x) ((x) * (x) * (x) * (x))
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x)  ((x) * (x))
 #define inv(x)  ((real) 1.0 / (x))
@@ -48,6 +50,7 @@ extern "C" {
 #define minusfivehalves(x) (inv(fivehalves(x)))
 #define minusthreehalves(x) (inv(threehalves(x)) )
 #define minushalf(x) ( inv(mw_sqrt(x)) )
+
 
 /* TODO: Have fma */
 #define mw_fma(a, b, c) (((a) * (b)) + (c))
@@ -213,6 +216,13 @@ typedef struct MW_ALIGN_TYPE_V(16)
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
 
+
+/* current hubble parameter and cosmological critical density */
+#define hubble ((real) 73.8 / 1000.0) //km/s/kpc
+#define hubble_gyr ((real) hubble * 3.154 *inv(3.086) ) //conversion to 1/gyr -> (km/s/kpc * 3.15576e16s/gyr * 1kpc/3.086e16km)
+#define pcrit_exact ((real) 3.0 * sqr(hubble_gyr) / (8.0 * M_PI) )
+#define pcrit       0.000679087369829744220469326744094105320596648627735869652//precalculated version of pcrit
+#define vol_pcrit   0.568910904587397184785763397846734505212216314432372653620//vol_pcrit = 200.0 * pcrit * PI_4_3 
 
 #if !defined(NAN) && defined(_MSC_VER)
 static const union

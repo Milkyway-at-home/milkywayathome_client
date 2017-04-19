@@ -77,7 +77,7 @@ static int luaRunSystem(lua_State* luaSt)
     NBodyStatus rc;
     NBodyState* st;
     NBodyCtx ctx;
-
+    
     if (lua_gettop(luaSt) != 3)
     {
         return luaL_argerror(luaSt, 3, "Expected 3 arguments");
@@ -91,7 +91,11 @@ static int luaRunSystem(lua_State* luaSt)
         return luaL_argerror(luaSt, 3, "Expected potential as argument 3\n");
     }
 
-    rc = nbRunSystem(&ctx, st);
+        /* this is commented because it messed with my timetable, and no one messes with my timetable.
+         * actually though, it is because this entire file is unused, umimplemented code that was written 
+         * get access to the state during the run among other things. But it was never finished. 
+         */
+//     rc = nbRunSystem(&ctx, st);
     lua_pushstring(luaSt, showNBodyStatus(rc));
 
     return 1;

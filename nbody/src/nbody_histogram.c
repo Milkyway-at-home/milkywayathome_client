@@ -55,6 +55,7 @@ real nbNormalizedHistogramError(unsigned int n, real total)
     return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;
 }
 
+
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
 {
     unsigned int i;
@@ -274,12 +275,14 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
                 data->count,
-                data->err);
+                data->err,
+                data->vdisp,
+                data->vdisperr);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -347,12 +350,107 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
             
             /* Report center of the bins */
             histData[Histindex].lambda = ((real) i + 0.5) * lambdaSize + lambdaStart;
-            histData[Histindex].beta = ((real) j + 0.5) * betaSize + betaStart;
-            histData[Histindex].count = count / totalNum;
-            histData[Histindex].err = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex].beta   = ((real) j + 0.5) * betaSize + betaStart;
+            histData[Histindex].count  = count / totalNum;
+            histData[Histindex].err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
         }
     }
 }
+
+static void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * vlos)
+{
+    
+    unsigned int Histindex;
+    Body* p;
+    HistData* histData;
+    const Body* endp = st->bodytab + st->nbody;
+
+    unsigned int counter = 0;
+    
+    histData = histogram->data;
+
+    real v_line_of_sight;
+    real bin_ave, bin_sigma, new_count;
+    
+    for (p = st->bodytab; p < endp; ++p)
+    {
+        /* Only include bodies in models we aren't ignoring */
+        if (!ignoreBody(p))
+        {
+            
+            /* Check if the position is within the bounds of the histogram */
+            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
+            {   
+                Histindex = (int) use_body[counter];
+                
+                v_line_of_sight = vlos[counter];
+                /* bin count minus what was already removed */
+                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
+                
+                /* average bin vel */
+                bin_ave = histData[Histindex].v_sum / new_count;
+                
+                /* the sigma for the bin is the same as the dispersion */
+                bin_sigma = histData[Histindex].vdisp;
+                
+                
+                if(mw_fabs(bin_ave - v_line_of_sight) > 2.5 * bin_sigma)//if it is outside of the sigma limit
+                {
+                    histData[Histindex].v_sum -= v_line_of_sight;//remove from vel dis sums
+                    histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
+                    histData[Histindex].outliersRemoved++;//keep track of how many are being removed
+                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                }
+                 
+            }
+            counter++;
+        }
+    }
+    
+    
+}
+
+/* Get the velocity dispersion in each bin*/
+static void nbCalcVelDisp(NBodyHistogram* histogram)
+{
+    unsigned int i;
+    unsigned int j;
+    unsigned int Histindex;
+    
+    unsigned int lambdaBins = histogram->lambdaBins;
+    unsigned int betaBins = histogram->betaBins;
+    
+    HistData* histData = histogram->data;
+
+    real count;
+    real n_ratio;
+    real n_new;
+    real v_sum, vsq_sum, vdispsq;
+
+    for (i = 0; i < lambdaBins; ++i)
+    {
+        for(j = 0; j < betaBins; ++j)
+        {
+            Histindex = i * betaBins + j;
+            count = (real) histData[Histindex].rawCount;
+            count -= histData[Histindex].outliersRemoved;
+            
+            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
+            {
+                n_new = count - 1.0; //because the mean is calculated from the same populations set
+                n_ratio = count / (n_new); 
+                
+                vsq_sum = histData[Histindex].vsq_sum;
+                v_sum = histData[Histindex].v_sum;
+                
+                vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
+                histData[Histindex].vdisp = mw_sqrt(vdispsq);
+            }
+        }
+    }
+    
+}
+
 
 
 /*
@@ -391,16 +489,22 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     unsigned int betaBins = hp->betaBins;
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
-    real Nbodies= st->nbody;
+    unsigned int ub_counter = 0;
+    
+    real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
     
+    real * use_body  = mwCalloc(Nbodies / 2, sizeof(real));
+    real * vlos      = mwCalloc(Nbodies / 2, sizeof(real));
+    
     nbGetHistTrig(&histTrig, hp);
-
     histogram = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
     histogram->lambdaBins = lambdaBins;
     histogram->betaBins = betaBins;
     histogram->hasRawCounts = TRUE;
     histogram->params = *hp;
+    
+    real v_line_of_sight;
     
     for (int i = 0; i < Nbodies; i++)
     {
@@ -413,17 +517,24 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     }
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
+    
     /* It does not make sense to ignore bins in a generated histogram */
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
+        histData[Histindex].v_sum    = 0.0;
+        histData[Histindex].vsq_sum  = 0.0;
+        histData[Histindex].vdisp    = 0.0;
+        histData[Histindex].vdisperr = 0.0;
+        histData[Histindex].outliersRemoved = 0.0;
+        
         histData[Histindex].useBin = TRUE;
     }
 
 
     for (p = st->bodytab; p < endp; ++p)
     {
-        /* Only include bodies in models we aren't ignoring */
+        /* Only include bodies in models we aren't ignoring (like dark matter) */
         if (!ignoreBody(p))
         {
             
@@ -431,7 +542,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
             lambda = L(lambdaBetaR);
             beta = B(lambdaBetaR);
-
+            
+            use_body[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
+            vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
+            
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
             betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
@@ -440,16 +554,36 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
             {   
                 Histindex = lambdaIndex * betaBins + betaIndex;
+                use_body[ub_counter] = Histindex;//if body is in hist, mark which hist bin
                 histData[Histindex].rawCount++;
                 ++totalNum;
+                
+                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
+                
+                /* each of these are components of the vel disp */
+                histData[Histindex].v_sum += v_line_of_sight;
+                histData[Histindex].vsq_sum += sqr(v_line_of_sight);
             }
+            ub_counter++;
         }
     }
 
     histogram->totalNum = totalNum; /* Total particles in range */
-
+    
+    /* this converges somewhere between 3 and 6 iterations */
+    for(int i = 0; i < 6; i++)
+    {
+        nbCalcVelDisp(histogram);
+        nbRemoveOutliers(st, histogram, use_body, vlos);
+    }
+    
+    nbCalcVelDisp(histogram);
     nbNormalizeHistogram(histogram);
-
+    
+    free(use_body);
+    free(vlos);
+    
     return histogram;
 }
 
@@ -596,13 +730,15 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf \n",
+                    "%d %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
                     &histData[fileCount].count,
-                    &histData[fileCount].err);
-        if (rc != 5)
+                    &histData[fileCount].err,
+                    &histData[fileCount].vdisp,
+                    &histData[fileCount].vdisperr);
+        if (rc != 7 && rc != 5)//for the ones with vel disp and without
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
             error = TRUE;

@@ -43,6 +43,7 @@ typedef struct
     char* histogramFileName;
     char* histoutFileName;
     char* matchHistogram;   /* Just match this histogram to other histogram, no simulation */
+    char* matchHistVelDisp;   /* Just match this histogram to other histogram, no simulation -- with vel dispersion calc*/
     char* graphicsBin;
     char* visArgs;
 
@@ -78,10 +79,10 @@ typedef struct
     int verbose;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st);
-NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 int nbVerifyFile(const NBodyFlags* nbf);
 int nbMain(const NBodyFlags* nbf);
 

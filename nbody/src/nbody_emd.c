@@ -57,6 +57,24 @@
     ==========================================================================
 */
 
+/* Cost Function:
+ * Copyright 2016 Siddhartha Shelton
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "milkyway_util.h"
 #include "nbody_emd.h"
 #include "nbody_defaults.h"
@@ -1328,28 +1346,17 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     * probability distribution and (1.0 - emd / max_dist) */
 
     real EMDComponent = 1.0 - emd / 50.0;
-    /* this is the newest version of the cost function
-     * it uses a combination of the binomial error for sim 
-     * and the poisson error for the data
-     */
     
-    p = ((real) nSim / (real) n) ;
-    real num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
-    real denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
-    real CostComponent = num / denom; //this is the log of the cost component
-
+    
     /* the 300 is there to add weight to the EMD component */
-    likelihood = 300.0 * mw_log(EMDComponent) +  (CostComponent);
+    likelihood = 300.0 * mw_log(EMDComponent);
 
-//     mw_printf("emd = % 10.15f\n", emd);
-//     mw_printf("EMDComponent = % 10.15f\n", EMDComponent);
-//     mw_printf("log(EMDComponent) = %10.15f\n", mw_log(EMDComponent));
-//     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
-//     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
     free(hist);
     free(dat);
 //     mw_printf("l = %.15f\n", p);
 //     mw_printf("l = %.15f\n", likelihood);
+    
+    /* the emd is a negative. returning a positive value */
     return -likelihood;
 }
 

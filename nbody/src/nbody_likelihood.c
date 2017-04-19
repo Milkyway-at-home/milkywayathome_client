@@ -60,24 +60,33 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
     return FALSE;
 }
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist)
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp)
 {
     NBodyHistogram* dat;
     NBodyHistogram* match;
     real emd = NAN;
-
+    real cost_component = NAN;
+    real vel_disp = NAN;
+    real likelihood = NAN;
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
 
     if (dat && match)
     {
         emd = nbMatchEMD(dat, match);
+        cost_component = nbCostComponent(dat, match);
+        likelihood = emd + cost_component;
+        
+        if(use_veldisp)
+        {
+            vel_disp = nbVelocityDispersion(dat, match);
+            likelihood += vel_disp;
+        }
+        
     }
-
     free(dat);
     free(match);
-
-    return emd;
+    return likelihood;
 }
 
 
@@ -87,6 +96,12 @@ real nbSystemLikelihood(const NBodyState* st,
                      const NBodyHistogram* histogram,
                      NBodyLikelihoodMethod method)
 {
+    
+    real geometry_component;
+    real cost_component;
+    real velocity_dispersion_component;
+    real likelihood = NAN;
+    
     if (data->lambdaBins != histogram->lambdaBins)
     {
         mw_printf("Number of bins does not match those in histogram file. "
@@ -96,6 +111,8 @@ real nbSystemLikelihood(const NBodyState* st,
         return NAN;
     }
 
+    
+    /* likelihood due to shape of the histograms */
     if (method == NBODY_EMD)
     {
         /* We could have far crazier variations in the distance in cases
@@ -125,12 +142,28 @@ real nbSystemLikelihood(const NBodyState* st,
             return worstEMD; //Changed.  See above comment.
         }
 
-        return nbMatchEMD(data, histogram);
+        geometry_component = nbMatchEMD(data, histogram);
     }
     else
     {
-        return nbCalcChisq(data, histogram, method);
+        geometry_component = nbCalcChisq(data, histogram, method);
     }
+    
+    /* likelihood due to the amount of mass in the histograms */
+    
+    cost_component = nbCostComponent(data, histogram);
+
+    likelihood = geometry_component + cost_component;
+    
+    /* likelihood due to the vel dispersion per bin of the two hist */
+    if(st->useVelDisp)
+    {
+        velocity_dispersion_component = nbVelocityDispersion(data, histogram);
+        likelihood += velocity_dispersion_component;
+    }
+    
+    return likelihood;
+    
 }
 
 
