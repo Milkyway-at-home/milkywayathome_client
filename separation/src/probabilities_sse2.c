@@ -64,7 +64,7 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
     MW_ALIGN_V(16) double xyzstr[MAX_CONVOLVE];
   #endif
 
-    __m128d QI, RI, tmp0,tmp1, PROD, PBXV, BGP, PBTHICK, PBTHIN;
+    __m128d QI, RI, tmp0,tmp1, PROD, PBXV, BGP, PBTHICK;
     __m128d xyz0, xyz1, xyz2;
     __m128d CylR, CylZ;
 
@@ -75,15 +75,12 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
     const __m128d SUNR0    = mw_set1_pd(ap->sun_r0);
     const __m128d R0       = mw_set1_pd(ap->r0);
     const __m128d QV_RECIP = mw_set1_pd(ap->q_inv);
-    const __m128d THINLS   = mw_set1_pd(-0.44444444);
-    const __m128d THINHS   = mw_set1_pd(-4.0);
     const __m128d THICKLS  = mw_set1_pd(-0.285714286);
     const __m128d THICKHS  = mw_set1_pd(-1.428571429);
     /*Calculate halo and disk coeffients
       Can probably write this in a better way */    
-    const __m128d BGCOEF   = mw_set1_pd(.00125 * ap->bg_weight);
-    const __m128d THINCOEF = mw_set1_pd(.91875 * ap->thin_disk_weight);
-    const __m128d THICKCOEF = mw_set1_pd(.08);
+    const __m128d THICKCOEF   = mw_set1_pd(ap->thick_disk_weight);
+    const __m128d BGCOEF      = mw_set1_pd(ap->background_weight);
 
     (void) gPrime, (void) sg_dx;
 
@@ -120,7 +117,8 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
 
         /* Coordinate Tranform from GC XYZ to GC Cylindrical */
         CylR = mw_fsqrt_pd(mw_add_pd(xyz0,  xyz1));
-        CylZ = xyz2;
+        /* Find the absolute value of Z to ensure it works in North and South */
+        CylZ = mw_abs_pd(xyz2);
 
         /* Calculate R */
         PROD = mw_fsqrt_pd(mw_add_pd(xyz0, mw_add_pd(xyz1, tmp0)));
@@ -128,10 +126,9 @@ static real probabilities_intrinsics_hernquist(const AstronomyParameters* ap,
         /* Calculate background probability */
         PBXV = mw_div_pd(BGCOEF, mw_mul_pd(PROD, mw_mul_pd(tmp1, mw_mul_pd(tmp1, tmp1))));
         /* Calculate Thin and Thick Disk and add to Background Probability */
-        PBTHIN = mw_mul_pd(THINCOEF, mw_exp_pd(mw_add_pd(mw_mul_pd(CylR, THINLS),mw_mul_pd(CylZ, THINHS))));
         PBTHICK = mw_mul_pd(THICKCOEF, mw_exp_pd(mw_add_pd(mw_mul_pd(CylR, THICKLS), mw_mul_pd(CylZ, THICKHS))));
         /*Add Probabilties together, multiply by gaussian quadriture, r3 and exponential weight*/
-        BGP = mw_fma_pd(mw_load_pd(&qw_r3_N[i]), mw_add_pd(PBTHIN, mw_add_pd(PBXV, PBTHICK)), BGP);
+        BGP = mw_fma_pd(mw_load_pd(&qw_r3_N[i]), mw_add_pd(PBXV, PBTHICK), BGP);
     }
 
     BGP = mw_mul_pd(BGP, REF_XR);

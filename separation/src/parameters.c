@@ -83,6 +83,8 @@ static IntegralArea* freadParameters(FILE* file,
     int sgr_coordinates = 0;
     real* tmpArr = NULL;
 
+    int expected_input_params = 0;
+
     parametersVersion = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
 
     if (fscanf(file, "number_parameters: %u\n", &temp) < 1)
@@ -92,7 +94,12 @@ static IntegralArea* freadParameters(FILE* file,
         mw_fail("Error reading background_weight\n");
 
     bgp->epsilon = (real) tmp1;
-
+    
+    fscanf(file, "background_weight_step: %lf\n", &tmp1);
+    fscanf(file, "background_weight_min: %lf\n", &tmp1);
+    fscanf(file, "background_weight_max: %lf\n", &tmp1);    
+    fscanf(file, "optimize_background_weight: %d\n", &iTmp);    
+    if(iTmp) ++expected_input_params;
     tmpArr = fread_double_array(file, "background_parameters", NULL);
     if (!tmpArr)
         return NULL;
@@ -108,7 +115,7 @@ static IntegralArea* freadParameters(FILE* file,
     free(fread_double_array(file, "background_max", NULL));
     unsigned int opt_size = 0;
     int *optimize_parameter = fread_int_array(file, "optimize_parameter", &opt_size);
-    int expected_input_params = 0;
+    
     for(unsigned int j = 0; j < opt_size; ++j)
     {
         if(optimize_parameter[j]) ++expected_input_params;
@@ -340,8 +347,8 @@ int setParameters(AstronomyParameters* ap,
         return 1;
     }
 
-    bgp->q = parameters[0];
-    bgp->r0 = parameters[1];
+    bgp->epsilon = parameters[0];
+    bgp->q = parameters[1];
 
     for (i = 0; i < nStream; ++i)
     {

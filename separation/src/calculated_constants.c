@@ -77,7 +77,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->innerPower = bgp->innerPower;
     ap->q     = bgp->q;
 
-    ap->r0    = bgp->r0;
+    ap->r0    = 12.0;
     ap->outerPower = bgp->outerPower;
 
     ap->q_inv = inv(ap->q);
@@ -94,7 +94,13 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
         return 1;
     }
 
-    ap->exp_background_weight = mw_exp(bgp->epsilon);
+    if(bgp->epsilon < 0.0 || bgp->epsilon > 1.0)
+    {
+        mw_printf("Background Epsilon (%f) must be >= 0, <= 1\n", bgp->epsilon);
+        return 1;
+    }
+    ap->background_weight = bgp->epsilon;
+    ap->thick_disk_weight = 1.0 - ap->background_weight;
     //Check if we need to use fast or slow hernquist if we are not using Broken Power Law which doesn't care.
     if(ap->background_profile != BROKEN_POWER_LAW)
     {
@@ -118,7 +124,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
 
     /* Calculate the background weight */
 
-    calculate_background_weights(ap);
+    //calculate_background_weights(ap);
 
     return 0;
 }
@@ -127,7 +133,7 @@ void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
 {
     int i;
 
-    streams->sumExpWeights = ap->exp_background_weight;
+    streams->sumExpWeights = 1.0;
     for (i = 0; i < streams->number_streams; i++)
     {
         streams->parameters[i].epsilonExp = mw_exp(streams->parameters[i].epsilon);

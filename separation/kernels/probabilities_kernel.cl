@@ -162,14 +162,6 @@ inline real2 kahanSum(real2 running, real term)
     return running;
 }
 
-inline real prob_thin_disk(real2 rz)
-{
-    const real ls = -0.44444444; /*scale length, -1/(2.25kpc) from Xu et al. (2015) */
-    const real hs = -4.0; /*scale height, -1/(0.25kpc) from Xu et al. (2015) */
-    return exp(mad(rz.x, ls, fabs(rz.y)*hs));
-
-}
-
 inline real prob_thick_disk(real2 rz)
 {
     const real ls = -0.285714286; /*scale length, -1/(3.5kpc) from Xu et al. (2015) */
@@ -213,9 +205,8 @@ __kernel void probabilities(__global real2* restrict bgOut,
     real2 lTrig = lTrigBuf[trigIdx];
     real bSin = bSinBuf[trigIdx];
     real2 rc = rConsts[r_step];
-    real ThinCoef  = THIN_DISK_WEIGHT * 0.91875;
-    real ThickCoef = 0.08;
-    real BgCoef    = 0.00125 * BG_WEIGHT;
+    real ThickDiskCoef = THICK_DISK_WEIGHT;
+    real BackgroundCoef = BACKGROUND_WEIGHT;
 
     real2 bgTmp;
     real2 streamTmp[NSTREAM];
@@ -251,7 +242,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
 
         if (BACKGROUND_PROFILE == FAST_HERNQUIST)
         {
-            bg_prob = mad(rPt.y, mad( ThinCoef, prob_thin_disk(cylindricalCoords), mad(ThickCoef, prob_thick_disk(cylindricalCoords), mw_div(BgCoef, rg * cube(rs)))), bg_prob);
+            bg_prob = mad(rPt.y, mad(ThickDiskCoef, prob_thick_disk(cylindricalCoords), mw_div(BackgroundCoef, rg * cube(rs))), bg_prob);
             if (AUX_BG_PROFILE)
             {
                 /* Currently not used */
@@ -264,7 +255,7 @@ __kernel void probabilities(__global real2* restrict bgOut,
         {
             /*TO DO: Double Check rPt.y is gaussian quadrature weight * r^3 * gaussian (N) */
             /* Add the thin and thick disk densities from Xu et al. (2015) to Hernquist */
-            bg_prob = mad(rPt.y, mad( ThinCoef, prob_thin_disk(cylindricalCoords), mad(ThickCoef, prob_thick_disk(cylindricalCoords), mw_div( BgCoef, powr(rg, INNERPOWER) * powr(rs, ALPHA_DELTA_3)))), bg_prob);
+            bg_prob = mad(rPt.y, mad(ThickDiskCoef, prob_thick_disk(cylindricalCoords), mw_div(BackgroundCoef, powr(rg, INNERPOWER) * powr(rs, ALPHA_DELTA_3))), bg_prob);
             if (AUX_BG_PROFILE)
             {
                 /* Currently not used */

@@ -247,10 +247,9 @@ typedef struct
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
     int number_integrals;
 
-    real exp_background_weight;
+    real background_weight;
     
-    real bg_weight;  /*Renormalize the background to disk in the local stellar region*/
-    real thin_disk_weight;
+    real thick_disk_weight;
 } AstronomyParameters;
 
 /*Options for Background*/

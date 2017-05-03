@@ -317,7 +317,7 @@ static const BackgroundParameters defaultBG =
     /* .r0          */   0.0,
     /* .q           */   0.0,
     /* .outerPower  */   1.0,
-    /* .epsilon     */   0.0,
+    /* .epsilon     */   -20.0,
     /* .a           */   0.0,
     /* .b           */   0.0,
     /* .c           */   0.0
@@ -330,11 +330,11 @@ static int evaluateBackground(lua_State* luaSt)
     static const MWNamedArg bgArgTable[] =
         {
             { "innerPower", LUA_TNUMBER, NULL, FALSE, &bg.innerPower    },
-            { "r0",         LUA_TNUMBER, NULL, TRUE,  &bg.r0            },
+            { "r0",         LUA_TNUMBER, NULL, FALSE,  &bg.r0            },
             { "q",          LUA_TNUMBER, NULL, TRUE,  &bg.q             },
             { "outerPower", LUA_TNUMBER, NULL, FALSE, &bg.outerPower    },
 
-            { "epsilon",    LUA_TNUMBER, NULL, FALSE, &bg.epsilon       },
+            { "epsilon",    LUA_TNUMBER, NULL, TRUE, &bg.epsilon       },
 
             { "a",          LUA_TNUMBER, NULL, FALSE, &bg.a             },
             { "b",          LUA_TNUMBER, NULL, FALSE, &bg.b             },
@@ -388,11 +388,11 @@ static int luaDefaultSetBGStreamParametersFromArguments(lua_State* luaSt)
     lua_setfield(luaSt, bgTable, "q");
 
     lua_rawgeti(luaSt, ptable, 2);
-    lua_setfield(luaSt, bgTable, "r0");
+    lua_setfield(luaSt, bgTable, "epsilon");
 
     /* Not included in fit */
-    lua_pushnumber(luaSt, 0.0);
-    lua_setfield(luaSt, bgTable, "epsilon");
+    lua_pushnumber(luaSt, 12.0);
+    lua_setfield(luaSt, bgTable, "r0");
 
     lua_pushnumber(luaSt, 1.0);
     lua_setfield(luaSt, bgTable, "innerPower");
