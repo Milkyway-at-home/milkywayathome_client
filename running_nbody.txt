@@ -1,0 +1,114 @@
+Once you are able to make the nbody application compile you will likely want to run it.
+
+Lua Files:
+The lua files are neccesary for taking in user input and communicating it to the simulation.
+They also control vital simulation parameters which are not taken in by command line.
+As of version 1.64, previous lua files will not work as they do not have the proper parameters needed for version 1.64.
+
+Some of the parameters the lua file controls are (as of EMD_v164.lua):
+
+-the number of bodies used in the simulation.
+-the comparison method used to compare the input histogram and the histogram made at the end of the sim.
+-the minimum version that the lua file can use.
+
+- the number of bins used for the histogram in both directions, lambda and beta.
+- the range in each direction that the histogram will bin bodies. 
+- NOTE: we normally use a 1D histogram in lamdba for scienctific reasons. We also use a tight constraint on the beta direction (narrow on the stream).
+
+- use the best likelihood code, which keeps track of the best likelihood value and histogram every time step.
+- at what percent of the simulation the best likelihood code should turn on.
+- whether or not to use the velocity dispersions in the calculation of the likelihood.
+
+- the coordinates in phase space, (l,b,r,vx,vy,vz), where the current location of the orphan stream is taken to be.
+
+at the very bottom, in the histogram function are the angles used for the coordinate transforms used to convert from x,y,z to l,b,r.
+
+
+For the developers: (as of for_developer.lua)
+further options are available in the dev lua:
+- ability to switch to a null potential (empty space without MW galaxy)
+- whether to use a two component model or not. (uses a single plummer sphere if 1 component chosen)
+- whether to use the tree code for the force calculations (default on client side) or to use the exact calculation.
+- whether to print out the reverse orbit coordinates to a file (be careful using this)
+- print out the input parameters. masses are output in both sim units and solar masses.
+
+
+
+To run an nbody format:
+    ./PATH_TO_BINARY/milkyway_nbody \
+    -f PATH_TO_LUA_FILE/lua_file.lua \
+    -h PATH_TO_INPUT_HIST/input_hist.lua \
+    -o PATH_TO_PLACE_COORDINATE_OUTPUT_FILE/output.out \
+    -z PATH_TO_PLACE_SIMULATION_HIST/hist.hist \
+    -n 8 -b  \
+    -i simulation_time rev_time baryon_rad radius_ratio baryon_mass mass_ratio\
+    
+    - The above is a typical run command to put into command line. 
+    - The flags for the input hist is optional. if there is no input hist, then the sim will not run a comparison at the end, and will just output a hist (which it does anyway). 
+    - The flags for the output hist and output positions are also optional in a way. You have to have at least one there otherwise it will throw a condescending exception at you. 
+    - if the flag for the output hist is included but the path does not exist, it will print the hist in standard output.
+    
+    - the -n controls the number of threads to use.
+    - the -b is for the coordinate output. options are -x, -b, or nothing. 
+        If -x the coordinate output will have x,y,z,vx,vy,vx, masses,mass type. 
+        If nothing then l,b,r,vx,vy,vx, masses,mass type. 
+        If -b then x,y,z,l,b,r,vx,vy,vx, masses,mass type, line of sight vel. 
+    - NOTE: the coordinate output is only useful for developers.
+    
+    - the -i ingnores any checkpoints present.
+    - the parameters are named above, but should be put in as numbers.
+    
+to list all flag options:
+./milkyway_nbody --help
+    
+    EXs command line useage:
+    
+    ./milkyway_nbody \
+        -f EMD_v164.lua \
+        -o output_0gy.out \
+        -h correct_hist.hist \
+        -z hist_test.hist \
+        -n 8 -b  \
+        -i 3.0 1.0 0.2 0.2 12 0.2\
+        
+        
+    ./milkyway_nbody \
+        -f EMD_v164.lua \
+        -h correct_hist.hist \
+        -z hist_test.hist \
+        -n 8 -b  \
+        -i 3.0 1.0 0.2 0.2 12 0.2\
+
+    ./milkyway_nbody \
+        -f EMD_v164.lua \
+        -o output_0gy.out \
+        -n 8 -x  \
+        -i 3.0 1.0 0.2 0.2 12 0.2\
+
+    ./milkyway_nbody \
+        -f EMD_v164.lua \
+        -z hist_test.hist \
+        -n 8 -b  \
+        -i 3.0 1.0 0.2 0.2 12 0.2\
+        
+        
+If you have two properly made histograms and just want to compare them you can run:
+    ./milkyway_nbody \
+        -h hist1.hist \
+        -s hist2.hist \
+
+        
+a useful flag for devs is -P which prints out the percent progress to command line (though the sim then runs a tad bit slower)
+
+NOTE: the second numerical parameter put in is overwritten in the lua file to the first parameter.
+This is because we no longer use the second input parameter but the server still has it listed. Therefore, it does not matter what is put in. On the server, when a run is put up, to make sure this parameter isn't searched over, we set the upper and lower search range to the same thing.
+
+NOTE: in the lua file, the input parameters are rounded to 9 decimal places. After this, the precision in the input values differ between different platforms. Changes at this precision does seem to affect the simulation likelihood.
+        
+
+        
+
+
+
+    
+    
