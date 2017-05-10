@@ -8,7 +8,8 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
-        
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
@@ -16,9 +17,33 @@ nbodyMinVersion       = "1.64"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 two_component_model   = true    -- -- TWO COMPONENTS SWITCH      -- --
+use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
-print_out_parameters  = true    -- -- PRINT OUT ALL PARAMETERS   -- --
+print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+-- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
+lda_bins        = 50      -- number of bins in lamdba direction
+lda_lower_range = -150    -- lower range for lambda
+lda_upper_range = 150     -- upepr range for lamdba
+
+bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
+bta_lower_range = -15     -- lower range for beta
+bta_upper_range = 15      -- upper range for beta
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+-- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
+use_best_likelihood  = true    -- use the best likelihood return code
+best_like_start      = 0.98    -- what percent of sim to start
+use_vel_disps        = true    -- use velocity dispersions in likelihood
+        
+
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 l  = 218
 b  = 53.5
@@ -27,6 +52,8 @@ vx = -156
 vy = 79 
 vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+        
+        
 
 function makePotential()
    if(run_null_potential == true) then
@@ -75,11 +102,11 @@ function makeContext()
       timeEvolve  = evolveTime,
       timestep    = get_timestep(),
       eps2        = calculateEps2(totalBodies, soften_length ),
-      criterion   = "NewCriterion",
+      criterion   = criterion,
       useQuad     = true,
-      useBestLike = true,
-      useVelDisp  = true,
-      BestLikeStart = 0.98,
+      useBestLike = use_best_likelihood,
+      useVelDisp  = use_vel_disps,
+      BestLikeStart = best_like_start,
       theta       = 1.0
    }
 end
@@ -152,13 +179,13 @@ function makeHistogram()
      psi = 90.70,
      
      -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = -150,
-     lambdaEnd = 150,
-     lambdaBins = 50,
+     lambdaStart = lda_lower_range,
+     lambdaEnd   = lda_upper_range,
+     lambdaBins  = lda_bins,
      
-     betaStart = -15,
-     betaEnd = 15,
-     betaBins = 1
+     betaStart = bta_lower_range,
+     betaEnd   = bta_upper_range,
+     betaBins  = bta_bins
 }
 end
 
@@ -190,6 +217,14 @@ dwarfMass = mass_l / light_mass_ratio
 rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
 mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+
+
+if(use_tree_code) then
+    criterion = "NewCriterion"
+else
+    criterion = "Exact"
+end
+
 
 if(print_out_parameters) then
     print('forward time=', evolveTime, '\nrev time=',  revOrbTime)

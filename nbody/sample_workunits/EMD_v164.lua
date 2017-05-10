@@ -8,8 +8,29 @@
 totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.64"  -- -- MINIMUM APP VERSION        -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+-- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
+lda_bins        = 50      -- number of bins in lamdba direction
+lda_lower_range = -150    -- lower range for lambda
+lda_upper_range = 150     -- upepr range for lamdba
+
+bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
+bta_lower_range = -15     -- lower range for beta
+bta_upper_range = 15      -- upper range for beta
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+-- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
+use_best_likelihood  = true    -- use the best likelihood return code
+best_like_start      = 0.98    -- what percent of sim to start
+use_vel_disps        = true    -- use velocity dispersions in likelihood
+        
+
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 l  = 218
 b  = 53.5
@@ -63,9 +84,9 @@ function makeContext()
       eps2        = calculateEps2(totalBodies, soften_length ),
       criterion   = "NewCriterion",
       useQuad     = true,
-      useBestLike = true,
-      useVelDisp  = true,
-      BestLikeStart = 0.98,
+      useBestLike = use_best_likelihood,
+      useVelDisp  = use_vel_disps,
+      BestLikeStart = best_like_start,
       theta       = 1.0
    }
 end
@@ -104,13 +125,13 @@ function makeHistogram()
      psi = 90.70,
      
      -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = -150,
-     lambdaEnd = 150,
-     lambdaBins = 50,
+     lambdaStart = lda_lower_range,
+     lambdaEnd   = lda_upper_range,
+     lambdaBins  = lda_bins,
      
-     betaStart = -15,
-     betaEnd = 15,
-     betaBins = 1
+     betaStart = bta_lower_range,
+     betaEnd   = bta_upper_range,
+     betaBins  = bta_bins
 }
 end
 
