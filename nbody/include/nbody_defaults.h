@@ -36,7 +36,7 @@ extern "C" {
 
 
 #define DEFAULT_SUN_GC_DISTANCE ((real) 8.0)
-#define DEFAULT_CRITERION NewCriterion
+#define DEFAULT_CRITERION TreeCode
 #define DEFAULT_TREE_ROOT_SIZE ((real) 4.0)
 
 #define DEFAULT_USE_QUADRUPOLE_MOMENTS TRUE

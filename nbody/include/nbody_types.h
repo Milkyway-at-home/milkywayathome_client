@@ -155,7 +155,7 @@ typedef struct MW_ALIGN_TYPE
 typedef enum
 {
     InvalidCriterion = InvalidEnum,
-    NewCriterion,  /* FIXME: What is this exactly? Rename it. */
+    TreeCode, 
     SW93,
     BH86,
     Exact

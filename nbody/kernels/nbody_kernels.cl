@@ -51,7 +51,7 @@
 #endif
 
 
-#if !BH86 && !SW93 && !NEWCRITERION && !EXACT
+#if !BH86 && !SW93 && !TREECODE && !EXACT
   #error Opening criterion not set
 #endif
 
@@ -470,7 +470,7 @@ __kernel void NBODY_KERNEL(boundingBox)
             _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
             _treeStatus->doneCnt = 0;
 
-            if (NEWCRITERION || SW93)
+            if (TREECODE || SW93)
             {
                 _critRadii[NNODE] = radius;
             }
@@ -683,7 +683,7 @@ __kernel void NBODY_KERNEL(buildTree)
                             }
                             patch = max(patch, cell);
 
-                            if (SW93 || NEWCRITERION)
+                            if (SW93 || TREECODE)
                             {
                                 _critRadii[cell] = r;  /* Save cell size */
                             }
@@ -1070,7 +1070,7 @@ __kernel void NBODY_KERNEL(summarization)
 
                 real psize;
 
-                if (SW93 || NEWCRITERION)
+                if (SW93 || TREECODE)
                 {
                     psize = _critRadii[k]; /* Get saved size (half cell = radius) */
                 }
@@ -1094,7 +1094,7 @@ __kernel void NBODY_KERNEL(summarization)
                     bmax2 += bmax2Inc(pz, cz, psize);
                     rc2 = bmax2 / (THETA * THETA);
                 }
-                else if (NEWCRITERION)
+                else if (TREECODE)
                 {
                     real dx = px - cx;  /* Find distance from center of mass to geometric center */
                     real dy = py - cy;
@@ -1106,7 +1106,7 @@ __kernel void NBODY_KERNEL(summarization)
                     rc2 = rc * rc;
                 }
 
-                if (SW93 || NEWCRITERION)
+                if (SW93 || TREECODE)
                 {
                     /* We don't have the size of the cell for BH86, but really still should check */
                     bool xTest = checkTreeDim(px, cx, psize);
@@ -1123,7 +1123,7 @@ __kernel void NBODY_KERNEL(summarization)
                 _posY[k] = py;
                 _posZ[k] = pz;
 
-                if (SW93 || NEWCRITERION)
+                if (SW93 || TREECODE)
                 {
                     _critRadii[k] = rc2;
                 }
@@ -1562,7 +1562,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
         rootQZZ = _quadZZ[NNODE];
       #endif
 
-        if (SW93 || NEWCRITERION)
+        if (SW93 || TREECODE)
         {
             rootCritRadius = _critRadii[NNODE];
         }
@@ -1646,7 +1646,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 node[j] = NNODE;
                 pos[j] = 0;
 
-                if (SW93 || NEWCRITERION)
+                if (SW93 || TREECODE)
                 {
                     dq[j] = rootCritRadius;
                 }
@@ -1765,7 +1765,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                 node[depth] = n;
                                 pos[depth] = 0;
 
-                                if (SW93 || NEWCRITERION)
+                                if (SW93 || TREECODE)
                                 {
                                     dq[depth] = _critRadii[n];
                                 }

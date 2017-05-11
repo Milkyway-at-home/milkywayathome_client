@@ -270,7 +270,7 @@ the direct summation.
 @item @code{"SW93"}
 @tab Use sum squares criterion from S&W '93 paper
 
-@item @code{"NewCriterion"}
+@item @code{"TreeCode"}
 @tab Barnes newer opening criterion using the center of mass offset
 
 @item @code{"Exact"}

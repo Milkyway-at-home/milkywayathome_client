@@ -53,7 +53,7 @@ local resultTable = {
    seeds        = { 1234567890, 609746760, 1000198000 },
    thetas       = { 1.0, 0.9, 0.5, 0.3 },
    treeRSizes   = { 8.0, 4.0, 2.0, 1.0 },
-   criterion    = { "SW93", "NewCriterion", "BH86", "Exact" },
+   criterion    = { "SW93", "TreeCode", "BH86", "Exact" },
    useQuads     = { true, false },
    allowIncests = { true }  -- Might as well allow it for the tests.
 }
