@@ -357,101 +357,6 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     }
 }
 
-static void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * vlos)
-{
-    
-    unsigned int Histindex;
-    Body* p;
-    HistData* histData;
-    const Body* endp = st->bodytab + st->nbody;
-
-    unsigned int counter = 0;
-    
-    histData = histogram->data;
-
-    real v_line_of_sight;
-    real bin_ave, bin_sigma, new_count;
-    
-    for (p = st->bodytab; p < endp; ++p)
-    {
-        /* Only include bodies in models we aren't ignoring */
-        if (!ignoreBody(p))
-        {
-            
-            /* Check if the position is within the bounds of the histogram */
-            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
-            {   
-                Histindex = (int) use_body[counter];
-                
-                v_line_of_sight = vlos[counter];
-                /* bin count minus what was already removed */
-                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
-                
-                /* average bin vel */
-                bin_ave = histData[Histindex].v_sum / new_count;
-                
-                /* the sigma for the bin is the same as the dispersion */
-                bin_sigma = histData[Histindex].vdisp;
-                
-                
-                if(mw_fabs(bin_ave - v_line_of_sight) > 2.5 * bin_sigma)//if it is outside of the sigma limit
-                {
-                    histData[Histindex].v_sum -= v_line_of_sight;//remove from vel dis sums
-                    histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
-                    histData[Histindex].outliersRemoved++;//keep track of how many are being removed
-                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
-                }
-                 
-            }
-            counter++;
-        }
-    }
-    
-    
-}
-
-/* Get the velocity dispersion in each bin*/
-static void nbCalcVelDisp(NBodyHistogram* histogram)
-{
-    unsigned int i;
-    unsigned int j;
-    unsigned int Histindex;
-    
-    unsigned int lambdaBins = histogram->lambdaBins;
-    unsigned int betaBins = histogram->betaBins;
-    
-    HistData* histData = histogram->data;
-
-    real count;
-    real n_ratio;
-    real n_new;
-    real v_sum, vsq_sum, vdispsq;
-
-    for (i = 0; i < lambdaBins; ++i)
-    {
-        for(j = 0; j < betaBins; ++j)
-        {
-            Histindex = i * betaBins + j;
-            count = (real) histData[Histindex].rawCount;
-            count -= histData[Histindex].outliersRemoved;
-            
-            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
-            {
-                n_new = count - 1.0; //because the mean is calculated from the same populations set
-                n_ratio = count / (n_new); 
-                
-                vsq_sum = histData[Histindex].vsq_sum;
-                v_sum = histData[Histindex].v_sum;
-                
-                vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
-                histData[Histindex].vdisp = mw_sqrt(vdispsq);
-            }
-        }
-    }
-    
-}
-
-
 
 /*
 Takes a treecode position, converts it to (l,b), then to (lambda,
@@ -493,6 +398,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
+    mwbool correct_dispersion = FALSE;
     
     real * use_body  = mwCalloc(Nbodies / 2, sizeof(real));
     real * vlos      = mwCalloc(Nbodies / 2, sizeof(real));
@@ -571,14 +477,16 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
 
     histogram->totalNum = totalNum; /* Total particles in range */
     
+    
+    nbCalcVelDisp(histogram, correct_dispersion);
+    correct_dispersion = TRUE;
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < 6; i++)
     {
-        nbCalcVelDisp(histogram);
         nbRemoveOutliers(st, histogram, use_body, vlos);
+        nbCalcVelDisp(histogram, correct_dispersion);
     }
     
-    nbCalcVelDisp(histogram);
     nbNormalizeHistogram(histogram);
     
     free(use_body);
