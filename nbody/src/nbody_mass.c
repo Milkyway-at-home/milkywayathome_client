@@ -219,6 +219,14 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
                 vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
                 vdispsq *= correction_factor;//correcting for truncating the distribution when removing outliers.
                 histData[Histindex].vdisp = mw_sqrt(vdispsq);
+                
+                histData[Histindex].vdisperr = inv(n_new) * mw_sqrt( vsq_sum + inv(n_new) * sqr(v_sum)) ;
+                
+                
+                if(correct_dispersion == FALSE)
+                { 
+                    histData[Histindex].vdisperr = histData[Histindex].vdisp;//the original vel disp before outlier rejection
+                }
             }
         }
     }
@@ -336,10 +344,10 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
-    real chisq = 0.0;
+    real Nsigma = 0.0;
     real vdisp_data;
     real vdisp_hist;
-    real err;
+    real err_data, err_hist;
     for (unsigned int i = 0; i < nbins; ++i)
     {
         if (data->data[i].useBin)
@@ -348,25 +356,40 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
             /* the data may have incomplete vel disps. Where it does not have will have -1 */
             if(vdisp_data > 0)
             {
-                err = data->data[i].vdisperr;
+                
+                err_data = data->data[i].vdisperr;
+                err_hist = histogram->data[i].vdisperr;
+                
                 vdisp_hist = histogram->data[i].vdisp;
 
                 /* the error in simulation veldisp is set to zero. */
-                if(err == 0.0)
+                if(err_data == 0.0)
                 {
-                    chisq += sqr( (vdisp_data - vdisp_hist) );
+                    Nsigma += sqr( (vdisp_data - vdisp_hist) );
                 }
                 else
                 {
-                    chisq += sqr( (vdisp_data - vdisp_hist) / err);//for when we start using actual data
+                    Nsigma += sqr( vdisp_data - vdisp_hist ) / ( sqr(err_data) + sqr(err_hist) );//for when we start using actual data
                 }
+//                 err = data->data[i].vdisperr;
+//                 vdisp_hist = histogram->data[i].vdisp;
+// 
+//                 /* the error in simulation veldisp is set to zero. */
+//                 if(err == 0.0)
+//                 {
+//                     chisq += sqr( (vdisp_data - vdisp_hist) );
+//                 }
+//                 else
+//                 {
+//                     chisq += sqr( (vdisp_data - vdisp_hist) / err);//for when we start using actual data
+//                 }
             }
         }
 
     }
     
-    chisq = chisq / (real) nbins;
-    return chisq;
+    Nsigma = Nsigma / ( (real) nbins * 2.0);
+    return -Nsigma;
 }
 
 
