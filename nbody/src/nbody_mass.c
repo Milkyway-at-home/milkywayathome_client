@@ -39,7 +39,7 @@ static real factorial(int n)
        }
 
      return result;
-  }
+}
 
 
 static real choose(int n, int c)
@@ -220,7 +220,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
                 vdispsq *= correction_factor;//correcting for truncating the distribution when removing outliers.
                 histData[Histindex].vdisp = mw_sqrt(vdispsq);
                 
-                histData[Histindex].vdisperr = inv(n_new) * mw_sqrt( vsq_sum + inv(n_new) * sqr(v_sum)) ;
+                histData[Histindex].vdisperr = ( mw_sqrt(count) / n_new ) * histData[Histindex].vdisp ;
                 
                 
                 if(correct_dispersion == FALSE)
@@ -388,8 +388,8 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
 
     }
     
-    Nsigma = Nsigma / ( (real) nbins * 2.0);
-    return -Nsigma;
+    Nsigma = Nsigma / ( (real) nbins * 1.0);
+    return Nsigma;
 }
 
 
