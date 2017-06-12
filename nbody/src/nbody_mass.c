@@ -344,7 +344,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
-    real Nsigma = 0.0;
+    real Nsigma_sq = 0.0;
     real vdisp_data;
     real vdisp_hist;
     real err_data, err_hist;
@@ -365,31 +365,19 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
                 /* the error in simulation veldisp is set to zero. */
                 if(err_data == 0.0)
                 {
-                    Nsigma += sqr( (vdisp_data - vdisp_hist) );
+                    //this should never actually end up running
+                    Nsigma_sq += sqr( (vdisp_data - vdisp_hist) );
                 }
                 else
                 {
-                    Nsigma += sqr( vdisp_data - vdisp_hist ) / ( sqr(err_data) + sqr(err_hist) );//for when we start using actual data
+                    Nsigma_sq += sqr( vdisp_data - vdisp_hist ) / ( sqr(err_data) + sqr(err_hist) );
                 }
-//                 err = data->data[i].vdisperr;
-//                 vdisp_hist = histogram->data[i].vdisp;
-// 
-//                 /* the error in simulation veldisp is set to zero. */
-//                 if(err == 0.0)
-//                 {
-//                     chisq += sqr( (vdisp_data - vdisp_hist) );
-//                 }
-//                 else
-//                 {
-//                     chisq += sqr( (vdisp_data - vdisp_hist) / err);//for when we start using actual data
-//                 }
             }
         }
 
     }
     
-    Nsigma = Nsigma / ( (real) nbins * 1.0);
-    return Nsigma;
+    return Nsigma_sq / 2.0;
 }
 
 
