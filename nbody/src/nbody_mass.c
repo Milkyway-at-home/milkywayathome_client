@@ -348,6 +348,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
     real vdisp_data;
     real vdisp_hist;
     real err_data, err_hist;
+    real probability;
     for (unsigned int i = 0; i < nbins; ++i)
     {
         if (data->data[i].useBin)
@@ -376,8 +377,9 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
         }
 
     }
+    probability = ( (nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq) - (Nsigma_sq) / 2.0;
     
-    return Nsigma_sq / 2.0;
+    return probability;
 }
 
 
