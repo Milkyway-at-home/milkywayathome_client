@@ -103,7 +103,7 @@ function get_timestep()
     else 
         t = sqr(1/10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
-    print(t)
+--     print(t)
     return t
 end
 
