@@ -494,8 +494,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
     
-    real * use_body  = mwCalloc(Nbodies / 2, sizeof(real));
-    real * vlos      = mwCalloc(Nbodies / 2, sizeof(real));
     
     nbGetHistTrig(&histTrig, hp);
     histogram = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
@@ -515,6 +513,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             body_count++;
         }
     }
+
+    real * use_body  = mwCalloc(body_count, sizeof(real));
+    real * vlos      = mwCalloc(body_count, sizeof(real));
+
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
     
