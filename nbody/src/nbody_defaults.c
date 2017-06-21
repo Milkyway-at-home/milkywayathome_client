@@ -36,6 +36,8 @@ const NBodyCtx defaultNBodyCtx =
 
     /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
     /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
+    /* .Nstep_control   */  FALSE,
+    /* .Ntsteps         */  0,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
     
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,

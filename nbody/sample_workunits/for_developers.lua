@@ -5,6 +5,12 @@
 -- This is the developer version of the lua parameter file. 
 -- It gives all the options you can have. 
 -- Many of these the client will not need.
+
+-- NOTE --
+-- if you are using single component plummer model, it will take the baryonic
+-- matter component parameters. meaning you input should look like
+-- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
+-- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
@@ -161,8 +167,8 @@ function makeBodies(ctx, potential)
             prng        = prng,
             position    = finalPosition,
             velocity    = finalVelocity,
-            mass        = dwarfMass,
-            scaleRadius = r0,
+            mass        = mass_l,
+            scaleRadius = rscale_l,
             ignore      = false
         }
   
