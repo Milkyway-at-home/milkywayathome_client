@@ -143,6 +143,7 @@ static int createNBodyCtx(lua_State* luaSt)
     
     if(ctx.Nstep_control)
     {
+        mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
         ctx.nStep = (int) ctx.Ntsteps;
     }
 
