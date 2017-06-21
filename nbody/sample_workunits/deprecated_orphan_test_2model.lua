@@ -36,7 +36,7 @@ if deviceInfo ~= nil then
 else
    print("Using cpu")
    -- Using CPU
-   criterion = "NewCriterion"
+   criterion = "TreeCode"
    quads = true
    openingAngle = 1.0
 

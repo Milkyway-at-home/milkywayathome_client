@@ -220,7 +220,7 @@ mass_d    = dwarfMass * (1.0 - light_mass_ratio)
 
 
 if(use_tree_code) then
-    criterion = "NewCriterion"
+    criterion = "TreeCode"
 else
     criterion = "Exact"
 end

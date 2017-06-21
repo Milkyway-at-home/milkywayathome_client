@@ -35,7 +35,7 @@
 
 static const MWEnumAssociation criterionOptions[] =
 {
-    { "NewCriterion", NewCriterion },
+    { "TreeCode",     TreeCode     },
     { "Exact",        Exact        },
     { "BH86",         BH86         },
     { "SW93",         SW93         },

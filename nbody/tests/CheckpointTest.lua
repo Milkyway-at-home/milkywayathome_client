@@ -33,7 +33,7 @@ function randomNBodyCtx(prng)
       theta       = prng:random(0, 1),
       eps2        = prng:random(1.0e-9, 1.0e-3),
       treeRSize   = prng:randomListItem({ 4, 8, 2, 16 }),
-      criterion   = prng:randomListItem({"NewCriterion", "SW93", "BH86", "Exact"}),
+      criterion   = prng:randomListItem({"TreeCode", "SW93", "BH86", "Exact"}),
       useQuad     = prng:randomBool(),
       allowIncest = true,
       quietErrors = true

@@ -59,13 +59,6 @@ static inline real density( real r, const Dwarf* comp1, const Dwarf* comp2)
     return density_result;
 }
 
-static inline real profile_rho(real r, real r_placeholder, 
-                               const Dwarf* comp, const Dwarf* comp_placeholder)
-{
-    //there are two place holders because max finder is also used for dis_fun
-    real result = r * r * get_density(comp, r);    
-    return result;
-}
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
 static inline real first_derivative(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
@@ -792,9 +785,11 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         
         /*finding the max of the individual components*/
         int place_holder = 0;
-        real rho_max_light = max_finder(profile_rho, place_holder, comp1, comp1, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4 );
-        real rho_max_dark  = max_finder(profile_rho, place_holder, comp2, comp2, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4 );
-
+        real rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l; //these are the analytic equations for the radius where r^2rho is max;
+        real rho_max_dark  = mw_sqrt(2.0 / 3.0) * rscale_d;
+        rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+        rho_max_dark  = sqr(rho_max_dark)  * get_density(comp2, rho_max_dark);
+        
      /*initializing particles:*/
         memset(&b, 0, sizeof(b));
         lua_createtable(luaSt, nbody, 0);

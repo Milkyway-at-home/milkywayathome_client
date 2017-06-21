@@ -84,6 +84,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         }
         
     }
+    mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\n", emd, cost_component, vel_disp, likelihood);
     free(dat);
     free(match);
     return likelihood;
@@ -161,7 +162,7 @@ real nbSystemLikelihood(const NBodyState* st,
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
         likelihood += velocity_dispersion_component;
     }
-    
+    mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\n",geometry_component, cost_component, velocity_dispersion_component, likelihood);
     return likelihood;
     
 }

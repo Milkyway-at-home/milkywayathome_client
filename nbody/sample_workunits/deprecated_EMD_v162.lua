@@ -79,7 +79,7 @@ function makeContext()
       timeEvolve  = evolveTime,
       timestep    = get_timestep(),
       eps2        = calculateEps2(totalBodies, soften_length ),
-      criterion   = "NewCriterion",
+      criterion   = "TreeCode",
       useQuad     = true,
       theta       = 1.0
    }
