@@ -400,9 +400,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     mwbool islight = FALSE;//is it light matter?
     mwbool correct_dispersion = FALSE;
     
-    real * use_body  = mwCalloc(Nbodies / 2, sizeof(real));
-    real * vlos      = mwCalloc(Nbodies / 2, sizeof(real));
-    
     
     nbGetHistTrig(&histTrig, hp);
     histogram = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
