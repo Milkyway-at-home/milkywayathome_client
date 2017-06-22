@@ -97,8 +97,10 @@ static int createNBodyCtx(lua_State* luaSt)
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
             { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors   },
             { "useBestLike",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike   },
-            { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
             { "BestLikeStart", LUA_TNUMBER,  NULL, TRUE,  &ctx.BestLikeStart },
+            { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
+            { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps       },
+            { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control }, 
             END_MW_NAMED_ARG
         };
 
@@ -136,8 +138,14 @@ static int createNBodyCtx(lua_State* luaSt)
                    nStepf,
                    ctx.timeEvolve, ctx.timestep);
     }
-
+    
     ctx.nStep = (unsigned int) nStepf;
+    
+    if(ctx.Nstep_control)
+    {
+        mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
+        ctx.nStep = (int) ctx.Ntsteps;
+    }
 
     {
         int major = 0, minor = 0;
@@ -218,6 +226,8 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
     { "useVelDisp",      getBool,       offsetof(NBodyCtx, useVelDisp)  },
     { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
+    { "Nstep_control",   getBool,       offsetof(NBodyCtx, Nstep_control) },
+    { "Ntsteps",         getNumber,     offsetof(NBodyCtx, Ntsteps)     },
     { NULL, NULL, 0 }
 };
 
@@ -236,6 +246,8 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useBestLike",     setBool,       offsetof(NBodyCtx, useBestLike) },
     { "useVelDisp",      setBool,       offsetof(NBodyCtx, useVelDisp)  },
     { "BestLikeStart",   setNumber,     offsetof(NBodyCtx, BestLikeStart) },
+    { "Nstep_control",   setBool,       offsetof(NBodyCtx, Nstep_control) },
+    { "Ntsteps",         setNumber,     offsetof(NBodyCtx, Ntsteps)     },
     { NULL, NULL, 0 }
 };
 
