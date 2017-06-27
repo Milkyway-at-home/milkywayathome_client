@@ -378,14 +378,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
 
     }
     
-    if(Nsigma_sq <= 0.0)
-    {
-       probability = 0.0;
-    }
-    else
-    {
-        probability = ( (nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq) - (Nsigma_sq) / 2.0;
-    }
+    probability = ( (nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq + 1.0) - (Nsigma_sq) / 2.0;
     
     return probability;
 }
