@@ -388,7 +388,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
         probability -= ((nbins / 2.0) - 1.0 ) * ( mw_log(sigma_cutoff) - 1.0);
     }
     
-    return probability;
+    return -probability;
 }
 
 
