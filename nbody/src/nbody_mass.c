@@ -193,7 +193,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
     real n_ratio;
     real n_new;
     real v_sum, vsq_sum, vdispsq;
-    real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 away outliers are removed. DO NOT CHANGE with recalculating for a different cutoff. 
+    real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 sigma away where outliers are removed. DO NOT CHANGE without recalculating for a different cutoff. 
     
     if(correct_dispersion == FALSE)
     { 
