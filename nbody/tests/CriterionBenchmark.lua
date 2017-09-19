@@ -12,7 +12,7 @@ local nTimestep = 40
 local nbodies = { 1024, 10000, 20000, 32768, 50000, 75000, 100000 }
 local thetas = { 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }
 
-local criteria = { "BH86", "SW93", "NewCriterion" }
+local criteria = { "BH86", "SW93", "TreeCode" }
 local quads = { true, false }
 
 

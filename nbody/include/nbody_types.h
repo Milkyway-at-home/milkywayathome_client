@@ -155,7 +155,7 @@ typedef struct MW_ALIGN_TYPE
 typedef enum
 {
     InvalidCriterion = InvalidEnum,
-    NewCriterion,  /* FIXME: What is this exactly? Rename it. */
+    TreeCode, 
     SW93,
     BH86,
     Exact
@@ -403,14 +403,16 @@ typedef struct MW_ALIGN_TYPE
     criterion_t criterion;
     ExternalPotentialType potentialType;
     
+    mwbool Nstep_control;  /* manually control how many timesteps simulation runs */
     mwbool useBestLike;       /* use best likelihood return code */
     mwbool useVelDisp;        /* use the velocity dispersion comparison calc */
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
-   
+    
     real BestLikeStart;       /* after what portion of the sim should the calc start */
 
+    real Ntsteps;     /* number of time steps to run when manual control is on */
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
 
@@ -420,8 +422,8 @@ typedef struct MW_ALIGN_TYPE
 #define NBODYCTX_TYPE "NBodyCtx"
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
-                         FALSE, FALSE, FALSE, FALSE, FALSE,             \
-                         0, 0, 0,                                       \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,      \
+                         0, 0, 0, 0,                                    \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.

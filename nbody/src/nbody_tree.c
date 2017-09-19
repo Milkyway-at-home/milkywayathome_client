@@ -319,7 +319,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
     /* return square of radius */
     switch (ctx->criterion)
     {
-        case NewCriterion:
+        case TreeCode:
             /* use size plus offset */
             rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             return sqr(rc);

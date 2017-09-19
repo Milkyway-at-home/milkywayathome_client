@@ -640,7 +640,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  ctx->useQuad,
 
                  /* Set criterion */
-                 ctx->criterion == NewCriterion,
+                 ctx->criterion == TreeCode,
                  ctx->criterion == SW93,
                  ctx->criterion == BH86,
                  ctx->criterion == Exact,
@@ -1817,7 +1817,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
             return MW_CL_ERROR;
         }
 
-        if (ctx->criterion == SW93 || ctx->criterion == NewCriterion)
+        if (ctx->criterion == SW93 || ctx->criterion == TreeCode)
         {
             /* This only is for cells, so we could subtract nbody if we wanted */
             nbb->critRadii = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
