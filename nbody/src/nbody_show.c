@@ -44,8 +44,8 @@ const char* showCriterionT(criterion_t x)
     {
         case Exact:
             return "Exact";
-        case NewCriterion:
-            return "NewCriterion";
+        case TreeCode:
+            return "TreeCode";
         case BH86:
             return "BH86";
         case SW93:

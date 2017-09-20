@@ -161,7 +161,6 @@ real nbSystemLikelihood(const NBodyState* st,
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
         likelihood += velocity_dispersion_component;
     }
-    
     return likelihood;
     
 }

@@ -46,8 +46,8 @@ function runStandardPlummer(n, quad, crit, theta)
    runBenchmark(name, sampleSeeds[1], n, nTimestep, crit, theta, quad, 16, 0.2)
 end
 
-runStandardPlummer(100000, "true", "NewCriterion", 1.0)
-runStandardPlummer(100000, "false", "NewCriterion", 1.0)
+runStandardPlummer(100000, "true", "TreeCode", 1.0)
+runStandardPlummer(100000, "false", "TreeCode", 1.0)
 
 runStandardPlummer(100000, "true", "SW93", 1.0)
 runStandardPlummer(100000, "false", "SW93", 1.0)

@@ -36,7 +36,7 @@ function makeContext()
       timeEvolve = evolveTime,
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
       eps2       = calculateEps2(totalBodies, r0),
-      criterion  = "NewCriterion",
+      criterion  = "TreeCode",
       useQuad    = true,
       theta      = 1.0
    }
