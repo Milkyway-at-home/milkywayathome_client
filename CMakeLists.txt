@@ -427,9 +427,10 @@ if(NBODY_GL)
   if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glm/CMakeLists.txt)
     message(FATAL_ERROR "GLM submodule is missing. Did you forget to git submodule init; git submodule update?")
   endif()
-  set(GLM_PACKAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
-  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/glm/util)
   find_package(GLM)
+  include_directories(${GLM_INCLUDE_DIRECTORIES})
+  link_directories(${GLM_LIBRARY_DIRS})
+  add_definitions(${GLM_DEFINITIONS})
 endif()
 
 

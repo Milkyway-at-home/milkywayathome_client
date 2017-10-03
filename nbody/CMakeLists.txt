@@ -43,7 +43,6 @@ cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
   include_directories(${GLFW_INCLUDE_DIR})
-  include_directories(${GLM_INCLUDE_DIR})
 endif()
 
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
