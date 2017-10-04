@@ -129,14 +129,13 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
         b.vel.y = vy[i];
         b.vel.z = vz[i];
         
-    mw_printf("%f %f %f %f %f %f %f\n", b.bodynode.pos.x, b.bodynode.pos.y, b.bodynode.pos.z, b.vel.x, b.vel.y, b.vel.z, b.bodynode.mass);
+        mw_printf("%f %f %f %f %f %f %f\n", b.bodynode.pos.x, b.bodynode.pos.y, b.bodynode.pos.z, b.vel.x, b.vel.y, b.vel.z, b.bodynode.mass);
         assert(nbPositionValid(b.bodynode.pos));
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
     }
     
     
-//         for(int i = 0; i < counter; i++)
     /* go now and be free!*/
     free(x);
     free(y);
