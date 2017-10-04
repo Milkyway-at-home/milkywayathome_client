@@ -275,6 +275,10 @@ if(NBODY_BLENDER_OUTPUT)
   add_definitions("-DNBODY_BLENDER_OUTPUT")
 endif()
 
+if(NBODY_DEV_OPTIONS)
+  add_definitions("-DNBODY_DEV_OPTIONS")
+endif()
+
 if(NBODY_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES} nbody_kernels)

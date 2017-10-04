@@ -101,6 +101,8 @@ static int createNBodyCtx(lua_State* luaSt)
             { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
             { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps       },
             { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control }, 
+            { "MultiOutput",   LUA_TBOOLEAN, NULL, FALSE, &ctx.MultiOutput   },
+            { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq    },
             END_MW_NAMED_ARG
         };
 
@@ -228,6 +230,8 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { "Nstep_control",   getBool,       offsetof(NBodyCtx, Nstep_control) },
     { "Ntsteps",         getNumber,     offsetof(NBodyCtx, Ntsteps)     },
+    { "MultiOutput",     getBool,       offsetof(NBodyCtx, MultiOutput) },
+    { "OutputFreq",      getNumber,     offsetof(NBodyCtx, OutputFreq)  },
     { NULL, NULL, 0 }
 };
 
@@ -248,6 +252,8 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "BestLikeStart",   setNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { "Nstep_control",   setBool,       offsetof(NBodyCtx, Nstep_control) },
     { "Ntsteps",         setNumber,     offsetof(NBodyCtx, Ntsteps)     },
+    { "MultiOutput",     setBool,       offsetof(NBodyCtx, MultiOutput) },
+    { "OutputFreq",      setNumber,     offsetof(NBodyCtx, OutputFreq)  },
     { NULL, NULL, 0 }
 };
 

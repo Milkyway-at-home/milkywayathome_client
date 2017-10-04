@@ -29,6 +29,17 @@ print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
+-- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
+
+useMultiOutputs       = true    -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 1       -- -- FREQUENCY OF WRITING OUTPUTS -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+        
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
@@ -121,6 +132,8 @@ function makeContext()
       BestLikeStart = best_like_start,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
+      MultiOutput   = useMultiOutputs,
+      OutputFreq    = freqOfOutputs,
       theta       = 1.0
    }
 end

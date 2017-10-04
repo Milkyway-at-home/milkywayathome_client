@@ -254,6 +254,14 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         nbFindCenterOfMass(&startCmPos, st);
         perpendicularCmPos=startCmPos;
     #endif
+        
+    #ifdef NBODY_DEV_OPTIONS
+        if(ctx->MultiOutput)
+        {
+            mw_printf("THIS RAN!!\n");
+        }
+            
+    #endif
     real curStep = st->step;
     real Nstep = ctx->nStep;
     
