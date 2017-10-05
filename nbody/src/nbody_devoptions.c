@@ -41,3 +41,6 @@ int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlag
     
     return rc;
 }
+
+
+
