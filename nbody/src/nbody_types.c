@@ -608,6 +608,8 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->BestLikeStart, ctx2->BestLikeStart)
         && feqWithNan(ctx1->Nstep_control, ctx2->Nstep_control)
         && feqWithNan(ctx1->Ntsteps, ctx2->Ntsteps)
+        && feqWithNan(ctx1->MultiOutput, ctx2->MultiOutput)
+        && feqWithNan(ctx1->OutputFreq, ctx2->OutputFreq)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)

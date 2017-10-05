@@ -89,7 +89,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 }
 
 /* output: Print bodies */
-static int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
+int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
     Body* p;
     mwvector lbr;

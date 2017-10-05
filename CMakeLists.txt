@@ -184,6 +184,10 @@ option(NBODY_BLENDER_OUTPUT
         "Builds with the ability to output for use with Blender Visualizer." OFF)
 mark_as_advanced(NBODY_BLENDER_OUTPUT)
 
+option(NBODY_DEV_OPTIONS
+        "Builds with the ability to turn on options useful for developers." OFF)
+mark_as_advanced(NBODY_DEV_OPTIONS)
+
 cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
                          "DOUBLEPREC" ON)
 mark_as_advanced(NBODY_CRLIBM)

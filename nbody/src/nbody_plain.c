@@ -27,6 +27,7 @@
 #include "nbody_grav.h"
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
+#include "nbody_devoptions.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -254,6 +255,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         nbFindCenterOfMass(&startCmPos, st);
         perpendicularCmPos=startCmPos;
     #endif
+        
     real curStep = st->step;
     real Nstep = ctx->nStep;
     
@@ -264,6 +266,18 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         #ifdef NBODY_BLENDER_OUTPUT
             nbFindCenterOfMass(&nextCmPos, st);
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
+        #endif
+            
+        /* if one needs to add run time options, here is the place to do it
+         * this will not run on client side. and provides a good environment
+         * to add options without bogging down the client side application
+         */    
+        #ifdef NBODY_DEV_OPTIONS
+            if(ctx->MultiOutput)
+            {
+                dev_write_outputs(ctx, st, nbf, ctx->OutputFreq);
+            }
+                
         #endif
         rc |= nbStepSystemPlain(ctx, st);
         curStep = st->step;

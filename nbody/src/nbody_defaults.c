@@ -34,8 +34,12 @@ const NBodyCtx defaultNBodyCtx =
     /* .criterion       */  DEFAULT_CRITERION,
     /* .potentialType   */  EXTERNAL_POTENTIAL_DEFAULT,
 
+    /* .MultiOutput     */  FALSE,
+    /* .OutputFreq      */  1,
+    
     /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
     /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
+    
     /* .Nstep_control   */  FALSE,
     /* .Ntsteps         */  0,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
