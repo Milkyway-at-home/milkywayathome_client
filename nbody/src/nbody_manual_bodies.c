@@ -71,13 +71,12 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
 
         /* Skip comments and blank lines */
         if (lineBuf[0] == '#' || lineBuf[0] == '\n')
-            fsize -= 1;
+            fsize -= 1;//removing the commented and blank lines from the total line count
             continue;
     }
     fclose(body_inputs);
-    unsigned int nbody = fsize;
     body_inputs = mwOpenResolved(body_file, "r");
-    mw_printf("%i\n", fsize);
+   
     
     real * x  = mwCalloc(fsize, sizeof(real));
     real * y  = mwCalloc(fsize, sizeof(real));
@@ -87,6 +86,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     real * vz = mwCalloc(fsize, sizeof(real));
     real * masses = mwCalloc(fsize, sizeof(real));
     
+    unsigned int nbody = fsize;
     memset(&b, 0, sizeof(b));
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);      
@@ -142,7 +142,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
         b.vel.y = vy[i];
         b.vel.z = vz[i];
         
-        mw_printf("%f %f %f %f %f %f %f\n", b.bodynode.pos.x, b.bodynode.pos.y, b.bodynode.pos.z, b.vel.x, b.vel.y, b.vel.z, b.bodynode.mass);
+//         mw_printf("%f %f %f %f %f %f %f\n", b.bodynode.pos.x, b.bodynode.pos.y, b.bodynode.pos.z, b.vel.x, b.vel.y, b.vel.z, b.bodynode.mass);
         assert(nbPositionValid(b.bodynode.pos));
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
