@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_MIXEDDWARF_H_
-#define _NBODY_MIXEDDWARF_H_
+#ifndef _NBODY_MANUALBODIES_H_
+#define _NBODY_MANUALBODIES_H_
 
 #include <lua.h>
 #include "nbody_types.h"
@@ -31,12 +31,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-int nbGenerateMixedDwarf(lua_State* luaSt);
-void registerGenerateMixedDwarf(lua_State* luaSt);
+int nbGenerateManualBodies(lua_State* luaSt);
+void registerGenerateManualBodies(lua_State* luaSt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _NBODY_MIXEDDWARF_H_ */
+#endif /* _NBODY_MANUALBODIES_H_ */
 

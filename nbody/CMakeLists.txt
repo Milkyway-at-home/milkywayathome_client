@@ -43,7 +43,6 @@ cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
   include_directories(${GLFW_INCLUDE_DIR})
-  include_directories(${GLM_INCLUDE_DIR})
 endif()
 
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
@@ -135,6 +134,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_isotropic.c
                   ${NBODY_SRC_DIR}/nbody_mixeddwarf.c
+                  ${NBODY_SRC_DIR}/nbody_manual_bodies.c
                   ${NBODY_SRC_DIR}/nbody_dwarf_potential.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_nfw.c
@@ -164,6 +164,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
                       ${NBODY_INCLUDE_DIR}/nbody_mixeddwarf.h
+                      ${NBODY_INCLUDE_DIR}/nbody_manual_bodies.h
                       ${NBODY_INCLUDE_DIR}/nbody_dwarf_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
