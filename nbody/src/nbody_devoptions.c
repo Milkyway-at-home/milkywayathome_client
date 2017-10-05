@@ -26,15 +26,17 @@
 int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, real freq)
 {
     int rc = 0;
-    if(TRUE)
+    if((st->step + 1) % (int) freq == 0)
     {
+        
         FILE* f;
         char output_file_name[1024];
         sprintf(output_file_name, "%d", st->step);
-
+        
         f = mwOpenResolved(output_file_name, "w+");
         rc = nbOutputBodies(f, ctx, st, nbf);
         fclose(f);
+        
     }
     
     return rc;
