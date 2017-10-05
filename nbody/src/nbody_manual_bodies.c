@@ -41,24 +41,43 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     /*initializing particles:*/
     int table;
     Body b;
-
     FILE* body_inputs;
+
     unsigned int lineNum = 0;
-    unsigned int fileCount = 0;
     char lineBuf[1024];
     int rc = 0;
     real type;
     mwbool error = FALSE;
+    
+    
     body_inputs = mwOpenResolved(body_file, "r");
     size_t fsize = mwCountLinesInFile(body_inputs);//get the number of lines in the file
     
-    unsigned int nbody = fsize;
     
     if (body_inputs == NULL)//make sure the file is available
     {
         mw_printf("Error opening data file '%s'\n", body_file);
         return NULL;
     }
+    
+    if (fsize == 0)//if the file is empty then throw error
+    {
+        mw_printf("Data file line count = 0\n");
+        return NULL;
+    }
+    
+    while (fgets(lineBuf, (int) sizeof(lineBuf), body_inputs))
+    {
+
+        /* Skip comments and blank lines */
+        if (lineBuf[0] == '#' || lineBuf[0] == '\n')
+            fsize -= 1;
+            continue;
+    }
+    fclose(body_inputs);
+    unsigned int nbody = fsize;
+    body_inputs = mwOpenResolved(body_file, "r");
+    mw_printf("%i\n", fsize);
     
     real * x  = mwCalloc(fsize, sizeof(real));
     real * y  = mwCalloc(fsize, sizeof(real));
@@ -72,11 +91,6 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);      
     
-    if (fsize == 0)//if the file is empty then throw error
-    {
-        mw_printf("Histogram line count = 0\n");
-        return NULL;
-    }
 
     int counter = 0;
     while (fgets(lineBuf, (int) sizeof(lineBuf), body_inputs))
@@ -107,7 +121,6 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
                    );
         
         counter++;
-        ++fileCount;
     }
     
     fclose(body_inputs);

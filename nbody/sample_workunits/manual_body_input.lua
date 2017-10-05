@@ -20,7 +20,7 @@
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.66"  -- -- MINIMUM APP VERSION        -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
+run_null_potential    = true   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = false   -- -- USE TREE CODE NOT EXACT    -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -75,14 +75,14 @@ end
 
 function get_timestep()
     -- this is a hard coded value. We may need to revist this at a later date.
-    t = 1e-6
+    t = 1e-5
 --     print(t)
     return t
 end
 
 
 function makeContext()
-   soften_length  = 2e-7
+   soften_length  = 2e-5
    
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
