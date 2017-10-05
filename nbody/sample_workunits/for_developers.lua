@@ -239,7 +239,6 @@ rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
 light_mass_ratio = round( tonumber(arg[6]), dec )
--- mass_d_enc       = round( tonumber(arg[6]), dec )
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
@@ -248,12 +247,6 @@ rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
 mass_d    = dwarfMass * (1.0 - light_mass_ratio)
 
--- revOrbTime = evolveTime
--- rscale_t  = rscale_l / light_r_ratio
--- rscale_d  = rscale_t *  (1.0 - light_r_ratio)
--- mass_d    = get_md()
--- 
--- -- rscale_d  = get_rscale()
 
 
 if(use_tree_code) then
