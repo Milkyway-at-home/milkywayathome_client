@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 int nbWriteBodies(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf);
-
+int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf);
 #ifdef __cplusplus
 }
 #endif

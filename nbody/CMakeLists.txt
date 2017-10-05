@@ -147,6 +147,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_util.c
                   ${NBODY_SRC_DIR}/nbody_emd.c
                   ${NBODY_SRC_DIR}/nbody_mass.c
+                  ${NBODY_SRC_DIR}/nbody_devoptions.c
                   ${NBODY_SRC_DIR}/nbody_likelihood.c
                   ${NBODY_SRC_DIR}/nbody_histogram.c
                   ${NBODY_SRC_DIR}/nbody_caustic.c
@@ -180,6 +181,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_graphics.h
                       ${NBODY_INCLUDE_DIR}/nbody_emd.h
                       ${NBODY_INCLUDE_DIR}/nbody_mass.h
+                      ${NBODY_INCLUDE_DIR}/nbody_devoptions.h
                       ${NBODY_INCLUDE_DIR}/nbody_likelihood.h
                       ${NBODY_INCLUDE_DIR}/nbody_histogram.h
                       ${NBODY_INCLUDE_DIR}/nbody_caustic.h
