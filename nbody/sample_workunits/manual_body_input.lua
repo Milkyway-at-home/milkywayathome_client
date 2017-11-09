@@ -20,7 +20,7 @@
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.66"  -- -- MINIMUM APP VERSION        -- --
 
-run_null_potential    = true   -- -- NULL POTENTIAL SWITCH      -- --
+run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = false   -- -- USE TREE CODE NOT EXACT    -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -46,7 +46,20 @@ best_like_start      = 0.98    -- what percent of sim to start
 use_vel_disps        = true    -- use velocity dispersions in likelihood
         
 timestep_control     = false -- -- control number of steps    -- --
-Ntime_steps          = 0    -- -- number of timesteps to run -- --
+Ntime_steps          = 10    -- -- number of timesteps to run -- --
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
+-- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
+
+useMultiOutputs       = false    -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 1       -- -- FREQUENCY OF WRITING OUTPUTS -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+        
+
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 orbit_parameter_l  = 218
@@ -75,7 +88,7 @@ end
 
 function get_timestep()
     -- this is a hard coded value. We may need to revist this at a later date.
-    t = 1e-5
+    t = 1e-3
 --     print(t)
     return t
 end
@@ -95,6 +108,8 @@ function makeContext()
       BestLikeStart = best_like_start,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
+      MultiOutput   = useMultiOutputs,
+      OutputFreq    = freqOfOutputs,
       theta       = 1.0
    }
 end
