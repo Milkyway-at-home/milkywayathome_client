@@ -149,6 +149,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     
     
     /* go now and be free!*/
+    free(ty);
     free(x);
     free(y);
     free(z);
