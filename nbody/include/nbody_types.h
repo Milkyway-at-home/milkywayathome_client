@@ -92,6 +92,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define isBody(x) (((NBodyNode*) (x))->type != 0)
 #define isCell(x) (((NBodyNode*) (x))->type == 0)
 #define ignoreBody(x) (((NBodyNode*) (x))->type < 0)
+#define typeBody(x) (((NBodyNode*) (x))->type)
 #define bodyTypeIsIgnore(x) ((x) < 0)
 
 typedef short body_t;

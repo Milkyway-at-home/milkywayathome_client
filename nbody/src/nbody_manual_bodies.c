@@ -46,7 +46,6 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     unsigned int lineNum = 0;
     char lineBuf[1024];
     int rc = 0;
-    real type;
     mwbool error = FALSE;
     
     
@@ -78,6 +77,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     body_inputs = mwOpenResolved(body_file, "r");
    
     
+    real * ty = mwCalloc(fsize, sizeof(real));;
     real * x  = mwCalloc(fsize, sizeof(real));
     real * y  = mwCalloc(fsize, sizeof(real));
     real * z  = mwCalloc(fsize, sizeof(real));
@@ -110,7 +110,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
 
         rc = sscanf(lineBuf,
                     "%lf %lf %lf %lf %lf %lf %lf %lf \n",
-                    &type,
+                    &ty[counter],
                     &x[counter],
                     &y[counter],
                     &z[counter],
@@ -128,9 +128,8 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     /* pushing the bodies */
     for (int i = 0; i < nbody; i++)
     {
-        b.bodynode.type = BODY(TRUE);
+        b.bodynode.type = (short) ty[i];
         b.bodynode.mass = masses[i];
-
         /*this actually gets the position and velocity vectors and pushes table of bodies*/
         /*They are meant to give the dwarf an initial position and vel*/
         /* you have to work for your bodynode */
