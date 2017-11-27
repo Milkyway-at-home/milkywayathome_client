@@ -46,6 +46,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     unsigned int lineNum = 0;
     char lineBuf[1024];
     int rc = 0;
+    real type;
     mwbool error = FALSE;
     
     
@@ -76,8 +77,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     fclose(body_inputs);
     body_inputs = mwOpenResolved(body_file, "r");
    
-    
-    real * ty = mwCalloc(fsize, sizeof(real));;
+    real * id = mwCalloc(fsize, sizeof(real));
     real * x  = mwCalloc(fsize, sizeof(real));
     real * y  = mwCalloc(fsize, sizeof(real));
     real * z  = mwCalloc(fsize, sizeof(real));
@@ -109,8 +109,9 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
             continue;
 
         rc = sscanf(lineBuf,
-                    "%lf %lf %lf %lf %lf %lf %lf %lf \n",
-                    &ty[counter],
+                    "%lf %lf %lf %lf %lf %lf %lf %lf %lf \n",
+                    &type,
+                    &id[counter],
                     &x[counter],
                     &y[counter],
                     &z[counter],
@@ -128,8 +129,10 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     /* pushing the bodies */
     for (int i = 0; i < nbody; i++)
     {
-        b.bodynode.type = (short) ty[i];
+        b.bodynode.type = BODY(TRUE);
+        b.bodynode.id = id[i];
         b.bodynode.mass = masses[i];
+
         /*this actually gets the position and velocity vectors and pushes table of bodies*/
         /*They are meant to give the dwarf an initial position and vel*/
         /* you have to work for your bodynode */
@@ -149,7 +152,6 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     
     
     /* go now and be free!*/
-    free(ty);
     free(x);
     free(y);
     free(z);
@@ -157,7 +159,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     free(vy);
     free(vz);
     free(masses);
-    
+    free(id);
     return 1;             
         
 }

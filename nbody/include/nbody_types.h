@@ -92,7 +92,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define isBody(x) (((NBodyNode*) (x))->type != 0)
 #define isCell(x) (((NBodyNode*) (x))->type == 0)
 #define ignoreBody(x) (((NBodyNode*) (x))->type < 0)
-#define typeBody(x) (((NBodyNode*) (x))->type)
+#define idBody(x) (((NBodyNode*) (x))->id)
 #define bodyTypeIsIgnore(x) ((x) < 0)
 
 typedef short body_t;
@@ -104,9 +104,10 @@ typedef struct MW_ALIGN_TYPE _NBodyNode
     struct _NBodyNode* next;  /* link to next force-calc */
     real mass;                /* total mass of node */
     body_t type;              /* code for node type */
+    unsigned int id;          /* body id */
 } NBodyNode;
 
-#define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0  }
+#define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0, 0  }
 
 #define Type(x) (((NBodyNode*) (x))->type)
 #define Mass(x) (((NBodyNode*) (x))->mass)

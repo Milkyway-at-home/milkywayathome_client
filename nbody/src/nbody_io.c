@@ -59,7 +59,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
     if (both)
     {
-        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 "x", 
                 "y",  
                 "z",  
@@ -75,7 +75,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
     }
     else
     {
-        fprintf(f, "# ignore %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s\n",
                 cartesian ? "x" : "l",
                 cartesian ? "y" : "b",
                 cartesian ? "z" : "r",
@@ -101,7 +101,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
 
     for (p = st->bodytab; p < endp; p++)
     {
-        fprintf(f, "%8d,", typeBody(p));  /* Print if model it belongs to is ignored */
+        fprintf(f, "%8d, %8d,", ignoreBody(p), idBody(p));  /* Print if model it belongs to is ignored */
         if (nbf->outputCartesian)
         {
             fprintf(f,
