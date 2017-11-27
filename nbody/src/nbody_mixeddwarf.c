@@ -862,6 +862,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         /* pushing the bodies */
         for (i = 0; i < nbody; i++)
         {
+            b.bodynode.id   = i + 1;
             if(i < half_bodies)
             {
                 b.bodynode.type = BODY(islight);

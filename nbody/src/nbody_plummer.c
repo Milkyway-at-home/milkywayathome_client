@@ -143,7 +143,8 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
              * to change the tests. Same with other models */
         }
         while (isinf(r));
-
+        
+        b.bodynode.id = i + 1;
         b.bodynode.pos = plummerBodyPosition(prng, rShift, radiusScale, r);
         b.vel = plummerBodyVelocity(prng, vShift, velScale, r);
 
