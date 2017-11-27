@@ -46,7 +46,6 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     unsigned int lineNum = 0;
     char lineBuf[1024];
     int rc = 0;
-    real type;
     mwbool error = FALSE;
     
     
