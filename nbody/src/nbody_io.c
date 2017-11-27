@@ -101,7 +101,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
 
     for (p = st->bodytab; p < endp; p++)
     {
-        fprintf(f, "%8d,", ignoreBody(p));  /* Print if model it belongs to is ignored */
+        fprintf(f, "%8d,", typeBody(p));  /* Print if model it belongs to is ignored */
         if (nbf->outputCartesian)
         {
             fprintf(f,
