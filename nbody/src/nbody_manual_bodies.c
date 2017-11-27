@@ -77,6 +77,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     fclose(body_inputs);
     body_inputs = mwOpenResolved(body_file, "r");
    
+    real * ty = mwCalloc(fsize, sizeof(real));
     real * id = mwCalloc(fsize, sizeof(real));
     real * x  = mwCalloc(fsize, sizeof(real));
     real * y  = mwCalloc(fsize, sizeof(real));
@@ -110,7 +111,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
 
         rc = sscanf(lineBuf,
                     "%lf %lf %lf %lf %lf %lf %lf %lf %lf \n",
-                    &type,
+                    &ty[counter],
                     &id[counter],
                     &x[counter],
                     &y[counter],
@@ -129,7 +130,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     /* pushing the bodies */
     for (int i = 0; i < nbody; i++)
     {
-        b.bodynode.type = BODY(TRUE);
+        b.bodynode.type = ty[i];
         b.bodynode.id = id[i];
         b.bodynode.mass = masses[i];
 
@@ -152,6 +153,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     
     
     /* go now and be free!*/
+    free(ty);
     free(x);
     free(y);
     free(z);
