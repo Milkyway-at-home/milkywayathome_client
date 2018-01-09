@@ -1,3 +1,3 @@
-if(NOT CrossCompile)
-    add_subdirectory(xxd)
-endif()
+#if(NOT CrossCompile)
+#    add_subdirectory(xxd)
+#endif()
