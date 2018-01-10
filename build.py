@@ -52,11 +52,11 @@ if os == "linux":
 if os == "win":
 
     if arch == "64":
-        execute(["cmake", ".", "-DOPENCL_INCLUDE_DIRS=../cuda/include", "-DOPENCL_LIBRARIES=../x86_64/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag)
+        execute(["cmake", ".", "-DOPENCL_INCLUDE_DIRS=/home/jenkins/cuda/include", "-DOPENCL_LIBRARIES=/home/jenkins/x86_64/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag)
 
     if arch == "32":
         #print("ERROR: Windows 32 bit not supported")
-        execute(["cmake", ".", "-DBUILD_32=ON", "-DOPENCL_INCLUDE_DIRS=../cuda/include", "-DOPENCL_LIBRARIES=../x86/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag)
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DOPENCL_INCLUDE_DIRS=/home/jenkins/cuda/include", "-DOPENCL_LIBRARIES=/home/jenkins/x86/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag)
     
     execute(["make", "clean"])
     execute(["make"])
