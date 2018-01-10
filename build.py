@@ -33,7 +33,7 @@ assert nbody_openmp_sep_opencl in ["ON", "OFF"], "ERROR: Set NBODY_OPENMP to ON 
 cmake_shared_flags = ["-DSEPARATION=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp_sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
 
 # CMake flags used for windows
-cmake_static_flag = ["-DNBODY_STATIC=ON",  "-DBOINC_APPLICATION=ON",  "-DCMAKE_BUILD_TYPE=Release"]
+cmake_static_flag = ["-DNBODY_STATIC=ON",  "-DBOINC_APPLICATION=ON",  "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_TOOLCHAIN_FILE=cmake_modules/MinGW32-Cross-Toolchain.cmake"]
 
 # Linux
 if os == "linux":
@@ -52,14 +52,14 @@ if os == "linux":
 if os == "win":
 
     if arch == "64":
-        execute(["cmake", ".", "-G", "MinGW Makefiles"] + cmake_shared_flags + cmake_static_flag)
+        execute(["cmake", ".", "-DOPENCL_INCLUDE_DIRS=../cuda/include", "-DOPENCL_LIBRARIES=../x86_64/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag)
 
     if arch == "32":
-        print("ERROR: Windows 32 bit not supported")
-        #execute(["cmake", ".", "-G", "MinGW Makefiles", "-DBUILD_32=ON"] + cmake_shared_flags + cmake_static_flag)
+        #print("ERROR: Windows 32 bit not supported")
+        execute(["cmake", ".", "-DBUILD_32=ON", "-DOPENCL_INCLUDE_DIRS=../cuda/include", "-DOPENCL_LIBRARIES=../x86/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag)
     
-    execute(["mingw32-make", "clean"])
-    execute(["mingw32-make"])
+    execute(["make", "clean"])
+    execute(["make"])
 
 # Mac OS X
 if os == "mac":
