@@ -235,6 +235,71 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
 
 
 
+
+/* Get the velocity dispersion in each bin*/
+void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
+{
+    unsigned int i;
+    unsigned int j;
+    unsigned int Histindex;
+    
+    unsigned int lambdaBins = histogram->lambdaBins;
+    unsigned int betaBins = histogram->betaBins;
+    
+    HistData* histData = histogram->data;
+
+    real count;
+    real n_ratio;
+    real n_new;
+
+    real beta_sum, betasq_sum, beta_dispsq;
+    real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 sigma away where outliers are removed. DO NOT CHANGE without recalculating for a different cutoff. 
+    
+    if(correct_dispersion == FALSE)
+    { 
+        correction_factor = 1.0;
+    }
+    
+    for (i = 0; i < lambdaBins; ++i)
+    {
+        for(j = 0; j < betaBins; ++j)
+        {
+            Histindex = i * betaBins + j;
+            count = (real) histData[Histindex].rawCount;
+            count -= histData[Histindex].outliersRemoved;
+            
+            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
+            {
+                n_new = count - 1.0; //because the mean is calculated from the same populations set
+                n_ratio = count / (n_new); 
+                
+                betasq_sum = histData[Histindex].betasq_sum;
+                beta_sum = histData[Histindex].beta_sum;
+                
+                beta_dispsq = (betasq_sum / n_new) - n_ratio * sqr(beta_sum / count);
+                beta_dispsq *= correction_factor;//correcting for truncating the distribution when removing outliers.
+                histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
+                
+                histData[Histindex].beta_disperr = ( mw_sqrt(count) / n_new ) * histData[Histindex].beta_disp ;
+                
+                
+                if(correct_dispersion == FALSE)
+                { 
+                    histData[Histindex].beta_disperr = histData[Histindex].beta_disp;//the original vel disp before outlier rejection
+                }
+            }
+        }
+    }
+    
+}
+
+
+
+
+
+
+
+
 void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * vlos)
 {
     
@@ -289,6 +354,61 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
     
 }
 
+
+
+void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * betas)
+{
+    
+    unsigned int Histindex;
+    Body* p;
+    HistData* histData;
+    const Body* endp = st->bodytab + st->nbody;
+
+    unsigned int counter = 0;
+    
+    histData = histogram->data;
+
+    real beta;
+    real bin_ave, bin_sigma, new_count;
+    real sigma_cutoff = 2.5; //this is a hardcoded value. The sigma correction used depends on this. DO NOT CHANGE without recalculating correction factor
+    
+    for (p = st->bodytab; p < endp; ++p)
+    {
+        /* Only include bodies in models we aren't ignoring */
+        if (!ignoreBody(p))
+        {
+            
+            /* Check if the position is within the bounds of the histogram */
+            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
+            {   
+                Histindex = (int) use_body[counter];
+                
+                beta = betas[counter];
+                /* bin count minus what was already removed */
+                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
+                
+                /* average bin vel */
+                bin_ave = histData[Histindex].beta_sum / new_count;
+                
+                /* the sigma for the bin is the same as the dispersion */
+                bin_sigma = histData[Histindex].beta_disp;
+                
+                
+                if(mw_fabs(bin_ave - beta) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
+                {
+                    histData[Histindex].beta_sum -= beta;//remove from vel dis sums
+                    histData[Histindex].betasq_sum -= sqr(beta);
+                    histData[Histindex].outliersRemoved++;//keep track of how many are being removed
+                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                }
+                 
+            }
+            counter++;
+        }
+    }
+    
+    
+}
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {

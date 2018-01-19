@@ -421,8 +421,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     }
 
     real * use_body  = mwCalloc(body_count, sizeof(real));
-    real * vlos      = mwCalloc(body_count, sizeof(real));
-
+//     real * vlos      = mwCalloc(body_count, sizeof(real));
+    real * betas     = mwCalloc(body_count, sizeof(real));
+    
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
     
@@ -452,7 +453,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             beta = B(lambdaBetaR);
             
             use_body[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
-            vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
+//             vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
+            betas[ub_counter]    = DEFAULT_NOT_USE;
             
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
@@ -466,12 +468,16 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 histData[Histindex].rawCount++;
                 ++totalNum;
                 
-                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
-                vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
-                
+//                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+//                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
+                betas[ub_counter] = beta;
                 /* each of these are components of the vel disp */
-                histData[Histindex].v_sum += v_line_of_sight;
-                histData[Histindex].vsq_sum += sqr(v_line_of_sight);
+//                 histData[Histindex].v_sum += v_line_of_sight;
+//                 histData[Histindex].vsq_sum += sqr(v_line_of_sight);
+                
+                /* each of these are components of the beta disp */
+                histData[Histindex].beta_sum += beta;
+                histData[Histindex].betasq_sum += sqr(beta);
             }
             ub_counter++;
         }
@@ -480,19 +486,23 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     histogram->totalNum = totalNum; /* Total particles in range */
     
     
-    nbCalcVelDisp(histogram, correct_dispersion);
+//     nbCalcVelDisp(histogram, correct_dispersion);
+    nbCalcBetaDisp(histogram, correct_dispersion);
     correct_dispersion = TRUE;
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < 6; i++)
     {
-        nbRemoveOutliers(st, histogram, use_body, vlos);
-        nbCalcVelDisp(histogram, correct_dispersion);
+//         nbRemoveOutliers(st, histogram, use_body, vlos);
+//         nbCalcVelDisp(histogram, correct_dispersion);
+        nbRemoveBetaOutliers(st, histogram, use_body, betas);
+        nbCalcBetaDisp(histogram, correct_dispersion);
     }
     
     nbNormalizeHistogram(histogram);
     
     free(use_body);
-    free(vlos);
+//     free(vlos);
+    free(betas);
     
     return histogram;
 }

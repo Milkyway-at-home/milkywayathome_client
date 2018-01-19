@@ -280,10 +280,17 @@ typedef struct
     real beta;
     real count;
     real err;
+    
     real v_sum;
     real vsq_sum;
     real vdisp;
     real vdisperr;
+    
+    real beta_sum;
+    real betasq_sum;
+    real beta_disp;
+    real beta_disperr;
+    
     real outliersRemoved;
 } HistData;
 
