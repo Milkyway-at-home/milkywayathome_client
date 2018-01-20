@@ -364,7 +364,8 @@ typedef struct MW_ALIGN_TYPE
     real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
-    
+    mwbool useBetaDisp;            /* whether or not to use the beta disp comparison */
+
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -388,7 +389,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 
@@ -412,9 +413,10 @@ typedef struct MW_ALIGN_TYPE
     criterion_t criterion;
     ExternalPotentialType potentialType;
     
-    mwbool Nstep_control;  /* manually control how many timesteps simulation runs */
+    mwbool Nstep_control;     /* manually control how many timesteps simulation runs */
     mwbool useBestLike;       /* use best likelihood return code */
     mwbool useVelDisp;        /* use the velocity dispersion comparison calc */
+    mwbool useBetaDisp;       /* use the beta dispersion comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
     
     mwbool useQuad;           /* use quadrupole corrections */
@@ -432,10 +434,10 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                        \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,        \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
-                         0, 0, 0, 0, 0,                                       \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                               \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,               \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
+                         0, 0, 0, 0, 0,                                              \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.

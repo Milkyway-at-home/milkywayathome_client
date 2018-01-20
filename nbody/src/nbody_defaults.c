@@ -43,7 +43,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .Nstep_control   */  FALSE,
     /* .Ntsteps         */  0,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
-    
+    /* .useBetaDisp     */  DEFAULT_USE_BETA_DISP,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,

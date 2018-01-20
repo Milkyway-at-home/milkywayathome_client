@@ -512,3 +512,57 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
 }
 
 
+
+real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int nbins = lambdaBins * betaBins;
+    real Nsigma_sq = 0.0;
+    real beta_disp_data;
+    real beta_disp_hist;
+    real err_data, err_hist;
+    real probability;
+    for (unsigned int i = 0; i < nbins; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            beta_disp_data = data->data[i].beta_disp;
+            /* the data may have incomplete vel disps. Where it does not have will have -1 */
+            if(beta_disp_data > 0)
+            {
+                
+                err_data = data->data[i].beta_disperr;
+                err_hist = histogram->data[i].beta_disperr;
+                
+                beta_disp_hist = histogram->data[i].beta_disp;
+
+                /* the error in simulation veldisp is set to zero. */
+                if(err_data == 0.0)
+                {
+                    //this should never actually end up running
+                    Nsigma_sq += sqr( (beta_disp_data - beta_disp_hist) );
+                }
+                else
+                {
+                    Nsigma_sq += sqr( beta_disp_data - beta_disp_hist ) / ( sqr(err_data) + sqr(err_hist) );
+                }
+            }
+        }
+
+    }
+    real sigma_cutoff = 2.0 * ((nbins / 2.0) - 1.0);
+    if(Nsigma_sq <= sigma_cutoff)
+    {
+       probability = 0.0;
+    }
+    else
+    {
+        probability =  ((nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq) - (Nsigma_sq) / 2.0;
+        probability -= ((nbins / 2.0) - 1.0 ) * ( mw_log(sigma_cutoff) - 1.0);
+    }
+    
+    return -probability;
+}
+
+

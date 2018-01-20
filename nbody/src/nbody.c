@@ -404,6 +404,7 @@ int nbMain(const NBodyFlags* nbf)
     ts = mwGetTime();
     
     st->useVelDisp = ctx->useVelDisp;
+    st->useBetaDisp = ctx->useBetaDisp;
     rc = nbRunSystem(ctx, st, nbf);
     
     te = mwGetTime();

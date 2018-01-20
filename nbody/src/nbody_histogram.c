@@ -281,8 +281,8 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->beta,
                 data->count,
                 data->err,
-                data->vdisp,
-                data->vdisperr);
+                data->beta_disp,
+                data->beta_disperr);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -431,10 +431,15 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
-        histData[Histindex].v_sum    = 0.0;
-        histData[Histindex].vsq_sum  = 0.0;
-        histData[Histindex].vdisp    = 0.0;
-        histData[Histindex].vdisperr = 0.0;
+//         histData[Histindex].v_sum    = 0.0;
+//         histData[Histindex].vsq_sum  = 0.0;
+//         histData[Histindex].vdisp    = 0.0;
+//         histData[Histindex].vdisperr = 0.0;
+        
+        histData[Histindex].beta_sum    = 0.0;
+        histData[Histindex].betasq_sum  = 0.0;
+        histData[Histindex].beta_disp    = 0.0;
+        histData[Histindex].beta_disperr = 0.0;
         histData[Histindex].outliersRemoved = 0.0;
         
         histData[Histindex].useBin = TRUE;
@@ -656,8 +661,8 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].beta,
                     &histData[fileCount].count,
                     &histData[fileCount].err,
-                    &histData[fileCount].vdisp,
-                    &histData[fileCount].vdisperr);
+                    &histData[fileCount].beta_disp,
+                    &histData[fileCount].beta_disperr);
         if (rc != 7 && rc != 5)//for the ones with vel disp and without
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);

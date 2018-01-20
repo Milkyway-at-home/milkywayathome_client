@@ -60,13 +60,14 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
     return FALSE;
 }
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp)
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp, mwbool use_betadisp)
 {
     NBodyHistogram* dat;
     NBodyHistogram* match;
     real emd = NAN;
     real cost_component = NAN;
     real vel_disp = NAN;
+    real beta_disp = NAN;
     real likelihood = NAN;
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
@@ -81,6 +82,11 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         {
             vel_disp = nbVelocityDispersion(dat, match);
             likelihood += vel_disp;
+        }
+        if(use_betadisp)
+        {
+            beta_disp = nbBetaDispersion(dat, match);
+            likelihood += beta_disp;
         }
         
     }
@@ -100,6 +106,7 @@ real nbSystemLikelihood(const NBodyState* st,
     real geometry_component;
     real cost_component;
     real velocity_dispersion_component;
+    real beta_dispersion_component;
     real likelihood = NAN;
     
     if (data->lambdaBins != histogram->lambdaBins)
@@ -161,8 +168,15 @@ real nbSystemLikelihood(const NBodyState* st,
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
         likelihood += velocity_dispersion_component;
     }
+    if(st->useBetaDisp)
+    {
+        beta_dispersion_component = nbBetaDispersion(data, histogram);
+        likelihood += beta_dispersion_component;
+    }
+    
     return likelihood;
     
 }
 
 
+// 
