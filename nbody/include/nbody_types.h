@@ -291,7 +291,9 @@ typedef struct
     real beta_disp;
     real beta_disperr;
     
-    real outliersRemoved;
+    real outliersBetaRemoved;
+    real outliersVelRemoved;
+    
 } HistData;
 
 

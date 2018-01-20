@@ -446,7 +446,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         histData[Histindex].betasq_sum  = 0.0;
         histData[Histindex].beta_disp    = 0.0;
         histData[Histindex].beta_disperr = 0.0;
-        histData[Histindex].outliersRemoved = 0.0;
+        
+        histData[Histindex].outliersBetaRemoved = 0.0;
+        histData[Histindex].outliersVelRemoved = 0.0;
         
         histData[Histindex].useBin = TRUE;
     }
@@ -503,8 +505,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < 6; i++)
     {
-        nbRemoveOutliers(st, histogram, use_body, vlos);
+        nbRemoveVelOutliers(st, histogram, use_body, vlos);
         nbCalcVelDisp(histogram, correct_dispersion);
+        
         nbRemoveBetaOutliers(st, histogram, use_body, betas);
         nbCalcBetaDisp(histogram, correct_dispersion);
     }
