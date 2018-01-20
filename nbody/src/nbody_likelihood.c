@@ -78,15 +78,15 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         cost_component = nbCostComponent(dat, match);
         likelihood = emd + cost_component;
         
-        if(use_veldisp)
-        {
-            vel_disp = nbVelocityDispersion(dat, match);
-            likelihood += vel_disp;
-        }
         if(use_betadisp)
         {
             beta_disp = nbBetaDispersion(dat, match);
             likelihood += beta_disp;
+        }
+        if(use_veldisp)
+        {
+            vel_disp = nbVelocityDispersion(dat, match);
+            likelihood += vel_disp;
         }
         
     }
@@ -163,15 +163,15 @@ real nbSystemLikelihood(const NBodyState* st,
     likelihood = geometry_component + cost_component;
     
     /* likelihood due to the vel dispersion per bin of the two hist */
-    if(st->useVelDisp)
-    {
-        velocity_dispersion_component = nbVelocityDispersion(data, histogram);
-        likelihood += velocity_dispersion_component;
-    }
     if(st->useBetaDisp)
     {
         beta_dispersion_component = nbBetaDispersion(data, histogram);
         likelihood += beta_dispersion_component;
+    }
+    if(st->useVelDisp)
+    {
+        velocity_dispersion_component = nbVelocityDispersion(data, histogram);
+        likelihood += velocity_dispersion_component;
     }
     
     return likelihood;

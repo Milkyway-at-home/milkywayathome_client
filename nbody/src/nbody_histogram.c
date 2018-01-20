@@ -129,7 +129,7 @@ static void nbPrintHistogramHeader(FILE* f,
             hp->betaStart, nbHistogramCenter(hp->betaStart, hp->betaEnd), hp->betaEnd,
             nbHistogramLambdaBinSize(hp),
             nbHistogramBetaBinSize(hp));
-
+    
     fprintf(f,
             "# Nbody = %d\n"
             "# Evolve time = %f\n"
@@ -251,7 +251,10 @@ static void nbPrintHistogramHeader(FILE* f,
 
     fprintf(f,
             "#\n"
-            "# UseBin  Lambda  Beta  Probability  Error\n"
+            "#Column Headers:\n"
+            "# UseBin,  Lambda,  Beta,  Normalized Counts, Count Error, "
+            "Beta Dispersion,  Beta Dispersion Error, 
+            "LOS Velocity Dispersion, Velocity Dispersion Error\n"
             "#\n"
             "\n"
         );
@@ -271,18 +274,21 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
     fprintf(f, "betaBins = %u\n", histogram->betaBins);
 
+    
     for (i = 0; i < nBin; ++i)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
                 data->count,
                 data->err,
                 data->beta_disp,
-                data->beta_disperr);
+                data->beta_disperr,
+                data->vdisp,
+                data->vdisperr);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -655,15 +661,22 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf\n",
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
                     &histData[fileCount].count,
                     &histData[fileCount].err,
                     &histData[fileCount].beta_disp,
-                    &histData[fileCount].beta_disperr);
-        if (rc != 7 && rc != 5)//for the ones with vel disp and without
+                    &histData[fileCount].beta_disperr,
+                    &histData[fileCount].vdisp,
+                    &histData[fileCount].vdisperr);
+        
+        
+        /*NOTE this should be changed jus to 9 once all old versions of this code and old histograms are phased out.
+         * For now it is necessary as others may be using older histograms.
+         */
+        if (rc != 9 && rc != 7 && rc != 5)//for the ones with beta, vel disp and without either
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
             error = TRUE;
