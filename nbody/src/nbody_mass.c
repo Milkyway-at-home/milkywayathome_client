@@ -216,13 +216,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial)
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
-                 * Previously, when removing outliers, if a bin had outliers removed in the 
-                 * previous round but then did not have any outliers removed in the next round (while others did), 
-                 * the dispersion would be recalculated from the unchanged sums. This was then set to the dispersion in the bin, without
-                 * the correction for outlier removal, which was done in the previous round after calculation. Therefore, if any bin had themselves
-                 * dispersion calculated an extra time after an outlier removal, it would revert the dispersion to the uncorrected value.
-                 * Now, it will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or 
-                 * if there was an outlier removed in that bin. 
+                 * It will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or if there was an outlier removed in that bin. 
                  */
                 
                 if(histData[Histindex].velOutlierRemoved)
@@ -288,13 +282,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial)
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
-                 * Previously, when removing outliers, if a bin had outliers removed in the 
-                 * previous round but then did not have any outliers removed in the next round (while others did), 
-                 * the dispersion would be recalculated from the unchanged sums. This was then set to the dispersion in the bin, without
-                 * the correction for outlier removal, which was done in the previous round after calculation. Therefore, if any bin had themselves
-                 * dispersion calculated an extra time after an outlier removal, it would revert the dispersion to the uncorrected value.
-                 * Now, it will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or 
-                 * if there was an outlier removed in that bin. 
+                 * It will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or if there was an outlier removed in that bin. 
                  */
                 
                 
