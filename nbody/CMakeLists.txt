@@ -86,7 +86,7 @@ print_separator()
 
 if(NBODY_OPENCL)
   set(nbody_inline_src "${LIBRARY_OUTPUT_PATH}/nbody_kernels_inline.c")
-  if(CrossCompile)
+#   if(CrossCompile)
     add_custom_command(
       OUTPUT "${nbody_inline_src}"
       COMMAND xxd -i "nbody_kernels.cl" ${nbody_inline_src}
@@ -94,15 +94,15 @@ if(NBODY_OPENCL)
       DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
       MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
       COMMENT "Inlining N-body kernel source")
-  else()
-    add_custom_command(
-      OUTPUT "${nbody_inline_src}"
-      COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
-      WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
-      DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
-      MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
-      COMMENT "Inlining N-body kernel source")
-  endif()
+#   else()
+#     add_custom_command(
+#       OUTPUT "${nbody_inline_src}"
+#       COMMAND $<TARGET_FILE:xxd> -i "nbody_kernels.cl" ${nbody_inline_src}
+#       WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/kernels"
+#       DEPENDS "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+#       MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/kernels/nbody_kernels.cl"
+#       COMMENT "Inlining N-body kernel source")
+#   endif()
   add_library(nbody_kernels STATIC ${nbody_inline_src})
 endif()
 
@@ -341,7 +341,7 @@ macro(add_inline_shader inline_src_list name type)
   set(inline_src "${LIBRARY_OUTPUT_PATH}/nbody_${name}_${type}_shaders_inline.c")
   add_custom_command(
     OUTPUT "${inline_src}"
-    COMMAND $<TARGET_FILE:xxd> -i "${name}_${type}.glsl" ${inline_src}
+    COMMAND xxd -i "${name}_${type}.glsl" ${inline_src}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/shaders"
     DEPENDS "${PROJECT_SOURCE_DIR}/shaders/${name}_${type}.glsl"
     MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/shaders/${name}_${type}.glsl"
@@ -426,7 +426,7 @@ if(NBODY_GL)
   set(milkyway_image_src "${LIBRARY_OUTPUT_PATH}/nbody_milkyway_image.c")
   add_custom_command(
     OUTPUT ${milkyway_image_src}
-    COMMAND $<TARGET_FILE:xxd> -i "nbody_milkyway_image.bin" ${milkyway_image_src}
+    COMMAND xxd -i "nbody_milkyway_image.bin" ${milkyway_image_src}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/images"
     DEPENDS "${PROJECT_SOURCE_DIR}/images/nbody_milkyway_image.bin"
     MAIN_DEPENDENCY "${PROJECT_SOURCE_DIR}/images/nbody_milkyway_image.bin"
