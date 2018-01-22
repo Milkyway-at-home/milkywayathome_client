@@ -178,7 +178,7 @@ real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 }
 
 /* Get the velocity dispersion in each bin*/
-void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
+void nbCalcVelDisp(NBodyHistogram* histogram)
 {
     unsigned int i;
     unsigned int j;
@@ -195,10 +195,6 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
     real v_sum, vsq_sum, vdispsq;
     real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 sigma away where outliers are removed. DO NOT CHANGE without recalculating for a different cutoff. 
     
-    if(correct_dispersion == FALSE)
-    { 
-        correction_factor = 1.0;
-    }
     
     for (i = 0; i < lambdaBins; ++i)
     {
@@ -217,16 +213,18 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
                 v_sum = histData[Histindex].v_sum;
                 
                 vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
-                vdispsq *= correction_factor;//correcting for truncating the distribution when removing outliers.
+                
+                if(histData[Histindex].velOutlierRemoved == TRUE)
+                {
+                    vdispsq *= correction_factor;
+                    histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
+                }//correcting for truncating the distribution when removing outliers.
+                
                 histData[Histindex].vdisp = mw_sqrt(vdispsq);
                 
                 histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
                 
                 
-                if(correct_dispersion == FALSE)
-                { 
-                    histData[Histindex].vdisperr = histData[Histindex].vdisp;//the original vel disp before outlier rejection
-                }
             }
         }
     }
@@ -237,7 +235,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
 
 
 /* Get the velocity dispersion in each bin*/
-void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
+void nbCalcBetaDisp(NBodyHistogram* histogram)
 {
     unsigned int i;
     unsigned int j;
@@ -255,11 +253,6 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
     real beta_sum, betasq_sum, beta_dispsq;
     real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 sigma away where outliers are removed. DO NOT CHANGE without recalculating for a different cutoff. 
     
-    if(correct_dispersion == FALSE)
-    { 
-        correction_factor = 1.0;
-    }
-    
     for (i = 0; i < lambdaBins; ++i)
     {
         for(j = 0; j < betaBins; ++j)
@@ -268,7 +261,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
             count = (real) histData[Histindex].rawCount;
             count -= histData[Histindex].outliersBetaRemoved;
             
-            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
+            if(count > 2.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
                 n_ratio = count / (n_new); 
@@ -277,16 +270,23 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
                 beta_sum = histData[Histindex].beta_sum;
                 
                 beta_dispsq = (betasq_sum / n_new) - n_ratio * sqr(beta_sum / count);
-                beta_dispsq *= correction_factor;//correcting for truncating the distribution when removing outliers.
-                histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
                 
+                if(histData[Histindex].betaOutlierRemoved == TRUE)
+                {
+                    beta_dispsq *= correction_factor; 
+                    histData[Histindex].betaOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
+                    mw_printf("correcting\n");
+                }//correcting for truncating the distribution when removing outliers.
+                else
+                {
+                    mw_printf("not correcting\n");
+                }
+                
+                histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
                 histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
                 
+                mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n",count, beta_sum, betasq_sum, beta_dispsq, histData[Histindex].beta_disp, histData[Histindex].outliersBetaRemoved);
                 
-                if(correct_dispersion == FALSE)
-                { 
-                    histData[Histindex].beta_disperr = histData[Histindex].beta_disp;//the original vel disp before outlier rejection
-                }
             }
         }
     }
@@ -294,7 +294,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool correct_dispersion)
 }
 
 
-void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * vlos)
+void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos)
 {
     
     unsigned int Histindex;
@@ -317,9 +317,10 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
         {
             
             /* Check if the position is within the bounds of the histogram */
-            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
+            if (use_velbody[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
             {   
-                Histindex = (int) use_body[counter];
+                Histindex = (int) use_velbody[counter];
+                histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 
                 v_line_of_sight = vlos[counter];
                 /* bin count minus what was already removed */
@@ -337,7 +338,8 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                     histData[Histindex].v_sum -= v_line_of_sight;//remove from vel dis sums
                     histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
                     histData[Histindex].outliersVelRemoved++;//keep track of how many are being removed
-                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                    use_velbody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                    histData[Histindex].velOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
                 }
                  
             }
@@ -350,7 +352,7 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
 
 
 
-void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * betas)
+void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas)
 {
     
     unsigned int Histindex;
@@ -371,11 +373,10 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
         /* Only include bodies in models we aren't ignoring */
         if (!ignoreBody(p))
         {
-            
             /* Check if the position is within the bounds of the histogram */
-            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
+            if (use_betabody[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
             {   
-                Histindex = (int) use_body[counter];
+                Histindex = (int) use_betabody[counter];
                 
                 beta = betas[counter];
                 /* bin count minus what was already removed */
@@ -386,14 +387,16 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                 
                 /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].beta_disp;
-                
+//                 mw_printf("bin stats\t\t%.15f\t%.15f\t%.15f\t%.15f\n", bin_ave, beta, mw_fabs(bin_ave - beta), sigma_cutoff * bin_sigma);
                 
                 if(mw_fabs(bin_ave - beta) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
                     histData[Histindex].beta_sum -= beta;//remove from vel dis sums
                     histData[Histindex].betasq_sum -= sqr(beta);
                     histData[Histindex].outliersBetaRemoved++;//keep track of how many are being removed
-                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                    use_betabody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                    histData[Histindex].betaOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
+                    mw_printf("removing:\t %1.5f\t %1.5f\t %1.5f\n", beta, sqr(beta), histData[Histindex].outliersBetaRemoved);
                 }
                  
             }

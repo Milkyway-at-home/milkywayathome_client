@@ -404,7 +404,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
-    mwbool correct_dispersion = FALSE;
     
     
     nbGetHistTrig(&histTrig, hp);
@@ -426,7 +425,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         }
     }
 
-    real * use_body  = mwCalloc(body_count, sizeof(real));
+    real * use_velbody  = mwCalloc(body_count, sizeof(real));
+    real * use_betabody  = mwCalloc(body_count, sizeof(real));
     real * vlos      = mwCalloc(body_count, sizeof(real));
     real * betas     = mwCalloc(body_count, sizeof(real));
     
@@ -449,7 +449,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         
         histData[Histindex].outliersBetaRemoved = 0.0;
         histData[Histindex].outliersVelRemoved = 0.0;
-        
+        histData[Histindex].betaOutlierRemoved = FALSE;
+        histData[Histindex].velOutlierRemoved = FALSE;
         histData[Histindex].useBin = TRUE;
     }
 
@@ -465,10 +466,12 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             lambda = L(lambdaBetaR);
             beta = B(lambdaBetaR);
             
-            use_body[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
+            use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
+            use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
+            
             vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
             betas[ub_counter]    = DEFAULT_NOT_USE;
-            
+
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
             betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
@@ -477,9 +480,12 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
             {   
                 Histindex = lambdaIndex * betaBins + betaIndex;
-                use_body[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                use_velbody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                
                 histData[Histindex].rawCount++;
                 ++totalNum;
+                
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
@@ -491,30 +497,32 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 /* each of these are components of the beta disp */
                 histData[Histindex].beta_sum += beta;
                 histData[Histindex].betasq_sum += sqr(beta);
+//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\n", beta, sqr(beta), histData[Histindex].beta_sum, histData[Histindex].betasq_sum);
             }
             ub_counter++;
         }
     }
-
     histogram->totalNum = totalNum; /* Total particles in range */
     
     
-    nbCalcVelDisp(histogram, correct_dispersion);
-    nbCalcBetaDisp(histogram, correct_dispersion);
-    correct_dispersion = TRUE;
+    nbCalcVelDisp(histogram);
+    nbCalcBetaDisp(histogram);
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < 6; i++)
     {
-        nbRemoveVelOutliers(st, histogram, use_body, vlos);
-        nbCalcVelDisp(histogram, correct_dispersion);
+        nbRemoveVelOutliers(st, histogram, use_velbody, vlos);
+        nbCalcVelDisp(histogram);
         
-        nbRemoveBetaOutliers(st, histogram, use_body, betas);
-        nbCalcBetaDisp(histogram, correct_dispersion);
+        nbRemoveBetaOutliers(st, histogram, use_betabody, betas);
+        nbCalcBetaDisp(histogram);
     }
+    nbCalcBetaDisp(histogram);
+    nbCalcBetaDisp(histogram);
     
     nbNormalizeHistogram(histogram);
     
-    free(use_body);
+    free(use_velbody);
+    free(use_betabody);
     free(vlos);
     free(betas);
     
