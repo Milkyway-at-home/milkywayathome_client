@@ -178,7 +178,7 @@ real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 }
 
 /* Get the velocity dispersion in each bin*/
-void nbCalcVelDisp(NBodyHistogram* histogram)
+void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial)
 {
     unsigned int i;
     unsigned int j;
@@ -214,16 +214,30 @@ void nbCalcVelDisp(NBodyHistogram* histogram)
                 
                 vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
                 
-                if(histData[Histindex].velOutlierRemoved == TRUE)
+                /* The following requires explanation. For the first calculation of dispersions, the bool initial 
+                 * needs to be set to true. After that false.
+                 * Previously, when removing outliers, if a bin had outliers removed in the 
+                 * previous round but then did not have any outliers removed in the next round (while others did), 
+                 * the dispersion would be recalculated from the unchanged sums. This was then set to the dispersion in the bin, without
+                 * the correction for outlier removal, which was done in the previous round after calculation. Therefore, if any bin had themselves
+                 * dispersion calculated an extra time after an outlier removal, it would revert the dispersion to the uncorrected value.
+                 * Now, it will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or 
+                 * if there was an outlier removed in that bin. 
+                 */
+                
+                if(histData[Histindex].velOutlierRemoved)
                 {
                     vdispsq *= correction_factor;
-                    histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
+//                     mw_printf("correcting\n");
                 }//correcting for truncating the distribution when removing outliers.
-                
-                histData[Histindex].vdisp = mw_sqrt(vdispsq);
-                
-                histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
-                
+                if(initial || histData[Histindex].velOutlierRemoved)
+                {
+//                     mw_printf("setting disp\n");
+                    histData[Histindex].vdisp = mw_sqrt(vdispsq);
+                    histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
+                    histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
+                }
+//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n",count, v_sum, vsq_sum, vdispsq, histData[Histindex].vdisp, histData[Histindex].outliersVelRemoved);
                 
             }
         }
@@ -235,7 +249,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram)
 
 
 /* Get the velocity dispersion in each bin*/
-void nbCalcBetaDisp(NBodyHistogram* histogram)
+void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial)
 {
     unsigned int i;
     unsigned int j;
@@ -261,6 +275,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram)
             count = (real) histData[Histindex].rawCount;
             count -= histData[Histindex].outliersBetaRemoved;
             
+            /*NOTE change back to 10*/
             if(count > 2.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
@@ -271,21 +286,33 @@ void nbCalcBetaDisp(NBodyHistogram* histogram)
                 
                 beta_dispsq = (betasq_sum / n_new) - n_ratio * sqr(beta_sum / count);
                 
-                if(histData[Histindex].betaOutlierRemoved == TRUE)
+                /* The following requires explanation. For the first calculation of dispersions, the bool initial 
+                 * needs to be set to true. After that false.
+                 * Previously, when removing outliers, if a bin had outliers removed in the 
+                 * previous round but then did not have any outliers removed in the next round (while others did), 
+                 * the dispersion would be recalculated from the unchanged sums. This was then set to the dispersion in the bin, without
+                 * the correction for outlier removal, which was done in the previous round after calculation. Therefore, if any bin had themselves
+                 * dispersion calculated an extra time after an outlier removal, it would revert the dispersion to the uncorrected value.
+                 * Now, it will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or 
+                 * if there was an outlier removed in that bin. 
+                 */
+                
+                
+                if(histData[Histindex].betaOutlierRemoved)
                 {
                     beta_dispsq *= correction_factor; 
-                    histData[Histindex].betaOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
-                    mw_printf("correcting\n");
+//                     mw_printf("correcting\n");
                 }//correcting for truncating the distribution when removing outliers.
-                else
+                
+                if(initial || histData[Histindex].betaOutlierRemoved )
                 {
-                    mw_printf("not correcting\n");
+//                     mw_printf("setting disp\n");
+                    histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
+                    histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
+                    histData[Histindex].betaOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 }
                 
-                histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
-                histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
-                
-                mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n",count, beta_sum, betasq_sum, beta_dispsq, histData[Histindex].beta_disp, histData[Histindex].outliersBetaRemoved);
+//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n",count, beta_sum, betasq_sum, beta_dispsq, histData[Histindex].beta_disp, histData[Histindex].outliersBetaRemoved);
                 
             }
         }
@@ -320,7 +347,6 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
             if (use_velbody[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
             {   
                 Histindex = (int) use_velbody[counter];
-                histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 
                 v_line_of_sight = vlos[counter];
                 /* bin count minus what was already removed */
@@ -331,7 +357,7 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                 
                 /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].vdisp;
-                
+//                 mw_printf("bin stats\t\t%.15f\t%.15f\t%.15f\t%.15f\n", bin_ave, v_line_of_sight, mw_fabs(bin_ave - v_line_of_sight), bin_sigma);
                 
                 if(mw_fabs(bin_ave - v_line_of_sight) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
@@ -340,6 +366,7 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                     histData[Histindex].outliersVelRemoved++;//keep track of how many are being removed
                     use_velbody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
                     histData[Histindex].velOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
+//                     mw_printf("removing:\t %1.5f\t %1.5f\t %1.5f\n", v_line_of_sight, sqr(v_line_of_sight), histData[Histindex].outliersVelRemoved);
                 }
                  
             }
@@ -367,7 +394,6 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
     real beta;
     real bin_ave, bin_sigma, new_count;
     real sigma_cutoff = 2.5; //this is a hardcoded value. The sigma correction used depends on this. DO NOT CHANGE without recalculating correction factor
-    
     for (p = st->bodytab; p < endp; ++p)
     {
         /* Only include bodies in models we aren't ignoring */
@@ -387,7 +413,7 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                 
                 /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].beta_disp;
-//                 mw_printf("bin stats\t\t%.15f\t%.15f\t%.15f\t%.15f\n", bin_ave, beta, mw_fabs(bin_ave - beta), sigma_cutoff * bin_sigma);
+//                 mw_printf("bin stats\t\t%.15f\t%.15f\t%.15f\t%.15f\n", bin_ave, beta, mw_fabs(bin_ave - beta), bin_sigma);
                 
                 if(mw_fabs(bin_ave - beta) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
@@ -396,7 +422,7 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                     histData[Histindex].outliersBetaRemoved++;//keep track of how many are being removed
                     use_betabody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
                     histData[Histindex].betaOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
-                    mw_printf("removing:\t %1.5f\t %1.5f\t %1.5f\n", beta, sqr(beta), histData[Histindex].outliersBetaRemoved);
+//                     mw_printf("removing:\t %1.5f\t %1.5f\t %1.5f\n", beta, sqr(beta), histData[Histindex].outliersBetaRemoved);
                 }
                  
             }
