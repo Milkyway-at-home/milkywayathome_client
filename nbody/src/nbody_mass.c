@@ -178,7 +178,7 @@ real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 }
 
 /* Get the velocity dispersion in each bin*/
-void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial)
+void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
 {
     unsigned int i;
     unsigned int j;
@@ -193,7 +193,6 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial)
     real n_ratio;
     real n_new;
     real v_sum, vsq_sum, vdispsq;
-    real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 sigma away where outliers are removed. DO NOT CHANGE without recalculating for a different cutoff. 
     
     
     for (i = 0; i < lambdaBins; ++i)
@@ -216,22 +215,19 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial)
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
-                 * It will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or if there was an outlier removed in that bin. 
+                 * It will correct if there was no outliers removed because then the distribution does not have wings
+                 * It will also correct if outliers were removed because then the wings were removed. 
+                 * Does one correction everytime there was an outlier removed. Corrects once if no outliers were removed. 
                  */
                 
-                if(histData[Histindex].velOutlierRemoved)
+                if(!initial)
                 {
                     vdispsq *= correction_factor;
-//                     mw_printf("correcting\n");
                 }//correcting for truncating the distribution when removing outliers.
-                if(initial || histData[Histindex].velOutlierRemoved)
-                {
-//                     mw_printf("setting disp\n");
-                    histData[Histindex].vdisp = mw_sqrt(vdispsq);
-                    histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
-                    histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
-                }
-//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n",count, v_sum, vsq_sum, vdispsq, histData[Histindex].vdisp, histData[Histindex].outliersVelRemoved);
+
+                histData[Histindex].vdisp = mw_sqrt(vdispsq);
+                histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
+                histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 
             }
         }
@@ -243,7 +239,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial)
 
 
 /* Get the velocity dispersion in each bin*/
-void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial)
+void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
 {
     unsigned int i;
     unsigned int j;
@@ -259,7 +255,6 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial)
     real n_new;
 
     real beta_sum, betasq_sum, beta_dispsq;
-    real correction_factor = 1.111; //this is a hard coded value that depends on the number of 2.5 sigma away where outliers are removed. DO NOT CHANGE without recalculating for a different cutoff. 
     
     for (i = 0; i < lambdaBins; ++i)
     {
@@ -282,25 +277,21 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial)
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
-                 * It will do the calculation, but will only set the dispersion for the bin if it is the initial calculation, or if there was an outlier removed in that bin. 
+                 * It will correct if there was no outliers removed because then the distribution does not have wings
+                 * It will also correct if outliers were removed because then the wings were removed. 
+                 * Does one correction everytime there was an outlier removed. Corrects once if no outliers were removed. 
                  */
                 
                 
-                if(histData[Histindex].betaOutlierRemoved)
+                if(!initial)
                 {
                     beta_dispsq *= correction_factor; 
-//                     mw_printf("correcting\n");
                 }//correcting for truncating the distribution when removing outliers.
                 
-                if(initial || histData[Histindex].betaOutlierRemoved )
-                {
-//                     mw_printf("setting disp\n");
-                    histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
-                    histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
-                    histData[Histindex].betaOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
-                }
+                histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
+                histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
+                histData[Histindex].betaOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 
-//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n",count, beta_sum, betasq_sum, beta_dispsq, histData[Histindex].beta_disp, histData[Histindex].outliersBetaRemoved);
                 
             }
         }
@@ -309,7 +300,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial)
 }
 
 
-void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos)
+void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos, real sigma_cutoff)
 {
     
     unsigned int Histindex;
@@ -323,7 +314,6 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
 
     real v_line_of_sight;
     real bin_ave, bin_sigma, new_count;
-    real sigma_cutoff = 2.5; //this is a hardcoded value. The sigma correction used depends on this. DO NOT CHANGE without recalculating correction factor
     
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -345,7 +335,6 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                 
                 /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].vdisp;
-//                 mw_printf("bin stats\t\t%.15f\t%.15f\t%.15f\t%.15f\n", bin_ave, v_line_of_sight, mw_fabs(bin_ave - v_line_of_sight), bin_sigma);
                 
                 if(mw_fabs(bin_ave - v_line_of_sight) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
@@ -354,7 +343,6 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                     histData[Histindex].outliersVelRemoved++;//keep track of how many are being removed
                     use_velbody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
                     histData[Histindex].velOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
-//                     mw_printf("removing:\t %1.5f\t %1.5f\t %1.5f\n", v_line_of_sight, sqr(v_line_of_sight), histData[Histindex].outliersVelRemoved);
                 }
                  
             }
@@ -367,7 +355,7 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
 
 
 
-void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas)
+void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas, real sigma_cutoff)
 {
     
     unsigned int Histindex;
@@ -381,7 +369,7 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
 
     real beta;
     real bin_ave, bin_sigma, new_count;
-    real sigma_cutoff = 2.5; //this is a hardcoded value. The sigma correction used depends on this. DO NOT CHANGE without recalculating correction factor
+
     for (p = st->bodytab; p < endp; ++p)
     {
         /* Only include bodies in models we aren't ignoring */
@@ -401,7 +389,6 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                 
                 /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].beta_disp;
-//                 mw_printf("bin stats\t\t%.15f\t%.15f\t%.15f\t%.15f\n", bin_ave, beta, mw_fabs(bin_ave - beta), bin_sigma);
                 
                 if(mw_fabs(bin_ave - beta) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
@@ -410,7 +397,6 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                     histData[Histindex].outliersBetaRemoved++;//keep track of how many are being removed
                     use_betabody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
                     histData[Histindex].betaOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
-//                     mw_printf("removing:\t %1.5f\t %1.5f\t %1.5f\n", beta, sqr(beta), histData[Histindex].outliersBetaRemoved);
                 }
                  
             }
@@ -460,10 +446,6 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     real denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
     real CostComponent = num / denom; //this is the log of the cost component
 
-//     mw_printf("log(CostComponent) = %10.15f\n", (CostComponent));
-//     mw_printf("num = %10.15f \t denom = %10.15f\n", num, denom);
-//     mw_printf("l = %.15f\n", p);
-//     mw_printf("l = %.15f\n", likelihood);
     /* the cost component is negative. Returning a postive value */
     return -CostComponent;
     

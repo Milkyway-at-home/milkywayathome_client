@@ -497,24 +497,22 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 /* each of these are components of the beta disp */
                 histData[Histindex].beta_sum += beta;
                 histData[Histindex].betasq_sum += sqr(beta);
-//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\n", beta, sqr(beta), histData[Histindex].beta_sum, histData[Histindex].betasq_sum);
-//                 mw_printf("%.15f\t%.15f\t%.15f\t%.15f\n", v_line_of_sight, sqr(v_line_of_sight), histData[Histindex].v_sum, histData[Histindex].vsq_sum);
             }
             ub_counter++;
         }
     }
     histogram->totalNum = totalNum; /* Total particles in range */
-    
-    nbCalcVelDisp(histogram, TRUE);
-    nbCalcBetaDisp(histogram, TRUE);
+
+    nbCalcVelDisp(histogram, TRUE, ctx->VelCorrect);
+    nbCalcBetaDisp(histogram, TRUE, ctx->BetaCorrect);
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < 6; i++)
     {
-        nbRemoveBetaOutliers(st, histogram, use_betabody, betas);
-        nbCalcBetaDisp(histogram, FALSE);
+        nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma);
+        nbCalcBetaDisp(histogram, FALSE, ctx->BetaCorrect);
         
-        nbRemoveVelOutliers(st, histogram, use_velbody, vlos);
-        nbCalcVelDisp(histogram, FALSE);
+        nbRemoveVelOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma);
+        nbCalcVelDisp(histogram, FALSE, ctx->VelCorrect);
         
     }
     

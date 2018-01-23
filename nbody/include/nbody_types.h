@@ -431,6 +431,11 @@ typedef struct MW_ALIGN_TYPE
     real BestLikeStart;       /* after what portion of the sim should the calc start */
     real OutputFreq;          /* frequency of writing outputs */
     
+    real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
+    real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
+    real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
+    real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
+    
     real Ntsteps;     /* number of time steps to run when manual control is on */
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
@@ -442,7 +447,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                               \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,               \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
-                         0, 0, 0, 0, 0,                                              \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0,                                  \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.

@@ -45,12 +45,14 @@ bta_upper_range = 15      -- upper range for beta
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
 use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
-use_vel_disps        = true    -- use velocity dispersions in likelihood
+use_beta_disps       = true    -- use beta dispersions in likelihood
+use_vel_disps        = false    -- use velocity dispersions in likelihood
         
 timestep_control     = false   -- -- control number of steps    -- --
 Ntime_steps          = 10    -- -- number of timesteps to run -- --
 
-
+SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection -- --
+Correction           = 1.111   -- -- correction for outlier rejection -- --
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
@@ -135,6 +137,10 @@ function makeContext()
       BestLikeStart = best_like_start,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
+      BetaSigma     = SigmaCutoff,
+      VelSigma      = SigmaCutoff,
+      BetaCorrect   = Correction,
+      VelCorrect    = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta       = 1.0

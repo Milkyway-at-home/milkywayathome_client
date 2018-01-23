@@ -40,6 +40,11 @@ const NBodyCtx defaultNBodyCtx =
     /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
     /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
     
+    /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
+    /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
+    /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
+    /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
+       
     /* .Nstep_control   */  FALSE,
     /* .Ntsteps         */  0,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
