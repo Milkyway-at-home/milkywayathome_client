@@ -49,7 +49,7 @@ use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
         
 timestep_control     = false   -- -- control number of steps    -- --
-Ntime_steps          = 10    -- -- number of timesteps to run -- --
+Ntime_steps          = 10      -- -- number of timesteps to run -- --
 
 SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection -- --
 Correction           = 1.111   -- -- correction for outlier rejection -- --
@@ -132,9 +132,10 @@ function makeContext()
       eps2        = calculateEps2(totalBodies, soften_length ),
       criterion   = criterion,
       useQuad     = true,
-      useBestLike = use_best_likelihood,
-      useVelDisp  = use_vel_disps,
+      useBestLike   = use_best_likelihood,
       BestLikeStart = best_like_start,
+      useVelDisp    = use_vel_disps,
+      useBetaDisp   = use_beta_disps,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,

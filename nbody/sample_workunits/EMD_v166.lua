@@ -29,7 +29,7 @@ bta_upper_range = 15      -- upper range for beta
 use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
 use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = false    -- use velocity dispersions in likelihood
+use_vel_disps        = false   -- use velocity dispersions in likelihood
         
 SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection -- --
 Correction           = 1.111   -- -- correction for outlier rejection -- --
@@ -86,9 +86,10 @@ function makeContext()
       eps2        = calculateEps2(totalBodies, soften_length ),
       criterion   = "TreeCode",
       useQuad     = true,
-      useBestLike = use_best_likelihood,
-      useVelDisp  = use_vel_disps,
+      useBestLike   = use_best_likelihood,
       BestLikeStart = best_like_start,
+      useVelDisp    = use_vel_disps,
+      useBetaDisp   = use_beta_disps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
       BetaCorrect   = Correction,
