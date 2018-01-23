@@ -236,9 +236,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_fa
 }
 
 
-
-
-/* Get the velocity dispersion in each bin*/
+/* Get the beta dispersion in each bin*/
 void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
 {
     unsigned int i;
@@ -265,7 +263,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_f
             count -= histData[Histindex].outliersBetaRemoved;
             
             /*NOTE change back to 10*/
-            if(count > 2.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
+            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
                 n_ratio = count / (n_new); 
@@ -491,6 +489,7 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
 
     }
     real sigma_cutoff = 2.0 * ((nbins / 2.0) - 1.0);
+
     if(Nsigma_sq <= sigma_cutoff)
     {
        probability = 0.0;
@@ -554,7 +553,6 @@ real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogra
         probability =  ((nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq) - (Nsigma_sq) / 2.0;
         probability -= ((nbins / 2.0) - 1.0 ) * ( mw_log(sigma_cutoff) - 1.0);
     }
-    
     return -probability;
 }
 

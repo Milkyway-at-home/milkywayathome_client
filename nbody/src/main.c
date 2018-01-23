@@ -241,9 +241,14 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
         
         {
-            "match-histogram-veldisp", 'D',
+            "match-histogram-veldisp", 'V',
             POPT_ARG_STRING, &nbf.matchHistVelDisp,
             0, "Only match this histogram against other histogram (requires histogram argument) with vel disp comparison", NULL
+        },
+        {
+            "match-histogram-betadisp", 'D',
+            POPT_ARG_STRING, &nbf.matchHistBetaVelDisp,
+            0, "Only match this histogram against other histogram (requires histogram argument) with beta and vel disp comparison", NULL
         },
         
         {
@@ -466,7 +471,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         exit(EXIT_SUCCESS);
     }
 
-    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistVelDisp)
+    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistBetaDisp && !nbf.matchHistVelDisp && !nbf.matchHistBetaVelDisp)
     {
         mw_printf("An input file, checkpoint, or matching histogram argument is required\n");
         poptFreeContext(context);
@@ -651,6 +656,17 @@ int main(int argc, const char* argv[])
         real beta_disp = FALSE;
         /* runs the comparison of two input hists using vel dispersion calc */
         emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistVelDisp, vel_disp, beta_disp);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
+        rc = isnan(emd);
+        
+    }
+    else if(nbf.matchHistBetaVelDisp)
+    {
+        real emd;
+        real vel_disp = TRUE; 
+        real beta_disp = TRUE;
+        /* runs the comparison of two input hists using vel dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaVelDisp, vel_disp, beta_disp);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
         
