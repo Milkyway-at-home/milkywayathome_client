@@ -478,7 +478,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         return TRUE;
     }
 
-    if ((nbf.matchHistogram || nbf.matchHistVelDisp) && !nbf.histogramFileName)
+    if ((nbf.matchHistogram || nbf.matchHistVelDisp || nbf.matchHistBetaDisp || nbf.matchHistBetaVelDisp) && !nbf.histogramFileName)
     {
         mw_printf("--match-histogram argument requires --histogram-file\n");
         poptFreeContext(context);

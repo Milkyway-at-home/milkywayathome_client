@@ -228,7 +228,6 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_fa
 
                 histData[Histindex].vdisp = mw_sqrt(vdispsq);
                 histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
-                histData[Histindex].velOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 
             }
         }
@@ -263,7 +262,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_f
             count = (real) histData[Histindex].rawCount;
             count -= histData[Histindex].outliersBetaRemoved;
             
-            /*NOTE change back to 10*/
+            
             if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
@@ -289,7 +288,6 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_f
                 
                 histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
                 histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
-                histData[Histindex].betaOutlierRemoved = FALSE;//resetting the outlier bool for this iteration
                 
                 
             }
@@ -341,7 +339,6 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                     histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
                     histData[Histindex].outliersVelRemoved++;//keep track of how many are being removed
                     use_velbody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
-                    histData[Histindex].velOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
                 }
                  
             }
@@ -395,7 +392,6 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                     histData[Histindex].betasq_sum -= sqr(beta);
                     histData[Histindex].outliersBetaRemoved++;//keep track of how many are being removed
                     use_betabody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
-                    histData[Histindex].betaOutlierRemoved = TRUE; //marking it as having had an outlier removed in this iteration
                 }
                  
             }
@@ -521,7 +517,7 @@ real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogra
         if (data->data[i].useBin)
         {
             beta_disp_data = data->data[i].beta_disp;
-            /* the data may have incomplete vel disps. Where it does not have will have -1 */
+            /* the data may have incomplete beta disps. Where it does not have will have -1 */
             if(beta_disp_data > 0)
             {
                 

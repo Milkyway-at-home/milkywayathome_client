@@ -107,8 +107,8 @@ real nbSystemLikelihood(const NBodyState* st,
     
     real geometry_component;
     real cost_component;
-    real velocity_dispersion_component;
-    real beta_dispersion_component;
+    real velocity_dispersion_component = NAN;
+    real beta_dispersion_component = NAN;
     real likelihood = NAN;
     
     if (data->lambdaBins != histogram->lambdaBins)
@@ -175,7 +175,6 @@ real nbSystemLikelihood(const NBodyState* st,
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
         likelihood += velocity_dispersion_component;
     }
-    
     return likelihood;
     
 } 

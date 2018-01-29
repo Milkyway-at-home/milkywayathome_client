@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2011 Matthew Arsenault
  * Copyright (c) 2016-2018 Siddhartha Shelton
- * 
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -149,12 +148,13 @@ static int createNBodyCtx(lua_State* luaSt)
     
     ctx.nStep = (unsigned int) nStepf;
     
-    if(ctx.Nstep_control)
-    {
-        mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
-        ctx.nStep = (int) ctx.Ntsteps;
-    }
-
+    #ifdef NBODY_DEV_OPTIONS
+        if(ctx.Nstep_control)
+        {
+            mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
+            ctx.nStep = (int) ctx.Ntsteps;
+        }
+    #endif
     
     {
         int major = 0, minor = 0;

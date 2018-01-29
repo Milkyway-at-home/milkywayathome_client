@@ -450,8 +450,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         
         histData[Histindex].outliersBetaRemoved = 0.0;
         histData[Histindex].outliersVelRemoved = 0.0;
-        histData[Histindex].betaOutlierRemoved = FALSE;
-        histData[Histindex].velOutlierRemoved = FALSE;
         histData[Histindex].useBin = TRUE;
     }
 
@@ -682,10 +680,10 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].vdisperr);
         
         
-        /*NOTE this should be changed jus to 9 once all old versions of this code and old histograms are phased out.
-         * For now it is necessary as others may be using older histograms.
+        /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
+         * and their errors. If not using them, can input zeros in the Columns
          */
-        if (rc != 9 && rc != 7 && rc != 5)//for the ones with beta, vel disp and without either
+        if (rc != 9)
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
             error = TRUE;

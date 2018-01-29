@@ -296,9 +296,6 @@ typedef struct
     real outliersBetaRemoved;
     real outliersVelRemoved;
     
-    mwbool betaOutlierRemoved;
-    mwbool velOutlierRemoved;
-    
 } HistData;
 
 
