@@ -1,7 +1,8 @@
 /*
  *  Copyright (c) 2011 Matthew Arsenault
  *  Copyright (c) 2011 Rensselaer Polytechnic Institute.
- *
+ *  Copyright (c) 2016-2018 Siddhartha Shelton
+ * 
  *  This file is part of Milkway@Home.
  *
  *  Milkway@Home is free software: you may copy, redistribute and/or modify it

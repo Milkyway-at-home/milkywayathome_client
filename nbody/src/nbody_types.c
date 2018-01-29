@@ -1,5 +1,6 @@
 /* Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
    Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
+   Copyright (c) 2016-2018 Siddhartha Shelton
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
 Rensselaer Polytechnic Institute.
 

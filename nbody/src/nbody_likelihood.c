@@ -2,6 +2,7 @@
  *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
  *  Copyright (c) 2010-2011 Ben Willett
  *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2016-2018 Siddhartha Shelton
  *
  *  This file is part of Milkway@Home.
  *
@@ -90,7 +91,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         }
         
     }
-    mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", emd, cost_component, beta_disp, vel_disp, likelihood);
+
     free(dat);
     free(match);
     return likelihood;
@@ -174,10 +175,7 @@ real nbSystemLikelihood(const NBodyState* st,
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
         likelihood += velocity_dispersion_component;
     }
-    mw_printf("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", geometry_component, cost_component, beta_dispersion_component, velocity_dispersion_component, likelihood);
+    
     return likelihood;
     
-}
-
-
-// 
+} 

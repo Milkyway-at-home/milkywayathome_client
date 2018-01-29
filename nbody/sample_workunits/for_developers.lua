@@ -1,4 +1,4 @@
--- /* Copyright (c) 2016 Siddhartha Shelton */
+-- /* Copyright (c) 2016-2018 Siddhartha Shelton */
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
