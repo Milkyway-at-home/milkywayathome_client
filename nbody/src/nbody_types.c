@@ -1,5 +1,6 @@
 /* Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
    Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
+   Copyright (c) 2016-2018 Siddhartha Shelton
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
 Rensselaer Polytechnic Institute.
 
@@ -605,11 +606,16 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->allowIncest, ctx2->allowIncest)
         && feqWithNan(ctx1->useBestLike, ctx2->useBestLike)
         && feqWithNan(ctx1->useVelDisp, ctx2->useVelDisp)
+        && feqWithNan(ctx1->useBetaDisp, ctx2->useBetaDisp)
         && feqWithNan(ctx1->BestLikeStart, ctx2->BestLikeStart)
         && feqWithNan(ctx1->Nstep_control, ctx2->Nstep_control)
         && feqWithNan(ctx1->Ntsteps, ctx2->Ntsteps)
         && feqWithNan(ctx1->MultiOutput, ctx2->MultiOutput)
         && feqWithNan(ctx1->OutputFreq, ctx2->OutputFreq)
+        && feqWithNan(ctx1->BetaSigma, ctx2->BetaSigma)
+        && feqWithNan(ctx1->VelSigma, ctx2->VelSigma)
+        && feqWithNan(ctx1->BetaCorrect, ctx2->BetaCorrect)
+        && feqWithNan(ctx1->VelCorrect, ctx2->VelCorrect)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)

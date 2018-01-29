@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011 Matthew Arsenault
- *
+ * Copyright (c) 2016-2018 Siddhartha Shelton
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -99,10 +99,15 @@ static int createNBodyCtx(lua_State* luaSt)
             { "useBestLike",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike   },
             { "BestLikeStart", LUA_TNUMBER,  NULL, TRUE,  &ctx.BestLikeStart },
             { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
+            { "useBetaDisp",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBetaDisp   },
             { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps       },
             { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control }, 
             { "MultiOutput",   LUA_TBOOLEAN, NULL, FALSE, &ctx.MultiOutput   },
             { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq    },
+            { "BetaSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaSigma     },
+            { "VelSigma",      LUA_TNUMBER,  NULL, TRUE,  &ctx.VelSigma      },
+            { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
+            { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
             END_MW_NAMED_ARG
         };
 
@@ -142,12 +147,14 @@ static int createNBodyCtx(lua_State* luaSt)
     }
     
     ctx.nStep = (unsigned int) nStepf;
-    if(ctx.Nstep_control)
-    {
-        mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
-        ctx.nStep = (int) ctx.Ntsteps;
-    }
-
+    
+    #ifdef NBODY_DEV_OPTIONS
+        if(ctx.Nstep_control)
+        {
+            mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
+            ctx.nStep = (int) ctx.Ntsteps;
+        }
+    #endif
     
     {
         int major = 0, minor = 0;
@@ -227,11 +234,16 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
     { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
     { "useVelDisp",      getBool,       offsetof(NBodyCtx, useVelDisp)  },
+    { "useBetaDisp",     getBool,       offsetof(NBodyCtx, useBetaDisp) },
     { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { "Nstep_control",   getBool,       offsetof(NBodyCtx, Nstep_control) },
     { "Ntsteps",         getNumber,     offsetof(NBodyCtx, Ntsteps)     },
     { "MultiOutput",     getBool,       offsetof(NBodyCtx, MultiOutput) },
     { "OutputFreq",      getNumber,     offsetof(NBodyCtx, OutputFreq)  },
+    { "BetaSigma",       getNumber,     offsetof(NBodyCtx, BetaSigma)   },
+    { "VelSigma",        getNumber,     offsetof(NBodyCtx, VelSigma)    },
+    { "BetaCorrect",     getNumber,     offsetof(NBodyCtx, BetaCorrect) },
+    { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)  },
     { NULL, NULL, 0 }
 };
 
@@ -249,11 +261,16 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
     { "useBestLike",     setBool,       offsetof(NBodyCtx, useBestLike) },
     { "useVelDisp",      setBool,       offsetof(NBodyCtx, useVelDisp)  },
+    { "useBetaDisp",     setBool,       offsetof(NBodyCtx, useBetaDisp) },
     { "BestLikeStart",   setNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { "Nstep_control",   setBool,       offsetof(NBodyCtx, Nstep_control) },
     { "Ntsteps",         setNumber,     offsetof(NBodyCtx, Ntsteps)     },
     { "MultiOutput",     setBool,       offsetof(NBodyCtx, MultiOutput) },
     { "OutputFreq",      setNumber,     offsetof(NBodyCtx, OutputFreq)  },
+    { "BetaSigma",       setNumber,     offsetof(NBodyCtx, BetaSigma)   },
+    { "VelSigma",        setNumber,     offsetof(NBodyCtx, VelSigma)    },
+    { "BetaCorrect",     setNumber,     offsetof(NBodyCtx, BetaCorrect) },
+    { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)  },
     { NULL, NULL, 0 }
 };
 

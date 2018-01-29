@@ -1,4 +1,4 @@
--- /* Copyright (c) 2016 Siddhartha Shelton */
+-- /* Copyright (c) 2016-2018 Siddhartha Shelton */
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
@@ -19,7 +19,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.66"  -- -- MINIMUM APP VERSION        -- --
+nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 two_component_model   = true    -- -- TWO COMPONENTS SWITCH      -- --
@@ -40,17 +40,17 @@ lda_upper_range = 150     -- upepr range for lamdba
 bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
 bta_lower_range = -15     -- lower range for beta
 bta_upper_range = 15      -- upper range for beta
+
+SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
+Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
 use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
-use_vel_disps        = true    -- use velocity dispersions in likelihood
-        
-timestep_control     = false   -- -- control number of steps    -- --
-Ntime_steps          = 10    -- -- number of timesteps to run -- --
 
-
+use_beta_disps       = true    -- use beta dispersions in likelihood
+use_vel_disps        = false   -- use velocity dispersions in likelihood
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
@@ -59,7 +59,10 @@ Ntime_steps          = 10    -- -- number of timesteps to run -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
 useMultiOutputs       = false    -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 6       -- -- FREQUENCY OF WRITING OUTPUTS -- --
+freqOfOutputs         = 6        -- -- FREQUENCY OF WRITING OUTPUTS -- --
+
+timestep_control     = false     -- -- control number of steps      -- --
+Ntime_steps          = 10        -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -130,11 +133,16 @@ function makeContext()
       eps2        = calculateEps2(totalBodies, soften_length ),
       criterion   = criterion,
       useQuad     = true,
-      useBestLike = use_best_likelihood,
-      useVelDisp  = use_vel_disps,
+      useBestLike   = use_best_likelihood,
       BestLikeStart = best_like_start,
+      useVelDisp    = use_vel_disps,
+      useBetaDisp   = use_beta_disps,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
+      BetaSigma     = SigmaCutoff,
+      VelSigma      = SigmaCutoff,
+      BetaCorrect   = Correction,
+      VelCorrect    = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta       = 1.0

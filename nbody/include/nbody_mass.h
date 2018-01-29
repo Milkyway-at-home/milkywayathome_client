@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012 Rensselaer Polytechnic Institute
- *
+ * Copyright (c) 2016-2018 Siddhartha Shelton
+ * 
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -37,13 +38,14 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
 
-void nbCalcVelDisp(NBodyHistogram* histogram, mwbool correct_dispersion);
+void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
+void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
 
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * vlos);
-
+void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos, real sigma_cutoff);
+void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas, real sigma_cutoff);
 
 real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
-
+real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
 #ifdef __cplusplus
 }
 #endif

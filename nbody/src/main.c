@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
  *  Copyright (c) 2010-2011 Matthew Arsenault
- *
+ *  Copyright (c) 2016-2018 Siddhartha Shelton
  *  This file is part of Milkway@Home.
  *
  *  Milkway@Home is free software: you may copy, redistribute and/or modify it
@@ -235,9 +235,20 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
         
         {
-            "match-histogram-veldisp", 'S',
+            "match-histogram-betadisp", 'S',
+            POPT_ARG_STRING, &nbf.matchHistBetaDisp,
+            0, "Only match this histogram against other histogram (requires histogram argument) with beta disp comparison", NULL
+        },
+        
+        {
+            "match-histogram-veldisp", 'V',
             POPT_ARG_STRING, &nbf.matchHistVelDisp,
             0, "Only match this histogram against other histogram (requires histogram argument) with vel disp comparison", NULL
+        },
+        {
+            "match-histogram-betadisp", 'D',
+            POPT_ARG_STRING, &nbf.matchHistBetaVelDisp,
+            0, "Only match this histogram against other histogram (requires histogram argument) with beta and vel disp comparison", NULL
         },
         
         {
@@ -460,14 +471,14 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         exit(EXIT_SUCCESS);
     }
 
-    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistVelDisp)
+    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistBetaDisp && !nbf.matchHistVelDisp && !nbf.matchHistBetaVelDisp)
     {
         mw_printf("An input file, checkpoint, or matching histogram argument is required\n");
         poptFreeContext(context);
         return TRUE;
     }
 
-    if ((nbf.matchHistogram || nbf.matchHistVelDisp) && !nbf.histogramFileName)
+    if ((nbf.matchHistogram || nbf.matchHistVelDisp || nbf.matchHistBetaDisp || nbf.matchHistBetaVelDisp) && !nbf.histogramFileName)
     {
         mw_printf("--match-histogram argument requires --histogram-file\n");
         poptFreeContext(context);
@@ -620,18 +631,42 @@ int main(int argc, const char* argv[])
     else if (nbf.matchHistogram)
     {
         real emd;
-        real vel_disp = FALSE; 
+        real vel_disp = FALSE;
+        real beta_disp = FALSE;
         /* runs the comparison of two input hists without using vel dispersion calc */
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram, vel_disp);
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram, vel_disp, beta_disp);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
+    }
+    else if(nbf.matchHistBetaDisp)
+    {
+        real emd;
+        real vel_disp = FALSE; 
+        real beta_disp = TRUE;
+        /* runs the comparison of two input hists using vel dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaDisp, vel_disp, beta_disp);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
+        rc = isnan(emd);
+        
     }
     else if(nbf.matchHistVelDisp)
     {
         real emd;
         real vel_disp = TRUE; 
+        real beta_disp = FALSE;
         /* runs the comparison of two input hists using vel dispersion calc */
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistVelDisp, vel_disp);
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistVelDisp, vel_disp, beta_disp);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
+        rc = isnan(emd);
+        
+    }
+    else if(nbf.matchHistBetaVelDisp)
+    {
+        real emd;
+        real vel_disp = TRUE; 
+        real beta_disp = TRUE;
+        /* runs the comparison of two input hists using vel dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaVelDisp, vel_disp, beta_disp);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
         

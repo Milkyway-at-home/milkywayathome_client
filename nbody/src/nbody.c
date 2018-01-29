@@ -3,7 +3,7 @@
  * Copyright (c) 2010, 2011 Matthew Arsenault
  * Copyright (c) 2010, 2011 Rensselaer Polytechnic Institute.
  * Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
- *
+ * Copyright (c) 2016-2018 Siddhartha Shelton
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -404,6 +404,7 @@ int nbMain(const NBodyFlags* nbf)
     ts = mwGetTime();
     
     st->useVelDisp = ctx->useVelDisp;
+    st->useBetaDisp = ctx->useBetaDisp;
     rc = nbRunSystem(ctx, st, nbf);
     
     te = mwGetTime();

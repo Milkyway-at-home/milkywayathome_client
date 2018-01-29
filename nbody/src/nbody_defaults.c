@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2011  Matthew Arsenault
+Copyright (c) 2016-2018 Siddhartha Shelton
 
 This file is part of Milkway@Home.
 
@@ -40,10 +41,15 @@ const NBodyCtx defaultNBodyCtx =
     /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
     /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
     
+    /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
+    /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
+    /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
+    /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
+       
     /* .Nstep_control   */  FALSE,
     /* .Ntsteps         */  0,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
-    
+    /* .useBetaDisp     */  DEFAULT_USE_BETA_DISP,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,

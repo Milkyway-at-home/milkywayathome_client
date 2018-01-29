@@ -57,8 +57,8 @@
     ==========================================================================
 */
 
-/* Cost Function:
- * Copyright 2016 Siddhartha Shelton
+/* likelihood Scaling:
+ * Copyright (c) 2016-2018 Siddhartha Shelton
 
 This file is part of Milkway@Home.
 
@@ -1276,12 +1276,10 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
-    unsigned int n = histogram->totalSimulated;
     unsigned int nSim = histogram->totalNum;
     unsigned int nData = data->totalNum;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
-    real p; /* probability of observing an event */
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
@@ -1353,7 +1351,6 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
     free(hist);
     free(dat);
-//     mw_printf("l = %.15f\n", p);
 //     mw_printf("l = %.15f\n", likelihood);
     
     /* the emd is a negative. returning a positive value */

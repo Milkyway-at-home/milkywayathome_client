@@ -4,6 +4,8 @@
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
 Rensselaer Polytechnic Institute.
 
+Copyright (c) 2016-2018 Siddhartha Shelton
+
 This file is part of Milkway@Home.
 
 Milkyway@Home is free software: you can redistribute it and/or modify
@@ -280,11 +282,20 @@ typedef struct
     real beta;
     real count;
     real err;
+    
     real v_sum;
     real vsq_sum;
     real vdisp;
     real vdisperr;
-    real outliersRemoved;
+    
+    real beta_sum;
+    real betasq_sum;
+    real beta_disp;
+    real beta_disperr;
+    
+    real outliersBetaRemoved;
+    real outliersVelRemoved;
+    
 } HistData;
 
 
@@ -357,7 +368,8 @@ typedef struct MW_ALIGN_TYPE
     real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
-    
+    mwbool useBetaDisp;            /* whether or not to use the beta disp comparison */
+
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -381,7 +393,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 
@@ -405,9 +417,10 @@ typedef struct MW_ALIGN_TYPE
     criterion_t criterion;
     ExternalPotentialType potentialType;
     
-    mwbool Nstep_control;  /* manually control how many timesteps simulation runs */
+    mwbool Nstep_control;     /* manually control how many timesteps simulation runs */
     mwbool useBestLike;       /* use best likelihood return code */
     mwbool useVelDisp;        /* use the velocity dispersion comparison calc */
+    mwbool useBetaDisp;       /* use the beta dispersion comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
     
     mwbool useQuad;           /* use quadrupole corrections */
@@ -417,6 +430,11 @@ typedef struct MW_ALIGN_TYPE
     real BestLikeStart;       /* after what portion of the sim should the calc start */
     real OutputFreq;          /* frequency of writing outputs */
     
+    real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
+    real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
+    real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
+    real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
+    
     real Ntsteps;     /* number of time steps to run when manual control is on */
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
@@ -425,10 +443,10 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                        \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,        \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
-                         0, 0, 0, 0, 0,                                       \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                               \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,               \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0,                                  \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.

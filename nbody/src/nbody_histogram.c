@@ -2,7 +2,8 @@
  *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
  *  Copyright (c) 2010-2011 Ben Willett
  *  Copyright (c) 2010-2011 Matthew Arsenault
- *
+ *  Copyright (c) 2016-2018 Siddhartha Shelton
+ * 
  *  This file is part of Milkway@Home.
  *
  *  Milkway@Home is free software: you may copy, redistribute and/or modify it
@@ -129,7 +130,7 @@ static void nbPrintHistogramHeader(FILE* f,
             hp->betaStart, nbHistogramCenter(hp->betaStart, hp->betaEnd), hp->betaEnd,
             nbHistogramLambdaBinSize(hp),
             nbHistogramBetaBinSize(hp));
-
+    
     fprintf(f,
             "# Nbody = %d\n"
             "# Evolve time = %f\n"
@@ -251,7 +252,10 @@ static void nbPrintHistogramHeader(FILE* f,
 
     fprintf(f,
             "#\n"
-            "# UseBin  Lambda  Beta  Probability  Error\n"
+            "#Column Headers:\n"
+            "# UseBin,  Lambda,  Beta,  Normalized Counts, Count Error, "
+            "Beta Dispersion,  Beta Dispersion Error,"
+            "LOS Velocity Dispersion, Velocity Dispersion Error\n"
             "#\n"
             "\n"
         );
@@ -271,16 +275,19 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
     fprintf(f, "betaBins = %u\n", histogram->betaBins);
 
+    
     for (i = 0; i < nBin; ++i)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
                 data->count,
                 data->err,
+                data->beta_disp,
+                data->beta_disperr,
                 data->vdisp,
                 data->vdisperr);
 
@@ -398,7 +405,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
-    mwbool correct_dispersion = FALSE;
     
     
     nbGetHistTrig(&histTrig, hp);
@@ -420,9 +426,11 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         }
     }
 
-    real * use_body  = mwCalloc(body_count, sizeof(real));
+    real * use_velbody  = mwCalloc(body_count, sizeof(real));
+    real * use_betabody  = mwCalloc(body_count, sizeof(real));
     real * vlos      = mwCalloc(body_count, sizeof(real));
-
+    real * betas     = mwCalloc(body_count, sizeof(real));
+    
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
     
@@ -434,8 +442,14 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
-        histData[Histindex].outliersRemoved = 0.0;
         
+        histData[Histindex].beta_sum    = 0.0;
+        histData[Histindex].betasq_sum  = 0.0;
+        histData[Histindex].beta_disp    = 0.0;
+        histData[Histindex].beta_disperr = 0.0;
+        
+        histData[Histindex].outliersBetaRemoved = 0.0;
+        histData[Histindex].outliersVelRemoved = 0.0;
         histData[Histindex].useBin = TRUE;
     }
 
@@ -451,9 +465,12 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             lambda = L(lambdaBetaR);
             beta = B(lambdaBetaR);
             
-            use_body[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
-            vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
+            use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
+            use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             
+            vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
+            betas[ub_counter]    = DEFAULT_NOT_USE;
+
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
             betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
@@ -462,37 +479,48 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
             {   
                 Histindex = lambdaIndex * betaBins + betaIndex;
-                use_body[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                use_velbody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                
                 histData[Histindex].rawCount++;
                 ++totalNum;
                 
+                
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
-                
+                betas[ub_counter] = beta;
                 /* each of these are components of the vel disp */
                 histData[Histindex].v_sum += v_line_of_sight;
                 histData[Histindex].vsq_sum += sqr(v_line_of_sight);
+                
+                /* each of these are components of the beta disp */
+                histData[Histindex].beta_sum += beta;
+                histData[Histindex].betasq_sum += sqr(beta);
             }
             ub_counter++;
         }
     }
-
     histogram->totalNum = totalNum; /* Total particles in range */
-    
-    
-    nbCalcVelDisp(histogram, correct_dispersion);
-    correct_dispersion = TRUE;
+
+    nbCalcVelDisp(histogram, TRUE, ctx->VelCorrect);
+    nbCalcBetaDisp(histogram, TRUE, ctx->BetaCorrect);
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < 6; i++)
     {
-        nbRemoveOutliers(st, histogram, use_body, vlos);
-        nbCalcVelDisp(histogram, correct_dispersion);
+        nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma);
+        nbCalcBetaDisp(histogram, FALSE, ctx->BetaCorrect);
+        
+        nbRemoveVelOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma);
+        nbCalcVelDisp(histogram, FALSE, ctx->VelCorrect);
+        
     }
     
     nbNormalizeHistogram(histogram);
     
-    free(use_body);
+    free(use_velbody);
+    free(use_betabody);
     free(vlos);
+    free(betas);
     
     return histogram;
 }
@@ -640,15 +668,22 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf\n",
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
                     &histData[fileCount].count,
                     &histData[fileCount].err,
+                    &histData[fileCount].beta_disp,
+                    &histData[fileCount].beta_disperr,
                     &histData[fileCount].vdisp,
                     &histData[fileCount].vdisperr);
-        if (rc != 7 && rc != 5)//for the ones with vel disp and without
+        
+        
+        /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
+         * and their errors. If not using them, can input zeros in the Columns
+         */
+        if (rc != 9)
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
             error = TRUE;

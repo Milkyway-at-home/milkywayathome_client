@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2011 Matthew Arsenault
- *
+ * Copyright (c) 2016-2018 Siddhartha Shelton
+ * 
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -44,9 +45,13 @@ extern "C" {
 #define DEFAULT_QUIET_ERRORS FALSE
 
 #define DEFAULT_USE_BEST_LIKELIHOOD FALSE
-#define DEFAULT_USE_VEL_DISP TRUE
+#define DEFAULT_USE_VEL_DISP FALSE
+#define DEFAULT_USE_BETA_DISP TRUE
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
+#define DEFAULT_SIGMA_CUTOFF ((real) 2.5)
+#define DEFAULT_DISP_CORRECTION ((real) 1.111)
+
 #define DEFAULT_NOT_USE ((real) -1)
   /*
     Return this when a big likelihood is needed.

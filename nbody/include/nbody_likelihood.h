@@ -2,7 +2,7 @@
  * Copyright (c) 2010, 2011 Ben Willett
  * Copyright (c) 2010, 2011 Matthew Arsenault
  * Copyright (c) 2010, 2011 Rensselaer Polytechnic Institute.
- *
+ * 
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ real nbSystemLikelihood(const NBodyState* st,
 
 int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method);
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool vel_disp);
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool vel_disp, mwbool beta_disp);
 
 #ifdef __cplusplus
 }

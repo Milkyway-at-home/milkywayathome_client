@@ -2,6 +2,7 @@
  *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
  *  Copyright (c) 2010-2011 Ben Willett
  *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2016-2018 Siddhartha Shelton
  *
  *  This file is part of Milkway@Home.
  *
@@ -60,13 +61,14 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
     return FALSE;
 }
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp)
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp, mwbool use_betadisp)
 {
     NBodyHistogram* dat;
     NBodyHistogram* match;
     real emd = NAN;
     real cost_component = NAN;
     real vel_disp = NAN;
+    real beta_disp = NAN;
     real likelihood = NAN;
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
@@ -77,6 +79,11 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         cost_component = nbCostComponent(dat, match);
         likelihood = emd + cost_component;
         
+        if(use_betadisp)
+        {
+            beta_disp = nbBetaDispersion(dat, match);
+            likelihood += beta_disp;
+        }
         if(use_veldisp)
         {
             vel_disp = nbVelocityDispersion(dat, match);
@@ -84,6 +91,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         }
         
     }
+
     free(dat);
     free(match);
     return likelihood;
@@ -99,7 +107,8 @@ real nbSystemLikelihood(const NBodyState* st,
     
     real geometry_component;
     real cost_component;
-    real velocity_dispersion_component;
+    real velocity_dispersion_component = NAN;
+    real beta_dispersion_component = NAN;
     real likelihood = NAN;
     
     if (data->lambdaBins != histogram->lambdaBins)
@@ -156,6 +165,11 @@ real nbSystemLikelihood(const NBodyState* st,
     likelihood = geometry_component + cost_component;
     
     /* likelihood due to the vel dispersion per bin of the two hist */
+    if(st->useBetaDisp)
+    {
+        beta_dispersion_component = nbBetaDispersion(data, histogram);
+        likelihood += beta_dispersion_component;
+    }
     if(st->useVelDisp)
     {
         velocity_dispersion_component = nbVelocityDispersion(data, histogram);
@@ -163,6 +177,4 @@ real nbSystemLikelihood(const NBodyState* st,
     }
     return likelihood;
     
-}
-
-
+} 
