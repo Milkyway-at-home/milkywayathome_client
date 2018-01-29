@@ -1,6 +1,6 @@
 /*
  *  Copyright (c) 2011 Matthew Arsenault
- *  Copyright (c) 2016 Siddhartha Shelton
+ *  Copyright (c) 2016-2018 Siddhartha Shelton
  *  This file is part of Milkway@Home.
  *
  *  Milkway@Home is free software: you may copy, redistribute and/or modify it

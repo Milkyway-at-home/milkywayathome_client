@@ -2,7 +2,7 @@
  * Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
  * Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.
  * Copyright (c) 2010-2012 Matthew Arsenault
- * Copyright (c) 2016 Siddhartha Shelton
+ * Copyright (c) 2016-2018 Siddhartha Shelton
  * This file is part of Milkway@Home.
  *
  * Milkyway@Home is free software: you can redistribute it and/or modify

@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_ANISOTROPIC_H_
-#define _NBODY_ANISOTROPIC_H_
+#ifndef _NBODY_ISOTROPIC_H_
+#define _NBODY_ISOTROPIC_H_
 
 #include <lua.h>
 
@@ -34,5 +34,5 @@ void registerGenerateIsotropic(lua_State* luaSt);
 }
 #endif
 
-#endif /* _NBODY_PLUMMER_H_ */
+#endif /* _NBODY_ISOTROPIC_H_ */
 

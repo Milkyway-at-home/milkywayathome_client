@@ -57,8 +57,8 @@
     ==========================================================================
 */
 
-/* Cost Function:
- * Copyright 2016 Siddhartha Shelton
+/* likelihood Scaling:
+ * Copyright (c) 2016-2018 Siddhartha Shelton
 
 This file is part of Milkway@Home.
 
