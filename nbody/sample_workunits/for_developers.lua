@@ -142,7 +142,7 @@ function makeContext()
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
-      --IterMax       = SigmaIter,
+      IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       MultiOutput   = useMultiOutputs,
