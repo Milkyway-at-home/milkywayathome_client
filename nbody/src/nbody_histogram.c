@@ -399,6 +399,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     real betaStart = hp->betaStart;
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
+    unsigned int IterMax = 6;
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
     unsigned int ub_counter = 0;
@@ -505,7 +506,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     nbCalcVelDisp(histogram, TRUE, ctx->VelCorrect);
     nbCalcBetaDisp(histogram, TRUE, ctx->BetaCorrect);
     /* this converges somewhere between 3 and 6 iterations */
-    for(int i = 0; i < 6; i++)
+    for(int i = 0; i < IterMax; i++)
     {
         nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma);
         nbCalcBetaDisp(histogram, FALSE, ctx->BetaCorrect);
