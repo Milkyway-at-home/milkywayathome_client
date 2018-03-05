@@ -50,7 +50,7 @@ extern "C" {
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
 #define DEFAULT_SIGMA_CUTOFF ((real) 2.5)
-/*#define DEFAULT_SIGMA_ITER ((unsinged int) 6)*/
+#define DEFAULT_SIGMA_ITER ((real) 6)
 #define DEFAULT_DISP_CORRECTION ((real) 1.111)
 
 #define DEFAULT_NOT_USE ((real) -1)

@@ -399,7 +399,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     real betaStart = hp->betaStart;
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
-    unsigned int IterMax = 6;
+    unsigned int IterMax = ctx->IterMax;
+    /*unsigned int IterMax = 6;*/	/*Default value for IterMax*/
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
     unsigned int ub_counter = 0;

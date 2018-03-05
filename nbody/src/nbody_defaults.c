@@ -43,7 +43,7 @@ const NBodyCtx defaultNBodyCtx =
     
     /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
     /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
-    /* .IterMax         */  /*DEFAULT_SIGMA_ITER,*/
+    /* .IterMax         */  DEFAULT_SIGMA_ITER,
     /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
        

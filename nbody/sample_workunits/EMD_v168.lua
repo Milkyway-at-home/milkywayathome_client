@@ -95,7 +95,7 @@ function makeContext()
       useBetaDisp   = use_beta_disps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
-      --IterMax       = SigmaIter,
+      IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       theta       = 1.0

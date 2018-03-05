@@ -614,7 +614,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->OutputFreq, ctx2->OutputFreq)
         && feqWithNan(ctx1->BetaSigma, ctx2->BetaSigma)
         && feqWithNan(ctx1->VelSigma, ctx2->VelSigma)
-        /*&& feqWithNan(ctx1->IterMax, ctx2->Itermax)*/
+        && feqWithNan(ctx1->IterMax, ctx2->IterMax)
         && feqWithNan(ctx1->BetaCorrect, ctx2->BetaCorrect)
         && feqWithNan(ctx1->VelCorrect, ctx2->VelCorrect)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
