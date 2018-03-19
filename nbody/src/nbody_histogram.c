@@ -107,7 +107,7 @@ static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
                                    int nbody,
-                                   float bestLikelihood_time)
+                                   real bestLikelihood_time)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
