@@ -17,15 +17,19 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 100   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-two_component_model   = true    -- -- TWO COMPONENTS SWITCH      -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
-print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
+run_null_potential    = true             -- -- NULL POTENTIAL SWITCH      -- --
+Model_Type            = "Two Component"  -- -- TWO COMPONENTS SWITCH      -- --
+-- -- Model Type Options -- --
+-- --   "Two Component"  -- --
+-- --   "Plummer"        -- --
+-- --   ""               -- --  This Option allows for manual body input in MakeBodies
+use_tree_code         = true             -- -- USE TREE CODE NOT EXACT    -- --
+print_reverse_orbit   = false            -- -- PRINT REVERSE ORBIT SWITCH -- --
+print_out_parameters  = false            -- -- PRINT OUT ALL PARAMETERS   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -61,8 +65,8 @@ use_vel_disps        = false   -- use velocity dispersions in likelihood
 useMultiOutputs       = false    -- -- WRITE MULTIPLE OUTPUTS       -- --
 freqOfOutputs         = 6        -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control     = false     -- -- control number of steps      -- --
-Ntime_steps          = 10        -- -- number of timesteps to run   -- --
+timestep_control     = true     -- -- control number of steps      -- --
+Ntime_steps          = 500      -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -181,7 +185,7 @@ function makeBodies(ctx, potential)
     
 
   
-    if(two_component_model) then 
+    if(Model_Type == "Two Component") then 
         firstModel = predefinedModels.mixeddwarf{
             nbody       = totalBodies,
             prng        = prng,
@@ -192,7 +196,7 @@ function makeBodies(ctx, potential)
             ignore      = true
         }
         
-    else
+    elseif(Model_Type == "Plummer") then
         firstModel = predefinedModels.plummer{
             nbody       = totalBodies,
             prng        = prng,
@@ -202,7 +206,11 @@ function makeBodies(ctx, potential)
             scaleRadius = rscale_l,
             ignore      = false
         }
-  
+    else --Create manual bodies--
+        firstModel = {
+        Body.create{mass = 1.0, position = Vector.create(0.0, 0.0, 0.0), velocity = Vector.create(1.0, 1.0, 1.0), ignore = false},
+        Body.create{mass = 1.0, position = Vector.create(0.0, 0.0, 0.1), velocity = Vector.create(1.0, 1.0, 1.0), ignore = false}
+        }
     end
   
   return firstModel
