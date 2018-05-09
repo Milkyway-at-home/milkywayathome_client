@@ -2,15 +2,12 @@
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
--- This is the developer version of the lua parameter file. 
--- It gives all the options you can have. 
--- Many of these the client will not need.
+-- This is the manual body list version of the lua parameter file. 
+-- It allows you to manual set a body list
 
 -- NOTE --
--- if you are using single component plummer model, it will take the baryonic
--- matter component parameters. meaning you input should look like
--- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
--- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
+-- required inputs are the simulation time and body file
+-- the time step and soften length are hard coded. Keep this in mind.
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
@@ -38,6 +35,10 @@ lda_upper_range = 150     -- upepr range for lamdba
 bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
 bta_lower_range = -15     -- lower range for beta
 bta_upper_range = 15      -- upper range for beta
+
+
+SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection -- --
+Correction           = 1.111   -- -- correction for outlier rejection -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
@@ -108,6 +109,10 @@ function makeContext()
       BestLikeStart = best_like_start,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
+      BetaSigma     = SigmaCutoff,
+      VelSigma      = SigmaCutoff,
+      BetaCorrect   = Correction,
+      VelCorrect    = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta       = 1.0
@@ -147,7 +152,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg == 2, "Expected 2 arguments")
+assert(#arg == 2, "Expected 2 arguments: evolve time and a manual body list file")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 -- argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
@@ -160,7 +165,6 @@ file             = arg[2]
 
 if(use_tree_code) then
     criterion = "TreeCode"
---     criterion = "NewCriterion"
 else
     criterion = "Exact"
 end

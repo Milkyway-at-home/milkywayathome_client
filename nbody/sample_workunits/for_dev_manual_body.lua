@@ -2,32 +2,48 @@
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
--- This is the developer version of the lua parameter file. 
+-- This is the developer version of the lua parameter file with manual body 
+-- input possible. 
 -- It gives all the options you can have. 
 -- Many of these the client will not need.
 
 -- NOTE --
--- to fully utilize this lua, need to compile with -DNBODY_DEV_OPTIONS=ON
 -- if you are using single component plummer model, it will take the baryonic
 -- matter component parameters. meaning you input should look like
 -- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
 -- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
+-- ALSO required is a file input to allow for a manual body list
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 2000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-two_component_model   = true    -- -- TWO COMPONENTS SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- MODEL SETTINGS   -- -- -- -- -- -- -- -- -- --        
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- ModelComponent Options: 
+-- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
+-- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
+-- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
+ModelComponents   = 2       -- -- TWO COMPONENTS SWITCH      -- --
+manual_bodies     = false    -- -- USE THE MANUAL BODY LIST   -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
@@ -63,7 +79,7 @@ useMultiOutputs       = false    -- -- WRITE MULTIPLE OUTPUTS       -- --
 freqOfOutputs         = 6        -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control     = false     -- -- control number of steps      -- --
-Ntime_steps          = 10        -- -- number of timesteps to run   -- --
+Ntime_steps          = 2        -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -182,7 +198,7 @@ function makeBodies(ctx, potential)
     
 
   
-    if(two_component_model) then 
+    if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
             nbody       = totalBodies,
             prng        = prng,
@@ -193,7 +209,7 @@ function makeBodies(ctx, potential)
             ignore      = true
         }
         
-    else
+    elseif(ModelComponents == 1) then
         firstModel = predefinedModels.plummer{
             nbody       = totalBodies,
             prng        = prng,
@@ -205,8 +221,24 @@ function makeBodies(ctx, potential)
         }
   
     end
+    
+    if(manual_bodies) then
+       manualModel = predefinedModels.manual_bodies{
+        body_file   = file,
+    }
+         
+    end
   
-  return firstModel
+    if(ModelComponents > 0 and manual_bodies) then 
+        return firstModel, manualModel
+    elseif(ModelComponents == 0 and manual_bodies) then
+        return manualModel
+    elseif(ModelComponents > 0 and not manual_bodies) then
+        return firstModel
+    else    
+        print("Don't you want to simulate something?")
+    end
+    
 end
 
 function makeHistogram()
@@ -229,7 +261,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg == 6, "Expected 6 arguments")
+assert(#arg >= 6, "Expected 6 model arguments and a manual body file")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
@@ -248,6 +280,7 @@ rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
 light_mass_ratio = round( tonumber(arg[6]), dec )
+file             = arg[7]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
