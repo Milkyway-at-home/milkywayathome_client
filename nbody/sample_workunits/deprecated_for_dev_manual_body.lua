@@ -223,8 +223,8 @@ function makeBodies(ctx, potential)
     end
     
     if(manual_bodies) then
-       manualModel = predefinedModels.manual_bodies{
-        body_file   = file,
+        manualModel = predefinedModels.manual_bodies{
+        body_file   = manual_body_file,
     }
          
     end
@@ -280,7 +280,7 @@ rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
 light_mass_ratio = round( tonumber(arg[6]), dec )
-file             = arg[7]
+manual_body_file = arg[7] -- optional arguments
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
@@ -289,7 +289,10 @@ rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
 mass_d    = dwarfMass * (1.0 - light_mass_ratio)
 
-
+if(manual_bodies and manual_body_file == nil) then 
+    print 'WARNING: No body list given. Manual body input turn off'
+    manual_bodies = false  --optional body list was not included
+end
 
 if(use_tree_code) then
     criterion = "TreeCode"

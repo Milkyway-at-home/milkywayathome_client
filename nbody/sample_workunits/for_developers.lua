@@ -12,6 +12,12 @@
 -- matter component parameters. meaning you input should look like
 -- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
 -- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
+
+-- available option: using a user inputted list of bodies. Sent in as an 
+-- optional arguement after dwarf parameter list
+-- MUST still include dwarf parameter list
+-- can control what model to use below
+-- simulation time still taken as the first parameter in the list
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
@@ -23,11 +29,26 @@ nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-two_component_model   = true    -- -- TWO COMPONENTS SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- MODEL SETTINGS   -- -- -- -- -- -- -- -- -- --        
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- ModelComponent Options: 
+-- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
+-- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
+-- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
+ModelComponents   = 2       -- -- TWO COMPONENTS SWITCH      -- --
+manual_bodies     = true    -- -- USE THE MANUAL BODY LIST   -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
@@ -182,7 +203,7 @@ function makeBodies(ctx, potential)
     
 
   
-    if(two_component_model) then 
+    if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
             nbody       = totalBodies,
             prng        = prng,
@@ -193,7 +214,7 @@ function makeBodies(ctx, potential)
             ignore      = true
         }
         
-    else
+    elseif(ModelComponents == 1) then
         firstModel = predefinedModels.plummer{
             nbody       = totalBodies,
             prng        = prng,
@@ -206,7 +227,23 @@ function makeBodies(ctx, potential)
   
     end
   
-  return firstModel
+    if(manual_bodies) then
+        manualModel = predefinedModels.manual_bodies{
+        body_file   = manual_body_file,
+    }
+         
+    end
+    
+    if(ModelComponents > 0 and manual_bodies) then 
+        return firstModel, manualModel
+    elseif(ModelComponents == 0 and manual_bodies) then
+        return manualModel
+    elseif(ModelComponents > 0 and not manual_bodies) then
+        return firstModel
+    else    
+        print("Don't you want to simulate something?")
+    end
+    
 end
 
 function makeHistogram()
@@ -229,7 +266,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg == 6, "Expected 6 arguments")
+assert(#arg >= 6, "Expected 6 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
@@ -248,6 +285,7 @@ rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
 light_mass_ratio = round( tonumber(arg[6]), dec )
+manual_body_file = arg[7]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
@@ -256,6 +294,15 @@ rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
 mass_d    = dwarfMass * (1.0 - light_mass_ratio)
 
+if(manual_bodies and manual_body_file == nil) then 
+    print 'WARNING: No body list given. Manual body input turn off'
+    manual_bodies = false  --optional body list was not included
+elseif(manual_bodies and ModelComponents == 0) then
+    print 'Using user inputted body list only' 
+    print( manual_body_file)
+elseif(manual_bodies and ModelComponents ~= 0) then
+    print 'Using dwarf model and user inputted body list'
+end
 
 
 if(use_tree_code) then

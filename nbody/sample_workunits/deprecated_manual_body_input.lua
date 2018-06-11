@@ -161,6 +161,10 @@ prng = DSFMT.create(argSeed)
 evolveTime       = tonumber(arg[1])
 file             = arg[2]
 
+
+    print( file)
+
+
 -- print(evolveTime, file)
 
 if(use_tree_code) then
