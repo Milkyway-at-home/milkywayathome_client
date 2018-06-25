@@ -67,8 +67,6 @@ void nbReverseOrbit(mwvector* finalPos,
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
     
-    mw_printf("%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\t%0.15f\n", x.x, x.y, x.z, v.x, v.y, v.z);
-
     *finalPos = x;
     *finalVel = v;
 }
