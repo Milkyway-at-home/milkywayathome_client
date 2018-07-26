@@ -84,6 +84,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
     mwvector v_for, x_for;
     mwvector lbr;
     real t;
+    real dt_half = dt / 2.0;
 
     // Set the initial conditions
     x = pos;
@@ -102,14 +103,16 @@ void nbPrintReverseOrbit(mwvector* finalPos,
     for (t = 0; t <= tstop; t += dt)
     {
         // Update the velocities and positions
-        mw_incaddv_s(v, acc, dt);
+        mw_incaddv_s(v, acc, dt_half);
         mw_incaddv_s(x, v, dt);
         
-        lbr = cartesianToLbr(x, DEFAULT_SUN_GC_DISTANCE);
-        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(lbr), Y(lbr), Z(lbr), X(v), Y(v), Z(v));
         
         // Compute the new acceleration
         acc = nbExtAcceleration(pot, x);
+        mw_incaddv_s(v, acc, dt_half);
+        
+        lbr = cartesianToLbr(x, DEFAULT_SUN_GC_DISTANCE);
+        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(lbr), Y(lbr), Z(lbr), X(v), Y(v), Z(v));
     }
 
     fclose(fp);
@@ -118,14 +121,16 @@ void nbPrintReverseOrbit(mwvector* finalPos,
     for (t = 0; t <= tstopforward; t += dt)
     {
         // Update the velocities and positions
-        mw_incaddv_s(v_for, acc, dt);
+        mw_incaddv_s(v_for, acc, dt_half);
         mw_incaddv_s(x_for, v_for, dt);
         
-        lbr = cartesianToLbr(x_for, DEFAULT_SUN_GC_DISTANCE);
-        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(lbr), Y(lbr), Z(lbr), X(v_for), Y(v_for), Z(v_for));
         
         // Compute the new acceleration
         acc = nbExtAcceleration(pot, x_for);
+        mw_incaddv_s(v_for, acc, dt_half);
+        
+        lbr = cartesianToLbr(x_for, DEFAULT_SUN_GC_DISTANCE);
+        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(lbr), Y(lbr), Z(lbr), X(v_for), Y(v_for), Z(v_for));
     }
     fclose(fp);
     
