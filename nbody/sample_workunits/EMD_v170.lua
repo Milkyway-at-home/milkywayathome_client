@@ -25,6 +25,7 @@ bta_lower_range = -15     -- lower range for beta
 bta_upper_range = 15      -- upper range for beta
         
 SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
+SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
 Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -94,6 +95,7 @@ function makeContext()
       useBetaDisp   = use_beta_disps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
+      IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       theta       = 1.0
