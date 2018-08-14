@@ -7,7 +7,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.66"  -- -- MINIMUM APP VERSION        -- --
+nbodyMinVersion       = "1.70"  -- -- MINIMUM APP VERSION        -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -36,12 +36,12 @@ use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false   -- use velocity dispersions in likelihood
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-l  = 218
-b  = 53.5
-r  = 28.6
-vx = -156 
-vy = 79 
-vz = 107
+orbit_parameter_l  = 218
+orbit_parameter_b  = 53.5
+orbit_parameter_r  = 28.6
+orbit_parameter_vx = -156 
+orbit_parameter_vy = 79 
+orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 function makePotential()
@@ -107,8 +107,8 @@ function makeBodies(ctx, potential)
     
     finalPosition, finalVelocity = reverseOrbit{
         potential = potential,
-        position  = lbrToCartesian(ctx, Vector.create(l, b, r)),
-        velocity  = Vector.create(vx, vy, vz),
+        position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+        velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
         tstop     = revOrbTime,
         dt        = ctx.timestep / 10.0
     }
