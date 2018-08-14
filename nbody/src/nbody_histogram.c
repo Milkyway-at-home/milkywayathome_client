@@ -106,7 +106,8 @@ unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /*
 static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
-                                   int nbody)
+                                   int nbody,
+                                   real bestLikelihood_time)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
@@ -133,7 +134,8 @@ static void nbPrintHistogramHeader(FILE* f,
     
     fprintf(f,
             "# Nbody = %d\n"
-            "# Evolve time = %f\n"
+            "# Evolve backward time = %f\n"
+            "# Evolve forward time = %f\n"
             "# Timestep = %f\n"
             "# Sun GC Dist = %f\n"
             "# Criterion = %s\n"
@@ -143,6 +145,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "#\n",
             nbody,
             ctx->timeEvolve,
+            bestLikelihood_time,
             ctx->timestep,
             ctx->sunGCDist,
             showCriterionT(ctx->criterion),
@@ -320,7 +323,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody);
+    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, st->bestLikelihood_time);
     nbPrintHistogram(f, histogram);
 
     if (f != DEFAULT_OUTPUT_FILE)
@@ -399,6 +402,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     real betaStart = hp->betaStart;
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
+    unsigned int IterMax = ctx->IterMax;
+    /*unsigned int IterMax = 6;*/	/*Default value for IterMax*/
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
     unsigned int ub_counter = 0;
@@ -505,7 +510,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     nbCalcVelDisp(histogram, TRUE, ctx->VelCorrect);
     nbCalcBetaDisp(histogram, TRUE, ctx->BetaCorrect);
     /* this converges somewhere between 3 and 6 iterations */
-    for(int i = 0; i < 6; i++)
+    for(int i = 0; i < IterMax; i++)
     {
         nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma);
         nbCalcBetaDisp(histogram, FALSE, ctx->BetaCorrect);

@@ -432,6 +432,7 @@ typedef struct MW_ALIGN_TYPE
     
     real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
     real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
+    real IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
     real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     
@@ -446,7 +447,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                               \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,               \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0,                                  \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                               \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.
