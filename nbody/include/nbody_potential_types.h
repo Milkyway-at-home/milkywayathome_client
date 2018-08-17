@@ -26,12 +26,14 @@
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
-#define _SPHERICAL 0
+#define _HERN_SPHERICAL 0
+#define _PLUMMER_SPHERICAL 1
 
 typedef enum
 {
     InvalidSpherical   = InvalidEnum,
-    SphericalPotential = _SPHERICAL
+    HernquistSpherical = _HERN_SPHERICAL,
+    PlummerSpherical = _PLUMMER_SPHERICAL
 } spherical_t;
 
 /* Spherical potential */
@@ -75,13 +77,15 @@ typedef struct MW_ALIGN_TYPE
 #define _NFW_HALO 1
 #define _TRIAXIAL_HALO 2
 #define _CAUSTIC_HALO 3
+#define _AS_HALO 4
 typedef enum
 {
-    InvalidHalo     = InvalidEnum,
-    LogarithmicHalo = _LOG_HALO,
-    NFWHalo         = _NFW_HALO,
-    TriaxialHalo    = _TRIAXIAL_HALO,
-    CausticHalo     = _CAUSTIC_HALO
+    InvalidHalo        = InvalidEnum,
+    LogarithmicHalo    = _LOG_HALO,
+    NFWHalo            = _NFW_HALO,
+    TriaxialHalo       = _TRIAXIAL_HALO,
+    CausticHalo        = _CAUSTIC_HALO,
+    AllenSantillanHalo = _AS_HALO
 } halo_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -97,6 +101,10 @@ typedef struct MW_ALIGN_TYPE
     real c1;           /* Constants calculated for triaxial from other params */
     real c2;           /* TODO: Lots more stuff could be cached, but should be done less stupidly */
     real c3;
+
+    real mass;
+    real gamma;
+    real lambda;
 } Halo;
 
 #define HALO_TYPE "Halo"
@@ -141,7 +149,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
-#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 

@@ -167,6 +167,36 @@ static void nbPrintHistogramHeader(FILE* f,
         return;
     }
 
+    switch (p->sphere[1].type)
+    {
+        case HernquistSpherical:
+
+            fprintf(f,
+                    "# Spherical: Hernquist\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->sphere[1].mass,
+                    p->sphere[1].scale);
+            break;
+
+        case PlummerSpherical:
+
+            fprintf(f,
+                    "# Spherical: Plummer\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->sphere[1].mass,
+                    p->sphere[1].scale);
+            break;
+
+        case InvalidSpherical:
+        default:
+            fprintf(f,
+                    "# Spherical: ???\n"
+                    "#\n");
+    }
 
     switch (p->disk.type)
     {
@@ -244,6 +274,20 @@ static void nbPrintHistogramHeader(FILE* f,
             fprintf(f,
                     "# Halo: Caustic\n"
                     "#\n");
+            break;
+
+        case AllenSantillanHalo:
+            fprintf(f,
+                    "# Halo: Allen-Santillan\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#   gamma = %f\n"
+                    "#   lambda = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength,
+                    p->halo.gamma,
+                    p->halo.lambda);
             break;
 
         case InvalidHalo:

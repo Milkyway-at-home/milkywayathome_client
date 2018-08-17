@@ -39,13 +39,24 @@ int pushSpherical(lua_State* luaSt, const Spherical* p)
 
 static const MWEnumAssociation sphericalOptions[] =
 {
-    { "spherical", SphericalPotential },
+    { "hernquist", HernquistSpherical },
+    { "plummer", PlummerSpherical },
     END_MW_ENUM_ASSOCIATION
 };
 
-static int createSpherical(lua_State* luaSt)
+static int createSpherical(lua_State* luaSt, const MWNamedArg* argTable, Spherical* s)
 {
-    static Spherical s = { SphericalPotential, 0.0, 0.0 };
+    oneTableArgument(luaSt, argTable);
+    if (checkSphericalConstants(s))
+        luaL_error(luaSt, "Invalid bulge encountered");
+
+    pushSpherical(luaSt, s);
+    return 1;
+}
+
+static int createHernquistSpherical(lua_State* luaSt)
+{
+    static Spherical s = EMPTY_SPHERICAL;
     static const MWNamedArg argTable[] =
         {
             { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
@@ -53,10 +64,22 @@ static int createSpherical(lua_State* luaSt)
             END_MW_NAMED_ARG
         };
 
-    oneTableArgument(luaSt, argTable);
-    pushSpherical(luaSt, &s);
+    s.type = HernquistSpherical;
+    return createSpherical(luaSt, argTable, &s);
+}
 
-    return 1;
+static int createPlummerSpherical(lua_State* luaSt)
+{
+    static Spherical s = EMPTY_SPHERICAL;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
+            { "scale", LUA_TNUMBER,  NULL, TRUE, &s.scale },
+            END_MW_NAMED_ARG
+        };
+
+    s.type = PlummerSpherical;
+    return createSpherical(luaSt, argTable, &s);
 }
 
 int getSphericalT(lua_State* luaSt, void* v)
@@ -96,7 +119,8 @@ static const luaL_reg metaMethodsSpherical[] =
 
 static const luaL_reg methodsSpherical[] =
 {
-    { "spherical", createSpherical },
+    { "hernquist", createHernquistSpherical },
+    { "plummer", createPlummerSpherical },
     { NULL, NULL }
 };
 
@@ -110,7 +134,7 @@ static const Xet_reg_pre gettersSpherical[] =
 
 static const Xet_reg_pre settersSpherical[] =
 {
-    //{ "type",  setSphericalT, offsetof(Spherical, type) },
+//    { "type",  setSphericalT, offsetof(Spherical, type) },
     { "mass",  setNumber, offsetof(Spherical, mass) },
     { "scale", setNumber, offsetof(Spherical, scale) },
     { NULL, NULL, 0 }
@@ -133,7 +157,8 @@ int registerSphericalKinds(lua_State* luaSt)
     lua_newtable(luaSt);
     table = lua_gettop(luaSt);
 
-    setModelTableItem(luaSt, table, createSpherical, "spherical");
+    setModelTableItem(luaSt, table, createHernquistSpherical, "hernquist");
+    setModelTableItem(luaSt, table, createPlummerSpherical, "plummer");
 
     lua_setglobal(luaSt, "sphericalModels");
 

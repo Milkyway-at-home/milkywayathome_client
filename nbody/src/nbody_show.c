@@ -61,8 +61,10 @@ const char* showSphericalT(spherical_t x)
 {
     switch (x)
     {
-        case SphericalPotential:
-            return "SphericalPotential";
+        case HernquistSpherical:
+            return "HernquistSpherical";
+        case PlummerSpherical:
+            return "PlummerSpherical";
         case InvalidSpherical:
             return "InvalidSpherical";
         default:
@@ -95,6 +97,8 @@ const char* showHaloT(halo_t x)
             return "NFWHalo";
         case TriaxialHalo:
             return "TriaxialHalo";
+        case AllenSantillanHalo:
+            return "AllenSantillanHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:
@@ -259,6 +263,9 @@ char* showHalo(const Halo* h)
                      "      c2           = %g\n"
                      "      c3           = %g\n"
                      "      triaxAngle   = %g\n"
+                     "      gamma        = %g\n"
+                     "      lambda       = %g\n"
+                     "      mass         = %g\n"
                      "    };\n",
                      showHaloT(h->type),
                      h->vhalo,
@@ -269,7 +276,10 @@ char* showHalo(const Halo* h)
                      h->c1,
                      h->c2,
                      h->c3,
-                     h->triaxAngle))
+                     h->triaxAngle,
+                     h->gamma,
+                     h->lambda,
+                     h->mass))
     {
         mw_fail("asprintf() failed\n");
     }

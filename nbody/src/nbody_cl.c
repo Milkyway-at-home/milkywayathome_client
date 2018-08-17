@@ -583,11 +583,14 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Potential */
                  "-DUSE_EXTERNAL_POTENTIAL=%d "
+                 "-DHERNQUIST_SPHERICAL=%d "
+                 "-DPLUMMER_SPHERICAL=%d "
                  "-DMIYAMOTO_NAGAI_DISK=%d "
                  "-DEXPONENTIAL_DISK=%d "
                  "-DLOG_HALO=%d "
                  "-DNFW_HALO=%d "
                  "-DTRIAXIAL_HALO=%d "
+                 "-DAS_HALO=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -608,6 +611,9 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DHALO_C1=%a "
                  "-DHALO_C2=%a "
                  "-DHALO_C3=%a "
+                 "-DHALO_MASS=%a "
+                 "-DHALO_GAMMA=%a "
+                 "-DHALO_LAMBDA=%a "
 
                  "%s "
                  "%s "
@@ -649,11 +655,14 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  /* Set potential */
                  ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT,
 
+                 p->sphere[0].type == HernquistSpherical,
+                 p->sphere[0].type == PlummerSpherical,
                  p->disk.type == MiyamotoNagaiDisk,
                  p->disk.type == ExponentialDisk,
                  p->halo.type == LogarithmicHalo,
                  p->halo.type == NFWHalo,
                  p->halo.type == TriaxialHalo,
+                 p->halo.type == AllenSantillanHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -675,6 +684,9 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.c1,
                  p->halo.c2,
                  p->halo.c3,
+                 p->halo.mass,
+                 p->halo.gamma,
+                 p->halo.lambda,
 
                  /* Misc. other stuff */
                  mwHasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",

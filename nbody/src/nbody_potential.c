@@ -27,11 +27,18 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-static inline mwvector sphericalAccel(const Spherical* sph, mwvector pos, real r)
+static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
     const real tmp = sph->scale + r;
 
     return mw_mulvs(pos, -sph->mass / (r * sqr(tmp)));
+}
+
+static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos, real r)
+{
+    const real tmp = mw_sqrt(sqr(sph->scale) + sqr(r));
+
+    return mw_mulvs(pos, -sph->mass / cube(tmp));
 }
 
 /* gets negative of the acceleration vector of this disk component */
@@ -119,6 +126,26 @@ static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)
     return acc;
 }
 
+static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
+{
+    const real gam = h->gamma;
+    const real lam = h->lambda;
+    const real M = h->mass;
+    const real a = h->scaleLength;
+    const real scaleR = r/a;
+    const real scaleL = lam/a;
+    real c;
+
+    if (r<lam)
+    {    c = -(M/sqr(a))*mw_pow(scaleR,gam-2)/(1+mw_pow(scaleR,gam-1));
+    }
+    else
+    {    c = -(M/sqr(r))*mw_pow(scaleL,gam)/(1+mw_pow(scaleL,gam-1));
+    }
+
+    return mw_mulvs(pos, c/r);
+}
+
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
@@ -151,6 +178,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         case CausticHalo:
             acctmp = causticHaloAccel(&pot->halo, pos, r);
             break;
+        case AllenSantillanHalo:
+            acctmp = ASHaloAccel(&pot->halo, pos, r);
+            break;
         case InvalidHalo:
         default:
             mw_fail("Invalid halo type in external acceleration\n");
@@ -158,7 +188,19 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 
     mw_incaddv(acc, acctmp);
     /*Calculate the Bulge Accelerations*/
-    acctmp = sphericalAccel(&pot->sphere[0], pos, r);
+    switch (pot->sphere[0].type)
+    {
+        case HernquistSpherical:
+            acctmp = hernquistSphericalAccel(&pot->sphere[0], pos, r);
+            break;
+        case PlummerSpherical:
+            acctmp = plummerSphericalAccel(&pot->sphere[0], pos, r);
+            break;
+        case InvalidSpherical:
+        default:
+            mw_fail("Invalid bulge type in external acceleration\n");
+    }
+
     mw_incaddv(acc, acctmp);
 
     return acc;

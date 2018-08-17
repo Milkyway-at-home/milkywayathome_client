@@ -39,10 +39,11 @@ int pushHalo(lua_State* luaSt, const Halo* p)
 
 static const MWEnumAssociation haloOptions[] =
 {
-    { "logarithmic", LogarithmicHalo },
-    { "nfw",         NFWHalo,        },
-    { "triaxial",    TriaxialHalo,   },
-    { "caustic",     CausticHalo,    },
+    { "logarithmic",        LogarithmicHalo        },
+    { "nfw",                NFWHalo,               },
+    { "triaxial",           TriaxialHalo,          },
+    { "caustic",            CausticHalo,           },
+    { "allenSantillan",     AllenSantillanHalo,    },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -117,6 +118,22 @@ static int createCausticHalo(lua_State* luaSt)
     return createHalo(luaSt, argTable, &h);
 }
 
+static int createAllenSantillanHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            { "gamma", LUA_TNUMBER, NULL, TRUE,&h.gamma },
+            { "lambda", LUA_TNUMBER, NULL, TRUE,&h.lambda },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = AllenSantillanHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
 static int toStringHalo(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
@@ -154,10 +171,11 @@ static const luaL_reg metaMethodsHalo[] =
 
 static const luaL_reg methodsHalo[] =
 {
-    { "logarithmic", createLogarithmicHalo },
-    { "nfw",         createNFWHalo         },
-    { "triaxial",    createTriaxialHalo    },
-    { "caustic",     createCausticHalo     },
+    { "logarithmic",        createLogarithmicHalo        },
+    { "nfw",                createNFWHalo                },
+    { "triaxial",           createTriaxialHalo           },
+    { "caustic",            createCausticHalo            },
+    { "allenSantillan",     createAllenSantillanHalo     },
     { NULL, NULL }
 };
 
@@ -174,6 +192,9 @@ static const Xet_reg_pre gettersHalo[] =
     { "c1",          getNumber, offsetof(Halo, c1) },
     { "c2",          getNumber, offsetof(Halo, c2) },
     { "c3",          getNumber, offsetof(Halo, c3) },
+    { "mass",        getNumber, offsetof(Halo, mass) },
+    { "gamma",       getNumber, offsetof(Halo, gamma) },
+    { "lambda",      getNumber, offsetof(Halo, lambda) },
     { NULL, NULL, 0 }
 };
 
@@ -188,6 +209,9 @@ static const Xet_reg_pre settersHalo[] =
     { "c1",          setNumber, offsetof(Halo, c1) },
     { "c2",          setNumber, offsetof(Halo, c2) },
     { "c3",          setNumber, offsetof(Halo, c3) },
+    { "mass",        setNumber, offsetof(Halo, mass) },
+    { "gamma",       setNumber, offsetof(Halo, gamma) },
+    { "lambda",      setNumber, offsetof(Halo, lambda) },
     { NULL, NULL, 0 }
 };
 
@@ -213,6 +237,7 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createNFWHalo, "nfw");
     setModelTableItem(luaSt, table, createTriaxialHalo, "triaxial");
     setModelTableItem(luaSt, table, createCausticHalo, "caustic");
+    setModelTableItem(luaSt, table, createAllenSantillanHalo, "allenSantillan");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

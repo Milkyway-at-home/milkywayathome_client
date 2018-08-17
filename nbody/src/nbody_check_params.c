@@ -90,24 +90,33 @@ mwbool checkHaloConstants(Halo* h)
     real qxs, qys;
 
     /* Common to all 4 models */
-    if (!isfinite(h->vhalo) || mwCheckNormalPosNum(h->scaleLength))
+    if (mwCheckNormalPosNum(h->scaleLength))
+    {
         return invalidHaloWarning(h->type);
+    }
 
     switch (h->type)
     {
         case LogarithmicHalo:
-            if (!isfinite(h->flattenZ))
+            if (!isfinite(h->flattenZ) || !isfinite(h->vhalo))
+            {
                 return invalidHaloWarning(h->type);
+            }
             break;
 
         case NFWHalo:
+            if (!isfinite(h->vhalo))
+            {
+                return invalidHaloWarning(h->type);
+            }
             break;
 
         case TriaxialHalo:
             if (   !isfinite(h->triaxAngle)
                 || !isfinite(h->flattenX)
                 || !isfinite(h->flattenY)
-                || !isfinite(h->flattenZ))
+                || !isfinite(h->flattenZ)
+                || !isfinite(h->vhalo))
             {
                 return invalidHaloWarning(h->type);
             }
@@ -129,6 +138,16 @@ mwbool checkHaloConstants(Halo* h)
             break;
 
         case CausticHalo:
+            break;
+
+        case AllenSantillanHalo:
+            if (   !isfinite(h->gamma)
+                || !isfinite(h->lambda)
+                || !isfinite(h->mass))
+            {
+                mw_printf("Parameters called incorrectly");
+                return invalidHaloWarning(h->type);
+            }
             break;
 
         case InvalidHalo:
