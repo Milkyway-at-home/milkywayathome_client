@@ -146,6 +146,18 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
     return mw_mulvs(pos, c/r);
 }
 
+static inline mwvector WEHaloAccel(const Halo* h, mwvector pos, real r)
+{
+    const real a = h->scaleLength;
+    const real M = h->mass;
+    const real sum2 = sqr(r) + sqr(a);
+
+    const real c = (-M/r)*(a + mw_sqrt(sum2))/(sum2 + a*mw_sqrt(sum2));
+
+    return mw_mulvs(pos, c/r);
+
+}
+
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
@@ -180,6 +192,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case AllenSantillanHalo:
             acctmp = ASHaloAccel(&pot->halo, pos, r);
+            break;
+        case WilkinsonEvansHalo:
+            acctmp = WEHaloAccel(&pot->halo, pos, r);
             break;
         case InvalidHalo:
         default:

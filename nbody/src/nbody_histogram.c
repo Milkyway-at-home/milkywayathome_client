@@ -290,6 +290,16 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->halo.lambda);
             break;
 
+        case WilkinsonEvansHalo:
+            fprintf(f,
+                    "# Halo: Wilkinson-Evans\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength);
+            break;
+
         case InvalidHalo:
         default:
             fprintf(f,

@@ -145,7 +145,13 @@ mwbool checkHaloConstants(Halo* h)
                 || !isfinite(h->lambda)
                 || !isfinite(h->mass))
             {
-                mw_printf("Parameters called incorrectly");
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case WilkinsonEvansHalo:
+            if (!isfinite(h->mass))
+            {
                 return invalidHaloWarning(h->type);
             }
             break;

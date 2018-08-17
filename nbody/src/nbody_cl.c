@@ -591,6 +591,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DNFW_HALO=%d "
                  "-DTRIAXIAL_HALO=%d "
                  "-DAS_HALO=%d "
+                 "-DWE_HALO=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -663,6 +664,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.type == NFWHalo,
                  p->halo.type == TriaxialHalo,
                  p->halo.type == AllenSantillanHalo,
+                 p->halo.type == WilkinsonEvansHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */

@@ -44,6 +44,7 @@ static const MWEnumAssociation haloOptions[] =
     { "triaxial",           TriaxialHalo,          },
     { "caustic",            CausticHalo,           },
     { "allenSantillan",     AllenSantillanHalo,    },
+    { "wilkinsonEvans",     WilkinsonEvansHalo,    },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -134,6 +135,20 @@ static int createAllenSantillanHalo(lua_State* luaSt)
     return createHalo(luaSt, argTable, &h);
 }
 
+static int createWilkinsonEvansHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = WilkinsonEvansHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
 static int toStringHalo(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
@@ -176,6 +191,7 @@ static const luaL_reg methodsHalo[] =
     { "triaxial",           createTriaxialHalo           },
     { "caustic",            createCausticHalo            },
     { "allenSantillan",     createAllenSantillanHalo     },
+    { "wilkinsonEvans",     createWilkinsonEvansHalo     },
     { NULL, NULL }
 };
 
@@ -238,6 +254,7 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createTriaxialHalo, "triaxial");
     setModelTableItem(luaSt, table, createCausticHalo, "caustic");
     setModelTableItem(luaSt, table, createAllenSantillanHalo, "allenSantillan");
+    setModelTableItem(luaSt, table, createWilkinsonEvansHalo, "wilkinsonEvans");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

@@ -99,6 +99,8 @@ const char* showHaloT(halo_t x)
             return "TriaxialHalo";
         case AllenSantillanHalo:
             return "AllenSantillanHalo";
+        case WilkinsonEvansHalo:
+            return "WilkinsonEvansHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:
