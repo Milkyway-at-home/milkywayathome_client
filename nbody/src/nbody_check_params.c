@@ -156,6 +156,13 @@ mwbool checkHaloConstants(Halo* h)
             }
             break;
 
+        case NFWMassHalo:
+            if (!isfinite(h->mass))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
         case InvalidHalo:
         default:
             mw_printf("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);

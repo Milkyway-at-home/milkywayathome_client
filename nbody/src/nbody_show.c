@@ -101,6 +101,8 @@ const char* showHaloT(halo_t x)
             return "AllenSantillanHalo";
         case WilkinsonEvansHalo:
             return "WilkinsonEvansHalo";
+        case NFWMassHalo:
+            return "NFWMassHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:

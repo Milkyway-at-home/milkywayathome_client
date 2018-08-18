@@ -79,6 +79,7 @@ typedef struct MW_ALIGN_TYPE
 #define _CAUSTIC_HALO 3
 #define _AS_HALO 4
 #define _WE_HALO 5
+#define _NFWM_HALO 6
 typedef enum
 {
     InvalidHalo        = InvalidEnum,
@@ -87,7 +88,8 @@ typedef enum
     TriaxialHalo       = _TRIAXIAL_HALO,
     CausticHalo        = _CAUSTIC_HALO,
     AllenSantillanHalo = _AS_HALO,
-    WilkinsonEvansHalo = _WE_HALO
+    WilkinsonEvansHalo = _WE_HALO,
+    NFWMassHalo        = _NFWM_HALO
 } halo_t;
 
 typedef struct MW_ALIGN_TYPE
