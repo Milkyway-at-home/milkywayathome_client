@@ -105,6 +105,8 @@ const char* showHaloT(halo_t x)
             return "NFWMassHalo";
         case PlummerHalo:
             return "PlummerHalo";
+        case HernquistHalo:
+            return "HernquistHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:

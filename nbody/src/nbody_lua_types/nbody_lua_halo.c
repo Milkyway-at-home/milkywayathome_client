@@ -47,6 +47,7 @@ static const MWEnumAssociation haloOptions[] =
     { "wilkinsonEvans",     WilkinsonEvansHalo,    },
     { "nfwmass",            NFWMassHalo,           },
     { "plummer",            PlummerHalo,           },
+    { "hernquist",          HernquistHalo,         },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -179,6 +180,20 @@ static int createPlummerHalo(lua_State* luaSt)
     return createHalo(luaSt, argTable, &h);
 }
 
+static int createHernquistHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = HernquistHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
 static int toStringHalo(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
@@ -224,6 +239,7 @@ static const luaL_reg methodsHalo[] =
     { "wilkinsonEvans",     createWilkinsonEvansHalo     },
     { "nfwmass",            createNFWMassHalo            },
     { "plummer",            createPlummerHalo            },
+    { "hernquist",          createHernquistHalo          },
     { NULL, NULL }
 };
 
@@ -289,6 +305,7 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createWilkinsonEvansHalo, "wilkinsonEvans");
     setModelTableItem(luaSt, table, createNFWMassHalo, "nfwmass");
     setModelTableItem(luaSt, table, createPlummerHalo, "plummer");
+    setModelTableItem(luaSt, table, createHernquistHalo, "hernquist");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

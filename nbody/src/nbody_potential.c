@@ -177,6 +177,12 @@ static inline mwvector plummerHaloAccel(const Halo* h, mwvector pos, real r)
     return mw_mulvs(pos, -h->mass / cube(tmp));
 }
 
+static inline mwvector hernquistHaloAccel(const Halo* h, mwvector pos, real r)
+{
+    const real tmp = h->scaleLength + r;
+
+    return mw_mulvs(pos, -h->mass / (r * sqr(tmp)));
+}
 
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
@@ -220,6 +226,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case PlummerHalo:
             acctmp = plummerHaloAccel(&pot->halo, pos, r);
+            break;
+        case HernquistHalo:
+            acctmp = hernquistHaloAccel(&pot->halo, pos, r);
             break;
         case InvalidHalo:
         default:

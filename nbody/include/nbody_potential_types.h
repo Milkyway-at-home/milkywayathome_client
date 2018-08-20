@@ -81,6 +81,7 @@ typedef struct MW_ALIGN_TYPE
 #define _WE_HALO 5
 #define _NFWM_HALO 6
 #define _PLUMMER_HALO 7
+#define _HERNQUIST_HALO 8
 typedef enum
 {
     InvalidHalo        = InvalidEnum,
@@ -91,7 +92,8 @@ typedef enum
     AllenSantillanHalo = _AS_HALO,
     WilkinsonEvansHalo = _WE_HALO,
     NFWMassHalo        = _NFWM_HALO,
-    PlummerHalo        = _PLUMMER_HALO
+    PlummerHalo        = _PLUMMER_HALO,
+    HernquistHalo      = _HERNQUIST_HALO
 } halo_t;
 
 typedef struct MW_ALIGN_TYPE
