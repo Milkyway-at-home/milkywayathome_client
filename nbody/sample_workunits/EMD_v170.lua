@@ -72,9 +72,9 @@ function get_timestep()
     end
     
     -- I did it this way so there was only one place to change the time step. 
-    t = (1 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
+    t = (1.0 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
     
-    tmp = sqr(1/10.0) * sqrt((pi_4_3 * cube(rscale_d)) / (mass_l + mass_d))
+    tmp = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_d)) / (mass_l + mass_d))
 --     print('timestep ', t, tmp)
     
     return t
