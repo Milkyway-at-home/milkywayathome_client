@@ -27,6 +27,79 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+/*Some functions for more compact computation*/
+
+static inline real lnfact(int n)
+{
+     int counter;
+     real result = 0.0;
+     if (n > 0)
+     {
+          for (counter = n; counter >= 1; counter--)
+          {
+               result += mw_log((real) counter);
+          }
+     }
+     /*mw_printf("ln(%u!) = %.15f \n",n,result);*/
+     return result;
+}
+
+static inline real binom(int n, int k)
+{
+    return mw_exp(lnfact(n)-lnfact(k)-lnfact(n-k));
+}
+
+static inline real leg_pol(real x, int l)
+{
+    real sum = 0.0;
+    for (int m = 0; m < mw_floor(l/2)+1; m++)
+    {
+        sum += mw_pow(-1, m)*mw_pow(x, l-2*m)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l);
+    }
+    if (x == 0.0)
+    {
+        if (l*1.0/2.0 == mw_ceil(l*1.0/2.0))
+        {
+            sum = mw_pow(-1,l/2)*mw_exp(lnfact(l)-2*lnfact(l/2) - l*mw_log(2));
+        }
+        else
+        {
+            sum = 0.0;
+        }
+    }
+    /*mw_printf("P(%.15f, %u) = %.15f \n",x,l,sum);*/
+    return sum;
+}
+
+static inline real leg_pol_derv(real x, int l)
+{
+    real sum = 0.0;
+    for (int m = 0; m < mw_floor((l-1)/2)+1; m++)
+    {
+        sum += mw_pow(-1, m)*mw_pow(x, l - 2*m - 1)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m);
+    }
+    /*mw_printf("P'(%.15f, %u) = %.15f \n",x,l,sum);*/
+    return sum;
+}
+
+static inline real lower_gamma(int n, real x)
+{
+    real sum = 0;
+    for (int k = 0; k < n; k++)
+    {
+       sum += mw_pow(x,k)/mw_exp(lnfact(k));
+    }
+    /*mw_printf("g(%u, %.15f) = %.15f \n",n,x,mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum));*/
+    return mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum);
+}
+
+static inline real GenExpIntegral(int n, real x)
+{
+    return mw_exp(-x)/(x + n/(1+1/(x + (n+1)/(1 + 2/(x + (n+2)/(1 + 3/(x + (n+3)/(1 + 4/(x + n+5)))))))));
+}
+
+/*spherical bulge potentials*/
+
 static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
     const real tmp = sph->scale + r;
@@ -42,6 +115,7 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos,
 }
 
 /* gets negative of the acceleration vector of this disk component */
+
 static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r)
 {
     mwvector acc;
@@ -60,15 +134,75 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
     return acc;
 }
 
-static inline mwvector exponentialDiskAccel(const Disk* disk, mwvector pos, real r)
+/*WARNING: This potential uses incomplete gamma functions and the generalized exponential integral function. This potential will take longer than other potentials to run.*/
+static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)
 {
-    const real b = disk->scaleLength;
+    mwvector acc;
+    /*Reset acc vector*/
+    X(acc) = 0.0;
+    Y(acc) = 0.0;
+    Z(acc) = 0.0;
 
-    const real expPiece = mw_exp(-r / b) * (r + b) / b;
-    const real factor   = disk->mass * (expPiece - 1.0) / cube(r);
+    const mwvector r_hat = mw_mulvs(pos, 1.0/r);
+    const real r_proj = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
 
-    return mw_mulvs(pos, factor);
+    mwvector theta_hat;
+    X(theta_hat) = X(pos)*Z(pos)/r/r_proj;
+    Y(theta_hat) = Y(pos)*Z(pos)/r/r_proj;
+    Z(theta_hat) = -r_proj/r;
+
+    const real scl = disk->scaleLength;
+    const real M = disk->mass;
+    const real costheta = Z(pos)/r;
+    const real sintheta = r_proj/r;
+
+    real r_f = 0.0;
+    real theta_f = 0.0;
+    real a_r = 0.0;
+    real b_r = 0.0;
+    real p0 = 0.0;
+    real pcos = 0.0;
+
+    for (int l = 0; l < 5; l++) /*Only even terms add, so counter is multiplied by 2*/
+    {
+        if (l>0)
+        {
+            a_r = GenExpIntegral(2*l,r/scl);
+        }
+        else
+        {
+            a_r = 0.0;
+        }
+        b_r = mw_pow(scl/r,2*l+2)*lower_gamma(2*l+2,r/scl);
+        p0 = leg_pol(0,2*l);
+        pcos = leg_pol(costheta,2*l);
+        r_f += p0*pcos*(2*l*a_r - (2*l+1)*b_r);
+
+        if (l > 0)
+        {
+            theta_f -= p0*(a_r+b_r)*sintheta*leg_pol_derv(costheta,2*l);
+        }
+    }
+
+    mwvector r_comp = mw_mulvs(r_hat, r_f*M/sqr(scl));
+    mwvector theta_comp = mw_mulvs(theta_hat, theta_f*M/sqr(scl));
+
+    X(acc) = X(r_comp) + X(theta_comp);
+    Y(acc) = Y(r_comp) + Y(theta_comp);
+    Z(acc) = Z(r_comp) + Z(theta_comp);
+
+    if (r_f > 0)
+    {
+        mw_printf("ERROR: Repulsive acceleration!\n");
+        mw_printf("r_magnitude = %.15f\n",r_f*M/sqr(scl));
+        mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+        mw_printf("Acceleration = %.15f \n",mw_absv(acc));
+    }
+
+    return acc;
 }
+
+/*Halo potentials*/
 
 static inline mwvector logHaloAccel(const Halo* halo, mwvector pos, real r)
 {
@@ -191,8 +325,8 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
     /*Calculate the Disk Accelerations*/
     switch (pot->disk.type)
     {
-        case ExponentialDisk:
-            acc = exponentialDiskAccel(&pot->disk, pos, r);
+        case FreemanDisk:
+            acc = freemanDiskAccel(&pot->disk, pos, r);
             break;
         case MiyamotoNagaiDisk:
             acc = miyamotoNagaiDiskAccel(&pot->disk, pos, r);
@@ -251,7 +385,12 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
     }
 
     mw_incaddv(acc, acctmp);
-
+    if (!isfinite(mw_absv(acc)))
+    {
+        mw_printf("ERROR: UNNATURAL ACCELERATION CALCULATED!\n");
+        mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+        mw_printf("Acceleration = %.15f \n",mw_absv(acc));
+    }
     return acc;
 }
 

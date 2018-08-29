@@ -213,9 +213,9 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleHeight);
             break;
 
-        case ExponentialDisk:
+        case FreemanDisk:
             fprintf(f,
-                    "# Disk: Exponential\n"
+                    "# Disk: Freeman\n"
                     "#   mass = %f\n"
                     "#   b = %f\n"
                     "#\n",

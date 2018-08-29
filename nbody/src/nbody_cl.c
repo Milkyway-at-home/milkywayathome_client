@@ -586,7 +586,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DHERNQUIST_SPHERICAL=%d "
                  "-DPLUMMER_SPHERICAL=%d "
                  "-DMIYAMOTO_NAGAI_DISK=%d "
-                 "-DEXPONENTIAL_DISK=%d "
+                 "-DFREEMAN_DISK=%d "
                  "-DLOG_HALO=%d "
                  "-DNFW_HALO=%d "
                  "-DTRIAXIAL_HALO=%d "
@@ -662,7 +662,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->sphere[0].type == HernquistSpherical,
                  p->sphere[0].type == PlummerSpherical,
                  p->disk.type == MiyamotoNagaiDisk,
-                 p->disk.type == ExponentialDisk,
+                 p->disk.type == FreemanDisk,
                  p->halo.type == LogarithmicHalo,
                  p->halo.type == NFWHalo,
                  p->halo.type == TriaxialHalo,

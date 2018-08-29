@@ -78,8 +78,8 @@ const char* showDiskT(disk_t x)
     {
         case MiyamotoNagaiDisk:
             return "MiyamotoNagaiDisk";
-        case ExponentialDisk:
-            return "ExponentialDisk";
+        case FreemanDisk:
+            return "FreemanDisk";
         case InvalidDisk:
             return "InvalidDisk";
         default:

@@ -49,7 +49,7 @@ typedef struct MW_ALIGN_TYPE
 
 /* Can't get the enum value in preprocessor, so do this */
 #define _MN_DISK 0
-#define _EXP_DISK 1
+#define _FREEMAN_DISK 1
 
 
 /* Supported disk models */
@@ -57,7 +57,7 @@ typedef enum
 {
     InvalidDisk       = InvalidEnum,
     MiyamotoNagaiDisk = _MN_DISK,
-    ExponentialDisk   = _EXP_DISK
+    FreemanDisk   = _FREEMAN_DISK
 } disk_t;
 
 typedef struct MW_ALIGN_TYPE

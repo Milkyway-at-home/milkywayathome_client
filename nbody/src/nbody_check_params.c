@@ -57,7 +57,7 @@ mwbool checkDiskConstants(Disk* d)
             }
             break;
 
-        case ExponentialDisk:
+        case FreemanDisk:
             if (mwCheckNormalPosNum(d->scaleLength))
             {
                 mw_printf("Invalid parameter for disk type '%s': scaleLength = %.15f\n",

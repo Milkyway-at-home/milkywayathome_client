@@ -38,7 +38,7 @@ int pushDisk(lua_State* luaSt, const Disk* p)
 
 static const MWEnumAssociation diskOptions[] =
 {
-    { "exponential",    ExponentialDisk   },
+    { "freeman",    FreemanDisk   },
     { "miyamoto-nagai", MiyamotoNagaiDisk },
     END_MW_ENUM_ASSOCIATION
 };
@@ -65,9 +65,9 @@ static int createMiyamotoNagaiDisk(lua_State* luaSt)
     return createDisk(luaSt, argTable, &d);
 }
 
-static int createExponentialDisk(lua_State* luaSt)
+static int createFreemanDisk(lua_State* luaSt)
 {
-    static Disk d = { ExponentialDisk, 0.0, 0.0, 0.0 };
+    static Disk d = { FreemanDisk, 0.0, 0.0, 0.0 };
 
     static const MWNamedArg argTable[] =
         {
@@ -117,7 +117,7 @@ static const luaL_reg metaMethodsDisk[] =
 static const luaL_reg methodsDisk[] =
 {
     { "miyamotoNagai", createMiyamotoNagaiDisk },
-    { "exponential",   createExponentialDisk   },
+    { "freeman",   createFreemanDisk   },
     { NULL, NULL }
 };
 
@@ -156,7 +156,7 @@ int registerDiskKinds(lua_State* luaSt)
     table = lua_gettop(luaSt);
 
     setModelTableItem(luaSt, table, createMiyamotoNagaiDisk, "miyamotoNagai");
-    setModelTableItem(luaSt, table, createExponentialDisk, "exponential");
+    setModelTableItem(luaSt, table, createFreemanDisk, "freeman");
 
     lua_setglobal(luaSt, "diskModels");
 
