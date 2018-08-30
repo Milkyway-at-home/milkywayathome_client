@@ -93,9 +93,9 @@ static inline real lower_gamma(int n, real x)
     return mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum);
 }
 
-static inline real GenExpIntegral(int n, real x)
+static inline real GenExpIntegral(int n, real x) /*Optimized for convergence at n=1,x=0.5*/
 {
-    return mw_exp(-x)/(x + n/(1+1/(x + (n+1)/(1 + 2/(x + (n+2)/(1 + 3/(x + (n+3)/(1 + 4/(x + n+5)))))))));
+    return mw_exp(-x)/(x + n/(1+1/(x + (n+1)/(1 + 2/(x + (n+2)/(1 + 3/(x + (n+3)/(1 + 4/(x + (n+4)/(1 + 5/(x + (n+5)/(1 + 6/(x + (n+6)/(1 + 7/(x + (n+7)/(1 + 8/(x + (n+8)/(1 + 9/(x + (n+9)/11)))))))))))))))))));
 }
 
 /*spherical bulge potentials*/
