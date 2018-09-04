@@ -107,6 +107,8 @@ const char* showHaloT(halo_t x)
             return "PlummerHalo";
         case HernquistHalo:
             return "HernquistHalo";
+        case NinkovicHalo:
+            return "NinkovicHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:
@@ -274,6 +276,10 @@ char* showHalo(const Halo* h)
                      "      gamma        = %g\n"
                      "      lambda       = %g\n"
                      "      mass         = %g\n"
+                     "      rho0         = %g\n"
+                     "      l1           = %g\n"
+                     "      l2           = %g\n"
+                     "      l3           = %g\n"
                      "    };\n",
                      showHaloT(h->type),
                      h->vhalo,
@@ -287,7 +293,8 @@ char* showHalo(const Halo* h)
                      h->triaxAngle,
                      h->gamma,
                      h->lambda,
-                     h->mass))
+                     h->mass,
+                     h->rho0))
     {
         mw_fail("asprintf() failed\n");
     }

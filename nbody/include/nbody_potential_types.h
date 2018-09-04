@@ -82,6 +82,7 @@ typedef struct MW_ALIGN_TYPE
 #define _NFWM_HALO 6
 #define _PLUMMER_HALO 7
 #define _HERNQUIST_HALO 8
+#define _NINKOVIC_HALO 9
 typedef enum
 {
     InvalidHalo        = InvalidEnum,
@@ -93,7 +94,8 @@ typedef enum
     WilkinsonEvansHalo = _WE_HALO,
     NFWMassHalo        = _NFWM_HALO,
     PlummerHalo        = _PLUMMER_HALO,
-    HernquistHalo      = _HERNQUIST_HALO
+    HernquistHalo      = _HERNQUIST_HALO,
+    NinkovicHalo       = _NINKOVIC_HALO
 } halo_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -106,13 +108,15 @@ typedef struct MW_ALIGN_TYPE
     real flattenX;      /* used by triaxial */
     real triaxAngle;    /* used by triaxial */
 
-    real c1;           /* Constants calculated for triaxial from other params */
-    real c2;           /* TODO: Lots more stuff could be cached, but should be done less stupidly */
+    real c1;            /* Constants calculated for triaxial from other params */
+    real c2;            /* TODO: Lots more stuff could be cached, but should be done less stupidly */
     real c3;
 
     real mass;
     real gamma;
     real lambda;
+
+    real rho0;          /*used by Ninkovic Halo*/
 } Halo;
 
 #define HALO_TYPE "Halo"
@@ -157,7 +161,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
-#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 

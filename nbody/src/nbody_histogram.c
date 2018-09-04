@@ -330,6 +330,18 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->halo.scaleLength);
             break;
 
+        case NinkovicHalo:
+            fprintf(f,
+                    "# Halo: Ninkovic\n"
+                    "#   rho0 = %f\n"
+                    "#   a = %f\n"
+                    "#   rl = %f\n"
+                    "#\n",
+                    p->halo.rho0,
+                    p->halo.scaleLength,
+                    p->halo.lambda);
+            break;
+
         case InvalidHalo:
         default:
             fprintf(f,

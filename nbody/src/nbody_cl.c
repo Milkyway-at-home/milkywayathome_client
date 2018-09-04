@@ -595,6 +595,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DNFWM_HALO=%d "
                  "-DPLUMMER_HALO=%d "
                  "-DHERNQUIST_HALO=%d "
+                 "-DNINKOVIC_HALO=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -618,6 +619,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DHALO_MASS=%a "
                  "-DHALO_GAMMA=%a "
                  "-DHALO_LAMBDA=%a "
+                 "-DHALO_RHO0=%a "
 
                  "%s "
                  "%s "
@@ -671,6 +673,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.type == NFWMassHalo,
                  p->halo.type == PlummerHalo,
                  p->halo.type == HernquistHalo,
+                 p->halo.type == NinkovicHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -695,6 +698,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.mass,
                  p->halo.gamma,
                  p->halo.lambda,
+                 p->halo.rho0,
 
                  /* Misc. other stuff */
                  mwHasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",

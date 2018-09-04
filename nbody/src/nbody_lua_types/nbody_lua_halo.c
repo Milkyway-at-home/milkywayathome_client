@@ -48,6 +48,7 @@ static const MWEnumAssociation haloOptions[] =
     { "nfwmass",            NFWMassHalo,           },
     { "plummer",            PlummerHalo,           },
     { "hernquist",          HernquistHalo,         },
+    { "ninkovic",           NinkovicHalo,          },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -194,6 +195,21 @@ static int createHernquistHalo(lua_State* luaSt)
     return createHalo(luaSt, argTable, &h);
 }
 
+static int createNinkovicHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "rho0",       LUA_TNUMBER, NULL, TRUE, &h.rho0      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            { "lambda", LUA_TNUMBER, NULL, TRUE,&h.lambda },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = NinkovicHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
 static int toStringHalo(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
@@ -240,6 +256,7 @@ static const luaL_reg methodsHalo[] =
     { "nfwmass",            createNFWMassHalo            },
     { "plummer",            createPlummerHalo            },
     { "hernquist",          createHernquistHalo          },
+    { "ninkovic",           createNinkovicHalo           },
     { NULL, NULL }
 };
 
@@ -259,6 +276,7 @@ static const Xet_reg_pre gettersHalo[] =
     { "mass",        getNumber, offsetof(Halo, mass) },
     { "gamma",       getNumber, offsetof(Halo, gamma) },
     { "lambda",      getNumber, offsetof(Halo, lambda) },
+    { "rho0",        getNumber, offsetof(Halo, rho0) },
     { NULL, NULL, 0 }
 };
 
@@ -276,6 +294,7 @@ static const Xet_reg_pre settersHalo[] =
     { "mass",        setNumber, offsetof(Halo, mass) },
     { "gamma",       setNumber, offsetof(Halo, gamma) },
     { "lambda",      setNumber, offsetof(Halo, lambda) },
+    { "rho0",        setNumber, offsetof(Halo, rho0) },
     { NULL, NULL, 0 }
 };
 
@@ -306,6 +325,7 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createNFWMassHalo, "nfwmass");
     setModelTableItem(luaSt, table, createPlummerHalo, "plummer");
     setModelTableItem(luaSt, table, createHernquistHalo, "hernquist");
+    setModelTableItem(luaSt, table, createNinkovicHalo, "ninkovic");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

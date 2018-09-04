@@ -27,7 +27,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-/*Some functions for more compact computation*/
+/*Methods to be called by potentials*/
 
 static inline real lnfact(int n)
 {
@@ -318,6 +318,32 @@ static inline mwvector hernquistHaloAccel(const Halo* h, mwvector pos, real r)
     return mw_mulvs(pos, -h->mass / (r * sqr(tmp)));
 }
 
+static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)      /*Special case of Ninkovic Halo (l1=0,l2=3,l3=2) (Ninkovic 2017)*/
+{
+    const real rho0 = h->rho0;
+    const real a = h->scaleLength;
+    const real lambda = h->lambda;
+
+    const real z = r/a;
+    const real zl = lambda/a;
+    const real f = 4.0*3.1415926535/3.0*rho0*cube(a);
+
+    real mass_enc;
+
+    if (r > lambda)
+    {
+        mass_enc = f*(mw_log(1.0+cube(zl)) - cube(zl)/(1+cube(zl)));
+    }
+    else
+    {
+        mass_enc = f*(mw_log(1.0+cube(z)) - cube(z)/(1+cube(zl)));
+    }
+
+    mwvector acc = mw_mulvs(pos, -mass_enc/cube(r));
+
+    return acc;
+}
+
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
@@ -363,6 +389,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case HernquistHalo:
             acctmp = hernquistHaloAccel(&pot->halo, pos, r);
+            break;
+        case NinkovicHalo:
+            acctmp = ninkovicHaloAccel(&pot->halo, pos, r);
             break;
         case InvalidHalo:
         default:

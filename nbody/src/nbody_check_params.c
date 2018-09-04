@@ -177,6 +177,14 @@ mwbool checkHaloConstants(Halo* h)
             }
             break;
 
+        case NinkovicHalo:
+            if (   !isfinite(h->rho0)
+                || !isfinite(h->lambda))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
         case InvalidHalo:
         default:
             mw_printf("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);
