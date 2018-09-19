@@ -27,6 +27,7 @@
 #include "nbody_emd.h"
 #include "nbody_mass.h"
 #include "nbody_defaults.h"
+#include "nbody_potential_types.h"
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
 #include "nbody_show.h"
@@ -203,7 +204,7 @@ static void nbPrintHistogramHeader(FILE* f,
         case MiyamotoNagaiDisk:
 
             fprintf(f,
-                    "# Disk: MiaymotoNagai\n"
+                    "# Primary Disk: MiaymotoNagai\n"
                     "#   mass = %f\n"
                     "#   a = %f\n"
                     "#   b = %f\n"
@@ -213,9 +214,22 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleHeight);
             break;
 
+        case DoubleExponentialDisk:
+
+            fprintf(f,
+                    "# Primary Disk: DoubleExponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
         case FreemanDisk:
             fprintf(f,
-                    "# Disk: Freeman\n"
+                    "# Primary Disk: Freeman\n"
                     "#   mass = %f\n"
                     "#   b = %f\n"
                     "#\n",
@@ -226,10 +240,64 @@ static void nbPrintHistogramHeader(FILE* f,
         case InvalidDisk:
         default:
             fprintf(f,
-                    "# Disk: ???\n"
+                    "# Primary Disk: ???\n"
                     "#\n");
     }
 
+    //if(!(ctx->SecondDisk))
+    if(TRUE)
+    {
+        fprintf(f,
+               "# Secondary Disk: NULL\n"
+               "#\n");
+    }
+    else
+    {
+        switch (p->disk2.type)
+        {
+            case MiyamotoNagaiDisk:
+
+                fprintf(f,
+                        "# Seconday Disk: MiaymotoNagai\n"
+                        "#   mass = %f\n"
+                        "#   a = %f\n"
+                        "#   b = %f\n"
+                        "#\n",
+                        p->disk.mass,
+                        p->disk.scaleLength,
+                        p->disk.scaleHeight);
+                break;
+
+            case DoubleExponentialDisk:
+
+                fprintf(f,
+                        "# Secondary Disk: DoubleExponential\n"
+                        "#   mass = %f\n"
+                        "#   Rd = %f\n"
+                        "#   zd = %f\n"
+                        "#\n",
+                        p->disk.mass,
+                        p->disk.scaleLength,
+                        p->disk.scaleHeight);
+                break;
+
+            case FreemanDisk:
+                fprintf(f,
+                        "# Secondary Disk: Freeman\n"
+                        "#   mass = %f\n"
+                        "#   b = %f\n"
+                        "#\n",
+                        p->disk.mass,
+                        p->disk.scaleLength);
+                break;
+
+            case InvalidDisk:
+            default:
+                fprintf(f,
+                        "# Secondary Disk: ???\n"
+                        "#\n");
+        }
+    }
 
     switch (p->halo.type)
     {

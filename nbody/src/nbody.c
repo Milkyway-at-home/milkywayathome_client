@@ -386,6 +386,8 @@ int nbMain(const NBodyFlags* nbf)
         mw_printf("Failed to create shared scene\n");
     }
 
+    st->SecondDisk = ctx->SecondDisk;
+
     if (nbf->visualizer && st->scene)
     {
         /* Make sure the first scene is available for the launched graphics */
@@ -402,7 +404,7 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     ts = mwGetTime();
-    
+
     st->useVelDisp = ctx->useVelDisp;
     st->useBetaDisp = ctx->useBetaDisp;
     rc = nbRunSystem(ctx, st, nbf);

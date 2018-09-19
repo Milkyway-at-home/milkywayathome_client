@@ -50,14 +50,16 @@ typedef struct MW_ALIGN_TYPE
 /* Can't get the enum value in preprocessor, so do this */
 #define _MN_DISK 0
 #define _FREEMAN_DISK 1
+#define _DOUBEXPO_DISK 2
 
 
 /* Supported disk models */
 typedef enum
 {
-    InvalidDisk       = InvalidEnum,
-    MiyamotoNagaiDisk = _MN_DISK,
-    FreemanDisk   = _FREEMAN_DISK
+    InvalidDisk           = InvalidEnum,
+    MiyamotoNagaiDisk     = _MN_DISK,
+    FreemanDisk           = _FREEMAN_DISK,
+    DoubleExponentialDisk = _DOUBEXPO_DISK
 } disk_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -152,6 +154,7 @@ typedef struct MW_ALIGN_TYPE
 {
     Spherical sphere[1];
     Disk disk;
+    Disk disk2;
     Halo halo;
     void* rings;       /* currently unused */
 } Potential;
@@ -161,9 +164,10 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
+#define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
+#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
 

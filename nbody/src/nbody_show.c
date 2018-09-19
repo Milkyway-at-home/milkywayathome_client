@@ -78,6 +78,8 @@ const char* showDiskT(disk_t x)
     {
         case MiyamotoNagaiDisk:
             return "MiyamotoNagaiDisk";
+        case DoubleExponentialDisk:
+            return "DoubleExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
         case InvalidDisk:
@@ -277,9 +279,6 @@ char* showHalo(const Halo* h)
                      "      lambda       = %g\n"
                      "      mass         = %g\n"
                      "      rho0         = %g\n"
-                     "      l1           = %g\n"
-                     "      l2           = %g\n"
-                     "      l3           = %g\n"
                      "    };\n",
                      showHaloT(h->type),
                      h->vhalo,

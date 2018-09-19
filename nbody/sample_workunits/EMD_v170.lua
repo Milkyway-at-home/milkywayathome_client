@@ -8,6 +8,8 @@
 totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.70"  -- -- MINIMUM APP VERSION        -- --
+
+use_secondary_disk    = false   -- -- SECONDARY SWITCH DISK      -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -93,6 +95,7 @@ function makeContext()
       BestLikeStart = best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
+      SecondDisk    = use_secondary_disk,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
       IterMax       = SigmaIter,

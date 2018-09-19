@@ -20,6 +20,7 @@
 
 #include "nbody_priv.h"
 #include "nbody_potential.h"
+#include "nbody_potential_types.h"
 #include "milkyway_util.h"
 #include "nbody_caustic.h"
 
@@ -98,6 +99,148 @@ static inline real GenExpIntegral(int n, real x) /*Optimized for convergence at 
     return mw_exp(-x)/(x + n/(1+1/(x + (n+1)/(1 + 2/(x + (n+2)/(1 + 3/(x + (n+3)/(1 + 4/(x + (n+4)/(1 + 5/(x + (n+5)/(1 + 6/(x + (n+6)/(1 + 7/(x + (n+7)/(1 + 8/(x + (n+8)/(1 + 9/(x + (n+9)/11)))))))))))))))))));
 }
 
+static inline real besselI0(real x)
+{
+    real add = 0.0;
+    for (int i = 0; i < 40; i++)
+    {
+        add += mw_pow(x/2.0,2*i)/mw_exp(2*lnfact(i));
+    }
+    return add;
+}
+
+static inline real besselI1(real x)
+{
+    real add = 0.0;
+    for (int i = 0; i < 40; i++)
+    {
+        add += mw_pow(x/2.0,2*i + 1)/mw_exp(2*lnfact(i) + mw_log((real) i + 1.0));
+    }
+    return add;
+}
+
+static inline real besselK0(real x)
+{
+    const int n = 15;
+    const real a = 0.0;
+    const real b = 10.0;
+
+    real integral = 0.0;
+    const real weight[] = {5,8,5};
+    const real point[] = {-0.774596669, 0 , 0.774596669};
+    const real frac = 9.0;
+    const real h = (b-a)/n;
+
+    for (int i = 0; i < n; i++)
+    {
+        real piece = 0.0;
+        for (int j = 0; j < 3; j++)
+        {
+            real w_val = h*point[j]/2 + a+(i+0.5)*h;
+            real funcval = mw_exp(-2*x*mw_pow(mw_sinh(w_val/2),2));
+            piece = piece + h*weight[j]*funcval/frac/2.0;
+        }
+        integral  = integral + piece;
+    }
+    //mw_printf("K0(%.15f) = %.15f\n",x,integral*mw_exp(-x));
+    return integral*mw_exp(-x);
+}
+
+static inline real besselK1(real x)
+{
+    const int n = 10;
+    const real a = 0.0;
+    const real b = 15.0;
+
+    real integral = 0.0;
+    const real weight[] = {5,8,5};
+    const real point[] = {-0.774596669, 0 , 0.774596669};
+    const real frac = 9.0;
+    const real h = (b-a)/n;
+
+    for (int i = 0; i < n; i++)
+    {
+        real piece = 0.0;
+        for (int j = 0; j < 3; j++)
+        {
+            real w_val = h*point[j]/2 + a+(i+0.5)*h;
+            real funcval = mw_exp(-2*x*mw_pow(mw_sinh(w_val/2),2))*mw_cosh(w_val);
+            piece = piece + h*weight[j]*funcval/frac/2.0;
+        }
+        integral  = integral + piece;
+    }
+    //mw_printf("K1(%.15f) = %.15f\n",x,integral*mw_exp(-x));
+    return integral*mw_exp(-x);
+}
+
+static inline real aExp(real k, real R, real Rd)
+{
+    const int n = 5;
+    const real a = 0.0;
+    const real b = R;
+
+    real integral = 0.0;
+    const real weight[] = {5,8,5};
+    const real point[] = {-0.774596669, 0 , 0.774596669};
+    const real frac = 9.0;
+    const real h = (b-a)/n;
+
+    for (int i = 0; i < n; i++)
+    {
+        real piece = 0.0;
+        for (int j = 0; j < 3; j++)
+        {
+            real x_val = h*point[j]/2 + a+(i+0.5)*h;
+            real funcval = x_val*mw_exp(-x_val/Rd)*besselI0(k*x_val);
+            piece = piece + h*weight[j]*funcval/frac/2.0;
+        }
+        integral  = integral + piece;
+    }
+    //mw_printf("aExp(%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,integral/sqr(Rd));
+    return integral/sqr(Rd);
+}
+
+static inline real bExp(real k, real R, real Rd)
+{
+    const int n = 8;
+    const real a = R;
+    const real b = 15.0*R;
+
+    real integral = 0.0;
+    const real weight[] = {5,8,5};
+    const real point[] = {-0.774596669, 0 , 0.774596669};
+    const real frac = 9.0;
+    const real h = (b-a)/n;
+
+    for (int i = 0; i < n; i++)
+    {
+        real piece = 0.0;
+        for (int j = 0; j < 3; j++)
+        {
+            real x_val = h*point[j]/2 + a+(i+0.5)*h;
+            real funcval = x_val*mw_exp(-x_val/Rd)*besselK0(k*x_val);
+            piece = piece + h*weight[j]*funcval/frac/2.0;
+        }
+        integral  = integral + piece;
+    }
+    //mw_printf("bExp(%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,integral/sqr(Rd));
+    return integral/sqr(Rd);
+}
+
+static inline real RExpIntegrand (real k, real R, real Rd, real z, real zd)
+{
+    real val = k*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R))/(sqr(zd*k) + 1);
+    //mw_printf("RExp(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
+    return val;
+}
+
+static inline real ZExpIntegrand (real k, real R, real Rd, real z, real zd)
+{
+    real val = k*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R))/(sqr(zd*k) + 1);
+    //mw_printf("ZExp = %.15f\n",val);
+    return val;
+}
+
 /*spherical bulge potentials*/
 
 static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector pos, real r)
@@ -114,7 +257,7 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos,
     return mw_mulvs(pos, -sph->mass / cube(tmp));
 }
 
-/* gets negative of the acceleration vector of this disk component */
+/* Disk Potentials */
 
 static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r)
 {
@@ -135,7 +278,7 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
 }
 
 /*WARNING: This potential uses incomplete gamma functions and the generalized exponential integral function. This potential will take longer than other potentials to run.*/
-static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)
+static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)     /*From Freeman 1970*/
 {
     mwvector acc;
     /*Reset acc vector*/
@@ -198,6 +341,65 @@ static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)
         mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
         mw_printf("Acceleration = %.15f \n",mw_absv(acc));
     }
+
+    return acc;
+}
+
+static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos, real r)        /*SO STUPIDLY SLOW, YOU SHOULDN'T BE RUNNING THIS!*/
+{
+    //mw_printf("Calculating Acceleration\n");
+    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+    mwvector acc;
+
+    const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
+    mwvector R_hat;
+    X(R_hat) = X(pos)/R;
+    Y(R_hat) = Y(pos)/R;
+    Z(R_hat) = 0.0;
+
+    mwvector Z_hat;
+    X(Z_hat) = 0.0;
+    Y(Z_hat) = 0.0;
+    Z(Z_hat) = 1.0;
+
+    const real Rd = disk->scaleLength;
+    const real zd = disk->scaleHeight;
+    const real M = disk->mass;
+    const real z = Z(pos);
+
+    const int n = 50;
+    const real a = 0.0;
+    const real b = 60.0/R;
+    real integralR = 0.0;
+    real integralZ = 0.0;
+    const real weight[] = {5,8,5};
+    const real point[] = {-0.774596669, 0 , 0.774596669};
+    const real frac = 9.0;
+    const real h = (b-a)/(n*1.0);
+
+    for (int k = 0; k < n; k++)     /*Three-point Gaussian Quadrature*/
+    {
+        real Rpiece = 0.0;
+        real Zpiece = 0.0;
+        real k_val = 0.0;
+        for (int j = 0; j < 3; j++)
+        {
+            k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
+            Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/frac/2.0;
+            Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/frac/2.0;
+        }
+        integralR  = integralR + Rpiece;
+        integralZ  = integralZ + Zpiece;
+    }
+
+    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/3.1415926535*integralR);
+    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/3.1415926535*integralZ);
+
+    X(acc) = X(R_comp) + X(Z_comp);
+    Y(acc) = Y(R_comp) + Y(Z_comp);
+    Z(acc) = Z(R_comp) + Z(Z_comp);
+
+    mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]\n",X(acc),Y(acc),Z(acc));
 
     return acc;
 }
@@ -357,9 +559,33 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         case MiyamotoNagaiDisk:
             acc = miyamotoNagaiDiskAccel(&pot->disk, pos, r);
             break;
+        case DoubleExponentialDisk:
+            acc = doubleExponentialDiskAccel(&pot->disk, pos, r);
+            break;
         case InvalidDisk:
         default:
-            mw_fail("Invalid disk type in external acceleration\n");
+            mw_fail("Invalid primary disk type in external acceleration\n");
+    }
+    /*Calculate the optional Second Disk Accelerations*/
+    //if (SecondDisk)
+    if (FALSE)
+    {
+        mw_printf("Using Second Disk\n");
+        switch (pot->disk2.type)
+        {
+            case FreemanDisk:
+                acc = freemanDiskAccel(&pot->disk2, pos, r);
+                break;
+            case MiyamotoNagaiDisk:
+                acc = miyamotoNagaiDiskAccel(&pot->disk2, pos, r);
+                break;
+            case DoubleExponentialDisk:
+                acc = doubleExponentialDiskAccel(&pot->disk2, pos, r);
+                break;
+            case InvalidDisk:
+            default:
+                mw_fail("Invalid secondary disk type in external acceleration\n");
+        }
     }
     /*Calculate the Halo Accelerations*/
     switch (pot->halo.type)

@@ -62,18 +62,61 @@ int setPotential(lua_State* luaSt, void* v)
     return 0;
 }
 
+static int createPotential2(lua_State* luaSt)
+{
+    Potential p = EMPTY_POTENTIAL;
+    const Spherical* s = NULL;
+    const Disk* d  = NULL;
+    const Disk* d2 = NULL;
+    const Halo* h  = NULL;
+
+    const MWNamedArg argTable[] =
+        {
+            { "spherical", LUA_TUSERDATA, SPHERICAL_TYPE, TRUE,  &s  },
+            { "halo",      LUA_TUSERDATA, HALO_TYPE,      TRUE,  &h  },
+            { "disk",      LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d  },
+            { "disk2",     LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d2 },
+            END_MW_NAMED_ARG
+        };
+
+    switch (lua_gettop(luaSt))
+    {
+        case 1:  /* Table of named arguments */
+            handleNamedArgumentTable(luaSt, argTable, 1);
+            break;
+
+        case 4:
+            s =  checkSpherical(luaSt, 1);
+            d =  checkDisk(luaSt, 2);
+            d2 = checkDisk(luaSt, 3);
+            h =  checkHalo(luaSt, 4);
+            break;
+
+        default:
+            return luaL_argerror(luaSt, 1, "Expected 1, or 4 arguments");
+    }
+
+    p.sphere[0] = *s;
+    p.disk = *d;
+    p.disk2 = *d2;
+    p.halo = *h;
+
+    pushPotential(luaSt, &p);
+    return 1;
+}
+
 static int createPotential(lua_State* luaSt)
 {
     Potential p = EMPTY_POTENTIAL;
     const Spherical* s = NULL;
-    const Disk* d = NULL;
-    const Halo* h = NULL;
+    const Disk* d  = NULL;
+    const Halo* h  = NULL;
 
     const MWNamedArg argTable[] =
         {
-            { "spherical", LUA_TUSERDATA, SPHERICAL_TYPE, TRUE,  &s },
-            { "halo",      LUA_TUSERDATA, HALO_TYPE,      TRUE,  &h },
-            { "disk",      LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d },
+            { "spherical", LUA_TUSERDATA, SPHERICAL_TYPE, TRUE,  &s  },
+            { "halo",      LUA_TUSERDATA, HALO_TYPE,      TRUE,  &h  },
+            { "disk",      LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d  },
             END_MW_NAMED_ARG
         };
 
@@ -84,9 +127,9 @@ static int createPotential(lua_State* luaSt)
             break;
 
         case 3:
-            s = checkSpherical(luaSt, 1);
-            d = checkDisk(luaSt, 2);
-            h = checkHalo(luaSt, 3);
+            s =  checkSpherical(luaSt, 1);
+            d =  checkDisk(luaSt, 2);
+            h =  checkHalo(luaSt, 3);
             break;
 
         default:
@@ -103,12 +146,14 @@ static int createPotential(lua_State* luaSt)
 
 static int luaAcceleration(lua_State* luaSt)
 {
-    const Potential* pot;
-    const mwvector* r;
+    static Potential* pot;
+    static mwvector* r ;
+   // static mwbool* SecondDisk = FALSE;
 
     pot = checkPotential(luaSt, 1);
     r = checkVector(luaSt, 2);
-
+    //SecondDisk = mw_lua_checkboolean(luaSt, 3);
+    
     pushVector(luaSt, nbExtAcceleration(pot, *r));
     return 1;
 }
@@ -131,10 +176,17 @@ static const luaL_reg methodsPotential[] =
     { NULL, NULL }
 };
 
+static const luaL_reg methodsPotential2[] =
+{
+    { "create",       createPotential2 },
+    { "acceleration", luaAcceleration  },
+    { NULL, NULL }
+};
+
 static const Xet_reg_pre gettersPotential[] =
 {
     { "spherical", getSpherical, offsetof(Potential, sphere[0]) },
-    { "disk" ,     getDisk,      offsetof(Potential, disk)      },
+    { "disk",      getDisk,      offsetof(Potential, disk)      },
     { "halo",      getHalo,      offsetof(Potential, halo)      },
     { NULL, NULL, 0 }
 };
@@ -142,18 +194,52 @@ static const Xet_reg_pre gettersPotential[] =
 static const Xet_reg_pre settersPotential[] =
 {
     { "spherical", setSpherical, offsetof(Potential, sphere[0]) },
-    { "disk" ,     setDisk,      offsetof(Potential, disk)      },
+    { "disk",      setDisk,      offsetof(Potential, disk)      },
     { "halo",      setHalo,      offsetof(Potential, halo)      },
     { NULL, NULL, 0 }
 };
 
+static const Xet_reg_pre gettersPotential2[] =
+{
+    { "spherical", getSpherical, offsetof(Potential, sphere[0]) },
+    { "disk",      getDisk,      offsetof(Potential, disk)      },
+    { "disk2",     getDisk,      offsetof(Potential, disk2)     },
+    { "halo",      getHalo,      offsetof(Potential, halo)      },
+    { NULL, NULL, 0 }
+};
+
+static const Xet_reg_pre settersPotential2[] =
+{
+    { "spherical", setSpherical, offsetof(Potential, sphere[0]) },
+    { "disk",      setDisk,      offsetof(Potential, disk)      },
+    { "disk2",     setDisk,      offsetof(Potential, disk2)     },
+    { "halo",      setHalo,      offsetof(Potential, halo)      },
+    { NULL, NULL, 0 }
+};
+
+
 int registerPotential(lua_State* luaSt)
 {
-    return registerStruct(luaSt,
-                          POTENTIAL_TYPE,
-                          gettersPotential,
-                          settersPotential,
-                          metaMethodsPotential,
-                          methodsPotential);
+    //PULL MWBOOL SECONDDISK FROM LUA_STATE
+    mwbool* SecondDisk = FALSE;
+
+    if (SecondDisk)
+    {
+        return registerStruct(luaSt,
+                      POTENTIAL_TYPE,
+                      gettersPotential2,
+                      settersPotential2,
+                      metaMethodsPotential,
+                      methodsPotential2);
+    }
+    else
+    {
+        return registerStruct(luaSt,
+                      POTENTIAL_TYPE,
+                      gettersPotential,
+                      settersPotential,
+                      metaMethodsPotential,
+                      methodsPotential);
+    }
 }
 

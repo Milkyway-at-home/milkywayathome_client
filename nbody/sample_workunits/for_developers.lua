@@ -29,6 +29,7 @@ nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
+use_secondary_disk    = false   -- -- SECONDARY SWITCH DISK      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
@@ -160,6 +161,7 @@ function makeContext()
       BestLikeStart = best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
+      SecondDisk    = use_secondary_disk,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,

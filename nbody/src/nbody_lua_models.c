@@ -184,14 +184,15 @@ static int luaReverseOrbit(lua_State* luaSt)
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
+    //static mwbool* SecondDisk = FALSE;
 
     static const MWNamedArg argTable[] =
         {
-            { "potential", LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
-            { "position",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
-            { "velocity",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
-            { "tstop",     LUA_TNUMBER,   NULL,           TRUE, &tstop },
-            { "dt",        LUA_TNUMBER,   NULL,           TRUE, &dt    },
+            { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
+            { "position",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos           },
+            { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
+            { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
+            { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
             END_MW_NAMED_ARG
         };
 
@@ -234,15 +235,16 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
+    //static mwbool SecondDisk = FALSE;
 
     static const MWNamedArg argTable[] =
         {
-            { "potential", LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot    },
-            { "position",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos    },
-            { "velocity",  LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel    },
-            { "tstop",     LUA_TNUMBER,   NULL,           TRUE, &tstop  },
-            { "tstopf",    LUA_TNUMBER,   NULL,           TRUE, &tstopf },
-            { "dt",        LUA_TNUMBER,   NULL,           TRUE, &dt     },
+            { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
+            { "position",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos           },
+            { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
+            { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
+            { "tstopf",     LUA_TNUMBER,   NULL,           TRUE, &tstopf        },
+            { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
             END_MW_NAMED_ARG
         };
 
@@ -262,7 +264,7 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 6 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 7 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
