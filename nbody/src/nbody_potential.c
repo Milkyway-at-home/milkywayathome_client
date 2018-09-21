@@ -121,7 +121,7 @@ static inline real besselI1(real x)
 
 static inline real besselK0(real x)
 {
-    const int n = 15;
+    const int n = 10;
     const real a = 0.0;
     const real b = 10.0;
 
@@ -202,7 +202,7 @@ static inline real aExp(real k, real R, real Rd)
 
 static inline real bExp(real k, real R, real Rd)
 {
-    const int n = 8;
+    const int n = 7;
     const real a = R;
     const real b = 15.0*R;
 
@@ -273,6 +273,8 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
     X(acc) = -disk->mass * X(pos) / rth;
     Y(acc) = -disk->mass * Y(pos) / rth;
     Z(acc) = -disk->mass * Z(pos) * azp / (zp * rth);
+
+    //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]\n",X(acc),Y(acc),Z(acc));
 
     return acc;
 }
@@ -345,7 +347,8 @@ static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r) 
     return acc;
 }
 
-static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos, real r)        /*SO STUPIDLY SLOW, YOU SHOULDN'T BE RUNNING THIS!*/
+/*WARNING: This potential is EVEN SLOWER than the Freeman Potential! Do NOT use this for NBody!*/
+static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos, real r)
 {
     //mw_printf("Calculating Acceleration\n");
     //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
@@ -367,26 +370,25 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     const real M = disk->mass;
     const real z = Z(pos);
 
-    const int n = 50;
+    const int n = 15;
     const real a = 0.0;
     const real b = 60.0/R;
     real integralR = 0.0;
     real integralZ = 0.0;
-    const real weight[] = {5,8,5};
-    const real point[] = {-0.774596669, 0 , 0.774596669};
-    const real frac = 9.0;
+    const real weight[] = {0.236927,0.478629,0.568889,0.478629,0.236927};
+    const real point[] = {-0.90618,-0.538469,0.0,0.538469,0.90618};
     const real h = (b-a)/(n*1.0);
 
-    for (int k = 0; k < n; k++)     /*Three-point Gaussian Quadrature*/
+    for (int k = 0; k < n; k++)     /*Five-point Gaussian Quadrature*/
     {
         real Rpiece = 0.0;
         real Zpiece = 0.0;
         real k_val = 0.0;
-        for (int j = 0; j < 3; j++)
+        for (int j = 0; j < 5; j++)
         {
             k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
-            Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/frac/2.0;
-            Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/frac/2.0;
+            Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/2.0;
+            Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/2.0;
         }
         integralR  = integralR + Rpiece;
         integralZ  = integralZ + Zpiece;
@@ -399,7 +401,9 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     Y(acc) = Y(R_comp) + Y(Z_comp);
     Z(acc) = Z(R_comp) + Z(Z_comp);
 
-    mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]\n",X(acc),Y(acc),Z(acc));
+    //real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
+
+    //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
 
     return acc;
 }
