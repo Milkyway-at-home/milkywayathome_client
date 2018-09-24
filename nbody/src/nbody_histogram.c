@@ -192,6 +192,12 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->sphere[1].scale);
             break;
 
+        case NoSpherical:
+
+            fprintf(f,
+                    "# Spherical: None\n");
+            break;
+
         case InvalidSpherical:
         default:
             fprintf(f,
@@ -237,6 +243,11 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleLength);
             break;
 
+        case NoDisk:
+            fprintf(f,
+                    "# Primary Disk: None\n");
+            break;
+
         case InvalidDisk:
         default:
             fprintf(f,
@@ -244,59 +255,55 @@ static void nbPrintHistogramHeader(FILE* f,
                     "#\n");
     }
 
-    //if(!(ctx->SecondDisk))
-    if(TRUE)
+    switch (p->disk2.type)
     {
-        fprintf(f,
-               "# Secondary Disk: NULL\n"
-               "#\n");
-    }
-    else
-    {
-        switch (p->disk2.type)
-        {
-            case MiyamotoNagaiDisk:
+        case MiyamotoNagaiDisk:
 
-                fprintf(f,
-                        "# Seconday Disk: MiaymotoNagai\n"
-                        "#   mass = %f\n"
-                        "#   a = %f\n"
-                        "#   b = %f\n"
-                        "#\n",
-                        p->disk.mass,
-                        p->disk.scaleLength,
-                        p->disk.scaleHeight);
-                break;
+            fprintf(f,
+                    "# Seconday Disk: MiaymotoNagai\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#   b = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
 
-            case DoubleExponentialDisk:
+        case DoubleExponentialDisk:
 
-                fprintf(f,
-                        "# Secondary Disk: DoubleExponential\n"
-                        "#   mass = %f\n"
-                        "#   Rd = %f\n"
-                        "#   zd = %f\n"
-                        "#\n",
-                        p->disk.mass,
-                        p->disk.scaleLength,
-                        p->disk.scaleHeight);
-                break;
+            fprintf(f,
+                    "# Secondary Disk: DoubleExponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
 
-            case FreemanDisk:
-                fprintf(f,
-                        "# Secondary Disk: Freeman\n"
-                        "#   mass = %f\n"
-                        "#   b = %f\n"
-                        "#\n",
-                        p->disk.mass,
-                        p->disk.scaleLength);
-                break;
+        case FreemanDisk:
+            fprintf(f,
+                    "# Secondary Disk: Freeman\n"
+                    "#   mass = %f\n"
+                    "#   b = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength);
+            break;
 
-            case InvalidDisk:
-            default:
-                fprintf(f,
-                        "# Secondary Disk: ???\n"
-                        "#\n");
-        }
+        case NoDisk:
+            fprintf(f,
+                    "# Secondary Disk: None\n");
+            break;
+
+        case InvalidDisk:
+        default:
+            fprintf(f,
+                    "# Secondary Disk: ???\n"
+                    "#\n");
+    
     }
 
     switch (p->halo.type)
@@ -408,6 +415,11 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->halo.rho0,
                     p->halo.scaleLength,
                     p->halo.lambda);
+            break;
+
+        case NoHalo:
+            fprintf(f,
+                    "# Halo: None\n");
             break;
 
         case InvalidHalo:

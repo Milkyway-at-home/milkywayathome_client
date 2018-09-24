@@ -566,31 +566,38 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         case DoubleExponentialDisk:
             acc = doubleExponentialDiskAccel(&pot->disk, pos, r);
             break;
+        case NoDisk:
+            X(acc) = 0.0;
+            Y(acc) = 0.0;
+            Z(acc) = 0.0;
+            break;
         case InvalidDisk:
         default:
             mw_fail("Invalid primary disk type in external acceleration\n");
     }
-    /*Calculate the optional Second Disk Accelerations*/
-    //if (SecondDisk)
-    if (FALSE)
+    /*Calculate Second Disk Accelerations*/
+    switch (pot->disk2.type)
     {
-        mw_printf("Using Second Disk\n");
-        switch (pot->disk2.type)
-        {
-            case FreemanDisk:
-                acc = freemanDiskAccel(&pot->disk2, pos, r);
-                break;
-            case MiyamotoNagaiDisk:
-                acc = miyamotoNagaiDiskAccel(&pot->disk2, pos, r);
-                break;
-            case DoubleExponentialDisk:
-                acc = doubleExponentialDiskAccel(&pot->disk2, pos, r);
-                break;
-            case InvalidDisk:
-            default:
-                mw_fail("Invalid secondary disk type in external acceleration\n");
-        }
+        case FreemanDisk:
+            acctmp = freemanDiskAccel(&pot->disk2, pos, r);
+            break;
+        case MiyamotoNagaiDisk:
+            acctmp = miyamotoNagaiDiskAccel(&pot->disk2, pos, r);
+            break;
+        case DoubleExponentialDisk:
+            acctmp = doubleExponentialDiskAccel(&pot->disk2, pos, r);
+            break;
+        case NoDisk:
+            X(acctmp) = 0.0;
+            Y(acctmp) = 0.0;
+            Z(acctmp) = 0.0;
+            break;
+        case InvalidDisk:
+        default:
+            mw_fail("Invalid secondary disk type in external acceleration\n");
     }
+    mw_incaddv(acc, acctmp);
+
     /*Calculate the Halo Accelerations*/
     switch (pot->halo.type)
     {
@@ -623,6 +630,11 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         case NinkovicHalo:
             acctmp = ninkovicHaloAccel(&pot->halo, pos, r);
             break;
+        case NoHalo:
+            X(acctmp) = 0.0;
+            Y(acctmp) = 0.0;
+            Z(acctmp) = 0.0;
+            break;
         case InvalidHalo:
         default:
             mw_fail("Invalid halo type in external acceleration\n");
@@ -637,6 +649,11 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case PlummerSpherical:
             acctmp = plummerSphericalAccel(&pot->sphere[0], pos, r);
+            break;
+        case NoSpherical:
+            X(acctmp) = 0.0;
+            Y(acctmp) = 0.0;
+            Z(acctmp) = 0.0;
             break;
         case InvalidSpherical:
         default:

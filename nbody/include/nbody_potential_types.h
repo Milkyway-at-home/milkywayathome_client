@@ -26,12 +26,14 @@
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
-#define _HERN_SPHERICAL 0
-#define _PLUMMER_SPHERICAL 1
+#define _NO_SPHERICAL 0
+#define _HERN_SPHERICAL 1
+#define _PLUMMER_SPHERICAL 2
 
 typedef enum
 {
     InvalidSpherical   = InvalidEnum,
+    NoSpherical = _NO_SPHERICAL,
     HernquistSpherical = _HERN_SPHERICAL,
     PlummerSpherical = _PLUMMER_SPHERICAL
 } spherical_t;
@@ -48,15 +50,17 @@ typedef struct MW_ALIGN_TYPE
 
 
 /* Can't get the enum value in preprocessor, so do this */
-#define _MN_DISK 0
-#define _FREEMAN_DISK 1
-#define _DOUBEXPO_DISK 2
+#define _NO_DISK 0
+#define _MN_DISK 1
+#define _FREEMAN_DISK 2
+#define _DOUBEXPO_DISK 3
 
 
 /* Supported disk models */
 typedef enum
 {
     InvalidDisk           = InvalidEnum,
+    NoDisk                = _NO_DISK,
     MiyamotoNagaiDisk     = _MN_DISK,
     FreemanDisk           = _FREEMAN_DISK,
     DoubleExponentialDisk = _DOUBEXPO_DISK
@@ -75,19 +79,21 @@ typedef struct MW_ALIGN_TYPE
 /* Supported halo models */
 
 /* Can't get the enum value in preprocessor, so do this */
-#define _LOG_HALO 0
-#define _NFW_HALO 1
-#define _TRIAXIAL_HALO 2
-#define _CAUSTIC_HALO 3
-#define _AS_HALO 4
-#define _WE_HALO 5
-#define _NFWM_HALO 6
-#define _PLUMMER_HALO 7
-#define _HERNQUIST_HALO 8
-#define _NINKOVIC_HALO 9
+#define _NO_HALO 0
+#define _LOG_HALO 1
+#define _NFW_HALO 2
+#define _TRIAXIAL_HALO 3
+#define _CAUSTIC_HALO 4
+#define _AS_HALO 5
+#define _WE_HALO 6
+#define _NFWM_HALO 7
+#define _PLUMMER_HALO 8
+#define _HERNQUIST_HALO 9
+#define _NINKOVIC_HALO 10
 typedef enum
 {
     InvalidHalo        = InvalidEnum,
+    NoHalo             = _NO_HALO,
     LogarithmicHalo    = _LOG_HALO,
     NFWHalo            = _NFW_HALO,
     TriaxialHalo       = _TRIAXIAL_HALO,

@@ -65,6 +65,8 @@ const char* showSphericalT(spherical_t x)
             return "HernquistSpherical";
         case PlummerSpherical:
             return "PlummerSpherical";
+        case NoSpherical:
+            return "NoSpherical";
         case InvalidSpherical:
             return "InvalidSpherical";
         default:
@@ -82,6 +84,8 @@ const char* showDiskT(disk_t x)
             return "DoubleExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
+        case NoDisk:
+            return "NoDisk";
         case InvalidDisk:
             return "InvalidDisk";
         default:
@@ -111,6 +115,8 @@ const char* showHaloT(halo_t x)
             return "HernquistHalo";
         case NinkovicHalo:
             return "NinkovicHalo";
+        case NoHalo:
+            return "NoHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:

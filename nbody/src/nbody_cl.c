@@ -585,12 +585,15 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DUSE_EXTERNAL_POTENTIAL=%d "
                  "-DHERNQUIST_SPHERICAL=%d "
                  "-DPLUMMER_SPHERICAL=%d "
+                 "-DNO_SPHERICAL=%d "
                  "-DMIYAMOTO_NAGAI_DISK=%d "
                  "-DFREEMAN_DISK=%d "
                  "-DDOUBEXPO_DISK=%d "
+                 "-DNO_DISK=%d "
                  "-DMIYAMOTO_NAGAI_DISK2=%d "
                  "-DFREEMAN_DISK2=%d "
                  "-DDOUBEXPO_DISK2=%d "
+                 "-DNO_DISK2=%d "
                  "-DLOG_HALO=%d "
                  "-DNFW_HALO=%d "
                  "-DTRIAXIAL_HALO=%d "
@@ -600,6 +603,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DPLUMMER_HALO=%d "
                  "-DHERNQUIST_HALO=%d "
                  "-DNINKOVIC_HALO=%d "
+                 "-DNO_HALO=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -667,12 +671,15 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  p->sphere[0].type == HernquistSpherical,
                  p->sphere[0].type == PlummerSpherical,
+                 p->sphere[0].type == NoSpherical,
                  p->disk.type == MiyamotoNagaiDisk,
                  p->disk.type == FreemanDisk,
                  p->disk.type == DoubleExponentialDisk,
+                 p->disk.type == NoDisk,
                  p->disk2.type == MiyamotoNagaiDisk,
                  p->disk2.type == FreemanDisk,
                  p->disk2.type == DoubleExponentialDisk,
+                 p->disk2.type == NoDisk,
                  p->halo.type == LogarithmicHalo,
                  p->halo.type == NFWHalo,
                  p->halo.type == TriaxialHalo,
@@ -682,6 +689,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.type == PlummerHalo,
                  p->halo.type == HernquistHalo,
                  p->halo.type == NinkovicHalo,
+                 p->halo.type == NoHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */

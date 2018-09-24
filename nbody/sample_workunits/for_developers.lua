@@ -29,7 +29,6 @@ nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-use_secondary_disk    = false   -- -- SECONDARY SWITCH DISK      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
@@ -109,9 +108,11 @@ function makePotential()
        print("running in null potential")
        return nil
    else
+        --NOTE: To exculde a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+            disk2     = Disk.none{ mass = 3.0e5 },
             halo      = Halo.logarithmic{ vhalo = 73, scaleLength = 12.0, flattenZ = 1.0 }
         }
    end
@@ -161,7 +162,6 @@ function makeContext()
       BestLikeStart = best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
-      SecondDisk    = use_secondary_disk,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,

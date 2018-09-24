@@ -41,6 +41,7 @@ static const MWEnumAssociation sphericalOptions[] =
 {
     { "hernquist", HernquistSpherical },
     { "plummer", PlummerSpherical },
+    { "none", NoSpherical },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -79,6 +80,19 @@ static int createPlummerSpherical(lua_State* luaSt)
         };
 
     s.type = PlummerSpherical;
+    return createSpherical(luaSt, argTable, &s);
+}
+
+static int createNoSpherical(lua_State* luaSt)
+{
+    static Spherical s = EMPTY_SPHERICAL;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
+            END_MW_NAMED_ARG
+        };
+
+    s.type = NoSpherical;
     return createSpherical(luaSt, argTable, &s);
 }
 
@@ -121,6 +135,7 @@ static const luaL_reg methodsSpherical[] =
 {
     { "hernquist", createHernquistSpherical },
     { "plummer", createPlummerSpherical },
+    { "none", createNoSpherical },
     { NULL, NULL }
 };
 
@@ -134,7 +149,6 @@ static const Xet_reg_pre gettersSpherical[] =
 
 static const Xet_reg_pre settersSpherical[] =
 {
-//    { "type",  setSphericalT, offsetof(Spherical, type) },
     { "mass",  setNumber, offsetof(Spherical, mass) },
     { "scale", setNumber, offsetof(Spherical, scale) },
     { NULL, NULL, 0 }
@@ -159,6 +173,7 @@ int registerSphericalKinds(lua_State* luaSt)
 
     setModelTableItem(luaSt, table, createHernquistSpherical, "hernquist");
     setModelTableItem(luaSt, table, createPlummerSpherical, "plummer");
+    setModelTableItem(luaSt, table, createNoSpherical, "none");
 
     lua_setglobal(luaSt, "sphericalModels");
 
