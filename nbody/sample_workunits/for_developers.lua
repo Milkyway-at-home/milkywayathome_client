@@ -26,7 +26,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.68"  -- -- MINIMUM APP VERSION        -- --
+nbodyMinVersion       = "1.70"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_secondary_disk    = false   -- -- SECONDARY SWITCH DISK      -- --
@@ -45,7 +45,7 @@ print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
 ModelComponents   = 2       -- -- TWO COMPONENTS SWITCH      -- --
-manual_bodies     = true    -- -- USE THE MANUAL BODY LIST   -- --
+manual_bodies     = false    -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -139,12 +139,9 @@ function get_timestep()
         -- I did it this way so there was only one place to change the time step. 
         t = (1.0 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
         
-    --     tmp = sqr(1/10.0) * sqrt((pi_4_3 * cube(rscale_d)) / (mass_l + mass_d))
-    --     print('timestep ', t, tmp)
     else 
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
---     print(t)
     return t
 end
 
