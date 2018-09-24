@@ -485,19 +485,9 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
         }
 
     }
-    real sigma_cutoff = 2.0 * ((nbins / 2.0) - 1.0);
-
-    if(Nsigma_sq <= sigma_cutoff)
-    {
-       probability = 0.0;
-    }
-    else
-    {
-        probability =  ((nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq) - (Nsigma_sq) / 2.0;
-        probability -= ((nbins / 2.0) - 1.0 ) * ( mw_log(sigma_cutoff) - 1.0);
-    }
+        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
     
-    return -probability;
+    return probability;
 }
 
 
@@ -540,17 +530,9 @@ real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogra
         }
 
     }
-    real sigma_cutoff = 2.0 * ((nbins / 2.0) - 1.0);
-    if(Nsigma_sq <= sigma_cutoff)
-    {
-       probability = 0.0;
-    }
-    else
-    {
-        probability =  ((nbins / 2.0) - 1.0 ) * mw_log(Nsigma_sq) - (Nsigma_sq) / 2.0;
-        probability -= ((nbins / 2.0) - 1.0 ) * ( mw_log(sigma_cutoff) - 1.0);
-    }
-    return -probability;
+    
+        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
+    return probability;
 }
 
 
