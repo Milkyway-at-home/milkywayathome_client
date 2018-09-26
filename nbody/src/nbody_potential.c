@@ -241,6 +241,20 @@ static inline real ZExpIntegrand (real k, real R, real Rd, real z, real zd)
     return val;
 }
 
+static inline real RSechIntegrand (real k, real R, real Rd, real z, real zd)
+{
+    real val = 3.1415926535*sqr(k)*zd/mw_sinh(3.1415926535*k*zd/4)/8.0*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R))/(sqr(zd*k) + 1);
+    //mw_printf("RSech(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
+    return val;
+}
+
+static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
+{
+    real val = 3.1415926535*sqr(k)*zd/mw_sinh(3.1415926535*k*zd/4)/8.0*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R))/(sqr(zd*k) + 1);
+    //mw_printf("ZSech = %.15f\n",val);
+    return val;
+}
+
 /*spherical bulge potentials*/
 
 static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector pos, real r)
@@ -389,6 +403,67 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
             k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
             Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/2.0;
             Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/2.0;
+        }
+        integralR  = integralR + Rpiece;
+        integralZ  = integralZ + Zpiece;
+    }
+
+    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/3.1415926535*integralR);
+    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/3.1415926535*integralZ);
+
+    X(acc) = X(R_comp) + X(Z_comp);
+    Y(acc) = Y(R_comp) + Y(Z_comp);
+    Z(acc) = Z(R_comp) + Z(Z_comp);
+
+    //real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
+
+    //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
+
+    return acc;
+}
+
+/*WARNING: This potential is EVEN SLOWER than the Freeman Potential! Do NOT use this for NBody!*/
+static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos, real r)
+{
+    //mw_printf("Calculating Acceleration\n");
+    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+    mwvector acc;
+
+    const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
+    mwvector R_hat;
+    X(R_hat) = X(pos)/R;
+    Y(R_hat) = Y(pos)/R;
+    Z(R_hat) = 0.0;
+
+    mwvector Z_hat;
+    X(Z_hat) = 0.0;
+    Y(Z_hat) = 0.0;
+    Z(Z_hat) = 1.0;
+
+    const real Rd = disk->scaleLength;
+    const real zd = disk->scaleHeight;
+    const real M = disk->mass;
+    const real z = Z(pos);
+
+    const int n = 15;
+    const real a = 0.0;
+    const real b = 60.0/R;
+    real integralR = 0.0;
+    real integralZ = 0.0;
+    const real weight[] = {0.236927,0.478629,0.568889,0.478629,0.236927};
+    const real point[] = {-0.90618,-0.538469,0.0,0.538469,0.90618};
+    const real h = (b-a)/(n*1.0);
+
+    for (int k = 0; k < n; k++)     /*Five-point Gaussian Quadrature*/
+    {
+        real Rpiece = 0.0;
+        real Zpiece = 0.0;
+        real k_val = 0.0;
+        for (int j = 0; j < 5; j++)
+        {
+            k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
+            Rpiece = Rpiece + h*weight[j]*RSechIntegrand(k_val,R,Rd,z,zd)/2.0;
+            Zpiece = Zpiece + h*weight[j]*ZSechIntegrand(k_val,R,Rd,z,zd)/2.0;
         }
         integralR  = integralR + Rpiece;
         integralZ  = integralZ + Zpiece;
@@ -566,6 +641,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         case DoubleExponentialDisk:
             acc = doubleExponentialDiskAccel(&pot->disk, pos, r);
             break;
+        case Sech2ExponentialDisk:
+            acc = sech2ExponentialDiskAccel(&pot->disk, pos, r);
+            break;
         case NoDisk:
             X(acc) = 0.0;
             Y(acc) = 0.0;
@@ -586,6 +664,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case DoubleExponentialDisk:
             acctmp = doubleExponentialDiskAccel(&pot->disk2, pos, r);
+            break;
+        case Sech2ExponentialDisk:
+            acctmp = sech2ExponentialDiskAccel(&pot->disk2, pos, r);
             break;
         case NoDisk:
             X(acctmp) = 0.0;

@@ -233,6 +233,19 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleHeight);
             break;
 
+        case Sech2ExponentialDisk:
+
+            fprintf(f,
+                    "# Primary Disk: Sech2Exponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
         case FreemanDisk:
             fprintf(f,
                     "# Primary Disk: Freeman\n"
@@ -274,6 +287,19 @@ static void nbPrintHistogramHeader(FILE* f,
 
             fprintf(f,
                     "# Secondary Disk: DoubleExponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case Sech2ExponentialDisk:
+
+            fprintf(f,
+                    "# Secondary Disk: Sech2Exponential\n"
                     "#   mass = %f\n"
                     "#   Rd = %f\n"
                     "#   zd = %f\n"

@@ -82,6 +82,8 @@ const char* showDiskT(disk_t x)
             return "MiyamotoNagaiDisk";
         case DoubleExponentialDisk:
             return "DoubleExponentialDisk";
+        case Sech2ExponentialDisk:
+            return "DoubleExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
         case NoDisk:

@@ -90,6 +90,17 @@ mwbool checkDiskConstants(Disk* d)
             }
             break;
 
+        case Sech2ExponentialDisk:
+            if (mwCheckNormalPosNum(d->scaleLength) || mwCheckNormalPosNum(d->scaleHeight))
+            {
+                mw_printf("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f\n",
+                          showDiskT(d->type),
+                          d->scaleLength,
+                          d->scaleHeight);
+                badDisk = TRUE;
+            }
+            break;
+
         case FreemanDisk:
             if (mwCheckNormalPosNum(d->scaleLength))
             {

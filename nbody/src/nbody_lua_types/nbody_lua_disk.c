@@ -82,6 +82,21 @@ static int createDoubleExponentialDisk(lua_State* luaSt)
     return createDisk(luaSt, argTable, &d);
 }
 
+static int createSech2ExponentialDisk(lua_State* luaSt)
+{
+    static Disk d = { Sech2ExponentialDisk, 0.0, 0.0, 0.0 };
+
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &d.mass        },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &d.scaleLength },
+            { "scaleHeight", LUA_TNUMBER, NULL, TRUE, &d.scaleHeight },
+            END_MW_NAMED_ARG
+        };
+
+    return createDisk(luaSt, argTable, &d);
+}
+
 static int createFreemanDisk(lua_State* luaSt)
 {
     static Disk d = { FreemanDisk, 0.0, 0.0, 0.0 };
@@ -149,6 +164,7 @@ static const luaL_reg methodsDisk[] =
     { "miyamotoNagai", createMiyamotoNagaiDisk },
     { "freeman",   createFreemanDisk   },
     { "doubleExponential",   createDoubleExponentialDisk   },
+    { "sech2Exponential",   createSech2ExponentialDisk   },
     { "none",   createNoDisk   },
     { NULL, NULL }
 };
@@ -190,6 +206,7 @@ int registerDiskKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createMiyamotoNagaiDisk, "miyamotoNagai");
     setModelTableItem(luaSt, table, createFreemanDisk, "freeman");
     setModelTableItem(luaSt, table, createDoubleExponentialDisk, "doubleExponential");
+    setModelTableItem(luaSt, table, createSech2ExponentialDisk, "sech2Exponential");
     setModelTableItem(luaSt, table, createNoDisk, "none");
 
     lua_setglobal(luaSt, "diskModels");

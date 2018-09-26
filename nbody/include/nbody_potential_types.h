@@ -54,6 +54,7 @@ typedef struct MW_ALIGN_TYPE
 #define _MN_DISK 1
 #define _FREEMAN_DISK 2
 #define _DOUBEXPO_DISK 3
+#define _SECHEXPO_DISK 4
 
 
 /* Supported disk models */
@@ -63,7 +64,8 @@ typedef enum
     NoDisk                = _NO_DISK,
     MiyamotoNagaiDisk     = _MN_DISK,
     FreemanDisk           = _FREEMAN_DISK,
-    DoubleExponentialDisk = _DOUBEXPO_DISK
+    DoubleExponentialDisk = _DOUBEXPO_DISK,
+    Sech2ExponentialDisk  = _SECHEXPO_DISK
 } disk_t;
 
 typedef struct MW_ALIGN_TYPE

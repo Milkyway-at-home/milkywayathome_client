@@ -9,6 +9,7 @@ Spherical:
 Disk:
       Disk.miyamotoNagai{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
       Disk.doubleExponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
+      Disk.sech2Exponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
       Disk.freeman{ mass = <structure mass units>, scaleLength = <kpc> }
       Disk.none{ mass = <whatever> }
 
