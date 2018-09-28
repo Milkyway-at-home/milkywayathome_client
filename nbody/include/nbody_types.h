@@ -283,6 +283,7 @@ typedef struct
     real count;
     real err;
     
+    real v_radial;
     real v_sum;
     real vsq_sum;
     real vdisp;
@@ -292,6 +293,8 @@ typedef struct
     real betasq_sum;
     real beta_disp;
     real beta_disperr;
+
+    real distance;
     
     real outliersBetaRemoved;
     real outliersVelRemoved;
