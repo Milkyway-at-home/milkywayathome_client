@@ -257,8 +257,8 @@ static void nbPrintHistogramHeader(FILE* f,
             "#\n"
             "#Column Headers:\n"
             "# UseBin,  Lambda,  Beta,  Normalized Counts, Count Error, "
-            "Beta Dispersion,  Beta Dispersion Error,"
-            "LOS Velocity Dispersion, Velocity Dispersion Error\n"
+            "Beta Dispersion,  Beta Dispersion Error, Radial Velocity, "
+            "LOS Velocity Dispersion, Velocity Dispersion Error, Distance\n"
             "#\n"
             "\n"
         );
@@ -283,7 +283,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
@@ -291,8 +291,10 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->err,
                 data->beta_disp,
                 data->beta_disperr,
+                data->v_radial,
                 data->vdisp,
-                data->vdisperr);
+                data->vdisperr,
+                data->distance);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -673,7 +675,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
@@ -681,8 +683,10 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].err,
                     &histData[fileCount].beta_disp,
                     &histData[fileCount].beta_disperr,
+                    &histData[fileCount].v_radial,
                     &histData[fileCount].vdisp,
-                    &histData[fileCount].vdisperr);
+                    &histData[fileCount].vdisperr,
+                    &histData[fileCount].distance);
         
         
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
