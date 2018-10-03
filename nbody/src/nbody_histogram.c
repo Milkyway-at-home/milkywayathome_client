@@ -256,8 +256,8 @@ static void nbPrintHistogramHeader(FILE* f,
     fprintf(f,
             "#\n"
             "#Column Headers:\n"
-            "# UseBin,  Lambda,  Beta,  Normalized Counts, Count Error, "
-            "Beta Dispersion,  Beta Dispersion Error, Radial Velocity, "
+            "# UseBin,  Lambda,  Beta, Betas, Normalized Counts, Count Error, "
+            "Beta Dispersion,  Beta Dispersion Error, LOS Velocity, "
             "LOS Velocity Dispersion, Velocity Dispersion Error, Distance\n"
             "#\n"
             "\n"
@@ -283,15 +283,16 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
+                data->betas;
                 data->count,
                 data->err,
                 data->beta_disp,
                 data->beta_disperr,
-                data->v_radial,
+                data->v_los,
                 data->vdisp,
                 data->vdisperr,
                 data->distance);
@@ -523,11 +524,14 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     }
     
     nbNormalizeHistogram(histogram);
+
+    histData->v_los = vlos;
+    histData->betas = betas;
     
     free(use_velbody);
     free(use_betabody);
-    free(vlos);
-    free(betas);
+    // free(vlos);
+    // free(betas);
     
     return histogram;
 }
@@ -675,15 +679,16 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
+                    &histData[fileCount].betas,
                     &histData[fileCount].count,
                     &histData[fileCount].err,
                     &histData[fileCount].beta_disp,
                     &histData[fileCount].beta_disperr,
-                    &histData[fileCount].v_radial,
+                    &histData[fileCount].v_los,
                     &histData[fileCount].vdisp,
                     &histData[fileCount].vdisperr,
                     &histData[fileCount].distance);
