@@ -256,7 +256,7 @@ static void nbPrintHistogramHeader(FILE* f,
     fprintf(f,
             "#\n"
             "#Column Headers:\n"
-            "# UseBin,  Lambda,  Beta, Betas, Normalized Counts, Count Error, "
+            "# UseBin,  Lambda,  Beta, Beta Avg, Normalized Counts, Count Error, "
             "Beta Dispersion,  Beta Dispersion Error, LOS Velocity, "
             "LOS Velocity Dispersion, Velocity Dispersion Error, Distance\n"
             "#\n"
@@ -287,7 +287,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->useBin,
                 data->lambda,
                 data->beta,
-                data->betas;
+                data->beta_avg,
                 data->count,
                 data->err,
                 data->beta_disp,
@@ -446,11 +446,13 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
+        histData[Histindex].v_los     = 0.0;
         histData[Histindex].v_sum    = 0.0;
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
         
+        histData[Histindex].beta_avg    = 0.0;
         histData[Histindex].beta_sum    = 0.0;
         histData[Histindex].betasq_sum  = 0.0;
         histData[Histindex].beta_disp    = 0.0;
@@ -495,6 +497,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                histData[Histindex].v_los = v_line_of_sight; // add to the histogram ??? pls
+
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
                 betas[ub_counter] = beta;
                 /* each of these are components of the vel disp */
@@ -525,13 +529,13 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     
     nbNormalizeHistogram(histogram);
 
-    histData->v_los = vlos;
-    histData->betas = betas;
+    // histData->v_los = vlos;
+    // histData->betas = betas;
     
     free(use_velbody);
     free(use_betabody);
-    // free(vlos);
-    // free(betas);
+    free(vlos);
+    free(betas);
     
     return histogram;
 }
@@ -683,7 +687,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
-                    &histData[fileCount].betas,
+                    &histData[fileCount].beta_avg,
                     &histData[fileCount].count,
                     &histData[fileCount].err,
                     &histData[fileCount].beta_disp,

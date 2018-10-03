@@ -289,7 +289,7 @@ typedef struct
     real vdisp;
     real vdisperr;
 
-    real betas;
+    real beta_avg;
     real beta_sum;
     real betasq_sum;
     real beta_disp;
