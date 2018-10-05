@@ -177,8 +177,8 @@ static void nbPrintHistogramHeader(FILE* f,
                     "#   mass = %f\n"
                     "#   a = %f\n"
                     "#\n",
-                    p->sphere[1].mass,
-                    p->sphere[1].scale);
+                    p->sphere[0].mass,
+                    p->sphere[0].scale);
             break;
 
         case PlummerSpherical:
@@ -188,8 +188,8 @@ static void nbPrintHistogramHeader(FILE* f,
                     "#   mass = %f\n"
                     "#   a = %f\n"
                     "#\n",
-                    p->sphere[1].mass,
-                    p->sphere[1].scale);
+                    p->sphere[0].mass,
+                    p->sphere[0].scale);
             break;
 
         case NoSpherical:
