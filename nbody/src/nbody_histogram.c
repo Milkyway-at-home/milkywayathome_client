@@ -20,8 +20,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// TESTING TESTING TESTING
-
 #include "nbody_config.h"
 
 #include "nbody_histogram.h"
@@ -258,9 +256,10 @@ static void nbPrintHistogramHeader(FILE* f,
     fprintf(f,
             "#\n"
             "#Column Headers:\n"
-            "# UseBin,  Lambda,  Beta,  Normalized Counts, Count Error, "
-            "Beta Dispersion,  Beta Dispersion Error,"
-            "LOS Velocity Dispersion, Velocity Dispersion Error, Average Beta\n"//changed text
+            "# UseBin,  Lambda,  Beta, Normalized Counts, Count Error, "
+            "Beta Dispersion,  Beta Dispersion Error, "
+            "LOS Velocity Dispersion, Velocity Dispersion Error, "
+            "LOS Velocity, Beta Average, Distance\n"
             "#\n"
             "\n"
         );
@@ -285,7 +284,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
@@ -294,7 +293,10 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->beta_disp,
                 data->beta_disperr,
                 data->vdisp,
-                data->vdisperr);
+                data->vdisperr,
+                data->v_los,
+                data->beta_avg,
+                data->distance);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -445,11 +447,13 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
+        histData[Histindex].v_los     = 0.0;
         histData[Histindex].v_sum    = 0.0;
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
         
+        histData[Histindex].beta_avg    = 0.0;
         histData[Histindex].beta_sum    = 0.0;
         histData[Histindex].betasq_sum  = 0.0;
         histData[Histindex].beta_disp    = 0.0;
@@ -494,6 +498,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                histData[Histindex].v_los = v_line_of_sight; // add to the histogram
+
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
                 betas[ub_counter] = beta;
                 /* each of these are components of the vel disp */
@@ -678,7 +684,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
@@ -687,7 +693,10 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].beta_disp,
                     &histData[fileCount].beta_disperr,
                     &histData[fileCount].vdisp,
-                    &histData[fileCount].vdisperr);
+                    &histData[fileCount].vdisperr,
+                    &histData[fileCount].v_los,
+                    &histData[fileCount].beta_avg,
+                    &histData[fileCount].distance);
         
         
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 

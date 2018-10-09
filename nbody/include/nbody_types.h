@@ -283,15 +283,22 @@ typedef struct
     real count;
     real err;
     
+    real v_los;
+    real v_los_err;
     real v_sum;
     real vsq_sum;
     real vdisp;
     real vdisperr;
-    
+
+    real beta_avg;
+    real beta_avg_err;
     real beta_sum;
     real betasq_sum;
     real beta_disp;
     real beta_disperr;
+
+    real distance;
+    real dist_err;
     
     real outliersBetaRemoved;
     real outliersVelRemoved;
