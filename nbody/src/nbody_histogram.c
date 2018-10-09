@@ -260,7 +260,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "#Column Headers:\n"
             "# UseBin,  Lambda,  Beta,  Normalized Counts, Count Error, "
             "Beta Dispersion,  Beta Dispersion Error,"
-            "LOS Velocity Dispersion, Velocity Dispersion Error\n"
+            "LOS Velocity Dispersion, Velocity Dispersion Error, Average Beta\n"//changed text
             "#\n"
             "\n"
         );
@@ -274,7 +274,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     unsigned int nBin = histogram->lambdaBins * histogram->betaBins;
 
     mw_boinc_print(f, "<histogram>\n");
-    fprintf(f, "n = %u\n", histogram->totalNum);
+    fprintf(f, "n = %u\n", histogram->totalNum);  /*LN 38 on test.hist */
     fprintf(f, "massPerParticle = %12.15f\n", histogram->massPerParticle);
     fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
@@ -285,7 +285,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
@@ -390,7 +390,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     unsigned int Histindex;
     unsigned int totalNum = 0;
     Body* p;
-    NBodyHistogram* histogram;
+    NBodyHistogram* histogram;   /* These two are important pointers, SUPRISE!!*/
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
@@ -435,9 +435,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
 
     real * use_velbody  = mwCalloc(body_count, sizeof(real));
     real * use_betabody  = mwCalloc(body_count, sizeof(real));
-    real * vlos      = mwCalloc(body_count, sizeof(real));
-    real * betas     = mwCalloc(body_count, sizeof(real));
-    
+    real * vlos      = mwCalloc(body_count, sizeof(real));        /** ._______________.**/
+    real * betas     = mwCalloc(body_count, sizeof(real));        /** LOOK HERE DUMBASS**/
+                                                                  /** .---------------.**/
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
     
@@ -524,10 +524,13 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     
     nbNormalizeHistogram(histogram);
     
+
+
     free(use_velbody);
     free(use_betabody);
     free(vlos);
-    free(betas);
+    free(betas);  /*** Find where NBodyHistogram* is to find and create the areas necessary to add in the beta values
+                        then set those values to betas and store it appropriately and in the correct spot ***/
     
     return histogram;
 }
