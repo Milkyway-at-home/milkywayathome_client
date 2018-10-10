@@ -259,7 +259,8 @@ static void nbPrintHistogramHeader(FILE* f,
             "# UseBin,  Lambda,  Beta, Normalized Counts, Count Error, "
             "Beta Dispersion,  Beta Dispersion Error, "
             "LOS Velocity Dispersion, Velocity Dispersion Error, "
-            "LOS Velocity, Beta Average, Distance\n"
+            "LOS Velocity, LOS Velocity Error, Beta Average, Beta Average Error, "
+            "Distance, Distance Error\n"
             "#\n"
             "\n"
         );
@@ -284,7 +285,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     {
         data = &histogram->data[i];
         fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
@@ -295,8 +296,11 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->vdisp,
                 data->vdisperr,
                 data->v_los,
+                data->v_los_err,
                 data->beta_avg,
-                data->distance);
+                data->beta_avg_err,
+                data->distance,
+                data->dist_err);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % histogram->betaBins == histogram->betaBins-1)
@@ -448,12 +452,14 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     {
         histData[Histindex].rawCount = 0;
         histData[Histindex].v_los    = 0.0;
+        histData[Histindex].v_los_err = 0.0;
         histData[Histindex].v_sum    = 0.0;
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
         
         histData[Histindex].beta_avg    = 0.0;
+        histData[Histindex].beta_avg_err    = 0.0;
         histData[Histindex].beta_sum    = 0.0;
         histData[Histindex].betasq_sum  = 0.0;
         histData[Histindex].beta_disp    = 0.0;
@@ -532,7 +538,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         if(denom != 0)
         {
             histData[i].v_los = histData[i].v_sum / denom;
+            histData[i].v_los_err = histData[i].vdisp / sqrt(denom);
             histData[i].beta_avg = histData[i].beta_sum / denom;
+            histData[i].beta_avg_err = histData[i].beta_disp / sqrt(denom);
         }
     }
     
@@ -690,7 +698,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         }
 
         rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].beta,
@@ -701,8 +709,11 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].vdisp,
                     &histData[fileCount].vdisperr,
                     &histData[fileCount].v_los,
+                    &histData[fileCount].v_los_err,
                     &histData[fileCount].beta_avg,
-                    &histData[fileCount].distance);
+                    &histData[fileCount].beta_avg_err,
+                    &histData[fileCount].distance,
+                    &histData[fileCount].dist_err);
         
         
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
