@@ -534,12 +534,9 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             histData[i].v_los = histData[i].v_sum / denom;
             histData[i].beta_avg = histData[i].beta_sum / denom;
         }
-        
     }
     
     nbNormalizeHistogram(histogram);
-    
-
 
     free(use_velbody);
     free(use_betabody);
