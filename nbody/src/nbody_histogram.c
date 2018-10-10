@@ -447,7 +447,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
-        histData[Histindex].v_los     = 0.0;
+        histData[Histindex].v_los    = 0.0;
         histData[Histindex].v_sum    = 0.0;
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
@@ -496,9 +496,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 histData[Histindex].rawCount++;
                 ++totalNum;
                 
-                
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
-                histData[Histindex].v_los = v_line_of_sight; // add to the histogram
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
                 betas[ub_counter] = beta;
@@ -513,6 +511,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
             ub_counter++;
         }
     }
+   
     histogram->totalNum = totalNum; /* Total particles in range */
 
     nbCalcVelDisp(histogram, TRUE, ctx->VelCorrect);
@@ -525,6 +524,16 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         
         nbRemoveVelOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma);
         nbCalcVelDisp(histogram, FALSE, ctx->VelCorrect);
+    }
+
+    for (int i = 0; i < nBin; ++i)
+    {
+        unsigned int denom = histData[i].rawCount - histData[i].outliersVelRemoved;
+        if(denom != 0)
+        {
+            histData[i].v_los = histData[i].v_sum / denom;
+            histData[i].beta_avg = histData[i].beta_sum / denom;
+        }
         
     }
     

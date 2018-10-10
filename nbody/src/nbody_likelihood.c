@@ -182,10 +182,10 @@ real nbSystemLikelihood(const NBodyState* st,
         beta_component = nbBetaComponent(data, histogram);
         likelihood += beta_component;
     }
-    if(st->useVradial)
+    if(st->useVlos)
     {
-        radial_velocity_component = nbRadialVelocityComponent(data, histogram);
-        likelihood += radial_velocity_component;
+        LOS_velocity_component = nbLOSVelocityComponent(data, histogram);
+        likelihood += LOS_velocity_component;
     }
     if(st->useDist)
     {
