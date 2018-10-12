@@ -532,10 +532,12 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         nbCalcVelDisp(histogram, FALSE, ctx->VelCorrect);
     }
 
+    // add the average v_los and average beta (& their respective errors) to the histogram
+    // dispersions are already calculated and in histogram - this is used to calculate error
     for (int i = 0; i < nBin; ++i)
     {
         unsigned int denom = histData[i].rawCount - histData[i].outliersVelRemoved;
-        if(denom != 0)
+        if(denom != 0) // no data for the bin
         {
             histData[i].v_los = histData[i].v_sum / denom;
             histData[i].v_los_err = histData[i].vdisp / sqrt(denom);
