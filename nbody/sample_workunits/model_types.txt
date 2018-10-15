@@ -17,7 +17,7 @@ Halo:
       Halo.logarithmic{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenZ = <q> }
       Halo.nfw{ vhalo = <kpc/Gyr>, scaleLength = <kpc> }
       Halo.triaxial{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenX = <q>, flattenY = <q>, flattenZ = <q>, triaxAngle = <q> }
-      Halo.caustic{}
+      Halo.caustic{}??? (Don't use this one.)
       Halo.allenSantillan{ mass = <structure mass units>, scaleLength = <kpc>, lambda = <kpc>, gamma = <q> }
       Halo.wilkinsonEvans{ mass = <structure mass units>, scaleLength = <kpc> }
       Halo.nfwmass{ mass = <structure mass units>, scaleLength = <kpc> }
