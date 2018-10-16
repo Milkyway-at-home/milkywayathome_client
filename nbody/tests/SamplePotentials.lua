@@ -42,7 +42,7 @@ SamplePotentials.buildAllDisks = function()
 
    doubleExponentialDisks = buildAllCombinations(
       function(m, a, b)
-         return Disk.exponential{ mass = m, scaleLength = a, scaleHeight = b }
+         return Disk.doubleExponential{ mass = m, scaleLength = a, scaleHeight = b }
       end,
       { 2.24933e5, 3.0e6, 1.5e4 },
       { 3.6, 2.0, 6.5 },
@@ -51,7 +51,7 @@ SamplePotentials.buildAllDisks = function()
 
    sech2ExponentialDisks = buildAllCombinations(
       function(m, a, b)
-         return Disk.exponential{ mass = m, scaleLength = a, scaleHeight = b }
+         return Disk.sech2Exponential{ mass = m, scaleLength = a, scaleHeight = b }
       end,
       { 2.24933e5, 3.0e6, 1.5e4 },
       { 3.6, 2.0, 6.5 },
@@ -60,7 +60,7 @@ SamplePotentials.buildAllDisks = function()
 
    freemanDisks = buildAllCombinations(
       function(m, a)
-         return Disk.exponential{ mass = m, scaleLength = a }
+         return Disk.freeman{ mass = m, scaleLength = a }
       end,
       { 2.24933e5, 3.0e6, 1.5e4 },
       { 3.6, 2.0, 6.5 }
@@ -73,14 +73,14 @@ SamplePotentials.buildAllDisk2s = function()
    local noDisk2s, miyamotoNagaiDisk2s, doubleExponentialDisk2s, sech2ExponentialDisk2s, freemanDisk2s
    noDisk2s = buildAllCombinations(
       function(m)
-         return Disk2.none{ mass = m }
+         return Disk.none{ mass = m }
       end,
       { 4.5e5, 5.0e6, 3.0e4 }
    )
 
    miyamotoNagaiDisk2s = buildAllCombinations(
       function(m, a, b)
-         return Disk2.miyamotoNagai{ mass = m, scaleLength = a, scaleHeight = b }
+         return Disk.miyamotoNagai{ mass = m, scaleLength = a, scaleHeight = b }
       end,
       { 4.5e5, 5.0e6, 3.0e4 },
       { 6.5, 9.0, 3.0 },
@@ -89,7 +89,7 @@ SamplePotentials.buildAllDisk2s = function()
 
    doubleExponentialDisk2s = buildAllCombinations(
       function(m, a, b)
-         return Disk2.exponential{ mass = m, scaleLength = a, scaleHeight = b }
+         return Disk.doubleExponential{ mass = m, scaleLength = a, scaleHeight = b }
       end,
       { 2.24933e5, 3.0e6, 1.5e4 },
       { 3.6, 2.0, 6.5 },
@@ -98,7 +98,7 @@ SamplePotentials.buildAllDisk2s = function()
 
    sech2ExponentialDisk2s = buildAllCombinations(
       function(m, a, b)
-         return Disk2.exponential{ mass = m, scaleLength = a, scaleHeight = b }
+         return Disk.sech2Exponential{ mass = m, scaleLength = a, scaleHeight = b }
       end,
       { 2.24933e5, 3.0e6, 1.5e4 },
       { 3.6, 2.0, 6.5 },
@@ -107,7 +107,7 @@ SamplePotentials.buildAllDisk2s = function()
 
    freemanDisk2s = buildAllCombinations(
       function(m, a)
-         return Disk2.exponential{ mass = m, scaleLength = a }
+         return Disk.freeman{ mass = m, scaleLength = a }
       end,
       { 2.24933e5, 3.0e6, 1.5e4 },
       { 3.6, 2.0, 6.5 }
@@ -252,122 +252,95 @@ end
 
 -- Artificial tests, should have at least every combination of
 -- spherical, disk, halo component typs. (750 COMBINATIONS!?!)
-SamplePotentials.samplePotentials = {
-   potentialA = Potential.create{
-      spherical = Spherical.spherical{
-         mass  = 1.5e5,
-         scale = 0.7
-      },
 
-      disk = Disk.miyamotoNagai{
-         mass        = 4.5e5,
-         scaleLength = 6.0,
-         scaleHeight = 0.3
-      },
+--Following for-loop generates string to be passed as command due to obscene number of potential combinations
+pot_string = "SamplePotentials.samplePotentials = {"
+sphere_types = 3
+disk_types = 5
+halo_types = 10
 
-      halo = Halo.logarithmic{
-         vhalo       = 80,
-         scaleLength = 15,
-         flattenZ    = 1.0
-      }
-   },
+pot_count = 1
+for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
+   i = floor(n/(disk_types*disk_types*halo_types))
+   j = floor((n-(disk_types*disk_types*halo_types)*i)/(disk_types*halo_types))
+   k = floor((n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j)/(halo_types))
+   l = n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j-halo_types*k
 
-   potentialB = Potential.create{
-      spherical = Spherical.spherical{
-         mass  = 2.0e5,
-         scale = 0.7
-      },
+   pot_string = pot_string.."potential"..pot_count.." = Potential.create{"
+   if i==0 then
+      pot_string = pot_string.."spherical = Spherical.none{ mass = 3.0e5 },"
+   elseif i==1 then
+      pot_string = pot_string.."spherical = Spherical.hernquist{ mass = 1.5e5, scale = 0.8 },"
+   elseif i==2 then
+      pot_string = pot_string.."spherical = Spherical.plummer{ mass = 2.0e5, scale = 0.6 },"
+   else
+      assert(false)
+   end
 
-      disk = Disk.exponential{
-         mass        = 9.0e5,
-         scaleLength = 6
-      },
+   if j==0 then
+      pot_string = pot_string.."disk = Disk.none{ mass = 3.0e5 },"
+   elseif j==1 then
+      pot_string = pot_string.."disk = Disk.miyamotoNagai{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 },"
+   elseif j==2 then
+      pot_string = pot_string.."disk = Disk.doubleExponential{ mass = 4.0e5, scaleLength = 4.5, scaleHeight = 0.3 },"
+   elseif j==3 then
+      pot_string = pot_string.."disk = Disk.sech2Exponential{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 },"
+   elseif j==4 then
+      pot_string = pot_string.."disk = Disk.freeman{ mass = 4.5e5, scaleLength = 6.0 },"
+   else
+      assert(false)
+   end
 
-      halo = Halo.logarithmic{
-         vhalo       = 60,
-         scaleLength = 10.0,
-         flattenZ    = 1.1
-      }
-   },
+   if k==0 then
+      pot_string = pot_string.."disk2 = Disk.none{ mass = 3.0e5 },"
+   elseif k==1 then
+      pot_string = pot_string.."disk2 = Disk.miyamotoNagai{ mass = 3.0e5, scaleLength = 6.0, scaleHeight = 0.3 },"
+   elseif k==2 then
+      pot_string = pot_string.."disk2 = Disk.doubleExponential{ mass = 3.0e5, scaleLength = 4.5, scaleHeight = 0.3 },"
+   elseif k==3 then
+      pot_string = pot_string.."disk2 = Disk.sech2Exponential{ mass = 3.0e5, scaleLength = 5.0, scaleHeight = 0.3 },"
+   elseif k==4 then
+      pot_string = pot_string.."disk2 = Disk.freeman{ mass = 3.0e5, scaleLength = 5.5 },"
+   else
+      assert(false)
+   end
 
-   potentialC = Potential.create{
-      spherical = Spherical.spherical{
-         mass  = 2.0e6,
-         scale = 1.0
-      },
+   if l==0 then
+      pot_string = pot_string.."halo = Halo.none{ mass = 3.0e6 }}"
+   elseif l==1 then
+      pot_string = pot_string.."halo = Halo.logarithmic{ vhalo = 80, scaleLength = 15, flattenZ = 1.0 }}"
+   elseif l==2 then
+      pot_string = pot_string.."halo = Halo.nfw{ vhalo = 90, scaleLength = 12 }}"
+   elseif l==3 then
+      pot_string = pot_string.."halo = Halo.triaxial{ vhalo = 120, scaleLength = 18, flattenX = 1.3, flattenY = 1.0, flattenZ = 1.45, triaxAngle = 96 }}"
+   elseif l==4 then
+      pot_string = pot_string.."halo = Halo.allenSantillan{ mass = 3.0e6, scaleLength = 20, lambda = 200, gamma = 2.0}}"
+   elseif l==5 then
+      pot_string = pot_string.."halo = Halo.wilkinsonEvans{ mass = 3.0e6, scaleLength = 15 }}"
+   elseif l==6 then
+      pot_string = pot_string.."halo = Halo.nfwmass{ mass = 3.0e6, scaleLength = 15 }}"
+   elseif l==7 then
+      pot_string = pot_string.."halo = Halo.plummer{ mass = 3.0e6, scaleLength = 15 }}"
+   elseif l==8 then
+      pot_string = pot_string.."halo = Halo.hernquist{ mass = 3.0e6, scaleLength = 15 }}"
+   elseif l==9 then
+      pot_string = pot_string.."halo = Halo.ninkovic{ mass = 3.0e6, scaleLength = 15, lambda = 96 }}"
+   else
+      assert(false)
+   end
 
-      disk = Disk.exponential{
-         scaleLength = 9,
-         mass        = 9.0e5
-      },
+   if pot_count==halo_types*disk_types*disk_types*sphere_types then
+      pot_string = pot_string.."}"
+      break
+   else
+      pot_string = pot_string..","
+   end
+   pot_count = pot_count + 1
+end
 
-      halo = Halo.nfw{
-         vhalo       = 150,
-         scaleLength = 25
-      }
-   },
+--Runs generated stream as command
+os.system(pot_string)
 
-   potentialD = Potential.create{
-      spherical = Spherical.spherical{
-         mass  = 2.0e6,
-         scale = 1.0
-      },
-
-      disk = Disk.miyamotoNagai{
-         mass        = 2e6,
-         scaleLength = 7.0,
-         scaleHeight = 0.2
-      },
-
-      halo = Halo.triaxial{
-         vhalo       = 120,
-         scaleLength = 18,
-         flattenZ = 1.45,
-         flattenX = 1.3,
-         flattenY = 1.0,
-         triaxAngle = 96
-      }
-   },
-
-   potentialE = Potential.create{
-      spherical = Spherical.spherical{
-         mass  = 2e5,
-         scale = 0.4
-      },
-
-      disk = Disk.miyamotoNagai{
-         mass        = 7e5,
-         scaleLength = 9.0,
-         scaleHeight = 0.5
-      },
-
-      halo = Halo.nfw{
-         vhalo       = 120,
-         scaleLength = 18,
-      }
-   },
-
-   potentialF = Potential.create{
-      spherical = Spherical.spherical{
-         mass  = 2.0e6,
-         scale = 1.0
-      },
-
-      disk = Disk.exponential{
-         mass        = 3.0e7,
-         scaleLength = 8,
-      },
-
-      halo = Halo.triaxial{
-         vhalo       = 140,
-         scaleLength = 25,
-         flattenZ = 1.3,
-         flattenX = 1.4,
-         flattenY = 1.1,
-         triaxAngle = 112
-      }
-   }
-}
 
 SamplePotentials.samplePotentialNames = getKeyNames(SamplePotentials.samplePotentials)
 
