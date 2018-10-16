@@ -332,7 +332,7 @@ typedef struct
 typedef struct
 {
     unsigned int lambdaBins;
-     unsigned int betaBins;
+    unsigned int betaBins;
     unsigned int totalNum;
     unsigned int totalSimulated;
     int hasRawCounts;
