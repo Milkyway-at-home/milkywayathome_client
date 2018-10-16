@@ -384,6 +384,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                                   const NBodyState* st,       /* Final state of the simulation */
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
+    real posistion;
     real lambda;
     real beta;
     mwvector lambdaBetaR;
@@ -392,7 +393,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     unsigned int Histindex;
     unsigned int totalNum = 0;
     Body* p;
-    NBodyHistogram* histogram;   /* These two are important pointers, SUPRISE!!*/
+    NBodyHistogram* histogram;  
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
@@ -437,9 +438,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
 
     real * use_velbody  = mwCalloc(body_count, sizeof(real));
     real * use_betabody  = mwCalloc(body_count, sizeof(real));
-    real * vlos      = mwCalloc(body_count, sizeof(real));        /** ._______________.**/
-    real * betas     = mwCalloc(body_count, sizeof(real));        /** LOOK HERE DUMBASS**/
-                                                                  /** .---------------.**/
+    real * vlos      = mwCalloc(body_count, sizeof(real));       
+    real * betas     = mwCalloc(body_count, sizeof(real));   
+       
+
     histogram->totalSimulated = (unsigned int) body_count;
     histData = histogram->data;
     
@@ -447,11 +449,13 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     for (Histindex = 0; Histindex < nBin; ++Histindex)
     {
         histData[Histindex].rawCount = 0;
-        histData[Histindex].v_los     = 0.0;
+        histData[Histindex].v_los    = 0.0;
         histData[Histindex].v_sum    = 0.0;
         histData[Histindex].vsq_sum  = 0.0;
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
+
+        histData[Histindex].distance = 0.0;
         
         histData[Histindex].beta_avg    = 0.0;
         histData[Histindex].beta_sum    = 0.0;
@@ -470,7 +474,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         /* Only include bodies in models we aren't ignoring (like dark matter) */
         if (!ignoreBody(p))
         {
-            
+            //real * sum_positions = mwCalloc(body_count, sizeof(real)); 
+
             /* Get the position in lbr coorinates */
             lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
             lambda = L(lambdaBetaR);
@@ -500,7 +505,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 histData[Histindex].v_los = v_line_of_sight; // add to the histogram
 
-                vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc
+                posistion = calc_distance(Pos(p), ctx->sunGCDist);
+                histData[Histindex].distance += posistion; /**  This is almost guaranteed to be horribly horribly wrong.  **/
+
+                vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
                 /* each of these are components of the vel disp */
                 histData[Histindex].v_sum += v_line_of_sight;
@@ -511,6 +519,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 histData[Histindex].betasq_sum += sqr(beta);
             }
             ub_counter++;
+           // free(sum_positions)
         }
     }
     histogram->totalNum = totalNum; /* Total particles in range */
@@ -528,6 +537,20 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         
     }
     
+    /** This is where I want to calculate the average.  => [rawcount - (outliers removed calculated above)] **/
+    for(int i = 0; i <= Histindex; ++i)
+    {
+        if(histData[i].rawCount - histData[i].outliersBetaRemoved - histData[i].outliersVelRemoved > 0) //try not to divide by negatives or 0
+        {
+            histData[i].distance /= (histData[i].rawCount - histData[i].outliersBetaRemoved - histData[i].outliersVelRemoved);
+        }
+        else
+        {
+            histData[i].distance = 0;
+        }
+    }
+
+
     nbNormalizeHistogram(histogram);
     
 

@@ -38,6 +38,8 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
 
+real calc_distance(const mwvector p, real sunGCdist);
+
 void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
 void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
 

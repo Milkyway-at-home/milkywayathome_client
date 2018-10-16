@@ -178,6 +178,14 @@ real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
     return vl;
 }
 
+real calc_distance(const mwvector p, real sunGCdist)  /**Calculating the distance to each body **/
+{
+    real xsol = X(p) + sunGCdist;
+    real distance = mw_sqrt(xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p) );
+
+    return distance;
+}
+
 /* Get the velocity dispersion in each bin*/
 void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
 {
