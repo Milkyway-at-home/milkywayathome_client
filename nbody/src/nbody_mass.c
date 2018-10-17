@@ -305,7 +305,7 @@ void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_f
 }
 
 
-void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos, real sigma_cutoff)
+void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos, real sigma_cutoff, real sunGCdist)
 {
     
     unsigned int Histindex;
@@ -318,6 +318,7 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
     histData = histogram->data;
 
     real v_line_of_sight;
+    real distance;
     real bin_ave, bin_sigma, new_count;
     
     for (p = st->bodytab; p < endp; ++p)
@@ -347,8 +348,13 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
                     histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
                     histData[Histindex].outliersVelRemoved++;//keep track of how many are being removed
                     use_velbody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+
+                    /** Adjusting the distance parameters as well **/
+                    distance = calc_distance(Pos(p), sunGCdist);
+                    histData[Histindex].avgDistance -= distance;
                 }
-                 
+
+                
             }
             counter++;
         }
@@ -359,7 +365,7 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
 
 
 
-void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas, real sigma_cutoff)
+void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas, real sigma_cutoff, real sunGCdist)
 {
     
     unsigned int Histindex;
@@ -370,6 +376,8 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
     unsigned int counter = 0;
     
     histData = histogram->data;
+
+    real distance;
 
     real beta;
     real bin_ave, bin_sigma, new_count;
@@ -400,6 +408,10 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
                     histData[Histindex].betasq_sum -= sqr(beta);
                     histData[Histindex].outliersBetaRemoved++;//keep track of how many are being removed
                     use_betabody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+
+                    /** Adjusting the distance parameters as well **/
+                    distance = calc_distance(Pos(p), sunGCdist);
+                    histData[Histindex].avgDistance -= distance;
                 }
                  
             }

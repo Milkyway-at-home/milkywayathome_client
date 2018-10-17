@@ -299,7 +299,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
                 data->v_los_err,
                 data->beta_avg,
                 data->beta_avg_err,
-                data->distance,
+                data->avgDistance,
                 data->dist_err);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
@@ -388,9 +388,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                                   const NBodyState* st,       /* Final state of the simulation */
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
-    real posistion;
+    real location;
     real lambda;
     real beta;
+    real locationStdDev;
     mwvector lambdaBetaR;
     unsigned int lambdaIndex;
     unsigned int betaIndex;
@@ -460,7 +461,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         histData[Histindex].vdisp    = 0.0;
         histData[Histindex].vdisperr = 0.0;
 
-        histData[Histindex].distance = 0.0;
+        histData[Histindex].avgDistance = 0.0;
+        histData[Histindex].dist_err = 0.0;
         
         histData[Histindex].beta_avg    = 0.0;
         histData[Histindex].beta_avg_err    = 0.0;
@@ -480,7 +482,6 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         /* Only include bodies in models we aren't ignoring (like dark matter) */
         if (!ignoreBody(p))
         {
-            //real * sum_positions = mwCalloc(body_count, sizeof(real)); 
 
             /* Get the position in lbr coorinates */
             lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
@@ -509,8 +510,8 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
 
-                posistion = calc_distance(Pos(p), ctx->sunGCDist);
-                histData[Histindex].distance += posistion; /**  This is almost guaranteed to be horribly horribly wrong.  **/
+                location = calc_distance(Pos(p), ctx->sunGCDist);
+                histData[Histindex].avgDistance += location; /**  This is almost guaranteed to be horribly horribly wrong.  **/
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
@@ -534,10 +535,10 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < IterMax; i++)
     {
-        nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma);
+        nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
         nbCalcBetaDisp(histogram, FALSE, ctx->BetaCorrect);
         
-        nbRemoveVelOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma);
+        nbRemoveVelOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
         nbCalcVelDisp(histogram, FALSE, ctx->VelCorrect);
     }
 
@@ -556,17 +557,29 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     }
     
     /** This is where I want to calculate the average.  => [rawcount - (outliers removed calculated above)] **/
-    for(int i = 0; i <= Histindex; ++i)
+    for(unsigned int i = 0; i <= Histindex; ++i)                                                                                                                        /**In general do you have to remove the outliers before calculating distance average?  Similar for dist std dev **/
     {
-        if(histData[i].rawCount - histData[i].outliersBetaRemoved - histData[i].outliersVelRemoved > 0) //try not to divide by negatives or 0
+        real denom = histData[i].rawCount - histData[i].outliersVelRemoved - histData[i].outliersBetaRemoved;
+        real avgDistanceSqrd = sqr(histData[i].avgDistance);
+       
+
+
+        if(denom > 0) //try not to divide by negatives or 0
         {
-            histData[i].distance /= (histData[i].rawCount - histData[i].outliersBetaRemoved - histData[i].outliersVelRemoved);
+            //calculate the std dev.
+            locationStdDev = sqrt((avgDistanceSqrd - (avgDistanceSqrd/denom)) / denom);
+            histData[i].dist_err = locationStdDev / (sqrt(denom));
+            histData[i].avgDistance /= denom;
         }
         else
         {
-            histData[i].distance = 0;
+            histData[i].avgDistance = 0;
+            histData[i].dist_err = 0;
         }
+
     }
+
+    //after calculating average, find the std dev for each distance and then store it as error by doing stddev/sqrt(n)
 
 
     nbNormalizeHistogram(histogram);
@@ -737,7 +750,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
                     &histData[fileCount].v_los_err,
                     &histData[fileCount].beta_avg,
                     &histData[fileCount].beta_avg_err,
-                    &histData[fileCount].distance,
+                    &histData[fileCount].avgDistance,
                     &histData[fileCount].dist_err);
         
         

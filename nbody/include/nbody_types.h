@@ -297,7 +297,7 @@ typedef struct
     real beta_disp;
     real beta_disperr;
 
-    real distance;
+    real avgDistance;
     real dist_err;
     
     real outliersBetaRemoved;
