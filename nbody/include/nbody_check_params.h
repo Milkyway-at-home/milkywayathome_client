@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 #ifdef __cplusplus
-extern "C"
+extern "C" {
 #endif
 
 mwbool checkHaloConstants(Halo* h);
