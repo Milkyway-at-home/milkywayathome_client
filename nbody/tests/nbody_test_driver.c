@@ -161,27 +161,19 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
         return 1;
     }
 
-    if (!EVP_MD_CTX_cleanup(hashCtx))
-    {
-        mw_printf("Error cleaning up hash context for NBodyCtxTest\n");
-        return 1;
-    }
+    EVP_MD_CTX_free(hashCtx);
 
     return 0;
 }
 
 int hashNBodyTest(MWHash* hash, NBodyTest* test)
 {
-    EVP_MD_CTX hashCtx;
+    EVP_MD_CTX *hashCtx;
     int failed = 0;
 
-    EVP_MD_CTX_init(&hashCtx);
+    hashCtx = EVP_MD_CTX_create();
     failed = hashNBodyTestCore(&hashCtx, hash, test);
-    if (!EVP_MD_CTX_cleanup(&hashCtx))
-    {
-        mw_printf("Error cleaning up hash context\n");
-        return 1;
-    }
+    EVP_MD_CTX_free(&hashCtx);
 
     return failed;
 }
@@ -345,16 +337,12 @@ static void nbodyTestCleanup(void)
 #if USE_SSL_TESTS
 int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
 {
-    EVP_MD_CTX hashCtx;
+    EVP_MD_CTX *hashCtx;
     int failed = 0;
 
-    EVP_MD_CTX_init(&hashCtx);
+    hashCtx = EVP_MD_CTX_create();
     failed = hashBodiesCore(&hashCtx, hash, bodies, nbody);
-    if (!EVP_MD_CTX_cleanup(&hashCtx))
-    {
-        mw_printf("Error cleaning up hash context\n");
-        return 1;
-    }
+    EVP_MD_CTX_free(&hashCtx);
 
     return failed;
 }
