@@ -376,6 +376,9 @@ typedef struct MW_ALIGN_TYPE
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
     mwbool useBetaDisp;            /* whether or not to use the beta disp comparison */
+    mwbool useBetaComp;            /* whether or not to use the avg beta comparison */
+    mwbool useVlos;                /* whether or not to use the avg vlos comparison */
+    mwbool useDist;                /* whether or not to use the avg distance comparison */
 
     mwbool ignoreResponsive;
     mwbool usesExact;
@@ -428,6 +431,9 @@ typedef struct MW_ALIGN_TYPE
     mwbool useBestLike;       /* use best likelihood return code */
     mwbool useVelDisp;        /* use the velocity dispersion comparison calc */
     mwbool useBetaDisp;       /* use the beta dispersion comparison calc */
+    mwbool useBetaComp;       /* use the beta average comparison calc */
+    mwbool useVlos;           /* use the line of sight velocity comparison calc */
+    mwbool useDist;           /* use the average distance comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
     
     mwbool useQuad;           /* use quadrupole corrections */

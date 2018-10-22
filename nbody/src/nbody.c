@@ -405,6 +405,10 @@ int nbMain(const NBodyFlags* nbf)
     
     st->useVelDisp = ctx->useVelDisp;
     st->useBetaDisp = ctx->useBetaDisp;
+    st->useBetaComp = ctx->useBetaComp;
+    st->useVlos = ctx->useVlos;
+    st->useDist = ctx->useDist;
+    
     rc = nbRunSystem(ctx, st, nbf);
     
     te = mwGetTime();

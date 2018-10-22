@@ -757,7 +757,7 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
          * and their errors. If not using them, can input zeros in the Columns
          */
-        if (rc != 9)
+        if (rc != 15)
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
             error = TRUE;
