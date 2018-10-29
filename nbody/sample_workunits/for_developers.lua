@@ -31,13 +31,13 @@ nbodyMinVersion       = "1.72"  -- -- MINIMUM APP VERSION        -- --
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
-print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
+print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- MODEL SETTINGS   -- -- -- -- -- -- -- -- -- --        
+-- -- -- -- -- -- -- -- -- MODEL SETTINGS       -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- ModelComponent Options: 
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
@@ -72,20 +72,22 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
 
-use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = false   -- use velocity dispersions in likelihood
-
+use_beta_disps       = false    -- use beta dispersions in likelihood
+use_vel_disps        = false    -- use velocity dispersions in likelihood
+use_beta_comp        = true    -- use average beta in likelihood
+use_vlos_comp        = true   -- use average los velocity in likelihood
+use_avg_dist         = false    -- use average distance in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false    -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 6        -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 6            -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control     = false     -- -- control number of steps      -- --
-Ntime_steps          = 10        -- -- number of timesteps to run   -- --
+timestep_control     = false         -- -- control number of steps      -- --
+Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -157,6 +159,9 @@ function makeContext()
       BestLikeStart = best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
+      useBetaComp   = use_beta_comp,
+      useVlos       = use_vlos_comp,
+      useDist       = use_avg_dist,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,

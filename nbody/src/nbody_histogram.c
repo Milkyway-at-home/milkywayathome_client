@@ -465,7 +465,7 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         histData[Histindex].dist_err = 0.0;
         
         histData[Histindex].beta_avg    = 0.0;
-        histData[Histindex].beta_avg_err    = 0.0;
+        histData[Histindex].beta_avg_err = 0.0;
         histData[Histindex].beta_sum    = 0.0;
         histData[Histindex].betasq_sum  = 0.0;
         histData[Histindex].beta_disp    = 0.0;
@@ -544,15 +544,30 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
 
     // add the average v_los and average beta (& their respective errors) to the histogram
     // dispersions are already calculated and in histogram - this is used to calculate error
-    for (int i = 0; i < nBin; ++i)
+    for (unsigned int i = 0; i < nBin; ++i)
     {
-        unsigned int denom = histData[i].rawCount - histData[i].outliersVelRemoved;
-        if(denom != 0) // no data for the bin
+        // int denom = histData[i].rawCount - histData[i].outliersVelRemoved - histData[i].outliersBetaRemoved;
+        int vdenom = histData[i].rawCount - histData[i].outliersVelRemoved;
+        int bdenom = histData[i].rawCount - histData[i].outliersBetaRemoved;
+        if(vdenom < 0)
         {
-            histData[i].v_los = histData[i].v_sum / denom;
-            histData[i].v_los_err = histData[i].vdisp / sqrt(denom);
-            histData[i].beta_avg = histData[i].beta_sum / denom;
-            histData[i].beta_avg_err = histData[i].beta_disp / sqrt(denom);
+            histData[i].v_los = 3.141592;
+            histData[i].v_los_err = 3.141592;
+        }
+        else if(vdenom != 0) // no data for the bin
+        {
+            histData[i].v_los = histData[i].v_sum / vdenom;
+            histData[i].v_los_err = histData[i].vdisp / sqrt(vdenom);
+        }
+        if(bdenom < 0)
+        {
+            histData[i].beta_avg = 3.141592;
+            histData[i].beta_avg_err = 3.141592;
+        }
+        else if(bdenom != 0) // no data for the bin
+        {
+            histData[i].beta_avg = histData[i].beta_sum / bdenom;
+            histData[i].beta_avg_err = histData[i].beta_disp / sqrt(bdenom);
         }
     }
     

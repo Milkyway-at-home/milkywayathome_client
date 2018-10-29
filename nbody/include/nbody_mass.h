@@ -48,6 +48,10 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
 
 real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
 real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
+real nbBetaComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
+real nbLOSVelocityComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
+real nbDistanceComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
+
 #ifdef __cplusplus
 }
 #endif

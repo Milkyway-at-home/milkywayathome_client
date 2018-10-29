@@ -555,4 +555,92 @@ real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogra
     return probability;
 }
 
+real nbBetaComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int nbins = lambdaBins * betaBins;
+    real Nsigma_sq = 0.0;
+    real beta_avg_data;
+    real beta_avg_hist;
+    real err_data, err_hist;
+    real probability;
+    for (unsigned int i = 0; i < nbins; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            beta_avg_data = data->data[i].beta_avg;
+            /* the data may have incomplete beta averages. Where it does not have will have -1 */
+            if(beta_avg_data > 0)
+            {
+                err_data = data->data[i].beta_avg_err;
+                err_hist = histogram->data[i].beta_avg_err;
+                
+                beta_avg_hist = histogram->data[i].beta_avg;
 
+                /* the error in simulation veldisp is set to zero. */
+                if(err_data == 0.0)
+                {
+                    //this should never actually end up running
+                    Nsigma_sq += sqr( (beta_avg_data - beta_avg_hist) );
+                }
+                else
+                {
+                    Nsigma_sq += sqr( beta_avg_data - beta_avg_hist ) / ( sqr(err_data) + sqr(err_hist) );
+                }
+            }
+        }
+
+    }
+    
+        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
+    return probability;
+}
+
+real nbLOSVelocityComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int nbins = lambdaBins * betaBins;
+    real Nsigma_sq = 0.0;
+    real v_los_data;
+    real v_los_hist;
+    real err_data, err_hist;
+    real probability;
+    for (unsigned int i = 0; i < nbins; ++i)
+    {
+        if (data->data[i].useBin)
+        {
+            v_los_data = data->data[i].v_los;
+            /* the data may have incomplete los velocity averages. Where it does not have will have -1 */
+            if(v_los_data > 0)
+            {
+                err_data = data->data[i].v_los_err;
+                err_hist = histogram->data[i].v_los_err;
+                
+                v_los_hist = histogram->data[i].v_los;
+
+                /* the error in simulation veldisp is set to zero. */
+                if(err_data == 0.0)
+                {
+                    //this should never actually end up running
+                    Nsigma_sq += sqr( (v_los_data - v_los_hist) );
+                }
+                else
+                {
+                    Nsigma_sq += sqr( v_los_data - v_los_hist ) / ( sqr(err_data) + sqr(err_hist) );
+                }
+            }
+        }
+
+    }
+    
+        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
+    return probability;
+}
+
+real nbDistanceComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
+{
+    // real probability;
+    return sqrt(2);
+}
