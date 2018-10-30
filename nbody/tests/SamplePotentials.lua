@@ -20,7 +20,7 @@
 
 require "NBodyTesting"
 
-local SamplePotentials = { }
+SamplePotentials = { }
 
 SamplePotentials.buildAllDisks = function()
    local noDisks, miyamotoNagaiDisks, doubleExponentialDisks, sech2ExponentialDisks, freemanDisks
@@ -267,69 +267,69 @@ for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
    l = n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j-halo_types*k
 
    pot_string = pot_string.."potential"..pot_count.." = Potential.create{"
-   if i==0 then
+   if (i==0) then
       pot_string = pot_string.."spherical = Spherical.none{ mass = 3.0e5 },"
-   elseif i==1 then
+   elseif (i==1) then
       pot_string = pot_string.."spherical = Spherical.hernquist{ mass = 1.5e5, scale = 0.8 },"
-   elseif i==2 then
+   elseif (i==2) then
       pot_string = pot_string.."spherical = Spherical.plummer{ mass = 2.0e5, scale = 0.6 },"
    else
       assert(false)
    end
 
-   if j==0 then
+   if (j==0) then
       pot_string = pot_string.."disk = Disk.none{ mass = 3.0e5 },"
-   elseif j==1 then
+   elseif (j==1) then
       pot_string = pot_string.."disk = Disk.miyamotoNagai{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 },"
-   elseif j==2 then
+   elseif (j==2) then
       pot_string = pot_string.."disk = Disk.doubleExponential{ mass = 4.0e5, scaleLength = 4.5, scaleHeight = 0.3 },"
-   elseif j==3 then
+   elseif (j==3) then
       pot_string = pot_string.."disk = Disk.sech2Exponential{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 },"
-   elseif j==4 then
+   elseif (j==4) then
       pot_string = pot_string.."disk = Disk.freeman{ mass = 4.5e5, scaleLength = 6.0 },"
    else
       assert(false)
    end
 
-   if k==0 then
+   if (k==0) then
       pot_string = pot_string.."disk2 = Disk.none{ mass = 3.0e5 },"
-   elseif k==1 then
+   elseif (k==1) then
       pot_string = pot_string.."disk2 = Disk.miyamotoNagai{ mass = 3.0e5, scaleLength = 6.0, scaleHeight = 0.3 },"
-   elseif k==2 then
+   elseif (k==2) then
       pot_string = pot_string.."disk2 = Disk.doubleExponential{ mass = 3.0e5, scaleLength = 4.5, scaleHeight = 0.3 },"
-   elseif k==3 then
+   elseif (k==3) then
       pot_string = pot_string.."disk2 = Disk.sech2Exponential{ mass = 3.0e5, scaleLength = 5.0, scaleHeight = 0.3 },"
-   elseif k==4 then
+   elseif (k==4) then
       pot_string = pot_string.."disk2 = Disk.freeman{ mass = 3.0e5, scaleLength = 5.5 },"
    else
       assert(false)
    end
 
-   if l==0 then
+   if (l==0) then
       pot_string = pot_string.."halo = Halo.none{ mass = 3.0e6 }}"
-   elseif l==1 then
+   elseif (l==1) then
       pot_string = pot_string.."halo = Halo.logarithmic{ vhalo = 80, scaleLength = 15, flattenZ = 1.0 }}"
-   elseif l==2 then
+   elseif (l==2) then
       pot_string = pot_string.."halo = Halo.nfw{ vhalo = 90, scaleLength = 12 }}"
-   elseif l==3 then
+   elseif (l==3) then
       pot_string = pot_string.."halo = Halo.triaxial{ vhalo = 120, scaleLength = 18, flattenX = 1.3, flattenY = 1.0, flattenZ = 1.45, triaxAngle = 96 }}"
-   elseif l==4 then
+   elseif (l==4) then
       pot_string = pot_string.."halo = Halo.allenSantillan{ mass = 3.0e6, scaleLength = 20, lambda = 200, gamma = 2.0}}"
-   elseif l==5 then
+   elseif (l==5) then
       pot_string = pot_string.."halo = Halo.wilkinsonEvans{ mass = 3.0e6, scaleLength = 15 }}"
-   elseif l==6 then
+   elseif (l==6) then
       pot_string = pot_string.."halo = Halo.nfwmass{ mass = 3.0e6, scaleLength = 15 }}"
-   elseif l==7 then
+   elseif (l==7) then
       pot_string = pot_string.."halo = Halo.plummer{ mass = 3.0e6, scaleLength = 15 }}"
-   elseif l==8 then
+   elseif (l==8) then
       pot_string = pot_string.."halo = Halo.hernquist{ mass = 3.0e6, scaleLength = 15 }}"
-   elseif l==9 then
-      pot_string = pot_string.."halo = Halo.ninkovic{ mass = 3.0e6, scaleLength = 15, lambda = 96 }}"
+   elseif (l==9) then
+      pot_string = pot_string.."halo = Halo.ninkovic{ rho0 = 26.0, scaleLength = 15, lambda = 96 }}"
    else
       assert(false)
    end
 
-   if pot_count==halo_types*disk_types*disk_types*sphere_types then
+   if (pot_count == (halo_types*disk_types*disk_types*sphere_types)) then
       pot_string = pot_string.."}"
       break
    else
@@ -339,34 +339,34 @@ for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
 end
 
 --Runs generated stream as command
-os.system(pot_string)
+loadstring(pot_string)()
 
 
 SamplePotentials.samplePotentialNames = getKeyNames(SamplePotentials.samplePotentials)
 
 SamplePotentials.randomHalo = function(prng)
-   if prng == nil then
+   if (prng == nil) then
       prng = DSFMT.create()
    end
 
    local typ = floor(prng:random(0, 10))
 
-   if typ == 0 then
+   if (typ == 0) then
       return Halo.none{
          mass        = prng:random(1.0e4, 5.0e7)
       }
-   elseif typ == 1 then
+   elseif (typ == 1) then
       return Halo.logarithmic{
          vhalo       = prng:random(10, 200),
          scaleLength = prng:random(3, 100),
          flattenZ    = prng:random(0, 3)
       }
-   elseif typ == 2 then
+   elseif (typ == 2) then
       return Halo.nfw{
          vhalo       = prng:random(1, 300),
          scaleLength = prng:random(0.1, 40)
       }
-   elseif typ == 3 then
+   elseif (typ == 3) then
       return Halo.triaxial{
          vhalo       = prng:random(1, 200),
          scaleLength = prng:random(0.1, 30),
@@ -375,36 +375,36 @@ SamplePotentials.randomHalo = function(prng)
          flattenZ    = prng:random(0, 4),
          triaxAngle  = prng:random(0, 180)
       }
-   elseif typ == 4 then
+   elseif (typ == 4) then
       return Halo.allenSantillan{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(0.1, 30),
          lambda      = prng:random(20.0, 300.0),
          gamma       = prng:random(2.0, 5.0)
       }
-   elseif typ == 5 then
+   elseif (typ == 5) then
       return Halo.wilkinsonEvans{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(0.1, 30)
       }
-   elseif typ == 6 then
+   elseif (typ == 6) then
       return Halo.nfwmass{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(0.1, 30)
       }
-   elseif typ == 7 then
+   elseif (typ == 7) then
       return Halo.plummer{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(0.1, 30)
       }
-   elseif typ == 8 then
+   elseif (typ == 8) then
       return Halo.hernquist{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(0.1, 30)
       }
-   elseif typ == 9 then
+   elseif (typ == 9) then
       return Halo.ninkovic{
-         mass        = prng:random(1.0e4, 5.0e7),
+         rho0        = prng:random(5.0, 50.0),
          scaleLength = prng:random(0.1, 30),
          lambda      = prng:random(30.0, 150.0)
       }
@@ -414,35 +414,35 @@ SamplePotentials.randomHalo = function(prng)
 end
 
 SamplePotentials.randomDisk = function(prng)
-   if prng == nil then
+   if (prng == nil) then
       prng = DSFMT.create()
    end
 
    local typ = floor(prng:random(0, 5))
 
-   if typ == 0 then
+   if (typ == 0) then
       return Disk.none{
          mass        = prng:random(1.0e4, 5.0e7)
       }
-   elseif typ == 1 then
+   elseif (typ == 1) then
       return Disk.miyamotoNagai{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10),
          scaleHeight = prng:random(0.1, 8)
       }
-   elseif typ == 2 then
+   elseif (typ == 2) then
       return Disk.doubleExponential{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10),
          scaleHeight = prng:random(0.1, 8)
       }
-   elseif typ == 3 then
+   elseif (typ == 3) then
       return Disk.sech2Exponential{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10),
          scaleHeight = prng:random(0.1, 8)
       }
-   elseif typ == 4 then
+   elseif (typ == 4) then
       return Disk.freeman{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10)
@@ -453,36 +453,36 @@ SamplePotentials.randomDisk = function(prng)
 end
 
 SamplePotentials.randomDisk2 = function(prng)
-   if prng == nil then
+   if (prng == nil) then
       prng = DSFMT.create()
    end
 
    local typ = floor(prng:random(0, 5))
 
-   if typ == 0 then
-      return Disk2.none{
+   if (typ == 0) then
+      return Disk.none{
          mass        = prng:random(1.0e4, 5.0e7)
       }
-   elseif typ == 1 then
-      return Disk2.miyamotoNagai{
+   elseif (typ == 1) then
+      return Disk.miyamotoNagai{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10),
          scaleHeight = prng:random(0.1, 8)
       }
-   elseif typ == 2 then
-      return Disk2.doubleExponential{
+   elseif (typ == 2) then
+      return Disk.doubleExponential{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10),
          scaleHeight = prng:random(0.1, 8)
       }
-   elseif typ == 3 then
-      return Disk2.sech2Exponential{
+   elseif (typ == 3) then
+      return Disk.sech2Exponential{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10),
          scaleHeight = prng:random(0.1, 8)
       }
-   elseif typ == 4 then
-      return Disk2.freeman{
+   elseif (typ == 4) then
+      return Disk.freeman{
          mass        = prng:random(1.0e4, 5.0e7),
          scaleLength = prng:random(1, 10)
       }
@@ -492,22 +492,22 @@ SamplePotentials.randomDisk2 = function(prng)
 end
 
 SamplePotentials.randomSpherical = function(prng)
-   if prng == nil then
+   if (prng == nil) then
       prng = DSFMT.create()
    end
 
-   local typ == floor(prng:random(0, 3))
+   local typ = floor(prng:random(0, 3))
 
-   if typ == 0 then
+   if (typ == 0) then
       return Spherical.none{
          mass        = prng:random(1.0e4, 5.0e7)
       }
-   elseif typ == 1 then
+   elseif (typ == 1) then
       return Spherical.hernquist{
          mass  = prng:random(1.0e4, 9e7),
          scale = prng:random(0, 4)
       }
-   elseif typ == 2 then
+   elseif (typ == 2) then
       return Spherical.plummer{
          mass  = prng:random(1.0e4, 9e7),
          scale = prng:random(0, 4)

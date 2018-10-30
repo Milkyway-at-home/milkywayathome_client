@@ -77,8 +77,8 @@ add_test(NAME invalid_input_test
 
 
 
-# add_test(NAME context_test
-#          COMMAND nbody_test_driver "ContextTest.lua")
+add_test(NAME context_test
+          COMMAND nbody_test_driver "ContextTest.lua")
 
 # Run these first 3 tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,4,1)
@@ -122,9 +122,9 @@ foreach(n ${body_counts})
 endforeach()
 
 
-# compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
-#execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"
-#                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
+#compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
+execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"
+                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
 
 
 add_custom_target(context_test COMMAND ${CMAKE_CTEST_COMMAND} -R "context_test")
