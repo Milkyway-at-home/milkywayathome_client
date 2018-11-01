@@ -28,6 +28,7 @@ local generatingResults = true
 function getTestNBodyState(t)
    local ctx, pot, model, bodies
    pot = SP.samplePotentials[t.potential]
+   print("Potential variable type = ",type(pot))
    model = SM.sampleModels[t.model]
    bodies, eps2, dt = model(t.nbody, t.seed)
 

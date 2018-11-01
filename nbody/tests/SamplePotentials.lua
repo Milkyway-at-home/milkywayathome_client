@@ -253,11 +253,12 @@ end
 -- Artificial tests, should have at least every combination of
 -- spherical, disk, halo component typs. (750 COMBINATIONS!?!)
 
---Following for-loop generates string to be passed as command due to obscene number of potential combinations
-pot_string = "SamplePotentials.samplePotentials = {"
+--Following for-loop generates all possible potential combinations dynamically
 sphere_types = 3
 disk_types = 5
 halo_types = 10
+
+SamplePotentials.samplePotentials = { }
 
 pot_count = 1
 for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
@@ -266,81 +267,75 @@ for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
    k = floor((n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j)/(halo_types))
    l = n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j-halo_types*k
 
-   pot_string = pot_string.."potential"..pot_count.." = Potential.create{"
    if (i==0) then
-      pot_string = pot_string.."spherical = Spherical.none{ mass = 3.0e5 },"
+      spherical_piece = Spherical.none{ mass = 3.0e5 }
    elseif (i==1) then
-      pot_string = pot_string.."spherical = Spherical.hernquist{ mass = 1.5e5, scale = 0.8 },"
+      spherical_piece = Spherical.hernquist{ mass = 1.5e5, scale = 0.8 }
    elseif (i==2) then
-      pot_string = pot_string.."spherical = Spherical.plummer{ mass = 2.0e5, scale = 0.6 },"
+      spherical_piece = Spherical.plummer{ mass = 2.0e5, scale = 0.6 }
    else
       assert(false)
    end
 
    if (j==0) then
-      pot_string = pot_string.."disk = Disk.none{ mass = 3.0e5 },"
+      disk_piece = Disk.none{ mass = 3.0e5 }
    elseif (j==1) then
-      pot_string = pot_string.."disk = Disk.miyamotoNagai{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 },"
+      disk_piece = Disk.miyamotoNagai{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 }
    elseif (j==2) then
-      pot_string = pot_string.."disk = Disk.doubleExponential{ mass = 4.0e5, scaleLength = 4.5, scaleHeight = 0.3 },"
+      disk_piece = Disk.doubleExponential{ mass = 4.0e5, scaleLength = 4.5, scaleHeight = 0.3 }
    elseif (j==3) then
-      pot_string = pot_string.."disk = Disk.sech2Exponential{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 },"
+      disk_piece = Disk.sech2Exponential{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 }
    elseif (j==4) then
-      pot_string = pot_string.."disk = Disk.freeman{ mass = 4.5e5, scaleLength = 6.0 },"
+      disk_piece = Disk.freeman{ mass = 4.5e5, scaleLength = 6.0 }
    else
       assert(false)
    end
 
    if (k==0) then
-      pot_string = pot_string.."disk2 = Disk.none{ mass = 3.0e5 },"
+      disk2_piece = Disk.none{ mass = 3.0e5 }
    elseif (k==1) then
-      pot_string = pot_string.."disk2 = Disk.miyamotoNagai{ mass = 3.0e5, scaleLength = 6.0, scaleHeight = 0.3 },"
+      disk2_piece = Disk.miyamotoNagai{ mass = 3.0e5, scaleLength = 3.0, scaleHeight = 0.3 }
    elseif (k==2) then
-      pot_string = pot_string.."disk2 = Disk.doubleExponential{ mass = 3.0e5, scaleLength = 4.5, scaleHeight = 0.3 },"
+      disk2_piece = Disk.doubleExponential{ mass = 3.0e5, scaleLength = 1.5, scaleHeight = 0.3 }
    elseif (k==3) then
-      pot_string = pot_string.."disk2 = Disk.sech2Exponential{ mass = 3.0e5, scaleLength = 5.0, scaleHeight = 0.3 },"
+      disk2_piece = Disk.sech2Exponential{ mass = 3.0e5, scaleLength = 3.0, scaleHeight = 0.3 }
    elseif (k==4) then
-      pot_string = pot_string.."disk2 = Disk.freeman{ mass = 3.0e5, scaleLength = 5.5 },"
+      disk2_piece = Disk.freeman{ mass = 3.0e5, scaleLength = 2.5 }
    else
       assert(false)
    end
 
    if (l==0) then
-      pot_string = pot_string.."halo = Halo.none{ mass = 3.0e6 }}"
+      halo_piece = Halo.none{ mass = 3.0e6 }
    elseif (l==1) then
-      pot_string = pot_string.."halo = Halo.logarithmic{ vhalo = 80, scaleLength = 15, flattenZ = 1.0 }}"
+      halo_piece = Halo.logarithmic{ vhalo = 80, scaleLength = 15, flattenZ = 1.0 }
    elseif (l==2) then
-      pot_string = pot_string.."halo = Halo.nfw{ vhalo = 90, scaleLength = 12 }}"
+      halo_piece = Halo.nfw{ vhalo = 90, scaleLength = 12 }
    elseif (l==3) then
-      pot_string = pot_string.."halo = Halo.triaxial{ vhalo = 120, scaleLength = 18, flattenX = 1.3, flattenY = 1.0, flattenZ = 1.45, triaxAngle = 96 }}"
+      halo_piece = Halo.triaxial{ vhalo = 120, scaleLength = 18, flattenX = 1.3, flattenY = 1.0, flattenZ = 1.45, triaxAngle = 96 }
    elseif (l==4) then
-      pot_string = pot_string.."halo = Halo.allenSantillan{ mass = 3.0e6, scaleLength = 20, lambda = 200, gamma = 2.0}}"
+      halo_piece = Halo.allenSantillan{ mass = 3.0e6, scaleLength = 20, lambda = 200, gamma = 2.0}
    elseif (l==5) then
-      pot_string = pot_string.."halo = Halo.wilkinsonEvans{ mass = 3.0e6, scaleLength = 15 }}"
+      halo_piece = Halo.wilkinsonEvans{ mass = 3.0e6, scaleLength = 15 }
    elseif (l==6) then
-      pot_string = pot_string.."halo = Halo.nfwmass{ mass = 3.0e6, scaleLength = 15 }}"
+      halo_piece = Halo.nfwmass{ mass = 3.0e6, scaleLength = 15 }
    elseif (l==7) then
-      pot_string = pot_string.."halo = Halo.plummer{ mass = 3.0e6, scaleLength = 15 }}"
+      halo_piece = Halo.plummer{ mass = 3.0e6, scaleLength = 15 }
    elseif (l==8) then
-      pot_string = pot_string.."halo = Halo.hernquist{ mass = 3.0e6, scaleLength = 15 }}"
+      halo_piece = Halo.hernquist{ mass = 3.0e6, scaleLength = 15 }
    elseif (l==9) then
-      pot_string = pot_string.."halo = Halo.ninkovic{ rho0 = 26.0, scaleLength = 15, lambda = 96 }}"
+      halo_piece = Halo.ninkovic{ rho0 = 26.0, scaleLength = 15, lambda = 96 }
    else
       assert(false)
    end
 
-   if (pot_count == (halo_types*disk_types*disk_types*sphere_types)) then
-      pot_string = pot_string.."}"
-      break
-   else
-      pot_string = pot_string..","
-   end
+   SamplePotentials.samplePotentials["potential"..tostring(pot_count)] = Potential.create{ spherical = spherical_piece, disk = disk_piece, disk2 = disk2_piece, halo = halo_piece }
+
    pot_count = pot_count + 1
+   if (pot_count > (sphere_types*disk_types*disk_types*halo_types)) then
+      break
+   end
 end
-
---Runs generated stream as command
-loadstring(pot_string)()
-
 
 SamplePotentials.samplePotentialNames = getKeyNames(SamplePotentials.samplePotentials)
 
