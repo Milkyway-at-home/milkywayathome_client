@@ -69,7 +69,8 @@ add_test(NAME emd_test COMMAND emd_test)
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
 add_test(NAME invalid_input_test
-         COMMAND nbody_test_driver "RunInvalidInputTests.lua"
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "RunInvalidInputTests.lua"
                                    $<TARGET_FILE:milkyway_nbody>
                                    ${INVALID_TEST_INPUTS})
 
@@ -78,7 +79,8 @@ add_test(NAME invalid_input_test
 
 
 add_test(NAME context_test
-          COMMAND nbody_test_driver "ContextTest.lua")
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "ContextTest.lua")
 
 # Run these first 3 tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,4,1)
@@ -123,8 +125,8 @@ endforeach()
 
 
 #compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
-execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"
-                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
+#execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"
+#                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
 
 
 add_custom_target(context_test COMMAND ${CMAKE_CTEST_COMMAND} -R "context_test")

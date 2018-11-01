@@ -27,7 +27,7 @@ for i = 2, #args do
       eprintf("Input '%s' should have failed but did not\n", args[i])
       failCount = failCount + 1
    else
-      printf("Inpt '%s' failed as expected\n", args[i])
+      printf("Input '%s' failed as expected\n", args[i])
    end
 
    if verbose then

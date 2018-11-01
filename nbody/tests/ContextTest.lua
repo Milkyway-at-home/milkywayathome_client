@@ -39,6 +39,12 @@ function getTestNBodyState(t)
       treeRSize   = t.treeRSize,
       criterion   = t.criterion,
       useQuad     = t.useQuad,
+      BestLikeStart = 0.95,
+      BetaSigma     = 2.5,
+      VelSigma      = 2.5,
+      BetaCorrect   = 1.111,
+      VelCorrect    = 1.111,
+      IterMax       = 6,
       allowIncest = t.allowIncest,
       quietErrors = true
    }
