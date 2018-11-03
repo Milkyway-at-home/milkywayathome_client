@@ -576,7 +576,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DTHETA=%a "
                  "-DUSE_QUAD=%d "
 
-                 "-DNEWCRITERION=%d "
+                 "-DTREECODE=%d "
                  "-DSW93=%d "
                  "-DBH86=%d "
                  "-DEXACT=%d "
