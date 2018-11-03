@@ -1291,7 +1291,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
             ++buildIterations;
         }
-        while (treeStatus.doneCnt != st->effNBody);
+        while (treeStatus.doneCnt < st->effNBody);
     }
 
     /* FIXME: Work sizes */
