@@ -100,6 +100,21 @@ cl_int mwBuildProgram(cl_program program, cl_device_id device, const char* optio
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "clBuildProgram: Build failure");
+
+        if (err == CL_BUILD_PROGRAM_FAILURE) {
+            char* buildLog = mwGetBuildLog(program, device);
+            if (buildLog && strcmp(buildLog, ""))
+            {
+                mw_printf("Build log:\n"
+                          "--------------------------------------------------------------------------------\n"
+                          "%s\n"
+                          "--------------------------------------------------------------------------------\n",
+                          buildLog
+                    );
+            }
+            free(buildLog);
+        }
+
     }
 
     return err;
