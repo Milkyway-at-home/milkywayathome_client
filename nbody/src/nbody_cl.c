@@ -740,12 +740,12 @@ cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
         return CL_TRUE;
     }
 
-    if (!nbCreateKernels(program, st->kernels))
-        return CL_TRUE;
+    if (nbCreateKernels(program, st->kernels))
+        return CL_FALSE;
 
     clReleaseProgram(program);
 
-    return CL_FALSE;
+    return CL_TRUE;
 }
 
 /* Return CL_FALSE if device isn't capable of running this */
