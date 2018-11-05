@@ -579,7 +579,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DTHETA=%a "
                  "-DUSE_QUAD=%d "
 
-                 "-DNEWCRITERION=%d "
+                 "-DTREECODE=%d "
                  "-DSW93=%d "
                  "-DBH86=%d "
                  "-DEXACT=%d "
@@ -1295,7 +1295,7 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
             ++buildIterations;
         }
-        while (treeStatus.doneCnt != st->effNBody);
+        while (treeStatus.doneCnt < st->effNBody);
     }
 
     /* FIXME: Work sizes */
