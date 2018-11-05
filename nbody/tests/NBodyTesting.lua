@@ -129,10 +129,9 @@ end
 
 function runTest(t)
    local status, fatal = "NBODY_SUCCESS", false  -- 0 steps is OK
-
-   local ctx, pot, st = getTestNBodyState(t)
+   local ctx, st = getTestNBodyState(t)
    for i = 1, t.nSteps do
-      status = st:step(ctx, pot)
+      status = st:step(ctx)
       fatal = statusIsFatal(status)
       if fatal then
          break

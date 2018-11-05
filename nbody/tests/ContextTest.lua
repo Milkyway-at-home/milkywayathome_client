@@ -24,11 +24,10 @@ SM = require "SampleModels"
 
 local generatingResults = true
 
--- returns (ctx, potential, st)
+-- returns (ctx, st)
 function getTestNBodyState(t)
-   local ctx, pot, model, bodies
+   local ctx, potential, model, bodies, st
    pot = SP.samplePotentials[t.potential]
-   print("Potential variable type = ",type(pot))
    model = SM.sampleModels[t.model]
    bodies, eps2, dt = model(t.nbody, t.seed)
 
@@ -49,7 +48,12 @@ function getTestNBodyState(t)
       allowIncest = t.allowIncest,
       quietErrors = true
    }
-   return ctx, pot, NBodyState.create(ctx, pot, bodies)
+   --Add potential to context
+   ctx:addPotential(pot)
+
+   st = NBodyState.create(ctx, bodies)
+
+   return ctx, st
 end
 
 local resultTable = {

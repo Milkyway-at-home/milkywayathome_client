@@ -253,7 +253,77 @@ end
 -- Artificial tests, should have at least every combination of
 -- spherical, disk, halo component typs. (750 COMBINATIONS!?!)
 
---Following for-loop generates all possible potential combinations dynamically
+function Spherical_piece(i)
+   if (i==0) then
+      return Spherical.none{ mass = 3.0e5 }
+   elseif (i==1) then
+      return Spherical.hernquist{ mass = 1.5e5, scale = 0.8 }
+   elseif (i==2) then
+      return Spherical.plummer{ mass = 2.0e5, scale = 0.6 }
+   else
+      assert(false)
+   end
+end
+
+function Disk_piece(j)
+   if (j==0) then
+      return Disk.none{ mass = 3.0e5 }
+   elseif (j==1) then
+      return Disk.miyamotoNagai{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 }
+   elseif (j==2) then
+      return Disk.doubleExponential{ mass = 4.0e5, scaleLength = 4.5, scaleHeight = 0.3 }
+   elseif (j==3) then
+      return Disk.sech2Exponential{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 }
+   elseif (j==4) then
+      return Disk.freeman{ mass = 4.5e5, scaleLength = 6.0 }
+   else
+      assert(false)
+   end
+end
+
+function Disk2_piece(k)
+   if (k==0) then
+      return Disk.none{ mass = 3.0e5 }
+   elseif (k==1) then
+      return Disk.miyamotoNagai{ mass = 3.0e5, scaleLength = 3.0, scaleHeight = 0.3 }
+   elseif (k==2) then
+      return Disk.doubleExponential{ mass = 3.0e5, scaleLength = 1.5, scaleHeight = 0.3 }
+   elseif (k==3) then
+      return Disk.sech2Exponential{ mass = 3.0e5, scaleLength = 3.0, scaleHeight = 0.3 }
+   elseif (k==4) then
+      return Disk.freeman{ mass = 3.0e5, scaleLength = 2.5 }
+   else
+      assert(false)
+   end
+end
+
+function Halo_piece(l)
+   if (l==0) then
+      return Halo.none{ mass = 3.0e6 }
+   elseif (l==1) then
+      return Halo.logarithmic{ vhalo = 80, scaleLength = 15, flattenZ = 1.0 }
+   elseif (l==2) then
+      return Halo.nfw{ vhalo = 90, scaleLength = 12 }
+   elseif (l==3) then
+      return Halo.triaxial{ vhalo = 120, scaleLength = 18, flattenX = 1.3, flattenY = 1.0, flattenZ = 1.45, triaxAngle = 96 }
+   elseif (l==4) then
+      return Halo.allenSantillan{ mass = 3.0e6, scaleLength = 20, lambda = 200, gamma = 2.0}
+   elseif (l==5) then
+      return Halo.wilkinsonEvans{ mass = 3.0e6, scaleLength = 15 }
+   elseif (l==6) then
+      return Halo.nfwmass{ mass = 3.0e6, scaleLength = 15 }
+   elseif (l==7) then
+      return Halo.plummer{ mass = 3.0e6, scaleLength = 15 }
+   elseif (l==8) then
+      return Halo.hernquist{ mass = 3.0e6, scaleLength = 15 }
+   elseif (l==9) then
+      return Halo.ninkovic{ rho0 = 26.0, scaleLength = 15, lambda = 96 }
+   else
+      assert(false)
+   end
+end
+
+--Following for-loop generates all possible potential combinations
 sphere_types = 3
 disk_types = 5
 halo_types = 10
@@ -267,74 +337,18 @@ for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
    k = floor((n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j)/(halo_types))
    l = n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j-halo_types*k
 
-   if (i==0) then
-      spherical_piece = Spherical.none{ mass = 3.0e5 }
-   elseif (i==1) then
-      spherical_piece = Spherical.hernquist{ mass = 1.5e5, scale = 0.8 }
-   elseif (i==2) then
-      spherical_piece = Spherical.plummer{ mass = 2.0e5, scale = 0.6 }
-   else
-      assert(false)
-   end
-
-   if (j==0) then
-      disk_piece = Disk.none{ mass = 3.0e5 }
-   elseif (j==1) then
-      disk_piece = Disk.miyamotoNagai{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 }
-   elseif (j==2) then
-      disk_piece = Disk.doubleExponential{ mass = 4.0e5, scaleLength = 4.5, scaleHeight = 0.3 }
-   elseif (j==3) then
-      disk_piece = Disk.sech2Exponential{ mass = 4.5e5, scaleLength = 6.0, scaleHeight = 0.3 }
-   elseif (j==4) then
-      disk_piece = Disk.freeman{ mass = 4.5e5, scaleLength = 6.0 }
-   else
-      assert(false)
-   end
-
-   if (k==0) then
-      disk2_piece = Disk.none{ mass = 3.0e5 }
-   elseif (k==1) then
-      disk2_piece = Disk.miyamotoNagai{ mass = 3.0e5, scaleLength = 3.0, scaleHeight = 0.3 }
-   elseif (k==2) then
-      disk2_piece = Disk.doubleExponential{ mass = 3.0e5, scaleLength = 1.5, scaleHeight = 0.3 }
-   elseif (k==3) then
-      disk2_piece = Disk.sech2Exponential{ mass = 3.0e5, scaleLength = 3.0, scaleHeight = 0.3 }
-   elseif (k==4) then
-      disk2_piece = Disk.freeman{ mass = 3.0e5, scaleLength = 2.5 }
-   else
-      assert(false)
-   end
-
-   if (l==0) then
-      halo_piece = Halo.none{ mass = 3.0e6 }
-   elseif (l==1) then
-      halo_piece = Halo.logarithmic{ vhalo = 80, scaleLength = 15, flattenZ = 1.0 }
-   elseif (l==2) then
-      halo_piece = Halo.nfw{ vhalo = 90, scaleLength = 12 }
-   elseif (l==3) then
-      halo_piece = Halo.triaxial{ vhalo = 120, scaleLength = 18, flattenX = 1.3, flattenY = 1.0, flattenZ = 1.45, triaxAngle = 96 }
-   elseif (l==4) then
-      halo_piece = Halo.allenSantillan{ mass = 3.0e6, scaleLength = 20, lambda = 200, gamma = 2.0}
-   elseif (l==5) then
-      halo_piece = Halo.wilkinsonEvans{ mass = 3.0e6, scaleLength = 15 }
-   elseif (l==6) then
-      halo_piece = Halo.nfwmass{ mass = 3.0e6, scaleLength = 15 }
-   elseif (l==7) then
-      halo_piece = Halo.plummer{ mass = 3.0e6, scaleLength = 15 }
-   elseif (l==8) then
-      halo_piece = Halo.hernquist{ mass = 3.0e6, scaleLength = 15 }
-   elseif (l==9) then
-      halo_piece = Halo.ninkovic{ rho0 = 26.0, scaleLength = 15, lambda = 96 }
-   else
-      assert(false)
-   end
-
-   SamplePotentials.samplePotentials["potential"..tostring(pot_count)] = Potential.create{ spherical = spherical_piece, disk = disk_piece, disk2 = disk2_piece, halo = halo_piece }
+   SamplePotentials.samplePotentials["potential"..tostring(pot_count)] = Potential.create{
+      spherical = Spherical_piece(i),
+      disk      = Disk_piece(j),
+      disk2     = Disk2_piece(k),
+      halo      = Halo_piece(l)
+   }
 
    pot_count = pot_count + 1
    if (pot_count > (sphere_types*disk_types*disk_types*halo_types)) then
       break
    end
+
 end
 
 SamplePotentials.samplePotentialNames = getKeyNames(SamplePotentials.samplePotentials)
