@@ -730,6 +730,7 @@ cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st)
 
     compileFlags = nbGetCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);
+    mw_printf("Kernel Compile Flags: %s\n",compileFlags);
 
     program = mwCreateProgramFromSrc(ci, 1, &src, &srcLen, compileFlags);
     free(compileFlags);
