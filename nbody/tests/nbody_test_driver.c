@@ -250,7 +250,8 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     int i;
     unsigned int mdLen;
     const Body* b;
-    mw_printf("CORE - Before struct definition\n");
+
+    //mw_printf("CORE - Before struct definition\n");
     struct
     {
         mwvector pos, vel;
@@ -264,8 +265,9 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
         mw_printf("Can't hash 0 bodies\n");
         return 1;
     }
-    mw_printf("CORE - Digest Check\n");
-    if (!EVP_DigestInit_ex(&hashCtx, EVP_sha1(), NULL))       /*SEGMENTATION FAULT!!!*/
+
+    //mw_printf("CORE - Digest Check\n");
+    if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
     {
         mw_printf("Initializing hash digest failed\n");
         return 1;
@@ -274,9 +276,11 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     /* Prevent random garbage from getting hashed. The struct will be
      * padded and won't be the same size as 2 * sizeof(mwvector) +
      * sizeof(real) so bad things happen when hashing sizeof(hashableBody) */
-    mw_printf("CORE - Before memset\n");
+
+    //mw_printf("CORE - Before memset\n");
     memset(&hashableBody, 0, sizeof(hashableBody));
-    mw_printf("CORE - Before body loop\n");
+
+    //mw_printf("CORE - Before body loop\n");
     for (i = 0; i < nbody; ++i)
     {
         b = &bodies[i];
@@ -292,13 +296,15 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
             return 1;
         }
     }
-    mw_printf("CORE - Before final Digest Check\n");
+
+    //mw_printf("CORE - Before final Digest Check\n");
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, &mdLen))
     {
         mw_printf("Error finalizing hash\n");
         return 1;
     }
-    mw_printf("CORE - Before Digest length assertion\n");
+
+    //mw_printf("CORE - Before Digest length assertion\n");
     assert(mdLen == SHA_DIGEST_LENGTH);
 
     return 0;
@@ -344,11 +350,15 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     int failed = 0;
 
     //mw_printf("HASHBOD - Before hashCtx creation\n");
-    hashCtx = EVP_MD_CTX_create();
-    mw_printf("HASHBOD - Before hashBodiesCore\n");
+    hashCtx = EVP_MD_CTX_new();
+
+    //mw_printf("HASHBOD - Before hashBodiesCore\n");
     failed = hashBodiesCore(hashCtx, hash, bodies, nbody);
-    mw_printf("HASHBOD - Before free\n");
-    EVP_MD_CTX_free(&hashCtx);
+
+    //mw_printf("HASHBOD - Before free\n");
+    EVP_MD_CTX_free(hashCtx);
+
+    //mw_printf("HASHBOD - After free\n");
 
     return failed;
 }
@@ -403,13 +413,13 @@ static int luaHashOrHashSortBodies(lua_State* luaSt, int sort)
         sortBodies(st->bodytab, st->nbody);
     }
 
-    mw_printf("HASHSORT - Before hashBodies\n");
+    //mw_printf("HASHSORT - Before hashBodies\n");
     hashBodies(&hash, st->bodytab, st->nbody);
 
-    mw_printf("HASHSORT - Before showHash\n");
+    //mw_printf("HASHSORT - Before showHash\n");
     showHash(hashBuf, &hash);
 
-    mw_printf("HASHSORT - Before pushstring\n");
+    //mw_printf("HASHSORT - Before pushstring\n");
     lua_pushstring(luaSt, hashBuf);
 
     return 1;
@@ -422,7 +432,7 @@ static int luaHashBodies(lua_State* luaSt)
 
 static int luaHashSortBodies(lua_State* luaSt)
 {
-    mw_printf("HASHSORT - Before luaHashOrHashSortBodies\n");
+    //mw_printf("HASHSORT - Before luaHashOrHashSortBodies\n");
     return luaHashOrHashSortBodies(luaSt, 1);
 }
 
