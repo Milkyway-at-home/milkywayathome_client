@@ -237,19 +237,20 @@ static int hashNBodyTestTable(lua_State* luaSt)
 {
     NBodyTest test;
     MWHash hash;
-    char buf[SHA_DIGEST_LENGTH];
+    char buf[2 * sizeof(MWHash) + 1] = "";
 
-    mw_printf("HASHNTABLE - Before checkNBodyTestTable\n");
+    //mw_printf("HASHNTABLE - Before checkNBodyTestTable\n");
     checkNBodyTestTable(luaSt, lua_gettop(luaSt), &test);
-    mw_printf("HASHNTABLE - Before hashNBodyTest\n");
+
+    //mw_printf("HASHNTABLE - Before hashNBodyTest\n");
     hashNBodyTest(&hash, &test);
 
-    mw_printf("HASHNTABLE - Before showHash\n");
+    //mw_printf("HASHNTABLE - Before showHash\n");
     showHash(buf, &hash);
-    mw_printf("HASHNTABLE - Before pushstring\n");
+    //mw_printf("HASHNTABLE - Before pushstring\n");
     lua_pushstring(luaSt, buf);
 
-    mw_printf("HASHNTable - After\n");
+    //mw_printf("HASHNTable - After\n");
 
     return 1;
 }

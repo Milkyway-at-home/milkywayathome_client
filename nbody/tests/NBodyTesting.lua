@@ -156,17 +156,17 @@ function runTestSet(tests, resultTable)
    for _, t in ipairs(tests) do
       print("Running test ", i, 100 * i / #tests)
       printResult(t)
-      eprintf("TESTSET - Before runTest\n")
+      --eprintf("TESTSET - Before runTest\n")
       local resultHash, status, failed = runTest(t)
-      eprintf("TESTSET - Before hashNBodyTest\n")
+      --eprintf("TESTSET - Before hashNBodyTest\n")
       local testHash = hashNBodyTest(t)
-      eprintf("TESTSET - Before resultTable assignments\n")
+      --eprintf("TESTSET - Before resultTable assignments\n")
       resultTable.hashtable[testHash] = t
       resultTable.hashtable[testHash].result = resultHash
       resultTable.hashtable[testHash].status = status
       resultTable.hashtable[testHash].failed = failed
       i = i + 1
-      eprintf("TESTSET - After\n")
+      --eprintf("TESTSET - After\n")
 
    end
 
