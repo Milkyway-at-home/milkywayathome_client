@@ -129,16 +129,22 @@ end
 
 function runTest(t)
    local status, fatal = "NBODY_SUCCESS", false  -- 0 steps is OK
+   --eprintf("TEST - Before getTestNBodyState\n")
    local ctx, st = getTestNBodyState(t)
+   --eprintf("TEST - Before Step Loop\n")
    for i = 1, t.nSteps do
+     --eprintf("TEST - Before State Step\n")
       status = st:step(ctx)
+      --eprintf("TEST - Before Status Check\n")
       fatal = statusIsFatal(status)
       if fatal then
          break
       end
    end
-
-   return st:hashSortBodies(), status, fatal
+   eprintf("TEST - Before Sort Bodies\n")
+   local res = st:hashSortBodies()
+   eprintf("TEST - After\n")
+   return res, status, fatal
 end
 
 

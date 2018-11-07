@@ -63,12 +63,16 @@ static int stepNBodyState(lua_State* luaSt)
 
     if (lua_gettop(luaSt) != 2)
         return luaL_argerror(luaSt, 2, "Expected 2 arguments");
-
+    //mw_printf("STEP - Before State\n");
     st = checkNBodyState(luaSt, 1);
+    //mw_printf("STEP - Before Context\n");
     ctx = *checkNBodyCtx(luaSt, 2);
 
+    //mw_printf("STEP - Before RC\n");
     rc = nbStepSystem(&ctx, st);
+    //mw_printf("STEP - Before pushstring\n");
     lua_pushstring(luaSt, showNBodyStatus(rc));
+    //mw_printf("STEP - After\n");
     return 1;
 }
 
