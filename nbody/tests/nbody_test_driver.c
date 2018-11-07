@@ -161,8 +161,6 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
         return 1;
     }
 
-    EVP_MD_CTX_free(hashCtx);
-
     return 0;
 }
 
@@ -171,9 +169,16 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     EVP_MD_CTX *hashCtx;
     int failed = 0;
 
-    hashCtx = EVP_MD_CTX_create();
-    failed = hashNBodyTestCore(&hashCtx, hash, test);
-    EVP_MD_CTX_free(&hashCtx);
+    //mw_printf("HASHN - Before initializing context\n");
+    hashCtx = EVP_MD_CTX_new();
+
+    //mw_printf("HASHN - Before core\n");
+    failed = hashNBodyTestCore(hashCtx, hash, test);
+
+    //mw_printf("HASHN - Before free\n");
+    EVP_MD_CTX_free(hashCtx);
+
+    //mw_printf("HASHN - After\n");
 
     return failed;
 }
@@ -234,11 +239,17 @@ static int hashNBodyTestTable(lua_State* luaSt)
     MWHash hash;
     char buf[SHA_DIGEST_LENGTH];
 
+    mw_printf("HASHNTABLE - Before checkNBodyTestTable\n");
     checkNBodyTestTable(luaSt, lua_gettop(luaSt), &test);
+    mw_printf("HASHNTABLE - Before hashNBodyTest\n");
     hashNBodyTest(&hash, &test);
 
+    mw_printf("HASHNTABLE - Before showHash\n");
     showHash(buf, &hash);
+    mw_printf("HASHNTABLE - Before pushstring\n");
     lua_pushstring(luaSt, buf);
+
+    mw_printf("HASHNTable - After\n");
 
     return 1;
 }
