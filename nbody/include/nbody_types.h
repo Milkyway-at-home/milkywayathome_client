@@ -280,28 +280,11 @@ typedef struct
     unsigned int rawCount;
     real lambda;
     real beta;
-    real count;
-    real err;
-    
-    real v_los;
-    real v_los_err;
-    real v_sum;
-    real vsq_sum;
-    real vdisp;
-    real vdisperr;
-
-    real beta_avg;
-    real beta_avg_err;
-    real beta_sum;
-    real betasq_sum;
-    real beta_disp;
-    real beta_disperr;
-
-    real avgDistance;
-    real dist_err;
-    
-    real outliersBetaRemoved;
-    real outliersVelRemoved;
+    real variable;  // can be customized to any of the different histograms
+    real err;       // the error in variable
+    real sum;       // used by beta & vel disp
+    real sq_sum;    // used by beta & vel disp
+    real outliersRemoved;
     
 } HistData;
 
@@ -328,7 +311,6 @@ typedef struct
 #define EMPTY_HISTOGRAM_PARAMS { 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 0 }
 #define HISTOGRAM_PARAMS_TYPE "HistogramParams"
 
-
 typedef struct
 {
     unsigned int lambdaBins;
@@ -344,6 +326,31 @@ typedef struct
     HistData data[1];
 } NBodyHistogram;
 
+/* class to hold all of the different histograms */
+typedef struct
+{
+    // data input must ALWAYS be in the following order:
+    // Beta disp, vel disp, vlos avg, beta avg, dist avg
+    mwbool usage[5];
+    NBodyHistogram histograms[5]; 
+} AllHistograms;
+/*
+typedef struct
+{
+    mwbool vdisp;   // indicates whether or not these are to be created/used during the simulation
+    mwbool bdisp;
+    mwbool vlos;
+    mwbool beta;
+    mwbool dist;
+
+    NBodyHistogram vdisp_hist;
+    NBodyHistogram bdisp_hist;
+    NBodyHistogram vlos_hist;
+    NBodyHistogram beta_hist;
+    NBodyHistogram dist_hist;
+
+} AllHistograms;
+*/
 
 /* Mutable state used during an evaluation */
 typedef struct MW_ALIGN_TYPE

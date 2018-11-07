@@ -186,8 +186,8 @@ real calc_distance(const mwvector p, real sunGCdist)  /**Calculating the distanc
     return distance;
 }
 
-/* Get the velocity dispersion in each bin*/
-void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
+/* Get the dispersion in each bin*/
+void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
 {
     unsigned int i;
     unsigned int j;
@@ -244,68 +244,7 @@ void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_fa
 }
 
 
-/* Get the beta dispersion in each bin*/
-void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
-{
-    unsigned int i;
-    unsigned int j;
-    unsigned int Histindex;
-    
-    unsigned int lambdaBins = histogram->lambdaBins;
-    unsigned int betaBins = histogram->betaBins;
-    
-    HistData* histData = histogram->data;
-
-    real count;
-    real n_ratio;
-    real n_new;
-
-    real beta_sum, betasq_sum, beta_dispsq;
-    
-    for (i = 0; i < lambdaBins; ++i)
-    {
-        for(j = 0; j < betaBins; ++j)
-        {
-            Histindex = i * betaBins + j;
-            count = (real) histData[Histindex].rawCount;
-            count -= histData[Histindex].outliersBetaRemoved;
-            
-            
-            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
-            {
-                n_new = count - 1.0; //because the mean is calculated from the same populations set
-                n_ratio = count / (n_new); 
-                
-                betasq_sum = histData[Histindex].betasq_sum;
-                beta_sum = histData[Histindex].beta_sum;
-                
-                beta_dispsq = (betasq_sum / n_new) - n_ratio * sqr(beta_sum / count);
-                
-                /* The following requires explanation. For the first calculation of dispersions, the bool initial 
-                 * needs to be set to true. After that false.
-                 * It will correct if there was no outliers removed because then the distribution does not have wings
-                 * It will also correct if outliers were removed because then the wings were removed. 
-                 * Does one correction everytime there was an outlier removed. Corrects once if no outliers were removed. 
-                 */
-                
-                
-                if(!initial)
-                {
-                    beta_dispsq *= correction_factor; 
-                }//correcting for truncating the distribution when removing outliers.
-                
-                histData[Histindex].beta_disp = mw_sqrt(beta_dispsq);
-                histData[Histindex].beta_disperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].beta_disp ;
-                
-                
-            }
-        }
-    }
-    
-}
-
-
-void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos, real sigma_cutoff, real sunGCdist)
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist)
 {
     
     unsigned int Histindex;
@@ -328,26 +267,26 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
         {
             
             /* Check if the position is within the bounds of the histogram */
-            if (use_velbody[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
+            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
             {   
-                Histindex = (int) use_velbody[counter];
+                Histindex = (int) use_body[counter];
                 
-                v_line_of_sight = vlos[counter];
+                this_var = var[counter];
                 /* bin count minus what was already removed */
-                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersVelRemoved);
+                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
                 
                 /* average bin vel */
                 bin_ave = histData[Histindex].v_sum / new_count;
                 
                 /* the sigma for the bin is the same as the dispersion */
-                bin_sigma = histData[Histindex].vdisp;
+                bin_sigma = histData[Histindex].variable;
                 
-                if(mw_fabs(bin_ave - v_line_of_sight) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
+                if(mw_fabs(bin_ave - this_var) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
-                    histData[Histindex].v_sum -= v_line_of_sight;//remove from vel dis sums
-                    histData[Histindex].vsq_sum -= sqr(v_line_of_sight);
-                    histData[Histindex].outliersVelRemoved++;//keep track of how many are being removed
-                    use_velbody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                    histData[Histindex].sum -= v_line_of_sight;//remove from vel dis sums
+                    histData[Histindex].sq_sum -= sqr(this_var);
+                    histData[Histindex].outliersRemoved++;//keep track of how many are being removed
+                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
 
                     /** Adjusting the distance parameters as well **/
                     distance = calc_distance(Pos(p), sunGCdist);
@@ -363,64 +302,6 @@ void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real *
     
 }
 
-
-
-void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas, real sigma_cutoff, real sunGCdist)
-{
-    
-    unsigned int Histindex;
-    Body* p;
-    HistData* histData;
-    const Body* endp = st->bodytab + st->nbody;
-
-    unsigned int counter = 0;
-    
-    histData = histogram->data;
-
-    real distance;
-
-    real beta;
-    real bin_ave, bin_sigma, new_count;
-
-    for (p = st->bodytab; p < endp; ++p)
-    {
-        /* Only include bodies in models we aren't ignoring */
-        if (!ignoreBody(p))
-        {
-            /* Check if the position is within the bounds of the histogram */
-            if (use_betabody[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
-            {   
-                Histindex = (int) use_betabody[counter];
-                
-                beta = betas[counter];
-                /* bin count minus what was already removed */
-                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersBetaRemoved);
-                
-                /* average bin vel */
-                bin_ave = histData[Histindex].beta_sum / new_count;
-                
-                /* the sigma for the bin is the same as the dispersion */
-                bin_sigma = histData[Histindex].beta_disp;
-                
-                if(mw_fabs(bin_ave - beta) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
-                {
-                    histData[Histindex].beta_sum -= beta;//remove from vel dis sums
-                    histData[Histindex].betasq_sum -= sqr(beta);
-                    histData[Histindex].outliersBetaRemoved++;//keep track of how many are being removed
-                    use_betabody[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
-
-                    /** Adjusting the distance parameters as well **/
-                    distance = calc_distance(Pos(p), sunGCdist);
-                    histData[Histindex].avgDistance -= distance;
-                }
-                 
-            }
-            counter++;
-        }
-    }
-    
-    
-}
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
@@ -466,40 +347,41 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
 }
 
-
-real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram)
+/* for use with velocity dispersion, beta dispersion, average vlos,
+average beta, and average distance likelihood component calculations */
+real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
     real Nsigma_sq = 0.0;
-    real vdisp_data;
-    real vdisp_hist;
+    real Data;
+    real Hist;
     real err_data, err_hist;
     real probability;
     for (unsigned int i = 0; i < nbins; ++i)
     {
         if (data->data[i].useBin)
         {
-            vdisp_data = data->data[i].vdisp;
-            /* the data may have incomplete vel disps. Where it does not have will have -1 */
-            if(vdisp_data > 0)
+            Data = data->data[i].variable;
+            /* the data may have incomplete information. Where it does not have will have -1 */
+            if(Data > 0)
             {
                 
-                err_data = data->data[i].vdisperr;
-                err_hist = histogram->data[i].vdisperr;
+                err_data = data->data[i].err;
+                err_hist = histogram->data[i].err;
                 
-                vdisp_hist = histogram->data[i].vdisp;
+                Hist = histogram->data[i].variable;
 
-                /* the error in simulation veldisp is set to zero. */
+                /* the error in simulation of variable is set to zero. */
                 if(err_data == 0.0)
                 {
                     //this should never actually end up running
-                    Nsigma_sq += sqr( (vdisp_data - vdisp_hist) );
+                    Nsigma_sq += sqr( (Data - Hist) );
                 }
                 else
                 {
-                    Nsigma_sq += sqr( vdisp_data - vdisp_hist ) / ( sqr(err_data) + sqr(err_hist) );
+                    Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
                 }
             }
         }
@@ -508,139 +390,4 @@ real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* hist
         probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
     
     return probability;
-}
-
-
-
-real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram)
-{
-    unsigned int lambdaBins = data->lambdaBins;
-    unsigned int betaBins = data->betaBins;
-    unsigned int nbins = lambdaBins * betaBins;
-    real Nsigma_sq = 0.0;
-    real beta_disp_data;
-    real beta_disp_hist;
-    real err_data, err_hist;
-    real probability;
-    for (unsigned int i = 0; i < nbins; ++i)
-    {
-        if (data->data[i].useBin)
-        {
-            beta_disp_data = data->data[i].beta_disp;
-            /* the data may have incomplete beta disps. Where it does not have will have -1 */
-            if(beta_disp_data > 0)
-            {
-                
-                err_data = data->data[i].beta_disperr;
-                err_hist = histogram->data[i].beta_disperr;
-                
-                beta_disp_hist = histogram->data[i].beta_disp;
-
-                /* the error in simulation veldisp is set to zero. */
-                if(err_data == 0.0)
-                {
-                    //this should never actually end up running
-                    Nsigma_sq += sqr( (beta_disp_data - beta_disp_hist) );
-                }
-                else
-                {
-                    Nsigma_sq += sqr( beta_disp_data - beta_disp_hist ) / ( sqr(err_data) + sqr(err_hist) );
-                }
-            }
-        }
-
-    }
-    
-        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
-    return probability;
-}
-
-real nbBetaComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
-{
-    unsigned int lambdaBins = data->lambdaBins;
-    unsigned int betaBins = data->betaBins;
-    unsigned int nbins = lambdaBins * betaBins;
-    real Nsigma_sq = 0.0;
-    real beta_avg_data;
-    real beta_avg_hist;
-    real err_data, err_hist;
-    real probability;
-    for (unsigned int i = 0; i < nbins; ++i)
-    {
-        if (data->data[i].useBin)
-        {
-            beta_avg_data = data->data[i].beta_avg;
-            /* the data may have incomplete beta averages. Where it does not have will have -1 */
-            if(beta_avg_data > 0)
-            {
-                err_data = data->data[i].beta_avg_err;
-                err_hist = histogram->data[i].beta_avg_err;
-                
-                beta_avg_hist = histogram->data[i].beta_avg;
-
-                /* the error in simulation veldisp is set to zero. */
-                if(err_data == 0.0)
-                {
-                    //this should never actually end up running
-                    Nsigma_sq += sqr( (beta_avg_data - beta_avg_hist) );
-                }
-                else
-                {
-                    Nsigma_sq += sqr( beta_avg_data - beta_avg_hist ) / ( sqr(err_data) + sqr(err_hist) );
-                }
-            }
-        }
-
-    }
-    
-        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
-    return probability;
-}
-
-real nbLOSVelocityComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
-{
-    unsigned int lambdaBins = data->lambdaBins;
-    unsigned int betaBins = data->betaBins;
-    unsigned int nbins = lambdaBins * betaBins;
-    real Nsigma_sq = 0.0;
-    real v_los_data;
-    real v_los_hist;
-    real err_data, err_hist;
-    real probability;
-    for (unsigned int i = 0; i < nbins; ++i)
-    {
-        if (data->data[i].useBin)
-        {
-            v_los_data = data->data[i].v_los;
-            /* the data may have incomplete los velocity averages. Where it does not have will have -1 */
-            if(v_los_data > 0)
-            {
-                err_data = data->data[i].v_los_err;
-                err_hist = histogram->data[i].v_los_err;
-                
-                v_los_hist = histogram->data[i].v_los;
-
-                /* the error in simulation veldisp is set to zero. */
-                if(err_data == 0.0)
-                {
-                    //this should never actually end up running
-                    Nsigma_sq += sqr( (v_los_data - v_los_hist) );
-                }
-                else
-                {
-                    Nsigma_sq += sqr( v_los_data - v_los_hist ) / ( sqr(err_data) + sqr(err_hist) );
-                }
-            }
-        }
-
-    }
-    
-        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
-    return probability;
-}
-
-real nbDistanceComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
-{
-    // real probability;
-    return sqrt(2);
 }

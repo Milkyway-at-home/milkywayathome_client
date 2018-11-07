@@ -123,8 +123,8 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 
 static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
-    NBodyHistogram* data = NULL;
-    NBodyHistogram* histogram = NULL;
+    AllHistograms* data = NULL;
+    AllHistograms* histogram = NULL;
     real likelihood = NAN;
     NBodyLikelihoodMethod method;
     HistogramParams hp;

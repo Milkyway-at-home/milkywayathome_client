@@ -384,7 +384,7 @@ Then calculates the cross correlation between the model histogram and
 the data histogram A maximum correlation means the best fit */
 
 /* Returns null on failure */
-NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context */
+AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context */
                                   const NBodyState* st,       /* Final state of the simulation */
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
@@ -421,14 +421,52 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
     
-    
     nbGetHistTrig(&histTrig, hp);
-    histogram = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    histogram->lambdaBins = lambdaBins;
-    histogram->betaBins = betaBins;
-    histogram->hasRawCounts = TRUE;
-    histogram->params = *hp;
-    
+
+    NBodyHistogram hist;
+    hist = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    hist->lambdaBins = lambdaBins;
+    hist->betaBins = betaBins;
+    hist->hasRawCounts = TRUE;
+    hist->params = *hp;
+
+    // create the histograms for each variable only if they're wanted/needed
+    // otherwise mark them as unused (false)
+    if(st->useBetaDisp)
+    {
+        histogram->usage[0] = TRUE;
+        histogram->histograms[0] = hist;
+    }
+    else histogram->bdisp = FALSE;
+
+    if(st->useVelDisp)
+    {
+        histogram->usage[1] = TRUE;
+        histogram->histograms[1] = hist;
+    }
+    else histogram->vidsp = FALSE;
+
+    if(st->useVlos)
+    {
+        histogram->usage[2] = TRUE;
+        histogram->histograms[2] = hist;
+    }
+    else histogram->vlos = FALSE;
+
+    if(st->useBetaComp)
+    {
+        histogram->usage[3] = TRUE;
+        histogram->histograms[3] = hist;
+    }
+    else histogram->beta = FALSE;
+
+    if(st->useDist)
+    {
+        histogram->usage[4] = TRUE;
+        histogram->histograms[4] = hist;
+    }
+    else histogram->dist = FALSE;
+
     real v_line_of_sight;
     
     for (int i = 0; i < Nbodies; i++)
@@ -441,39 +479,31 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
         }
     }
 
-    real * use_velbody  = mwCalloc(body_count, sizeof(real));
+    real * use_velbody   = mwCalloc(body_count, sizeof(real));
     real * use_betabody  = mwCalloc(body_count, sizeof(real));
     real * vlos      = mwCalloc(body_count, sizeof(real));       
     real * betas     = mwCalloc(body_count, sizeof(real));   
        
 
     histogram->totalSimulated = (unsigned int) body_count;
-    histData = histogram->data;
     
     /* It does not make sense to ignore bins in a generated histogram */
-    for (Histindex = 0; Histindex < nBin; ++Histindex)
+    for (unsigned int i = 0; i < 5; ++i)
     {
-        histData[Histindex].rawCount = 0;
-        histData[Histindex].v_los    = 0.0;
-        histData[Histindex].v_los_err = 0.0;
-        histData[Histindex].v_sum    = 0.0;
-        histData[Histindex].vsq_sum  = 0.0;
-        histData[Histindex].vdisp    = 0.0;
-        histData[Histindex].vdisperr = 0.0;
+        if(!histogram->usage[i]) continue; // don't bother if not using the histogram
 
-        histData[Histindex].avgDistance = 0.0;
-        histData[Histindex].dist_err = 0.0;
-        
-        histData[Histindex].beta_avg    = 0.0;
-        histData[Histindex].beta_avg_err = 0.0;
-        histData[Histindex].beta_sum    = 0.0;
-        histData[Histindex].betasq_sum  = 0.0;
-        histData[Histindex].beta_disp    = 0.0;
-        histData[Histindex].beta_disperr = 0.0;
-        
-        histData[Histindex].outliersBetaRemoved = 0.0;
-        histData[Histindex].outliersVelRemoved = 0.0;
-        histData[Histindex].useBin = TRUE;
+        histData = histogram->histograms[i]->data;
+
+        for (Histindex = 0; Histindex < nBin; ++Histindex)
+        {
+            histData[Histindex].rawCount    = 0;
+            histData[Histindex].variable    = 0.0;
+            histData[Histindex].sum         = 0.0;
+            histData[Histindex].sq_sum      = 0.0;
+            histData[Histindex].err         = 0.0;
+            histData[Histindex].outliersRemoved = 0.0;
+            histData[Histindex].useBin = TRUE;
+        }
     }
 
 
@@ -530,41 +560,29 @@ NBodyHistogram* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation cont
    
     histogram->totalNum = totalNum; /* Total particles in range */
 
-    nbCalcVelDisp(histogram, TRUE, ctx->VelCorrect);
-    nbCalcBetaDisp(histogram, TRUE, ctx->BetaCorrect);
+    nbCalcDisp(histogram, TRUE, ctx->VelCorrect);
+    nbCalcDisp(histogram, TRUE, ctx->BetaCorrect);
     /* this converges somewhere between 3 and 6 iterations */
     for(int i = 0; i < IterMax; i++)
     {
-        nbRemoveBetaOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-        nbCalcBetaDisp(histogram, FALSE, ctx->BetaCorrect);
+        nbRemoveOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+        nbCalcDisp(histogram, FALSE, ctx->BetaCorrect);
         
-        nbRemoveVelOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-        nbCalcVelDisp(histogram, FALSE, ctx->VelCorrect);
+        nbRemoveOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+        nbCalcDisp(histogram, FALSE, ctx->VelCorrect);
     }
 
-    // add the average v_los and average beta (& their respective errors) to the histogram
     // dispersions are already calculated and in histogram - this is used to calculate error
     for (unsigned int i = 0; i < nBin; ++i)
     {
-        // int denom = histData[i].rawCount - histData[i].outliersVelRemoved - histData[i].outliersBetaRemoved;
         int vdenom = histData[i].rawCount - histData[i].outliersVelRemoved;
         int bdenom = histData[i].rawCount - histData[i].outliersBetaRemoved;
-        if(vdenom < 0)
-        {
-            histData[i].v_los = 3.141592;
-            histData[i].v_los_err = 3.141592;
-        }
-        else if(vdenom != 0) // no data for the bin
+        if(vdenom != 0) // no data for the bin
         {
             histData[i].v_los = histData[i].v_sum / vdenom;
             histData[i].v_los_err = histData[i].vdisp / sqrt(vdenom);
         }
-        if(bdenom < 0)
-        {
-            histData[i].beta_avg = 3.141592;
-            histData[i].beta_avg_err = 3.141592;
-        }
-        else if(bdenom != 0) // no data for the bin
+        if(bdenom != 0) // no data for the bin
         {
             histData[i].beta_avg = histData[i].beta_sum / bdenom;
             histData[i].beta_avg_err = histData[i].beta_disp / sqrt(bdenom);

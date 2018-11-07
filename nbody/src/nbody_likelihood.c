@@ -188,27 +188,27 @@ real nbSystemLikelihood(const NBodyState* st,
     /* likelihood due to the vel dispersion per bin of the two hist */
     if(st->useBetaDisp)
     {
-        beta_dispersion_component = nbBetaDispersion(data, histogram);
+        beta_dispersion_component = nbLikelihood(data, histogram);
         likelihood += beta_dispersion_component;
     }
     if(st->useVelDisp)
     {
-        velocity_dispersion_component = nbVelocityDispersion(data, histogram);
+        velocity_dispersion_component = nbLikelihood(data, histogram);
         likelihood += velocity_dispersion_component;
     }
     if(st->useBetaComp)
     {
-        beta_component = nbBetaComponent(data, histogram);
+        beta_component = nbLikelihood(data, histogram);
         likelihood += beta_component;
     }
     if(st->useVlos)
     {
-        LOS_velocity_component = nbLOSVelocityComponent(data, histogram);
+        LOS_velocity_component = nbLikelihood(data, histogram);
         likelihood += LOS_velocity_component;
     }
     if(st->useDist)
     {
-        distance_component = nbDistanceComponent(data, histogram);
+        distance_component = nbLikelihood(data, histogram);
         likelihood += distance_component;
     }
     return likelihood;
