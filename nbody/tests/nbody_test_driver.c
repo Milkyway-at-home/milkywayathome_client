@@ -39,7 +39,6 @@
 #include "nbody_defaults.h"
 #include "nbody_tree.h"
 
-
 /* things in NBodyCtx which influence individual steps that aren't the potential. */
 typedef struct
 {
@@ -170,13 +169,15 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     int failed = 0;
 
     //mw_printf("HASHN - Before initializing context\n");
-    hashCtx = EVP_MD_CTX_new();
+    hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.0
+    //hashCtx = EVP_MD_CTX_create();     //OPENSSL V1.0.2
 
     //mw_printf("HASHN - Before core\n");
     failed = hashNBodyTestCore(hashCtx, hash, test);
 
     //mw_printf("HASHN - Before free\n");
-    EVP_MD_CTX_free(hashCtx);
+    EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
+    //EVP_MD_CTX_destroy(hashCtx);     //OPENSSL V1.1.0
 
     //mw_printf("HASHN - After\n");
 
@@ -362,13 +363,15 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     int failed = 0;
 
     //mw_printf("HASHBOD - Before hashCtx creation\n");
-    hashCtx = EVP_MD_CTX_new();
+    hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.0
+    //hashCtx = EVP_MD_CTX_create();     //OPENSSL V1.0.2
 
     //mw_printf("HASHBOD - Before hashBodiesCore\n");
     failed = hashBodiesCore(hashCtx, hash, bodies, nbody);
 
     //mw_printf("HASHBOD - Before free\n");
-    EVP_MD_CTX_free(hashCtx);
+    EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
+    //EVP_MD_CTX_destroy(hashCtx);     //OPENSSL V1.1.0
 
     //mw_printf("HASHBOD - After free\n");
 
