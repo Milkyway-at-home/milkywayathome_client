@@ -535,82 +535,141 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
                 use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
                 use_velbody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
                 
-                histData[Histindex].rawCount++;
+                for(int i = 0; i < 5; i++)
+                    if(histogram->usage[i]) histogram->histograms[i]->data[Histindex].rawCount++;
+
                 ++totalNum;
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
 
-                location = calc_distance(Pos(p), ctx->sunGCDist);
-                histData[Histindex].avgDistance += location; /**  This is almost guaranteed to be horribly horribly wrong.  **/
+                if(histogram->usage[4])
+                {
+                    location = calc_distance(Pos(p), ctx->sunGCDist);
+                    histogram->histograms[i]->data[Histindex].variable += location;
+                }
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
-                /* each of these are components of the vel disp */
-                histData[Histindex].v_sum += v_line_of_sight;
-                histData[Histindex].vsq_sum += sqr(v_line_of_sight);
-                
-                /* each of these are components of the beta disp */
-                histData[Histindex].beta_sum += beta;
-                histData[Histindex].betasq_sum += sqr(beta);
+
+                if(histogram->usage[0])
+                {
+                    /* each of these are components of the beta disp */
+                    histogram->histograms[i]->data[Histindex].sum += beta;
+                    histogram->histograms[i]->data[Histindex].sq_sum += sqr(beta);
+                }
+                if(histogram->usage[1])
+                {
+                    /* each of these are components of the vel disp */
+                    histogram->histograms[i]->data[Histindex].sum += v_line_of_sight;
+                    histogram->histograms[i]->data[Histindex].sq_sum += sqr(v_line_of_sight);
+                }
+                if(histogram->usage[2])
+                {
+                    /* each of these are components of the vel disp */
+                    histogram->histograms[i]->data[Histindex].sum += v_line_of_sight;
+                    histogram->histograms[i]->data[Histindex].sq_sum += sqr(v_line_of_sight);
+                }
+                if(histogram->usage[3])
+                {
+                    /* each of these are components of the beta disp */
+                    histogram->histograms[i]->data[Histindex].sum += beta;
+                    histogram->histograms[i]->data[Histindex].sq_sum += sqr(beta);
+                }
+            
             }
             ub_counter++;
            // free(sum_positions)
         }
     }
    
-    histogram->totalNum = totalNum; /* Total particles in range */
+    for(int i = 0; i < 5; i++)
+        if(histograms->usage[i]) histogram->histograms[i]->totalNum = totalNum; /* Total particles in range */
 
-    nbCalcDisp(histogram, TRUE, ctx->VelCorrect);
-    nbCalcDisp(histogram, TRUE, ctx->BetaCorrect);
-    /* this converges somewhere between 3 and 6 iterations */
-    for(int i = 0; i < IterMax; i++)
+    if(histograms->usage[0])    // if using beta disp
+        nbCalcDisp(histogram->histograms[0], TRUE, ctx->BelCorrect);
+    if(histograms->usage[1])    // if using vel disp
+        nbCalcDisp(histogram->histograms[1], TRUE, ctx->VelCorrect);
+    if(histograms->usage[2])    // if using vlos average
+        nbCalcDisp(histogram->histograms[2], TRUE, ctx->VelCorrect);
+    if(histograms->usage[3])    // if using beta average
+        nbCalcDisp(histogram->histograms[0], TRUE, ctx->BelCorrect);
+
+    /* these converge somewhere between 3 and 6 iterations */
+    if(histograms->usage[0])
     {
-        nbRemoveOutliers(st, histogram, use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-        nbCalcDisp(histogram, FALSE, ctx->BetaCorrect);
-        
-        nbRemoveOutliers(st, histogram, use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-        nbCalcDisp(histogram, FALSE, ctx->VelCorrect);
+        for(int i = 0; i < IterMax; i++)
+        {
+            nbRemoveOutliers(st, histogram->histograms[0], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[0], FALSE, ctx->BetaCorrect);
+        }
+    }
+    if(histograms->usage[1])
+    {
+        for(int i = 0; i < IterMax; i++)
+        {
+            nbRemoveOutliers(st, histogram->histograms[1], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[1], FALSE, ctx->VelCorrect);
+        }
     }
 
+    // calculation of average velocity and average beta values
     // dispersions are already calculated and in histogram - this is used to calculate error
-    for (unsigned int i = 0; i < nBin; ++i)
+    if(histogram->usage[2]) // vlos average
     {
-        int vdenom = histData[i].rawCount - histData[i].outliersVelRemoved;
-        int bdenom = histData[i].rawCount - histData[i].outliersBetaRemoved;
-        if(vdenom != 0) // no data for the bin
+        for (unsigned int i = 0; i < IterMax; ++i)
         {
-            histData[i].v_los = histData[i].v_sum / vdenom;
-            histData[i].v_los_err = histData[i].vdisp / sqrt(vdenom);
+            nbRemoveOutliers(st, histogram->histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[2], FALSE, ctx->VelCorrect);
+            int vdenom = histogram->histograms[2]->data[i].rawCount - histogram->histograms[2]->data[i].outliersRemoved;
+            if(vdenom != 0) // no data for the bin
+            {
+                // calculates error first because the dispersion is stored as the variable at the moment
+                // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
+                histogram->histograms[2]->data[i].err = histogram->histograms[2]->data[i].variable / sqrt(vdenom);
+                histogram->histograms[2]->data[i].variable /= vdenom;
+            }
         }
-        if(bdenom != 0) // no data for the bin
+    }
+    if(histogram->usage[3]) // beta average
+    {
+        for (unsigned int i = 0; i < IterMax; ++i)
         {
-            histData[i].beta_avg = histData[i].beta_sum / bdenom;
-            histData[i].beta_avg_err = histData[i].beta_disp / sqrt(bdenom);
+            nbRemoveOutliers(st, histogram->histograms[3], use_betalbody, vlos, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[3], FALSE, ctx->BetaCorrect);
+            int bdenom = histogram->histograms[3]->data[i].rawCount - histogram->histograms[3]->data[i].outliersRemoved;
+            if(bdenom != 0) // no data for the bin
+            {
+                // calculates error first because the dispersion is stored as the variable at the moment
+                // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
+                histogram->histograms[3]->data[i].err = histogram->histograms[3]->data[i].variable / sqrt(bdenom);
+                histogram->histograms[3]->data[i].variable /= vdenom;
+            }
         }
     }
     
-    /** This is where I want to calculate the average.  => [rawcount - (outliers removed calculated above)] **/
-    for(unsigned int i = 0; i <= Histindex; ++i)                                                                                                                        /**In general do you have to remove the outliers before calculating distance average?  Similar for dist std dev **/
-    {
-        real denom = histData[i].rawCount - histData[i].outliersVelRemoved - histData[i].outliersBetaRemoved;
-        real avgDistanceSqrd = sqr(histData[i].avgDistance);
+    // This is where I want to calculate the average.  => [rawcount - (outliers removed calculated above)]
+    // for(unsigned int i = 0; i <= Histindex; ++i)                                                                                                                        /**In general do you have to remove the outliers before calculating distance average?  Similar for dist std dev **/
+    // {
+    //     real denom = histData[i].rawCount - histData[i].outliersVelRemoved - histData[i].outliersBetaRemoved;
+    //     real avgDistanceSqrd = sqr(histData[i].avgDistance);
        
 
 
-        if(denom > 0) //try not to divide by negatives or 0
-        {
-            //calculate the std dev.
-            locationStdDev = sqrt((avgDistanceSqrd - (avgDistanceSqrd/denom)) / denom);
-            histData[i].dist_err = locationStdDev / (sqrt(denom));
-            histData[i].avgDistance /= denom;
-        }
-        else
-        {
-            histData[i].avgDistance = 0;
-            histData[i].dist_err = 0;
-        }
+    //     if(denom > 0) //try not to divide by negatives or 0
+    //     {
+    //         //calculate the std dev.
+    //         locationStdDev = sqrt((avgDistanceSqrd - (avgDistanceSqrd/denom)) / denom);
+    //         histData[i].dist_err = locationStdDev / (sqrt(denom));
+    //         histData[i].avgDistance /= denom;
+    //     }
+    //     else
+    //     {
+    //         histData[i].avgDistance = 0;
+    //         histData[i].dist_err = 0;
+    //     }
 
-    }
+    // }
+
 
     //after calculating average, find the std dev for each distance and then store it as error by doing stddev/sqrt(n)
 

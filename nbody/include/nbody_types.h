@@ -330,27 +330,14 @@ typedef struct
 typedef struct
 {
     // data input must ALWAYS be in the following order:
-    // Beta disp, vel disp, vlos avg, beta avg, dist avg
+    // 0: beta disp
+    // 1: vel disp
+    // 2: vlos avg
+    // 3: beta avg
+    // 4: dist avg
     mwbool usage[5];
     NBodyHistogram histograms[5]; 
 } AllHistograms;
-/*
-typedef struct
-{
-    mwbool vdisp;   // indicates whether or not these are to be created/used during the simulation
-    mwbool bdisp;
-    mwbool vlos;
-    mwbool beta;
-    mwbool dist;
-
-    NBodyHistogram vdisp_hist;
-    NBodyHistogram bdisp_hist;
-    NBodyHistogram vlos_hist;
-    NBodyHistogram beta_hist;
-    NBodyHistogram dist_hist;
-
-} AllHistograms;
-*/
 
 /* Mutable state used during an evaluation */
 typedef struct MW_ALIGN_TYPE

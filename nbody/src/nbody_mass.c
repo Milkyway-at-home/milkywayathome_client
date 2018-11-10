@@ -201,7 +201,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
     real count;
     real n_ratio;
     real n_new;
-    real v_sum, vsq_sum, vdispsq;
+    real sum, sq_sum, dispsq;
     
     
     for (i = 0; i < lambdaBins; ++i)
@@ -210,17 +210,17 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
         {
             Histindex = i * betaBins + j;
             count = (real) histData[Histindex].rawCount;
-            count -= histData[Histindex].outliersVelRemoved;
+            count -= histData[Histindex].outliersRemoved;
             
             if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = count - 1.0; //because the mean is calculated from the same populations set
                 n_ratio = count / (n_new); 
                 
-                vsq_sum = histData[Histindex].vsq_sum;
-                v_sum = histData[Histindex].v_sum;
+                sq_sum = histData[Histindex].sq_sum;
+                sum = histData[Histindex].sum;
                 
-                vdispsq = (vsq_sum / n_new) - n_ratio * sqr(v_sum / count);
+                vdispsq = (sq_sum / n_new) - n_ratio * sqr(sum / count);
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
@@ -231,11 +231,11 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
                 
                 if(!initial)
                 {
-                    vdispsq *= correction_factor;
+                    dispsq *= correction_factor;
                 }//correcting for truncating the distribution when removing outliers.
 
-                histData[Histindex].vdisp = mw_sqrt(vdispsq);
-                histData[Histindex].vdisperr =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].vdisp ;
+                histData[Histindex].variable = mw_sqrt(dispsq);
+                histData[Histindex].err =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].variable ;
                 
             }
         }
