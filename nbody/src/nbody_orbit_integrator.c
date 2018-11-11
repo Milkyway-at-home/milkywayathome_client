@@ -130,7 +130,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
         mw_incaddv_s(v_for, acc, dt_half);
         
         lbr = cartesianToLbr(x_for, DEFAULT_SUN_GC_DISTANCE);
-        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(x_for), Y(x_for), Z(x_for), X(lbr), Y(lbr), Z(lbr), X(v), Y(v), Z(v));
+        fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(x_for), Y(x_for), Z(x_for), X(lbr), Y(lbr), Z(lbr), X(v_for), Y(v_for), Z(v_for));
     }
     fclose(fp);
     
