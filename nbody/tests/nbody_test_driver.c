@@ -177,7 +177,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
 
     //mw_printf("HASHN - Before free\n");
     EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
-    //EVP_MD_CTX_destroy(hashCtx);     //OPENSSL V1.1.0
+    //EVP_MD_CTX_destroy(hashCtx);     //OPENSSL V1.0.2
 
     //mw_printf("HASHN - After\n");
 
@@ -371,7 +371,7 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
 
     //mw_printf("HASHBOD - Before free\n");
     EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
-    //EVP_MD_CTX_destroy(hashCtx);     //OPENSSL V1.1.0
+    //EVP_MD_CTX_destroy(hashCtx);     //OPENSSL V1.0.2
 
     //mw_printf("HASHBOD - After free\n");
 
