@@ -267,43 +267,70 @@ static void nbPrintHistogramHeader(FILE* f,
 }
 
 /* Print the histogram without a header. */
-void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
+void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
 {
     unsigned int i;
-    const HistData* data;
-    unsigned int nBin = histogram->lambdaBins * histogram->betaBins;
+    const HistData* data; // for generic output parameters
+    const HistData* bdisp;
+    const HistData* vdisp;
+    const HistData* vlos;
+    const HistData* beta;
+    const HistData* dist;
 
+    unsigned int index;
+    for(i = 0; i < 5; i++)
+    {
+        // assumes at least one histogram is being used (or else what are you doing??)
+        // also assumes same lambdaBins / betaBins for all hists (for right now)
+        if(histogram->usage[i])
+        {
+            unsigned int nBin = histogram->usage[i]->lambdaBins * histogram->usage[i]->betaBins;
+            index = i;
+            break;
+        }
+    }
+
+    // outputs these numbers from one of the histograms
+    // at this point, these numbers should be the same for all histograms anyway
     mw_boinc_print(f, "<histogram>\n");
-    fprintf(f, "n = %u\n", histogram->totalNum);  /*LN 38 on test.hist */
-    fprintf(f, "massPerParticle = %12.15f\n", histogram->massPerParticle);
-    fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
-    fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
-    fprintf(f, "betaBins = %u\n", histogram->betaBins);
+    fprintf(f, "n = %u\n", histogram->histograms[index].totalNum);
+    fprintf(f, "massPerParticle = %12.15f\n", histogram->histograms[index].massPerParticle);
+    fprintf(f, "totalSimulated = %u\n", histogram->histograms[index].totalSimulated);
+    fprintf(f, "lambdaBins = %u\n", histogram->histograms[index].lambdaBins);
+    fprintf(f, "betaBins = %u\n", histogram->histograms[index].betaBins);
 
     
     for (i = 0; i < nBin; ++i)
     {
-        data = &histogram->data[i];
+        // make sure these are all zero by default
+        // so outputs something even if not using (instead of crashing)
+        data = &histogram->histograms[index]->data[i];
+        bdisp = &histogram->histograms[0]->data[i];
+        vdisp = &histogram->histograms[1]->data[i];
+        vlos = &histogram->histograms[2]->data[i];
+        beta = &histogram->histograms[3]->data[i];
+        dist = &histogram->histograms[4]->data[i];
+
         fprintf(f,
                 "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 data->useBin,
                 data->lambda,
                 data->beta,
                 data->count,
-                data->err,
-                data->beta_disp,
-                data->beta_disperr,
-                data->vdisp,
-                data->vdisperr,
-                data->v_los,
-                data->v_los_err,
-                data->beta_avg,
-                data->beta_avg_err,
-                data->avgDistance,
-                data->dist_err);
+                data->count_err,
+                bdisp->variable,
+                bdisp->err,
+                vdisp->variable,
+                vdisp->err,
+                vlos->variable,
+                vlos->err,
+                beta->variable,
+                beta->err,
+                dist->variable,
+                dist->err);
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
-        if(i % histogram->betaBins == histogram->betaBins-1)
+        if(i % histogram->usage[index]->betaBins == histogram->usage[index]->betaBins-1)
         {
             fprintf(f, "\n");
         }
@@ -317,7 +344,7 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
 void nbWriteHistogram(const char* histoutFileName,
                       const NBodyCtx* ctx,
                       const NBodyState* st,
-                      const NBodyHistogram* histogram)
+                      const AllHistorams* histogram)
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
 
@@ -331,7 +358,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, st->bestLikelihood_time);
+    nbPrintHistogramHeader(f, ctx, &histogram->histograms[0]->params, st->nbody, st->bestLikelihood_time);
     nbPrintHistogram(f, histogram);
 
     if (f != DEFAULT_OUTPUT_FILE)
@@ -370,7 +397,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
             histData[Histindex].lambda = ((real) i + 0.5) * lambdaSize + lambdaStart;
             histData[Histindex].beta   = ((real) j + 0.5) * betaSize + betaStart;
             histData[Histindex].count  = count / totalNum;
-            histData[Histindex].err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex].count_err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
         }
     }
 }
@@ -490,8 +517,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     /* It does not make sense to ignore bins in a generated histogram */
     for (unsigned int i = 0; i < 5; ++i)
     {
-        if(!histogram->usage[i]) continue; // don't bother if not using the histogram
-
+        // this does not ignore histograms we are not using for output purposes
+        // (we want to have output for all columns regardless of usage)
         histData = histogram->histograms[i]->data;
 
         for (Histindex = 0; Histindex < nBin; ++Histindex)
@@ -593,6 +620,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
         nbCalcDisp(histogram->histograms[2], TRUE, ctx->VelCorrect);
     if(histograms->usage[3])    // if using beta average
         nbCalcDisp(histogram->histograms[0], TRUE, ctx->BelCorrect);
+    // calc disp for distance too??
 
     /* these converge somewhere between 3 and 6 iterations */
     if(histograms->usage[0])
@@ -673,8 +701,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
 
     //after calculating average, find the std dev for each distance and then store it as error by doing stddev/sqrt(n)
 
-
-    nbNormalizeHistogram(histogram);
+    for(int i = 0; i < 5; i++)
+        nbNormalizeHistogram(histogram->histograms[i]);
 
     free(use_velbody);
     free(use_betabody);

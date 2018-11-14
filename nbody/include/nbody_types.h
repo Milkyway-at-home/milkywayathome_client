@@ -280,6 +280,8 @@ typedef struct
     unsigned int rawCount;
     real lambda;
     real beta;
+    real count;
+    real count_err;
     real variable;  // can be customized to any of the different histograms
     real err;       // the error in variable
     real sum;       // used by beta & vel disp
