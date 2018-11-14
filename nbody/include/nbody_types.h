@@ -280,8 +280,6 @@ typedef struct
     unsigned int rawCount;
     real lambda;
     real beta;
-    real count;
-    real count_err;
     real variable;  // can be customized to any of the different histograms
     real err;       // the error in variable
     real sum;       // used by beta & vel disp
@@ -332,13 +330,14 @@ typedef struct
 typedef struct
 {
     // data input must ALWAYS be in the following order:
-    // 0: beta disp
-    // 1: vel disp
-    // 2: vlos avg
-    // 3: beta avg
-    // 4: dist avg
-    mwbool usage[5];
-    NBodyHistogram histograms[5]; 
+    // 0: normalized counts
+    // 1: beta disp
+    // 2: vel disp
+    // 3: vlos avg
+    // 4: beta avg
+    // 5: dist avg
+    mwbool usage[6];
+    NBodyHistogram histograms[6]; 
 } AllHistograms;
 
 /* Mutable state used during an evaluation */
