@@ -327,26 +327,90 @@ end
 sphere_types = 3
 disk_types = 5
 halo_types = 10
+all_combo = false        --Keep this set to false if you DON'T want to run over all possible potential combinations
 
 SamplePotentials.samplePotentials = { }
 
-pot_count = 1
-for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
-   i = floor(n/(disk_types*disk_types*halo_types))
-   j = floor((n-(disk_types*disk_types*halo_types)*i)/(disk_types*halo_types))
-   k = floor((n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j)/(halo_types))
-   l = n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j-halo_types*k
+if (all_combo) then
+   pot_count = 1
+   for n=0,sphere_types*disk_types*disk_types*halo_types+1 do
+      i = floor(n/(disk_types*disk_types*halo_types))
+      j = floor((n-(disk_types*disk_types*halo_types)*i)/(disk_types*halo_types))
+      k = floor((n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j)/(halo_types))
+      l = n-(disk_types*disk_types*halo_types)*i-(disk_types*halo_types)*j-halo_types*k
 
-   SamplePotentials.samplePotentials["potential"..tostring(pot_count)] = Potential.create{
-      spherical = Spherical_piece(i),
-      disk      = Disk_piece(j),
-      disk2     = Disk2_piece(k),
-      halo      = Halo_piece(l)
-   }
+      SamplePotentials.samplePotentials["potential"..tostring(pot_count)] = Potential.create{
+         spherical = Spherical_piece(i),
+         disk      = Disk_piece(j),
+         disk2     = Disk2_piece(k),
+         halo      = Halo_piece(l)
+      }
 
-   pot_count = pot_count + 1
-   if (pot_count > (sphere_types*disk_types*disk_types*halo_types)) then
-      break
+      pot_count = pot_count + 1
+      if (pot_count > (sphere_types*disk_types*disk_types*halo_types)) then
+         break
+      end
+   end
+else
+
+   disk1_count = 1
+   for n=0, disk_types+1 do
+      SamplePotentials.samplePotentials["potential_prim_disk"..tostring(disk1_count)] = Potential.create{
+         spherical = Spherical_piece(0),
+         disk      = Disk_piece(n),
+         disk2     = Disk2_piece(0),
+         halo      = Halo_piece(0)
+      }
+
+      disk1_count = disk1_count + 1
+      if (disk1_count > disk_types) then
+         break
+      end
+   end
+
+   disk2_count = 1
+   for n=0, disk_types+1 do
+      SamplePotentials.samplePotentials["potential_sec_disk"..tostring(disk2_count)] = Potential.create{
+         spherical = Spherical_piece(0),
+         disk      = Disk_piece(0),
+         disk2     = Disk2_piece(n),
+         halo      = Halo_piece(0)
+      }
+
+      disk2_count = disk2_count + 1
+      if (disk2_count > disk_types) then
+         break
+      end
+   end
+
+   sphere_count = 1
+   for n=0, sphere_types+1 do
+      SamplePotentials.samplePotentials["potential_sphere"..tostring(sphere_count)] = Potential.create{
+         spherical = Spherical_piece(n),
+         disk      = Disk_piece(0),
+         disk2     = Disk2_piece(0),
+         halo      = Halo_piece(0)
+      }
+
+      sphere_count = sphere_count + 1
+      if (sphere_count > sphere_types) then
+         break
+      end
+   end
+
+   halo_count = 1
+   for n=0, halo_types+1 do
+      SamplePotentials.samplePotentials["potential_halo"..tostring(halo_count)] = Potential.create{
+         spherical = Spherical_piece(0),
+         disk      = Disk_piece(0),
+         disk2     = Disk2_piece(0),
+         halo      = Halo_piece(n)
+      }
+
+      halo_count = halo_count + 1
+      if (halo_count > halo_types) then
+         break
+      end
    end
 
 end
