@@ -77,6 +77,10 @@ static const AMDGPUData amdGPUData[] =
     { "Thames",     MW_CAL_TARGET_THAMES,   16 * 4, 4, 64 },
     { "Lombok",     MW_CAL_TARGET_LOMBOK,   16 * 4, 4, 64 },
 
+    /* Sea Islands family W8100, W9100, S9150 */
+    { "Hawaii",     MW_CAL_TARGET_HAWAII,   16 * 4, 2, 64 },
+
+
 #if 0
     /* These are there, but I don't know about them */
     { "WinterPark",                        16 * 5, 0, 64 },
