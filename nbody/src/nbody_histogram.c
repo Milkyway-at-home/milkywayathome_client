@@ -712,13 +712,14 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
 
 /* Read in a histogram from a file for calculating a likelihood value.
  */
-NBodyHistogram* nbReadHistogram(const char* histogramFile)
+AllHistograms* nbReadHistogram(const char* histogramFile)
 {
     FILE* f;
     int rc = 0;
     size_t fsize = 0;
-    NBodyHistogram* histogram = NULL;
-    HistData* histData = NULL;
+    AllHistograms* histogram = NULL;
+    NBodyHistogram* hist = NULL;
+    // sHistData* histData = NULL;
     unsigned int fileCount = 0;
     unsigned int lineNum = 0;
     mwbool error = FALSE;
@@ -730,10 +731,12 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     mwbool readBetaBins = FALSE; /* Read the number of bins the beta direction */
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
     mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
+    mwbool readUsage = FALSE;      /* Read the usage of the histograms */
     unsigned int nGen = 0;    /* Number of particles read from the histogram */
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
+    real usage;                /* bit string of usage of each histogram */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -751,9 +754,11 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         return NULL;
     }
 
-    histogram = (NBodyHistogram*) mwCalloc(sizeof(NBodyHistogram) + fsize * sizeof(HistData), sizeof(char));
-    histogram->hasRawCounts = FALSE;     /* Do we want to include these? */
-    histData = histogram->data;
+    hist = (NBodyHistogram*) mwCalloc(sizeof(NBodyHistogram) + fsize * sizeof(HistData), sizeof(char));
+    hist->hasRawCounts = FALSE;     /* Do we want to include these? */
+    histData = hist->data;
+    for(int i = 0; i < 6; i++)      // store the histograms in the full struct
+            histogram->histograms[i] = hist;
 
     while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
@@ -851,24 +856,52 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
             }
         }
 
+        if (!readUsage)
+        {
+            rc = sscanf(lineBuf, " usage = %u \n", &usage);
+            if(rc == 1)
+            {
+                readUsage = TRUE;
+                continue;
+            }
+        }
+
+        real useBin;
+        real lambda;
+        real beta;
+        double* variable[6];
+        double* errors[6];
+
         rc = sscanf(lineBuf,
                     "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-                    &histData[fileCount].useBin,
-                    &histData[fileCount].lambda,
-                    &histData[fileCount].beta,
-                    &histData[fileCount].count,
-                    &histData[fileCount].err,
-                    &histData[fileCount].beta_disp,
-                    &histData[fileCount].beta_disperr,
-                    &histData[fileCount].vdisp,
-                    &histData[fileCount].vdisperr,
-                    &histData[fileCount].v_los,
-                    &histData[fileCount].v_los_err,
-                    &histData[fileCount].beta_avg,
-                    &histData[fileCount].beta_avg_err,
-                    &histData[fileCount].avgDistance,
-                    &histData[fileCount].dist_err);
-        
+                    useBin,
+                    lambda,
+                    beta,
+                    variable[0],
+                    errors[0],
+                    variable[1],
+                    errors[1],
+                    variable[2],
+                    errors[2],
+                    variable[3],
+                    errors[3],
+                    variable[4],
+                    errors[4],
+                    variable[5],
+                    errors[5]);
+
+        // only save the numbers that are used
+        for(int i = 0; i < 6; i++)
+        {
+            if(usage[i] == '1')
+            {
+                histogram->histograms[i].data[fileCount].useBin = useBin;
+                histogram->histograms[i].data[fileCount].lambda = lambda;
+                histogram->histograms[i].data[fileCount].beta = beta;
+                histogram->histograms[i].data[fileCount].variable = variable[i];
+                histogram->histograms[i].data[fileCount].err = errors[i];
+            }
+        }
         
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
          * and their errors. If not using them, can input zeros in the Columns
@@ -891,10 +924,10 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
         return NULL;
     }
 
-    histogram->lambdaBins = lambdaBins;
-    histogram->betaBins = betaBins;
-    histogram->totalNum = nGen;
-    histogram->totalSimulated = totalSim;
-    histogram->massPerParticle = mass;
+    hist->lambdaBins = lambdaBins;
+    hist->betaBins = betaBins;
+    hist->totalNum = nGen;
+    hist->totalSimulated = totalSim;
+    hist->massPerParticle = mass;
     return histogram;
 }
