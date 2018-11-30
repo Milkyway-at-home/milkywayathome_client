@@ -321,7 +321,8 @@ static void nbPrintHistogramHeader(FILE* f,
 
         case NoDisk:
             fprintf(f,
-                    "# Secondary Disk: None\n");
+                    "# Secondary Disk: None\n"
+                    "#\n");
             break;
 
         case InvalidDisk:

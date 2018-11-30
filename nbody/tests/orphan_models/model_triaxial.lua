@@ -16,6 +16,7 @@ function makePotential()
    return Potential.create{
       spherical = Spherical.spherical{ mass = 1.52954402e5, scale = 0.7 },
       disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+      disk2     = Disk.none{ mass = 3.0e5 },
       halo      = Halo.triaxial{ vhalo = 116,
                                  scaleLength = 16.3,
                                  flattenZ = 1.43,
@@ -33,7 +34,13 @@ function makeContext()
       eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
-      theta      = 1.0
+      theta      = 1.0,
+      BestLikeStart = 0.95,
+      BetaSigma     = 2.5,
+      VelSigma      = 2.5,
+      BetaCorrect   = 1.111,
+      VelCorrect    = 1.111,
+      IterMax       = 6
    }
 end
 
@@ -58,7 +65,21 @@ function makeBodies(ctx, potential)
 end
 
 function makeHistogram()
-   return HistogramParams.create()
+   return HistogramParams.create{
+     --Orphan Stream coordinate transformation angles
+     phi = 128.79,
+     theta = 54.39,
+     psi = 90.70,
+     
+     -- ANGULAR RANGE AND NUMBER OF BINS
+     lambdaStart = -150,
+     lambdaEnd   = 150,
+     lambdaBins  = 50,
+     
+     betaStart = -15,
+     betaEnd   = 15,
+     betaBins  = 1
+}
 end
 
 

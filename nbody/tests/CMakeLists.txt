@@ -77,10 +77,13 @@ add_test(NAME invalid_input_test
 
 
 
+#--------UNCOMMENT THIS SECTION TO ADD CONTEXT TEST--------#
 
-add_test(NAME context_test
-           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-           COMMAND nbody_test_driver "ContextTest.lua")
+#add_test(NAME context_test
+#           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+#           COMMAND nbody_test_driver "ContextTest.lua")
+
+#----------------------------------------------------------#
 
 # Run these first 3 tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,4,1)
@@ -98,6 +101,9 @@ set(orphan_model_names model_1
                        model_5_bounds_test
                        model_6
                        model_7
+                       model_8
+                       model_9
+                       model_ninkovic
                        model_triaxial)
 
 foreach(model_name ${orphan_model_names})
@@ -108,7 +114,7 @@ foreach(model_name ${orphan_model_names})
                                           $<TARGET_FILE:milkyway_nbody>
                                           "orphan_models"
                                           ${model_name}
-                                          "orphan_model_histogram"
+                                          "test_histogram"#"orphan_model_histogram"
                                           ${n})
   endforeach()
 endforeach()

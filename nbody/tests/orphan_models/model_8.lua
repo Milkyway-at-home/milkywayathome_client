@@ -14,10 +14,10 @@ dwarfRadius = 0.2
 
 function makePotential()
    return Potential.create{
-      spherical = Spherical.plummer{ mass = 1.52954402E5, scale = 0.7 },
-      disk      = Disk.miyamotoNagai{ mass = 4.45865888E5, scaleLength = 6.5, scaleHeight = 0.26 },
+      spherical = Spherical.plummer{ mass = 4.0373214139267E4, scale = 0.249 },
+      disk      = Disk.miyamotoNagai{ mass = 3.2340408839019E5, scaleLength = 3.67, scaleHeight = 0.305 },
       disk2     = Disk.none{ mass = 3.0e5 },
-      halo      = Halo.nfw{ vhalo = 155, scaleLength = 22.25 }
+      halo      = Halo.allenSantillan{ mass = 4.7276406194167E4, scaleLength = 1.52, lambda = 200.0, gamma = 2.0 }
    }
 end
 
@@ -42,7 +42,7 @@ function makeBodies(ctx, potential)
    local finalPosition, finalVelocity = reverseOrbit{
       potential = potential,
       position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.9)),
-      velocity  = Vector.create(-178, 106, 108),
+      velocity  = Vector.create(-179, 106, 109),
       tstop     = 4.0,
       dt        = ctx.timestep / 10.0
    }
