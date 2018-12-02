@@ -439,7 +439,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     unsigned int Histindex;
     unsigned int totalNum = 0;
     Body* p;
-    NBodyHistogram* histogram;  
+    AllHistograms histogram; 
     HistData* histData;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
@@ -717,7 +717,8 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
     FILE* f;
     int rc = 0;
     size_t fsize = 0;
-    AllHistograms* histogram = NULL;
+    AllHistograms all;
+    AllHistograms* histogram = &all;
     NBodyHistogram* hist = NULL;
     // sHistData* histData = NULL;
     unsigned int fileCount = 0;
@@ -756,9 +757,9 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
 
     hist = (NBodyHistogram*) mwCalloc(sizeof(NBodyHistogram) + fsize * sizeof(HistData), sizeof(char));
     hist->hasRawCounts = FALSE;     /* Do we want to include these? */
-    histData = hist->data;
+    HistData* histData = hist->data;
     for(int i = 0; i < 6; i++)      // store the histograms in the full struct
-            histogram->histograms[i] = hist;
+            histogram->histograms[i] = &hist;
 
     while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
@@ -866,9 +867,9 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
             }
         }
 
-        real useBin;
-        real lambda;
-        real beta;
+        int* useBin;
+        double* lambda;
+        double* beta;
         double* variable[6];
         double* errors[6];
 
@@ -893,14 +894,14 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
         // only save the numbers that are used
         for(int i = 0; i < 6; i++)
         {
-            if(usage[i] == '1')
-            {
+            //if(usage[i] == '1')
+            //{
                 histogram->histograms[i].data[fileCount].useBin = useBin;
                 histogram->histograms[i].data[fileCount].lambda = lambda;
                 histogram->histograms[i].data[fileCount].beta = beta;
                 histogram->histograms[i].data[fileCount].variable = variable[i];
                 histogram->histograms[i].data[fileCount].err = errors[i];
-            }
+            //}
         }
         
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
@@ -929,5 +930,6 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
     hist->totalNum = nGen;
     hist->totalSimulated = totalSim;
     hist->massPerParticle = mass;
-    return histogram;
+    AllHistograms* h = &histogram;
+    return h;
 }
