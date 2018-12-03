@@ -181,7 +181,7 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
             switch (method)
             {
                 case NBODY_ORIG_CHISQ:
-                    tmp = (data->data[i].count - (n / effTotalNum)) / err;
+                    tmp = (data->data[i].rawCount - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;
 
@@ -194,31 +194,31 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
 
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
                     err = sqrt(sqr(err) + sqr(simErr));
-                    tmp = (data->data[i].count - (n / effTotalNum)) / err;
+                    tmp = (data->data[i].rawCount - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;
 
                 case NBODY_CHISQ_ALT:
-                    chiSq += nbChisqAlt(data->data[i].count, n / effTotalNum);
+                    chiSq += nbChisqAlt(data->data[i].rawCount, n / effTotalNum);
                     break;
 
                 case NBODY_POISSON:
                     /* Poisson one */
-                    chiSq += nbPoissonTerm(data->data[i].count, n / effTotalNum);
+                    chiSq += nbPoissonTerm(data->data[i].rawCount, n / effTotalNum);
                     break;
 
                 case NBODY_KOLMOGOROV:
-                    chiSq = mw_fmax(chiSq, fabs(data->data[i].count - (n / effTotalNum)));
+                    chiSq = mw_fmax(chiSq, fabs(data->data[i].rawCount - (n / effTotalNum)));
                     break;
 
                 case NBODY_KULLBACK_LEIBLER:
                     /* "Relative entropy" */
-                    chiSq += nbKullbackLeiblerTerm(data->data[i].count, n / effTotalNum);
+                    chiSq += nbKullbackLeiblerTerm(data->data[i].rawCount, n / effTotalNum);
                     break;
 
                 case NBODY_SAHA:
                     /* This will actually find ln(W). W is an unreasonably large number. */
-                    chiSq += nbSahaTerm(n, scale * data->data[i].count);
+                    chiSq += nbSahaTerm(n, scale * data->data[i].rawCount);
                     break;
 
                 case NBODY_INVALID_METHOD:

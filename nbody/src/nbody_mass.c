@@ -220,7 +220,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
                 sq_sum = histData[Histindex].sq_sum;
                 sum = histData[Histindex].sum;
                 
-                vdispsq = (sq_sum / n_new) - n_ratio * sqr(sum / count);
+                 dispsq = (sq_sum / n_new) - n_ratio * sqr(sum / count);
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
@@ -258,7 +258,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
 
     real v_line_of_sight;
     real distance;
-    real bin_ave, bin_sigma, new_count;
+    real bin_ave, bin_sigma, new_count, this_var;
     
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -276,7 +276,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                 new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
                 
                 /* average bin vel */
-                bin_ave = histData[Histindex].v_sum / new_count;
+                bin_ave = histData[Histindex].sum / new_count;
                 
                 /* the sigma for the bin is the same as the dispersion */
                 bin_sigma = histData[Histindex].variable;
@@ -287,10 +287,6 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                     histData[Histindex].sq_sum -= sqr(this_var);
                     histData[Histindex].outliersRemoved++;//keep track of how many are being removed
                     use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
-
-                    /** Adjusting the distance parameters as well **/
-                    distance = calc_distance(Pos(p), sunGCdist);
-                    histData[Histindex].avgDistance -= distance;
                 }
 
                 

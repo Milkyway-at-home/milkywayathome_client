@@ -284,7 +284,7 @@ typedef struct
     real err;       // the error in variable
     real sum;       // used by beta & vel disp
     real sq_sum;    // used by beta & vel disp
-    real outliersRemoved;
+    real outliersRemoved;   
     
 } HistData;
 
@@ -318,7 +318,7 @@ typedef struct
     unsigned int totalNum;
     unsigned int totalSimulated;
     int hasRawCounts;
-    HistogramParams params;
+    HistogramParams* params;
     real massPerParticle;
 
     /* This is used as a variable length struct. Do not add any fields

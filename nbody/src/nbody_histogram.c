@@ -66,7 +66,7 @@ real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBo
     {
         if (data->data[i].useBin)
         {
-            total += histogram->data[i].count;
+            total += histogram->data[i].rawCount;
         }
     }
 
@@ -142,8 +142,8 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Quadrupole Moments = %s\n"
             "# Eps = %f\n"
             "#\n",
-            nbody,
-            ctx->timeEvolve,
+            nbody,  
+            ctx->timeEvolve,    
             bestLikelihood_time,
             ctx->timestep,
             ctx->sunGCDist,
@@ -269,17 +269,17 @@ static void nbPrintHistogramHeader(FILE* f,
 void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
 {
     unsigned int i;
-    const HistData* data; // for generic output parameters
     real output[12]; // for outputting the data
 
     unsigned int index;
+    unsigned int nBin;
     for(i = 0; i < 6; i++)
     {
         // assumes at least one histogram is being used (or else what are you doing??)
         // also assumes same lambdaBins / betaBins for all hists (for right now)
         if(histogram->usage[i])
         {
-            unsigned int nBin = histogram->usage[i]->lambdaBins * histogram->usage[i]->betaBins;
+            nBin = histogram->histograms[i].lambdaBins * histogram->histograms[i].betaBins;
             index = i;
             break;
         }
@@ -308,14 +308,14 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
     {
         // should only output if the histogram is being used
         // the bitstring output at the beginning will determine which columns are present
-        data = &histogram->histograms[index]->data[i];
+        const HistData storedData = histogram->histograms[index].data[i];   // for generic output parameters
         int k = 0;
         for(unsigned int j = 0; j < 6; j++)
         {
             if(histogram->usage[j])
             {
-                output[k] = histogram->histograms[j]->data[i]->variable;
-                output[k+1] = histogram->histograms[j]]->data[i]->err;
+                output[k] = histogram->histograms[j].data[i].variable;
+                output[k+1] = histogram->histograms[j].data[i].err;
             }
             else
             {
@@ -328,8 +328,8 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
         // outputs zeroes for any histogram not being used
         fprintf(f,
                 "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
-                data->useBin,
-                data->lambda,
+                storedData.useBin,
+                storedData.lambda,
                 output[0],      // normalized counts
                 output[1],      // normalized counts error
                 output[2],      // beta disp
@@ -344,7 +344,7 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
                 output[11]);    // distance error
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
-        if(i % histogram->usage[index]->betaBins == histogram->usage[index]->betaBins-1)
+        if(i % histogram->histograms[index].betaBins == (histogram->histograms[index].betaBins)-1)
         {
             fprintf(f, "\n");
         }
@@ -358,21 +358,21 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
 void nbWriteHistogram(const char* histoutFileName,
                       const NBodyCtx* ctx,
                       const NBodyState* st,
-                      const AllHistorams* histogram)
+                      const AllHistograms* histogram)
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
 
     if (histoutFileName && strcmp(histoutFileName, ""))  /* If file specified, try to open it */
     {
         f = mwOpenResolved(histoutFileName, "w+");
-        if (f == NULL)
+        if (f == NULL) 
         {
             mwPerror("Error opening histogram '%s'. Using default output instead.", histoutFileName);
             f = DEFAULT_OUTPUT_FILE;
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &histogram->histograms[0]->params, st->nbody, st->bestLikelihood_time);
+    nbPrintHistogramHeader(f, ctx, histogram->histograms[0].params, st->nbody, st->bestLikelihood_time);
     nbPrintHistogram(f, histogram);
 
     if (f != DEFAULT_OUTPUT_FILE)
@@ -464,12 +464,12 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     
     nbGetHistTrig(&histTrig, hp);
 
-    NBodyHistogram hist;
+    NBodyHistogram* hist;
     hist = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
     hist->lambdaBins = lambdaBins;
     hist->betaBins = betaBins;
     hist->hasRawCounts = TRUE;
-    hist->params = *hp;
+    hist->params = hp;
 
     for (int i = 0; i < Nbodies; i++)
     {
@@ -485,43 +485,44 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
 
     // create the histograms for each variable only if they're wanted/needed
     // otherwise mark them as unused (false)
-    histogram->usage[0] = TRUE;
-    histogram->histograms[0] = hist;
+    histogram.usage[0] = TRUE;
+    histogram.histograms[0] = hist;  //The fix here might be problematic, I'm concerned about setting it to the memory value
+                                    //similarly, chagning the param in AllHistograms to a * array might be just as bad.
 
     if(st->useBetaDisp)
     {
-        histogram->usage[1] = TRUE;
+        histogram.usage[1] = TRUE;
         histogram->histograms[1] = hist;
     }
-    else histogram->usage[1] = FALSE;
+    else histogram.usage[1] = FALSE;
 
     if(st->useVelDisp)
     {
-        histogram->usage[2] = TRUE;
+        histogram.usage[2] = TRUE;
         histogram->histograms[2] = hist;
     }
-    else histogram->usage[2] = FALSE;
+    else histogram.usage[2] = FALSE;
 
     if(st->useVlos)
     {
-        histogram->usage[3] = TRUE;
+        histogram.usage[3] = TRUE;
         histogram->histograms[3] = hist;
     }
-    else histogram->usage[3] = FALSE;
+    else histogram.usage[3] = FALSE;
 
     if(st->useBetaComp)
     {
-        histogram->usage[4] = TRUE;
+        histogram.usage[4] = TRUE;
         histogram->histograms[4] = hist;
     }
-    else histogram->usage[4] = FALSE;
+    else histogram.usage[4] = FALSE;
 
     if(st->useDist)
     {
-        histogram->usage[5] = TRUE;
+        histogram.usage[5] = TRUE;
         histogram->histograms[5] = hist;
     }
-    else histogram->usage[5] = FALSE;
+    else histogram.usage[5] = FALSE;
 
     real v_line_of_sight;
 
@@ -700,11 +701,12 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     
     nbNormalizeHistogram(histogram->histograms[0]); // sets up normalized counts histogram
 
+    //freeing up mwcallocs (which is essentially a malloc)
     free(use_velbody);
     free(use_betabody);
     free(vlos);
-    free(betas);  /*** Find where NBodyHistogram* is to find and create the areas necessary to add in the beta values
-                        then set those values to betas and store it appropriately and in the correct spot ***/
+    free(betas);
+    free(hist);
     
     return histogram;
 }
