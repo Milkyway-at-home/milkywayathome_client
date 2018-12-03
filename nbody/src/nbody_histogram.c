@@ -486,41 +486,42 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     // create the histograms for each variable only if they're wanted/needed
     // otherwise mark them as unused (false)
     histogram.usage[0] = TRUE;
-    histogram.histograms[0] = hist;  //The fix here might be problematic, I'm concerned about setting it to the memory value
-                                    //similarly, chagning the param in AllHistograms to a * array might be just as bad.
+    histogram.histograms[0] = *hist;  //The fix here might be problematic, I'm concerned about setting it to the memory value
+                                    //similarly, chagning the param in AllHistograms to a * array might be just as bad. 
+                                    //other solutions include chagning hist to just a hist variable, but 
 
     if(st->useBetaDisp)
     {
         histogram.usage[1] = TRUE;
-        histogram->histograms[1] = hist;
+        histogram.histograms[1] = *hist;
     }
     else histogram.usage[1] = FALSE;
 
     if(st->useVelDisp)
     {
         histogram.usage[2] = TRUE;
-        histogram->histograms[2] = hist;
+        histogram.histograms[2] = *hist;
     }
     else histogram.usage[2] = FALSE;
 
     if(st->useVlos)
     {
         histogram.usage[3] = TRUE;
-        histogram->histograms[3] = hist;
+        histogram.histograms[3] = *hist;
     }
     else histogram.usage[3] = FALSE;
 
     if(st->useBetaComp)
     {
         histogram.usage[4] = TRUE;
-        histogram->histograms[4] = hist;
+        histogram.histograms[4] = *hist;
     }
     else histogram.usage[4] = FALSE;
 
     if(st->useDist)
     {
         histogram.usage[5] = TRUE;
-        histogram->histograms[5] = hist;
+        histogram.histograms[5] = *hist;
     }
     else histogram.usage[5] = FALSE;
 
@@ -536,8 +537,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     /* It does not make sense to ignore bins in a generated histogram */
     for (unsigned int i = 0; i < 6; ++i)
     {
-        if(!histogram->usage[i]) continue;
-        histData = histogram->histograms[i]->data;
+        if(!histogram.usage[i]) continue;
+        histData = histogram.histograms[i].data;
 
         for (Histindex = 0; Histindex < nBin; ++Histindex)
         {
@@ -581,44 +582,44 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
                 use_velbody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
                 
                 for(int i = 0; i < 6; i++)
-                    if(histogram->usage[i]) histogram->histograms[i]->data[Histindex].rawCount++;
+                    if(histogram.usage[i]) histogram.histograms[i].data[Histindex].rawCount++;
 
                 ++totalNum;
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
 
-                if(histogram->usage[5])
-                {
-                    location = calc_distance(Pos(p), ctx->sunGCDist);
-                    histogram->histograms[i]->data[Histindex].variable += location;
-                }
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
 
-                if(histogram->usage[1])
+                if(histogram.usage[1])
                 {
                     /* each of these are components of the beta disp */
-                    histogram->histograms[1]->data[Histindex].sum += beta;
-                    histogram->histograms[1]->data[Histindex].sq_sum += sqr(beta);
+                    histogram.histograms[1].data[Histindex].sum += beta;
+                    histogram.histograms[1].data[Histindex].sq_sum += sqr(beta);
                 }
-                if(histogram->usage[2])
+                if(histogram.usage[2])
                 {
                     /* each of these are components of the vel disp */
-                    histogram->histograms[2]->data[Histindex].sum += v_line_of_sight;
-                    histogram->histograms[2]->data[Histindex].sq_sum += sqr(v_line_of_sight);
+                    histogram.histograms[2].data[Histindex].sum += v_line_of_sight;
+                    histogram.histograms[2].data[Histindex].sq_sum += sqr(v_line_of_sight);
                 }
-                if(histogram->usage[3])
+                if(histogram.usage[3])
                 {
                     /* each of these are components of the vel disp */
-                    histogram->histograms[3]->data[Histindex].sum += v_line_of_sight;
-                    histogram->histograms[3]->data[Histindex].sq_sum += sqr(v_line_of_sight);
+                    histogram.histograms[3].data[Histindex].sum += v_line_of_sight;
+                    histogram.histograms[3].data[Histindex].sq_sum += sqr(v_line_of_sight);
                 }
-                if(histogram->usage[4])
+                if(histogram.usage[4])
                 {
                     /* each of these are components of the beta disp */
-                    histogram->histograms[4]->data[Histindex].sum += beta;
-                    histogram->histograms[4]->data[Histindex].sq_sum += sqr(beta);
+                    histogram.histograms[4].data[Histindex].sum += beta;
+                    histogram.histograms[4].data[Histindex].sq_sum += sqr(beta);
+                }
+                if(histogram.usage[5])
+                {
+                    location = calc_distance(Pos(p), ctx->sunGCDist);
+                    histogram.histograms[5].data[Histindex].variable += location;
                 }
             
             }
@@ -628,16 +629,16 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     }
    
     for(int i = 0; i < 6; i++)
-        if(histograms->usage[i]) histogram->histograms[i]->totalNum = totalNum; /* Total particles in range */
+        if(histograms.usage[i]) histogram.histograms[i].totalNum = totalNum; /* Total particles in range */
 
-    if(histograms->usage[1])    // if using beta disp
-        nbCalcDisp(histogram->histograms[1], TRUE, ctx->BelCorrect);
-    if(histograms->usage[2])    // if using vel disp
-        nbCalcDisp(histogram->histograms[2], TRUE, ctx->VelCorrect);
-    if(histograms->usage[3])    // if using vlos average
-        nbCalcDisp(histogram->histograms[3], TRUE, ctx->VelCorrect);
-    if(histograms->usage[4])    // if using beta average
-        nbCalcDisp(histogram->histograms[4], TRUE, ctx->BelCorrect);
+    if(histograms.usage[1])    // if using beta disp
+        nbCalcDisp(histogram.histograms[1], TRUE, ctx->BelCorrect);
+    if(histograms.usage[2])    // if using vel disp
+        nbCalcDisp(histogram.histograms[2], TRUE, ctx->VelCorrect);
+    if(histograms.usage[3])    // if using vlos average
+        nbCalcDisp(histogram.histograms[3], TRUE, ctx->VelCorrect);
+    if(histograms.usage[4])    // if using beta average
+        nbCalcDisp(histogram.histograms[4], TRUE, ctx->BelCorrect);
     // calc disp for distance too??
     /*
     if(histograms->usage[5])    // if using distance average
@@ -645,54 +646,54 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     */
 
     /* these converge somewhere between 3 and 6 iterations */
-    if(histograms->usage[1])
+    if(histograms.usage[1])
     {
         for(int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, histogram->histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram->histograms[1], FALSE, ctx->BetaCorrect);
+            nbRemoveOutliers(st, histogram.histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[1], FALSE, ctx->BetaCorrect);
         }
     }
-    if(histograms->usage[2])
+    if(histograms.usage[2])
     {
         for(int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, histogram->histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram->histograms[2], FALSE, ctx->VelCorrect);
+            nbRemoveOutliers(st, histogram.histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[2], FALSE, ctx->VelCorrect);
         }
     }
 
     // calculation of average velocity and average beta values
     // dispersions are already calculated and in histogram - this is used to calculate error
-    if(histogram->usage[3]) // vlos average
+    if(histogram.usage[3]) // vlos average
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, histogram->histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram->histograms[3], FALSE, ctx->VelCorrect);
-            int vdenom = histogram->histograms[3]->data[i].rawCount - histogram->histograms[3]->data[i].outliersRemoved;
+            nbRemoveOutliers(st, histogram.histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[3], FALSE, ctx->VelCorrect);
+            int vdenom = histogram.histograms[3].data[i].rawCount - histogram.histograms[3].data[i].outliersRemoved;
             if(vdenom != 0) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
-                histogram->histograms[3]->data[i].err = histogram->histograms[3]->data[i].variable / sqrt(vdenom);
-                histogram->histograms[3]->data[i].variable /= vdenom;
+                histogram.histograms[3].data[i].err = histogram.histograms[3].data[i].variable / sqrt(vdenom);
+                histogram.histograms[3].data[i].variable /= vdenom;
             }
         }
     }
-    if(histogram->usage[4]) // beta average
+    if(histogram.usage[4]) // beta average
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, histogram->histograms[4], use_betabody, vlos, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram->histograms[4], FALSE, ctx->BetaCorrect);
-            int bdenom = histogram->histograms[4]->data[i].rawCount - histogram->histograms[4]->data[i].outliersRemoved;
+            nbRemoveOutliers(st, histogram.histograms[4], use_betabody, vlos, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[4], FALSE, ctx->BetaCorrect);
+            int bdenom = histogram.histograms[4].data[i].rawCount - histogram.histograms[4].data[i].outliersRemoved;
             if(bdenom != 0) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
-                histogram->histograms[4]->data[i].err = histogram->histograms[3]->data[i].variable / sqrt(bdenom);
-                histogram->histograms[4]->data[i].variable /= vdenom;
+                histogram.histograms[4].data[i].err = histogram.histograms[3].data[i].variable / sqrt(bdenom);
+                histogram.histograms[4].data[i].variable /= vdenom;
             }
         }
     }

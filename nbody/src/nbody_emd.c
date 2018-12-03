@@ -1314,8 +1314,8 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     {
         if (data->data[i].useBin)
         {
-            dat[i].weight = (real) data->data[i].count;
-            hist[i].weight = (real) histogram->data[i].count;
+            dat[i].weight = (real) data->data[i].rawCount;
+            hist[i].weight = (real) histogram->data[i].rawCount;
         }
 
         hist[i].lambda = (real) histogram->data[i].lambda;
