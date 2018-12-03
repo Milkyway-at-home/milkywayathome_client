@@ -1271,22 +1271,27 @@ real nbWorstCaseEMD(const NBodyHistogram* hist)
     return DEFAULT_WORST_CASE;
 }
 
-real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
+real nbMatchEMD(const AllHistograms* data, const AllHistograms* histogram)
 {
-    unsigned int lambdaBins = data->lambdaBins;
-    unsigned int betaBins = data->betaBins;
+    // as of now all the histograms have the same lambda/betaBins info
+    // as any of the histograms can be used for this info, we use the first
+    NBodyHistogram* first_data = &data.histograms[0];
+    NBodyHistogram* first_hist = &histogram.histograms[0];
+
+    unsigned int lambdaBins = first_data->lambdaBins;
+    unsigned int betaBins = first_data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
-    unsigned int nSim = histogram->totalNum;
-    unsigned int nData = data->totalNum;
-    real histMass = histogram->massPerParticle;
-    real dataMass = data->massPerParticle;
+    unsigned int nSim = first_hist->totalNum;
+    unsigned int nData = first_hist->totalNum;
+    real histMass = first_hist->massPerParticle;
+    real dataMass = first_data->massPerParticle;
     unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
     real emd;
     real likelihood;
 
-    if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
+    if (first_data->lambdaBins != first_hist->lambdaBins || first_data->betaBins != first_hist->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and
@@ -1310,19 +1315,21 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     hist = mwCalloc(bins, sizeof(WeightPos));
     dat = mwCalloc(bins, sizeof(WeightPos));
     
-    for (i = 0; i < bins; ++i)
+    for(int i = 0; i < bins; i++)
     {
-        if (data->data[i].useBin)
+        if(this_data->data[i].useBin)
         {
-            dat[i].weight = (real) data->data[i].rawCount;
-            hist[i].weight = (real) histogram->data[i].rawCount;
-        }
+            {
+                dat[i].weight = (real) first_data->data[i].rawCount;
+                hist[i].weight = (real) first_hist->data[i].rawCount;
+            }
 
-        hist[i].lambda = (real) histogram->data[i].lambda;
-        dat[i].lambda = (real) data->data[i].lambda;
-        
-        hist[i].beta = (real) histogram->data[i].beta;
-        dat[i].beta = (real) data->data[i].beta;
+            hist[i].lambda = (real) first_hist->data[i].lambda;
+            dat[i].lambda = (real) first_data->data[i].lambda;
+          
+            hist[i].beta = (real) first_hist->data[i].beta;
+            dat[i].beta = (real) first_data->data[i].beta;
+        }
     }
 
     emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
