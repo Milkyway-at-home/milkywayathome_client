@@ -84,27 +84,27 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         
         if(use_betadisp)
         {
-            beta_disp = nbBetaDispersion(dat, match);
+            beta_disp = nbLikelihood(dat, match);
             likelihood += beta_disp;
         }
         if(use_veldisp)
         {
-            vel_disp = nbVelocityDispersion(dat, match);
+            vel_disp = nbLikelihood(dat, match);
             likelihood += vel_disp;
         }
          if(use_betacomp)
         {
-            beta_component = nbBetaComponent(dat, match);
+            beta_component = nbLikelihood(dat, match);
             likelihood += beta_component;
         }
         if(use_vlos)
         {
-            LOS_velocity_component = nbLOSVelocityComponent(dat, match);
+            LOS_velocity_component = nbLikelihood(dat, match);
             likelihood += LOS_velocity_component;
         }
         if(use_dist)
         {
-            distance_component = nbDistanceComponent(dat, match);
+            distance_component = nbLikelihood(dat, match);
             likelihood += distance_component;
         }
         

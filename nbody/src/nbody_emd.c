@@ -1275,8 +1275,8 @@ real nbMatchEMD(const AllHistograms* data, const AllHistograms* histogram)
 {
     // as of now all the histograms have the same lambda/betaBins info
     // as any of the histograms can be used for this info, we use the first
-    NBodyHistogram* first_data = &data.histograms[0];
-    NBodyHistogram* first_hist = &histogram.histograms[0];
+    NBodyHistogram* first_data = &(data->histograms[0]);
+    NBodyHistogram* first_hist = &(histogram->histograms[0]);
 
     unsigned int lambdaBins = first_data->lambdaBins;
     unsigned int betaBins = first_data->betaBins;
@@ -1317,7 +1317,7 @@ real nbMatchEMD(const AllHistograms* data, const AllHistograms* histogram)
     
     for(int i = 0; i < bins; i++)
     {
-        if(this_data->data[i].useBin)
+        if(first_data->data[i].useBin)
         {
             {
                 dat[i].weight = (real) first_data->data[i].rawCount;
