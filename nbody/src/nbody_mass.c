@@ -257,7 +257,6 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
     histData = histogram->data;
 
     real v_line_of_sight;
-    real distance;
     real bin_ave, bin_sigma, new_count, this_var;
     
     for (p = st->bodytab; p < endp; ++p)

@@ -433,6 +433,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     real lambda;
     real beta;
     real locationStdDev;
+    real v_line_of_sight;
     mwvector lambdaBetaR;
     unsigned int lambdaIndex;
     unsigned int betaIndex;
@@ -525,13 +526,14 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     }
     else histogram.usage[5] = FALSE;
 
-    real v_line_of_sight;
-
 
     real * use_velbody   = mwCalloc(body_count, sizeof(real));
     real * use_betabody  = mwCalloc(body_count, sizeof(real));
+    real * use_distbody  = mwCalloc(body_count, sizeof(real));
+
     real * vlos      = mwCalloc(body_count, sizeof(real));       
-    real * betas     = mwCalloc(body_count, sizeof(real));   
+    real * betas     = mwCalloc(body_count, sizeof(real));
+    real * distances = mwCalloc(body_count, sizeof(real));   
        
     
     /* It does not make sense to ignore bins in a generated histogram */
@@ -566,9 +568,11 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
             
             use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
+            use_distbody[ub_counter] = DEFAULT_NOT_USE;
             
             vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
             betas[ub_counter]    = DEFAULT_NOT_USE;
+            distances[ub_counter] = DEFAULT_NOT_USE;
 
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
@@ -579,7 +583,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
             {   
                 Histindex = lambdaIndex * betaBins + betaIndex;
                 use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
-                use_velbody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
+                use_velbody[ub_counter] = Histindex;
+                use_distbody[ub_counter] = Histindex;
                 
                 for(int i = 0; i < 6; i++)
                     if(histogram.usage[i]) histogram.histograms[i].data[Histindex].rawCount++;
@@ -587,10 +592,12 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
                 ++totalNum;
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                location = calc_distance(Pos(p), ctx->sunGCDist);
 
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
+                distances[ub_counter] = location;
 
                 if(histogram.usage[1])
                 {
@@ -618,13 +625,12 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
                 }
                 if(histogram.usage[5])
                 {
-                    location = calc_distance(Pos(p), ctx->sunGCDist);
-                    histogram.histograms[5].data[Histindex].variable += location;
+                    histogram.histograms[5].data[Histindex].sum += location;
+                    histogram.histograms[5].data[Histindex].sq_sum += sqr(location);
                 }
             
             }
             ub_counter++;
-           // free(sum_positions)
         }
     }
    
@@ -639,11 +645,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
         nbCalcDisp(&histogram.histograms[3], TRUE, ctx->VelCorrect);
     if(histogram.usage[4])    // if using beta average
         nbCalcDisp(&histogram.histograms[4], TRUE, ctx->BetaCorrect);
-    // calc disp for distance too??
-    /*
-    if(histograms->usage[5])    // if using distance average
-        nbCalcDisp(histogram->histograms[5], TRUE, ctx->???Correct);
-    */
+    if(histogram.usage[5])    // if using distance average
+        nbCalcDisp(&histogram.histograms[5], TRUE, ctx->BetaCorrect); //using beta correct for now, will need to add a dist correct
 
     /* these converge somewhere between 3 and 6 iterations */
     if(histogram.usage[1])
@@ -685,28 +688,42 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, &histogram.histograms[4], use_betabody, vlos, ctx->BetaSigma, ctx->sunGCDist);
+            nbRemoveOutliers(st, &histogram.histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
             nbCalcDisp(&histogram.histograms[4], FALSE, ctx->BetaCorrect);
             int bdenom = histogram.histograms[4].data[i].rawCount - histogram.histograms[4].data[i].outliersRemoved;
             if(bdenom != 0) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
-                histogram.histograms[4].data[i].err = histogram.histograms[3].data[i].variable / sqrt(bdenom);
+                histogram.histograms[4].data[i].err = histogram.histograms[4].data[i].variable / sqrt(bdenom);
                 histogram.histograms[4].data[i].variable /= bdenom;
             }
         }
     }
-
-    // need to add distance here
+    if(histogram.usage[5]) //average distance calculation
+    {
+        for(unsigned int i = 0; i < IterMax; ++i)
+        {
+            nbRemoveOutliers(st, &histogram.histograms[5], use_distbody, distances, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(&histogram.histograms[5], FALSE, ctx->BetaCorrect);
+            int ddenom = histogram.histograms[5].data[i].rawCount - histogram.histograms[5].data[i].outliersRemoved;
+            if(ddenom != 0)
+            {
+                histogram.histograms[5].data[i].err = histogram.histograms[5].data[i].variable / sqrt(ddenom);
+                histogram.histograms[5].data[i].variable /= ddenom;
+            }
+        }
+    }
     
     nbNormalizeHistogram(&histogram.histograms[0]); // sets up normalized counts histogram
 
     //freeing up mwcallocs (which is essentially a malloc)
     free(use_velbody);
     free(use_betabody);
+    free(use_distbody);
     free(vlos);
     free(betas);
+    free(distances);
     free(hist);
     
     return &histogram;
@@ -934,5 +951,6 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
     hist->totalSimulated = totalSim;
     hist->massPerParticle = mass;
     AllHistograms* h = &histogram;
+    //free(histogram)?
     return h;
 }
