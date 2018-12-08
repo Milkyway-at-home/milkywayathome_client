@@ -465,64 +465,77 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     
     nbGetHistTrig(&histTrig, hp);
 
-    NBodyHistogram* hist;
-    hist = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    hist->lambdaBins = lambdaBins;
-    hist->betaBins = betaBins;
-    hist->hasRawCounts = TRUE;
-    hist->params = hp;
+    NBodyHistogram* hist0;
+    hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist1;
+    hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist2;
+    hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist3;
+    hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist4;
+    hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist5;
+    hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+
+    // this only being for hist0 should be fine as long as the first histogram
+    // (normalized counts) is always the one this info is accessed from
+    hist0->lambdaBins = lambdaBins;
+    hist0->betaBins = betaBins;
+    hist0->hasRawCounts = TRUE;
+    hist0->params = hp;
 
     for (int i = 0; i < Nbodies; i++)
     {
         const Body* b = &st->bodytab[i];
         if(Type(b) == BODY(islight))
         {
-            hist->massPerParticle = Mass(b);
+            hist0->massPerParticle = Mass(b);
             body_count++;
         }
     }
 
-    hist->totalSimulated = (unsigned int) body_count;
+    hist0->totalSimulated = (unsigned int) body_count;
 
     // create the histograms for each variable only if they're wanted/needed
     // otherwise mark them as unused (false)
     histogram.usage[0] = TRUE;
-    histogram.histograms[0] = *hist;  //The fix here might be problematic, I'm concerned about setting it to the memory value
+    histogram.histograms[0] = *hist0;  //The fix here might be problematic, I'm concerned about setting it to the memory value
                                     //similarly, chagning the param in AllHistograms to a * array might be just as bad. 
                                     //other solutions include chagning hist to just a hist variable, but 
 
     if(st->useBetaDisp)
     {
         histogram.usage[1] = TRUE;
-        histogram.histograms[1] = *hist;
+        histogram.histograms[1] = *hist1;
     }
     else histogram.usage[1] = FALSE;
 
     if(st->useVelDisp)
     {
         histogram.usage[2] = TRUE;
-        histogram.histograms[2] = *hist;
+        histogram.histograms[2] = *hist2;
     }
     else histogram.usage[2] = FALSE;
 
     if(st->useVlos)
     {
         histogram.usage[3] = TRUE;
-        histogram.histograms[3] = *hist;
+        histogram.histograms[3] = *hist3;
     }
     else histogram.usage[3] = FALSE;
 
     if(st->useBetaComp)
     {
         histogram.usage[4] = TRUE;
-        histogram.histograms[4] = *hist;
+        histogram.histograms[4] = *hist4;
     }
     else histogram.usage[4] = FALSE;
 
     if(st->useDist)
     {
         histogram.usage[5] = TRUE;
-        histogram.histograms[5] = *hist;
+        histogram.histograms[5] = *hist5;
     }
     else histogram.usage[5] = FALSE;
 
@@ -724,7 +737,12 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     free(vlos);
     free(betas);
     free(distances);
-    free(hist);
+    free(hist0);
+    free(hist1);
+    free(hist2);
+    free(hist3);
+    free(hist4);
+    free(hist5);
     
     return &histogram;
 }
