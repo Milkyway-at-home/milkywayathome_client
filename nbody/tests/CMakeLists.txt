@@ -114,7 +114,7 @@ foreach(model_name ${orphan_model_names})
                                           $<TARGET_FILE:milkyway_nbody>
                                           "orphan_models"
                                           ${model_name}
-                                          "test_histogram"#"orphan_model_histogram"
+                                          "new_orphan_model_histogram"
                                           ${n})
   endforeach()
 endforeach()

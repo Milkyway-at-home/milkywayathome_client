@@ -14,7 +14,7 @@ dwarfRadius = 0.2
 
 function makePotential()
    return Potential.create{
-      spherical = Spherical.spherical{ mass = 1.52954402e5, scale = 0.7 },
+      spherical = Spherical.hernquist{ mass = 1.52954402e5, scale = 0.7 },
       disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
       disk2     = Disk.none{ mass = 3.0e5 },
       halo      = Halo.triaxial{ vhalo = 116,
@@ -72,9 +72,9 @@ function makeHistogram()
      psi = 90.70,
      
      -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = -150,
-     lambdaEnd   = 150,
-     lambdaBins  = 50,
+     lambdaStart = 50,
+     lambdaEnd   = 50,
+     lambdaBins  = 34,
      
      betaStart = -15,
      betaEnd   = 15,
