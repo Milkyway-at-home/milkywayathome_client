@@ -63,8 +63,8 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
 
 real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp, mwbool use_betadisp, mwbool use_betacomp, mwbool use_vlos, mwbool use_dist)
 {
-    NBodyHistogram* dat;
-    NBodyHistogram* match;
+    AllHistograms* dat;
+    AllHistograms* match;
     real emd = NAN;
     real cost_component = NAN;
     real vel_disp = NAN;
