@@ -337,7 +337,7 @@ typedef struct
     // 4: beta avg
     // 5: dist avg
     mwbool usage[6];
-    NBodyHistogram histograms[6]; 
+    NBodyHistogram* histograms[6]; 
 } AllHistograms;
 
 /* Mutable state used during an evaluation */

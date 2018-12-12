@@ -480,6 +480,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
 
     // this only being for hist0 should be fine as long as the first histogram
     // (normalized counts) is always the one this info is accessed from
+    /*  NEEDS TO BE SET FOR ALL OF THEM! */
     hist0->lambdaBins = lambdaBins;
     hist0->betaBins = betaBins;
     hist0->hasRawCounts = TRUE;
