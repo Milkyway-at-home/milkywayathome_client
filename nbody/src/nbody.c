@@ -230,7 +230,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_LIKELIHOOD_ERROR;
         }
 
-        histogram = nbCreateHistogram(ctx, st, &hp);
+        histogram = (nbCreateHistogram(ctx, st, &hp));
         if (!histogram)
         {
             mw_printf("Failed to create histogram\n");

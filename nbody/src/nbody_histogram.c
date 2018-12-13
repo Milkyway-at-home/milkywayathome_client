@@ -432,7 +432,6 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     real location;
     real lambda;
     real beta;
-    real locationStdDev;
     real v_line_of_sight;
     mwvector lambdaBetaR;
     unsigned int lambdaIndex;
@@ -652,31 +651,31 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
         if(histogram.usage[i]) histogram.histograms[i]->totalNum = totalNum; /* Total particles in range */
 
     if(histogram.usage[1])    // if using beta disp
-        nbCalcDisp(&histogram.histograms[1], TRUE, ctx->BetaCorrect);
+        nbCalcDisp(histogram.histograms[1], TRUE, ctx->BetaCorrect);
     if(histogram.usage[2])    // if using vel disp
-        nbCalcDisp(&histogram.histograms[2], TRUE, ctx->VelCorrect);
+        nbCalcDisp(histogram.histograms[2], TRUE, ctx->VelCorrect);
     if(histogram.usage[3])    // if using vlos average
-        nbCalcDisp(&histogram.histograms[3], TRUE, ctx->VelCorrect);
+        nbCalcDisp(histogram.histograms[3], TRUE, ctx->VelCorrect);
     if(histogram.usage[4])    // if using beta average
-        nbCalcDisp(&histogram.histograms[4], TRUE, ctx->BetaCorrect);
+        nbCalcDisp(histogram.histograms[4], TRUE, ctx->BetaCorrect);
     if(histogram.usage[5])    // if using distance average
-        nbCalcDisp(&histogram.histograms[5], TRUE, ctx->BetaCorrect); //using beta correct for now, will need to add a dist correct
+        nbCalcDisp(histogram.histograms[5], TRUE, ctx->BetaCorrect); //using beta correct for now, will need to add a dist correct
 
     /* these converge somewhere between 3 and 6 iterations */
     if(histogram.usage[1])
     {
         for(int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, &histogram.histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(&histogram.histograms[1], FALSE, ctx->BetaCorrect);
+            nbRemoveOutliers(st, histogram.histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[1], FALSE, ctx->BetaCorrect);
         }
     }
     if(histogram.usage[2])
     {
         for(int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, &histogram.histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-            nbCalcDisp(&histogram.histograms[2], FALSE, ctx->VelCorrect);
+            nbRemoveOutliers(st, histogram.histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[2], FALSE, ctx->VelCorrect);
         }
     }
 
@@ -686,8 +685,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, &histogram.histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-            nbCalcDisp(&histogram.histograms[3], FALSE, ctx->VelCorrect);
+            nbRemoveOutliers(st, histogram.histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[3], FALSE, ctx->VelCorrect);
             int vdenom = histogram.histograms[3]->data[i].rawCount - histogram.histograms[3]->data[i].outliersRemoved;
             if(vdenom != 0) // no data for the bin
             {
@@ -702,8 +701,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, &histogram.histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(&histogram.histograms[4], FALSE, ctx->BetaCorrect);
+            nbRemoveOutliers(st, histogram.histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[4], FALSE, ctx->BetaCorrect);
             int bdenom = histogram.histograms[4]->data[i].rawCount - histogram.histograms[4]->data[i].outliersRemoved;
             if(bdenom != 0) // no data for the bin
             {
@@ -718,8 +717,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     {
         for(unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, &histogram.histograms[5], use_distbody, distances, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(&histogram.histograms[5], FALSE, ctx->BetaCorrect);
+            nbRemoveOutliers(st, histogram.histograms[5], use_distbody, distances, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram.histograms[5], FALSE, ctx->BetaCorrect);
             int ddenom = histogram.histograms[5]->data[i].rawCount - histogram.histograms[5]->data[i].outliersRemoved;
             if(ddenom != 0)
             {
@@ -729,7 +728,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
         }
     }
     
-    nbNormalizeHistogram(&histogram.histograms[0]); // sets up normalized counts histogram
+    nbNormalizeHistogram(histogram.histograms[0]); // sets up normalized counts histogram
 
     //freeing up mwcallocs (which is essentially a malloc)
     free(use_velbody);
