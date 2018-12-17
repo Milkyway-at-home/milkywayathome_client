@@ -404,13 +404,17 @@ void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real 
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram)
 {
-    unsigned int n = histogram->totalSimulated;
-    unsigned int nSim = histogram->totalNum;
-    unsigned int nData = data->totalNum;
+    unsigned int lambdaBins = data->lambdaBins;
+    unsigned int betaBins = data->betaBins;
+    unsigned int nbins = lambdaBins * betaBins;
+    real n = (real) histogram->totalSimulated;
+    real nSim = (real) histogram->totalNum;
+    real nData = (real) data->totalNum;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
-
+    real rawCount;
+    
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
@@ -431,14 +435,28 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
         return NAN;
     }
     
+    
+    /*
+     * Correcting for bins in the comparison histogram that are not 
+     * included in the comparison.
+     */
+    for (unsigned int i = 0; i < nbins; ++i)
+    {
+        if(!data->data[i].useBin)
+        {
+            rawCount = histogram->data[i].count * nSim;
+            nSim -= rawCount;
+        }
+
+    }
+    
     /* this is the newest version of the cost function
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
      */
-    
-    p = ((real) nSim / (real) n) ;
-    real num = - sqr(dataMass * (real) nData - histMass * (real) nSim);
-    real denom = 2.0 * (sqr(dataMass) * (real) nData + sqr(histMass) * (real) nSim * p * (1.0 - p));
+    p = ( nSim / n) ;
+    real num = - sqr(dataMass * nData - histMass * nSim);
+    real denom = 2.0 * (sqr(dataMass) * nData + sqr(histMass) * nSim * p * (1.0 - p));
     real CostComponent = num / denom; //this is the log of the cost component
 
     /* the cost component is negative. Returning a postive value */
