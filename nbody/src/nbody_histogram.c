@@ -301,7 +301,8 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
         if(histogram->usage[i]) usage+='1';
         else usage+='0';
     }
-    fprintf(f, "usage = %u\n", usage);
+    fprintf(f, "usage = %d%d%d%d%d%d\n", histogram->usage[0], histogram->usage[1], histogram->usage[2],
+                                        histogram->usage[3], histogram->usage[4], histogram->usage[5]);
 
     
     for (i = 0; i < nBin; ++i)
@@ -438,9 +439,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     unsigned int betaIndex;
     unsigned int Histindex;
     unsigned int totalNum = 0;
-    Body* p;
-    AllHistograms histogram; 
     HistData* histData;
+    Body* p;
     NBHistTrig histTrig;
     const Body* endp = st->bodytab + st->nbody;
     real lambdaSize = nbHistogramLambdaBinSize(hp);
@@ -454,28 +454,24 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
     unsigned int IterMax = ctx->IterMax;
-    /*unsigned int IterMax = 6;*/	/*Default value for IterMax*/
+    /*unsigned int IterMax = 6;*/   /*Default value for IterMax*/
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
     unsigned int ub_counter = 0;
     
+    AllHistograms* histogram = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char)); 
+
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
     
     nbGetHistTrig(&histTrig, hp);
 
-    NBodyHistogram* hist0;
-    hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    NBodyHistogram* hist1;
-    hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    NBodyHistogram* hist2;
-    hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    NBodyHistogram* hist3;
-    hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    NBodyHistogram* hist4;
-    hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-    NBodyHistogram* hist5;
-    hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+    NBodyHistogram* hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
 
     // this only being for hist0 should be fine as long as the first histogram
     // (normalized counts) is always the one this info is accessed from
@@ -499,45 +495,45 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
 
     // create the histograms for each variable only if they're wanted/needed
     // otherwise mark them as unused (false)
-    histogram.usage[0] = TRUE;
-    histogram.histograms[0] = hist0;  //The fix here might be problematic, I'm concerned about setting it to the memory value
+    histogram->usage[0] = TRUE;
+    histogram->histograms[0] = hist0;  //The fix here might be problematic, I'm concerned about setting it to the memory value
                                     //similarly, chagning the param in AllHistograms to a * array might be just as bad. 
                                     //other solutions include chagning hist to just a hist variable, but 
 
     if(st->useBetaDisp)
     {
-        histogram.usage[1] = TRUE;
-        histogram.histograms[1] = hist1;
+        histogram->usage[1] = TRUE;
+        histogram->histograms[1] = hist1;
     }
-    else histogram.usage[1] = FALSE;
+    else histogram->usage[1] = FALSE;
 
     if(st->useVelDisp)
     {
-        histogram.usage[2] = TRUE;
-        histogram.histograms[2] = hist2;
+        histogram->usage[2] = TRUE;
+        histogram->histograms[2] = hist2;
     }
-    else histogram.usage[2] = FALSE;
+    else histogram->usage[2] = FALSE;
 
     if(st->useVlos)
     {
-        histogram.usage[3] = TRUE;
-        histogram.histograms[3] = hist3;
+        histogram->usage[3] = TRUE;
+        histogram->histograms[3] = hist3;
     }
-    else histogram.usage[3] = FALSE;
+    else histogram->usage[3] = FALSE;
 
     if(st->useBetaComp)
     {
-        histogram.usage[4] = TRUE;
-        histogram.histograms[4] = hist4;
+        histogram->usage[4] = TRUE;
+        histogram->histograms[4] = hist4;
     }
-    else histogram.usage[4] = FALSE;
+    else histogram->usage[4] = FALSE;
 
     if(st->useDist)
     {
-        histogram.usage[5] = TRUE;
-        histogram.histograms[5] = hist5;
+        histogram->usage[5] = TRUE;
+        histogram->histograms[5] = hist5;
     }
-    else histogram.usage[5] = FALSE;
+    else histogram->usage[5] = FALSE;
 
 
     real * use_velbody   = mwCalloc(body_count, sizeof(real));
@@ -552,8 +548,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     /* It does not make sense to ignore bins in a generated histogram */
     for (unsigned int i = 0; i < 6; ++i)
     {
-        if(!histogram.usage[i]) continue;
-        histData = histogram.histograms[i]->data;
+        if(!histogram->usage[i]) continue;
+        histData = histogram->histograms[i]->data;
 
         for (Histindex = 0; Histindex < nBin; ++Histindex)
         {
@@ -600,7 +596,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
                 use_distbody[ub_counter] = Histindex;
                 
                 for(int i = 0; i < 6; i++)
-                    if(histogram.usage[i]) histogram.histograms[i]->data[Histindex].rawCount++;
+                    if(histogram->usage[i]) histogram->histograms[i]->data[Histindex].rawCount++;
 
                 ++totalNum;
                 
@@ -612,34 +608,34 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
                 betas[ub_counter] = beta;
                 distances[ub_counter] = location;
 
-                if(histogram.usage[1])
+                if(histogram->usage[1])
                 {
                     /* each of these are components of the beta disp */
-                    histogram.histograms[1]->data[Histindex].sum += beta;
-                    histogram.histograms[1]->data[Histindex].sq_sum += sqr(beta);
+                    histogram->histograms[1]->data[Histindex].sum += beta;
+                    histogram->histograms[1]->data[Histindex].sq_sum += sqr(beta);
                 }
-                if(histogram.usage[2])
+                if(histogram->usage[2])
                 {
                     /* each of these are components of the vel disp */
-                    histogram.histograms[2]->data[Histindex].sum += v_line_of_sight;
-                    histogram.histograms[2]->data[Histindex].sq_sum += sqr(v_line_of_sight);
+                    histogram->histograms[2]->data[Histindex].sum += v_line_of_sight;
+                    histogram->histograms[2]->data[Histindex].sq_sum += sqr(v_line_of_sight);
                 }
-                if(histogram.usage[3])
+                if(histogram->usage[3])
                 {
                     /* each of these are components of the vel disp */
-                    histogram.histograms[3]->data[Histindex].sum += v_line_of_sight;
-                    histogram.histograms[3]->data[Histindex].sq_sum += sqr(v_line_of_sight);
+                    histogram->histograms[3]->data[Histindex].sum += v_line_of_sight;
+                    histogram->histograms[3]->data[Histindex].sq_sum += sqr(v_line_of_sight);
                 }
-                if(histogram.usage[4])
+                if(histogram->usage[4])
                 {
                     /* each of these are components of the beta disp */
-                    histogram.histograms[4]->data[Histindex].sum += beta;
-                    histogram.histograms[4]->data[Histindex].sq_sum += sqr(beta);
+                    histogram->histograms[4]->data[Histindex].sum += beta;
+                    histogram->histograms[4]->data[Histindex].sq_sum += sqr(beta);
                 }
-                if(histogram.usage[5])
+                if(histogram->usage[5])
                 {
-                    histogram.histograms[5]->data[Histindex].sum += location;
-                    histogram.histograms[5]->data[Histindex].sq_sum += sqr(location);
+                    histogram->histograms[5]->data[Histindex].sum += location;
+                    histogram->histograms[5]->data[Histindex].sq_sum += sqr(location);
                 }
             
             }
@@ -648,87 +644,87 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     }
    
     for(int i = 0; i < 6; i++)
-        if(histogram.usage[i]) histogram.histograms[i]->totalNum = totalNum; /* Total particles in range */
+        if(histogram->usage[i]) histogram->histograms[i]->totalNum = totalNum; /* Total particles in range */
 
-    if(histogram.usage[1])    // if using beta disp
-        nbCalcDisp(histogram.histograms[1], TRUE, ctx->BetaCorrect);
-    if(histogram.usage[2])    // if using vel disp
-        nbCalcDisp(histogram.histograms[2], TRUE, ctx->VelCorrect);
-    if(histogram.usage[3])    // if using vlos average
-        nbCalcDisp(histogram.histograms[3], TRUE, ctx->VelCorrect);
-    if(histogram.usage[4])    // if using beta average
-        nbCalcDisp(histogram.histograms[4], TRUE, ctx->BetaCorrect);
-    if(histogram.usage[5])    // if using distance average
-        nbCalcDisp(histogram.histograms[5], TRUE, ctx->BetaCorrect); //using beta correct for now, will need to add a dist correct
+    if(histogram->usage[1])    // if using beta disp
+        nbCalcDisp(histogram->histograms[1], TRUE, ctx->BetaCorrect);
+    if(histogram->usage[2])    // if using vel disp
+        nbCalcDisp(histogram->histograms[2], TRUE, ctx->VelCorrect);
+    if(histogram->usage[3])    // if using vlos average
+        nbCalcDisp(histogram->histograms[3], TRUE, ctx->VelCorrect);
+    if(histogram->usage[4])    // if using beta average
+        nbCalcDisp(histogram->histograms[4], TRUE, ctx->BetaCorrect);
+    if(histogram->usage[5])    // if using distance average
+        nbCalcDisp(histogram->histograms[5], TRUE, ctx->BetaCorrect); //using beta correct for now, will need to add a dist correct
 
     /* these converge somewhere between 3 and 6 iterations */
-    if(histogram.usage[1])
+    if(histogram->usage[1])
     {
         for(int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, histogram.histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram.histograms[1], FALSE, ctx->BetaCorrect);
+            nbRemoveOutliers(st, histogram->histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[1], FALSE, ctx->BetaCorrect);
         }
     }
-    if(histogram.usage[2])
+    if(histogram->usage[2])
     {
         for(int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, histogram.histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram.histograms[2], FALSE, ctx->VelCorrect);
+            nbRemoveOutliers(st, histogram->histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[2], FALSE, ctx->VelCorrect);
         }
     }
 
     // calculation of average velocity and average beta values
     // dispersions are already calculated and in histogram - this is used to calculate error
-    if(histogram.usage[3]) // vlos average
+    if(histogram->usage[3]) // vlos average
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, histogram.histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram.histograms[3], FALSE, ctx->VelCorrect);
-            int vdenom = histogram.histograms[3]->data[i].rawCount - histogram.histograms[3]->data[i].outliersRemoved;
+            nbRemoveOutliers(st, histogram->histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[3], FALSE, ctx->VelCorrect);
+            int vdenom = histogram->histograms[3]->data[i].rawCount - histogram->histograms[3]->data[i].outliersRemoved;
             if(vdenom != 0) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
-                histogram.histograms[3]->data[i].err = histogram.histograms[3]->data[i].variable / sqrt(vdenom);
-                histogram.histograms[3]->data[i].variable /= vdenom;
+                histogram->histograms[3]->data[i].err = histogram->histograms[3]->data[i].variable / sqrt(vdenom);
+                histogram->histograms[3]->data[i].variable /= vdenom;
             }
         }
     }
-    if(histogram.usage[4]) // beta average
+    if(histogram->usage[4]) // beta average
     {
         for (unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, histogram.histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram.histograms[4], FALSE, ctx->BetaCorrect);
-            int bdenom = histogram.histograms[4]->data[i].rawCount - histogram.histograms[4]->data[i].outliersRemoved;
+            nbRemoveOutliers(st, histogram->histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[4], FALSE, ctx->BetaCorrect);
+            int bdenom = histogram->histograms[4]->data[i].rawCount - histogram->histograms[4]->data[i].outliersRemoved;
             if(bdenom != 0) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
-                histogram.histograms[4]->data[i].err = histogram.histograms[4]->data[i].variable / sqrt(bdenom);
-                histogram.histograms[4]->data[i].variable /= bdenom;
+                histogram->histograms[4]->data[i].err = histogram->histograms[4]->data[i].variable / sqrt(bdenom);
+                histogram->histograms[4]->data[i].variable /= bdenom;
             }
         }
     }
-    if(histogram.usage[5]) //average distance calculation
+    if(histogram->usage[5]) //average distance calculation
     {
         for(unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, histogram.histograms[5], use_distbody, distances, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(histogram.histograms[5], FALSE, ctx->BetaCorrect);
-            int ddenom = histogram.histograms[5]->data[i].rawCount - histogram.histograms[5]->data[i].outliersRemoved;
+            nbRemoveOutliers(st, histogram->histograms[5], use_distbody, distances, ctx->BetaSigma, ctx->sunGCDist);
+            nbCalcDisp(histogram->histograms[5], FALSE, ctx->BetaCorrect);
+            int ddenom = histogram->histograms[5]->data[i].rawCount - histogram->histograms[5]->data[i].outliersRemoved;
             if(ddenom != 0)
             {
-                histogram.histograms[5]->data[i].err = histogram.histograms[5]->data[i].variable / sqrt(ddenom);
-                histogram.histograms[5]->data[i].variable /= ddenom;
+                histogram->histograms[5]->data[i].err = histogram->histograms[5]->data[i].variable / sqrt(ddenom);
+                histogram->histograms[5]->data[i].variable /= ddenom;
             }
         }
     }
     
-    nbNormalizeHistogram(histogram.histograms[0]); // sets up normalized counts histogram
+    nbNormalizeHistogram(histogram->histograms[0]); // sets up normalized counts histogram
 
     //freeing up mwcallocs (which is essentially a malloc)
     free(use_velbody);
@@ -737,14 +733,8 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     free(vlos);
     free(betas);
     free(distances);
-    free(hist0);
-    free(hist1);
-    free(hist2);
-    free(hist3);
-    free(hist4);
-    free(hist5);
     
-    return &histogram;
+    return histogram;
 }
 
 
@@ -755,10 +745,7 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
     FILE* f;
     int rc = 0;
     size_t fsize = 0;
-    AllHistograms all;
-    AllHistograms* histogram = &all;
-    NBodyHistogram* hist = NULL;
-    // sHistData* histData = NULL;
+    AllHistograms* histogram;
     unsigned int fileCount = 0;
     unsigned int lineNum = 0;
     mwbool error = FALSE;
@@ -775,9 +762,10 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    real usage;                /* bit string of usage of each histogram */
+    mwbool usage[6];  /* read in "bit string" of usage of each histogram */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
+
 
     f = mwOpenResolved(histogramFile, "r");
 
@@ -792,12 +780,6 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
         mw_printf("Histogram line count = 0\n");
         return NULL;
     }
-
-    hist = (NBodyHistogram*) mwCalloc(sizeof(NBodyHistogram) + fsize * sizeof(HistData), sizeof(char));
-    hist->hasRawCounts = FALSE;     /* Do we want to include these? */
-    HistData* histData = hist->data;
-    for(int i = 0; i < 6; i++)      // store the histograms in the full struct
-            histogram->histograms[i] = hist;
 
     while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
@@ -897,7 +879,7 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
 
         if (!readUsage)
         {
-            rc = sscanf(lineBuf, " usage = %u \n", &usage);
+            rc = sscanf(lineBuf, " usage = %d%d%d%d%d%d\n", &usage[0], &usage[1], &usage[2], &usage[3], &usage[4], &usage[5]);
             if(rc == 1)
             {
                 readUsage = TRUE;
@@ -932,14 +914,48 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
         // only save the numbers that are used
         for(int i = 0; i < 6; i++)
         {
-            //if(usage[i] == '1')   // THIS DOESN'T WORK YET -  MAKE IT WORK
-            //{
+            if(usage[i] == '1')
+            {
                 histogram->histograms[i]->data[fileCount].useBin = *useBin;
                 histogram->histograms[i]->data[fileCount].lambda = *lambda;
                 histogram->histograms[i]->data[fileCount].beta = *beta;
                 histogram->histograms[i]->data[fileCount].variable = *variable[i];
                 histogram->histograms[i]->data[fileCount].err = *errors[i];
-            //}
+            }
+        }
+
+
+        unsigned int nBin = lambdaBins * betaBins;
+        histogram = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
+        if(usage[0])
+        {
+            NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->histograms[0] = hist0;
+        }
+        if(usage[1])
+        {
+            NBodyHistogram* hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->histograms[1] = hist1;
+        }
+        if(usage[2])
+        {
+            NBodyHistogram* hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->histograms[2] = hist2;
+        }
+        if(usage[3])
+        {
+            NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->histograms[3] = hist3;
+        }
+        if(usage[4])
+        {
+            NBodyHistogram* hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->histograms[4] = hist4;
+        }
+        if(usage[5])
+        {
+            NBodyHistogram* hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->histograms[5] = hist5;
         }
         
         /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
@@ -963,12 +979,10 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
         return NULL;
     }
 
-    hist->lambdaBins = lambdaBins;
-    hist->betaBins = betaBins;
-    hist->totalNum = nGen;
-    hist->totalSimulated = totalSim;
-    hist->massPerParticle = mass;
-    AllHistograms* h = &histogram;
-    //free(histogram)?
-    return h;
+    histogram->histograms[0]->lambdaBins = lambdaBins;
+    histogram->histograms[0]->betaBins = betaBins;
+    histogram->histograms[0]->totalNum = nGen;
+    histogram->histograms[0]->totalSimulated = totalSim;
+    histogram->histograms[0]->massPerParticle = mass;
+    return histogram;
 }
