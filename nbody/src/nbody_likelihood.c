@@ -79,32 +79,32 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
     if (dat && match)
     {
         emd = nbMatchEMD(dat, match);
-        cost_component = nbCostComponent(dat, match);
+        cost_component = nbCostComponent(dat->histograms[0], match->histograms[0]);
         likelihood = emd + cost_component;
         
         if(use_betadisp)
         {
-            beta_disp = nbLikelihood(dat, match);
+            beta_disp = nbLikelihood(dat->histograms[1], match->histograms[1]);
             likelihood += beta_disp;
         }
         if(use_veldisp)
         {
-            vel_disp = nbLikelihood(dat, match);
+            vel_disp = nbLikelihood(dat->histograms[2], match->histograms[2]);
             likelihood += vel_disp;
         }
          if(use_betacomp)
         {
-            beta_component = nbLikelihood(dat, match);
+            beta_component = nbLikelihood(dat->histograms[3], match->histograms[3]);
             likelihood += beta_component;
         }
         if(use_vlos)
         {
-            LOS_velocity_component = nbLikelihood(dat, match);
+            LOS_velocity_component = nbLikelihood(dat->histograms[4], match->histograms[4]);
             likelihood += LOS_velocity_component;
         }
         if(use_dist)
         {
-            distance_component = nbLikelihood(dat, match);
+            distance_component = nbLikelihood(dat->histograms[5], match->histograms[5]);
             likelihood += distance_component;
         }
         
@@ -118,8 +118,8 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
 
 /* Calculate the likelihood from the final state of the simulation */
 real nbSystemLikelihood(const NBodyState* st,
-                     const NBodyHistogram* data,
-                     const NBodyHistogram* histogram,
+                     const AllHistograms* data,
+                     const AllHistograms* histogram,
                      NBodyLikelihoodMethod method)
 {
     
@@ -132,12 +132,12 @@ real nbSystemLikelihood(const NBodyState* st,
     real distance_component = NAN;
     real likelihood = NAN;
     
-    if (data->lambdaBins != histogram->lambdaBins)
+    if (data->histograms[0]->lambdaBins != histogram->histograms[0]->lambdaBins)
     {
         mw_printf("Number of bins does not match those in histogram file. "
                   "Expected %u, got %u\n",
-                  histogram->lambdaBins,
-                  data->lambdaBins);
+                  histogram->histograms[0]->lambdaBins,
+                  data->histograms[0]->lambdaBins);
         return NAN;
     }
 
@@ -158,59 +158,58 @@ real nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->totalNum < 0.0001 * (real) st->nbody)
+        if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody)
         {
             real worstEMD;
 
             mw_printf("Number of particles in bins is very small compared to total. "
                       "(%u << %u). Skipping distance calculation\n",
-                      histogram->totalNum,
+                      histogram->histograms[0]->totalNum,
                       st->nbody
                 );
-            worstEMD = nbWorstCaseEMD(histogram);
+            worstEMD = nbWorstCaseEMD(histogram->histograms[0]);
             //return 2.0 * worstEMD;
             return worstEMD; //Changed.  See above comment.
         }
-
+        // this function has been changed to accept AllHistograms
         geometry_component = nbMatchEMD(data, histogram);
     }
     else
     {
-        geometry_component = nbCalcChisq(data, histogram, method);
+        geometry_component = nbCalcChisq(data->histograms[0], histogram->histograms[0], method);
     }
     
     /* likelihood due to the amount of mass in the histograms */
     
-    cost_component = nbCostComponent(data, histogram);
+    cost_component = nbCostComponent(data->histograms[0], histogram->histograms[0]);
 
     likelihood = geometry_component + cost_component;
     
     /* likelihood due to the vel dispersion per bin of the two hist */
     if(st->useBetaDisp)
     {
-        beta_dispersion_component = nbLikelihood(data, histogram);
+        beta_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1]);
         likelihood += beta_dispersion_component;
     }
     if(st->useVelDisp)
     {
-        velocity_dispersion_component = nbLikelihood(data, histogram);
+        velocity_dispersion_component = nbLikelihood(data->histograms[2], histogram->histograms[2]);
         likelihood += velocity_dispersion_component;
     }
     if(st->useBetaComp)
     {
-        beta_component = nbLikelihood(data, histogram);
+        beta_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
         likelihood += beta_component;
     }
     if(st->useVlos)
     {
-        LOS_velocity_component = nbLikelihood(data, histogram);
+        LOS_velocity_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
         likelihood += LOS_velocity_component;
     }
     if(st->useDist)
     {
-        distance_component = nbLikelihood(data, histogram);
+        distance_component = nbLikelihood(data->histograms[5], histogram->histograms[5]);
         likelihood += distance_component;
     }
-    return likelihood;
-    
+    return likelihood;   
 } 

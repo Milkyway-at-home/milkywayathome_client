@@ -268,31 +268,19 @@ static void nbPrintHistogramHeader(FILE* f,
 /* Print the histogram without a header. */
 void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
 {
-    unsigned int i;
     real output[12]; // for outputting the data
 
-    unsigned int index;
     unsigned int nBin;
-    for(i = 0; i < 6; i++)
-    {
-        // assumes at least one histogram is being used (or else what are you doing??)
-        // also assumes same lambdaBins / betaBins for all hists (for right now)
-        if(histogram->usage[i])
-        {
-            nBin = histogram->histograms[i]->lambdaBins * histogram->histograms[i]->betaBins;
-            index = i;
-            break;
-        }
-    }
+    nBin = histogram->histograms[0]->lambdaBins * histogram->histograms[0]->betaBins;
 
     // outputs these numbers from one of the histograms
     // at this point, these numbers should be the same for all histograms anyway
     mw_boinc_print(f, "<histogram>\n");
-    fprintf(f, "n = %u\n", histogram->histograms[index]->totalNum);
-    fprintf(f, "massPerParticle = %12.15f\n", histogram->histograms[index]->massPerParticle);
-    fprintf(f, "totalSimulated = %u\n", histogram->histograms[index]->totalSimulated);
-    fprintf(f, "lambdaBins = %u\n", histogram->histograms[index]->lambdaBins);
-    fprintf(f, "betaBins = %u\n", histogram->histograms[index]->betaBins);
+    fprintf(f, "n = %u\n", histogram->histograms[0]->totalNum);
+    fprintf(f, "massPerParticle = %12.15f\n", histogram->histograms[0]->massPerParticle);
+    fprintf(f, "totalSimulated = %u\n", histogram->histograms[0]->totalSimulated);
+    fprintf(f, "lambdaBins = %u\n", histogram->histograms[0]->lambdaBins);
+    fprintf(f, "betaBins = %u\n", histogram->histograms[0]->betaBins);
 
     // create usage bit string
     real usage = '1';
@@ -305,11 +293,11 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
                                         histogram->usage[3], histogram->usage[4], histogram->usage[5]);
 
     
-    for (i = 0; i < nBin; ++i)
+    for (int i = 0; i < nBin; ++i)
     {
         // should only output if the histogram is being used
         // the bitstring output at the beginning will determine which columns are present
-        const HistData storedData = histogram->histograms[index]->data[i];   // for generic output parameters
+        const HistData storedData = histogram->histograms[0]->data[i];   // for generic output parameters
         int k = 0;
         for(unsigned int j = 0; j < 6; j++)
         {
@@ -345,7 +333,7 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
                 output[11]);    // distance error
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
-        if(i % histogram->histograms[index]->betaBins == (histogram->histograms[index]->betaBins)-1)
+        if(i % histogram->histograms[0]->betaBins == (histogram->histograms[0]->betaBins)-1)
         {
             fprintf(f, "\n");
         }
@@ -762,7 +750,7 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    mwbool usage[6];  /* read in "bit string" of usage of each histogram */
+    int usage[6];  /* read in "bit string" of usage of each histogram */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -887,9 +875,9 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
             }
         }
 
-        int* useBin;
-        double* lambda;
-        double* beta;
+        int* useBin = 0;
+        double* lambda = 0;
+        double* beta = 0;
         double* variable[6];
         double* errors[6];
 
@@ -914,7 +902,7 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
         // only save the numbers that are used
         for(int i = 0; i < 6; i++)
         {
-            if(usage[i] == '1')
+            if(usage[i] == 1)
             {
                 histogram->histograms[i]->data[fileCount].useBin = *useBin;
                 histogram->histograms[i]->data[fileCount].lambda = *lambda;
@@ -924,37 +912,42 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
             }
         }
 
-
         unsigned int nBin = lambdaBins * betaBins;
         histogram = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
-        if(usage[0])
+        if(usage[0] == 1)
         {
             NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->usage[0] = TRUE;
             histogram->histograms[0] = hist0;
         }
-        if(usage[1])
+        if(usage[1] == 1)
         {
             NBodyHistogram* hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->usage[1] = TRUE;
             histogram->histograms[1] = hist1;
         }
-        if(usage[2])
+        if(usage[2] == 1)
         {
             NBodyHistogram* hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->usage[2] = TRUE;
             histogram->histograms[2] = hist2;
         }
-        if(usage[3])
+        if(usage[3] == 1)
         {
             NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->usage[3] = TRUE;
             histogram->histograms[3] = hist3;
         }
-        if(usage[4])
+        if(usage[4] == 1)
         {
             NBodyHistogram* hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->usage[4] = TRUE;
             histogram->histograms[4] = hist4;
         }
-        if(usage[5])
+        if(usage[5] == 1)
         {
             NBodyHistogram* hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+            histogram->usage[5] = TRUE;
             histogram->histograms[5] = hist5;
         }
         
@@ -975,14 +968,21 @@ AllHistograms* nbReadHistogram(const char* histogramFile)
 
     if (error)
     {
+        for(int i = 0; i < 6; i++)
+            free(histogram->histograms[i]);
         free(histogram);
         return NULL;
     }
 
-    histogram->histograms[0]->lambdaBins = lambdaBins;
-    histogram->histograms[0]->betaBins = betaBins;
-    histogram->histograms[0]->totalNum = nGen;
-    histogram->histograms[0]->totalSimulated = totalSim;
-    histogram->histograms[0]->massPerParticle = mass;
+    for(int i = 0; i < 6; i++)
+    {
+        if(!histogram->usage[i]) continue;
+        histogram->histograms[i]->lambdaBins = lambdaBins;
+        histogram->histograms[i]->betaBins = betaBins;
+        histogram->histograms[i]->totalNum = nGen;
+        histogram->histograms[i]->totalSimulated = totalSim;
+        histogram->histograms[i]->massPerParticle = mass;
+    }
+
     return histogram;
 }

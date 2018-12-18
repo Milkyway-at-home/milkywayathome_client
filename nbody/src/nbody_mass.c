@@ -243,10 +243,11 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
     
 }
 
-
+// if vel is true, uses the velocity outliers
+// if vel is false, uses the beta outliers
+// DISTANCE ??
 void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist)
 {
-    
     unsigned int Histindex;
     Body* p;
     HistData* histData;
@@ -256,7 +257,6 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
     
     histData = histogram->data;
 
-    real v_line_of_sight;
     real bin_ave, bin_sigma, new_count, this_var;
     
     for (p = st->bodytab; p < endp; ++p)
@@ -271,10 +271,11 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                 Histindex = (int) use_body[counter];
                 
                 this_var = var[counter];
+
                 /* bin count minus what was already removed */
                 new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
                 
-                /* average bin vel */
+                /* average bin */
                 bin_ave = histData[Histindex].sum / new_count;
                 
                 /* the sigma for the bin is the same as the dispersion */
@@ -282,7 +283,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                 
                 if(mw_fabs(bin_ave - this_var) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
-                    histData[Histindex].sum -= v_line_of_sight;//remove from vel dis sums
+                    histData[Histindex].sum -= this_var;//remove from vel dis sums
                     histData[Histindex].sq_sum -= sqr(this_var);
                     histData[Histindex].outliersRemoved++;//keep track of how many are being removed
                     use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier

@@ -72,11 +72,11 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
 
-use_beta_disps       = false    -- use beta dispersions in likelihood
-use_vel_disps        = false    -- use velocity dispersions in likelihood
+use_beta_disps       = true    -- use beta dispersions in likelihood
+use_vel_disps        = true    -- use velocity dispersions in likelihood
 use_beta_comp        = true    -- use average beta in likelihood
 use_vlos_comp        = true   -- use average los velocity in likelihood
-use_avg_dist         = false    -- use average distance in likelihood
+use_avg_dist         = true    -- use average distance in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
