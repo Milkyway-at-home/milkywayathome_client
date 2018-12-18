@@ -1285,7 +1285,6 @@ real nbMatchEMD(const AllHistograms* data, const AllHistograms* histogram)
     unsigned int nData = first_hist->totalNum;
     real histMass = first_hist->massPerParticle;
     real dataMass = first_data->massPerParticle;
-    unsigned int i;
     WeightPos* hist;
     WeightPos* dat;
     real emd;
@@ -1315,7 +1314,7 @@ real nbMatchEMD(const AllHistograms* data, const AllHistograms* histogram)
     hist = mwCalloc(bins, sizeof(WeightPos));
     dat = mwCalloc(bins, sizeof(WeightPos));
     
-    for(int i = 0; i < bins; i++)
+    for(unsigned int i = 0; i < bins; i++)
     {
         if(first_data->data[i].useBin)
         {
