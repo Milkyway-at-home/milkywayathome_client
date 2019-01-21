@@ -156,9 +156,11 @@ static int luaCalculateTimestep(lua_State* luaSt)
 
 static real nbCalculateEps2(real nbody, real r0)
 {
-    real eps2 = sqr(r0) / (100.0 * nbody);
-    if (eps2 <= 2.0*REAL_EPSILON)
-        eps2 = 2.0 * REAL_EPSILON;
+    real eps = r0 / (10.0 * mw_sqrt(nbody));
+    real eps2 = sqr(eps);
+    if (eps2 <= REAL_EPSILON) {
+        eps2 = 2.0*REAL_EPSILON;
+    }
     return eps2;
 }
 
