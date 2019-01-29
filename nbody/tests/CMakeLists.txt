@@ -88,9 +88,9 @@ add_test(NAME invalid_input_test
 
 #--------UNCOMMENT THIS SECTION TO ADD CONTEXT TEST--------#
 
-#add_test(NAME context_test
-#           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-#           COMMAND nbody_test_driver "ContextTest.lua")
+add_test(NAME context_test
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "ContextTest.lua")
 
 #----------------------------------------------------------#
 
