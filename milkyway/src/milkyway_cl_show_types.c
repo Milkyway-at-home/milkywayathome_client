@@ -404,6 +404,9 @@ const char* showMWCALtargetEnum(const MWCALtargetEnum x)
         case MW_CAL_TARGET_HAWAII:
             return "MW_CAL_TARGET_HAWAII";
 
+        case MW_CAL_TARGET_RADEON_VII:
+            return "MW_CAL_TARGET_RADEON_VII";
+
         default:
             return "Invalid MWCALtargetEnum";
     }
