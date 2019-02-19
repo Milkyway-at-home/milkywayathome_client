@@ -25,6 +25,7 @@
 #include "nbody_defaults.h"
 #include "nbody_util.h"
 #include "nbody_checkpoint.h"
+#include "nbody_mass.h"
 #include "nbody_grav.h"
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
@@ -126,6 +127,10 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     real likelihood = NAN;
+    real likelihood_EMD = NAN;
+    real likelihood_Mass = NAN;
+    real likelihood_Beta = NAN;
+    real likelihood_Vel = NAN;
     NBodyLikelihoodMethod method;
     HistogramParams hp;
     
@@ -194,6 +199,22 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         if(mw_fabs(likelihood) < mw_fabs(st->bestLikelihood))
         {
             st->bestLikelihood = likelihood;
+
+            st->bestLikelihood_Mass = nbCostComponent(data, histogram);
+
+            if (st->useBetaDisp)
+            {
+                st->bestLikelihood_Beta = nbBetaDispersion(data, histogram);
+            }
+            else st->bestLikelihood_Beta = 0.0;
+
+            if (st->useVelDisp)
+            {
+                st->bestLikelihood_Vel = nbVelocityDispersion(data, histogram);
+            }
+            else st->bestLikelihood_Vel = 0.0;
+
+            st->bestLikelihood_EMD = likelihood-(st->bestLikelihood_Mass)-(st->bestLikelihood_Beta)-(st->bestLikelihood_Vel);
             
             /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;

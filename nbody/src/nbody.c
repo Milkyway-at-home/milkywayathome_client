@@ -210,6 +210,10 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     NBodyHistogram* data = NULL;
     NBodyHistogram* histogram = NULL;
     real likelihood = NAN;
+    real likelihood_EMD = st->bestLikelihood_EMD;
+    real likelihood_Mass = st->bestLikelihood_Mass;
+    real likelihood_Beta = st->bestLikelihood_Beta;
+    real likelihood_Vel = st->bestLikelihood_Vel;
     NBodyLikelihoodMethod method;
 
     /* The likelihood only means something when matching a histogram */
@@ -294,6 +298,10 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood) && ctx->useBestLike)
         {
             likelihood = st->bestLikelihood;
+            likelihood_EMD = st->bestLikelihood_EMD;
+            likelihood_Mass = st->bestLikelihood_Mass;
+            likelihood_Beta = st->bestLikelihood_Beta;
+            likelihood_Vel = st->bestLikelihood_Vel;
         }
         else
         {
@@ -324,6 +332,16 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_SUCCESS;
         }
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
+        mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -likelihood_EMD);
+        mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -likelihood_Mass);
+	if (st->useBetaDisp)
+        {
+            mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -likelihood_Beta);
+        }
+	if (st->useVelDisp)
+        {
+            mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -likelihood_Vel);
+        }
     }
 
 
