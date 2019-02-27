@@ -1249,8 +1249,12 @@ real emdCalc(const real* RESTRICT signature_arr1,
 
     if (!emdIterateSolution(&state))
     {
+        //mw_printf("emdComputeTotalFlow ACCESSED!\n");
         totalCost = emdComputeTotalFlow(&state, flow);
+        //mw_printf("totalCost = %.15f\n", totalCost);
+        //mw_printf("weight = %.15f\n", state.weight);
         emd = (real)(totalCost / state.weight);
+        //mw_printf("emd = %.15f\n", emd);
     }
 
     if (debugFlow)
@@ -1276,15 +1280,27 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
-    unsigned int nSim = histogram->totalNum;
+    unsigned int nSim_uncut = histogram->totalNum;
+    unsigned int nSim = nSim_uncut;
     unsigned int nData = data->totalNum;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     unsigned int i;
+    unsigned int rawCount;
     WeightPos* hist;
     WeightPos* dat;
     real emd;
     real likelihood;
+
+    /* Remove all simulated bodies in unused bins for renormalization after skipping bins */
+    for (i = 0; i < bins; ++i)
+    {
+        if(!data->data[i].useBin)
+        {
+            rawCount = mw_round(histogram->data[i].count * nSim_uncut);
+            nSim -= rawCount;
+        }
+    }
 
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
@@ -1315,7 +1331,7 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
         if (data->data[i].useBin)
         {
             dat[i].weight = (real) data->data[i].count;
-            hist[i].weight = (real) histogram->data[i].count;
+            hist[i].weight = (real) histogram->data[i].count * nSim_uncut / (1.0*nSim);
         }
 
         hist[i].lambda = (real) histogram->data[i].lambda;

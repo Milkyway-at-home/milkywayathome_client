@@ -445,7 +445,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     {
         if(!data->data[i].useBin)
         {
-            rawCount = histogram->data[i].count * nSim_uncut;
+            rawCount = mw_round(histogram->data[i].count * nSim_uncut);
             nSim -= rawCount;
         }
 
