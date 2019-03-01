@@ -108,10 +108,16 @@ static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
                                    int nbody,
-                                   real bestLikelihood_time)
+                                   real bestLikelihood_time,
+                                   real bestLikelihood)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
+
+    if (bestLikelihood_time == 0.0)
+    {
+        bestLikelihood_time = ctx->timeEvolve;
+    }
 
     mwLocalTimeFull(tBuf, sizeof(tBuf));
 
@@ -137,6 +143,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Nbody = %d\n"
             "# Evolve backward time = %f\n"
             "# Evolve forward time = %f\n"
+            "# Best Likelihood = %f\n"
             "# Timestep = %f\n"
             "# Sun GC Dist = %f\n"
             "# Criterion = %s\n"
@@ -147,6 +154,7 @@ static void nbPrintHistogramHeader(FILE* f,
             nbody,
             ctx->timeEvolve,
             bestLikelihood_time,
+            bestLikelihood,
             ctx->timestep,
             ctx->sunGCDist,
             showCriterionT(ctx->criterion),
@@ -526,7 +534,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, st->bestLikelihood_time);
+    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, st->bestLikelihood_time, st->bestLikelihood);
     nbPrintHistogram(f, histogram);
 
     if (f != DEFAULT_OUTPUT_FILE)
