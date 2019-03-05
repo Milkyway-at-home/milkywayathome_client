@@ -188,7 +188,6 @@ static int luaReverseOrbit(lua_State* luaSt)
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
-    //static mwbool* SecondDisk = FALSE;
 
     static const MWNamedArg argTable[] =
         {
@@ -268,7 +267,7 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 7 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 6 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
