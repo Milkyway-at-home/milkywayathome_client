@@ -22,21 +22,51 @@ require "NBodyTesting"
 SM = require "SampleModels"
 SP = require "SamplePotentials"
 
+function erf(x)       --Pulled from https://hewgill.com/picomath/lua/erf.lua.html
+    -- constants
+    a1 =  0.254829592
+    a2 = -0.284496736
+    a3 =  1.421413741
+    a4 = -1.453152027
+    a5 =  1.061405429
+    p  =  0.3275911
+
+    -- Save the sign of x
+    sign = 1
+    if x < 0 then
+        sign = -1
+    end
+    x = math.abs(x)
+
+    -- A&S formula 7.1.26
+    t = 1.0/(1.0 + p*x)
+    y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*math.exp(-x*x)
+
+    return sign*y
+end
+
 function randomNBodyCtx(prng)
    if prng == nil then
       prng = DSFMT.create()
    end
-
+   sigma = prng:random(1.5,3.0)
+   correct = math.sqrt(2*3.1415926535)/(math.sqrt(2*3.1415926535)*erf(sigma/math.sqrt(2)) - 2*sigma*math.exp(-sigma*sigma/2))
    return NBodyCtx.create{
-      timestep    = prng:random(1.0e-5, 1.0e-4),
-      timeEvolve  = prng:random(0, 10),
-      theta       = prng:random(0, 1),
-      eps2        = prng:random(1.0e-9, 1.0e-3),
-      treeRSize   = prng:randomListItem({ 4, 8, 2, 16 }),
-      criterion   = prng:randomListItem({"TreeCode", "SW93", "BH86", "Exact"}),
-      useQuad     = prng:randomBool(),
-      allowIncest = true,
-      quietErrors = true
+      timestep      = prng:random(1.0e-5, 1.0e-4),
+      timeEvolve    = prng:random(0, 10),
+      theta         = prng:random(0, 1),
+      eps2          = prng:random(1.0e-9, 1.0e-3),
+      treeRSize     = prng:randomListItem({ 4, 8, 2, 16 }),
+      criterion     = prng:randomListItem({"TreeCode", "SW93", "BH86", "Exact"}),
+      useQuad       = prng:randomBool(),
+      BestLikeStart = prng:random(0.85,0.99),
+      BetaSigma     = sigma,
+      VelSigma      = sigma,
+      BetaCorrect   = correct,
+      VelCorrect    = correct,
+      IterMax       = floor(prng:random(2,10)),
+      allowIncest   = true,
+      quietErrors   = true
    }
 end
 

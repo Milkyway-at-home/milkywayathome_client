@@ -23,7 +23,13 @@ function makeContext()
       timestep = 0.1,
       timeEvolve = 1.0,
       theta = 0.5,
-      eps2 = 0.01
+      eps2 = 0.01,
+      BestLikeStart = 0.98,
+      BetaSigma     = 2.5,
+      VelSigma      = 2.5,
+      BetaCorrect   = 1.111,
+      VelCorrect    = 1.111,
+      IterMax       = 6
    }
 end
 

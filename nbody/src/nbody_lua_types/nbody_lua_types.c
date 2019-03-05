@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void registerNBodyTypes(lua_State* luaSt)
 {
     registerBody(luaSt);
+    registerNBodyCtx(luaSt);
 
     registerHalo(luaSt);
     registerDisk(luaSt);
@@ -37,8 +38,6 @@ void registerNBodyTypes(lua_State* luaSt)
     
     registerPotential(luaSt);
     registerHistogramParams(luaSt);
-
-    registerNBodyCtx(luaSt);
 }
 
 static const MWEnumAssociation nbodyStatusOptions[] =

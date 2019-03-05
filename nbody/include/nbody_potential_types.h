@@ -26,12 +26,16 @@
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
-#define _SPHERICAL 0
+#define _NO_SPHERICAL 0
+#define _HERN_SPHERICAL 1
+#define _PLUMMER_SPHERICAL 2
 
 typedef enum
 {
     InvalidSpherical   = InvalidEnum,
-    SphericalPotential = _SPHERICAL
+    NoSpherical = _NO_SPHERICAL,
+    HernquistSpherical = _HERN_SPHERICAL,
+    PlummerSpherical = _PLUMMER_SPHERICAL
 } spherical_t;
 
 /* Spherical potential */
@@ -46,16 +50,22 @@ typedef struct MW_ALIGN_TYPE
 
 
 /* Can't get the enum value in preprocessor, so do this */
-#define _MN_DISK 0
-#define _EXP_DISK 1
+#define _NO_DISK 0
+#define _MN_DISK 1
+#define _FREEMAN_DISK 2
+#define _DOUBEXPO_DISK 3
+#define _SECHEXPO_DISK 4
 
 
 /* Supported disk models */
 typedef enum
 {
-    InvalidDisk       = InvalidEnum,
-    MiyamotoNagaiDisk = _MN_DISK,
-    ExponentialDisk   = _EXP_DISK
+    InvalidDisk           = InvalidEnum,
+    NoDisk                = _NO_DISK,
+    MiyamotoNagaiDisk     = _MN_DISK,
+    FreemanDisk           = _FREEMAN_DISK,
+    DoubleExponentialDisk = _DOUBEXPO_DISK,
+    Sech2ExponentialDisk  = _SECHEXPO_DISK
 } disk_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -71,17 +81,31 @@ typedef struct MW_ALIGN_TYPE
 /* Supported halo models */
 
 /* Can't get the enum value in preprocessor, so do this */
-#define _LOG_HALO 0
-#define _NFW_HALO 1
-#define _TRIAXIAL_HALO 2
-#define _CAUSTIC_HALO 3
+#define _NO_HALO 0
+#define _LOG_HALO 1
+#define _NFW_HALO 2
+#define _TRIAXIAL_HALO 3
+#define _CAUSTIC_HALO 4
+#define _AS_HALO 5
+#define _WE_HALO 6
+#define _NFWM_HALO 7
+#define _PLUMMER_HALO 8
+#define _HERNQUIST_HALO 9
+#define _NINKOVIC_HALO 10
 typedef enum
 {
-    InvalidHalo     = InvalidEnum,
-    LogarithmicHalo = _LOG_HALO,
-    NFWHalo         = _NFW_HALO,
-    TriaxialHalo    = _TRIAXIAL_HALO,
-    CausticHalo     = _CAUSTIC_HALO
+    InvalidHalo        = InvalidEnum,
+    NoHalo             = _NO_HALO,
+    LogarithmicHalo    = _LOG_HALO,
+    NFWHalo            = _NFW_HALO,
+    TriaxialHalo       = _TRIAXIAL_HALO,
+    CausticHalo        = _CAUSTIC_HALO,
+    AllenSantillanHalo = _AS_HALO,
+    WilkinsonEvansHalo = _WE_HALO,
+    NFWMassHalo        = _NFWM_HALO,
+    PlummerHalo        = _PLUMMER_HALO,
+    HernquistHalo      = _HERNQUIST_HALO,
+    NinkovicHalo       = _NINKOVIC_HALO
 } halo_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -94,9 +118,15 @@ typedef struct MW_ALIGN_TYPE
     real flattenX;      /* used by triaxial */
     real triaxAngle;    /* used by triaxial */
 
-    real c1;           /* Constants calculated for triaxial from other params */
-    real c2;           /* TODO: Lots more stuff could be cached, but should be done less stupidly */
+    real c1;            /* Constants calculated for triaxial from other params */
+    real c2;            /* TODO: Lots more stuff could be cached, but should be done less stupidly */
     real c3;
+
+    real mass;
+    real gamma;
+    real lambda;
+
+    real rho0;          /*used by Ninkovic Halo*/
 } Halo;
 
 #define HALO_TYPE "Halo"
@@ -132,6 +162,7 @@ typedef struct MW_ALIGN_TYPE
 {
     Spherical sphere[1];
     Disk disk;
+    Disk disk2;
     Halo halo;
     void* rings;       /* currently unused */
 } Potential;
@@ -141,9 +172,10 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
-#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0 }
+#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
+#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
 

@@ -586,11 +586,29 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Potential */
                  "-DUSE_EXTERNAL_POTENTIAL=%d "
+                 "-DHERNQUIST_SPHERICAL=%d "
+                 "-DPLUMMER_SPHERICAL=%d "
+                 "-DNO_SPHERICAL=%d "
                  "-DMIYAMOTO_NAGAI_DISK=%d "
-                 "-DEXPONENTIAL_DISK=%d "
+                 "-DFREEMAN_DISK=%d "
+                 "-DDOUBEXPO_DISK=%d "
+                 "-DSECHEXPO_DISK=%d "
+                 "-DNO_DISK=%d "
+                 "-DMIYAMOTO_NAGAI_DISK2=%d "
+                 "-DFREEMAN_DISK2=%d "
+                 "-DDOUBEXPO_DISK2=%d "
+                 "-DSECHEXPO_DISK2=%d "
+                 "-DNO_DISK2=%d "
                  "-DLOG_HALO=%d "
                  "-DNFW_HALO=%d "
                  "-DTRIAXIAL_HALO=%d "
+                 "-DAS_HALO=%d "
+                 "-DWE_HALO=%d "
+                 "-DNFWM_HALO=%d "
+                 "-DPLUMMER_HALO=%d "
+                 "-DHERNQUIST_HALO=%d "
+                 "-DNINKOVIC_HALO=%d "
+                 "-DNO_HALO=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -611,6 +629,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DHALO_C1=%a "
                  "-DHALO_C2=%a "
                  "-DHALO_C3=%a "
+                 "-DHALO_MASS=%a "
+                 "-DHALO_GAMMA=%a "
+                 "-DHALO_LAMBDA=%a "
+                 "-DHALO_RHO0=%a "
 
                  "%s "
                  "%s "
@@ -652,11 +674,29 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  /* Set potential */
                  ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT,
 
+                 p->sphere[0].type == HernquistSpherical,
+                 p->sphere[0].type == PlummerSpherical,
+                 p->sphere[0].type == NoSpherical,
                  p->disk.type == MiyamotoNagaiDisk,
-                 p->disk.type == ExponentialDisk,
+                 p->disk.type == FreemanDisk,
+                 p->disk.type == DoubleExponentialDisk,
+                 p->disk.type == Sech2ExponentialDisk,
+                 p->disk.type == NoDisk,
+                 p->disk2.type == MiyamotoNagaiDisk,
+                 p->disk2.type == FreemanDisk,
+                 p->disk2.type == DoubleExponentialDisk,
+                 p->disk2.type == Sech2ExponentialDisk,
+                 p->disk2.type == NoDisk,
                  p->halo.type == LogarithmicHalo,
                  p->halo.type == NFWHalo,
                  p->halo.type == TriaxialHalo,
+                 p->halo.type == AllenSantillanHalo,
+                 p->halo.type == WilkinsonEvansHalo,
+                 p->halo.type == NFWMassHalo,
+                 p->halo.type == PlummerHalo,
+                 p->halo.type == HernquistHalo,
+                 p->halo.type == NinkovicHalo,
+                 p->halo.type == NoHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -678,6 +718,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->halo.c1,
                  p->halo.c2,
                  p->halo.c3,
+                 p->halo.mass,
+                 p->halo.gamma,
+                 p->halo.lambda,
+                 p->halo.rho0,
 
                  /* Misc. other stuff */
                  mwHasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : "",

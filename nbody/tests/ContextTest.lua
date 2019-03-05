@@ -24,9 +24,9 @@ SM = require "SampleModels"
 
 local generatingResults = true
 
--- returns (ctx, potential, st)
+-- returns (ctx, st)
 function getTestNBodyState(t)
-   local ctx, pot, model, bodies
+   local ctx, potential, model, bodies, st
    pot = SP.samplePotentials[t.potential]
    model = SM.sampleModels[t.model]
    bodies, eps2, dt = model(t.nbody, t.seed)
@@ -39,10 +39,21 @@ function getTestNBodyState(t)
       treeRSize   = t.treeRSize,
       criterion   = t.criterion,
       useQuad     = t.useQuad,
+      BestLikeStart = 0.95,
+      BetaSigma     = 2.5,
+      VelSigma      = 2.5,
+      BetaCorrect   = 1.111,
+      VelCorrect    = 1.111,
+      IterMax       = 6,
       allowIncest = t.allowIncest,
       quietErrors = true
    }
-   return ctx, pot, NBodyState.create(ctx, pot, bodies)
+   --Add potential to context
+   ctx:addPotential(pot)
+
+   st = NBodyState.create(ctx, bodies)
+
+   return ctx, st
 end
 
 local resultTable = {

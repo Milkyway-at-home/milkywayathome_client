@@ -24,14 +24,36 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwbool checkSphericalConstants(Spherical* s)
 {
-    if (mwCheckNormalPosNum(s->mass) || mwCheckNormalPosNum(s->scale))
+    mwbool badSpherical = FALSE;
+    switch (s->type)
     {
-        mw_printf("Invalid parameters for '%s': mass = %.15f, scale = %.15f\n",
-                  showSphericalT(s->type), s->mass, s->scale);
-        return TRUE;
-    }
+        case HernquistSpherical:
+            if (mwCheckNormalPosNum(s->mass) || mwCheckNormalPosNum(s->scale))
+            {
+                mw_printf("Invalid parameters for '%s': mass = %.15f, scale = %.15f\n",
+                          showSphericalT(s->type), s->mass, s->scale);
+                badSpherical = TRUE;
+            }
+            break;
 
-    return FALSE;
+        case PlummerSpherical:
+            if (mwCheckNormalPosNum(s->mass) || mwCheckNormalPosNum(s->scale))
+            {
+                mw_printf("Invalid parameters for '%s': mass = %.15f, scale = %.15f\n",
+                          showSphericalT(s->type), s->mass, s->scale);
+                badSpherical = TRUE;
+            }
+            break;
+
+        case NoSpherical:
+            break;
+
+        case InvalidSpherical:
+        default:
+            mw_printf("Invalid spherical type: %s (%d)\n", showSphericalT(s->type), s->type);
+            return 1;
+    }
+    return badSpherical;
 }
 
 mwbool checkDiskConstants(Disk* d)
@@ -57,7 +79,29 @@ mwbool checkDiskConstants(Disk* d)
             }
             break;
 
-        case ExponentialDisk:
+        case DoubleExponentialDisk:
+            if (mwCheckNormalPosNum(d->scaleLength) || mwCheckNormalPosNum(d->scaleHeight))
+            {
+                mw_printf("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f\n",
+                          showDiskT(d->type),
+                          d->scaleLength,
+                          d->scaleHeight);
+                badDisk = TRUE;
+            }
+            break;
+
+        case Sech2ExponentialDisk:
+            if (mwCheckNormalPosNum(d->scaleLength) || mwCheckNormalPosNum(d->scaleHeight))
+            {
+                mw_printf("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f\n",
+                          showDiskT(d->type),
+                          d->scaleLength,
+                          d->scaleHeight);
+                badDisk = TRUE;
+            }
+            break;
+
+        case FreemanDisk:
             if (mwCheckNormalPosNum(d->scaleLength))
             {
                 mw_printf("Invalid parameter for disk type '%s': scaleLength = %.15f\n",
@@ -66,6 +110,9 @@ mwbool checkDiskConstants(Disk* d)
                 badDisk = TRUE;
             }
 
+            break;
+
+        case NoDisk:
             break;
 
         case InvalidDisk:
@@ -89,25 +136,29 @@ mwbool checkHaloConstants(Halo* h)
     real phi, cp, cps, sp, sps;
     real qxs, qys;
 
-    /* Common to all 4 models */
-    if (!isfinite(h->vhalo) || mwCheckNormalPosNum(h->scaleLength))
-        return invalidHaloWarning(h->type);
-
     switch (h->type)
     {
         case LogarithmicHalo:
-            if (!isfinite(h->flattenZ))
+            if (!isfinite(h->flattenZ) || !isfinite(h->vhalo) || !isfinite(h->scaleLength))
+            {
                 return invalidHaloWarning(h->type);
+            }
             break;
 
         case NFWHalo:
+            if (!isfinite(h->vhalo) || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
             break;
 
         case TriaxialHalo:
             if (   !isfinite(h->triaxAngle)
                 || !isfinite(h->flattenX)
                 || !isfinite(h->flattenY)
-                || !isfinite(h->flattenZ))
+                || !isfinite(h->flattenZ)
+                || !isfinite(h->vhalo)
+                || !isfinite(h->scaleLength))
             {
                 return invalidHaloWarning(h->type);
             }
@@ -129,6 +180,56 @@ mwbool checkHaloConstants(Halo* h)
             break;
 
         case CausticHalo:
+            break;
+
+        case AllenSantillanHalo:
+            if (   !isfinite(h->gamma)
+                || !isfinite(h->lambda)
+                || !isfinite(h->mass)
+                || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case WilkinsonEvansHalo:
+            if (!isfinite(h->mass) || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case NFWMassHalo:
+            if (!isfinite(h->mass) || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case PlummerHalo:
+            if (!isfinite(h->mass) || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case HernquistHalo:
+            if (!isfinite(h->mass) || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case NinkovicHalo:
+            if (   !isfinite(h->rho0)
+                || !isfinite(h->lambda)
+                || !isfinite(h->scaleLength))
+            {
+                return invalidHaloWarning(h->type);
+            }
+            break;
+
+        case NoHalo:
             break;
 
         case InvalidHalo:

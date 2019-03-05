@@ -408,12 +408,13 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
     real n = (real) histogram->totalSimulated;
-    real nSim = (real) histogram->totalNum;
+    real nSim_uncut = (real) histogram->totalNum;   /* Total simulated before dropping bins */
     real nData = (real) data->totalNum;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
     real rawCount;
+    real nSim = nSim_uncut;
     
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
@@ -444,7 +445,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     {
         if(!data->data[i].useBin)
         {
-            rawCount = histogram->data[i].count * nSim;
+            rawCount = mw_round(histogram->data[i].count * nSim_uncut);
             nSim -= rawCount;
         }
 
@@ -455,6 +456,15 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * and the poisson error for the data
      */
     p = ( nSim / n) ;
+
+    /*Print statements for debugging likelihood*/
+//    mw_printf("dataMass = %.15f\n",dataMass);
+//    mw_printf("nData    = %.15f\n",nData);
+//    mw_printf("histMass = %.15f\n",histMass);
+//    mw_printf("nSim     = %.15f\n",nSim);
+//    mw_printf("p        = %.15f\n",p);
+//    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
+
     real num = - sqr(dataMass * nData - histMass * nSim);
     real denom = 2.0 * (sqr(dataMass) * nData + sqr(histMass) * nSim * p * (1.0 - p));
     real CostComponent = num / denom; //this is the log of the cost component

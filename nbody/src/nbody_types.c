@@ -179,6 +179,10 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->nbody = nbody;
     st->bodytab = bodies;
     st->bestLikelihood = DEFAULT_WORST_CASE;
+    st->bestLikelihood_EMD = 0.0;
+    st->bestLikelihood_Mass = 0.0;
+    st->bestLikelihood_Beta = 0.0;
+    st->bestLikelihood_Vel = 0.0;
     st->bestLikelihood_time = 0.0;
     st->bestLikelihood_count = 0;
     
@@ -555,6 +559,7 @@ int equalHalo(const Halo* h1, const Halo* h2)
 {
     return (h1->type == h2->type)
         && feqWithNan(h1->vhalo, h2->vhalo)
+        && feqWithNan(h1->mass, h2->mass)
         && feqWithNan(h1->scaleLength, h2->scaleLength)
         && feqWithNan(h1->flattenZ, h2->flattenZ)
         && feqWithNan(h1->flattenY, h2->flattenY)
@@ -562,7 +567,8 @@ int equalHalo(const Halo* h1, const Halo* h2)
         && feqWithNan(h1->triaxAngle, h2->triaxAngle)
         && feqWithNan(h1->c1, h2->c1)
         && feqWithNan(h1->c2, h2->c2)
-        && feqWithNan(h1->c3, h2->c3);
+        && feqWithNan(h1->c3, h2->c3)
+        && feqWithNan(h1->rho0, h2->rho0);
 }
 
 int equalSpherical(const Spherical* s1, const Spherical* s2)
@@ -576,6 +582,7 @@ int equalPotential(const Potential* p1, const Potential* p2)
 {
     return equalSpherical(&p1->sphere[0], &p2->sphere[0])
         && equalDisk(&p1->disk, &p2->disk)
+        && equalDisk(&p1->disk2, &p2->disk2)
         && equalHalo(&p1->halo, &p2->halo);
 }
 

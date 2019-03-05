@@ -27,6 +27,7 @@
 #include "nbody_emd.h"
 #include "nbody_mass.h"
 #include "nbody_defaults.h"
+#include "nbody_potential_types.h"
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
 #include "nbody_show.h"
@@ -107,10 +108,16 @@ static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
                                    int nbody,
-                                   real bestLikelihood_time)
+                                   real bestLikelihood_time,
+                                   real bestLikelihood)
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
+
+    if (bestLikelihood_time == 0.0)
+    {
+        bestLikelihood_time = ctx->timeEvolve;
+    }
 
     mwLocalTimeFull(tBuf, sizeof(tBuf));
 
@@ -136,6 +143,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Nbody = %d\n"
             "# Evolve backward time = %f\n"
             "# Evolve forward time = %f\n"
+            "# Best Likelihood = %f\n"
             "# Timestep = %f\n"
             "# Sun GC Dist = %f\n"
             "# Criterion = %s\n"
@@ -146,6 +154,7 @@ static void nbPrintHistogramHeader(FILE* f,
             nbody,
             ctx->timeEvolve,
             bestLikelihood_time,
+            -bestLikelihood,
             ctx->timestep,
             ctx->sunGCDist,
             showCriterionT(ctx->criterion),
@@ -167,13 +176,49 @@ static void nbPrintHistogramHeader(FILE* f,
         return;
     }
 
+    switch (p->sphere[1].type)
+    {
+        case HernquistSpherical:
+
+            fprintf(f,
+                    "# Spherical: Hernquist\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->sphere[0].mass,
+                    p->sphere[0].scale);
+            break;
+
+        case PlummerSpherical:
+
+            fprintf(f,
+                    "# Spherical: Plummer\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->sphere[0].mass,
+                    p->sphere[0].scale);
+            break;
+
+        case NoSpherical:
+
+            fprintf(f,
+                    "# Spherical: None\n");
+            break;
+
+        case InvalidSpherical:
+        default:
+            fprintf(f,
+                    "# Spherical: ???\n"
+                    "#\n");
+    }
 
     switch (p->disk.type)
     {
         case MiyamotoNagaiDisk:
 
             fprintf(f,
-                    "# Disk: MiaymotoNagai\n"
+                    "# Primary Disk: MiaymotoNagai\n"
                     "#   mass = %f\n"
                     "#   a = %f\n"
                     "#   b = %f\n"
@@ -183,9 +228,35 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleHeight);
             break;
 
-        case ExponentialDisk:
+        case DoubleExponentialDisk:
+
             fprintf(f,
-                    "# Disk: Exponential\n"
+                    "# Primary Disk: DoubleExponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case Sech2ExponentialDisk:
+
+            fprintf(f,
+                    "# Primary Disk: Sech2Exponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case FreemanDisk:
+            fprintf(f,
+                    "# Primary Disk: Freeman\n"
                     "#   mass = %f\n"
                     "#   b = %f\n"
                     "#\n",
@@ -193,13 +264,82 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleLength);
             break;
 
+        case NoDisk:
+            fprintf(f,
+                    "# Primary Disk: None\n");
+            break;
+
         case InvalidDisk:
         default:
             fprintf(f,
-                    "# Disk: ???\n"
+                    "# Primary Disk: ???\n"
                     "#\n");
     }
 
+    switch (p->disk2.type)
+    {
+        case MiyamotoNagaiDisk:
+
+            fprintf(f,
+                    "# Seconday Disk: MiaymotoNagai\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#   b = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case DoubleExponentialDisk:
+
+            fprintf(f,
+                    "# Secondary Disk: DoubleExponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case Sech2ExponentialDisk:
+
+            fprintf(f,
+                    "# Secondary Disk: Sech2Exponential\n"
+                    "#   mass = %f\n"
+                    "#   Rd = %f\n"
+                    "#   zd = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.scaleHeight);
+            break;
+
+        case FreemanDisk:
+            fprintf(f,
+                    "# Secondary Disk: Freeman\n"
+                    "#   mass = %f\n"
+                    "#   b = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength);
+            break;
+
+        case NoDisk:
+            fprintf(f,
+                    "# Secondary Disk: None\n"
+                    "#\n");
+            break;
+
+        case InvalidDisk:
+        default:
+            fprintf(f,
+                    "# Secondary Disk: ???\n"
+                    "#\n");
+    
+    }
 
     switch (p->halo.type)
     {
@@ -244,6 +384,77 @@ static void nbPrintHistogramHeader(FILE* f,
             fprintf(f,
                     "# Halo: Caustic\n"
                     "#\n");
+            break;
+
+        case AllenSantillanHalo:
+            fprintf(f,
+                    "# Halo: Allen-Santillan\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#   gamma = %f\n"
+                    "#   lambda = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength,
+                    p->halo.gamma,
+                    p->halo.lambda);
+            break;
+
+        case WilkinsonEvansHalo:
+            fprintf(f,
+                    "# Halo: Wilkinson-Evans\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength);
+            break;
+
+        case NFWMassHalo:
+            fprintf(f,
+                    "# Halo: NFW\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength);
+            break;
+
+        case PlummerHalo:
+            fprintf(f,
+                    "# Halo: Plummer\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength);
+            break;
+
+        case HernquistHalo:
+            fprintf(f,
+                    "# Halo: Hernquist\n"
+                    "#   mass = %f\n"
+                    "#   a = %f\n"
+                    "#\n",
+                    p->halo.mass,
+                    p->halo.scaleLength);
+            break;
+
+        case NinkovicHalo:
+            fprintf(f,
+                    "# Halo: Ninkovic\n"
+                    "#   rho0 = %f\n"
+                    "#   a = %f\n"
+                    "#   rl = %f\n"
+                    "#\n",
+                    p->halo.rho0,
+                    p->halo.scaleLength,
+                    p->halo.lambda);
+            break;
+
+        case NoHalo:
+            fprintf(f,
+                    "# Halo: None\n");
             break;
 
         case InvalidHalo:
@@ -323,7 +534,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, st->bestLikelihood_time);
+    nbPrintHistogramHeader(f, ctx, &histogram->params, st->nbody, st->bestLikelihood_time, st->bestLikelihood);
     nbPrintHistogram(f, histogram);
 
     if (f != DEFAULT_OUTPUT_FILE)

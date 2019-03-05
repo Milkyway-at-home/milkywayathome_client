@@ -61,8 +61,12 @@ const char* showSphericalT(spherical_t x)
 {
     switch (x)
     {
-        case SphericalPotential:
-            return "SphericalPotential";
+        case HernquistSpherical:
+            return "HernquistSpherical";
+        case PlummerSpherical:
+            return "PlummerSpherical";
+        case NoSpherical:
+            return "NoSpherical";
         case InvalidSpherical:
             return "InvalidSpherical";
         default:
@@ -76,8 +80,14 @@ const char* showDiskT(disk_t x)
     {
         case MiyamotoNagaiDisk:
             return "MiyamotoNagaiDisk";
-        case ExponentialDisk:
-            return "ExponentialDisk";
+        case DoubleExponentialDisk:
+            return "DoubleExponentialDisk";
+        case Sech2ExponentialDisk:
+            return "DoubleExponentialDisk";
+        case FreemanDisk:
+            return "FreemanDisk";
+        case NoDisk:
+            return "NoDisk";
         case InvalidDisk:
             return "InvalidDisk";
         default:
@@ -95,6 +105,20 @@ const char* showHaloT(halo_t x)
             return "NFWHalo";
         case TriaxialHalo:
             return "TriaxialHalo";
+        case AllenSantillanHalo:
+            return "AllenSantillanHalo";
+        case WilkinsonEvansHalo:
+            return "WilkinsonEvansHalo";
+        case NFWMassHalo:
+            return "NFWMassHalo";
+        case PlummerHalo:
+            return "PlummerHalo";
+        case HernquistHalo:
+            return "HernquistHalo";
+        case NinkovicHalo:
+            return "NinkovicHalo";
+        case NoHalo:
+            return "NoHalo";
         case InvalidHalo:
             return "InvalidHalo";
         default:
@@ -259,6 +283,10 @@ char* showHalo(const Halo* h)
                      "      c2           = %g\n"
                      "      c3           = %g\n"
                      "      triaxAngle   = %g\n"
+                     "      gamma        = %g\n"
+                     "      lambda       = %g\n"
+                     "      mass         = %g\n"
+                     "      rho0         = %g\n"
                      "    };\n",
                      showHaloT(h->type),
                      h->vhalo,
@@ -269,7 +297,11 @@ char* showHalo(const Halo* h)
                      h->c1,
                      h->c2,
                      h->c3,
-                     h->triaxAngle))
+                     h->triaxAngle,
+                     h->gamma,
+                     h->lambda,
+                     h->mass,
+                     h->rho0))
     {
         mw_fail("asprintf() failed\n");
     }

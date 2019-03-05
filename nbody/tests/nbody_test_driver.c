@@ -39,7 +39,6 @@
 #include "nbody_defaults.h"
 #include "nbody_tree.h"
 
-
 /* things in NBodyCtx which influence individual steps that aren't the potential. */
 typedef struct
 {
@@ -161,12 +160,6 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
         return 1;
     }
 
-    if (!EVP_MD_CTX_cleanup(hashCtx))
-    {
-        mw_printf("Error cleaning up hash context for NBodyCtxTest\n");
-        return 1;
-    }
-
     return 0;
 }
 
@@ -175,13 +168,22 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     EVP_MD_CTX hashCtx;
     int failed = 0;
 
-    EVP_MD_CTX_init(&hashCtx);
+    //mw_printf("HASHN - Before initializing context\n");
+    //hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.0
+    EVP_MD_CTX_init(&hashCtx);           //OPENSSL V1.0.2
+
+    //mw_printf("HASHN - Before core\n");
     failed = hashNBodyTestCore(&hashCtx, hash, test);
-    if (!EVP_MD_CTX_cleanup(&hashCtx))
+
+    //mw_printf("HASHN - Before free\n");
+    //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
+    if (!EVP_MD_CTX_cleanup(&hashCtx)) //OPENSSL V1.0.2
     {
         mw_printf("Error cleaning up hash context\n");
         return 1;
     }
+
+    //mw_printf("HASHN - After\n");
 
     return failed;
 }
@@ -240,13 +242,20 @@ static int hashNBodyTestTable(lua_State* luaSt)
 {
     NBodyTest test;
     MWHash hash;
-    char buf[SHA_DIGEST_LENGTH];
+    char buf[2 * sizeof(MWHash) + 1] = "";
 
+    //mw_printf("HASHNTABLE - Before checkNBodyTestTable\n");
     checkNBodyTestTable(luaSt, lua_gettop(luaSt), &test);
+
+    //mw_printf("HASHNTABLE - Before hashNBodyTest\n");
     hashNBodyTest(&hash, &test);
 
+    //mw_printf("HASHNTABLE - Before showHash\n");
     showHash(buf, &hash);
+    //mw_printf("HASHNTABLE - Before pushstring\n");
     lua_pushstring(luaSt, buf);
+
+    //mw_printf("HASHNTable - After\n");
 
     return 1;
 }
@@ -258,6 +267,8 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     int i;
     unsigned int mdLen;
     const Body* b;
+
+    //mw_printf("CORE - Before struct definition\n");
     struct
     {
         mwvector pos, vel;
@@ -272,6 +283,7 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
         return 1;
     }
 
+    //mw_printf("CORE - Digest Check\n");
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
     {
         mw_printf("Initializing hash digest failed\n");
@@ -281,8 +293,11 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     /* Prevent random garbage from getting hashed. The struct will be
      * padded and won't be the same size as 2 * sizeof(mwvector) +
      * sizeof(real) so bad things happen when hashing sizeof(hashableBody) */
+
+    //mw_printf("CORE - Before memset\n");
     memset(&hashableBody, 0, sizeof(hashableBody));
 
+    //mw_printf("CORE - Before body loop\n");
     for (i = 0; i < nbody; ++i)
     {
         b = &bodies[i];
@@ -299,12 +314,14 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
         }
     }
 
+    //mw_printf("CORE - Before final Digest Check\n");
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, &mdLen))
     {
         mw_printf("Error finalizing hash\n");
         return 1;
     }
 
+    //mw_printf("CORE - Before Digest length assertion\n");
     assert(mdLen == SHA_DIGEST_LENGTH);
 
     return 0;
@@ -345,16 +362,26 @@ static void nbodyTestCleanup(void)
 #if USE_SSL_TESTS
 int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
 {
+    //mw_printf("HASHBOD - Before hashCtx definition\n");
     EVP_MD_CTX hashCtx;
     int failed = 0;
 
-    EVP_MD_CTX_init(&hashCtx);
+    //mw_printf("HASHBOD - Before hashCtx creation\n");
+    //hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.0
+    EVP_MD_CTX_init(&hashCtx);           //OPENSSL V1.0.2
+
+    //mw_printf("HASHBOD - Before hashBodiesCore\n");
     failed = hashBodiesCore(&hashCtx, hash, bodies, nbody);
-    if (!EVP_MD_CTX_cleanup(&hashCtx))
+
+    //mw_printf("HASHBOD - Before free\n");
+    //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
+    if (!EVP_MD_CTX_cleanup(&hashCtx)) //OPENSSL V1.0.2
     {
         mw_printf("Error cleaning up hash context\n");
         return 1;
     }
+
+    //mw_printf("HASHBOD - After free\n");
 
     return failed;
 }
@@ -389,19 +416,33 @@ static int luaHashOrHashSortBodies(lua_State* luaSt, int sort)
 {
     NBodyState* st;
     MWHash hash;
+
+    //mw_printf("HASHSORT - Before hashBuf definition\n");
     char hashBuf[2 * sizeof(MWHash) + 1] = "";
 
+    //mw_printf("HASHSORT - Before argument check\n");
     if (lua_gettop(luaSt) != 1)
+    {
         luaL_argerror(luaSt, 1, "Expected 1 argument");
+    }
 
+    //mw_printf("HASHSORT - Before checkNBodyState\n");
     st = checkNBodyState(luaSt, 1);
 
+    //mw_printf("HASHSORT - Before sort check\n");
     if (sort)
+    {
+        //mw_printf("HASHSORT - Before sortBodies\n");
         sortBodies(st->bodytab, st->nbody);
+    }
 
+    //mw_printf("HASHSORT - Before hashBodies\n");
     hashBodies(&hash, st->bodytab, st->nbody);
 
+    //mw_printf("HASHSORT - Before showHash\n");
     showHash(hashBuf, &hash);
+
+    //mw_printf("HASHSORT - Before pushstring\n");
     lua_pushstring(luaSt, hashBuf);
 
     return 1;
@@ -414,6 +455,7 @@ static int luaHashBodies(lua_State* luaSt)
 
 static int luaHashSortBodies(lua_State* luaSt)
 {
+    //mw_printf("HASHSORT - Before luaHashOrHashSortBodies\n");
     return luaHashOrHashSortBodies(luaSt, 1);
 }
 

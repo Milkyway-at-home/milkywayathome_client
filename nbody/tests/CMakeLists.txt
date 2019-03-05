@@ -42,11 +42,18 @@ add_executable(emd_test emd_test.c)
 set(emd_test_link_libs nbody
                        milkyway)
 
+add_executable(bessel_test bessel_test.c)
+
+set(bessel_test_link_libs nbody
+                          milkyway)
+
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
+milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -66,19 +73,26 @@ add_test(NAME custom_arg_test
 
 add_test(NAME emd_test COMMAND emd_test)
 
+add_test(NAME bessel_test COMMAND bessel_test)
+
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
 add_test(NAME invalid_input_test
-         COMMAND nbody_test_driver "RunInvalidInputTests.lua"
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "RunInvalidInputTests.lua"
                                    $<TARGET_FILE:milkyway_nbody>
                                    ${INVALID_TEST_INPUTS})
 
 
 
 
+#--------UNCOMMENT THIS SECTION TO ADD CONTEXT TEST--------#
 
-# add_test(NAME context_test
-#          COMMAND nbody_test_driver "ContextTest.lua")
+add_test(NAME context_test
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "ContextTest.lua")
+
+#----------------------------------------------------------#
 
 # Run these first 3 tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,4,1)
@@ -96,6 +110,9 @@ set(orphan_model_names model_1
                        model_5_bounds_test
                        model_6
                        model_7
+                       model_8
+                       model_9
+                       model_ninkovic
                        model_triaxial)
 
 foreach(model_name ${orphan_model_names})
@@ -106,7 +123,7 @@ foreach(model_name ${orphan_model_names})
                                           $<TARGET_FILE:milkyway_nbody>
                                           "orphan_models"
                                           ${model_name}
-                                          "orphan_model_histogram"
+                                          "new_orphan_model_histogram"
                                           ${n})
   endforeach()
 endforeach()
@@ -122,7 +139,7 @@ foreach(n ${body_counts})
 endforeach()
 
 
-# compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
+#compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
 #execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"
 #                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
 

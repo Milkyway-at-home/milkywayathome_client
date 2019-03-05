@@ -129,17 +129,22 @@ end
 
 function runTest(t)
    local status, fatal = "NBODY_SUCCESS", false  -- 0 steps is OK
-
-   local ctx, pot, st = getTestNBodyState(t)
+   --eprintf("TEST - Before getTestNBodyState\n")
+   local ctx, st = getTestNBodyState(t)
+   --eprintf("TEST - Before Step Loop\n")
    for i = 1, t.nSteps do
-      status = st:step(ctx, pot)
+     --eprintf("TEST - Before State Step\n")
+      status = st:step(ctx)
+      --eprintf("TEST - Before Status Check\n")
       fatal = statusIsFatal(status)
       if fatal then
          break
       end
    end
-
-   return st:hashSortBodies(), status, fatal
+   --eprintf("TEST - Before Sort Bodies\n")
+   local res = st:hashSortBodies()
+   --eprintf("TEST - After\n")
+   return res, status, fatal
 end
 
 
@@ -151,13 +156,17 @@ function runTestSet(tests, resultTable)
    for _, t in ipairs(tests) do
       print("Running test ", i, 100 * i / #tests)
       printResult(t)
+      --eprintf("TESTSET - Before runTest\n")
       local resultHash, status, failed = runTest(t)
+      --eprintf("TESTSET - Before hashNBodyTest\n")
       local testHash = hashNBodyTest(t)
+      --eprintf("TESTSET - Before resultTable assignments\n")
       resultTable.hashtable[testHash] = t
       resultTable.hashtable[testHash].result = resultHash
       resultTable.hashtable[testHash].status = status
       resultTable.hashtable[testHash].failed = failed
       i = i + 1
+      --eprintf("TESTSET - After\n")
 
    end
 

@@ -1,0 +1,27 @@
+Available Potential Models for MW@HOME:
+--------------------------------------------
+
+Spherical:
+      Spherical.hernquist{ mass = <structure mass units>, scale = <kpc> }
+      Spherical.plummer{ mass = <structure mass units>, scale = <kpc> }
+      Spherical.none{ mass = <whatever> }
+
+Disk:
+      Disk.miyamotoNagai{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
+      Disk.doubleExponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
+      Disk.sech2Exponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
+      Disk.freeman{ mass = <structure mass units>, scaleLength = <kpc> }
+      Disk.none{ mass = <whatever> }
+
+Halo:
+      Halo.logarithmic{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenZ = <q> }
+      Halo.nfw{ vhalo = <kpc/Gyr>, scaleLength = <kpc> }
+      Halo.triaxial{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenX = <q>, flattenY = <q>, flattenZ = <q>, triaxAngle = <q> }
+      Halo.caustic{}??? (Don't use this one.)
+      Halo.allenSantillan{ mass = <structure mass units>, scaleLength = <kpc>, lambda = <kpc>, gamma = <q> }
+      Halo.wilkinsonEvans{ mass = <structure mass units>, scaleLength = <kpc> }
+      Halo.nfwmass{ mass = <structure mass units>, scaleLength = <kpc> }
+      Halo.plummer{ mass = <structure mass units>, scaleLength = <kpc> }
+      Halo.hernquist{ mass = <structure mass units>, scaleLength = <kpc> }
+      Halo.ninkovic{ rho0 = <structure mass units/kpc^3>, scaleLength = <kpc>, lambda = <kpc> }
+      Halo.none{ mass = <whatever> }
