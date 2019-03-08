@@ -79,7 +79,8 @@ static const AMDGPUData amdGPUData[] =
 
     /* Sea Islands family W8100, W9100, S9150 */
     { "Hawaii",     MW_CAL_TARGET_HAWAII,   16 * 4, 2, 64 },
-    { "Radeon VII", MW_CAL_TARGET_RADEON_VII,   16 * 4, 4, 64 },
+    /* Radeon VII has this string 'gfx906' ! */
+    { "gfx906", MW_CAL_TARGET_RADEON_VII,   16 * 4, 4, 64 },
 
 
 #if 0
