@@ -27,10 +27,10 @@ arch = sys.argv[2]
 nbody_openmp_sep_opencl = sys.argv[3]
 assert os in ["win", "linux", "mac"], "ERROR: Unknown OS " + os
 assert arch in ["32", "64"], "ERROR: Unknown arch " + bit 
-assert nbody_openmp_sep_opencl in ["ON", "OFF"], "ERROR: Set NBODY_OPENMP to ON or OFF"
+assert sep_opencl in ["ON", "OFF"], "ERROR: Set SEP_OPENCL to ON or OFF" #No longer using multithreaded
 
 # CMake flags used for all platforms
-cmake_shared_flags = ["-DSEPARATION=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY_OPENMP=" + nbody_openmp_sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
+cmake_shared_flags = ["-DSEPARATION=ON", "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER", "-DNBODY=" + sep_opencl, "-DSEPARATION_OPENCL=" + nbody_openmp_sep_opencl]
 
 # CMake flags used for windows
 cmake_static_flag = ["-DNBODY_STATIC=ON",  "-DBOINC_APPLICATION=ON",  "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_TOOLCHAIN_FILE=cmake_modules/MinGW32-Cross-Toolchain.cmake"]
