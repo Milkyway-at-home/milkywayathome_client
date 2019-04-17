@@ -24,7 +24,7 @@ if len(sys.argv) != 4:
 # Make sure os and architecture are valid
 os  = sys.argv[1]
 arch = sys.argv[2]
-nbody_openmp_sep_opencl = sys.argv[3]
+sep_opencl = sys.argv[3]
 assert os in ["win", "linux", "mac"], "ERROR: Unknown OS " + os
 assert arch in ["32", "64"], "ERROR: Unknown arch " + bit 
 assert sep_opencl in ["ON", "OFF"], "ERROR: Set SEP_OPENCL to ON or OFF" #No longer using multithreaded
