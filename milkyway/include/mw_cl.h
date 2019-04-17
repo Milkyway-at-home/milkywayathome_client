@@ -27,9 +27,9 @@
   #include <OpenCL/cl_platform.h>
   #include <OpenCL/cl_ext.h>
 #else
-  #include </usr/include/CL/cl.h>               /*FIXME--Should just be "CL/cl.h" in brackets, but computer can't seem to find files otherwise*/
-  #include </usr/include/CL/cl_platform.h>      /*FIXME--Should just be "CL/cl_platform.h" in brackets, but computer can't seem to find files otherwise*/
-  #include </usr/include/CL/cl_ext.h>           /*FIXME--Should just be "CL/cl_ext.h" in brackets, but computer can't seem to find files otherwise*/
+  #include "CL/cl.h"
+  #include "CL/cl_platform.h"
+  #include "CL/cl_ext.h"
 #endif /* __APPLE__ */
 
 /* This doesn't seem to exist on OS X, but the callback on ATI on
