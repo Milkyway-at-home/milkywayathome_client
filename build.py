@@ -53,7 +53,7 @@ if os == "linux":
         execute(["cmake", "..", "-DOPENCL_LIBRARIES=/usr/lib/x86_64-linux-gnu/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_amd64/usr/local/cuda/include/", "-DBUILD_32=OFF"] + cmake_shared_flags + cmake_static_flag)
     if arch == "32":
         print("Warning: Linux 32 bit not supported for Milky Way N-body")
-        execute(["cmake", ".", "-DBUILD_32=ON", "-DNBODY=OFF", "-DSEPARATION_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_i386/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_i386/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
+        execute(["cmake", "..", "-DBUILD_32=ON", "-DNBODY=OFF", "-DSEPARATION_STATIC=ON", "-DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386", "-DOPENCL_LIBRARIES=/srv/chroot/hardy_i386/usr/lib/libOpenCL.so", "-DOPENCL_INCLUDE_DIRS=/srv/chroot/hardy_i386/usr/local/cuda/include/"] + cmake_shared_flags + cmake_static_flag)
     
     execute(["make", "clean"])
     execute(["make"])
@@ -62,11 +62,11 @@ if os == "linux":
 if os == "win":
 
     if arch == "64":
-        execute(["cmake", ".", "-DOPENCL_INCLUDE_DIRS=/home/jenkins/cuda/include", "-DOPENCL_LIBRARIES=/home/jenkins/x86_64/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag + cmake_windows_toolchain)
+        execute(["cmake", "..", "-DOPENCL_INCLUDE_DIRS=/home/jenkins/cuda/include", "-DOPENCL_LIBRARIES=/home/jenkins/x86_64/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag + cmake_windows_toolchain)
 
     if arch == "32":
         #print("ERROR: Windows 32 bit not supported")
-        execute(["cmake", ".", "-DBUILD_32=ON", "-DOPENCL_INCLUDE_DIRS=/home/jenkins/cuda/include", "-DOPENCL_LIBRARIES=/home/jenkins/x86/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag + cmake_windows_toolchain)
+        execute(["cmake", "..", "-DBUILD_32=ON", "-DOPENCL_INCLUDE_DIRS=/home/jenkins/cuda/include", "-DOPENCL_LIBRARIES=/home/jenkins/x86/OpenCL.lib"] + cmake_shared_flags + cmake_static_flag + cmake_windows_toolchain)
     
     execute(["make", "clean"])
     execute(["make"])
@@ -75,7 +75,7 @@ if os == "win":
 if os == "mac":
 
     if arch == "64":
-        execute(["/opt/local/bin/cmake", "."] + cmake_shared_flags + cmake_static_flag + ["-DCMAKE_C_FLAGS='-O3'" ])
+        execute(["/opt/local/bin/cmake", ".."] + cmake_shared_flags + cmake_static_flag + ["-DCMAKE_C_FLAGS='-O3'" ])
 
     if arch == "32":
         print("ERROR: Mac OSX 32 bit not supported")
