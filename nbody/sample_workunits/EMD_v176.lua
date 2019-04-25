@@ -45,6 +45,9 @@ orbit_parameter_vy = 79
 orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
+-- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
+TooManyTimesteps = 0
+
 function makePotential()
     --NOTE: To exculde a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
     return  Potential.create{
@@ -78,6 +81,11 @@ function get_timestep()
     
     tmp = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_d)) / (mass_l + mass_d))
 --     print('timestep ', t, tmp)
+
+    if (evolveTime/t > 150000 or t ~= t) then
+        TooManyTimesteps = 1
+        t = evolveTime/4.0
+    end
     
     return t
 end
@@ -109,6 +117,10 @@ function makeBodies(ctx, potential)
     local firstModel
     local finalPosition, finalVelocity
     
+    if TooManyTimesteps == 1 then
+        totalBodies = 1
+    end
+
     finalPosition, finalVelocity = reverseOrbit{
         potential = potential,
         position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),

@@ -505,10 +505,10 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
     mwvector acc, acctmp;
     real r = mw_absv(pos);
     const real limit = mw_pow(2.0,-8.0);
-    if (r < limit)
-    {
-        r = limit;
-    }
+
+    /* Change r if less than limit. Done this way to pipeline this step*/
+    r = (r <= limit)*limit + (r > limit)*r;
+
     /*Calculate the Disk Accelerations*/
     switch (pot->disk.type)
     {
@@ -533,6 +533,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         default:
             mw_fail("Invalid primary disk type in external acceleration\n");
     }
+
     /*Calculate Second Disk Accelerations*/
     switch (pot->disk2.type)
     {
@@ -600,8 +601,8 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         default:
             mw_fail("Invalid halo type in external acceleration\n");
     }
-
     mw_incaddv(acc, acctmp);
+
     /*Calculate the Bulge Accelerations*/
     switch (pot->sphere[0].type)
     {
@@ -620,14 +621,16 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
         default:
             mw_fail("Invalid bulge type in external acceleration\n");
     }
-
     mw_incaddv(acc, acctmp);
-    if (!isfinite(mw_absv(acc)))
-    {
-        mw_printf("ERROR: UNNATURAL ACCELERATION CALCULATED!\n");
-        mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-        mw_printf("Acceleration = %.15f \n",mw_absv(acc));
-    }
+
+    /*For debugging acceleration values*/
+//    if (!isfinite(mw_absv(acc)))
+//    {
+//        mw_printf("ERROR: UNNATURAL ACCELERATION CALCULATED!\n");
+//        mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+//        mw_printf("Acceleration = %.15f \n",mw_absv(acc));
+//    }
+
     return acc;
 }
 
