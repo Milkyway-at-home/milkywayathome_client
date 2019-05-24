@@ -101,7 +101,8 @@ orbit_parameter_vy = 79
 orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
-
+-- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
+TooManyTimesteps = 0
         
 function makePotential()
    if(run_null_potential == true) then
@@ -143,6 +144,12 @@ function get_timestep()
     else 
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
+
+    if (evolveTime/t > 150000 or t ~= t) then
+        TooManyTimesteps = 1
+        t = evolveTime/4.0
+    end
+
     return t
 end
 
@@ -177,6 +184,10 @@ end
 function makeBodies(ctx, potential)
   local firstModel
   local finalPosition, finalVelocity
+    if TooManyTimesteps == 1 then
+        totalBodies = 1
+    end
+
     if(run_null_potential == true) then
         print("placing dwarf at origin")
         finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
