@@ -31,16 +31,16 @@
 extern "C" {
 #endif
 
-AllHistograms* nbReadHistogram(const char* histogramFile);
+MainStruct* nbReadHistogram(const char* histogramFile);
 
-AllHistograms* nbCreateHistogram(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp);
+MainStruct* nbCreateHistogram(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp);
 
-void nbPrintHistogram(FILE* f, const AllHistograms* histogram);
+void nbPrintHistogram(FILE* f, const MainStruct* histogram);
 
 void nbWriteHistogram(const char* histoutFileName,
                       const NBodyCtx* ctx,
                       const NBodyState* st,
-                      const AllHistograms* histogram);
+                      const MainStruct* histogram);
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data);
 

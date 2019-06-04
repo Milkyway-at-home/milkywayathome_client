@@ -266,7 +266,7 @@ static void nbPrintHistogramHeader(FILE* f,
 }
 
 /* Print the histogram without a header. */
-void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
+void nbPrintHistogram(FILE* f, const MainStruct* histogram)
 {
     real output[12]; // for outputting the data
 
@@ -347,7 +347,7 @@ void nbPrintHistogram(FILE* f, const AllHistograms* histogram)
 void nbWriteHistogram(const char* histoutFileName,
                       const NBodyCtx* ctx,
                       const NBodyState* st,
-                      const AllHistograms* histogram)
+                      const MainStruct* histogram)
 {
     FILE* f = DEFAULT_OUTPUT_FILE;
 
@@ -414,7 +414,7 @@ Then calculates the cross correlation between the model histogram and
 the data histogram A maximum correlation means the best fit */
 
 /* Returns null on failure */
-AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context */
+MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context */
                                   const NBodyState* st,       /* Final state of the simulation */
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
@@ -447,7 +447,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     unsigned int body_count = 0;
     unsigned int ub_counter = 0;
     
-    AllHistograms* histogram = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char)); 
+    MainStruct* histogram = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char)); 
 
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
@@ -485,7 +485,7 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
     // otherwise mark them as unused (false)
     histogram->usage[0] = TRUE;
     histogram->histograms[0] = hist0;  //The fix here might be problematic, I'm concerned about setting it to the memory value
-                                    //similarly, chagning the param in AllHistograms to a * array might be just as bad. 
+                                    //similarly, chagning the param in MainStruct to a * array might be just as bad. 
                                     //other solutions include chagning hist to just a hist variable, but 
 
     if(st->useBetaDisp)
@@ -772,12 +772,12 @@ AllHistograms* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation conte
 
 /* Read in a histogram from a file for calculating a likelihood value.
  */
-AllHistograms* nbReadHistogram(const char* histogramFile)
+MainStruct* nbReadHistogram(const char* histogramFile)
 {
     FILE* f;
     int rc = 0;
     size_t fsize = 0;
-    AllHistograms* histogram;
+    MainStruct* histogram;
     unsigned int fileCount = 0;
     unsigned int lineNum = 0;
     mwbool error = FALSE;

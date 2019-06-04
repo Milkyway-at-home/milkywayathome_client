@@ -63,8 +63,8 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
 
 real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp, mwbool use_betadisp, mwbool use_betacomp, mwbool use_vlos, mwbool use_dist)
 {
-    AllHistograms* dat;
-    AllHistograms* match;
+    MainStruct* dat;
+    MainStruct* match;
     real emd = NAN;
     real cost_component = NAN;
     real vel_disp = NAN;
@@ -118,8 +118,8 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
 
 /* Calculate the likelihood from the final state of the simulation */
 real nbSystemLikelihood(const NBodyState* st,
-                     const AllHistograms* data,
-                     const AllHistograms* histogram,
+                     const MainStruct* data,
+                     const MainStruct* histogram,
                      NBodyLikelihoodMethod method)
 {
     
@@ -171,7 +171,7 @@ real nbSystemLikelihood(const NBodyState* st,
             //return 2.0 * worstEMD;
             return worstEMD; //Changed.  See above comment.
         }
-        // this function has been changed to accept AllHistograms
+        // this function has been changed to accept MainStruct
         geometry_component = nbMatchEMD(data, histogram);
     }
     else

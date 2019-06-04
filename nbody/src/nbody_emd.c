@@ -1271,7 +1271,7 @@ real nbWorstCaseEMD(const NBodyHistogram* hist)
     return DEFAULT_WORST_CASE;
 }
 
-real nbMatchEMD(const AllHistograms* data, const AllHistograms* histogram)
+real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
 {
     // as of now all the histograms have the same lambda/betaBins info
     // as any of the histograms can be used for this info, we use the first

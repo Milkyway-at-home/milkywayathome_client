@@ -338,7 +338,7 @@ typedef struct
     // 5: dist avg
     mwbool usage[6];
     NBodyHistogram* histograms[6]; 
-} AllHistograms;
+} MainStruct;
 
 /* Mutable state used during an evaluation */
 typedef struct MW_ALIGN_TYPE

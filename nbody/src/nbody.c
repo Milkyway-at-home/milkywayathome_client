@@ -207,8 +207,8 @@ NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
  */
 static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
-    AllHistograms* data = NULL;
-    AllHistograms* histogram = NULL;
+    MainStruct* data = NULL;
+    MainStruct* histogram = NULL;
     real likelihood = NAN;
     NBodyLikelihoodMethod method;
 
