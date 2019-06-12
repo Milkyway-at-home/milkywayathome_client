@@ -319,6 +319,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* histogram)
                 "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                 storedData.useBin,
                 storedData.lambda,
+                storedData.beta,
                 output[0],      // normalized counts
                 output[1],      // normalized counts error
                 output[2],      // beta disp
