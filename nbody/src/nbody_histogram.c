@@ -712,7 +712,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     // dispersions are already calculated and in histogram - this is used to calculate error
     if(all->usage[3]) // vlos average
     {
-        for (unsigned int i = 0; i < IterMax; ++i)
+        for (unsigned int i = 0; i < nBin; ++i)
         {
             nbRemoveOutliers(st, all->histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
             nbCalcDisp(all->histograms[3], FALSE, ctx->VelCorrect);
@@ -728,7 +728,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     }
     if(all->usage[4]) // beta average
     {
-        for (unsigned int i = 0; i < IterMax; ++i)
+        for (unsigned int i = 0; i < nBin; ++i)
         {
             nbRemoveOutliers(st, all->histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
             nbCalcDisp(all->histograms[4], FALSE, ctx->BetaCorrect);
