@@ -1319,8 +1319,9 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         if(first_data->data[i].useBin)
         {
             {
-                dat[i].weight = (real) first_data->data[i].rawCount;
-                hist[i].weight = (real) first_hist->data[i].rawCount;
+                // counts is stored in "variable" of the 0 histogram in MainStruct
+                dat[i].weight = (real) first_data->data[i].variable;
+                hist[i].weight = (real) first_hist->data[i].variable;
             }
 
             hist[i].lambda = (real) first_hist->data[i].lambda;

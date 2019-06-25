@@ -318,7 +318,7 @@ typedef struct
     unsigned int totalNum;
     unsigned int totalSimulated;
     int hasRawCounts;
-    HistogramParams* params;
+    HistogramParams params;
     real massPerParticle;
 
     /* This is used as a variable length struct. Do not add any fields
