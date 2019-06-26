@@ -917,7 +917,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         if (!readUsage)
         {
             rc = sscanf(lineBuf, " usage = %d%d%d%d%d%d\n", &usage[0], &usage[1], &usage[2], &usage[3], &usage[4], &usage[5]);
-            if(rc == 1)
+            if(rc == 6)//edited needs number of variables listed
             {
                 readUsage = TRUE;
                 continue;
@@ -928,7 +928,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         {
             unsigned int nBin = lambdaBins * betaBins;
             all = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
-            if(usage[0] == 0)
+            if(usage[0] == 1)
             {
                 NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
                 all->usage[0] = TRUE;
@@ -974,8 +974,10 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             buildHist = TRUE;
         }
 
+
+		/*The main part of the loop, goes through this each time.  Most likely works fine.*/
         int* useBin = 0;
-        double* lambda = 0;
+        double* lambda = 0; 
         double* beta = 0;
         double* variable[6];
         double* errors[6];
