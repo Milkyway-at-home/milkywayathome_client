@@ -795,6 +795,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
     mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
     mwbool readUsage = FALSE;      /* Read the usage of the histograms */
+    mwbool buildHist = FALSE; /* only want to build the histogrma once */
     unsigned int nGen = 0;    /* Number of particles read from the histogram */
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
@@ -816,51 +817,6 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         mw_printf("Histogram line count = 0\n");
         return NULL;
     }
-
-    unsigned int nBin = lambdaBins * betaBins;
-    all = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
-    if(usage[0] == 0)
-    {
-        NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-        all->usage[0] = TRUE;
-        all->histograms[0] = hist0;
-    }
-    else all->usage[0] = FALSE;
-    if(usage[1] == 1)
-    {
-        NBodyHistogram* hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-        all->usage[1] = TRUE;
-        all->histograms[1] = hist1;
-    }
-    else all->usage[1] = FALSE;
-    if(usage[2] == 1)
-    {
-        NBodyHistogram* hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-        all->usage[2] = TRUE;
-        all->histograms[2] = hist2;
-    }
-    else all->usage[2] = FALSE;
-    if(usage[3] == 1)
-    {
-        NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-        all->usage[3] = TRUE;
-        all->histograms[3] = hist3;
-    }
-    else all->usage[3] = FALSE;
-    if(usage[4] == 1)
-    {
-        NBodyHistogram* hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-        all->usage[4] = TRUE;
-        all->histograms[4] = hist4;
-    }
-    else all->usage[4] = FALSE;
-    if(usage[5] == 1)
-    {
-        NBodyHistogram* hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-        all->usage[5] = TRUE;
-        all->histograms[5] = hist5;
-    }
-    else all->usage[5] = FALSE;
 
     while (fgets(lineBuf, (int) sizeof(lineBuf), f))
     {
@@ -968,6 +924,56 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             }
         }
 
+        if(readUsage && !buildHist) // only build the histogram once
+        {
+            unsigned int nBin = lambdaBins * betaBins;
+            all = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
+            if(usage[0] == 0)
+            {
+                NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                all->usage[0] = TRUE;
+                all->histograms[0] = hist0;
+            }
+            else all->usage[0] = FALSE;
+            if(usage[1] == 1)
+            {
+                NBodyHistogram* hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                all->usage[1] = TRUE;
+                all->histograms[1] = hist1;
+            }
+            else all->usage[1] = FALSE;
+            if(usage[2] == 1)
+            {
+                NBodyHistogram* hist2 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                all->usage[2] = TRUE;
+                all->histograms[2] = hist2;
+            }
+            else all->usage[2] = FALSE;
+            if(usage[3] == 1)
+            {
+                NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                all->usage[3] = TRUE;
+                all->histograms[3] = hist3;
+            }
+            else all->usage[3] = FALSE;
+            if(usage[4] == 1)
+            {
+                NBodyHistogram* hist4 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                all->usage[4] = TRUE;
+                all->histograms[4] = hist4;
+            }
+            else all->usage[4] = FALSE;
+            if(usage[5] == 1)
+            {
+                NBodyHistogram* hist5 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                all->usage[5] = TRUE;
+                all->histograms[5] = hist5;
+            }
+            else all->usage[5] = FALSE;
+
+            buildHist = TRUE;
+        }
+
         int* useBin = 0;
         double* lambda = 0;
         double* beta = 0;
@@ -1005,9 +1011,6 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             }
         }
         
-        /* new standard for histograms is being enforced. Two extra columns for vel and beta dispersion 
-         * and their errors. If not using them, can input zeros in the Columns
-         */
         if (rc != 15)
         {
             mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
