@@ -931,13 +931,8 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
         if (!readUsage)
         {
-<<<<<<< HEAD
             rc = sscanf(lineBuf, " usage = %u %u %u %u %u %u\n", &usage[0], &usage[1], &usage[2], &usage[3], &usage[4], &usage[5]);
             if(rc == 6)
-=======
-            rc = sscanf(lineBuf, " usage = %d%d%d%d%d%d\n", &usage[0], &usage[1], &usage[2], &usage[3], &usage[4], &usage[5]);
-            if(rc == 6)//edited needs number of variables listed
->>>>>>> ed750a56297003d506e5c031963649977e59194f
             {
                 readUsage = TRUE;
                 continue;
@@ -994,21 +989,11 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             buildHist = TRUE;
         }
 
-<<<<<<< HEAD
         unsigned int useBin = 0;
         double lambda = 0;
         double beta = 0;
         double variable[6];
         double errors[6];
-=======
-
-        /*The main part of the loop, goes through this each time.  Most likely works fine.*/
-        int* useBin = 0;
-        double* lambda = 0; 
-        double* beta = 0;
-        double* variable[6];
-        double* errors[6];
->>>>>>> ed750a56297003d506e5c031963649977e59194f
 
         rc = sscanf(lineBuf,
                     "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
