@@ -289,7 +289,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
         if(all->usage[i]) usage+='1';
         else usage+='0';
     }
-    fprintf(f, "usage = %d%d%d%d%d%d\n", all->usage[0], all->usage[1], all->usage[2],
+    fprintf(f, "usage = %d %d %d %d %d %d\n", all->usage[0], all->usage[1], all->usage[2],
                                         all->usage[3], all->usage[4], all->usage[5]);
 
     
@@ -639,7 +639,6 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 location = calc_distance(Pos(p), ctx->sunGCDist);
 
-
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
                 distances[ub_counter] = location;
@@ -658,7 +657,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 }
                 if(all->usage[3])
                 {
-                    /* each of these are components of the vel disp, which is used for vel avg*/
+                    /* each of these are components of the vel disp, which is used for vel avg */
                     all->histograms[3]->data[Histindex].sum += v_line_of_sight;
                     all->histograms[3]->data[Histindex].sq_sum += sqr(v_line_of_sight);
                 }
@@ -728,6 +727,11 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 all->histograms[3]->data[i].err = all->histograms[3]->data[i].variable / sqrt(vdenom);
                 all->histograms[3]->data[i].variable = all->histograms[3]->data[i].sum / vdenom;
             }
+            else
+            {
+                all->histograms[3]->data[i].err = 0;
+                all->histograms[3]->data[i].variable = 0;
+            }
         }
     }
     if(all->usage[4]) // beta average
@@ -744,6 +748,11 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 all->histograms[4]->data[i].err = all->histograms[4]->data[i].variable / sqrt(bdenom);
                 all->histograms[4]->data[i].variable = all->histograms[4]->data[i].sum / bdenom;
             }
+            else
+            {
+                all->histograms[4]->data[i].err = 0;
+                all->histograms[4]->data[i].variable = 0;
+            }
         }
     }
     if(all->usage[5]) //average distance calculation
@@ -757,6 +766,11 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom);
                 all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
+            }
+            else
+            {
+                all->histograms[5]->data[i].err = 0;
+                all->histograms[5]->data[i].variable = 0;
             }
         }
     }
@@ -779,6 +793,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
  */
 MainStruct* nbReadHistogram(const char* histogramFile)
 {
+    mw_printf("Reading histogram \n");
     FILE* f;
     int rc = 0;
     size_t fsize = 0;
@@ -800,7 +815,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    int usage[6];  /* read in "bit string" of usage of each histogram */
+    unsigned int usage[6];  /* read in "bit string" of usage of each histogram */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -916,8 +931,13 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
         if (!readUsage)
         {
+<<<<<<< HEAD
+            rc = sscanf(lineBuf, " usage = %u %u %u %u %u %u\n", &usage[0], &usage[1], &usage[2], &usage[3], &usage[4], &usage[5]);
+            if(rc == 6)
+=======
             rc = sscanf(lineBuf, " usage = %d%d%d%d%d%d\n", &usage[0], &usage[1], &usage[2], &usage[3], &usage[4], &usage[5]);
             if(rc == 6)//edited needs number of variables listed
+>>>>>>> ed750a56297003d506e5c031963649977e59194f
             {
                 readUsage = TRUE;
                 continue;
@@ -974,42 +994,51 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             buildHist = TRUE;
         }
 
+<<<<<<< HEAD
+        unsigned int useBin = 0;
+        double lambda = 0;
+        double beta = 0;
+        double variable[6];
+        double errors[6];
+=======
 
-		/*The main part of the loop, goes through this each time.  Most likely works fine.*/
+        /*The main part of the loop, goes through this each time.  Most likely works fine.*/
         int* useBin = 0;
         double* lambda = 0; 
         double* beta = 0;
         double* variable[6];
         double* errors[6];
+>>>>>>> ed750a56297003d506e5c031963649977e59194f
 
         rc = sscanf(lineBuf,
                     "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-                    useBin,
-                    lambda,
-                    beta,
-                    variable[0],
-                    errors[0],
-                    variable[1],
-                    errors[1],
-                    variable[2],
-                    errors[2],
-                    variable[3],
-                    errors[3],
-                    variable[4],
-                    errors[4],
-                    variable[5],
-                    errors[5]);
+                    &useBin,
+                    &lambda,
+                    &beta,
+                    &variable[0],
+                    &errors[0],
+                    &variable[1],
+                    &errors[1],
+                    &variable[2],
+                    &errors[2],
+                    &variable[3],
+                    &errors[3],
+                    &variable[4],
+                    &errors[4],
+                    &variable[5],
+                    &errors[5]);
+
 
         // only save the numbers that are used
         for(int i = 0; i < 6; i++)
         {
             if(all->usage[i])
             {
-                all->histograms[i]->data[fileCount].useBin = *useBin;
-                all->histograms[i]->data[fileCount].lambda = *lambda;
-                all->histograms[i]->data[fileCount].beta = *beta;
-                all->histograms[i]->data[fileCount].variable = *variable[i];
-                all->histograms[i]->data[fileCount].err = *errors[i];
+                all->histograms[i]->data[fileCount].useBin = useBin;
+                all->histograms[i]->data[fileCount].lambda = lambda;
+                all->histograms[i]->data[fileCount].beta = beta;
+                all->histograms[i]->data[fileCount].variable = variable[i];
+                all->histograms[i]->data[fileCount].err = errors[i];
             }
         }
         
