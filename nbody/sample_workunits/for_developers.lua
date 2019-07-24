@@ -96,11 +96,11 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 orbit_parameter_l  = 218
-orbit_parameter_b  = 53.5
-orbit_parameter_r  = 28.6
-orbit_parameter_vx = -156 
-orbit_parameter_vy = 79 
-orbit_parameter_vz = 107
+-- orbit_parameter_b  = 53.5
+-- orbit_parameter_r  = 28.6
+-- orbit_parameter_vx = -156 
+-- orbit_parameter_vy = 79 
+-- orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -153,6 +153,11 @@ function makeContext()
       timeEvolve  = evolveTime,
       timestep    = get_timestep(),
       eps2        = calculateEps2(totalBodies, soften_length ),
+      b           = orbit_parameter_b,
+      r           = orbit_parameter_r,
+      vx          = orbit_parameter_vx,
+      vy          = orbit_parameter_vy,
+      vz          = orbit_parameter_vz,
       criterion   = criterion,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
@@ -270,7 +275,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expected 6 arguments")
+assert(#arg >= 11, "Expected 6 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
@@ -289,7 +294,12 @@ rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
 light_mass_ratio = round( tonumber(arg[6]), dec )
-manual_body_file = arg[7]
+orbit_parameter_b   = round( tonumber(arg[7]), dec )
+orbit_parameter_r   = round( tonumber(arg[8]), dec )
+orbit_parameter_vx  = round( tonumber(arg[9]), dec )
+orbit_parameter_vy  = round( tonumber(arg[10]), dec )
+orbit_parameter_vz  = round( tonumber(arg[11]), dec )
+manual_body_file = arg[7] -- what is this ? --
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime

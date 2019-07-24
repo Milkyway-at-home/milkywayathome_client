@@ -419,6 +419,12 @@ typedef struct MW_ALIGN_TYPE
     real treeRSize;
     real sunGCDist;
 
+    real b;     /* orbital parameters */
+    real r;
+    real vx;
+    real vy;
+    real vz;
+
     criterion_t criterion;
     ExternalPotentialType potentialType;
     

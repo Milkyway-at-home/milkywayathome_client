@@ -92,6 +92,14 @@ static int createNBodyCtx(lua_State* luaSt)
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
             { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
+
+            // false or true ?? is this where they're read in ??
+            { "b",             LUA_TNUMBER,  NULL, TRUE,  &ctx.b   },
+            { "r",             LUA_TNUMBER,  NULL, TRUE,  &ctx.r   },
+            { "vx",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vx  },
+            { "vy",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vy  },
+            { "vz",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vz  },
+            
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName     },
             { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad       },
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
