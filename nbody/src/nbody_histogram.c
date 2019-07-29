@@ -761,7 +761,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             }
         }
     }
-    if(all->usage[5]) //average distance calculation
+    if(all->usage[5]) //distance calculation
     {
         for(unsigned int i = 0; i < IterMax; ++i)
         {
@@ -771,7 +771,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             if(ddenom != 0)
             {
                 all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom);
-                all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
+				//all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
             }
             else
             {
