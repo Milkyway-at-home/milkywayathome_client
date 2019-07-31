@@ -366,7 +366,11 @@ typedef struct MW_ALIGN_TYPE
 
     unsigned int maxDepth;   /* Maximum depth before overflow. Used for CL version */
     
-    real bestLikelihood;            /* new parameter for best likelihood eval*/
+    real bestLikelihood;           /* new parameter for best likelihood eval */
+    real bestLikelihood_EMD;       /* EMD component of likelihood */
+    real bestLikelihood_Mass;      /* Mass component of likelihood */
+    real bestLikelihood_Beta;      /* Beta disp component of likelihood */
+    real bestLikelihood_Vel;       /* Velocity disp component of likelihood */
     real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
@@ -458,10 +462,10 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                               \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,               \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                               \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                      \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                      \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                      \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.

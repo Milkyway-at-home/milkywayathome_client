@@ -27,6 +27,7 @@
 int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, real freq)
 {
     int rc = 0;
+    freq = (freq == 0.0)*1.0 + freq;
     if((st->step + 1) % (int) freq == 0)
     {
         

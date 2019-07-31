@@ -39,10 +39,17 @@ int pushHalo(lua_State* luaSt, const Halo* p)
 
 static const MWEnumAssociation haloOptions[] =
 {
-    { "logarithmic", LogarithmicHalo },
-    { "nfw",         NFWHalo,        },
-    { "triaxial",    TriaxialHalo,   },
-    { "caustic",     CausticHalo,    },
+    { "logarithmic",        LogarithmicHalo        },
+    { "nfw",                NFWHalo,               },
+    { "triaxial",           TriaxialHalo,          },
+    { "caustic",            CausticHalo,           },
+    { "allenSantillan",     AllenSantillanHalo,    },
+    { "wilkinsonEvans",     WilkinsonEvansHalo,    },
+    { "nfwmass",            NFWMassHalo,           },
+    { "plummer",            PlummerHalo,           },
+    { "hernquist",          HernquistHalo,         },
+    { "ninkovic",           NinkovicHalo,          },
+    { "none",               NoHalo,                },
     END_MW_ENUM_ASSOCIATION
 };
 
@@ -117,6 +124,106 @@ static int createCausticHalo(lua_State* luaSt)
     return createHalo(luaSt, argTable, &h);
 }
 
+static int createAllenSantillanHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            { "gamma", LUA_TNUMBER, NULL, TRUE,&h.gamma },
+            { "lambda", LUA_TNUMBER, NULL, TRUE,&h.lambda },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = AllenSantillanHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createWilkinsonEvansHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = WilkinsonEvansHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createNFWMassHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = NFWMassHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createPlummerHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = PlummerHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createHernquistHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = HernquistHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createNinkovicHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "rho0",       LUA_TNUMBER, NULL, TRUE, &h.rho0      },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE,&h.scaleLength },
+            { "lambda", LUA_TNUMBER, NULL, TRUE,&h.lambda },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = NinkovicHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createNoHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",       LUA_TNUMBER, NULL, TRUE, &h.mass      },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = NoHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
 static int toStringHalo(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
@@ -154,10 +261,17 @@ static const luaL_reg metaMethodsHalo[] =
 
 static const luaL_reg methodsHalo[] =
 {
-    { "logarithmic", createLogarithmicHalo },
-    { "nfw",         createNFWHalo         },
-    { "triaxial",    createTriaxialHalo    },
-    { "caustic",     createCausticHalo     },
+    { "logarithmic",        createLogarithmicHalo        },
+    { "nfw",                createNFWHalo                },
+    { "triaxial",           createTriaxialHalo           },
+    { "caustic",            createCausticHalo            },
+    { "allenSantillan",     createAllenSantillanHalo     },
+    { "wilkinsonEvans",     createWilkinsonEvansHalo     },
+    { "nfwmass",            createNFWMassHalo            },
+    { "plummer",            createPlummerHalo            },
+    { "hernquist",          createHernquistHalo          },
+    { "ninkovic",           createNinkovicHalo           },
+    { "none",               createNoHalo                 },
     { NULL, NULL }
 };
 
@@ -174,6 +288,10 @@ static const Xet_reg_pre gettersHalo[] =
     { "c1",          getNumber, offsetof(Halo, c1) },
     { "c2",          getNumber, offsetof(Halo, c2) },
     { "c3",          getNumber, offsetof(Halo, c3) },
+    { "mass",        getNumber, offsetof(Halo, mass) },
+    { "gamma",       getNumber, offsetof(Halo, gamma) },
+    { "lambda",      getNumber, offsetof(Halo, lambda) },
+    { "rho0",        getNumber, offsetof(Halo, rho0) },
     { NULL, NULL, 0 }
 };
 
@@ -188,6 +306,10 @@ static const Xet_reg_pre settersHalo[] =
     { "c1",          setNumber, offsetof(Halo, c1) },
     { "c2",          setNumber, offsetof(Halo, c2) },
     { "c3",          setNumber, offsetof(Halo, c3) },
+    { "mass",        setNumber, offsetof(Halo, mass) },
+    { "gamma",       setNumber, offsetof(Halo, gamma) },
+    { "lambda",      setNumber, offsetof(Halo, lambda) },
+    { "rho0",        setNumber, offsetof(Halo, rho0) },
     { NULL, NULL, 0 }
 };
 
@@ -213,6 +335,13 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createNFWHalo, "nfw");
     setModelTableItem(luaSt, table, createTriaxialHalo, "triaxial");
     setModelTableItem(luaSt, table, createCausticHalo, "caustic");
+    setModelTableItem(luaSt, table, createAllenSantillanHalo, "allenSantillan");
+    setModelTableItem(luaSt, table, createWilkinsonEvansHalo, "wilkinsonEvans");
+    setModelTableItem(luaSt, table, createNFWMassHalo, "nfwmass");
+    setModelTableItem(luaSt, table, createPlummerHalo, "plummer");
+    setModelTableItem(luaSt, table, createHernquistHalo, "hernquist");
+    setModelTableItem(luaSt, table, createNinkovicHalo, "ninkovic");
+    setModelTableItem(luaSt, table, createNoHalo, "none");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

@@ -173,6 +173,7 @@ real nbSystemLikelihood(const NBodyState* st,
         }
         // this function has been changed to accept MainStruct
         geometry_component = nbMatchEMD(data, histogram);
+        //mw_printf("EMD Calculated!\n");
     }
     else
     {

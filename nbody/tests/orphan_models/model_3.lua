@@ -14,8 +14,9 @@ dwarfRadius = 0.2
 
 function makePotential()
    return Potential.create{
-      spherical = Spherical.spherical{ mass = 67479.9, scale = 0.6 },
-      disk      = Disk.exponential{ mass = 224933, scaleLength = 4 },
+      spherical = Spherical.hernquist{ mass = 67479.9, scale = 0.6 },
+      disk      = Disk.doubleExponential{ mass = 224933, scaleLength = 6, scaleHeight = 0.3 },
+      disk2     = Disk.none{ mass = 3.0e5 },
       halo      = Halo.logarithmic{ vhalo = 81, scaleLength = 12, flattenZ = 1 }
    }
 end
@@ -27,7 +28,13 @@ function makeContext()
       eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
-      theta      = 1.0
+      theta      = 1.0,
+      BestLikeStart = 0.95,
+      BetaSigma     = 2.5,
+      VelSigma      = 2.5,
+      BetaCorrect   = 1.111,
+      VelCorrect    = 1.111,
+      IterMax       = 6
    }
 end
 
@@ -52,7 +59,21 @@ function makeBodies(ctx, potential)
 end
 
 function makeHistogram()
-   return HistogramParams.create()
+   return HistogramParams.create{
+     --Orphan Stream coordinate transformation angles
+     phi = 128.79,
+     theta = 54.39,
+     psi = 90.70,
+     
+     -- ANGULAR RANGE AND NUMBER OF BINS
+     lambdaStart = 50,
+     lambdaEnd   = 50,
+     lambdaBins  = 34,
+     
+     betaStart = -15,
+     betaEnd   = 15,
+     betaBins  = 1
+}
 end
 
 

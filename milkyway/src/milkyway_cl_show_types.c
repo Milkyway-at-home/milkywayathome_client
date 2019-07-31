@@ -401,6 +401,9 @@ const char* showMWCALtargetEnum(const MWCALtargetEnum x)
         case MW_CAL_TARGET_LOMBOK:
             return "MW_CAL_TARGET_LOMBOK";
 
+        case MW_CAL_TARGET_HAWAII:
+            return "MW_CAL_TARGET_HAWAII";
+
         default:
             return "Invalid MWCALtargetEnum";
     }

@@ -1249,8 +1249,12 @@ real emdCalc(const real* RESTRICT signature_arr1,
 
     if (!emdIterateSolution(&state))
     {
+        //mw_printf("emdComputeTotalFlow ACCESSED!\n");
         totalCost = emdComputeTotalFlow(&state, flow);
+        //mw_printf("totalCost = %.15f\n", totalCost);
+        //mw_printf("weight = %.15f\n", state.weight);
         emd = (real)(totalCost / state.weight);
+        //mw_printf("emd = %.15f\n", emd);
     }
 
     if (debugFlow)
@@ -1281,14 +1285,27 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     unsigned int lambdaBins = first_data->lambdaBins;
     unsigned int betaBins = first_data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
-    unsigned int nSim = first_hist->totalNum;
+    unsigned int nSim_uncut = first_hist->totalNum;
+    unsigned int nSim = nSim_uncut;
     unsigned int nData = first_hist->totalNum;
     real histMass = first_hist->massPerParticle;
     real dataMass = first_data->massPerParticle;
+    unsigned int i;
+    unsigned int rawCount;
     WeightPos* hist;
     WeightPos* dat;
     real emd;
     real likelihood;
+
+    /* Remove all simulated bodies in unused bins for renormalization after skipping bins */
+    for (i = 0; i < bins; ++i)
+    {
+        if(!first_data->first_data[i].useBin)
+        {
+            rawCount = mw_round(first_hist->data[i].variable * nSim_uncut);
+            nSim -= rawCount;
+        }
+    }
 
     if (first_data->lambdaBins != first_hist->lambdaBins || first_data->betaBins != first_hist->betaBins)
     {
@@ -1321,7 +1338,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
             {
                 // counts is stored in "variable" of the 0 histogram in MainStruct
                 dat[i].weight = (real) first_data->data[i].variable;
-                hist[i].weight = (real) first_hist->data[i].variable;
+                hist[i].weight = (real) first_hist->data[i].variable * nSim_uncut / (1.0*nSim);
             }
 
             hist[i].lambda = (real) first_hist->data[i].lambda;

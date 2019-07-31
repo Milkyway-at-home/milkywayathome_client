@@ -27,9 +27,9 @@
   #include <OpenCL/cl_platform.h>
   #include <OpenCL/cl_ext.h>
 #else
-  #include <CL/cl.h>
-  #include <CL/cl_platform.h>
-  #include <CL/cl_ext.h>
+  #include "CL/cl.h"
+  #include "CL/cl_platform.h"
+  #include "CL/cl_ext.h"
 #endif /* __APPLE__ */
 
 /* This doesn't seem to exist on OS X, but the callback on ATI on
