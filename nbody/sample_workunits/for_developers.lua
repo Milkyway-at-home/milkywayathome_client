@@ -24,9 +24,9 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 2000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.72"  -- -- MINIMUM APP VERSION        -- --
+nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
@@ -103,21 +103,23 @@ orbit_parameter_l  = 218
 -- orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
-
+-- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
+TooManyTimesteps = 0
         
 function makePotential()
    if(run_null_potential == true) then
        print("running in null potential")
        return nil
    else
+        --NOTE: To exculde a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
         return  Potential.create{
-            spherical = Spherical.spherical{ mass  = 1.52954402e5, scale = 0.7 },
+            spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+            disk2     = Disk.none{ mass = 3.0e5 },
             halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
         }--vhalo = 74.61 kpc/gy = 73 km/s
    end
 end
-
 
 function get_timestep()
     if(ModelComponents == 2) then
@@ -143,6 +145,12 @@ function get_timestep()
     else 
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
+
+    if (evolveTime/t > 150000 or t ~= t) then
+        TooManyTimesteps = 1
+        t = evolveTime/4.0
+    end
+
     return t
 end
 
@@ -185,6 +193,10 @@ end
 function makeBodies(ctx, potential)
   local firstModel
   local finalPosition, finalVelocity
+    if TooManyTimesteps == 1 then
+        totalBodies = 1
+    end
+
     if(run_null_potential == true) then
         print("placing dwarf at origin")
         finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
@@ -299,7 +311,7 @@ orbit_parameter_r   = round( tonumber(arg[8]), dec )
 orbit_parameter_vx  = round( tonumber(arg[9]), dec )
 orbit_parameter_vy  = round( tonumber(arg[10]), dec )
 orbit_parameter_vz  = round( tonumber(arg[11]), dec )
-manual_body_file = arg[7] -- what is this ? --
+manual_body_file = arg[12]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime

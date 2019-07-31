@@ -93,7 +93,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
             { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
 
-            // false or true ?? is this where they're read in ??
+            // false or true ?? look through MWNamedArg ??
             { "b",             LUA_TNUMBER,  NULL, TRUE,  &ctx.b   },
             { "r",             LUA_TNUMBER,  NULL, TRUE,  &ctx.r   },
             { "vx",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vx  },
