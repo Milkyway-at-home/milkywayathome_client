@@ -573,7 +573,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &all->histograms[0]->params, st->nbody, st->bestLikelihood_time);
+    nbPrintHistogramHeader(f, ctx, &all->histograms[0]->params, st->nbody, st->bestLikelihood_time, st->bestLikelihood);
     nbPrintHistogram(f, all);
 
     if (f != DEFAULT_OUTPUT_FILE)

@@ -1300,7 +1300,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     /* Remove all simulated bodies in unused bins for renormalization after skipping bins */
     for (i = 0; i < bins; ++i)
     {
-        if(!first_data->first_data[i].useBin)
+        if(!first_data->data[i].useBin)
         {
             rawCount = mw_round(first_hist->data[i].variable * nSim_uncut);
             nSim -= rawCount;

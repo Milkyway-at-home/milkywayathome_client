@@ -202,19 +202,42 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 
             st->bestLikelihood_Mass = nbCostComponent(data, histogram);
 
+            st->bestLikelihood_EMD = likelihood - st->bestLikelihood_Mass;
+
             if (st->useBetaDisp)
             {
-                st->bestLikelihood_Beta = nbBetaDispersion(data, histogram);
+                st->bestLikelihood_Beta = nbLikelihood(data, histogram);
+                st->bestLikelihood_EMD -= st->bestLikelihood_Beta;
             }
             else st->bestLikelihood_Beta = 0.0;
 
             if (st->useVelDisp)
             {
-                st->bestLikelihood_Vel = nbVelocityDispersion(data, histogram);
+                st->bestLikelihood_Vel = nbLikelihood(data, histogram);
+                st->bestLikelihood_EMD -= st->bestLikelihood_Vel;
             }
             else st->bestLikelihood_Vel = 0.0;
 
-            st->bestLikelihood_EMD = likelihood-(st->bestLikelihood_Mass)-(st->bestLikelihood_Beta)-(st->bestLikelihood_Vel);
+            if (st->useVlos)
+            {
+                st->bestLikelihood_VelAvg = nbLikelihood(data, histogram);
+                st->bestLikelihood_EMD -= st->bestLikelihood_VelAvg;
+            }
+            else st->bestLikelihood_VelAvg = 0.0;
+
+            if (st->useBetaComp)
+            {
+                st->bestLikelihood_BetaAvg = nbLikelihood(data, histogram);
+                st->bestLikelihood_EMD -= st->bestLikelihood_BetaAvg;
+            }
+            else st->bestLikelihood_BetaAvg = 0.0;
+
+            if (st->useDist)
+            {
+                st->bestLikelihood_Dist = nbLikelihood(data, histogram);
+                st->bestLikelihood_EMD -= st->bestLikelihood_Dist;
+            }
+            else st->bestLikelihood_Dist = 0.0;
             
             /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;

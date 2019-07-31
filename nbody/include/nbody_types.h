@@ -371,6 +371,9 @@ typedef struct MW_ALIGN_TYPE
     real bestLikelihood_Mass;      /* Mass component of likelihood */
     real bestLikelihood_Beta;      /* Beta disp component of likelihood */
     real bestLikelihood_Vel;       /* Velocity disp component of likelihood */
+    real bestLikelihood_BetaAvg;   /* Beta avg component of likelihood */
+    real bestLikelihood_VelAvg;    /* Velocity avg component of likelihood */
+    real bestLikelihood_Dist;      /* Distance component of likelihood */
     real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
