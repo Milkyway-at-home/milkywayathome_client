@@ -175,7 +175,6 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
             return 0;
         }
         likelihood = nbSystemLikelihood(st, data, histogram, method);
-
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
           1.#INF00000, -1.#INF00000, or 0.#INF000000.  The server reads these as -1, 1, and 0
@@ -200,41 +199,41 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         {
             st->bestLikelihood = likelihood;
 
-            st->bestLikelihood_Mass = nbCostComponent(data, histogram);
+            st->bestLikelihood_Mass = nbCostComponent(data->histograms[0], histogram->histograms[0]);
 
             st->bestLikelihood_EMD = likelihood - st->bestLikelihood_Mass;
 
             if (st->useBetaDisp)
             {
-                st->bestLikelihood_Beta = nbLikelihood(data, histogram);
+                st->bestLikelihood_Beta = nbLikelihood(data->histograms[1], histogram->histograms[1]);
                 st->bestLikelihood_EMD -= st->bestLikelihood_Beta;
             }
             else st->bestLikelihood_Beta = 0.0;
 
             if (st->useVelDisp)
             {
-                st->bestLikelihood_Vel = nbLikelihood(data, histogram);
+                st->bestLikelihood_Vel = nbLikelihood(data->histograms[2], histogram->histograms[2]);
                 st->bestLikelihood_EMD -= st->bestLikelihood_Vel;
             }
             else st->bestLikelihood_Vel = 0.0;
 
             if (st->useVlos)
             {
-                st->bestLikelihood_VelAvg = nbLikelihood(data, histogram);
+                st->bestLikelihood_VelAvg = nbLikelihood(data->histograms[3], histogram->histograms[3]);
                 st->bestLikelihood_EMD -= st->bestLikelihood_VelAvg;
             }
             else st->bestLikelihood_VelAvg = 0.0;
 
             if (st->useBetaComp)
             {
-                st->bestLikelihood_BetaAvg = nbLikelihood(data, histogram);
+                st->bestLikelihood_BetaAvg = nbLikelihood(data->histograms[4], histogram->histograms[4]);
                 st->bestLikelihood_EMD -= st->bestLikelihood_BetaAvg;
             }
             else st->bestLikelihood_BetaAvg = 0.0;
 
             if (st->useDist)
             {
-                st->bestLikelihood_Dist = nbLikelihood(data, histogram);
+                st->bestLikelihood_Dist = nbLikelihood(data->histograms[5], histogram->histograms[5]);
                 st->bestLikelihood_EMD -= st->bestLikelihood_Dist;
             }
             else st->bestLikelihood_Dist = 0.0;
@@ -253,8 +252,14 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         }
     }
     
+    for(int i = 0; i < 6; i++)
+    {
+        if(data->usage[i]) free(data->histograms[i]);
+        if(histogram->usage[i]) free(histogram->histograms[i]);
+    }
     free(histogram);
     free(data);
+
     return NBODY_SUCCESS;
     
 }
