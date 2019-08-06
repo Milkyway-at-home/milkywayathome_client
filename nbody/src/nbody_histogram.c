@@ -1010,7 +1010,6 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
  */
 MainStruct* nbReadHistogram(const char* histogramFile)
 {
-    mw_printf("Reading histogram \n");
     FILE* f;
     int rc = 0;
     size_t fsize = 0;
