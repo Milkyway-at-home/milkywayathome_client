@@ -1279,6 +1279,6 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             all->histograms[i]->massPerParticle = mass;
         }
     }
-
+    
     return all;
 }

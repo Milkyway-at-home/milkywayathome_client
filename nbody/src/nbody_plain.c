@@ -174,7 +174,6 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
             return 0;
         }
         likelihood = nbSystemLikelihood(st, data, histogram, method);
-
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
           1.#INF00000, -1.#INF00000, or 0.#INF000000.  The server reads these as -1, 1, and 0
@@ -262,6 +261,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     }
     free(histogram);
     free(data);
+
     return NBODY_SUCCESS;
     
 }

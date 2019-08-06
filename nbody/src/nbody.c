@@ -214,6 +214,9 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     real likelihood_Mass = st->bestLikelihood_Mass;
     real likelihood_Beta = st->bestLikelihood_Beta;
     real likelihood_Vel = st->bestLikelihood_Vel;
+    real likelihood_VelAvg = st->bestLikelihood_VelAvg;
+    real likelihood_BetaAvg = st->bestLikelihood_BetaAvg;
+    real likelihood_Dist = st->bestLikelihood_Dist;
     NBodyLikelihoodMethod method;
 
     /* The likelihood only means something when matching a histogram */
@@ -428,7 +431,7 @@ int nbMain(const NBodyFlags* nbf)
     st->useDist = ctx->useDist;
     
     rc = nbRunSystem(ctx, st, nbf);
-    
+
     te = mwGetTime();
 
     if (nbf->reportProgress)
