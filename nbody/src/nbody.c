@@ -345,6 +345,18 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -likelihood_Vel);
         }
+    if (st->useVlos)
+    {
+        mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_Vel);
+    }
+    if (st->useBetaComp)
+    {
+        mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -likelihood_BetaAvg);
+    }
+    if (st->useDist)
+    {
+        mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
+    }
     }
 
 
