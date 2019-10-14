@@ -281,7 +281,7 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
         /*function value at those intervals*/
         values[i] = (*func)(interval_bound, comp1, comp2) - function_value;
 	if(isnan(values[i]))
-	{
+	{	
 		/*If the interval bound is at the singularity, shift it slightly to prevent a nan so that the root can still be found;
 		* added specifically to prevent issues with finding the root for an NFW profile*/
 		interval_bound += 0.00001;
@@ -519,7 +519,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
 
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
-
+	printf("radius: %1f velocity: %1f energy: %1f upperlimit: %1f distributionFunc: %1f\n", r, v, energy, upperlimit_r, distribution_function);
     return distribution_function;
 }
 
@@ -578,7 +578,7 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     /* having the upper limit as exactly v_esc is bad since the dist fun seems to blow up there for small r. */
     real v_esc = 0.99 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
     
-    real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
+    real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2); //Note for Jarrett, come back and check this function
     while(1)
     {
 
@@ -653,7 +653,7 @@ void printCM(real* x, real* y, real* z, real* mass, real compMass, unsigned int 
 	printf("cm: %1f\n", sqrt(cm_x * cm_x + cm_y * cm_y + cm_z * cm_z));
 }
 
-static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real dwarf_mass, int nbody)
+static int cm_correction_individual(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real dwarf_mass, unsigned int start, unsigned int nbody)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
@@ -667,7 +667,7 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
     real cm_vy = 0.0;
     real cm_vz = 0.0;
     unsigned int i;
-    for(i = 0; i < nbody; i++)
+    for(i = start; i < nbody; i++)
     {
         cm_x += mass[i] * x[i];
         cm_y += mass[i] * y[i];
@@ -688,8 +688,8 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 
 	unsigned int radcounter = 0; //debug line
 	unsigned int velcounter = 0; //debug line
-	real tolerance = 0.1;
-    for(i = 0; i < nbody; i++)
+	real tolerance = 0.05;
+    for(i = start; i < nbody; i++)
     {
 	real initialRad = sqrt(x[i] * x[i] + y[i] * y[i] + z[i] * z[i]); //debug line
         x[i] = x[i] - cm_x + rShift.x;
@@ -710,6 +710,11 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
     return 1;
 }
 
+static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real dwarf_mass, unsigned int nbody)
+{
+	cm_correction_individual(x, y, z, vx, vy, vz, mass, rShift, vShift, dwarf_mass, 0, nbody);
+}
+
 
 static inline void set_p0(Dwarf* comp)
 {
@@ -722,19 +727,17 @@ static inline void set_p0(Dwarf* comp)
     real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
     real c = r200 / rscale; //halo concentration
     real term = mw_log(1.0 + c) - c / (1.0 + c);
-    real p0 = inv(1.0) * 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
     comp->r200 = r200;
     comp->p0 = p0;
 }
 
 static inline void set_nfw_p0(Dwarf* comp, real bound) {
-	/**/
 	real mass = comp->mass;
 	real rscale = comp->scaleLength;
 	real x = bound + rscale;
 	real p0_coef = 4.0 * M_PI * cube(rscale) * (mw_log(x / rscale) - bound / x);
 	comp->p0 = mass / p0_coef;
-	printf("p0: %1f\n", comp->p0);
 }
 
 static inline real get_extra_nfw_mass(Dwarf* comp, real bound)
@@ -748,6 +751,14 @@ static inline real get_extra_nfw_mass(Dwarf* comp, real bound)
 //remove this function before submitting my code changes
 static inline real getPlummerMass(Dwarf* comp, real r) {
 	return comp->mass * r * r * r / sqrt(cube(r * r + comp->scaleLength * comp->scaleLength));
+}
+
+static real findRadContainingMassPlummer(Dwarf* comp, real threshold) {
+	real rad = 0;
+	while(getPlummerMass(comp, rad) / comp->mass < threshold) {
+		rad += 0.1;
+	}
+	return rad;
 }
 
 /*      DWARF GENERATION        */
@@ -785,7 +796,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         /*
          * NOTE: the nfw technically works but it does not output in virial equilibrium. 
          * will return to it at a later date. The Plummer and hern work.
-         * WORKS NOW BITCH (remove this comment before pushing to Github)
          */
         
         switch(comp1->type)
@@ -794,8 +804,9 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 bound1 =  50.0 * (rscale_l + rscale_d);
                 break;
             case NFW:
-                bound1 = 5.0 * comp1->r200;
-                comp1->mass = get_extra_nfw_mass(comp1, bound1);
+                bound1 = 4.0 * comp1->r200;
+                //set_nfw_p0(comp1, bound1);
+		comp1->mass = get_extra_nfw_mass(comp1, bound1);
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
@@ -808,8 +819,9 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
             case NFW:
-                bound2 = 5.0 * comp1->r200;
-                comp1->mass = get_extra_nfw_mass(comp1, bound1);
+                bound2 = 1.0 * comp2->r200; //20.0 * (rscale_l + rscale_d);
+                //set_nfw_p0(comp2, bound2);
+		comp2->mass = get_extra_nfw_mass(comp2, bound2);
                 break;
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
@@ -834,13 +846,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 	real massLostNFW = get_extra_nfw_mass(comp2, bound2) - get_extra_nfw_mass(comp2, rRoche);
 	real massLostPlummer = mass_l - getPlummerMass(comp1, rRoche);
 	printf("\tDark to Light Mass; %1f\n", mass_d / mass_l);
-	printf("Plummer\n\tBound 1: %1f mass 1: %1f\n", bound1, mass_l);
+	printf("Plummer\n\tBound 1: %1f mass 1: %1f r200: %1f p0: %1f\n", bound1, mass_l, comp1->r200, comp1->p0);
 		printf("\tMass lost: %1f percent Mass lost: %1f \n", massLostPlummer, massLostPlummer / mass_l * 100.0);
 		printf("\tTotal Bodies: %1f Bodies Lost: %.2f\n", mass_l / mass_light_particle, massLostPlummer / mass_light_particle);
-	printf("NFW\n\tBound 2: %1f mass 2: %1f\n", bound2, mass_d);
+	printf("NFW\n\tBound 2: %1f mass 2: %1f r200: %1f p0: %1f\n", bound2, mass_d, comp2->r200, comp2->p0);
 		printf("\tMass lost: %1f percent Mass lost: %1f \n", massLostNFW, massLostNFW / mass_d * 100.0);
 		printf("\tTotal Bodies: %1f Bodies Lost: %.2f\n", mass_d / mass_dark_particle, massLostNFW / mass_dark_particle);	
-//exit(1);
 	//End of my stuff
 	
         /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -919,12 +930,17 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             y[i] = vec.y;
             z[i] = vec.z;
         }
+	exit(0);
 	//printCM(x, y, z, masses, mass_l, 0, nbody / 2); //debug line
 	//printCM(x, y, z, masses, mass_l, nbody / 2, nbody); //debug line
 	printCM(x, y, z, masses, mass_l + mass_d, 0, nbody); //debug line
 	printCM(vx, vy, vz, masses, mass_l + mass_d, 0, nbody); //debug line
+
         /* getting the center of mass and momentum correction */
-        cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
+	cm_correction_individual(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody / 2);
+	cm_correction_individual(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody / 2, nbody);
+        //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
+
 	//printCM(x, y, z, masses, mass_l, 0, nbody / 2); //debug line
 	//printCM(x, y, z, masses, mass_l, nbody / 2, nbody); //debug line
 	printCM(x, y, z, masses, mass_l + mass_d, 0, nbody); //debug line
