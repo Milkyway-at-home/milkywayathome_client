@@ -430,6 +430,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
+    mwbool LMC;
     
     real BestLikeStart;       /* after what portion of the sim should the calc start */
     real OutputFreq;          /* frequency of writing outputs */
@@ -448,10 +449,10 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                      \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                      \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                      \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                               \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,               \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,    \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                               \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.

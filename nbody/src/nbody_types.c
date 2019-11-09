@@ -627,6 +627,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)
-        && equalPotential(&ctx1->pot, &ctx2->pot);
+        && equalPotential(&ctx1->pot, &ctx2->pot)
+        && feqWithNan(ctx1->LMC, ctx2->LMC);
 }
 

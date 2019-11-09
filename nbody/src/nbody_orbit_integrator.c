@@ -71,6 +71,95 @@ void nbReverseOrbit(mwvector* finalPos,
     *finalVel = v;
 }
 
+void nbReverseOrbit_LMC(mwvector* finalPos,
+                    mwvector* finalVel,
+                    mwvector* LMCfinalPos,
+                    mwvector* LMCfinalVel,
+                    const Potential* pot,
+                    mwvector pos,
+                    mwvector vel,
+                    mwvector LMCpos,
+                    mwvector LMCvel,
+                    real tstop,
+                    real dt)
+{   
+    int steps = tstop/dt/10+1;
+    mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
+    mwvector mw_x = mw_vec(0, 0, 0);
+    mwvector array[steps];
+    real t, LMCmass = 449865.888;
+    real dt_half = dt / 2.0;
+    int i = 0;
+    // Set the initial conditions
+    x = pos;
+    v = vel;
+    LMCv = LMCvel;
+    LMCx = LMCpos;
+    mw_incnegv(v);
+    mw_incnegv(LMCv);
+
+
+    // Get the initial acceleration
+    mw_acc = pointAccel(mw_x, LMCx, LMCmass);
+    LMC_acc = nbExtAcceleration(pot, LMCx);
+    acc = nbExtAcceleration(pot, x);
+    tmp = pointAccel(x, LMCx, LMCmass);
+    mw_incaddv(acc, tmp);
+
+    // Shift the body
+    mw_incnegv(mw_acc);
+    mw_incaddv(LMC_acc, mw_acc);
+    mw_incaddv(acc, mw_acc);
+
+    for (t = 0; t <= tstop; t += dt)
+    {   
+        steps = t/dt;
+        if( steps % 10 == 0){ 
+            array[i] = mw_acc;
+            i++;
+        }
+
+        // Update the velocities and positions
+        mw_incaddv_s(v, acc, dt_half);
+        mw_incaddv_s(x, v, dt);
+        mw_incaddv_s(LMCv, LMC_acc, dt_half);
+        mw_incaddv_s(LMCx, LMCv, dt);
+        
+        // Compute the new acceleration
+        mw_acc = pointAccel(mw_x, LMCx, LMCmass);
+        LMC_acc = nbExtAcceleration(pot, LMCx);
+        acc = nbExtAcceleration(pot, x);
+        tmp = pointAccel(x, LMCx, LMCmass);
+        mw_incaddv(acc, tmp);
+
+        // Shift the body
+        mw_incnegv(mw_acc);
+        mw_incaddv(LMC_acc, mw_acc);
+        mw_incaddv(acc, mw_acc);
+        
+        mw_incaddv_s(v, acc, dt_half);
+        mw_incaddv_s(LMCv, LMC_acc, dt_half);
+
+    }
+
+    array[i] = mw_acc;
+    FILE *fp;
+    fp = fopen("shift.txt", "w");
+    for(int j=i; j>1; j--){
+        tmp = array[j];
+        fprintf(fp,"%f %f %f\n", tmp.x, tmp.y, tmp.z);
+    }
+    fclose(fp);
+    /* Report the final values (don't forget to reverse the velocities) */
+    mw_incnegv(v);
+    mw_incnegv(LMCv);
+    
+    *finalPos = x;
+    *finalVel = v;
+    *LMCfinalPos = LMCx;
+    *LMCfinalVel = LMCv;
+}
+
 void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector* finalVel,
                          const Potential* pot,
