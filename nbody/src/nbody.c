@@ -186,8 +186,8 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
         return nbStepSystemCL(ctx, st);
     }
   #endif
-
-    return nbStepSystemPlain(ctx, st);
+    mwvector tmp, tmp1;
+    return nbStepSystemPlain(ctx, st, tmp, tmp1);
 }
 
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
