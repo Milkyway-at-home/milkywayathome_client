@@ -519,7 +519,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
 
     /*This calls guassian quad to integrate the function for a given energy*/
     distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
-	printf("radius: %1f velocity: %1f energy: %1f upperlimit: %1f distributionFunc: %1f\n", r, v, energy, upperlimit_r, distribution_function);
+	//printf("radius: %1f velocity: %1f energy: %1f upperlimit: %1f distributionFunc: %1f\n", r, v, energy, upperlimit_r, distribution_function);
     return distribution_function;
 }
 
@@ -819,14 +819,14 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
             case NFW:
-                bound2 = 1.0 * comp2->r200; //20.0 * (rscale_l + rscale_d);
+                bound2 = 4.0 * comp2->r200; //20.0 * (rscale_l + rscale_d);
                 //set_nfw_p0(comp2, bound2);
 		comp2->mass = get_extra_nfw_mass(comp2, bound2);
                 break;
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
-        }
+        }l
         
         
         real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
@@ -930,7 +930,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             y[i] = vec.y;
             z[i] = vec.z;
         }
-	exit(0);
+	//exit(0);
 	//printCM(x, y, z, masses, mass_l, 0, nbody / 2); //debug line
 	//printCM(x, y, z, masses, mass_l, nbody / 2, nbody); //debug line
 	printCM(x, y, z, masses, mass_l + mass_d, 0, nbody); //debug line
