@@ -205,6 +205,8 @@ function makeBodies(ctx, potential)
 	            tstop     = revOrbTime,
 	            dt        = ctx.timestep / 10.0
 	            }
+        print(finalPosition)
+        print(LMCfinalPosition)
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
 	            potential = potential,
@@ -213,6 +215,13 @@ function makeBodies(ctx, potential)
 	            tstop     = revOrbTime,
 	            dt        = ctx.timestep / 10.0
 	            }
+          -- LMCfinalPosition, LMCfinalVelocity = reverseOrbit{
+          --     potential = potential,
+          --     position = Vector.create(-1.1, -41.1, -27.9),
+          --     velocity = Vector.create(-57, -226, 221), 
+          --     tstop     = revOrbTime,
+          --     dt        = ctx.timestep / 10.0
+          --     }
          end
     end
     
@@ -250,6 +259,16 @@ function makeBodies(ctx, potential)
             comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
             ignore      = true
         }
+        -- LMCModel = predefinedModels.plummer{
+        --     nbody       = 1,
+        --     prng        = prng,
+        --     position    = LMCfinalPosition,
+        --     velocity    = LMCfinalVelocity,
+        --     mass        = 449865.888,
+        --     scaleRadius = 15,
+        --     ignore      = false
+        -- }
+
         
     elseif(ModelComponents == 1) then
         firstModel = predefinedModels.plummer{
@@ -270,7 +289,7 @@ function makeBodies(ctx, potential)
     }
          
     end
-    
+
     if(ModelComponents > 0 and manual_bodies) then 
         return firstModel, manualModel
     elseif(ModelComponents == 0 and manual_bodies) then

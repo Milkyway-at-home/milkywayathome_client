@@ -82,7 +82,8 @@ static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 static inline void bodyAdvancePos(Body* p, const real dt)
 {
     mwvector dr;
-
+    // printf("X %f %f %f\n", Pos(p).x,Pos(p).y,Pos(p).z);
+    // printf("V %f %f %f\n", Vel(p).x,Vel(p).y,Vel(p).z);
     dr = mw_mulvs(Vel(p), dt);  /* get position increment */
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
@@ -261,21 +262,26 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {   
     FILE *fp;
-    mwvector array[ctx->nStep], shift;
+    mwvector array[ctx->nStep*2], shift;
     float ax,ay,az;
     int i = 0;
     if (ctx->LMC){
-        fp = fopen("shift.txt", "w");
-        for(int j=0; j<ctx->nStep; j++){
+    	fp = fopen("shift", "r");
+    	for(int j=0; j<ctx->nStep*2; j+=2){
+        	fscanf("%f %f %f", &ax, &ay, &az);
+        	SET_VECTOR(shift,ax,ay,az);
+        	array[j] = shift;
             fscanf("%f %f %f", &ax, &ay, &az);
             SET_VECTOR(shift,ax,ay,az);
-            array[j] = shift;
+            array[j+1] = shift;
         }
     }
     else{
-        for( int j=0; j<ctx->nStep; j++){
+    	for( int j=0; j<ctx->nStep*2; j+=2){
+        	SET_VECTOR(shift,0,0,0);
+        	array[j] = shift;
             SET_VECTOR(shift,0,0,0);
-            array[j] = shift;
+            array[j+1] = shift;
         }
     }
 
@@ -321,7 +327,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
                 
         #endif
         rc |= nbStepSystemPlain(ctx, st, array[i], array[i+1]);
-        i++;
+        i += 2;
         curStep = st->step;
         
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)
