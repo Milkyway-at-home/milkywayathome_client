@@ -85,7 +85,8 @@ static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector rshift,
 
     pos = pickShell(dsfmtState, rsc * r);  /* pick scaled position */
     mw_incaddv(pos, rshift);               /* move the position */
-    pos.x= 125.638, pos.y=683.777, pos.z=-314.013;
+    // pos.x= 125.638, pos.y=683.777, pos.z=-314.013;
+    pos.x= 90.2928, pos.y=598.775, pos.z= -129.656;
     return pos;
 }
 
@@ -97,7 +98,8 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift,
     v = plummerRandomV(dsfmtState, r);
     vel = pickShell(dsfmtState, vsc * v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);                /* move the velocity */
-    vel.x= -22.6511, vel.y=-139.945, vel.z=41.7121;
+    // vel.x= -22.6511, vel.y=-139.945, vel.z=41.7121;
+    vel.x= -11.6102, vel.y=-100.185, vel.z=-4.12092;
     return vel;
 }
 

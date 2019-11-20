@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 2000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -205,8 +205,8 @@ function makeBodies(ctx, potential)
 	            tstop     = revOrbTime,
 	            dt        = ctx.timestep / 10.0
 	            }
-        print(finalPosition)
         print(LMCfinalPosition)
+        print(LMCfinalVelocity)
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
 	            potential = potential,
@@ -268,6 +268,8 @@ function makeBodies(ctx, potential)
         --     scaleRadius = 15,
         --     ignore      = false
         -- }
+        -- print(LMCfinalPosition)
+        -- print(LMCfinalVelocity)
 
         
     elseif(ModelComponents == 1) then

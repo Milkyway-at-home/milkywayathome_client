@@ -83,7 +83,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real tstop,
                     real dt)
 {	
-	int steps = (tstop/dt/10+1)*2;
+	int steps = (tstop/dt/10+1);
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
     mwvector array[steps];
@@ -114,7 +114,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     for (t = 0; t <= tstop; t += dt)
     {   
     	steps = t/dt;
-    	if( steps % 5 == 0){ 
+    	if( steps % 10 == 0){ 
     		array[i] = mw_acc;
         	i++;
     	}
@@ -144,10 +144,9 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
     array[i] = mw_acc;
     FILE *fp;
-    fp = fopen("shift", "w");
+    fp = fopen("shift.txt", "w");
     for(int j=i; j>1; j--){
     	tmp = array[j];
-        mw_incnegv(mw_acc);
         fprintf(fp,"%f %f %f\n", tmp.x, tmp.y, tmp.z);
     }
     fclose(fp);
