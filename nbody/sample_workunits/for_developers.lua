@@ -120,7 +120,9 @@ end
 
 
 function get_timestep()
-    if(ModelComponents == 2) then
+    if (timestep_control) then
+        t = (evolveTime) / (Ntime_step)
+    elseif(ModelComponents == 2) then
         --Mass of a single dark matter sphere enclosed within light rscale
         mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
 
