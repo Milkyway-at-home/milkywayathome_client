@@ -114,6 +114,16 @@ int destroyNBodyState(NBodyState* st)
 
     free(st->checkpointResolved);
 
+    if(st->shiftByLMC) 
+    {
+        int j = 0;
+        while(st->shiftByLMC[j]){
+            mwFreeA(st->shiftByLMC[j]);
+            j++;
+        }
+        mwFreeA(st->shiSftByLMC);
+    }
+
     if (st->potEvalStates)
     {
         for (i = 0; i < nThread; ++i)
@@ -123,6 +133,8 @@ int destroyNBodyState(NBodyState* st)
         free(st->potEvalClosures);
         free(st->potEvalStates);
     }
+
+
 
   #if NBODY_OPENCL
 
@@ -193,6 +205,11 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 }
+
+void setLMCShiftArray(NBodyState* st, real** shiftArray) {
+        st->shiftByLMC = shiftArray;
+    }
+
 
 NBodyState* newNBodyState()
 {

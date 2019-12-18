@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "nbody_coordinates.h"
 #include "nbody_defaults.h"
+#include "nbody_types.h"
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
@@ -141,15 +142,41 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv_s(LMCv, LMC_acc, dt_half);
 
     }
-
+    
+    //Allocate memory for the shift array equal to (x,y,z) i times
+    //I think there will be an extra row at the end of this that is empty 
+        //but i'm not sure
+    real** shiftArray = (real**)mwMalloc(r * sizeof(real*));
+    int idx;
+    for(idx = 0; idx < i; idx++) {
+        shiftArray[idx] = (real*)mwMalloc(3 * sizeof(real));
+    }
+            
     array[i] = mw_acc;
-    FILE *fp;
-    fp = fopen("shift.txt", "w");
+    int shiftIdx = 0;
+
+    //Fill the shift array with the calculated values from "array"
+    int j;
+    for(j = i; j > 1; j--) {
+        tmp = array[j];
+        shiftArray[shiftIdx][0] = tmp.x;
+        shiftArray[shiftIdx][1] = tmp.y;
+        shiftArray[shiftIdx][2] = tmp.z;
+        shiftIdx++;
+    }
+    setLMCShiftArray(shiftArray);     
+
+/* //shift.txt code:
+    array[i] = mw_acc;
+   // FILE *fp;
+    //fp = fopen("shift.txt", "w");
     for(int j=i; j>1; j--){
     	tmp = array[j];
         fprintf(fp,"%f %f %f\n", tmp.x, tmp.y, tmp.z);
     }
-    fclose(fp);
+   // fclose(fp);
+    */
+    
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
     mw_incnegv(LMCv);
