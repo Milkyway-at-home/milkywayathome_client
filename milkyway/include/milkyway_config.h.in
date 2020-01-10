@@ -188,7 +188,11 @@
 #else
   #define MW_ALIGN __attribute__((aligned))
   #define MW_ALIGN_V(x) __attribute__((aligned(x)))
+#if defined(__e2k__)
+  #define MW_ALIGN_TYPE __attribute__((aligned(16)))
+#else
   #define MW_ALIGN_TYPE __attribute__((aligned))
+#endif
   #define MW_ALIGN_TYPE_V(x) __attribute__((aligned(x)))
 #endif /* _MSC_VER */
 
