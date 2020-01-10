@@ -96,7 +96,7 @@ static ProbabilityFunc selectStandardFunction(const AstronomyParameters* ap)
 	return probabilities_slow_hprob;
 }
 
-#if MW_IS_X86
+#if MW_IS_X86 || defined(__e2k__)
 
 /* Use one of the faster functions if available, or use something forced */
 int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
@@ -113,10 +113,14 @@ int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* 
 
     mw_cpuid(abcd, 1, 0);
 
+#if defined(__e2k__)
+   hasAVX = hasSSE41 = hasSSE3 = hasSSE2 = 1;
+#else
     hasAVX = mwHasAVX(abcd) && mwOSHasAVXSupport();
     hasSSE41 = mwHasSSE41(abcd);
     hasSSE3 = mwHasSSE3(abcd);
     hasSSE2 = mwHasSSE2(abcd);
+#endif
 
     if (clr->verbose)
     {
