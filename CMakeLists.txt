@@ -254,11 +254,19 @@ add_flag_if_supported("-xc99")
 #                    #-Xanalyzer -analyzer-display-progress
 #                    -Xanalyzer -analyzer-no-purge-dead)
 
+CHECK_C_COMPILER_FLAG("-funswitch-loops" SUPPORTS_UNSWITCH_LOOPS)
+if(SUPPORTS_UNSWITCH_LOOPS)
+    set(gcc_extra_flags "-fno-common -funswitch-loops ")
+else()
+    set(gcc_extra_flags "-fno-common ")
+endif()
 
-set(gcc_extra_flags "-fno-common -funswitch-loops ")
-set(gcc_only_extra_flags "-freg-struct-return ")
-
-
+CHECK_C_COMPILER_FLAG("-freg-struct-return" SUPPORTS_REG_STRUCT_RETURN)
+if(SUPPORTS_REG_STRUCT_RETURN)
+    set(gcc_only_extra_flags "-freg-struct-return ")
+else()
+    set(gcc_only_extra_flags " ")
+endif()
 
 add_flag_if_supported("-maccumulate-outgoing-args")
 
