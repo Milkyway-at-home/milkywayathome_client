@@ -206,6 +206,11 @@ if(MILKYWAY_IPHONE_APP)
   add_definitions("-DMILKYWAY_IPHONE_APP")
 endif()
 
+option (DISABLE_SAFE_LCC_WARNINGS "Disable some of excess Elbrus compiler warnings" ON)
+mark_as_advanced(DISABLE_SAFE_LCC_WARNINGS)
+
+option (DISABLE_EXTRA_LCC_WARNINGS "Disable more Elbrus compiler warnings that may be unsafe" OFF)
+mark_as_advanced(DISABLE_EXTRA_LCC_WARNINGS)
 
 ################################################################################
 
@@ -254,6 +259,31 @@ add_flag_if_supported("-xc99")
 #                    #-Xanalyzer -analyzer-display-progress
 #                    -Xanalyzer -analyzer-no-purge-dead)
 
+if(DISABLE_SAFE_LCC_WARNINGS)
+    # These warnings are about completely safe situations
+    suppress_warning_if_supported("-Wno-alignment-reduction-ignored")
+    suppress_warning_if_supported("-Wno-unused-variable")
+    suppress_warning_if_supported("-Wno-unused-function")
+    suppress_warning_if_supported("-Wno-unused-parameter")
+    suppress_warning_if_supported("-Wno-comment")
+    suppress_warning_if_supported("-Wno-static-reference-in-c99-inline-function")
+    suppress_warning_if_supported("-Wno-reduced-alignment")
+    suppress_warning_if_supported("-Wno-inline")
+
+    if(DISABLE_EXTRA_LCC_WARNINGS)
+        # These warnings may probably lead to some unsafe situations,
+        # so we won't turn them off unless specifically noted
+        suppress_warning_if_supported("-Wno-maybe-uninitialized")
+        suppress_warning_if_supported("-Wno-invalid-pragma-parameter")
+        suppress_warning_if_supported("-Wno-bad-initializer-type")
+        suppress_warning_if_supported("-Wno-sign-compare")
+        suppress_warning_if_supported("-Wno-array-bounds")
+        suppress_warning_if_supported("-Wno-bad-return-value-type")
+        suppress_warning_if_supported("-Wno-implicit-function-declaration")
+        suppress_warning_if_supported("-Wno-invalid-builtin-arg")
+    endif()
+endif()
+
 CHECK_C_COMPILER_FLAG("-funswitch-loops" SUPPORTS_UNSWITCH_LOOPS)
 if(SUPPORTS_UNSWITCH_LOOPS)
     set(gcc_extra_flags "-fno-common -funswitch-loops ")
@@ -285,7 +315,7 @@ if(NOT DOUBLEPREC)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
-  foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags})
+  foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags} ${suppress_warning_flags})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
   endforeach()
 endif()
@@ -297,7 +327,7 @@ if(CMAKE_COMPILER_IS_GNUCC AND NOT C_COMPILER_IS_CLANG)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CXX_COMPILER_IS_CLANG)
-  foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags})
+  foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags} ${suppress_warning_flags})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
   endforeach()
 endif()
