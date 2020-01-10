@@ -160,6 +160,8 @@
   #define ARCH_STRING "MIPS64"
 #elif defined(__mips)
   #define ARCH_STRING "MIPS"
+#elif defined(__e2k__)
+  #define ARCH_STRING "E2K"
 #else
   #define ARCH_STRING "Unknown architecture"
   #warning "Unknown architecture!"
