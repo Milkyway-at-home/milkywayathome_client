@@ -30,6 +30,7 @@
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
+#include "nbody_orbit_integrator.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -265,10 +266,12 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     float ax,ay,az;
     int i = 0;
     if (ctx->LMC){
+        real** shiftLMC;
+        getShiftByLMC(shiftLMC);
         for(int j=0; j < ctx->nStep; j++){
-            real tempX = st->shiftByLMC[j][0];
-            real tempY = st->shiftByLMC[j][1];
-            real tempZ = st->shiftByLMC[j][2];
+            real tempX = shiftLMC[j][0];
+            real tempY = shiftLMC[j][1];
+            real tempZ = shiftLMC[j][2];
             SET_VECTOR(shift, tempX, tempY, tempZ);
             array[j] = shift;
         }

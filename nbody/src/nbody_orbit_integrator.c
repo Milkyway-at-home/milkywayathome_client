@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "nbody_coordinates.h"
 #include "nbody_defaults.h"
-#include "nbody_types.h"
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
@@ -146,13 +145,13 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     //Allocate memory for the shift array equal to (x,y,z) i times
     //I think there will be an extra row at the end of this that is empty 
         //but i'm not sure
-    real** shiftArray = (real**)mwMalloc(r * sizeof(real*));
+    real** shiftArray = (real**)mwMalloc(i * sizeof(real*));
     int idx;
     for(idx = 0; idx < i; idx++) {
         shiftArray[idx] = (real*)mwMalloc(3 * sizeof(real));
     }
             
-    array[i] = mw_acc;
+    array[i] = mw_acc; //from JiaZhao code
     int shiftIdx = 0;
 
     //Fill the shift array with the calculated values from "array"
@@ -164,7 +163,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         shiftArray[shiftIdx][2] = tmp.z;
         shiftIdx++;
     }
-    setLMCShiftArray(shiftArray);     
+  //  setLMCShiftArray(st, shiftArray);     
+    shiftByLMC = shiftArray;
 
 /* //shift.txt code:
     array[i] = mw_acc;
@@ -184,6 +184,14 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *finalVel = v;
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
+}
+
+void getShiftByLMC(real** shiftArray) {
+    if(!shiftByLMC) {
+        //error code
+    }
+
+    shiftArray = shiftByLMC;
 }
 
 void nbPrintReverseOrbit(mwvector* finalPos,
@@ -254,4 +262,5 @@ void nbPrintReverseOrbit(mwvector* finalPos,
 
     *finalPos = x;
     *finalVel = v;
+    *shiftByLMC = NULL; //LMC shift not used--set to NULL
 }

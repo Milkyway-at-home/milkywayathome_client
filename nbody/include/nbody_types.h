@@ -348,7 +348,7 @@ typedef struct MW_ALIGN_TYPE
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
-    real** shiftByLMC = NULL;         /*Array to shift Nbodies according to affect of massive LMC -- NULL for when LMC not in use*/
+    //real** shiftByLMC;   /*Array to shift Nbodies according to affect of massive LMC -- NULL for when LMC not in use*/
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */
     int* potEvalClosures;       /* Lua closure for each state */
@@ -540,7 +540,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx);
 int destroyNBodyState(NBodyState* st);
 int nbDetachSharedScene(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
-void setLMCShiftArray(NBodyState* st, real** shiftArray);
+//void setLMCShiftArray(NBodyState* st, real** shiftArray);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
