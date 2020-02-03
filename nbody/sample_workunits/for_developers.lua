@@ -165,7 +165,7 @@ function makeContext()
       criterion   = criterion,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
-      BestLikeStart = best_like_start,
+      BestLikeStart = eff_best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
       Nstep_control = timestep_control,
@@ -303,6 +303,13 @@ manual_body_file = arg[7]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
+if use_best_likelihood then
+    evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
+    eff_best_like_start = best_like_start / (2.0 - best_like_start)
+else
+    eff_best_like_start = best_like_start
+end
+
 dwarfMass = mass_l / light_mass_ratio
 rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
