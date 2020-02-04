@@ -265,21 +265,12 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     float ax,ay,az;
     int i = 0;
     if (ctx->LMC){
-        for(int j=0; j < ctx->nStep; j++){
-            real tempX = st->shiftByLMC[j][0];
-            real tempY = st->shiftByLMC[j][1];
-            real tempZ = st->shiftByLMC[j][2];
-            SET_VECTOR(shift, tempX, tempY, tempZ);
-            array[j] = shift;
-        }
-
-        /*shift.txt code
     	fp = fopen("shift.txt", "r");
     	for(int j=0; j<ctx->nStep; j++){
         	fscanf(fp, "%f %f %f", &ax, &ay, &az);
         	SET_VECTOR(shift,ax,ay,az);
         	array[j] = shift;
-        }*/
+        }
     }
     else{
     	for( int j=0; j<ctx->nStep; j++){
