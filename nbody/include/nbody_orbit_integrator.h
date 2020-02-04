@@ -25,8 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-extern real** shiftByLMC;
-
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
                     const Potential* pot,
@@ -47,8 +45,6 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real tstop,
                     real dt);
 
-void getShiftByLMC(real** shiftArray);
-
 void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector* finalVel,
                          const Potential* pot,
@@ -57,7 +53,6 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          real tstop,
                          real tstopforward,
                          real dt);
-
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 
