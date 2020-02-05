@@ -31,6 +31,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     willeb 10 May 2010 */
 /* Altered to be consistent with nbody integrator.
  * shelton June 25 2018 */
+
+//Ptr to LMC Shift Array (default is NULL)
+
+real** shiftByLMC = NULL;
+
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
                     const Potential* pot,
@@ -83,6 +88,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real tstop,
                     real dt)
 {	
+   
 	int steps = (tstop/dt/10+1);
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
@@ -143,13 +149,27 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     }
 
     array[i] = mw_acc;
-    FILE *fp;
-    fp = fopen("shift.txt", "w");
-    for(int j=i; j>1; j--){
-    	tmp = array[j];
-        fprintf(fp,"%f %f %f\n", tmp.x, tmp.y, tmp.z);
+    /*FILE *fA = fopen("testArray.txt", "w");
+    fprintf(fA,"i: %d\n\n", i);*/ //print code in place to confirm shift array is working--will remove for final version
+
+    //Allocate memory for the shift array equal to (x,y,z) i times
+    shiftByLMC = (real**)mwMalloc( (i+1)* sizeof(real*)); 
+    int idx;
+    for(idx = 0; idx < (i+1); idx++) {
+        shiftByLMC[idx] = (real*)mwMalloc(3*sizeof(real));
     }
-    fclose(fp);
+    
+    //Fill the shift array with the calculated values from "array" from index=i to index=2
+    int j;
+    for(j = i; j > 1; j--) {
+        tmp = array[j];
+        shiftByLMC[j][0] = tmp.x;
+        shiftByLMC[j][1] = tmp.y;
+        shiftByLMC[j][2] = tmp.z;
+        //fprintf(fA, "j: %d   %f %f %f\n", j, tmp.x, tmp.y, tmp.z);
+    }
+    //fclose(fA);
+
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
     mw_incnegv(LMCv);
@@ -158,6 +178,20 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
 }
+
+void getLMCArray(real *** shiftArrayPtr) {
+    //call : real** tmpShiftPtr;
+    //getLMCArray(&tmpShiftPtr);
+    *shiftArrayPtr = shiftByLMC;
+}
+void freeLMCArray(unsigned int size) {
+    int i;
+    for(i = 0; i < size; i++) {
+        mwFreeA(shiftByLMC[i]);
+    }
+    mwFreeA(shiftByLMC);
+} 
+
 
 void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector* finalVel,

@@ -30,6 +30,7 @@
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
+#include "nbody_orbit_integrator.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -260,17 +261,34 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {   
-    FILE *fp;
+    //FILE *fp;
     mwvector array[ctx->nStep], shift;
     float ax,ay,az;
     int i = 0;
     if (ctx->LMC){
+        real** shiftLMC;
+        getLMCArray(&shiftLMC);
+        for(int j=2; j < ctx->nStep+1; j++){ //filled backwards, read backwards? 
+            real tempX = shiftLMC[j][0];
+            real tempY = shiftLMC[j][1];
+            real tempZ = shiftLMC[j][2];
+            SET_VECTOR(shift, tempX, tempY, tempZ);
+            array[j] = shift;
+        }
+
+        //After shift, free dynamic memory
+
+       freeLMCArray(ctx->nStep+1);
+
+
+
+/*
     	fp = fopen("shift.txt", "r");
     	for(int j=0; j<ctx->nStep; j++){
         	fscanf(fp, "%f %f %f", &ax, &ay, &az);
         	SET_VECTOR(shift,ax,ay,az);
         	array[j] = shift;
-        }
+        } */
     }
     else{
     	for( int j=0; j<ctx->nStep; j++){
