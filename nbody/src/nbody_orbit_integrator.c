@@ -49,7 +49,7 @@ void nbReverseOrbit(mwvector* finalPos,
     mw_incnegv(v);
 
     // Get the initial acceleration
-    acc = nbExtAcceleration(pot, x);
+    acc = nbExtAcceleration(pot, x, 0);
 
     for (t = 0; t <= tstop; t += dt)
     {
@@ -58,7 +58,7 @@ void nbReverseOrbit(mwvector* finalPos,
         mw_incaddv_s(x, v, dt);
         
         // Compute the new acceleration
-        acc = nbExtAcceleration(pot, x);
+        acc = nbExtAcceleration(pot, x, t);
         
         mw_incaddv_s(v, acc, dt_half);
     }
@@ -95,7 +95,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
     mw_incnegv(v);
 
     // Get the initial acceleration
-    acc = nbExtAcceleration(pot, x);
+    acc = nbExtAcceleration(pot, x, 0);
 
     FILE * fp;
     fp = fopen("reverse_orbit.out", "w");
@@ -108,7 +108,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
         
         
         // Compute the new acceleration
-        acc = nbExtAcceleration(pot, x);
+        acc = nbExtAcceleration(pot, x, t);
         mw_incaddv_s(v, acc, dt_half);
         
         lbr = cartesianToLbr(x, DEFAULT_SUN_GC_DISTANCE);
@@ -117,7 +117,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
 
     fclose(fp);
     fp = fopen("forward_orbit.out", "w");
-    acc = nbExtAcceleration(pot, x_for);
+    acc = nbExtAcceleration(pot, x_for, 0);
     for (t = 0; t <= tstopforward; t += dt)
     {
         // Update the velocities and positions
@@ -126,7 +126,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
         
         
         // Compute the new acceleration
-        acc = nbExtAcceleration(pot, x_for);
+        acc = nbExtAcceleration(pot, x_for, t);
         mw_incaddv_s(v_for, acc, dt_half);
         
         lbr = cartesianToLbr(x_for, DEFAULT_SUN_GC_DISTANCE);

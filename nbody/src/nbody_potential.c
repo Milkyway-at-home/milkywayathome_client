@@ -164,7 +164,10 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
     Z(acc) = -disk->mass * Z(pos) * azp / (zp * rth);
 
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]\n",X(acc),Y(acc),Z(acc));
-
+    
+    /*mw_printf("disk x acc: %.15f\n", X(acc));
+    mw_printf("disk y acc: %.15f\n", Y(acc));
+    mw_printf("disk z acc: %.15f\n", Z(acc));*/
     return acc;
 }
 
@@ -358,17 +361,16 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     return acc;
 }
 
-//need to talk about units
-static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos, real r)
+//need to talk about units, debugging
+static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos, real r, real time)
 {
-    mw_printf("Calculating Acceleration\n");
+    /*mw_printf("Calculating Acceleration\n");
     mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-    mw_printf("r = %.15f\n", r);
+    mw_printf("r = %.15f\n", r);*/
 
-    real curTime = 500;//for now, assume time is 500. We will need to fix this later
     mwvector pointPos;
     pointPos.z = 0;
-    real curAngle = fmod((disk->patternSpeed * curTime), M_PI);
+    real curAngle = fmod((disk->patternSpeed * time), M_PI);
     pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
     pointPos.y = sin (curAngle) * disk->scaleLength;
 
@@ -378,10 +380,12 @@ static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos,
     real totalAcc = disk->mass/(disk->scaleLength*disk->scaleLength);//a = Gm/r^2
     acc = mw_mulvs(acc, totalAcc);
     
-    mw_printf("curAngle: %.15f\n", curAngle);
+   /* mw_printf("curAngle: %.15f\n", curAngle);
     mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
-    mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
-    mw_printf("totalAcc: %.15f\n", totalAcc);
+    mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));*/
+    /*mw_printf("point x acc: %.15f\n", X(acc));
+    mw_printf("point y acc: %.15f\n", Y(acc));
+    mw_printf("point z acc: %.15f\n", Z(acc));*/
     return acc;
 }
 
@@ -527,7 +531,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
     return acc;
 }
 
-mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
+mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 {
     mwvector acc, acctmp;
     real r = mw_absv(pos);
@@ -577,7 +581,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             acctmp = sech2ExponentialDiskAccel(&pot->disk2, pos, r);
             break;
         case OrbitingPointMassBar:
-            acctmp = orbitingPointMassBarAccel(&pot->disk2, pos, r);
+            acctmp = orbitingPointMassBarAccel(&pot->disk2, pos, r, time);
             break;
         case NoDisk:
             X(acctmp) = 0.0;
