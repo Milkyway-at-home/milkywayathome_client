@@ -86,6 +86,8 @@ const char* showDiskT(disk_t x)
             return "DoubleExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
+        case OrbitingPointMassBar:
+            return "OrbitingPointMassBar";
         case NoDisk:
             return "NoDisk";
         case InvalidDisk:
@@ -322,11 +324,15 @@ char* showDisk(const Disk* d)
                      "      mass        = %g\n"
                      "      scaleLength = %g\n"
                      "      scaleHeight = %g\n"
+                     "      patternSpeed = %g\n"
+                     "      startAngle = %g\n"
                      "    };\n",
                      showDiskT(d->type),
                      d->mass,
                      d->scaleLength,
-                     d->scaleHeight))
+                     d->scaleHeight,
+                     d->patternSpeed,
+                     d->startAngle))
     {
         mw_fail("asprintf() failed\n");
     }

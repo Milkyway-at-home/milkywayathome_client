@@ -55,6 +55,7 @@ typedef struct MW_ALIGN_TYPE
 #define _FREEMAN_DISK 2
 #define _DOUBEXPO_DISK 3
 #define _SECHEXPO_DISK 4
+#define _POINTMASS_BAR 5
 
 
 /* Supported disk models */
@@ -65,7 +66,8 @@ typedef enum
     MiyamotoNagaiDisk     = _MN_DISK,
     FreemanDisk           = _FREEMAN_DISK,
     DoubleExponentialDisk = _DOUBEXPO_DISK,
-    Sech2ExponentialDisk  = _SECHEXPO_DISK
+    Sech2ExponentialDisk  = _SECHEXPO_DISK,
+    OrbitingPointMassBar  = _POINTMASS_BAR
 } disk_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -74,6 +76,8 @@ typedef struct MW_ALIGN_TYPE
     real mass;         /* disk mass */
     real scaleLength;  /* "a" for M-N, "b" for exp disk */
     real scaleHeight;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
+    real patternSpeed; //for bars only
+    real startAngle;   //for bars only
 } Disk;
 
 #define DISK_TYPE "Disk"
