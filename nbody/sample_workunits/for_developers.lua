@@ -124,7 +124,9 @@ function makePotential()
 end
 
 function get_timestep()
-    if(ModelComponents == 2) then
+    if (timestep_control) then
+        t = (evolveTime) / (Ntime_step)
+    elseif(ModelComponents == 2) then
         --Mass of a single dark matter sphere enclosed within light rscale
         mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
 
@@ -171,7 +173,7 @@ function makeContext()
       criterion   = criterion,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
-      BestLikeStart = best_like_start,
+      BestLikeStart = eff_best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
       useBetaComp   = use_beta_comp,
@@ -322,6 +324,13 @@ end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
+if use_best_likelihood then
+    evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
+    eff_best_like_start = best_like_start / (2.0 - best_like_start)
+else
+    eff_best_like_start = best_like_start
+end
+
 dwarfMass = mass_l / light_mass_ratio
 rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
