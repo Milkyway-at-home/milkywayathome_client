@@ -73,10 +73,10 @@ use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = true    -- use velocity dispersions in likelihood
-use_beta_comp        = true    -- use average beta in likelihood
-use_vlos_comp        = true   -- use average los velocity in likelihood
-use_avg_dist         = true    -- use average distance in likelihood
+use_vel_disps        = false    -- use velocity dispersions in likelihood
+use_beta_comp        = false  -- use average beta in likelihood
+use_vlos_comp        = false   -- use average los velocity in likelihood
+use_avg_dist         = false    -- use average distance in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -96,11 +96,13 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 orbit_parameter_l  = 218
--- orbit_parameter_b  = 53.5
--- orbit_parameter_r  = 28.6
--- orbit_parameter_vx = -156 
--- orbit_parameter_vy = 79 
--- orbit_parameter_vz = 107
+
+-- IF ONLY USING 6 PARAMETERS, UNCOMMENT THESE
+orbit_parameter_b  = 53.5
+orbit_parameter_r  = 28.6
+orbit_parameter_vx = -156 
+orbit_parameter_vy = 79 
+orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -287,7 +289,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 11, "Expected 6 arguments")
+assert(#arg >= 6, "Expects either 6 or 11 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
@@ -306,12 +308,17 @@ rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
 light_mass_ratio = round( tonumber(arg[6]), dec )
-orbit_parameter_b   = round( tonumber(arg[7]), dec )
-orbit_parameter_r   = round( tonumber(arg[8]), dec )
-orbit_parameter_vx  = round( tonumber(arg[9]), dec )
-orbit_parameter_vy  = round( tonumber(arg[10]), dec )
-orbit_parameter_vz  = round( tonumber(arg[11]), dec )
-manual_body_file = arg[12]
+if(#arg == 11) then
+  orbit_parameter_b   = round( tonumber(arg[7]), dec )
+  orbit_parameter_r   = round( tonumber(arg[8]), dec )
+  orbit_parameter_vx  = round( tonumber(arg[9]), dec )
+  orbit_parameter_vy  = round( tonumber(arg[10]), dec )
+  orbit_parameter_vz  = round( tonumber(arg[11]), dec )
+  manual_body_file = arg[12]
+else
+  manual_body_file = arg[7]
+
+end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
