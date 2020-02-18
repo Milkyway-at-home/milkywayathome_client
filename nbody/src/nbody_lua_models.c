@@ -233,6 +233,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     mwvector finalPos, finalVel, LMCfinalPos, LMCfinalVel;
     static real dt = 0.0;
     static real tstop = 0.0;
+    static real LMCmass = 0.0;
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
@@ -246,6 +247,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
             { "LMCposition",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos           },
             { "LMCvelocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel           },
+            { "LMCmass",      LUA_TNUMBER,   NULL,           TRUE, &LMCmass         },
             { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
             { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
             END_MW_NAMED_ARG
@@ -275,7 +277,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, tstop, dt);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, tstop, dt, LMCmass);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

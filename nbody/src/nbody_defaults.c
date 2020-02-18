@@ -46,7 +46,8 @@ const NBodyCtx defaultNBodyCtx =
     /* .IterMax         */  DEFAULT_SIGMA_ITER,
     /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
-       
+    /* .LMC             */  FALSE,
+
     /* .Nstep_control   */  FALSE,
     /* .Ntsteps         */  0,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
@@ -59,8 +60,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
 
-    /* .pot             */  EMPTY_POTENTIAL,
-    /* .LMC             */  FALSE
+    /* .pot             */  EMPTY_POTENTIAL
 };
 
 const HistogramParams defaultHistogramParams =

@@ -430,7 +430,6 @@ typedef struct MW_ALIGN_TYPE
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
-    mwbool LMC;
     
     real BestLikeStart;       /* after what portion of the sim should the calc start */
     real OutputFreq;          /* frequency of writing outputs */
@@ -440,6 +439,7 @@ typedef struct MW_ALIGN_TYPE
     real IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
     real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
+    mwbool LMC;
     
     real Ntsteps;     /* number of time steps to run when manual control is on */
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */

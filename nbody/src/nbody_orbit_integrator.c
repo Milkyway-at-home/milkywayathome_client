@@ -86,14 +86,16 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector LMCpos,
                     mwvector LMCvel,
                     real tstop,
-                    real dt)
+                    real dt,
+                    real LMCmass
+                    )
 {	
    
 	int steps = (tstop/dt/10+1);
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
     mwvector array[steps];
-    real t, LMCmass = 449865.888;
+    real t;
     real dt_half = dt / 2.0;
     int i = 0;
     // Set the initial conditions

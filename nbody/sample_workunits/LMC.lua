@@ -33,6 +33,9 @@ use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
 LMC_body              = true   -- -- PRESENT OF LMC             -- --
+LMCtotalBodies        = 2000    -- DON'T SET TO VALUES SMALLER THAN 100 
+LMC_scaleRadius       = 15
+LMC_Mass              = 449865.888
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -202,11 +205,10 @@ function makeBodies(ctx, potential)
 	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
+              LMCmass   = LMC_Mass,
 	            tstop     = revOrbTime,
 	            dt        = ctx.timestep / 10.0
 	            }
-        print(LMCfinalPosition)
-        print(LMCfinalVelocity)
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
 	            potential = potential,
@@ -215,13 +217,6 @@ function makeBodies(ctx, potential)
 	            tstop     = revOrbTime,
 	            dt        = ctx.timestep / 10.0
 	            }
-          -- LMCfinalPosition, LMCfinalVelocity = reverseOrbit{
-          --     potential = potential,
-          --     position = Vector.create(-1.1, -41.1, -27.9),
-          --     velocity = Vector.create(-57, -226, 221), 
-          --     tstop     = revOrbTime,
-          --     dt        = ctx.timestep / 10.0
-          --     }
          end
     end
     
@@ -239,12 +234,12 @@ function makeBodies(ctx, potential)
     
   	if(LMC_body) then
   		LMCModel = predefinedModels.plummer{
-            nbody       = 1,
+            nbody       = LMCtotalBodies,
             prng        = prng,
             position    = LMCfinalPosition,
             velocity    = LMCfinalVelocity,
-            mass        = 449865.888,
-            scaleRadius = 15,
+            mass        = LMC_Mass,
+            scaleRadius = LMC_scaleRadius,
             ignore      = false
         }
     end
@@ -259,18 +254,6 @@ function makeBodies(ctx, potential)
             comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
             ignore      = true
         }
-        -- LMCModel = predefinedModels.plummer{
-        --     nbody       = 1,
-        --     prng        = prng,
-        --     position    = LMCfinalPosition,
-        --     velocity    = LMCfinalVelocity,
-        --     mass        = 449865.888,
-        --     scaleRadius = 15,
-        --     ignore      = false
-        -- }
-        -- print(LMCfinalPosition)
-        -- print(LMCfinalVelocity)
-
         
     elseif(ModelComponents == 1) then
         firstModel = predefinedModels.plummer{
@@ -291,7 +274,7 @@ function makeBodies(ctx, potential)
     }
          
     end
-
+    
     if(ModelComponents > 0 and manual_bodies) then 
         return firstModel, manualModel
     elseif(ModelComponents == 0 and manual_bodies) then

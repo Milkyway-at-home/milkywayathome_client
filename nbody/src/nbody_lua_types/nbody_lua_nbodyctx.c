@@ -109,7 +109,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "IterMax",       LUA_TNUMBER,  NULL, TRUE,  &ctx.IterMax       },
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
-            { "LMC",         LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC         }, 
+            { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           }, 
             END_MW_NAMED_ARG
         };
 
@@ -247,7 +247,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "IterMax",         getNumber,     offsetof(NBodyCtx, IterMax)     },
     { "BetaCorrect",     getNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)  },
-    { "LMC",           getBool,       offsetof(NBodyCtx, LMC)       }, 
+    { "LMC",             getBool,       offsetof(NBodyCtx, LMC)         }, 
     { NULL, NULL, 0 }
 };
 
@@ -276,7 +276,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "IterMax",         setNumber,     offsetof(NBodyCtx, IterMax)    },
     { "BetaCorrect",     setNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)  },
-    { "LMC",           setBool,       offsetof(NBodyCtx, LMC)       }, 
+    { "LMC",             setBool,       offsetof(NBodyCtx, LMC)         }, 
     { NULL, NULL, 0 }
 };
 
