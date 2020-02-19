@@ -98,6 +98,7 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 orbit_parameter_l  = 218
 
 -- IF ONLY USING 6 PARAMETERS, UNCOMMENT THESE
+-- IF USING ALL 11, COMMENT THESE OUT
 orbit_parameter_b  = 53.5
 orbit_parameter_r  = 28.6
 orbit_parameter_vx = -156 

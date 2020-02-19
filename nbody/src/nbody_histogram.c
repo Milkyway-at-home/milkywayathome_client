@@ -492,17 +492,6 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
     fprintf(f, "betaBins = %u\n", all->histograms[0]->betaBins);
-
-    // create usage bit string
-    real usage = '1';
-    for(int i = 1 ; i < 6; i++)
-    {
-        if(all->usage[i]) usage+='1';
-        else usage+='0';
-    }
-    fprintf(f, "usage = %d %d %d %d %d %d\n", all->usage[0], all->usage[1], all->usage[2],
-                                        all->usage[3], all->usage[4], all->usage[5]);
-
     
     for (unsigned int i = 0; i < nBin; ++i)
     {
@@ -700,40 +689,27 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
 
     // create the histograms for each variable only if they're wanted/needed
     // otherwise mark them as unused (false)
+
+    /// always use normalized counts
     all->usage[0] = TRUE;
     all->histograms[0] = hist0; 
 
-    if(st->useBetaDisp)
-    {
-        all->usage[1] = TRUE;
-        all->histograms[1] = hist1;
-        hist1->lambdaBins = lambdaBins;
-        hist1->betaBins = betaBins;
-        hist1->hasRawCounts = TRUE;
-        hist1->params = *hp;
-        hist1->totalSimulated = (unsigned int) body_count;
-    }
-    else
-    {
-        all->usage[1] = FALSE;
-        free(hist1);
-    }
+    // always use beta and vlos dispersion (for backwards compatibility)
+    all->usage[1] = TRUE;
+    all->histograms[1] = hist1;
+    hist1->lambdaBins = lambdaBins;
+    hist1->betaBins = betaBins;
+    hist1->hasRawCounts = TRUE;
+    hist1->params = *hp;
+    hist1->totalSimulated = (unsigned int) body_count;
 
-    if(st->useVelDisp)
-    {
-        all->usage[2] = TRUE;
-        all->histograms[2] = hist2;
-        hist2->lambdaBins = lambdaBins;
-        hist2->betaBins = betaBins;
-        hist2->hasRawCounts = TRUE;
-        hist2->params = *hp;
-        hist2->totalSimulated = (unsigned int) body_count;
-    }
-    else
-    {
-        all->usage[2] = FALSE;
-        free(hist2);
-    }
+    all->usage[2] = TRUE;
+    all->histograms[2] = hist2;
+    hist2->lambdaBins = lambdaBins;
+    hist2->betaBins = betaBins;
+    hist2->hasRawCounts = TRUE;
+    hist2->params = *hp;
+    hist2->totalSimulated = (unsigned int) body_count;
 
     if(st->useVlos)
     {
