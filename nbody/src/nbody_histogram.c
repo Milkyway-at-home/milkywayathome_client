@@ -514,24 +514,40 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
             k+=2;
         }
 
-        // outputs zeroes for any histogram not being used
-        fprintf(f,
-                "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
-                storedData.useBin,
-                storedData.lambda,
-                storedData.beta,
-                output[0],      // normalized counts
-                output[1],      // normalized counts error
-                output[2],      // beta disp
-                output[3],      // beta disp error
-                output[4],      // vlos disp
-                output[5],      // vlos disp error
-                output[6],      // vlos average
-                output[7],      // vlos avg error
-                output[8],      // beta average
-                output[9],      // beta average error
-                output[10],     // distance
-                output[11]);    // distance error
+        if(all->usage[5]) // if this histogram has been used, all histograms were calculated
+        {
+            fprintf(f,
+                    "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                    storedData.useBin,
+                    storedData.lambda,
+                    storedData.beta,
+                    output[0],      // normalized counts
+                    output[1],      // normalized counts error
+                    output[2],      // beta disp
+                    output[3],      // beta disp error
+                    output[4],      // vlos disp
+                    output[5],      // vlos disp error
+                    output[6],      // vlos average
+                    output[7],      // vlos avg error
+                    output[8],      // beta average
+                    output[9],      // beta average error
+                    output[10],     // distance
+                    output[11]);    // distance error
+        }
+        else // only fitting original histograms
+        {
+            fprintf(f,
+                    "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
+                    storedData.useBin,
+                    storedData.lambda,
+                    storedData.beta,
+                    output[0],      // normalized counts
+                    output[1],      // normalized counts error
+                    output[2],      // beta disp
+                    output[3],      // beta disp error
+                    output[4],      // vlos disp
+                    output[5]);     // vlos disp error  
+        }  
 
     /* Print blank lines for plotting histograms in gnuplot pm3d */
         if(i % all->histograms[0]->betaBins == (all->histograms[0]->betaBins)-1)

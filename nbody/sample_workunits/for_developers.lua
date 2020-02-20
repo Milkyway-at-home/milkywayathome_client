@@ -11,7 +11,7 @@
 -- if you are using single component plummer model, it will take the baryonic
 -- matter component parameters. meaning you input should look like
 -- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
--- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
+-- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2 (52.5, 28.6, -156, 79, 107)
 
 -- available option: using a user inputted list of bodies. Sent in as an 
 -- optional arguement after dwarf parameter list
@@ -74,9 +74,12 @@ best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
-use_beta_comp        = false  -- use average beta in likelihood
-use_vlos_comp        = false   -- use average los velocity in likelihood
-use_avg_dist         = false    -- use average distance in likelihood
+
+-- if one of these is true, will get zeroes in histogram for the others that are false
+-- if not computing likelihood scores, still need one of these to be true if want them computed/output
+use_beta_comp        = false  -- calculate average beta, use in likelihood
+use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
+use_avg_dist         = false  -- calculate average distance, use in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
