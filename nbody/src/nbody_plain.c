@@ -261,14 +261,12 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {   
-    //FILE *fp;
     mwvector array[ctx->nStep], shift;
-    float ax,ay,az;
-    int i = 0;
+    unsigned int i = 0, j = 0;
     if (ctx->LMC){
         real** shiftLMC;
         getLMCArray(&shiftLMC);
-        for(int j=2; j < ctx->nStep+1; j++){ //filled backwards, read backwards? 
+        for(j = 0; j < ctx->nStep; j++){
             real tempX = shiftLMC[j][0];
             real tempY = shiftLMC[j][1];
             real tempZ = shiftLMC[j][2];
@@ -276,22 +274,11 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             array[j] = shift;
         }
 
-        //After shift, free dynamic memory
-
-       freeLMCArray(ctx->nStep+1);
-
-
-
-/*
-    	fp = fopen("shift.txt", "r");
-    	for(int j=0; j<ctx->nStep; j++){
-        	fscanf(fp, "%f %f %f", &ax, &ay, &az);
-        	SET_VECTOR(shift,ax,ay,az);
-        	array[j] = shift;
-        } */
+        //free dynamic memory
+        freeLMCArray(ctx->nStep+1);
     }
     else{
-    	for( int j=0; j<ctx->nStep; j++){
+    	for(j = 0; j < ctx->nStep; j++){
         	SET_VECTOR(shift,0,0,0);
         	array[j] = shift;
         }

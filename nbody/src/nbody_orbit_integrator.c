@@ -91,13 +91,13 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     )
 {	
    
-	int steps = (tstop/dt/10+1);
+	unsigned int steps = (tstop/dt/10+1);
+    unsigned int i = 0, j = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
     mwvector array[steps];
     real t;
     real dt_half = dt / 2.0;
-    int i = 0;
     // Set the initial conditions
     x = pos;
     v = vel;
@@ -151,26 +151,20 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     }
 
     array[i] = mw_acc;
-    /*FILE *fA = fopen("testArray.txt", "w");
-    fprintf(fA,"i: %d\n\n", i);*/ //print code in place to confirm shift array is working--will remove for final version
 
     //Allocate memory for the shift array equal to (x,y,z) i times
     shiftByLMC = (real**)mwMalloc( (i+1)* sizeof(real*)); 
-    int idx;
-    for(idx = 0; idx < (i+1); idx++) {
-        shiftByLMC[idx] = (real*)mwMalloc(3*sizeof(real));
+    for(j = 0; j < (i+1); j++) {
+        shiftByLMC[j] = (real*)mwMalloc(3*sizeof(real));
     }
     
-    //Fill the shift array with the calculated values from "array" from index=i to index=2
-    int j;
-    for(j = i; j > 1; j--) {
-        tmp = array[j];
+    //Fill the shift array backward
+    for(j = 0; j < i+1; j++) {
+        tmp = array[i-j];
         shiftByLMC[j][0] = tmp.x;
         shiftByLMC[j][1] = tmp.y;
         shiftByLMC[j][2] = tmp.z;
-        //fprintf(fA, "j: %d   %f %f %f\n", j, tmp.x, tmp.y, tmp.z);
     }
-    //fclose(fA);
 
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
@@ -187,7 +181,7 @@ void getLMCArray(real *** shiftArrayPtr) {
     *shiftArrayPtr = shiftByLMC;
 }
 void freeLMCArray(unsigned int size) {
-    int i;
+    unsigned int i;
     for(i = 0; i < size; i++) {
         mwFreeA(shiftByLMC[i]);
     }
