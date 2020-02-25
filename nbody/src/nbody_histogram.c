@@ -335,10 +335,10 @@ static void nbPrintHistogramHeader(FILE* f,
                     "#   pattern speed = %f\n"
                     "#   start angle = %f\n"
                     "#\n",
-                    p->disk.mass,
-                    p->disk.scaleLength,
-                    p->disk.patternSpeed,
-                    p->disk.startAngle);
+                    p->disk2.mass,
+                    p->disk2.scaleLength,
+                    p->disk2.patternSpeed,
+                    p->disk2.startAngle);
             break;
 
         case NoDisk:

@@ -370,7 +370,7 @@ static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos,
 
     mwvector pointPos;
     pointPos.z = 0;
-    real curAngle = fmod((disk->patternSpeed * time), M_PI);
+    real curAngle = fmod((disk->patternSpeed * time)+disk->startAngle, 2*M_PI);
     pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
     pointPos.y = sin (curAngle) * disk->scaleLength;
 
@@ -380,10 +380,10 @@ static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos,
     real totalAcc = disk->mass/(disk->scaleLength*disk->scaleLength);//a = Gm/r^2
     acc = mw_mulvs(acc, totalAcc);
     
-   /* mw_printf("curAngle: %.15f\n", curAngle);
+    /*mw_printf("curAngle: %.15f\n", curAngle);
     mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
-    mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));*/
-    /*mw_printf("point x acc: %.15f\n", X(acc));
+    mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
+    mw_printf("point x acc: %.15f\n", X(acc));
     mw_printf("point y acc: %.15f\n", Y(acc));
     mw_printf("point z acc: %.15f\n", Z(acc));*/
     return acc;
