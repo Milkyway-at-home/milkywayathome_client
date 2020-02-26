@@ -51,7 +51,7 @@ void nbReverseOrbit(mwvector* finalPos,
     // Get the initial acceleration
     acc = nbExtAcceleration(pot, x, 0);
 
-    for (t = 0; t <= tstop; t += dt)
+    for (t = 0; t >= tstop*(-1); t -= dt)
     {
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);
@@ -100,7 +100,7 @@ void nbPrintReverseOrbit(mwvector* finalPos,
     FILE * fp;
     fp = fopen("reverse_orbit.out", "w");
     // Loop through time
-    for (t = 0; t <= tstop; t += dt)
+    for (t = 0; t >= tstop*(-1); t -= dt)
     {
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);

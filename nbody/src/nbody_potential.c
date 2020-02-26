@@ -370,7 +370,8 @@ static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos,
 
     mwvector pointPos;
     pointPos.z = 0;
-    real curAngle = fmod((disk->patternSpeed * time)+disk->startAngle, 2*M_PI);
+    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
+    curAngle = curAngle - M_PI;//this is because the sun is negative in our coordinate system
     pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
     pointPos.y = sin (curAngle) * disk->scaleLength;
 
