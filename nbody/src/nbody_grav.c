@@ -133,6 +133,8 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
+    real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
+    mw_printf("time from start: %f curTime: %f step: %f timestep: %f Nsteps %f\n", timeFromStart, curTime, st->step, ctx->timestep, ctx->Ntsteps);
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
@@ -149,7 +151,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
 
-                externAcc = nbExtAcceleration(&ctx->pot, Pos(b), curTime);
+                externAcc = nbExtAcceleration(&ctx->pot, Pos(b), timeFromStart);
                 mw_incaddv(a, externAcc);
                 accels[i] = a;
                 break;
@@ -205,6 +207,8 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
+    real timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
+    mw_printf("time from start: %f\n", timeFromStart);
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
@@ -216,7 +220,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
-                mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime));
+                mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), timeFromStart));
                 accels[i] = a;
                 break;
 

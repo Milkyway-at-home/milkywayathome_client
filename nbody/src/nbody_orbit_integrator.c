@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "nbody_coordinates.h"
 #include "nbody_defaults.h"
+#include "milkyway_util.h"
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
@@ -50,6 +51,7 @@ void nbReverseOrbit(mwvector* finalPos,
 
     // Get the initial acceleration
     acc = nbExtAcceleration(pot, x, 0);
+    mw_printf("tstop: %f\n", tstop);
 
     for (t = 0; t >= tstop*(-1); t -= dt)
     {
