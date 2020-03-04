@@ -294,13 +294,13 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )
-time_ratio       = round( tonumber(arg[2]), dec )
-rscale_l         = round( tonumber(arg[3]), dec )
-light_r_ratio    = round( tonumber(arg[4]), dec )
-mass_l           = round( tonumber(arg[5]), dec )
-light_mass_ratio = round( tonumber(arg[6]), dec )
-manual_body_file = arg[7]
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time
+time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
+rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
+light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+manual_body_file = arg[7]                            -- File with Individual Particles (.out file)
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio
