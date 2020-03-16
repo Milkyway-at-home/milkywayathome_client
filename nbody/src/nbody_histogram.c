@@ -116,7 +116,7 @@ static void nbPrintHistogramHeader(FILE* f,
 
     if (bestLikelihood_time == 0.0)
     {
-        bestLikelihood_time = ctx->timeEvolve;
+        bestLikelihood_time = ctx->timeBack;
     }
 
     mwLocalTimeFull(tBuf, sizeof(tBuf));
@@ -152,7 +152,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Eps = %f\n"
             "#\n",
             nbody,
-            ctx->timeEvolve,
+            ctx->timeBack,
             bestLikelihood_time,
             -bestLikelihood,
             ctx->timestep,
