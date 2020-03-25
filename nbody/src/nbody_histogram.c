@@ -1127,6 +1127,11 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
         if (!readUsage)
         {
+            if (lineBuf[0] != 'usage')
+            {
+                readUsage = TRUE;
+                continue;
+            }
             rc = sscanf(lineBuf, " usage = %u\n", &used);
             if(rc == 1)
             {
