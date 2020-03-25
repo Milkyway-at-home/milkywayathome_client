@@ -117,9 +117,11 @@ static int createNBodyCtx(lua_State* luaSt)
             { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq    },
             { "BetaSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaSigma     },
             { "VelSigma",      LUA_TNUMBER,  NULL, TRUE,  &ctx.VelSigma      },
+            { "DistSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.DistSigma     },
             { "IterMax",       LUA_TNUMBER,  NULL, TRUE,  &ctx.IterMax       },
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
+            { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect   },
             END_MW_NAMED_ARG
         };
 
@@ -257,9 +259,11 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "OutputFreq",      getNumber,     offsetof(NBodyCtx, OutputFreq)  },
     { "BetaSigma",       getNumber,     offsetof(NBodyCtx, BetaSigma)   },
     { "VelSigma",        getNumber,     offsetof(NBodyCtx, VelSigma)    },
+    { "DistSigma",       getNumber,     offsetof(NBodyCtx, DistSigma)   },
     { "IterMax",         getNumber,     offsetof(NBodyCtx, IterMax)     },
     { "BetaCorrect",     getNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)  },
+    { "DistCorrect",     getNumber,     offsetof(NBodyCtx, DistCorrect) },
     { NULL, NULL, 0 }
 };
 
@@ -288,9 +292,11 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "OutputFreq",      setNumber,     offsetof(NBodyCtx, OutputFreq)  },
     { "BetaSigma",       setNumber,     offsetof(NBodyCtx, BetaSigma)   },
     { "VelSigma",        setNumber,     offsetof(NBodyCtx, VelSigma)    },
-    { "IterMax",         setNumber,     offsetof(NBodyCtx, IterMax)    },
+    { "DistSigma",       setNumber,     offsetof(NBodyCtx, DistSigma)   },
+    { "IterMax",         setNumber,     offsetof(NBodyCtx, IterMax)     },
     { "BetaCorrect",     setNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)  },
+    { "DistCorrect",     setNumber,     offsetof(NBodyCtx, DistCorrect) },
     { NULL, NULL, 0 }
 };
 

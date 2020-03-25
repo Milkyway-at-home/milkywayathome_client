@@ -100,8 +100,8 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 orbit_parameter_l  = 218
 
--- IF ONLY USING 6 PARAMETERS, UNCOMMENT THESE
--- IF USING ALL 11, COMMENT THESE OUT
+-- these only get used if only 6 parameters are input from shell script
+-- otherwise they get reset later with the inputs (if 11 given)
 orbit_parameter_b  = 53.5
 orbit_parameter_r  = 28.6
 orbit_parameter_vx = -156 
@@ -187,9 +187,11 @@ function makeContext()
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
+      DistSigma     = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
+      DistCorrect   = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta       = 1.0

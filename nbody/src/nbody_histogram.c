@@ -508,6 +508,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
                 output[k] = all->histograms[j]->data[i].variable;
                 output[k+1] = all->histograms[j]->data[i].err;
             }
+            k+=2;
         }
 
         if(all->usage[3]) // if this histogram has been used, all histograms were calculated
@@ -955,8 +956,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->BetaSigma, ctx->sunGCDist);
-            nbCalcDisp(all->histograms[5], FALSE, ctx->BetaCorrect);
+            nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->DistSigma, ctx->sunGCDist);
+            nbCalcDisp(all->histograms[5], FALSE, ctx->DistCorrect);
             int ddenom = all->histograms[5]->data[i].rawCount - all->histograms[5]->data[i].outliersRemoved;
             if(ddenom != 0)
             {
@@ -1010,7 +1011,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    unsigned int used;  /* whether outputting new stuff, too, or just old output */
+    unsigned int used;  /* indicates how many variables to expect per line */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -1181,43 +1182,82 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         double variable[6];
         double errors[6];
 
-        rc = sscanf(lineBuf,
-                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-                    &useBin,
-                    &lambda,
-                    &beta,
-                    &variable[0],
-                    &errors[0],
-                    &variable[1],
-                    &errors[1],
-                    &variable[2],
-                    &errors[2],
-                    &variable[3],
-                    &errors[3],
-                    &variable[4],
-                    &errors[4],
-                    &variable[5],
-                    &errors[5]);
-
-
-        // only save the numbers that are used
-        for(int i = 0; i < 6; i++)
+        if(used) // new histogram output, there are more parameters to read in
         {
-            if(all->usage[i])
+            rc = sscanf(lineBuf,
+                        "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                        &useBin,
+                        &lambda,
+                        &beta,
+                        &variable[0],
+                        &errors[0],
+                        &variable[1],
+                        &errors[1],
+                        &variable[2],
+                        &errors[2],
+                        &variable[3],
+                        &errors[3],
+                        &variable[4],
+                        &errors[4],
+                        &variable[5],
+                        &errors[5]);
+
+
+            // only save the numbers that are used
+            for(int i = 0; i < 6; i++)
             {
-                all->histograms[i]->data[fileCount].useBin = useBin;
-                all->histograms[i]->data[fileCount].lambda = lambda;
-                all->histograms[i]->data[fileCount].beta = beta;
-                all->histograms[i]->data[fileCount].variable = variable[i];
-                all->histograms[i]->data[fileCount].err = errors[i];
+                if(all->usage[i])
+                {
+                    all->histograms[i]->data[fileCount].useBin = useBin;
+                    all->histograms[i]->data[fileCount].lambda = lambda;
+                    all->histograms[i]->data[fileCount].beta = beta;
+                    all->histograms[i]->data[fileCount].variable = variable[i];
+                    all->histograms[i]->data[fileCount].err = errors[i];
+                }
+            }
+            
+            if (rc != 15)
+            {
+                mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
+                error = TRUE;
+                break;
             }
         }
-        
-        if (rc != 15)
+
+        else // default histogram output (no new parameters)
         {
-            mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
-            error = TRUE;
-            break;
+            rc = sscanf(lineBuf,
+                        "%d %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                        &useBin,
+                        &lambda,
+                        &beta,
+                        &variable[0],
+                        &errors[0],
+                        &variable[1],
+                        &errors[1],
+                        &variable[2],
+                        &errors[2]);
+
+
+            // only save the numbers that are used
+            for(int i = 0; i < 3; i++)
+            {
+                if(all->usage[i])
+                {
+                    all->histograms[i]->data[fileCount].useBin = useBin;
+                    all->histograms[i]->data[fileCount].lambda = lambda;
+                    all->histograms[i]->data[fileCount].beta = beta;
+                    all->histograms[i]->data[fileCount].variable = variable[i];
+                    all->histograms[i]->data[fileCount].err = errors[i];
+                }
+            }
+            
+            if (rc != 9)
+            {
+                mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
+                error = TRUE;
+                break;
+            }
         }
 
         ++fileCount;
@@ -1226,19 +1266,22 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     fclose(f);
 
     // checking to make sure there's something in the histogram
+    unsigned int num = 3;
+    if(used) num = 6; // more histogram parameters for the new output
+
     unsigned int used_hist = 0;
-    for(unsigned int i = 0; i < 6; i++)
+    for(unsigned int i = 0; i < num; i++)
         if(all->usage[i]) used_hist++;
 
     if (error || used_hist == 0)
     {
-        for(int i = 0; i < 6; i++)
+        for(int i = 0; i < num; i++)
             free(all->histograms[i]);
         free(all);
         return NULL;
     }
 
-    for(int i = 0; i < 6; i++)
+    for(int i = 0; i < num; i++)
     {
         if(all->usage[i])
         {
