@@ -29,7 +29,6 @@ const NBodyCtx defaultNBodyCtx =
 
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,
-    /* .timeBack        */  0.0,
     /* .treeRSize       */  DEFAULT_TREE_ROOT_SIZE,
     /* .sunGCDist       */  DEFAULT_SUN_GC_DISTANCE,
 

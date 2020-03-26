@@ -221,7 +221,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     ws->factors[6] = 1;
     ws->factors[7] = 1;
 
-    ws->threads[0] = 64;
+    ws->threads[0] = 32;
     ws->threads[1] = 64;
     ws->threads[2] = 64;
     ws->threads[3] = 64;
@@ -330,6 +330,9 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[5] = 256;
         ws->threads[6] = 256;
         ws->threads[7] = 256;
+    }
+    while(ws->threads[0]*6*8 >= di->localMemSize){
+        ws->threads[0] /= 2;
     }
 
     return CL_FALSE;
@@ -586,29 +589,33 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Potential */
                  "-DUSE_EXTERNAL_POTENTIAL=%d "
-                 "-DHERNQUIST_SPHERICAL=%d "
-                 "-DPLUMMER_SPHERICAL=%d "
-                 "-DNO_SPHERICAL=%d "
-                 "-DMIYAMOTO_NAGAI_DISK=%d "
-                 "-DFREEMAN_DISK=%d "
-                 "-DDOUBEXPO_DISK=%d "
-                 "-DSECHEXPO_DISK=%d "
-                 "-DNO_DISK=%d "
-                 "-DMIYAMOTO_NAGAI_DISK2=%d "
-                 "-DFREEMAN_DISK2=%d "
-                 "-DDOUBEXPO_DISK2=%d "
-                 "-DSECHEXPO_DISK2=%d "
-                 "-DNO_DISK2=%d "
-                 "-DLOG_HALO=%d "
-                 "-DNFW_HALO=%d "
-                 "-DTRIAXIAL_HALO=%d "
-                 "-DAS_HALO=%d "
-                 "-DWE_HALO=%d "
-                 "-DNFWM_HALO=%d "
-                 "-DPLUMMER_HALO=%d "
-                 "-DHERNQUIST_HALO=%d "
-                 "-DNINKOVIC_HALO=%d "
-                 "-DNO_HALO=%d "
+//                 "-DHERNQUIST_SPHERICAL=%d "
+//                 "-DPLUMMER_SPHERICAL=%d "
+//                 "-DNO_SPHERICAL=%d "
+//                 "-DMIYAMOTO_NAGAI_DISK=%d "
+//                 "-DFREEMAN_DISK=%d "
+//                 "-DDOUBEXPO_DISK=%d "
+//                 "-DSECHEXPO_DISK=%d "
+//                 "-DNO_DISK=%d "
+//                 "-DMIYAMOTO_NAGAI_DISK2=%d "
+//                 "-DFREEMAN_DISK2=%d "
+//                 "-DDOUBEXPO_DISK2=%d "
+//                 "-DSECHEXPO_DISK2=%d "
+//                 "-DNO_DISK2=%d "
+//                 "-DLOG_HALO=%d "
+//                 "-DNFW_HALO=%d "
+//                 "-DTRIAXIAL_HALO=%d "
+//                 "-DAS_HALO=%d "
+//                 "-DWE_HALO=%d "
+//                 "-DNFWM_HALO=%d "
+//                 "-DPLUMMER_HALO=%d "
+//                 "-DHERNQUIST_HALO=%d "
+//                 "-DNINKOVIC_HALO=%d "
+//                 "-DNO_HALO=%d "
+                    "-DDISK_TYPE=%d "
+                    "-DDISK_2_TYPE=%d "
+                    "-DHALO_TYPE=%d "
+                    "-DSPHERE_TYPE=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -673,30 +680,33 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Set potential */
                  ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT,
-
-                 p->sphere[0].type == HernquistSpherical,
-                 p->sphere[0].type == PlummerSpherical,
-                 p->sphere[0].type == NoSpherical,
-                 p->disk.type == MiyamotoNagaiDisk,
-                 p->disk.type == FreemanDisk,
-                 p->disk.type == DoubleExponentialDisk,
-                 p->disk.type == Sech2ExponentialDisk,
-                 p->disk.type == NoDisk,
-                 p->disk2.type == MiyamotoNagaiDisk,
-                 p->disk2.type == FreemanDisk,
-                 p->disk2.type == DoubleExponentialDisk,
-                 p->disk2.type == Sech2ExponentialDisk,
-                 p->disk2.type == NoDisk,
-                 p->halo.type == LogarithmicHalo,
-                 p->halo.type == NFWHalo,
-                 p->halo.type == TriaxialHalo,
-                 p->halo.type == AllenSantillanHalo,
-                 p->halo.type == WilkinsonEvansHalo,
-                 p->halo.type == NFWMassHalo,
-                 p->halo.type == PlummerHalo,
-                 p->halo.type == HernquistHalo,
-                 p->halo.type == NinkovicHalo,
-                 p->halo.type == NoHalo,
+                p->disk.type,
+                p->disk2.type,
+                p->halo.type,
+                p->sphere[0].type,
+//                 p->sphere[0].type == HernquistSpherical,
+//                 p->sphere[0].type == PlummerSpherical,
+//                 p->sphere[0].type == NoSpherical,
+//                 p->disk.type == MiyamotoNagaiDisk,
+//                 p->disk.type == FreemanDisk,
+//                 p->disk.type == DoubleExponentialDisk,
+//                 p->disk.type == Sech2ExponentialDisk,
+//                 p->disk.type == NoDisk,
+//                 p->disk2.type == MiyamotoNagaiDisk,
+//                 p->disk2.type == FreemanDisk,
+//                 p->disk2.type == DoubleExponentialDisk,
+//                 p->disk2.type == Sech2ExponentialDisk,
+//                 p->disk2.type == NoDisk,
+//                 p->halo.type == LogarithmicHalo,
+//                 p->halo.type == NFWHalo,
+//                 p->halo.type == TriaxialHalo,
+//                 p->halo.type == AllenSantillanHalo,
+//                 p->halo.type == WilkinsonEvansHalo,
+//                 p->halo.type == NFWMassHalo,
+//                 p->halo.type == PlummerHalo,
+//                 p->halo.type == HernquistHalo,
+//                 p->halo.type == NinkovicHalo,
+//                 p->halo.type == NoHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -1009,9 +1019,11 @@ static NBodyStatus nbKernelErrorToNBodyStatus(NBodyKernelError x)
         case NBODY_KERNEL_CELL_OVERFLOW:
             return NBODY_CELL_OVERFLOW_ERROR;
         case NBODY_KERNEL_TREE_INCEST:
+//            return NBODY_SUCCESS; /* Somewhat inaccurate but shouldn't happen  */
             return NBODY_TREE_INCEST_FATAL; /* Somewhat inaccurate but shouldn't happen  */
         case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
-            return NBODY_TREE_STRUCTURE_ERROR;
+            return NBODY_SUCCESS;
+//            return NBODY_TREE_STRUCTURE_ERROR;
         case NBODY_KERNEL_ERROR_OTHER:
             return NBODY_ERROR;
         default:
@@ -1222,8 +1234,10 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
                                  0, NULL, &boxEv);
-    if (err != CL_SUCCESS)
+    if (err != CL_SUCCESS){
+        fprintf(stderr,"\n\n BAD \n\n");
         goto tree_build_exit;
+    }
 
     /* FIXME: Work sizes */
     err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTreeClear, 1,
@@ -1556,7 +1570,7 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
             return NBODY_CL_ERROR;
         }
     }
-
+//    printf("%f\n",st->tree.root->cellnode.pos.x);
     err = nbExecuteForceKernels(st, CL_TRUE);
     if (err != CL_SUCCESS)
     {
@@ -1627,6 +1641,10 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 
     while (st->step < ctx->nStep)
     {
+
+    	if(st->step == 607){
+    		printf("Hello\n");
+    	}
         #ifdef NBODY_BLENDER_OUTPUT
             nbFindCenterOfMass(&nextCmPos, st);
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);

@@ -135,7 +135,6 @@ static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
 static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
     const real tmp = sph->scale + r;
-
     return mw_mulvs(pos, -sph->mass / (r * sqr(tmp)));
 }
 

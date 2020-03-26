@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_TYPES_H_
 #define _NBODY_TYPES_H_
 
+
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
  *
@@ -415,7 +416,6 @@ typedef struct MW_ALIGN_TYPE
     real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
-    real timeBack;
     real treeRSize;
     real sunGCDist;
 

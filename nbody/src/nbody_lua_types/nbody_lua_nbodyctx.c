@@ -88,7 +88,6 @@ static int createNBodyCtx(lua_State* luaSt)
         {
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
-            { "timeBack",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timeBack      },
             { "theta",         LUA_TNUMBER,  NULL, FALSE, &ctx.theta         },
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
@@ -226,7 +225,6 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 {
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)  },
-    { "timeBack",        getNumber,     offsetof(NBodyCtx, timeBack)    },
     { "theta",           getNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)   },
@@ -255,7 +253,6 @@ static const Xet_reg_pre settersNBodyCtx[] =
 {
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)  },
-    { "timeBack",        setNumber,     offsetof(NBodyCtx, timeBack)    },
     { "theta",           setNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)   },
