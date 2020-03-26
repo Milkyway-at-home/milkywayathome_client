@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="milkyway_separation"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\boinc\;CMake Files\cmake_modules\;CMake Files\crlibm\;CMake Files\crlibm\tests\;CMake Files\dSFMT\;CMake Files\libelf\;CMake Files\libelf\cmake_modules\;CMake Files\libelf\lib\;CMake Files\lua\;CMake Files\lua\include\;CMake Files\milkyway\;CMake Files\milkyway\include\;CMake Files\.git\;CMake Files\.git\refs\;CMake Files\.git\refs\heads\;CMake Files\nbody\;CMake Files\nbody\include\;CMake Files\nbody\tests\;CMake Files\nbody\doc\;CMake Files\separation\;CMake Files\separation\include\;CMake Files\separation\tests\;CMake Files\tools\;CMake Files\popt\;CMake Files\popt\include\;CMake Files\popt\tests\;CMake Files\openpa\;CMake Files\openpa\include\;CMake Files\openpa\test\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="milkyway_separation">
+				<Option output="/home/conrad/milkywayathome_client/bin/milkyway_separation" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 milkyway_separation"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="milkyway_separation/fast">
+				<Option output="/home/conrad/milkywayathome_client/bin/milkyway_separation" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 milkyway_separation/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_sse2">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_sse2.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_sse2"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_sse2/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_sse2.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_sse2/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_sse3">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_sse3.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_sse3"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_sse3/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_sse3.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_sse3/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_kernels">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_kernels.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_kernels"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_kernels/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_kernels.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_kernels/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_sse41">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_sse41.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_sse41"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_sse41/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_sse41.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_sse41/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_avx">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_avx.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_avx"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="separation_core_avx/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libseparation_core_avx.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/separation"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/api"/>
+					<Add directory="/home/conrad/milkywayathome_client/boinc/boinc/lib"/>
+					<Add directory="/home/conrad/milkywayathome_client/popt/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/lua/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/milkyway/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/dSFMT"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/separation/../boinc/boinc"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 separation_core_avx/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test_data">
+				<Option working_dir="/home/conrad/milkywayathome_client/separation/tests"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/tests/Makefile&quot;  VERBOSE=1 test_data"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/tests/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/tests/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/separation/tests/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/conrad/milkywayathome_client/lib/separation_kernel_inline.c">
+			<Option target="separation_kernels"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/lib/summarization_kernel_inline.c">
+			<Option target="separation_kernels"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/calculated_constants.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/cl_compile_flags.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/coordinates.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/evaluation.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/evaluation_state.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/gauss_legendre.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/il_kernels.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/integrals.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/io_util.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/likelihood.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/parameters.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/probabilities.h">
+			<Option target="separation_core_sse2"/>
+			<Option target="separation_core_sse3"/>
+			<Option target="separation"/>
+			<Option target="separation_core_sse41"/>
+			<Option target="separation_core_avx"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/probabilities_dispatch.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/probabilities_intrin.h">
+			<Option target="separation_core_sse2"/>
+			<Option target="separation_core_sse3"/>
+			<Option target="separation_core_sse41"/>
+			<Option target="separation_core_avx"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/r_points.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/replace_amd_il.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/run_cl.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_cl_buffers.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_config.h.in">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_constants.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_lua.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_types.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_utils.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/setup_cl.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/star_points.h">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/kernels/probabilities_kernel.cl">
+			<Option target="separation_kernels"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/kernels/summarization_kernel.cl">
+			<Option target="separation_kernels"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/calculated_constants.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/cl_compile_flags.cpp">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/coordinates.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/evaluation.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/evaluation_state.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/gauss_legendre.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/il_kernel_1.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/il_kernel_2.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/il_kernel_3.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/il_kernel_4.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/integrals.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/io_util.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/likelihood.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/parameters.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/probabilities.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/probabilities_dispatch.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/probabilities_sse2.c">
+			<Option target="separation_core_sse2"/>
+			<Option target="separation_core_sse3"/>
+			<Option target="separation_core_sse41"/>
+			<Option target="separation_core_avx"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/r_points.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/replace_amd_il.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/run_cl.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/separation_binaries.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/separation_cl_buffers.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/separation_lua.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/separation_main.c">
+			<Option target="milkyway_separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/separation_utils.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/setup_cl.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/src/star_points.c">
+			<Option target="separation"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/boinc/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\boinc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/boinc/config.h.cmake.in">
+			<Option virtualFolder="CMake Files\boinc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/boinc/version.h.cmake.in">
+			<Option virtualFolder="CMake Files\boinc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/BOINCBinNames.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/BOINCPaths.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CPUNameTest.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CheckCFlag.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CheckSSE2.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CompilerID.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindGMP.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindMPFR.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindOpenCL.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindReadline.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/GetGitRevisionDescription.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/GetGitRevisionDescription.cmake.in">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/IgnoreWarningFlags.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MSVCFlags.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MWLink.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MaybeDlCheck.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MinGWPaths.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/PreferStatic.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/PrintInfo.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/Profiling.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/SpecialLibs.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/test_avx.c">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/crlibm/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\crlibm\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/crlibm/crlibm_config.h.in">
+			<Option virtualFolder="CMake Files\crlibm\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/crlibm/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\crlibm\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/dSFMT/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\dSFMT\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libelf\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/config.h.in">
+			<Option virtualFolder="CMake Files\libelf\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/cmake_modules/CheckHeaderSTDC.cmake">
+			<Option virtualFolder="CMake Files\libelf\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/sys_elf.h.in">
+			<Option virtualFolder="CMake Files\libelf\lib\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/lua/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lua\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/lua/include/luaconf.h.in">
+			<Option virtualFolder="CMake Files\lua\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/milkyway/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\milkyway\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/milkyway/include/milkyway_config.h.in">
+			<Option virtualFolder="CMake Files\milkyway\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/milkyway/include/milkyway_git_version.h.in">
+			<Option virtualFolder="CMake Files\milkyway\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/.git/HEAD">
+			<Option virtualFolder="CMake Files\.git\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/.git/refs/heads/master">
+			<Option virtualFolder="CMake Files\.git\refs\heads\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\nbody\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/include/nbody_config.h.in">
+			<Option virtualFolder="CMake Files\nbody\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\nbody\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/doc/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\nbody\doc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\separation\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_config.h.in">
+			<Option virtualFolder="CMake Files\separation\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\separation\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/tools/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tools\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/popt/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\popt\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/popt/include/popt_config.h.in">
+			<Option virtualFolder="CMake Files\popt\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/popt/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\popt\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/openpa/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\openpa\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/openpa/include/opa_config.h.in">
+			<Option virtualFolder="CMake Files\openpa\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/openpa/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\openpa\test\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

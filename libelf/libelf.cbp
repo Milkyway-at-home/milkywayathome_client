@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="libelf"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\boinc\;CMake Files\cmake_modules\;CMake Files\crlibm\;CMake Files\crlibm\tests\;CMake Files\dSFMT\;CMake Files\libelf\;CMake Files\libelf\cmake_modules\;CMake Files\libelf\lib\;CMake Files\lua\;CMake Files\lua\include\;CMake Files\milkyway\;CMake Files\milkyway\include\;CMake Files\.git\;CMake Files\.git\refs\;CMake Files\.git\refs\heads\;CMake Files\nbody\;CMake Files\nbody\include\;CMake Files\nbody\tests\;CMake Files\nbody\doc\;CMake Files\separation\;CMake Files\separation\include\;CMake Files\separation\tests\;CMake Files\tools\;CMake Files\popt\;CMake Files\popt\include\;CMake Files\popt\tests\;CMake Files\openpa\;CMake Files\openpa\include\;CMake Files\openpa\test\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/conrad/milkywayathome_client/libelf"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="elf">
+				<Option output="/home/conrad/milkywayathome_client/lib/libelf.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/libelf"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add option="-DHAVE_CONFIG_H=1"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/include/libelf"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 elf"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="elf/fast">
+				<Option output="/home/conrad/milkywayathome_client/lib/libelf.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/conrad/milkywayathome_client/libelf"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDOUBLEPREC=1"/>
+					<Add option="-DDSFMT_MEXP=19937"/>
+					<Add option="-DHAVE_CONFIG_H=1"/>
+					<Add directory="/home/conrad/milkywayathome_client/include"/>
+					<Add directory="/home/conrad/milkywayathome_client/include/libelf"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf"/>
+					<Add directory="/home/conrad/milkywayathome_client/libelf/lib"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 elf/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/conrad/milkywayathome_client/libelf/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.fsize.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.getehdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.getphdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.getshdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.newehdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.newphdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/32.xlatetof.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/64.xlatetof.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/assert.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/begin.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/byteswap.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/checksum.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/cntl.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/cook.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/data.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/elf_repl.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/end.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/errmsg.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/errno.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/errors.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/ext_types.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/fill.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/flag.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/gelf.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/gelfehdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/gelfphdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/gelfshdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/gelftrans.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getarhdr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getaroff.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getarsym.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getbase.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getdata.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getident.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/getscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/hash.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/input.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/kind.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/libelf.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/memset.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/ndxscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/newdata.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/newscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/next.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/nextscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/nlist.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/nlist.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/opt.delscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/private.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/rand.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/rawdata.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/rawfile.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/strptr.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/swap64.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/update.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/verdef.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/verdef_32_tof.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/verdef_32_tom.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/verdef_64_tof.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/verdef_64_tom.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/verneed.h">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/version.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/x.elfext.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/x.movscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/x.remscn.c">
+			<Option target="elf"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/boinc/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\boinc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/boinc/config.h.cmake.in">
+			<Option virtualFolder="CMake Files\boinc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/boinc/version.h.cmake.in">
+			<Option virtualFolder="CMake Files\boinc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/BOINCBinNames.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/BOINCPaths.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CPUNameTest.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CheckCFlag.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CheckSSE2.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/CompilerID.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindGMP.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindMPFR.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindOpenCL.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/FindReadline.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/GetGitRevisionDescription.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/GetGitRevisionDescription.cmake.in">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/IgnoreWarningFlags.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MSVCFlags.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MWLink.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MaybeDlCheck.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/MinGWPaths.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/PreferStatic.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/PrintInfo.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/Profiling.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/SpecialLibs.cmake">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/cmake_modules/test_avx.c">
+			<Option virtualFolder="CMake Files\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/crlibm/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\crlibm\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/crlibm/crlibm_config.h.in">
+			<Option virtualFolder="CMake Files\crlibm\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/crlibm/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\crlibm\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/dSFMT/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\dSFMT\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\libelf\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/config.h.in">
+			<Option virtualFolder="CMake Files\libelf\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/cmake_modules/CheckHeaderSTDC.cmake">
+			<Option virtualFolder="CMake Files\libelf\cmake_modules\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/libelf/lib/sys_elf.h.in">
+			<Option virtualFolder="CMake Files\libelf\lib\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/lua/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\lua\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/lua/include/luaconf.h.in">
+			<Option virtualFolder="CMake Files\lua\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/milkyway/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\milkyway\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/milkyway/include/milkyway_config.h.in">
+			<Option virtualFolder="CMake Files\milkyway\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/milkyway/include/milkyway_git_version.h.in">
+			<Option virtualFolder="CMake Files\milkyway\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/.git/HEAD">
+			<Option virtualFolder="CMake Files\.git\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/.git/refs/heads/master">
+			<Option virtualFolder="CMake Files\.git\refs\heads\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\nbody\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/include/nbody_config.h.in">
+			<Option virtualFolder="CMake Files\nbody\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\nbody\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/nbody/doc/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\nbody\doc\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\separation\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/include/separation_config.h.in">
+			<Option virtualFolder="CMake Files\separation\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/separation/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\separation\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/tools/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tools\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/popt/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\popt\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/popt/include/popt_config.h.in">
+			<Option virtualFolder="CMake Files\popt\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/popt/tests/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\popt\tests\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/openpa/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\openpa\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/openpa/include/opa_config.h.in">
+			<Option virtualFolder="CMake Files\openpa\include\"/>
+		</Unit>
+		<Unit filename="/home/conrad/milkywayathome_client/openpa/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\openpa\test\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
