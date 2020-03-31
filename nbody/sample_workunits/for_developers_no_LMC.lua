@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 2000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -32,10 +32,6 @@ run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS   -- --
-LMC_body              = true   -- -- PRESENT OF LMC             -- --
-LMCtotalBodies        = 2000    -- DON'T SET TO VALUES SMALLER THAN 100 
-LMC_scaleRadius       = 15
-LMC_Mass              = 449865.888
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -125,7 +121,9 @@ end
 
 
 function get_timestep()
-    if(ModelComponents == 2) then
+    if (timestep_control) then
+        t = (evolveTime) / (Ntime_step)
+    elseif(ModelComponents == 2) then
         --Mass of a single dark matter sphere enclosed within light rscale
         mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
 
@@ -167,7 +165,7 @@ function makeContext()
       criterion   = criterion,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
-      BestLikeStart = best_like_start,
+      BestLikeStart = eff_best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
       Nstep_control = timestep_control,
@@ -179,16 +177,15 @@ function makeContext()
       VelCorrect    = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
-      theta       = 1.0,
-      LMC         = LMC_body
+      theta       = 1.0
    }
 end
 
 
 
 function makeBodies(ctx, potential)
-  local firstModel, LMCModel
-  local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
+  local firstModel
+  local finalPosition, finalVelocity
     if TooManyTimesteps == 1 then
         totalBodies = 1
     end
@@ -196,28 +193,14 @@ function makeBodies(ctx, potential)
     if(run_null_potential == true) then
         print("placing dwarf at origin")
         finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
-        LMCfinalPosition, LMCfinalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
     else 
-    	if (LMC_body) then
-    		finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbit_LMC{
-	            potential = potential,
-	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	            LMCvelocity = Vector.create(-57, -226, 221), 
-              LMCmass   = LMC_Mass,
-	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0
-	            }
-	    else
-	        finalPosition, finalVelocity = reverseOrbit{
-	            potential = potential,
-	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0
-	            }
-         end
+        finalPosition, finalVelocity = reverseOrbit{
+            potential = potential,
+            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+            tstop     = revOrbTime,
+            dt        = ctx.timestep / 10.0
+            }
     end
     
     if(print_reverse_orbit == true) then
@@ -232,18 +215,8 @@ function makeBodies(ctx, potential)
         print('Printing reverse orbit')
     end
     
-  	if(LMC_body) then
-  		LMCModel = predefinedModels.plummer{
-            nbody       = LMCtotalBodies,
-            prng        = prng,
-            position    = LMCfinalPosition,
-            velocity    = LMCfinalVelocity,
-            mass        = LMC_Mass,
-            scaleRadius = LMC_scaleRadius,
-            ignore      = false
-        }
-    end
 
+  
     if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
             nbody       = totalBodies,
@@ -279,8 +252,6 @@ function makeBodies(ctx, potential)
         return firstModel, manualModel
     elseif(ModelComponents == 0 and manual_bodies) then
         return manualModel
-    elseif(ModelComponents > 0 and not manual_bodies and LMC_body) then
-        return firstModel, LMCModel
     elseif(ModelComponents > 0 and not manual_bodies) then
         return firstModel
     else    
@@ -332,6 +303,13 @@ manual_body_file = arg[7]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime
+if use_best_likelihood then
+    evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
+    eff_best_like_start = best_like_start / (2.0 - best_like_start)
+else
+    eff_best_like_start = best_like_start
+end
+
 dwarfMass = mass_l / light_mass_ratio
 rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
