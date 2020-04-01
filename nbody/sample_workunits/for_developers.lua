@@ -167,6 +167,7 @@ function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
+      timeBack    = revOrbTime,
       timestep    = get_timestep(),
       eps2        = calculateEps2(totalBodies, soften_length ),
       b           = orbit_parameter_b,
@@ -310,12 +311,12 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )
-rev_ratio        = round( tonumber(arg[2]), dec )
-rscale_l         = round( tonumber(arg[3]), dec )
-light_r_ratio    = round( tonumber(arg[4]), dec )
-mass_l           = round( tonumber(arg[5]), dec )
-light_mass_ratio = round( tonumber(arg[6]), dec )
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time
+time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
+rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
+light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
 if(#arg == 11) then
   orbit_parameter_b   = round( tonumber(arg[7]), dec )
   orbit_parameter_r   = round( tonumber(arg[8]), dec )
@@ -324,12 +325,10 @@ if(#arg == 11) then
   orbit_parameter_vz  = round( tonumber(arg[11]), dec )
   manual_body_file = arg[12]
 else
-  manual_body_file = arg[7]
-
-end
+  manual_body_file = arg[7] -- File with Individual Particles (.out file)
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-revOrbTime = evolveTime
+revOrbTime = evolveTime / time_ratio
 if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)

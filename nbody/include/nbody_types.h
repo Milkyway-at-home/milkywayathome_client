@@ -423,6 +423,7 @@ typedef struct MW_ALIGN_TYPE
     real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
+    real timeBack;
     real treeRSize;
     real sunGCDist;
 

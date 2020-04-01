@@ -115,7 +115,7 @@ static void nbPrintHistogramHeader(FILE* f,
 
     if (bestLikelihood_time == 0.0)
     {
-        bestLikelihood_time = ctx->timeEvolve;
+        bestLikelihood_time = ctx->timeBack;
     }
 
     mwLocalTimeFull(tBuf, sizeof(tBuf));
@@ -150,8 +150,8 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Quadrupole Moments = %s\n"
             "# Eps = %f\n"
             "#\n",
-            nbody,  
-            ctx->timeEvolve,    
+            nbody,
+            ctx->timeBack,
             bestLikelihood_time,
             -bestLikelihood,
             ctx->timestep,
