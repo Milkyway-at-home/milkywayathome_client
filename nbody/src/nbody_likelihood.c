@@ -92,18 +92,33 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
             vel_disp = nbLikelihood(dat->histograms[2], match->histograms[2]);
             likelihood += vel_disp;
         }
-         if(use_betacomp)
+        if(use_betacomp)
         {
+            if(!dat->usage[3] || !match->usage[3])
+            {
+                mw_printf("One of these files does not contain any info for average beta\n");
+                return NAN;
+            }
             beta_component = nbLikelihood(dat->histograms[3], match->histograms[3]);
             likelihood += beta_component;
         }
         if(use_vlos)
         {
+            if(!dat->usage[4] || !match->usage[4])
+            {
+                mw_printf("One of these files does not contain any info for average vlos\n");
+                return NAN;
+            }
             LOS_velocity_component = nbLikelihood(dat->histograms[4], match->histograms[4]);
             likelihood += LOS_velocity_component;
         }
         if(use_dist)
         {
+            if(!dat->usage[5] || !match->usage[5])
+            {
+                mw_printf("One of these files does not contain any info for average distance\n");
+                return NAN;
+            }
             distance_component = nbLikelihood(dat->histograms[5], match->histograms[5]);
             likelihood += distance_component;
         }
@@ -199,16 +214,31 @@ real nbSystemLikelihood(const NBodyState* st,
     }
     if(st->useBetaComp)
     {
+        if(!data->usage[3] || !histogram->usage[3])
+        {
+            mw_printf("One of these files does not contain any info for average beta\n");
+            return NAN;
+        }  
         beta_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
         likelihood += beta_component;
     }
     if(st->useVlos)
     {
+        if(!data->usage[4] || !histogram->usage[4])
+        {
+            mw_printf("One of these files does not contain any info for average velocity\n");
+            return NAN;
+        }  
         LOS_velocity_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
         likelihood += LOS_velocity_component;
     }
     if(st->useDist)
     {
+        if(!data->usage[5] || !histogram->usage[5])
+        {
+            mw_printf("One of these files does not contain any info for average distance\n");
+            return NAN;
+        }  
         distance_component = nbLikelihood(data->histograms[5], histogram->histograms[5]);
         likelihood += distance_component;
     }
