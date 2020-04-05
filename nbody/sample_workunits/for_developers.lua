@@ -326,6 +326,7 @@ if(#arg == 11) then
   manual_body_file = arg[12]
 else
   manual_body_file = arg[7] -- File with Individual Particles (.out file)
+end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio
