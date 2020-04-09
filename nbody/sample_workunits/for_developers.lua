@@ -75,7 +75,7 @@ best_like_start      = 0.98    -- what percent of sim to start
 use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
 
--- if one of these is true, will get zeroes in histogram for the others that are false
+-- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
 use_beta_comp        = false  -- calculate average beta, use in likelihood
 use_vlos_comp        = false  -- calculate average los velocity, use in likelihood

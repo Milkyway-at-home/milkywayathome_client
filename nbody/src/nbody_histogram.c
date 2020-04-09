@@ -1011,7 +1011,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    unsigned int used;  /* indicates how many variables to expect per line */
+    mwbool used = FALSE;  /* indicates how many variables to expect per line */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -1127,15 +1127,16 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
         if (!readUsage)
         {
-            if (lineBuf[0] != 'usage')
+            if (lineBuf[0] == 'usage')
             {
                 readUsage = TRUE;
+                used = TRUE;
                 continue;
             }
-            rc = sscanf(lineBuf, " usage = %u\n", &used);
-            if(rc == 1)
+            else
             {
                 readUsage = TRUE;
+                used = FALSE;
                 continue;
             }
         }
