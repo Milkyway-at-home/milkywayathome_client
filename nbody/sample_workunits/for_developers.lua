@@ -331,7 +331,15 @@ light_mass_ratio = round( tonumber(arg[6]), dec )
 manual_body_file = arg[7]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-revOrbTime = evolveTime
+revOrbTime = evolveTime / time_ratio
+if use_best_likelihood then
+    evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
+    eff_best_like_start = best_like_start / (2.0 - best_like_start)
+else
+    eff_best_like_start = best_like_start
+end
+
+
 dwarfMass = mass_l / light_mass_ratio
 rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
