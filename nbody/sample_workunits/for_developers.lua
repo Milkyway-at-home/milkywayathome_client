@@ -10,7 +10,7 @@
 -- to fully utilize this lua, need to compile with -DNBODY_DEV_OPTIONS=ON
 -- if you are using single component plummer model, it will take the baryonic
 -- matter component parameters. meaning you input should look like
--- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
+-- ft, time_ratio, rscale_baryon, radius_ratio, baryon mass, mass ratio
 -- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
 
 -- available option: using a user inputted list of bodies. Sent in as an 
@@ -97,12 +97,12 @@ Ntime_steps          = 10        -- -- number of timesteps to run   -- --
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-orbit_parameter_l  = 218
-orbit_parameter_b  = 53.5
-orbit_parameter_r  = 28.6
-orbit_parameter_vx = -156 
-orbit_parameter_vy = 79 
-orbit_parameter_vz = 107
+orbit_parameter_l  = 250.0
+orbit_parameter_b  = 48.6
+orbit_parameter_r  = 22.6
+orbit_parameter_vx = 182.9 
+orbit_parameter_vy = -63.4
+orbit_parameter_vz = -140.6
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -162,8 +162,9 @@ function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
+      timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, soften_length ),
+      eps2        = calculateEps2(totalBodies, soften_length),
       criterion   = criterion,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
@@ -322,13 +323,13 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )
-rev_ratio        = round( tonumber(arg[2]), dec )
-rscale_l         = round( tonumber(arg[3]), dec )
-light_r_ratio    = round( tonumber(arg[4]), dec )
-mass_l           = round( tonumber(arg[5]), dec )
-light_mass_ratio = round( tonumber(arg[6]), dec )
-manual_body_file = arg[7]
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time
+time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
+rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
+light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+manual_body_file = arg[7]                            -- File with Individual Particles (.out file)
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio
