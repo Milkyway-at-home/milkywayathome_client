@@ -10,7 +10,7 @@
 -- to fully utilize this lua, need to compile with -DNBODY_DEV_OPTIONS=ON
 -- if you are using single component plummer model, it will take the baryonic
 -- matter component parameters. meaning you input should look like
--- ft, bt, rscale_baryon, radius_ratio, baryon mass, mass ratio
+-- ft, time_ratio, rscale_baryon, radius_ratio, baryon mass, mass ratio
 -- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2 (52.5, 28.6, -156, 79, 107)
 
 -- available option: using a user inputted list of bodies. Sent in as an 
@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 20000  -- -- NUMBER OF BODIES           -- --
+totalBodies           = 2000  -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -300,7 +300,7 @@ end
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 11 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
-argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+-- argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 -- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --

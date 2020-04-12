@@ -94,12 +94,11 @@ static int createNBodyCtx(lua_State* luaSt)
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
             { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
 
-            // false or true ?? look through MWNamedArg ??
-            { "b",             LUA_TNUMBER,  NULL, TRUE,  &ctx.b   },
-            { "r",             LUA_TNUMBER,  NULL, TRUE,  &ctx.r   },
-            { "vx",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vx  },
-            { "vy",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vy  },
-            { "vz",            LUA_TNUMBER,  NULL, TRUE,  &ctx.vz  },
+            { "b",             LUA_TNUMBER,  NULL, FALSE,  &ctx.b   },
+            { "r",             LUA_TNUMBER,  NULL, FALSE,  &ctx.r   },
+            { "vx",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vx  },
+            { "vy",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vy  },
+            { "vz",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vz  },
             
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName     },
             { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad       },

@@ -1277,8 +1277,8 @@ real nbWorstCaseEMD(const NBodyHistogram* hist)
 
 real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
 {
-    // as of now all the histograms have the same lambda/betaBins info
-    // as any of the histograms can be used for this info, we use the first
+    // all the histograms have the same lambda/betaBins info
+    // but histogram 0 is the one that contains the counts information
     NBodyHistogram* first_data = (data->histograms[0]);
     NBodyHistogram* first_hist = (histogram->histograms[0]);
 
@@ -1287,7 +1287,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     unsigned int bins = lambdaBins * betaBins;
     unsigned int nSim_uncut = first_hist->totalNum;
     unsigned int nSim = nSim_uncut;
-    unsigned int nData = first_hist->totalNum;
+    unsigned int nData = first_data->totalNum;
     real histMass = first_hist->massPerParticle;
     real dataMass = first_data->massPerParticle;
     unsigned int i;

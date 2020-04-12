@@ -315,9 +315,6 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
-        /* FIXME?: We could have mismatched histogram sizes, but I'm
-        * not sure what to do with ignored bins and
-        * renormalization */
         return NAN;
     }
 

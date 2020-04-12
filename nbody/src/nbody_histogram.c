@@ -492,7 +492,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
     fprintf(f, "betaBins = %u\n", all->histograms[0]->betaBins);
-    if(all->usage[3]) fprintf(f, "usage = %u\n", all->usage[3]);
+    if(all->usage[3]) fprintf(f, "!\n");
     
     
     for (unsigned int i = 0; i < nBin; ++i)
@@ -882,7 +882,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     if(all->usage[4])    // if using beta average
         nbCalcDisp(all->histograms[4], TRUE, ctx->BetaCorrect);
     if(all->usage[5])    // if using distance average
-        nbCalcDisp(all->histograms[5], TRUE, ctx->BetaCorrect); //using beta correct for now, will need to add a dist correct
+        nbCalcDisp(all->histograms[5], TRUE, ctx->DistCorrect); //using beta correct for now, will need to add a dist correct
 
     /* these converge somewhere between 3 and 6 iterations */
     if(all->usage[1])
@@ -1005,13 +1005,12 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     mwbool readBetaBins = FALSE; /* Read the number of bins the beta direction */
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
     mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
-    mwbool readUsage = FALSE;      /* Read the usage of the histograms */
     mwbool buildHist = FALSE; /* only want to build the histogrma once */
     unsigned int nGen = 0;    /* Number of particles read from the histogram */
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    mwbool used = FALSE;  /* indicates how many variables to expect per line */
+    mwbool used = FALSE;  /* indicates whether or not to expect extra histogram parameters */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -1043,6 +1042,14 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         /* Skip comments and blank lines */
         if (lineBuf[0] == '#' || lineBuf[0] == '\n')
             continue;
+        // if using the new histogram parameters
+        // there will be a line beginning with a ! to indicate
+        // the extra information to be read in
+        if (lineBuf[0] == '!')
+        {
+            used = TRUE;
+            continue;
+        }
 
         /* Skip <histogram> tags */
         if(!readOpeningTag)
@@ -1121,22 +1128,6 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             if(rc == 1)
             {
                 readBetaBins = TRUE;
-                continue;
-            }
-        }
-
-        if (!readUsage)
-        {
-            if (lineBuf[0] == 'usage')
-            {
-                readUsage = TRUE;
-                used = TRUE;
-                continue;
-            }
-            else
-            {
-                readUsage = TRUE;
-                used = FALSE;
                 continue;
             }
         }
