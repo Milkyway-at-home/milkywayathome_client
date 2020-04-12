@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 2000  -- -- NUMBER OF BODIES           -- --
+totalBodies           = 20000  -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -300,7 +300,7 @@ end
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 11 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
--- argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 -- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
