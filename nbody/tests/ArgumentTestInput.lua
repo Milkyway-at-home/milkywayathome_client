@@ -22,6 +22,7 @@ function makeContext()
    return NBodyCtx.create{
       timestep = 0.1,
       timeEvolve = 1.0,
+      timeBack   = 1.0,
       theta = 0.5,
       eps2 = 0.01,
       BestLikeStart = 0.98,
