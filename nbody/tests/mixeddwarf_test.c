@@ -1,5 +1,7 @@
-/* Plan to test root_finder: make an arbitrary function or multiple, and test to see if it can grab the correct root, also make sure it has a singularity at one spot
-Plan to test cm_correction: */
+/* This program tests the generation of a 2-component dwarf galaxy.
+* It creates a plummer-plummer dwarf and an NFW dwarf.
+* The structure and stability of these two dwarfs are checked by calculating their virial ratios and checking their center of masses.
+*/
 
 #include "nbody_mixeddwarf.h"
 #include "nbody_dwarf_potential.h"
@@ -57,6 +59,7 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 	U1 *= 0.5;
 	U2 *= 0.5;
 
+	//Compute the ratios. These should be 1 if they are in perfect virial equilibrium
 	real ratio_1 = U1 / T / 2.0;
 	real ratio_2 = U2 / T / 2.0;
 
@@ -77,6 +80,7 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 
 }
 
+//This function checks to ensure that the 2 components are individually and the dwarf as a whole are centered at 0
 int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies)
 {
 	//Note, this function relies on the fact that half the bodies are baryonic and half dark matter
@@ -174,7 +178,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 	return failed;
 }
 
-//make a two component plummer-plummer dwarf, and then compare it to a single component
+//make a two component plummer-plummer dwarf and check it
 int testPlummerPlummer()
 {
 	int failed = 0;
@@ -198,7 +202,7 @@ int testPlummerPlummer()
 	comp1->mass        = 12.0;
 	comp1->scaleLength = .2;
 	
-	//Make the two plummers identical to check against a 1 compnoent
+	//Make the two plummers identical, an arbtrary choice
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
 	comp2->type        = comp1->type;
 	comp2->mass        = comp1->mass;
@@ -207,7 +211,7 @@ int testPlummerPlummer()
 	dsfmt_t prng;
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
-	//Actually generate the dwarf bodies by calling a special version of the actual generation function
+	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
 	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
@@ -226,11 +230,12 @@ int testPlummerPlummer()
 	return failed;
 }
 
+//make a plummer-NFW dwarf and check it
 int testPlummerNFW()
 {
 	int failed = 0;
 	
-	unsigned int numBodies = 10000;
+	unsigned int numBodies = 10000; //The more bodies, the better the virial ratio will be. This is a good number of bodies
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
 	real* masses           = mwCalloc(numBodies, sizeof(real));
@@ -244,12 +249,13 @@ int testPlummerNFW()
 	vshift.y = 0;
 	vshift.z = 0;
 
+	//The Plummer component
     Dwarf* comp1       = mwMalloc(sizeof(Dwarf));
 	comp1->type        = Plummer;
 	comp1->mass        = 12.0;
 	comp1->scaleLength = .2;
 	
-	//Make the two plummers identical to check against a 1 compnoent
+	//The NFW component
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
 	comp2->type        = NFW;
 	comp2->mass        = 48.0;
@@ -258,7 +264,7 @@ int testPlummerNFW()
 	dsfmt_t prng;
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
-	//Actually generate the dwarf bodies by calling a special version of the actual generation function
+	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
 	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
