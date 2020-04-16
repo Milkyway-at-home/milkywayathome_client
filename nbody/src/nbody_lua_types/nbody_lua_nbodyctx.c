@@ -88,7 +88,7 @@ static int createNBodyCtx(lua_State* luaSt)
         {
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
-            { "timeBack",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timeBack      },
+            { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },
             { "theta",         LUA_TNUMBER,  NULL, FALSE, &ctx.theta         },
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
@@ -98,7 +98,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
             { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors   },
             { "useBestLike",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike   },
-            { "BestLikeStart", LUA_TNUMBER,  NULL, TRUE,  &ctx.BestLikeStart },
+            { "BestLikeStart", LUA_TNUMBER,  NULL, FALSE, &ctx.BestLikeStart },
             { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
             { "useBetaDisp",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBetaDisp   },
             { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps       },
@@ -107,7 +107,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq    },
             { "BetaSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaSigma     },
             { "VelSigma",      LUA_TNUMBER,  NULL, TRUE,  &ctx.VelSigma      },
-            { "IterMax",       LUA_TNUMBER,  NULL, TRUE,  &ctx.IterMax       },
+            { "IterMax",       LUA_TNUMBER,  NULL, FALSE, &ctx.IterMax       },
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
             END_MW_NAMED_ARG
