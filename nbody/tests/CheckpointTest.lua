@@ -54,7 +54,6 @@ function randomNBodyCtx(prng)
    return NBodyCtx.create{
       timestep      = prng:random(1.0e-5, 1.0e-4),
       timeEvolve    = prng:random(0, 10),
-      timeBack      = prng:random(0, 10),
       theta         = prng:random(0, 1),
       eps2          = prng:random(1.0e-9, 1.0e-3),
       treeRSize     = prng:randomListItem({ 4, 8, 2, 16 }),

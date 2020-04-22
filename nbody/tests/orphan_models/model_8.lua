@@ -24,8 +24,6 @@ end
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
-      timeEvolve = 3.945,
-      timeBack   = 3.945,
       eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
