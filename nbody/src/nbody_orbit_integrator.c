@@ -32,9 +32,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Altered to be consistent with nbody integrator.
  * shelton June 25 2018 */
 
-//Ptr to LMC Shift Array (default is NULL)
 
-mwvector** shiftByLMC = NULL;
+
+mwvector** shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
 
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,

@@ -1,4 +1,8 @@
-
+/*********************** DISCLAIMER *************************
+* This code is included for its potential usefulness but    *
+* has not been fully tested. It is not currently used in    *
+* any other milkyway@home files. Use at your own risk.      *
+************************************************************/
 #ifndef _NBODY_DENSITY_H_
 #define _NBODY_DENSITY_H_
 

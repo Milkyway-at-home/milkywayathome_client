@@ -1,3 +1,9 @@
+/*********************** DISCLAIMER *************************
+* This code is included for its potential usefulness but    *
+* has not been fully tested. It is not currently used in    *
+* any other milkyway@home files. Use at your own risk.      *
+************************************************************/
+
 #include "nbody_priv.h"
 #include "nbody_potential.h"
 #include "nbody_density.h"
