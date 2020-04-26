@@ -498,7 +498,6 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     for (unsigned int i = 0; i < nBin; ++i)
     {
         // should only output if the histogram is being used
-        // the bitstring output at the beginning will determine which columns are present
         const HistData storedData = all->histograms[0]->data[i];   // for generic output parameters
         int k = 0;
         for(unsigned int j = 0; j < 6; j++)

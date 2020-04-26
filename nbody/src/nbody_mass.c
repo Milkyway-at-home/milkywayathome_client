@@ -243,9 +243,6 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
     
 }
 
-// if vel is true, uses the velocity outliers
-// if vel is false, uses the beta outliers
-// DISTANCE ??
 void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist)
 {
     unsigned int Histindex;
