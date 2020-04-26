@@ -54,8 +54,7 @@
 /*                            NFW                                                                                        */
 /* this density is taken from the 1997 paper by nfw. the potential is taken from binney 2nd ed                           */                         
  static real nfw_den(const Dwarf* model, real r)                                                                         //
-{                                                                                                                        //
-    const real mass = model->mass;                                                                                       //
+{                                                                                                                        //                                                                                       //
     const real rscale = model->scaleLength;                                                                              //
     const real p0 = model->p0;                                                                                           //
     real R = r / rscale;                                                                                                 //
@@ -64,8 +63,7 @@
 }                                                                                                                        //
                                                                                                                          //
  static real nfw_pot(const Dwarf* model, real r)                                                                         //
-{                                                                                                                        //
-    const real mass = model->mass;                                                                                       //
+{                                                                                                                        //                                                                                      //
     const real rscale = model->scaleLength;                                                                              //
     const real p0 = model->p0;                                                                                           //
     real R = r / rscale;                                                                                                 //
