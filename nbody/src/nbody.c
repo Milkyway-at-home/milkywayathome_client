@@ -31,6 +31,7 @@
 #include "nbody_plain.h"
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
+#include "nbody_bar_time.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"

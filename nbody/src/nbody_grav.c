@@ -134,8 +134,19 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
     real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
-    mw_printf("time from start: %f curTime: %f step: %f timestep: %f Nsteps %f\n", timeFromStart, curTime, st->step, ctx->timestep, ctx->Ntsteps);
 
+    getBackwardOrbitArray(&(st->backwardOrbitPositions));//set state pointer to this array
+    //so checkpointing works
+    if(st->backwardOrbitArrayLength == NULL){
+        setBackwardOrbitRotation(st);
+        fillBackwardOrbitAngles(st);
+    }
+    
+    int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates ctx with new bar timestep
+    if(st->step % 10 == 0)
+        mw_printf("barTimeStep: %d, reg timeStep: %d\n", barTimeStep, st->step);
+    real barTime = barTimeStep * ctx->timestep - ctx->timeBack;
+    
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
   #endif
@@ -151,7 +162,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
 
-                externAcc = nbExtAcceleration(&ctx->pot, Pos(b), timeFromStart);
+                externAcc = nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack);
                 mw_incaddv(a, externAcc);
                 accels[i] = a;
                 break;
@@ -208,11 +219,20 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
     real timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
-    mw_printf("time from start: %f\n", timeFromStart);
 
+    getBackwardOrbitArray(&(st->backwardOrbitPositions));//set state pointer to this array
+    //so checkpointing works
+    if(st->backwardOrbitArrayLength == NULL){
+        setBackwardOrbitRotation(st);
+        fillBackwardOrbitAngles(st);
+    }
+    int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//change this back when it gets fixed in Master
+    real barTime = barTimeStep * ctx->timestep - ctx->timeBack;
+    
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
   #endif
+
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         switch (ctx->potentialType)
@@ -220,7 +240,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
-                mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), timeFromStart));
+                mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
                 accels[i] = a;
                 break;
 

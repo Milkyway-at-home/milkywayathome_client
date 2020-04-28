@@ -111,6 +111,8 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
+    
+    mwFreeA(st->backwardOrbitPositions);
 
     free(st->checkpointResolved);
 
@@ -192,6 +194,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
+
+    st->barTimeStep = 0;
 }
 
 NBodyState* newNBodyState()
@@ -437,6 +441,8 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 
     st->acctab = (mwvector*) mwMallocA(nbody * sizeof(mwvector));
     memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));
+
+    st->barTimeStep = oldSt->barTimeStep;
 
     if (oldSt->orbitTrace)
     {

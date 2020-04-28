@@ -383,6 +383,24 @@ typedef struct MW_ALIGN_TYPE
     mwbool useCLCheckpointing;
     mwbool reportProgress;
 
+    
+    //the xyz position of the backward particle at all timesteps 
+    //index 0 is the end of the backward orbit
+    mwvector* backwardOrbitPositions; 
+    mwvector backwardOrbitRotationAngles;
+    //how to rotate coordinates
+    //to align the stream with xy plane
+
+    //the theta values of the above where theta is the angle between 
+    //the the x axis and the point (ignoring z coordinate)
+    real* backwardOrbitAngles;
+
+    int backwardOrbitArrayLength;
+
+    int barTimeStep; //the last timestep used by the bar. Timestep 0 is the beginning of forward orbit
+
+    unsigned int numBarBins; //number of bins to use when determining bar time
+    
   #if NBODY_OPENCL
     CLInfo* ci;
     NBodyKernels* kernels;
@@ -397,7 +415,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL, NULL, NULL, 0, 0 }
 
 
 
@@ -446,6 +464,7 @@ typedef struct MW_ALIGN_TYPE
     unsigned int nStep;
 
     Potential pot;
+
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"

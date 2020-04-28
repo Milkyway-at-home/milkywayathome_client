@@ -361,7 +361,6 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     return acc;
 }
 
-//need to talk about units, debugging
 static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos, real r, real time)
 {
     /*mw_printf("Calculating Acceleration\n");

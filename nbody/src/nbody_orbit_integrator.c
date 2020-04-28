@@ -32,6 +32,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     willeb 10 May 2010 */
 /* Altered to be consistent with nbody integrator.
  * shelton June 25 2018 */
+
+mwvector* backwardOrbitPositions;//this is the l coordinate of the backwards
+//orbit point mass at each timestep (timestep being the index)
+//index 0 is the end of the backward orbit
+//note: make sure to free it
+int backwardOrbitArraySize;
+
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
                     const Potential* pot,
@@ -40,10 +47,14 @@ void nbReverseOrbit(mwvector* finalPos,
                     real tstop,
                     real dt)
 {
+    mw_printf("start pos: x: %f y: %f z: %f\n", pos.x, pos.y, pos.z);
+    mw_printf("start vel: x: %f y: %f z: %f\n", vel.x, vel.y, vel.z);
     mwvector acc, v, x;
     real t;
     real dt_half = dt / 2.0;
-    
+    int LArrayIndex = tstop / dt;
+    backwardOrbitArraySize = LArrayIndex;
+    mw_printf("Array Length = %d\n", backwardOrbitArraySize);
     // Set the initial conditions
     x = pos;
     v = vel;
@@ -51,26 +62,45 @@ void nbReverseOrbit(mwvector* finalPos,
 
     // Get the initial acceleration
     acc = nbExtAcceleration(pot, x, 0);
-    mw_printf("tstop: %f\n", tstop);
+    //mw_printf("tstop: %f\n", tstop);
+    
+    //allocate backwardsOrbitL
+    backwardOrbitPositions = (mwvector*)mwMalloc(LArrayIndex * sizeof(mwvector));
 
     for (t = 0; t >= tstop*(-1); t -= dt)
     {
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);
-        mw_incaddv_s(x, v, dt);
+        mw_incaddv_s(x, v, dt); 
+
         
         // Compute the new acceleration
         acc = nbExtAcceleration(pot, x, t);
         
         mw_incaddv_s(v, acc, dt_half);
+
+        backwardOrbitPositions[LArrayIndex] = x;
+        //record the current l coordinate
+        LArrayIndex--;
     }
     
     
+
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
     
     *finalPos = x;
     *finalVel = v;
+}
+
+void getBackwardOrbitArray(mwvector** ptr) {
+    //call : real* tmpOrbitPtr;
+    //getBackwardOrbitArray(&tmpOrbitPtr);
+    *ptr = backwardOrbitPositions;
+}
+
+int getOrbitArraySize(){
+    return backwardOrbitArraySize;
 }
 
 void nbPrintReverseOrbit(mwvector* finalPos,

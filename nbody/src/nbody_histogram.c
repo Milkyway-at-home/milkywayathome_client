@@ -113,7 +113,6 @@ static void nbPrintHistogramHeader(FILE* f,
 {
     char tBuf[256];
     const Potential* p = &ctx->pot;
-
     if (bestLikelihood_time == 0.0)
     {
         bestLikelihood_time = ctx->timeBack;
@@ -161,6 +160,7 @@ static void nbPrintHistogramHeader(FILE* f,
             ctx->theta,
             showBool(ctx->useQuad),
             mw_sqrt(ctx->eps2)
+
         );
 
 
@@ -502,7 +502,6 @@ void nbPrintHistogram(FILE* f, const NBodyHistogram* histogram)
     fprintf(f, "totalSimulated = %u\n", histogram->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", histogram->lambdaBins);
     fprintf(f, "betaBins = %u\n", histogram->betaBins);
-
     
     for (i = 0; i < nBin; ++i)
     {
@@ -938,3 +937,46 @@ NBodyHistogram* nbReadHistogram(const char* histogramFile)
     histogram->massPerParticle = mass;
     return histogram;
 }
+/*
+mwvector getHistogramCenter(const NBodyHistogram* hist, HistogramParams* hp, NBodyState* st, NBodyCtx* ctx){
+    int i;
+    real bestLambda, highestCount = 0, tmpCount;
+    mwvector center, pos;
+    center.x = 0;
+    center.y = 0;
+    center.z = 0;
+
+    //get lambda from histogram
+    for(i = 0; i < hist->lambdaBins; i++){
+        tmpCount = hist->data[i].count;
+        if(tmpCount > highestCount){
+            highestCount = tmpCount;
+            bestLambda = hist->data[i].lambda;
+        }
+    }
+
+    real lambdaBinSize = getAngleDiffDegrees(hp->lambdaStart, hp->lambdaEnd)/lambdaBins;
+    mwvector lambdaBeta;
+    NBHistTrig histTrig;
+    real maxLambda, minLambda, betaCount, betas = 0;
+    nbGetHistTrig(&histTrig, hp);
+    maxLambda = bestLambda + lambdaBinSize/2;
+    minLambda = bestLambda - lambdaBinSize/2;
+    if(maxLambda >= 360)
+        maxLambda -= 360;
+    if(minLambda < 0)
+        minLambda += 360;
+    //get beta from bodies (mean beta in the lambda bin)
+    for(i = 0; i < st->nbody; i++){
+        pos = st->bodytab[i].bodynode.pos;
+        lambdaBeta = nbXYZToLambdaBeta(&histTrig, pos, ctx->sunGCDist);
+        if(angleIsBetween(minLambda, maxLambda, L(lambdaBeta))){
+            betas += B(lambdaBeta);
+            betaCount += 1;
+        }
+    }
+
+    center = nb
+    
+    return center;
+}*/

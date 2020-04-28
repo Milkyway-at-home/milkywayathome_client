@@ -30,6 +30,8 @@
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
+#include "nbody_bar_time.h"
+#include "nbody_orbit_integrator.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -227,6 +229,13 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
             {
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
             }
+            
+            mwvector meanBinCenter, histCenterVelocity, meanBinVelocity;
+            mwvector histCenter = getStreamCenter(st, &meanBinCenter, &histCenterVelocity, &meanBinVelocity);
+            mw_printf("stream center hist = (%f, %f, %f)\n", histCenter.x, histCenter.y, histCenter.z);
+            mw_printf("stream center hist vel = (%f, %f, %f)\n", histCenterVelocity.x, histCenterVelocity.y, histCenterVelocity.z);
+            mw_printf("stream center mean = (%f, %f, %f)\n", meanBinCenter.x, meanBinCenter.y, meanBinCenter.z);
+            mw_printf("stream center mean vel = (%f, %f, %f)\n\n", meanBinVelocity.x, meanBinVelocity.y, meanBinVelocity.z);
         }
     }
     
@@ -260,6 +269,16 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
+    NBodyLikelihoodMethod method;
+    HistogramParams hp;
+    nbGetLikelihoodInfo(nbf, &hp, &method);
+    if(hp.lambdaBins != 0){
+        st->numBarBins = (hp.lambdaBins/getAngleDiffDegrees(hp.lambdaEnd, hp.lambdaStart)) * 2 * M_PI;
+        mw_printf("numBarBins: %d\n", st->numBarBins);
+    }
+    else
+        st->numBarBins = 360; //default number of histogram bins
+
     NBodyStatus rc = NBODY_SUCCESS;
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
     if (nbStatusIsFatal(rc))
@@ -282,7 +301,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     real Nstep = ctx->nStep;
     
     st->bestLikelihood = DEFAULT_WORST_CASE; //initializing it.
-    
+
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
@@ -325,7 +344,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
     #endif
 
+
     return nbWriteFinalCheckpoint(ctx, st);
 }
-
 

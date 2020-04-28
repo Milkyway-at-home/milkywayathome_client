@@ -41,6 +41,10 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          real tstop,
                          real tstopforward,
                          real dt);
+
+void getBackwardOrbitArray(mwvector** ptr);
+
+int getOrbitArraySize();
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 
