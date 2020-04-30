@@ -68,7 +68,6 @@ void nbReverseOrbit(mwvector* finalPos,
         mw_incaddv_s(v, acc, dt_half);
     }
     
-    
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
     
@@ -91,11 +90,11 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     )
 {	
    
-	unsigned int steps = (tstop/dt/10+1);
+	unsigned int steps = (tstop)/ (dt) + 1;
     unsigned int i = 0, j = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
-    mwvector array[steps];
+    mwvector array[steps + 1];
     real t;
     real dt_half = dt / 2.0;
     // Set the initial conditions
@@ -149,12 +148,12 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv_s(LMCv, LMC_acc, dt_half);
 
     }
-
-    array[i] = mw_acc;
-
-    //Allocate memory for the shift array equal to (x,y,z) i times
-    shiftByLMC = (mwvector**)mwMalloc((i+1)* sizeof(mwvector*)); 
-    for(j = 0; j < (i+1); j++) {
+    array[i] = mw_acc; //set the last index after the loop ends
+    
+    //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
+    unsigned int size = i+ 40*tstop;
+    shiftByLMC = (mwvector**)mwMalloc((size)* sizeof(mwvector*)); 
+    for(j = 0; j < (size); j++) {
         shiftByLMC[j] = (mwvector*)mwMalloc(sizeof(mwvector));
     }
     

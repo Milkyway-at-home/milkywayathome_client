@@ -266,7 +266,6 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         getLMCArray(&shiftLMC);
         setLMCShiftArray(st, shiftLMC);
     }
-    st->stepCounter = 0;
 
     NBodyStatus rc = NBODY_SUCCESS;
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
@@ -314,9 +313,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             SET_VECTOR(zero,0,0,0);
             rc |= nbStepSystemPlain(ctx, st, zero, zero); 
         } else {
-            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->stepCounter][0], st->shiftByLMC[st->stepCounter+1][0]); 
+            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step][0], st->shiftByLMC[st->step +1][0]); 
         }
-        st->stepCounter += 1;
         curStep = st->step;
         
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)

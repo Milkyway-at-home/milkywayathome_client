@@ -32,7 +32,7 @@ run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
-LMC_body              = true    -- -- PRESENCE OF LMC            -- --
+LMC_body              = true   -- -- PRESENCE OF LMC            -- --
 LMCtotalBodies        = 2000    -- -- DON'T SET TO VALUES SMALLER THAN 100 
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
@@ -183,8 +183,8 @@ function makeContext()
       VelCorrect    = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
-      theta       = 1.0,
-      LMC         = LMC_body
+      theta         = 1.0,
+      LMC           = LMC_body
    }
 end
 
@@ -213,6 +213,8 @@ function makeBodies(ctx, potential)
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
 	            }
+
+              
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
 	            potential = potential,

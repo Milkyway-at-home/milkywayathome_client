@@ -349,7 +349,6 @@ typedef struct MW_ALIGN_TYPE
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
     mwvector** shiftByLMC;
-    unsigned int stepCounter;
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */

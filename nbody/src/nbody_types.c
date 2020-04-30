@@ -111,10 +111,10 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
-
+    
     if(st->shiftByLMC) {   
         int j = 0;
-        while(st->shiftByLMC[j]){
+        while(j < st->step) {
             mwFreeA(st->shiftByLMC[j]);
             j++;
         }
