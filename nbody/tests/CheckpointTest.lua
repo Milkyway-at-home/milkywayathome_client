@@ -62,8 +62,10 @@ function randomNBodyCtx(prng)
       BestLikeStart = prng:random(0.85,0.99),
       BetaSigma     = sigma,
       VelSigma      = sigma,
+      DistSigma     = sigma,
       BetaCorrect   = correct,
       VelCorrect    = correct,
+      DistCorrect   = correct,
       IterMax       = floor(prng:random(2,10)),
       allowIncest   = true,
       quietErrors   = true
