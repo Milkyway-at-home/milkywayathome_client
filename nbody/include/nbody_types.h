@@ -449,7 +449,7 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                      \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                 \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                      \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                      \
