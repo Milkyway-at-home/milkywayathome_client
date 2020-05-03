@@ -47,13 +47,19 @@ add_executable(bessel_test bessel_test.c)
 set(bessel_test_link_libs nbody
                           milkyway)
 
+add_executable(mixeddwarf_test mixeddwarf_test.c)
+
+set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
+
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
 milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_link_libs}")
+milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -71,9 +77,12 @@ add_test(NAME custom_arg_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
            COMMAND nbody_test_driver "RunArgumentTests.lua" $<TARGET_FILE:milkyway_nbody>)
 
+
 add_test(NAME emd_test COMMAND emd_test)
 
 add_test(NAME bessel_test COMMAND bessel_test)
+
+add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
