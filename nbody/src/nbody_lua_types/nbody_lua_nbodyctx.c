@@ -226,6 +226,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 {
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)  },
+    { "timeBack",        getNumber,     offsetof(NBodyCtx, timeBack)    },
     { "theta",           getNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)   },
@@ -254,6 +255,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
 {
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)    },
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)  },
+    { "timeBack",        setNumber,     offsetof(NBodyCtx, timeBack)    },
     { "theta",           setNumber,     offsetof(NBodyCtx, theta)       },
     { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)        },
     { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)   },

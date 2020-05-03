@@ -158,6 +158,7 @@ function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
+      timeBack    = revOrbTime,
       timestep    = get_timestep(),
       eps2        = calculateEps2(totalBodies, soften_length ),
       criterion   = criterion,
@@ -292,7 +293,7 @@ end
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
 evolveTime       = round( tonumber(arg[1]), dec )
-rev_ratio        = round( tonumber(arg[2]), dec )
+time_ratio        = round( tonumber(arg[2]), dec )
 rscale_l         = round( tonumber(arg[3]), dec )
 light_r_ratio    = round( tonumber(arg[4]), dec )
 mass_l           = round( tonumber(arg[5]), dec )
@@ -300,7 +301,7 @@ light_mass_ratio = round( tonumber(arg[6]), dec )
 manual_body_file = arg[7]
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-revOrbTime = evolveTime
+revOrbTime = evolveTime / time_ratio
 dwarfMass = mass_l / light_mass_ratio
 rscale_t  = rscale_l / light_r_ratio
 rscale_d  = rscale_t *  (1.0 - light_r_ratio)
