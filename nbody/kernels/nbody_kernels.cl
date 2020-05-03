@@ -447,7 +447,7 @@ inline real4 ASHaloAccel(real4 pos, real r){
 	const real M = HALO_MASS;
 	const real a = HALO_SCALE_LENGTH;
 	const real scaleR = r/a;
-	const scaleL = lam/a;
+	const real scaleL = lam/a;
 	real c;
 
 	if (r<lam){
@@ -500,7 +500,7 @@ inline real4 plummerHaloAccel(real4 pos, real r){
 }
 
 inline real4 hernquistHaloAccel(real4 pos, real r){
-	const real tmp = HALO_SCALE_LENGTH + r
+	const real tmp = HALO_SCALE_LENGTH + r;
 	real4 acc;
  	acc.x = pos.x * - HALO_MASS / (r * sqr(tmp));
  	acc.y = pos.y * - HALO_MASS / (r * sqr(tmp));
@@ -511,7 +511,7 @@ inline real4 hernquistHaloAccel(real4 pos, real r){
 inline real4 ninkovicHaloAccel(real4 pos, real r){
 	const real rho0 = HALO_RHO0;
 	const real a = HALO_SCALE_LENGTH;
-	const lambda = HALO_LAMBDA;
+	const real lambda = HALO_LAMBDA;
 	const real z = r/a;
 	const real zl = lambda/a;
 	const real f = 4.0 * 3.1415926535 / 3.0 * rho0 * cube(a);
@@ -604,7 +604,7 @@ inline real4 externalAcceleration(real x, real y, real z)
 			//Caustic halo
 			break;
 		case 5:
-			acctmp = ASHaloAccel(pos,r)
+			acctmp = ASHaloAccel(pos,r);
 			break;
 		case 6:
 			acctmp = WEHaloAccel(pos,r);
@@ -658,7 +658,7 @@ inline real4 externalAcceleration(real x, real y, real z)
     return acc;
 
 
-
+}
 /* All kernels will use the same parameters for now */
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \

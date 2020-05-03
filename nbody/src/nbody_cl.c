@@ -589,33 +589,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Potential */
                  "-DUSE_EXTERNAL_POTENTIAL=%d "
-//                 "-DHERNQUIST_SPHERICAL=%d "
-//                 "-DPLUMMER_SPHERICAL=%d "
-//                 "-DNO_SPHERICAL=%d "
-//                 "-DMIYAMOTO_NAGAI_DISK=%d "
-//                 "-DFREEMAN_DISK=%d "
-//                 "-DDOUBEXPO_DISK=%d "
-//                 "-DSECHEXPO_DISK=%d "
-//                 "-DNO_DISK=%d "
-//                 "-DMIYAMOTO_NAGAI_DISK2=%d "
-//                 "-DFREEMAN_DISK2=%d "
-//                 "-DDOUBEXPO_DISK2=%d "
-//                 "-DSECHEXPO_DISK2=%d "
-//                 "-DNO_DISK2=%d "
-//                 "-DLOG_HALO=%d "
-//                 "-DNFW_HALO=%d "
-//                 "-DTRIAXIAL_HALO=%d "
-//                 "-DAS_HALO=%d "
-//                 "-DWE_HALO=%d "
-//                 "-DNFWM_HALO=%d "
-//                 "-DPLUMMER_HALO=%d "
-//                 "-DHERNQUIST_HALO=%d "
-//                 "-DNINKOVIC_HALO=%d "
-//                 "-DNO_HALO=%d "
-                    "-DDISK_TYPE=%d "
-                    "-DDISK_2_TYPE=%d "
-                    "-DHALO_TYPE=%d "
-                    "-DSPHERE_TYPE=%d "
+                 "-DDISK_TYPE=%d "
+                 "-DDISK_2_TYPE=%d "
+                 "-DHALO_TYPE=%d "
+                 "-DSPHERE_TYPE=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -684,29 +661,6 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                 p->disk2.type,
                 p->halo.type,
                 p->sphere[0].type,
-//                 p->sphere[0].type == HernquistSpherical,
-//                 p->sphere[0].type == PlummerSpherical,
-//                 p->sphere[0].type == NoSpherical,
-//                 p->disk.type == MiyamotoNagaiDisk,
-//                 p->disk.type == FreemanDisk,
-//                 p->disk.type == DoubleExponentialDisk,
-//                 p->disk.type == Sech2ExponentialDisk,
-//                 p->disk.type == NoDisk,
-//                 p->disk2.type == MiyamotoNagaiDisk,
-//                 p->disk2.type == FreemanDisk,
-//                 p->disk2.type == DoubleExponentialDisk,
-//                 p->disk2.type == Sech2ExponentialDisk,
-//                 p->disk2.type == NoDisk,
-//                 p->halo.type == LogarithmicHalo,
-//                 p->halo.type == NFWHalo,
-//                 p->halo.type == TriaxialHalo,
-//                 p->halo.type == AllenSantillanHalo,
-//                 p->halo.type == WilkinsonEvansHalo,
-//                 p->halo.type == NFWMassHalo,
-//                 p->halo.type == PlummerHalo,
-//                 p->halo.type == HernquistHalo,
-//                 p->halo.type == NinkovicHalo,
-//                 p->halo.type == NoHalo,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -1022,8 +976,7 @@ static NBodyStatus nbKernelErrorToNBodyStatus(NBodyKernelError x)
 //            return NBODY_SUCCESS; /* Somewhat inaccurate but shouldn't happen  */
             return NBODY_TREE_INCEST_FATAL; /* Somewhat inaccurate but shouldn't happen  */
         case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
-            return NBODY_SUCCESS;
-//            return NBODY_TREE_STRUCTURE_ERROR;
+            return NBODY_TREE_STRUCTURE_ERROR;
         case NBODY_KERNEL_ERROR_OTHER:
             return NBODY_ERROR;
         default:
