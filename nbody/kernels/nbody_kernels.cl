@@ -308,7 +308,7 @@ inline real4 freemanDiskAccel(real4 pos, real r)
 
     real4 theta_hat;
     theta_hat.x = pos.x *pos.z/r/r_proj;
-    theta_hat.x = pos.y *pos.z/r/r_proj;
+    theta_hat.y = pos.y *pos.z/r/r_proj;
     theta_hat.z = -r_proj/r;
 
     const real scl = DISK_SCALE_LENGTH;
@@ -440,6 +440,94 @@ inline real4 triaxialHaloAccel(real4 pos, real r)
 
     return acc;
 }
+
+inline real4 ASHaloAccel(real4 pos, real r){
+	const real gam = HALO_GAMMA;
+	const real lam = HALO_LAMBDA;
+	const real M = HALO_MASS;
+	const real a = HALO_SCALE_LENGTH;
+	const real scaleR = r/a;
+	const scaleL = lam/a;
+	real c;
+
+	if (r<lam){
+	    c = -(M/sqr(a))*pow(scaleR,gam-2)/(1+pow(scaleR,gam-1));
+    } else {
+	    c = -(M/sqr(r))*pow(scaleL,gam)/(1+pow(scaleL,gam-1));
+    }
+
+	real4 acc;
+	acc.x = pos.x * c/r;
+	acc.y = pos.y * c/r;
+	acc.z = pos.z * c/r;
+	return acc;
+}
+
+inline real4 WEHaloAccel(real4 pos, real r){
+	const real a = HALO_SCALE_LENGTH;
+	const real M = HALO_MASS;
+	const real sum2 = sqr(a) + sqr(r);
+	const real c = (-M/r)*(a + sqrt(sum2))/(sum2 + a*sqrt(sum2));
+
+	real4 acc;
+	acc.x = pos.x * c/r;
+	acc.y = pos.y * c/r;
+	acc.z = pos.z * c/r;
+	return acc;
+}
+
+inline real4 NFWMHaloAccel(real4 pos, real r){
+	const real a = HALO_SCALE_LENGTH;
+	const real M = HALO_MASS;
+	const real ar = a + r;
+	const real c = (-M/sqr(r))*(log(ar/a)/r - 1/ar);
+
+	real4 acc;
+	acc.x = pos.x * c;
+	acc.y = pos.y * c;
+	acc.z = pos.z * c;
+	return acc;
+}
+
+inline real4 plummerHaloAccel(real4 pos, real r){
+	const real tmp = sqrt(sqr(HALO_SCALE_LENGTH) + sqr(r));
+	real4 acc;
+	acc.x = pos.x * -HALO_MASS / cube(tmp);
+	acc.y = pos.y * -HALO_MASS / cube(tmp);
+	acc.z = pos.z * -HALO_MASS / cube(tmp);
+	return acc;
+
+}
+
+inline real4 hernquistHaloAccel(real4 pos, real r){
+	const real tmp = HALO_SCALE_LENGTH + r
+	real4 acc;
+ 	acc.x = pos.x * - HALO_MASS / (r * sqr(tmp));
+ 	acc.y = pos.y * - HALO_MASS / (r * sqr(tmp));
+ 	acc.z = pos.z * - HALO_MASS / (r * sqr(tmp));
+	return acc;
+}
+
+inline real4 ninkovicHaloAccel(real4 pos, real r){
+	const real rho0 = HALO_RHO0;
+	const real a = HALO_SCALE_LENGTH;
+	const lambda = HALO_LAMBDA;
+	const real z = r/a;
+	const real zl = lambda/a;
+	const real f = 4.0 * 3.1415926535 / 3.0 * rho0 * cube(a);
+	real mass_enc;
+	
+	if(r > lambda){
+		mass_enc = f* (log(1.0+cube(zl)) - cube(zl)/(1+cube(zl)));
+	} else {
+		mass_enc = f* (log(1.0+cube(z)) - cube(z)/(1+cube(zl)));
+	}
+	real4 acc;
+	acc.x = pos.x * -mass_enc/cube(r);
+	acc.y = pos.y * -mass_enc/cube(r);
+	acc.z = pos.z * -mass_enc/cube(r);
+	return acc;
+}
 inline real4 externalAcceleration(real x, real y, real z)
 {
     real4 pos = { x, y, z, 0.0 };
@@ -492,16 +580,55 @@ inline real4 externalAcceleration(real x, real y, real z)
             printf("Invalid Disk\n");
             break;
     }
+
+
     acc.x+=acctmp.x;
     acc.y+=acctmp.y;
     acc.z+=acctmp.z;
     switch(HALO_TYPE){
-        default:
-            acctmp.x = 0;
-            acctmp.y = 0;
-            acctmp.z = 0;
-            break;
+		case 0:
+			acctmp.x = 0;
+    		acctmp.y = 0;
+    		acctmp.z = 0;
+    		break;
+		case 1:
+			acctmp = logHaloAccel(pos, r);
+			break;
+		case 2:
+			acctmp = nfwHaloAccel(pos,r);
+			break;
+		case 3:
+			acctmp = triaxialHaloAccel(pos,r);
+			break;
+		case 4:
+			//Caustic halo
+			break;
+		case 5:
+			acctmp = ASHaloAccel(pos,r)
+			break;
+		case 6:
+			acctmp = WEHaloAccel(pos,r);
+			break;
+		case 7:
+			acctmp = NFWMHaloAccel(pos,r);
+			break;
+		case 8:
+			acctmp = plummerHaloAccel(pos,r);
+			break;
+		case 9:
+			acctmp = hernquistHaloAccel(pos,r);
+			break;
+		case 10:
+			acctmp = ninkovicHaloAccel(pos,r);
+			break;
+    	default:
+			printf("Error\n");
+        	acctmp.x = 0;
+        	acctmp.y = 0;
+        	acctmp.z = 0;
+        	break;
     }
+
     acc.x+=acctmp.x;
     acc.y+=acctmp.y;
     acc.z+=acctmp.z;
@@ -524,34 +651,11 @@ inline real4 externalAcceleration(real x, real y, real z)
             acctmp.z = 0;
             break;
     }
+
     acc.x+=acctmp.x;
     acc.y+=acctmp.y;
     acc.z+=acctmp.z;
     return acc;
-//    if (MIYAMOTO_NAGAI_DISK)
-//    {
-//        acc = miyamotoNagaiDiskAccel(pos, r);
-//    }
-//
-//
-//    if (LOG_HALO)
-//    {
-//        acc += logHaloAccel(pos, r);
-//    }
-//    else if (NFW_HALO)
-//    {
-//        acc += nfwHaloAccel(pos, r);
-//    }
-//    else if (TRIAXIAL_HALO)
-//    {
-//        acc += triaxialHaloAccel(pos, r);
-//    }
-//
-//    acc += plummerSphericalAccel(pos, r);
-//
-//    return acc;
-}
-
 
 
 
