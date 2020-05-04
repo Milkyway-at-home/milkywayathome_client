@@ -389,6 +389,10 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
     static const mwvector badVector = mw_vec(REAL_MAX, REAL_MAX, REAL_MAX);
 
     mw_printf("Printing potEvalStates...\n");
+    if (st->potEvalStates==NULL)
+    {
+        mw_printf("NULL STATE\n");
+    }
     lua_State* luaSt = st->potEvalStates[tid];
     mw_printf("DONE!\n");
 
