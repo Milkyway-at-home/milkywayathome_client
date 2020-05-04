@@ -470,8 +470,8 @@ typedef struct MW_ALIGN_TYPE
 #define NBODYCTX_TYPE "NBodyCtx"
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                 \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                      \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                      \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                 \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.
