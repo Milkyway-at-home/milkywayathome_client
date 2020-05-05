@@ -46,7 +46,7 @@ function getTestNBodyState(t)
       VelCorrect    = 1.111,
       IterMax       = 6,
       allowIncest = t.allowIncest,
-      quietErrors = true
+      quietErrors = true,
       LMC         = t.LMC
    }
    --Add potential to context

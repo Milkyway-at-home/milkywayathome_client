@@ -228,7 +228,7 @@ function printResult(t)
                        t.potential,
                        tostring(t.doublePrec),
                        t.model,
-                       tostring(t.useQuad)
+                       tostring(t.useQuad),
                        tostring(t.LMC))
 
    local resultFmt =
