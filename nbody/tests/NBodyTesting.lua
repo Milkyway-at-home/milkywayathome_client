@@ -212,7 +212,8 @@ function printResult(t)
    potential   = "%s",
    doublePrec  = %s,
    model       = "%s",
-   useQuad     = %s
+   useQuad     = %s,
+   LMC         = %s
 ]]
 
    local str
@@ -227,7 +228,8 @@ function printResult(t)
                        t.potential,
                        tostring(t.doublePrec),
                        t.model,
-                       tostring(t.useQuad))
+                       tostring(t.useQuad)
+                       tostring(t.LMC))
 
    local resultFmt =
 [[
