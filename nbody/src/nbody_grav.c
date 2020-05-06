@@ -147,6 +147,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 /* Include the external potential */
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
+                //mw_printf("POTENTIAL_DEFAULT...\n");
                 a = nbGravity(ctx, st, b);
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
@@ -162,6 +163,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
+                //mw_printf("CUSTOM_LUA...\n");
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc);
                 accels[i] = a;
@@ -260,7 +262,7 @@ NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
         rc = nbMakeTree(ctx, st);
         if (nbStatusIsFatal(rc))
             return rc;
-
+        mw_printf("Running ForceBody...\n");
         nbMapForceBody(ctx, st);
     }
     else
