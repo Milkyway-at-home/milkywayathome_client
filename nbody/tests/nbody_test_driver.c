@@ -184,7 +184,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     }
 
     //mw_printf("HASHN - After\n");
-
+///////////
     return failed;
 }
 
@@ -211,7 +211,7 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
             { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
             { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
             { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
-            { "LMC",         LUA_TBOOLEAN, NULL, TRUE, &test.ctx.LMC         }
+            { "LMC",         LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMC         },
 
             /* Unused in hash; these ones may or may not exist, just don't error if there */
             { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
