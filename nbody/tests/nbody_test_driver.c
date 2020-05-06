@@ -46,11 +46,12 @@ typedef struct
     real treeRSize;
     criterion_t criterion;
 
+    mwbool LMC;
     mwbool useQuad;
     mwbool allowIncest;
 } NBodyCtxTest;
 
-#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE }
+#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE, FALSE }
 
 typedef struct
 {
