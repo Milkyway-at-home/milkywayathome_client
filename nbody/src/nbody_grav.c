@@ -257,7 +257,7 @@ NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
         rc = nbMakeTree(ctx, st);
         if (nbStatusIsFatal(rc))
             return rc;
-        //mw_printf("Running ForceBody...\n");
+        mw_printf("Running ForceBody...\n");
         nbMapForceBody(ctx, st);
     }
     else
