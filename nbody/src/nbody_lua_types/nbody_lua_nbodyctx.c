@@ -118,7 +118,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "BetaSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaSigma     },
             { "VelSigma",      LUA_TNUMBER,  NULL, TRUE,  &ctx.VelSigma      },
             { "DistSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.DistSigma     },
-            { "IterMax",       LUA_TNUMBER,  NULL, FALSE,  &ctx.IterMax       },
+            { "IterMax",       LUA_TNUMBER,  NULL, FALSE, &ctx.IterMax       },
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
             { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect   },
