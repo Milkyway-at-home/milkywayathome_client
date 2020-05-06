@@ -147,6 +147,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 /* Include the external potential */
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
+                mw_printf("DEFAULT POTENTIAL\n");
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
                 mw_incaddv(a, externAcc);
@@ -154,10 +155,12 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
+                mw_printf("NULL POTENTIAL\n");
                 accels[i] = nbGravity(ctx, st, &bodies[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+                mw_printf("CUSTOM POTENTIAL\n");
                 a = nbGravity(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc)
