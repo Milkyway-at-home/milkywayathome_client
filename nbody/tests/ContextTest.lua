@@ -36,11 +36,6 @@ function getTestNBodyState(t)
       timeEvolve  = 42.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
       theta       = t.theta,
       eps2        = eps2,
-      orbit_parameter_b  = 53.5,
-      orbit_parameter_r  = 28.6,
-      orbit_parameter_vx = -156,
-      orbit_parameter_vy = 79,
-      orbit_parameter_vz = 107,
       treeRSize   = t.treeRSize,
       criterion   = t.criterion,
       useQuad     = t.useQuad,
