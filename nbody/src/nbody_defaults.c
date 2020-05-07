@@ -65,6 +65,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
+    /* .LMC             */  FALSE,
 
     /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,

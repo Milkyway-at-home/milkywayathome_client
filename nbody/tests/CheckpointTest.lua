@@ -73,7 +73,8 @@ function randomNBodyCtx(prng)
       DistCorrect   = correct,
       IterMax       = prng:randomListItem({ 2, 3, 4, 5 }),
       allowIncest   = true,
-      quietErrors   = true
+      quietErrors   = true,
+      LMC = true
    }
 end
 

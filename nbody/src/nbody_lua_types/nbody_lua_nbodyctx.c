@@ -122,6 +122,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
             { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect   },
+            { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           },
             END_MW_NAMED_ARG
         };
 
@@ -265,6 +266,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "BetaCorrect",     getNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)  },
     { "DistCorrect",     getNumber,     offsetof(NBodyCtx, DistCorrect) },
+    { "LMC",             getBool,       offsetof(NBodyCtx, LMC)         },
     { NULL, NULL, 0 }
 };
 
@@ -299,6 +301,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "BetaCorrect",     setNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)  },
     { "DistCorrect",     setNumber,     offsetof(NBodyCtx, DistCorrect) },
+    { "LMC",             setBool,       offsetof(NBodyCtx, LMC)         },
     { NULL, NULL, 0 }
 };
 
@@ -311,4 +314,3 @@ int registerNBodyCtx(lua_State* luaSt)
                           metaMethodsNBodyCtx,
                           methodsNBodyCtx);
 }
-
