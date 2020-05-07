@@ -348,6 +348,7 @@ typedef struct MW_ALIGN_TYPE
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
+    mwvector** shiftByLMC;
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */
@@ -440,6 +441,7 @@ typedef struct MW_ALIGN_TYPE
     real IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
     real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
+    mwbool LMC;
     
     real Ntsteps;     /* number of time steps to run when manual control is on */
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
@@ -539,6 +541,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx);
 
 int destroyNBodyState(NBodyState* st);
 int nbDetachSharedScene(NBodyState* st);
+void setLMCShiftArray(NBodyState* st, mwvector** shiftArray);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);

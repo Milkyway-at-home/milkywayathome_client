@@ -46,11 +46,12 @@ typedef struct
     real treeRSize;
     criterion_t criterion;
 
+    mwbool LMC;
     mwbool useQuad;
     mwbool allowIncest;
 } NBodyCtxTest;
 
-#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE }
+#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE, FALSE }
 
 typedef struct
 {
@@ -184,7 +185,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     }
 
     //mw_printf("HASHN - After\n");
-
+///////////
     return failed;
 }
 
@@ -210,8 +211,8 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
             { "criterion",   LUA_TSTRING,  NULL, TRUE,  &criterionName        },
             { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
             { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
-
             { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
+            { "LMC",         LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMC         },
 
             /* Unused in hash; these ones may or may not exist, just don't error if there */
             { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },

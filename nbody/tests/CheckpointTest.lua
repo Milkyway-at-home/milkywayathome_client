@@ -66,7 +66,8 @@ function randomNBodyCtx(prng)
       VelCorrect    = correct,
       IterMax       = floor(prng:random(2,10)),
       allowIncest   = true,
-      quietErrors   = true
+      quietErrors   = true,
+      LMC = true
    }
 end
 
