@@ -111,7 +111,16 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
-
+    
+    if(st->shiftByLMC) {   
+        int j = 0;
+        while(j < st->step) {
+            mwFreeA(st->shiftByLMC[j]);
+            j++;
+        }
+        mwFreeA(st->shiftByLMC);
+    }
+    
     free(st->checkpointResolved);
 
     if (st->potEvalStates)
@@ -192,6 +201,11 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
+}
+
+void setLMCShiftArray(NBodyState* st, mwvector** shiftArray) {
+    //Set the state variable for the LMC shift array
+    st->shiftByLMC = shiftArray;
 }
 
 NBodyState* newNBodyState()
@@ -628,6 +642,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)
-        && equalPotential(&ctx1->pot, &ctx2->pot);
+        && equalPotential(&ctx1->pot, &ctx2->pot)
+        && feqWithNan(ctx1->LMC, ctx2->LMC);
 }
 

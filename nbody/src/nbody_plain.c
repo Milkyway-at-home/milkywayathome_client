@@ -30,6 +30,7 @@
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
+#include "nbody_orbit_integrator.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -82,12 +83,12 @@ static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 static inline void bodyAdvancePos(Body* p, const real dt)
 {
     mwvector dr;
-
+    
     dr = mw_mulvs(Vel(p), dt);  /* get position increment */
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
 
-static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
+static inline void advancePosVel(NBodyState* st, const int nbody, const real dt, const mwvector acc_i)
 {
     int i;
     real dtHalf = 0.5 * dt;
@@ -99,13 +100,13 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
   #endif
     for (i = 0; i < nbody; ++i)
     {
-        bodyAdvanceVel(&bodies[i], accs[i], dtHalf);
+        bodyAdvanceVel(&bodies[i], mw_addv(accs[i], acc_i), dtHalf);
         bodyAdvancePos(&bodies[i], dt);
     }
 
 }
 
-static inline void advanceVelocities(NBodyState* st, const int nbody, const real dt)
+static inline void advanceVelocities(NBodyState* st, const int nbody, const real dt, const mwvector acc_i1)
 {
     int i;
     real dtHalf = 0.5 * dt;
@@ -117,7 +118,7 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
     {
-        bodyAdvanceVel(&bodies[i], accs[i], dtHalf);
+        bodyAdvanceVel(&bodies[i], mw_addv(accs[i], acc_i1), dtHalf);
     }
 }
 
@@ -238,16 +239,15 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 
 
 /* stepSystem: advance N-body system one time-step. */
-NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
 {
     NBodyStatus rc;
     
     const real dt = ctx->timestep;
 
-    advancePosVel(st, st->nbody, dt);
-
+    advancePosVel(st, st->nbody, dt, acc_i);
     rc = nbGravMap(ctx, st);
-    advanceVelocities(st, st->nbody, dt);
+    advanceVelocities(st, st->nbody, dt, acc_i1);
 
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT
@@ -259,7 +259,13 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st)
 }
 
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
-{
+{   
+    if (ctx->LMC){
+        mwvector** shiftLMC;
+        getLMCArray(&shiftLMC);
+        setLMCShiftArray(st, shiftLMC);
+    }
+
     NBodyStatus rc = NBODY_SUCCESS;
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
     if (nbStatusIsFatal(rc))
@@ -301,7 +307,13 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             }
                 
         #endif
-        rc |= nbStepSystemPlain(ctx, st);
+        if(!ctx->LMC) {
+            mwvector zero;
+            SET_VECTOR(zero,0,0,0);
+            rc |= nbStepSystemPlain(ctx, st, zero, zero); 
+        } else {
+            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step][0], st->shiftByLMC[st->step +1][0]); 
+        }
         curStep = st->step;
         
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)
