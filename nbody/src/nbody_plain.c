@@ -246,7 +246,6 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt, acc_i);
-
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
 
