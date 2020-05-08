@@ -352,7 +352,7 @@ rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-if(#arg == 11) then
+if((#arg == 11)or(#arg == 12)) then
   orbit_parameter_b   = round( tonumber(arg[7]), dec )
   orbit_parameter_r   = round( tonumber(arg[8]), dec )
   orbit_parameter_vx  = round( tonumber(arg[9]), dec )
