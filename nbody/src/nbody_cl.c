@@ -1594,9 +1594,6 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
     while (st->step < ctx->nStep)
     {
 
-    	if(st->step == 607){
-    		printf("Hello\n");
-    	}
         #ifdef NBODY_BLENDER_OUTPUT
             nbFindCenterOfMass(&nextCmPos, st);
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
