@@ -74,7 +74,7 @@ function makeHistogram()
      psi = 90.70,
      
      -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = 50,
+     lambdaStart = -50,
      lambdaEnd   = 50,
      lambdaBins  = 34,
      
