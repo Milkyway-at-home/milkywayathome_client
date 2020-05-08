@@ -224,35 +224,35 @@ real * nbSystemLikelihood(const NBodyState* st,
     likelihood = geometry_component + cost_component;
     
     /* likelihood due to the vel dispersion per bin of the two hist */
-    if(st->useVelDisp)
-    {
-        velocity_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1]);
-        likelihood += velocity_dispersion_component;
-    }
     if(st->useBetaDisp)
     {
-        beta_dispersion_component = nbLikelihood(data->histograms[2], histogram->histograms[2]);
+        beta_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1]);
         likelihood += beta_dispersion_component;
     }
-    if(st->useBetaComp)
+    if(st->useVelDisp)
     {
-        if(!data->usage[3] || !histogram->usage[3])
-        {
-            mw_printf("One of these files does not contain any info for average beta\n");
-            return NANArray;
-        }  
-        beta_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
-        likelihood += beta_component;
+        velocity_dispersion_component = nbLikelihood(data->histograms[2], histogram->histograms[2]);
+        likelihood += velocity_dispersion_component;
     }
     if(st->useVlos)
     {
-        if(!data->usage[4] || !histogram->usage[4])
+        if(!data->usage[3] || !histogram->usage[3])
         {
             mw_printf("One of these files does not contain any info for average velocity\n");
             return NANArray;
         }  
-        LOS_velocity_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
+        LOS_velocity_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
         likelihood += LOS_velocity_component;
+    }
+    if(st->useBetaComp)
+    {
+        if(!data->usage[4] || !histogram->usage[4])
+        {
+            mw_printf("One of these files does not contain any info for average beta\n");
+            return NANArray;
+        }  
+        beta_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
+        likelihood += beta_component;
     }
     if(st->useDist)
     {
