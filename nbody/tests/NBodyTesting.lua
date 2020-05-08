@@ -429,6 +429,15 @@ function runFullTest(arg)
       cpFlag = cpFlag .. " --ignore-checkpoint"
    end
 
+   eprintf("Running command line:\n %s\n   --checkpoint-interval=-1\n   -g\n   -t\n   -f %s\n   -h %s\n   --seed %s\n   %s\n   %s\n   %s\n",
+                                    tostring(arg.nbodyBin),
+                                    tostring(testPath),
+                                    tostring(histogramPath),
+                                    tostring(arg.seed),
+                                    tostring(cpFlag),
+                                    tostring(getExtraNBodyFlags()),
+                                    tostring(table.concat(arg.extraArgs, " ")))
+
    return os.readProcess(arg.nbodyBin or "milkyway_nbody",
                          "--checkpoint-interval=-1", -- Disable checkpointing
                          "-g", -- Prevent stderr from getting consumed with BOINC

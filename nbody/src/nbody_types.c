@@ -187,15 +187,15 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
-    st->bestLikelihood = DEFAULT_WORST_CASE;
-    st->bestLikelihood_EMD = 0.0;
-    st->bestLikelihood_Mass = 0.0;
-    st->bestLikelihood_Beta = 0.0;
-    st->bestLikelihood_Vel = 0.0;
-    st->bestLikelihood_BetaAvg = 0.0;
-    st->bestLikelihood_VelAvg = 0.0;
-    st->bestLikelihood_Dist = 0.0;
-    st->bestLikelihood_time = 0.0;
+    st->bestLikelihood         = DEFAULT_WORST_CASE;
+    st->bestLikelihood_EMD     = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Mass    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Beta    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Vel     = DEFAULT_WORST_CASE;
+    st->bestLikelihood_BetaAvg = DEFAULT_WORST_CASE;
+    st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_time    = DEFAULT_WORST_CASE;
     st->bestLikelihood_count = 0;
     
     /* We'll report the center of mass for each step + the initial one */

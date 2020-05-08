@@ -132,7 +132,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
 
 
 /* Calculate the likelihood from the final state of the simulation */
-real nbSystemLikelihood(const NBodyState* st,
+real * nbSystemLikelihood(const NBodyState* st,
                      const MainStruct* data,
                      const MainStruct* histogram,
                      NBodyLikelihoodMethod method)
@@ -146,6 +146,18 @@ real nbSystemLikelihood(const NBodyState* st,
     real LOS_velocity_component = NAN;
     real distance_component = NAN;
     real likelihood = NAN;
+
+    static real likelihoodArray[8];
+
+    static real NANArray[8]; /*This array contains NANs for each element so that it may be properly passed from this function*/
+    NANArray[0] = NAN;
+    NANArray[1] = NAN;
+    NANArray[2] = NAN;
+    NANArray[3] = NAN;
+    NANArray[4] = NAN;
+    NANArray[5] = NAN;
+    NANArray[6] = NAN;
+    NANArray[7] = NAN;
     
     if (data->histograms[0]->lambdaBins != histogram->histograms[0]->lambdaBins)
     {
@@ -153,7 +165,7 @@ real nbSystemLikelihood(const NBodyState* st,
                   "Expected %u, got %u\n",
                   histogram->histograms[0]->lambdaBins,
                   data->histograms[0]->lambdaBins);
-        return NAN;
+        return NANArray;
     }
 
     
@@ -175,6 +187,7 @@ real nbSystemLikelihood(const NBodyState* st,
          */
         if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody)
         {
+            static real worstEMD_Array[8];
             real worstEMD;
 
             mw_printf("Number of particles in bins is very small compared to total. "
@@ -183,8 +196,17 @@ real nbSystemLikelihood(const NBodyState* st,
                       st->nbody
                 );
             worstEMD = nbWorstCaseEMD(histogram->histograms[0]);
+
+            worstEMD_Array[0] = worstEMD;
+            worstEMD_Array[1] = worstEMD;
+            worstEMD_Array[2] = 0.0;
+            worstEMD_Array[3] = 0.0;
+            worstEMD_Array[4] = 0.0;
+            worstEMD_Array[5] = 0.0;
+            worstEMD_Array[6] = 0.0;
+            worstEMD_Array[7] = 0.0;
             //return 2.0 * worstEMD;
-            return worstEMD; //Changed.  See above comment.
+            return worstEMD_Array; //Changed.  See above comment.
         }
         // this function has been changed to accept MainStruct
         geometry_component = nbMatchEMD(data, histogram);
@@ -217,7 +239,7 @@ real nbSystemLikelihood(const NBodyState* st,
         if(!data->usage[3] || !histogram->usage[3])
         {
             mw_printf("One of these files does not contain any info for average beta\n");
-            return NAN;
+            return NANArray;
         }  
         beta_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
         likelihood += beta_component;
@@ -227,7 +249,7 @@ real nbSystemLikelihood(const NBodyState* st,
         if(!data->usage[4] || !histogram->usage[4])
         {
             mw_printf("One of these files does not contain any info for average velocity\n");
-            return NAN;
+            return NANArray;
         }  
         LOS_velocity_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
         likelihood += LOS_velocity_component;
@@ -237,10 +259,20 @@ real nbSystemLikelihood(const NBodyState* st,
         if(!data->usage[5] || !histogram->usage[5])
         {
             mw_printf("One of these files does not contain any info for average distance\n");
-            return NAN;
+            return NANArray;
         }  
         distance_component = nbLikelihood(data->histograms[5], histogram->histograms[5]);
         likelihood += distance_component;
     }
-    return likelihood;   
+
+    likelihoodArray[0]=likelihood;
+    likelihoodArray[1]=geometry_component;
+    likelihoodArray[2]=cost_component;
+    likelihoodArray[3]=beta_dispersion_component;
+    likelihoodArray[4]=velocity_dispersion_component;
+    likelihoodArray[5]=beta_component;
+    likelihoodArray[6]=LOS_velocity_component;
+    likelihoodArray[7]=distance_component;
+
+    return likelihoodArray;   
 } 
