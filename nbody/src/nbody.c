@@ -186,8 +186,15 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
         return nbStepSystemCL(ctx, st);
     }
   #endif
-
-    return nbStepSystemPlain(ctx, st);
+    mwvector tmp;
+    tmp.x = 0.0;
+    tmp.y = 0.0;
+    tmp.z = 0.0;
+    mwvector tmp1;
+    tmp1.x = 0.0;
+    tmp1.y = 0.0;
+    tmp1.z = 0.0;
+    return nbStepSystemPlain(ctx, st, tmp, tmp1);
 }
 
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
@@ -210,14 +217,16 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     MainStruct* data = NULL;
     MainStruct* histogram = NULL;
     real likelihood = NAN;
-    real likelihood_EMD = st->bestLikelihood_EMD;
-    real likelihood_Mass = st->bestLikelihood_Mass;
-    real likelihood_Beta = st->bestLikelihood_Beta;
-    real likelihood_Vel = st->bestLikelihood_Vel;
-    real likelihood_VelAvg = st->bestLikelihood_VelAvg;
-    real likelihood_BetaAvg = st->bestLikelihood_BetaAvg;
-    real likelihood_Dist = st->bestLikelihood_Dist;
+    real likelihood_EMD = NAN;
+    real likelihood_Mass = NAN;
+    real likelihood_Beta = NAN;
+    real likelihood_Vel = NAN;
+    real likelihood_VelAvg = NAN;
+    real likelihood_BetaAvg = NAN;
+    real likelihood_Dist = NAN;
     NBodyLikelihoodMethod method;
+
+    real *likelihoodArray;
 
     /* The likelihood only means something when matching a histogram */
     mwbool calculateLikelihood = (nbf->histogramFileName != NULL);
@@ -270,7 +279,15 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         }
         
         
-        likelihood = nbSystemLikelihood(st, data, histogram, method);
+        likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
+        likelihood         = likelihoodArray[0];
+        likelihood_EMD     = likelihoodArray[1];
+        likelihood_Mass    = likelihoodArray[2];
+        likelihood_Beta    = likelihoodArray[3];
+        likelihood_Vel     = likelihoodArray[4];
+        likelihood_BetaAvg = likelihoodArray[5];
+        likelihood_VelAvg  = likelihoodArray[6];
+        likelihood_Dist    = likelihoodArray[7];
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
@@ -300,11 +317,14 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         /* only do the comparison if we are using the best likelihood code */
         if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood) && ctx->useBestLike)
         {
-            likelihood = st->bestLikelihood;
-            likelihood_EMD = st->bestLikelihood_EMD;
-            likelihood_Mass = st->bestLikelihood_Mass;
-            likelihood_Beta = st->bestLikelihood_Beta;
-            likelihood_Vel = st->bestLikelihood_Vel;
+            likelihood         = st->bestLikelihood;
+            likelihood_EMD     = st->bestLikelihood_EMD;
+            likelihood_Mass    = st->bestLikelihood_Mass;
+            likelihood_Beta    = st->bestLikelihood_Beta;
+            likelihood_Vel     = st->bestLikelihood_Vel;
+            likelihood_VelAvg  = st->bestLikelihood_VelAvg;
+            likelihood_BetaAvg = st->bestLikelihood_BetaAvg;
+            likelihood_Dist    = st->bestLikelihood_Dist;
         }
         else
         {
@@ -345,18 +365,18 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -likelihood_Vel);
         }
-    if (st->useVlos)
-    {
-        mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_Vel);
-    }
-    if (st->useBetaComp)
-    {
-        mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -likelihood_BetaAvg);
-    }
-    if (st->useDist)
-    {
-        mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
-    }
+       if (st->useBetaComp)
+       {
+           mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -likelihood_BetaAvg);
+       }
+       if (st->useVlos)
+       {
+           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_Vel);
+       }
+       if (st->useDist)
+       {
+           mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
+       }
     }
 
 

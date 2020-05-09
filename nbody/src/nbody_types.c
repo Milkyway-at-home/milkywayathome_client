@@ -111,7 +111,16 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
-
+    
+    if(st->shiftByLMC) {   
+        int j = 0;
+        while(j < st->step) {
+            mwFreeA(st->shiftByLMC[j]);
+            j++;
+        }
+        mwFreeA(st->shiftByLMC);
+    }
+    
     free(st->checkpointResolved);
 
     if (st->potEvalStates)
@@ -178,15 +187,15 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
-    st->bestLikelihood = DEFAULT_WORST_CASE;
-    st->bestLikelihood_EMD = 0.0;
-    st->bestLikelihood_Mass = 0.0;
-    st->bestLikelihood_Beta = 0.0;
-    st->bestLikelihood_Vel = 0.0;
-    st->bestLikelihood_BetaAvg = 0.0;
-    st->bestLikelihood_VelAvg = 0.0;
-    st->bestLikelihood_Dist = 0.0;
-    st->bestLikelihood_time = 0.0;
+    st->bestLikelihood         = DEFAULT_WORST_CASE;
+    st->bestLikelihood_EMD     = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Mass    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Beta    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Vel     = DEFAULT_WORST_CASE;
+    st->bestLikelihood_BetaAvg = DEFAULT_WORST_CASE;
+    st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_time    = DEFAULT_WORST_CASE;
     st->bestLikelihood_count = 0;
     
     /* We'll report the center of mass for each step + the initial one */
@@ -195,6 +204,11 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
+}
+
+void setLMCShiftArray(NBodyState* st, mwvector** shiftArray) {
+    //Set the state variable for the LMC shift array
+    st->shiftByLMC = shiftArray;
 }
 
 NBodyState* newNBodyState()
@@ -636,6 +650,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)
-        && equalPotential(&ctx1->pot, &ctx2->pot);
+        && equalPotential(&ctx1->pot, &ctx2->pot)
+        && feqWithNan(ctx1->LMC, ctx2->LMC);
 }
 

@@ -56,11 +56,11 @@ function randomNBodyCtx(prng)
       timeEvolve    = prng:random(0, 10),
       theta         = prng:random(0, 1),
       eps2          = prng:random(1.0e-9, 1.0e-3),
-      b           = 53.5,
-      r           = 28.6,
-      vx          = -156,
-      vy          = 79,
-      vz          = 107,
+      b             = prng:random(40.0,60.0),
+      r             = prng:random(10.0,30.0),
+      vx            = prng:random(-200.0,200.0),
+      vy            = prng:random(-200.0,200.0),
+      vz            = prng:random(-200.0,200.0),
       treeRSize     = prng:randomListItem({ 4, 8, 2, 16 }),
       criterion     = prng:randomListItem({"TreeCode", "SW93", "BH86", "Exact"}),
       useQuad       = prng:randomBool(),
@@ -71,9 +71,10 @@ function randomNBodyCtx(prng)
       BetaCorrect   = correct,
       VelCorrect    = correct,
       DistCorrect   = correct,
-      IterMax       = floor(prng:random(2,10)),
+      IterMax       = prng:randomListItem({ 2, 3, 4, 5 }),
       allowIncest   = true,
-      quietErrors   = true
+      quietErrors   = true,
+      LMC = true
    }
 end
 
@@ -112,7 +113,6 @@ for i = 1, nTests do
    m = SM.randomPlummer(prng, 500)
    ctx = randomNBodyCtx(prng)
    ctx:addPotential(SP.randomPotential(prng))
-
 
    st = NBodyState.create(ctx, m)
    stClone = st:clone()

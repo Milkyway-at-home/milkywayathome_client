@@ -127,6 +127,7 @@ static int createNBodyState(lua_State* luaSt)
         return luaL_argerror(luaSt, 2, "Expected model tables");
 
     setInitialNBodyState(&st, &ctx, bodies, nbody);
+    //mw_printf("Checking status...\n");
 
     /* Run the first pseudostep to fill accelerations */
     if (nbStatusIsFatal(nbGravMap(&ctx, &st)))

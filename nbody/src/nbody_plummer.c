@@ -97,7 +97,7 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift,
     v = plummerRandomV(dsfmtState, r);
     vel = pickShell(dsfmtState, vsc * v);   /* pick scaled velocity */
     mw_incaddv(vel, vshift);                /* move the velocity */
-
+    
     return vel;
 }
 
