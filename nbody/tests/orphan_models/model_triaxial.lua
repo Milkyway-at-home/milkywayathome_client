@@ -38,8 +38,10 @@ function makeContext()
       BestLikeStart = 0.95,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
+      DistSigma      = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
+      DistCorrect    = 1.111,
       IterMax       = 6
    }
 end
@@ -72,7 +74,7 @@ function makeHistogram()
      psi = 90.70,
      
      -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = 50,
+     lambdaStart = -50,
      lambdaEnd   = 50,
      lambdaBins  = 34,
      

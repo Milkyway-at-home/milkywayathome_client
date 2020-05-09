@@ -11,7 +11,7 @@
 -- if you are using single component plummer model, it will take the baryonic
 -- matter component parameters. meaning you input should look like
 -- ft, time_ratio, rscale_baryon, radius_ratio, baryon mass, mass ratio
--- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2
+-- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2 (52.5, 28.6, -156, 79, 107)
 
 -- available option: using a user inputted list of bodies. Sent in as an 
 -- optional arguement after dwarf parameter list
@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 2000    -- -- NUMBER OF BODIES           -- --
+totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -32,7 +32,8 @@ run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
-LMC_body              = true   -- -- PRESENCE OF LMC            -- --
+
+LMC_body              = true    -- -- PRESENCE OF LMC            -- --
 LMCtotalBodies        = 2000    -- -- DON'T SET TO VALUES SMALLER THAN 100 
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
@@ -41,7 +42,7 @@ LMC_Mass              = 449865.888
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --        
+-- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- ModelComponent Options: 
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
@@ -77,19 +78,24 @@ use_best_likelihood  = true    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = false   -- use velocity dispersions in likelihood
+use_vel_disps        = false    -- use velocity dispersions in likelihood
 
+-- if one of these is true, will get output for all 3 of the new histograms
+-- if not computing likelihood scores, still need one of these to be true if want them computed/output
+use_beta_comp        = false  -- calculate average beta, use in likelihood
+use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
+use_avg_dist         = false  -- calculate average distance, use in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false    -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 6        -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 6            -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control     = false     -- -- control number of steps      -- --
-Ntime_steps          = 10        -- -- number of timesteps to run   -- --
+timestep_control     = false         -- -- control number of steps      -- --
+Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -97,12 +103,15 @@ Ntime_steps          = 10        -- -- number of timesteps to run   -- --
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-orbit_parameter_l  = 250.0
-orbit_parameter_b  = 48.6
-orbit_parameter_r  = 22.6
-orbit_parameter_vx = 182.9 
-orbit_parameter_vy = -63.4
-orbit_parameter_vz = -140.6
+orbit_parameter_l  = 218
+
+-- these only get used if only 6 parameters are input from shell script
+-- otherwise they get reset later with the inputs (if 11 given)
+orbit_parameter_b  = 53.5
+orbit_parameter_r  = 28.6
+orbit_parameter_vx = -156 
+orbit_parameter_vy = 79 
+orbit_parameter_vz = 107
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -122,7 +131,6 @@ function makePotential()
         }--vhalo = 74.61 kpc/gy = 73 km/s
    end
 end
-
 
 function get_timestep()
     if(timestep_control) then
@@ -164,23 +172,33 @@ end
 function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
    return NBodyCtx.create{
-      timeEvolve    = evolveTime,
-      timeBack      = revOrbTime,
-      timestep      = get_timestep(),
-      eps2          = calculateEps2(totalBodies, soften_length),
-      criterion     = criterion,
-      useQuad       = true,
+      timeEvolve  = evolveTime,
+      timeBack    = revOrbTime,
+      timestep    = get_timestep(),
+      eps2        = calculateEps2(totalBodies, soften_length),
+      b           = orbit_parameter_b,
+      r           = orbit_parameter_r,
+      vx          = orbit_parameter_vx,
+      vy          = orbit_parameter_vy,
+      vz          = orbit_parameter_vz,
+      criterion   = criterion,
+      useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
       useVelDisp    = use_vel_disps,
       useBetaDisp   = use_beta_disps,
+      useBetaComp   = use_beta_comp,
+      useVlos       = use_vlos_comp,
+      useDist       = use_avg_dist,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
+      DistSigma     = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
+      DistCorrect   = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
@@ -315,7 +333,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expected 6 arguments")
+assert(#arg >= 6, "Expects either 6 or 11 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
@@ -334,7 +352,16 @@ rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-manual_body_file = arg[7]                            -- File with Individual Particles (.out file)
+if((#arg == 11)or(#arg == 12)) then
+  orbit_parameter_b   = round( tonumber(arg[7]), dec )
+  orbit_parameter_r   = round( tonumber(arg[8]), dec )
+  orbit_parameter_vx  = round( tonumber(arg[9]), dec )
+  orbit_parameter_vy  = round( tonumber(arg[10]), dec )
+  orbit_parameter_vz  = round( tonumber(arg[11]), dec )
+  manual_body_file = arg[12]
+else
+  manual_body_file = arg[7] -- File with Individual Particles (.out file)
+end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio

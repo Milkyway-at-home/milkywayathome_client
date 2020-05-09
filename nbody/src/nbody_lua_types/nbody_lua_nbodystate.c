@@ -100,6 +100,7 @@ static int luaRunSystem(lua_State* luaSt)
          * get access to the state during the run among other things. But it was never finished. 
          */
 //     rc = nbRunSystem(&ctx, st);
+
     lua_pushstring(luaSt, showNBodyStatus(rc));
 
     return 1;

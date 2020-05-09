@@ -1275,16 +1275,21 @@ real nbWorstCaseEMD(const NBodyHistogram* hist)
     return DEFAULT_WORST_CASE;
 }
 
-real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
+real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
 {
-    unsigned int lambdaBins = data->lambdaBins;
-    unsigned int betaBins = data->betaBins;
+    // all the histograms have the same lambda/betaBins info
+    // but histogram 0 is the one that contains the counts information
+    NBodyHistogram* first_data = (data->histograms[0]);
+    NBodyHistogram* first_hist = (histogram->histograms[0]);
+
+    unsigned int lambdaBins = first_data->lambdaBins;
+    unsigned int betaBins = first_data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
-    unsigned int nSim_uncut = histogram->totalNum;
+    unsigned int nSim_uncut = first_hist->totalNum;
     unsigned int nSim = nSim_uncut;
-    unsigned int nData = data->totalNum;
-    real histMass = histogram->massPerParticle;
-    real dataMass = data->massPerParticle;
+    unsigned int nData = first_data->totalNum;
+    real histMass = first_hist->massPerParticle;
+    real dataMass = first_data->massPerParticle;
     unsigned int i;
     unsigned int rawCount;
     WeightPos* hist;
@@ -1295,14 +1300,14 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     /* Remove all simulated bodies in unused bins for renormalization after skipping bins */
     for (i = 0; i < bins; ++i)
     {
-        if(!data->data[i].useBin)
+        if(!first_data->data[i].useBin)
         {
-            rawCount = mw_round(histogram->data[i].count * nSim_uncut);
+            rawCount = mw_round(first_hist->data[i].variable * nSim_uncut);
             nSim -= rawCount;
         }
     }
 
-    if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
+    if (first_data->lambdaBins != first_hist->lambdaBins || first_data->betaBins != first_hist->betaBins)
     {
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and
@@ -1326,19 +1331,22 @@ real nbMatchEMD(const NBodyHistogram* data, const NBodyHistogram* histogram)
     hist = mwCalloc(bins, sizeof(WeightPos));
     dat = mwCalloc(bins, sizeof(WeightPos));
     
-    for (i = 0; i < bins; ++i)
+    for(unsigned int i = 0; i < bins; i++)
     {
-        if (data->data[i].useBin)
+        if(first_data->data[i].useBin)
         {
-            dat[i].weight = (real) data->data[i].count;
-            hist[i].weight = (real) histogram->data[i].count * nSim_uncut / (1.0*nSim);
-        }
+            {
+                // counts is stored in "variable" of the 0 histogram in MainStruct
+                dat[i].weight = (real) first_data->data[i].variable;
+                hist[i].weight = (real) first_hist->data[i].variable * nSim_uncut / (1.0*nSim);
+            }
 
-        hist[i].lambda = (real) histogram->data[i].lambda;
-        dat[i].lambda = (real) data->data[i].lambda;
-        
-        hist[i].beta = (real) histogram->data[i].beta;
-        dat[i].beta = (real) data->data[i].beta;
+            hist[i].lambda = (real) first_hist->data[i].lambda;
+            dat[i].lambda = (real) first_data->data[i].lambda;
+          
+            hist[i].beta = (real) first_hist->data[i].beta;
+            dat[i].beta = (real) first_data->data[i].beta;
+        }
     }
 
     emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);

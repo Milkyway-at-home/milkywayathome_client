@@ -211,10 +211,13 @@ static int doWithArgs(lua_State* luaSt, const char** args, unsigned int nArgs)
         }
     }
 
+    //mw_printf("Checking pcall...\n");
     if (lua_pcall(luaSt, nArgs, 0, 0))
     {
+        //mw_printf("FAILED...\n");
         return 1;
     }
+    //mw_printf("SUCCESS!\n");
 
     return 0;
 }
