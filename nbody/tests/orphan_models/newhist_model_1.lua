@@ -27,10 +27,10 @@ function makeContext()
       timeEvolve = 3.945,
       eps2       = calculateEps2(nbody, dwarfRadius),
       b           = 53.5,
-      r           = 28.6,
-      vx          = -156,
-      vy          = 79,
-      vz          = 107,
+      r           = 28.9,
+      vx          = -179,
+      vy          = 106,
+      vz          = 109,
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
@@ -51,8 +51,8 @@ end
 function makeBodies(ctx, potential)
    local finalPosition, finalVelocity = reverseOrbit{
       potential = potential,
-      position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6)),
-      velocity  = Vector.create(-156, 79, 107),
+      position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.9)),
+      velocity  = Vector.create(-179, 106, 109),
       tstop     = 4.0,
       dt        = ctx.timestep / 10.0
    }
