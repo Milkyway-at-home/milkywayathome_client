@@ -957,6 +957,9 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         {
             nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->DistSigma, ctx->sunGCDist);
             nbCalcDisp(all->histograms[5], FALSE, ctx->DistCorrect);
+        }
+        for (unsigned int i = 0; i < nBin; ++i)
+        {
             int ddenom = all->histograms[5]->data[i].rawCount - all->histograms[5]->data[i].outliersRemoved;
             if(ddenom != 0)
             {
