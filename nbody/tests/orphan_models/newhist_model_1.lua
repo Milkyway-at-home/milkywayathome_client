@@ -41,6 +41,9 @@ function makeContext()
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect    = 1.111,
+      useBetaComp   =true,
+      useVlos       =true,
+      useDist       =true,
       IterMax       = 6
    }
 end
@@ -48,8 +51,8 @@ end
 function makeBodies(ctx, potential)
    local finalPosition, finalVelocity = reverseOrbit{
       potential = potential,
-      position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.9)),
-      velocity  = Vector.create(-179, 106, 109),
+      position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6)),
+      velocity  = Vector.create(-156, 79, 107),
       tstop     = 4.0,
       dt        = ctx.timestep / 10.0
    }
@@ -73,7 +76,7 @@ function makeHistogram()
      psi = 90.70,
      
      -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = 50,
+     lambdaStart = -50,
      lambdaEnd   = 50,
      lambdaBins  = 34,
      

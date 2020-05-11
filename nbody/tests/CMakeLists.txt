@@ -122,7 +122,10 @@ set(orphan_model_names model_1
                        model_8
                        model_9
                        model_ninkovic
-                       model_triaxial)
+                       model_triaxial
+                       newhist_model_1
+                       newhist_model_2
+                       newhist_model_3)
 
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})

@@ -961,7 +961,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             if(ddenom != 0)
             {
                 all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom);
-                //all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
+                all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
             }
             else
             {
