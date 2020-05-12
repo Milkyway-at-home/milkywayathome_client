@@ -125,18 +125,23 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 
 static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
-    NBodyHistogram* data = NULL;
-    NBodyHistogram* histogram = NULL;
+    MainStruct* data = NULL;
+    MainStruct* histogram = NULL;
     real likelihood = NAN;
     real likelihood_EMD = NAN;
     real likelihood_Mass = NAN;
     real likelihood_Beta = NAN;
     real likelihood_Vel = NAN;
+    real likelihood_BetaAvg = NAN;
+    real likelihood_VelAvg = NAN;
+    real likelihood_Dist = NAN;
+
+    real *likelihoodArray;
+
     NBodyLikelihoodMethod method;
     HistogramParams hp;
     
     mwbool calculateLikelihood = (nbf->histogramFileName != NULL);
-    
     
     if (calculateLikelihood || nbf->histoutFileName || nbf->printHistogram)
     {
@@ -175,7 +180,15 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
              */
             return 0;
         }
-        likelihood = nbSystemLikelihood(st, data, histogram, method);
+        likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
+        likelihood         = likelihoodArray[0];
+        likelihood_EMD     = likelihoodArray[1];
+        likelihood_Mass    = likelihoodArray[2];
+        likelihood_Beta    = likelihoodArray[3];
+        likelihood_Vel     = likelihoodArray[4];
+        likelihood_BetaAvg = likelihoodArray[5];
+        likelihood_VelAvg  = likelihoodArray[6];
+        likelihood_Dist    = likelihoodArray[7];
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
@@ -201,21 +214,39 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         {
             st->bestLikelihood = likelihood;
 
-            st->bestLikelihood_Mass = nbCostComponent(data, histogram);
+            st->bestLikelihood_EMD = likelihood_EMD;
+
+            st->bestLikelihood_Mass = likelihood_Mass;
 
             if (st->useBetaDisp)
             {
-                st->bestLikelihood_Beta = nbBetaDispersion(data, histogram);
+                st->bestLikelihood_Beta = likelihood_Beta;
             }
             else st->bestLikelihood_Beta = 0.0;
 
             if (st->useVelDisp)
             {
-                st->bestLikelihood_Vel = nbVelocityDispersion(data, histogram);
+                st->bestLikelihood_Vel = likelihood_Vel;
             }
             else st->bestLikelihood_Vel = 0.0;
 
-            st->bestLikelihood_EMD = likelihood-(st->bestLikelihood_Mass)-(st->bestLikelihood_Beta)-(st->bestLikelihood_Vel);
+            if (st->useBetaComp)
+            {
+                st->bestLikelihood_BetaAvg = likelihood_BetaAvg;
+            }
+            else st->bestLikelihood_BetaAvg = 0.0;
+
+            if (st->useVlos)
+            {
+                st->bestLikelihood_VelAvg = likelihood_VelAvg;
+            }
+            else st->bestLikelihood_VelAvg = 0.0;
+
+            if (st->useDist)
+            {
+                st->bestLikelihood_Dist = likelihood_Dist;
+            }
+            else st->bestLikelihood_Dist = 0.0;
             
             /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
@@ -231,8 +262,17 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         }
     }
     
+    if(data != NULL)
+    {
+        for(int i = 0; i < 6; i++)
+        {
+            free(histogram->histograms[i]);
+            free(data->histograms[i]);
+        }
+    }
     free(histogram);
     free(data);
+
     return NBODY_SUCCESS;
     
 }

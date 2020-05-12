@@ -246,11 +246,20 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
             0, "Only match this histogram against other histogram (requires histogram argument) with vel disp comparison", NULL
         },
         {
-            "match-histogram-betadisp", 'D',
+            "match-histogram-betaveldisp", 'D',
             POPT_ARG_STRING, &nbf.matchHistBetaVelDisp,
             0, "Only match this histogram against other histogram (requires histogram argument) with beta and vel disp comparison", NULL
         },
-        
+        {
+            "match-histogram-betavlosdist", 'Q',
+            POPT_ARG_STRING, &nbf.matchHistBetaVlosDist,
+            0, "Only match this histogram against other histogram (requires histogram argument) with avg beta and vlos and dist comparison", NULL
+        },
+        {
+            "match-histogram-all", 'A',
+            POPT_ARG_STRING, &nbf.matchHistAll,
+            0, "Match this histogram against other histogram with veldisp, betadisp, avg beta, vlos, and distance", NULL
+        },
         {
             "output-file", 'o',
             POPT_ARG_STRING, &nbf.outFileName,
@@ -471,14 +480,15 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         exit(EXIT_SUCCESS);
     }
 
-    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistBetaDisp && !nbf.matchHistVelDisp && !nbf.matchHistBetaVelDisp)
+    if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistBetaDisp && !nbf.matchHistVelDisp
+                       && !nbf.matchHistBetaVelDisp && !nbf.matchHistBetaVlosDist && !nbf.matchHistAll)
     {
         mw_printf("An input file, checkpoint, or matching histogram argument is required\n");
         poptFreeContext(context);
         return TRUE;
     }
 
-    if ((nbf.matchHistogram || nbf.matchHistVelDisp || nbf.matchHistBetaDisp || nbf.matchHistBetaVelDisp) && !nbf.histogramFileName)
+    if ((nbf.matchHistogram || nbf.matchHistVelDisp || nbf.matchHistBetaDisp || nbf.matchHistBetaVelDisp || nbf.matchHistBetaVlosDist || nbf.matchHistAll) && !nbf.histogramFileName)
     {
         mw_printf("--match-histogram argument requires --histogram-file\n");
         poptFreeContext(context);
@@ -633,8 +643,11 @@ int main(int argc, const char* argv[])
         real emd;
         real vel_disp = FALSE;
         real beta_disp = FALSE;
+        real beta_avg = FALSE;
+        real vlos_avg = FALSE;
+        real dist_avg = FALSE;
         /* runs the comparison of two input hists without using vel dispersion calc */
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram, vel_disp, beta_disp);
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistogram, vel_disp, beta_disp, beta_avg, vlos_avg, dist_avg);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
     }
@@ -643,8 +656,11 @@ int main(int argc, const char* argv[])
         real emd;
         real vel_disp = FALSE; 
         real beta_disp = TRUE;
-        /* runs the comparison of two input hists using vel dispersion calc */
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaDisp, vel_disp, beta_disp);
+        real beta_avg = FALSE;
+        real vlos_avg = FALSE;
+        real dist_avg = FALSE;
+        /* runs the comparison of two input hists using beta dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaDisp, vel_disp, beta_disp, beta_avg, vlos_avg, dist_avg);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
         
@@ -654,8 +670,11 @@ int main(int argc, const char* argv[])
         real emd;
         real vel_disp = TRUE; 
         real beta_disp = FALSE;
+        real beta_avg = FALSE;
+        real vlos_avg = FALSE;
+        real dist_avg = FALSE;
         /* runs the comparison of two input hists using vel dispersion calc */
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistVelDisp, vel_disp, beta_disp);
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistVelDisp, vel_disp, beta_disp, beta_avg, vlos_avg, dist_avg);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
         
@@ -665,11 +684,38 @@ int main(int argc, const char* argv[])
         real emd;
         real vel_disp = TRUE; 
         real beta_disp = TRUE;
-        /* runs the comparison of two input hists using vel dispersion calc */
-        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaVelDisp, vel_disp, beta_disp);
+        real beta_avg = FALSE;
+        real vlos_avg = FALSE;
+        real dist_avg = FALSE;
+        /* runs the comparison of two input hists using beta and vlos dispersion calc */
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaVelDisp, vel_disp, beta_disp, beta_avg, vlos_avg, dist_avg);
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
         rc = isnan(emd);
         
+    }
+    else if(nbf.matchHistBetaVlosDist)
+    {
+        real emd;
+        real vel_disp = FALSE; 
+        real beta_disp = FALSE;
+        real beta_avg = TRUE;
+        real vlos_avg = TRUE;
+        real dist_avg = TRUE;
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistBetaVlosDist, vel_disp, beta_disp, beta_avg, vlos_avg, dist_avg);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
+        rc = isnan(emd);
+    }
+    else if(nbf.matchHistAll)
+    {
+        real emd;
+        real vel_disp = TRUE; 
+        real beta_disp = TRUE;
+        real beta_avg = TRUE;
+        real vlos_avg = TRUE;
+        real dist_avg = TRUE;
+        emd = nbMatchHistogramFiles(nbf.histogramFileName, nbf.matchHistAll, vel_disp, beta_disp, beta_avg, vlos_avg, dist_avg);
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -emd);
+        rc = isnan(emd);
     }
     else
     {

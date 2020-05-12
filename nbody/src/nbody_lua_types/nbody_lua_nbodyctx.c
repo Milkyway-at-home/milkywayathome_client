@@ -93,6 +93,13 @@ static int createNBodyCtx(lua_State* luaSt)
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
             { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
+
+            { "b",             LUA_TNUMBER,  NULL, FALSE,  &ctx.b   },
+            { "r",             LUA_TNUMBER,  NULL, FALSE,  &ctx.r   },
+            { "vx",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vx  },
+            { "vy",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vy  },
+            { "vz",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vz  },
+            
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName     },
             { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad       },
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
@@ -101,16 +108,21 @@ static int createNBodyCtx(lua_State* luaSt)
             { "BestLikeStart", LUA_TNUMBER,  NULL, FALSE, &ctx.BestLikeStart },
             { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp    },
             { "useBetaDisp",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBetaDisp   },
+            { "useBetaComp",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBetaComp   },
+            { "useVlos",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useVlos       },
+            { "useDist",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useDist       },
             { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps       },
             { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control }, 
             { "MultiOutput",   LUA_TBOOLEAN, NULL, FALSE, &ctx.MultiOutput   },
             { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq    },
             { "BetaSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaSigma     },
             { "VelSigma",      LUA_TNUMBER,  NULL, TRUE,  &ctx.VelSigma      },
+            { "DistSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.DistSigma     },
             { "IterMax",       LUA_TNUMBER,  NULL, FALSE, &ctx.IterMax       },
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
-            { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           }, 
+            { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect   },
+            { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           },
             END_MW_NAMED_ARG
         };
 
@@ -239,6 +251,9 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "useBestLike",     getBool,       offsetof(NBodyCtx, useBestLike) },
     { "useVelDisp",      getBool,       offsetof(NBodyCtx, useVelDisp)  },
     { "useBetaDisp",     getBool,       offsetof(NBodyCtx, useBetaDisp) },
+    { "useBetaComp",     getBool,       offsetof(NBodyCtx, useBetaComp) },
+    { "useVlos",         getBool,       offsetof(NBodyCtx, useVlos)     },
+    { "useDist",         getBool,       offsetof(NBodyCtx, useDist)     },
     { "BestLikeStart",   getNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { "Nstep_control",   getBool,       offsetof(NBodyCtx, Nstep_control) },
     { "Ntsteps",         getNumber,     offsetof(NBodyCtx, Ntsteps)     },
@@ -246,10 +261,12 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "OutputFreq",      getNumber,     offsetof(NBodyCtx, OutputFreq)  },
     { "BetaSigma",       getNumber,     offsetof(NBodyCtx, BetaSigma)   },
     { "VelSigma",        getNumber,     offsetof(NBodyCtx, VelSigma)    },
+    { "DistSigma",       getNumber,     offsetof(NBodyCtx, DistSigma)   },
     { "IterMax",         getNumber,     offsetof(NBodyCtx, IterMax)     },
     { "BetaCorrect",     getNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)  },
-    { "LMC",             getBool,       offsetof(NBodyCtx, LMC)         }, 
+    { "DistCorrect",     getNumber,     offsetof(NBodyCtx, DistCorrect) },
+    { "LMC",             getBool,       offsetof(NBodyCtx, LMC)         },
     { NULL, NULL, 0 }
 };
 
@@ -269,6 +286,9 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "useBestLike",     setBool,       offsetof(NBodyCtx, useBestLike) },
     { "useVelDisp",      setBool,       offsetof(NBodyCtx, useVelDisp)  },
     { "useBetaDisp",     setBool,       offsetof(NBodyCtx, useBetaDisp) },
+    { "useBetaComp",     setBool,       offsetof(NBodyCtx, useBetaComp) },
+    { "useVlos",         setBool,       offsetof(NBodyCtx, useVlos)     },
+    { "useDist",         setBool,       offsetof(NBodyCtx, useDist)     },
     { "BestLikeStart",   setNumber,     offsetof(NBodyCtx, BestLikeStart) },
     { "Nstep_control",   setBool,       offsetof(NBodyCtx, Nstep_control) },
     { "Ntsteps",         setNumber,     offsetof(NBodyCtx, Ntsteps)     },
@@ -276,10 +296,12 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "OutputFreq",      setNumber,     offsetof(NBodyCtx, OutputFreq)  },
     { "BetaSigma",       setNumber,     offsetof(NBodyCtx, BetaSigma)   },
     { "VelSigma",        setNumber,     offsetof(NBodyCtx, VelSigma)    },
-    { "IterMax",         setNumber,     offsetof(NBodyCtx, IterMax)    },
+    { "DistSigma",       setNumber,     offsetof(NBodyCtx, DistSigma)   },
+    { "IterMax",         setNumber,     offsetof(NBodyCtx, IterMax)     },
     { "BetaCorrect",     setNumber,     offsetof(NBodyCtx, BetaCorrect) },
     { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)  },
-    { "LMC",             setBool,       offsetof(NBodyCtx, LMC)         }, 
+    { "DistCorrect",     setNumber,     offsetof(NBodyCtx, DistCorrect) },
+    { "LMC",             setBool,       offsetof(NBodyCtx, LMC)         },
     { NULL, NULL, 0 }
 };
 

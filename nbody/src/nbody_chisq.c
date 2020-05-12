@@ -175,13 +175,13 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     {
         if (data->data[i].useBin)  /* Skip bins with missing data */
         {
-            n = (real) histogram->data[i].rawCount;
+            n = (real) histogram->data[i].variable;
             err = data->data[i].err;
 
             switch (method)
             {
                 case NBODY_ORIG_CHISQ:
-                    tmp = (data->data[i].count - (n / effTotalNum)) / err;
+                    tmp = (data->data[i].variable - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;
 
@@ -190,35 +190,35 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                      * we need to correct the errors in case there
                      * were any bins we are skipping for matching to
                      * the data */
-                    simErr = nbNormalizedHistogramError(histogram->data[i].rawCount, effTotalNum);
+                    simErr = nbNormalizedHistogramError(histogram->data[i].variable, effTotalNum);
 
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
                     err = sqrt(sqr(err) + sqr(simErr));
-                    tmp = (data->data[i].count - (n / effTotalNum)) / err;
+                    tmp = (data->data[i].variable - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;
 
                 case NBODY_CHISQ_ALT:
-                    chiSq += nbChisqAlt(data->data[i].count, n / effTotalNum);
+                    chiSq += nbChisqAlt(data->data[i].variable, n / effTotalNum);
                     break;
 
                 case NBODY_POISSON:
                     /* Poisson one */
-                    chiSq += nbPoissonTerm(data->data[i].count, n / effTotalNum);
+                    chiSq += nbPoissonTerm(data->data[i].variable, n / effTotalNum);
                     break;
 
                 case NBODY_KOLMOGOROV:
-                    chiSq = mw_fmax(chiSq, fabs(data->data[i].count - (n / effTotalNum)));
+                    chiSq = mw_fmax(chiSq, fabs(data->data[i].variable - (n / effTotalNum)));
                     break;
 
                 case NBODY_KULLBACK_LEIBLER:
                     /* "Relative entropy" */
-                    chiSq += nbKullbackLeiblerTerm(data->data[i].count, n / effTotalNum);
+                    chiSq += nbKullbackLeiblerTerm(data->data[i].variable, n / effTotalNum);
                     break;
 
                 case NBODY_SAHA:
                     /* This will actually find ln(W). W is an unreasonably large number. */
-                    chiSq += nbSahaTerm(n, scale * data->data[i].count);
+                    chiSq += nbSahaTerm(n, scale * data->data[i].variable);
                     break;
 
                 case NBODY_INVALID_METHOD:
