@@ -371,7 +371,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
        }
        if (st->useVlos)
        {
-           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_Vel);
+           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_VelAvg);
        }
        if (st->useDist)
        {

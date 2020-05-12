@@ -94,7 +94,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         }
         if(use_betacomp)
         {
-            if(!dat->usage[3] || !match->usage[3])
+            if(!dat->usage[4] || !match->usage[4])
             {
                 mw_printf("One of these files does not contain any info for average beta\n");
                 return NAN;
@@ -104,7 +104,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         }
         if(use_vlos)
         {
-            if(!dat->usage[4] || !match->usage[4])
+            if(!dat->usage[3] || !match->usage[3])
             {
                 mw_printf("One of these files does not contain any info for average vlos\n");
                 return NAN;
