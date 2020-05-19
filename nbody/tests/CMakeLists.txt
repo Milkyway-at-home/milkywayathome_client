@@ -130,7 +130,10 @@ set(orphan_model_names model_1
                        model_8
                        model_9
                        model_ninkovic
-                       model_triaxial)
+                       model_triaxial
+                       model_newhist1
+                       model_newhist2
+                       model_newhist3)
 
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})
@@ -140,7 +143,7 @@ foreach(model_name ${orphan_model_names})
                                           $<TARGET_FILE:milkyway_nbody>
                                           "orphan_models"
                                           ${model_name}
-                                          "new_orphan_model_histogram"
+                                          "orphan_model_histogram_3"
                                           ${n})
   endforeach()
 endforeach()

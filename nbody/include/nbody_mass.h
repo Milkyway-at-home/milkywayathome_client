@@ -38,14 +38,14 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
 
-void nbCalcVelDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
-void nbCalcBetaDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
+real calc_distance(const mwvector p, real sunGCdist);	
 
-void nbRemoveVelOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_velbody, real * vlos, real sigma_cutoff);
-void nbRemoveBetaOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_betabody, real * betas, real sigma_cutoff);
+void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
 
-real nbVelocityDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
-real nbBetaDispersion(const NBodyHistogram* data, const NBodyHistogram* histogram);
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist);
+
+real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram);
+
 #ifdef __cplusplus
 }
 #endif

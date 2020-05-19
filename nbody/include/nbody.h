@@ -47,6 +47,8 @@ typedef struct
     char* matchHistVelDisp;   /* Just match this histogram to other histogram, no simulation -- with vel dispersion calc*/
     char* matchHistBetaDisp;  /* Just match this histogram to other histogram, no simulation -- with beta dispersion calc*/
     char* matchHistBetaVelDisp; /* Just match this histogram to other histogram, no simulation -- with beta and vel dispersion calc*/
+    char* matchHistBetaVlosDist; /* Just match this histogram to other histogram, no simulation -- with avg beta, avg vlos, dist calc*/
+    char* matchHistAll;          /* Match this histogram to other histogram, no simulation -- with veta and vel disp, avg beta/vlos/dist */
     char* graphicsBin;
     char* visArgs;
 
@@ -82,7 +84,7 @@ typedef struct
     int verbose;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st);
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
