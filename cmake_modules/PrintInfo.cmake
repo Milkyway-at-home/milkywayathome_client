@@ -24,7 +24,7 @@ macro(print_libs)
   message("   Lua Libraries      ${LUA_LIBRARIES}")
   message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
   message("   OpenGL Libraries   ${OPENGL_LIBRARIES}")
-  message("   OpenSSL Libraries  ${OPENSSL_LIBARIES}")
+  message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
 endmacro()
 
 macro(print_build_options)
