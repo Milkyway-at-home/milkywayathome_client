@@ -46,7 +46,7 @@ int do_nothing(const NBodyFlags* nbf){
     nbWriteBodies(ctx, st, nbf);
 }
 
-int runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
+NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
     NBodyCtx* ctx = &Gctx;
     NBodyState* st = &Gst;
     CLRequest clr;
@@ -71,13 +71,12 @@ int runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
         exit(-1);
     }
     nbRunSystemCL(ctx,st);
-    nbWriteBodies(ctx, st, nbf);
     MainStruct* hist = nbCreateHistogram(ctx,st,hp);
     nbWriteHistogram(nbf->histoutFileName,ctx,st,hist);
-    return 0;
+    return st;
 }
 
-int runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
+NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
     NBodyCtx* ctx = &Cctx;
     NBodyState* st = &Cst;
     st->checkpointResolved = "checkpoint.dat";
@@ -87,10 +86,11 @@ int runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
 //    ctx->nStep = steps;
     printf("%d\n",ctx->nStep);
     nbRunSystemPlain(ctx,st,nbf);
+
     nbWriteBodies(ctx, st, nbf);
     MainStruct* hist = nbCreateHistogram(ctx,st,hp);
     nbWriteHistogram(nbf->histoutFileName,ctx,st,hist);
-    return 0;
+    return st;
 }
 
 int main(int argc, char* argv[]){
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]){
         a[i++] = mwCalloc(20,1);
     }
     nbf.numForwardedArgs = 6;
-    strcpy(a[0],"4.0");
+    strcpy(a[0],"0.1");
     strcpy(a[1],"1.0");
     strcpy(a[2],"0.2");
     strcpy(a[3],"0.2");
@@ -124,12 +124,28 @@ int main(int argc, char* argv[]){
     nbGetLikelihoodInfo(&nbf,&hp,&method);
     nbf.outFileName = "test_outputCPU.txt";
     nbf.histoutFileName = "CPU_hist.dat";
-    runCPU(&nbf,&hp);
+    NBodyState  C_ST = *runCPU(&nbf,&hp);
+
     nbf.outFileName = "test_outputGPU.txt";
     nbf.histoutFileName = "GPU_hist.dat";
-    runGPU(&nbf,&hp);
+    NBodyState G_ST = *runGPU(&nbf,&hp);
+    Body * p = C_ST.bodytab;
+    Body * q = G_ST.bodytab;
+    assert(C_ST.nbody == G_ST.nbody);
+    double* data = mwMalloc(sizeof(double)*C_ST.nbody);
+    while(p < C_ST.bodytab + C_ST.nbody && q < G_ST.bodytab + G_ST.nbody){
+        double x_dif = X(Pos(p))-X(Pos(q));
+        double y_dif = Y(Pos(p))-Y(Pos(q));
+        double z_dif = Z(Pos(p))-Z(Pos(q));
+        data[p-C_ST.bodytab] = mw_sqrt(sqr(x_dif)+sqr(y_dif)+sqr(z_dif));
+        p++;q++;
+    }
+    double sum = 0.0;
+    for (int j = 0; j < C_ST.nbody; ++j) {
+        sum += data[j];
+    }
+    sum /= C_ST.nbody;
+    printf("The average distance between the GPU and the CPU results is: %.8lf\n",sum);
 
-//    FILE * cpu_results= fopen("test_outputCPU.txt","r");
-//    char buff[256];
-//    while(fscanf(cpu_results,"")
+
 }
