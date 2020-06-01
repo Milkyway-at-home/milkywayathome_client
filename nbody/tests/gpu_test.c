@@ -63,7 +63,7 @@ NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
     nbSetup(ctx,st,nbf);
 //    ctx->useQuad = TRUE;
 //    ctx->criterion = TreeCode;
-//    ctx->nStep = steps;
+    ctx->nStep = steps;
     printf("%d\n",ctx->nStep);
     rc = nbInitNBodyStateCL(st, ctx);
 
@@ -83,7 +83,7 @@ NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
     nbSetup(ctx,st,nbf);
 //    ctx->useQuad = TRUE;
 //    ctx->criterion = TreeCode;
-//    ctx->nStep = steps;
+    ctx->nStep = steps;
     printf("%d\n",ctx->nStep);
     nbRunSystemPlain(ctx,st,nbf);
 
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]){
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
     omp_set_num_threads(16);
-    steps = 1000;
+    steps = 1;
     nbf.debugLuaLibs = 0;
     nbf.outputlbrCartesian = 1;
     nbf.inputFile = "four_developers.lua";
@@ -120,7 +120,8 @@ int main(int argc, char* argv[]){
     HistogramParams hp;
     NBodyLikelihoodMethod method;
     nbf.forwardedArgs = a;
-
+`   //Test 1 step
+    
     nbGetLikelihoodInfo(&nbf,&hp,&method);
     nbf.outFileName = "test_outputCPU.txt";
     nbf.histoutFileName = "CPU_hist.dat";
@@ -145,7 +146,11 @@ int main(int argc, char* argv[]){
         sum += data[j];
     }
     sum /= C_ST.nbody;
-    printf("The average distance between the GPU and the CPU results is: %.8lf\n",sum);
-
-
+    mw_printf("The average distance between the GPU and the CPU results is: %.8lf\n",sum);
+    if(sum >= 1e-6){
+        mw_printf("Test failed\n");
+        return -1;
+    } else {
+        mw_printf("Test passed\n");
+        return 0;
 }
