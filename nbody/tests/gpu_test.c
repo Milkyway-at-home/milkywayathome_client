@@ -156,4 +156,5 @@ int main(int argc, char* argv[]){
     } else {
         mw_printf("Test passed\n");
         return 0;
+    }
 }
