@@ -121,7 +121,7 @@ int main(int argc, char* argv[]){
     HistogramParams hp;
     NBodyLikelihoodMethod method;
     nbf.forwardedArgs = a;
-`   //Test 1 step
+    //Test 1 step
     
     nbGetLikelihoodInfo(&nbf,&hp,&method);
     
