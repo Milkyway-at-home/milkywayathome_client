@@ -58,7 +58,8 @@ NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
     CLR(&clr,nbf);
     int rc = nbInitCL(st, ctx, &clr);
     if(rc){
-        exit(-1);
+        mw_printf("OpenCL failed to initialize. Make sure OpenCL is supported on this device.\n");
+        exit(-2);
     }
     nbSetup(ctx,st,nbf);
 //    ctx->useQuad = TRUE;
@@ -123,13 +124,15 @@ int main(int argc, char* argv[]){
 `   //Test 1 step
     
     nbGetLikelihoodInfo(&nbf,&hp,&method);
+    
+    nbf.outFileName = "test_outputGPU.txt";
+    nbf.histoutFileName = "GPU_hist.dat";
+    NBodyState G_ST = *runGPU(&nbf,&hp);
+    
     nbf.outFileName = "test_outputCPU.txt";
     nbf.histoutFileName = "CPU_hist.dat";
     NBodyState  C_ST = *runCPU(&nbf,&hp);
 
-    nbf.outFileName = "test_outputGPU.txt";
-    nbf.histoutFileName = "GPU_hist.dat";
-    NBodyState G_ST = *runGPU(&nbf,&hp);
     Body * p = C_ST.bodytab;
     Body * q = G_ST.bodytab;
     assert(C_ST.nbody == G_ST.nbody);
