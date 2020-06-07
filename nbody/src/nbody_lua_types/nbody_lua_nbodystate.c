@@ -100,6 +100,7 @@ static int luaRunSystem(lua_State* luaSt)
          * get access to the state during the run among other things. But it was never finished. 
          */
 //     rc = nbRunSystem(&ctx, st);
+
     lua_pushstring(luaSt, showNBodyStatus(rc));
 
     return 1;
@@ -126,6 +127,7 @@ static int createNBodyState(lua_State* luaSt)
         return luaL_argerror(luaSt, 2, "Expected model tables");
 
     setInitialNBodyState(&st, &ctx, bodies, nbody);
+    //mw_printf("Checking status...\n");
 
     /* Run the first pseudostep to fill accelerations */
     if (nbStatusIsFatal(nbGravMap(&ctx, &st)))

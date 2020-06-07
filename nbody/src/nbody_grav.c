@@ -159,7 +159,9 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         {
             case EXTERNAL_POTENTIAL_DEFAULT:
                 /* Include the external potential */
+                //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
+                //mw_printf("POTENTIAL_DEFAULT...\n");
                 a = nbGravity(ctx, st, b);
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack);
@@ -168,13 +170,16 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
+                //mw_printf("NULL POTENTIAL - TREE\n");
                 accels[i] = nbGravity(ctx, st, &bodies[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+                //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
+                //mw_printf("CUSTOM_LUA...\n");
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(a, externAcc)
+                mw_incaddv(a, externAcc);
                 accels[i] = a;
                 break;
 
@@ -238,6 +243,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
         switch (ctx->potentialType)
         {
             case EXTERNAL_POTENTIAL_DEFAULT:
+                //mw_printf("DEFAULT POTENTIAL - EXACT\n");
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
@@ -245,10 +251,12 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
+                //mw_printf("NULL POTENTIAL - EXACT\n");
                 accels[i] = nbGravity_Exact(ctx, st, &bodies[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+                //mw_printf("CUSTOM POTENTIAL - EXACT\n");
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc);
@@ -280,7 +288,7 @@ NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
         rc = nbMakeTree(ctx, st);
         if (nbStatusIsFatal(rc))
             return rc;
-
+        //mw_printf("Running ForceBody...\n");
         nbMapForceBody(ctx, st);
     }
     else

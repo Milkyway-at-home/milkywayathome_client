@@ -27,8 +27,10 @@ function makeContext()
       BestLikeStart = 0.98,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
+      DistSigma     = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
+      DistCorrect   = 1.111,
       IterMax       = 6
    }
 end

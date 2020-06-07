@@ -4,7 +4,7 @@
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
 Rensselaer Polytechnic Institute.
 
-This file is part of Milkway@Home.
+This file is part of Milkyway@Home.
 
 Milkyway@Home is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -114,6 +114,15 @@ int destroyNBodyState(NBodyState* st)
     
     mwFreeA(st->backwardOrbitPositions);
 
+    if(st->shiftByLMC) {   
+        int j = 0;
+        while(j < st->step) {
+            mwFreeA(st->shiftByLMC[j]);
+            j++;
+        }
+        mwFreeA(st->shiftByLMC);
+    }
+    
     free(st->checkpointResolved);
 
     if (st->potEvalStates)
@@ -180,12 +189,15 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
-    st->bestLikelihood = DEFAULT_WORST_CASE;
-    st->bestLikelihood_EMD = 0.0;
-    st->bestLikelihood_Mass = 0.0;
-    st->bestLikelihood_Beta = 0.0;
-    st->bestLikelihood_Vel = 0.0;
-    st->bestLikelihood_time = 0.0;
+    st->bestLikelihood         = DEFAULT_WORST_CASE;
+    st->bestLikelihood_EMD     = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Mass    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Beta    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Vel     = DEFAULT_WORST_CASE;
+    st->bestLikelihood_BetaAvg = DEFAULT_WORST_CASE;
+    st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
+    st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_time    = DEFAULT_WORST_CASE;
     st->bestLikelihood_count = 0;
     
     /* We'll report the center of mass for each step + the initial one */
@@ -196,6 +208,11 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 
     st->barTimeStep = 0;
+}
+
+void setLMCShiftArray(NBodyState* st, mwvector** shiftArray) {
+    //Set the state variable for the LMC shift array
+    st->shiftByLMC = shiftArray;
 }
 
 NBodyState* newNBodyState()
@@ -621,6 +638,9 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->useBestLike, ctx2->useBestLike)
         && feqWithNan(ctx1->useVelDisp, ctx2->useVelDisp)
         && feqWithNan(ctx1->useBetaDisp, ctx2->useBetaDisp)
+        && feqWithNan(ctx1->useBetaComp, ctx2->useBetaComp)
+        && feqWithNan(ctx1->useVlos, ctx2->useVlos)
+        && feqWithNan(ctx1->useDist, ctx2->useDist)
         && feqWithNan(ctx1->BestLikeStart, ctx2->BestLikeStart)
         && feqWithNan(ctx1->Nstep_control, ctx2->Nstep_control)
         && feqWithNan(ctx1->Ntsteps, ctx2->Ntsteps)
@@ -628,12 +648,15 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->OutputFreq, ctx2->OutputFreq)
         && feqWithNan(ctx1->BetaSigma, ctx2->BetaSigma)
         && feqWithNan(ctx1->VelSigma, ctx2->VelSigma)
+        && feqWithNan(ctx1->DistSigma, ctx2->DistSigma)
         && feqWithNan(ctx1->IterMax, ctx2->IterMax)
         && feqWithNan(ctx1->BetaCorrect, ctx2->BetaCorrect)
         && feqWithNan(ctx1->VelCorrect, ctx2->VelCorrect)
+        && feqWithNan(ctx1->DistCorrect, ctx2->DistCorrect)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)
-        && equalPotential(&ctx1->pot, &ctx2->pot);
+        && equalPotential(&ctx1->pot, &ctx2->pot)
+        && feqWithNan(ctx1->LMC, ctx2->LMC);
 }
 

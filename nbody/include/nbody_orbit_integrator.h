@@ -33,6 +33,21 @@ void nbReverseOrbit(mwvector* finalPos,
                     real tstop,
                     real dt);
 
+void nbReverseOrbit_LMC(mwvector* finalPos,
+                    mwvector* finalVel,
+                    mwvector* LMCfinalPos,
+                    mwvector* LMCfinalVel,
+                    const Potential* pot,
+                    mwvector pos,
+                    mwvector vel,
+                    mwvector LMCpos,
+                    mwvector LMCvel,
+                    real tstop,
+                    real dt,
+                    real LMCmass);
+
+void getLMCArray(mwvector *** shiftArrayPtr);
+
 void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector* finalVel,
                          const Potential* pot,

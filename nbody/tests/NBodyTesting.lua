@@ -212,7 +212,8 @@ function printResult(t)
    potential   = "%s",
    doublePrec  = %s,
    model       = "%s",
-   useQuad     = %s
+   useQuad     = %s,
+   LMC         = %s
 ]]
 
    local str
@@ -227,7 +228,8 @@ function printResult(t)
                        t.potential,
                        tostring(t.doublePrec),
                        t.model,
-                       tostring(t.useQuad))
+                       tostring(t.useQuad),
+                       tostring(t.LMC))
 
    local resultFmt =
 [[
@@ -426,6 +428,15 @@ function runFullTest(arg)
    if not arg.cached then
       cpFlag = cpFlag .. " --ignore-checkpoint"
    end
+
+--   eprintf("Running command line:\n %s\n   --checkpoint-interval=-1\n   -g\n   -t\n   -f %s\n   -h %s\n   --seed %s\n   %s\n   %s\n   %s\n",
+--                                    tostring(arg.nbodyBin),
+--                                    tostring(testPath),
+--                                    tostring(histogramPath),
+--                                    tostring(arg.seed),
+--                                    tostring(cpFlag),
+--                                    tostring(getExtraNBodyFlags()),
+--                                    tostring(table.concat(arg.extraArgs, " ")))
 
    return os.readProcess(arg.nbodyBin or "milkyway_nbody",
                          "--checkpoint-interval=-1", -- Disable checkpointing

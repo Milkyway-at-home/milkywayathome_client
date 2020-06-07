@@ -29,14 +29,15 @@
 extern "C" {
 #endif
 
-real nbSystemLikelihood(const NBodyState* st,
-                     const NBodyHistogram* data,
-                     const NBodyHistogram* histogram,
+real * nbSystemLikelihood(const NBodyState* st,
+                     const MainStruct* data,
+                     const MainStruct* histogram,
                      NBodyLikelihoodMethod method);
 
 int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method);
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool vel_disp, mwbool beta_disp);
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool vel_disp, mwbool beta_disp, 
+					mwbool use_betacomp, mwbool use_vlos, mwbool use_dist);
 
 #ifdef __cplusplus
 }

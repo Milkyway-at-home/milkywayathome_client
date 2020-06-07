@@ -36,17 +36,25 @@ function getTestNBodyState(t)
       timeEvolve  = 42.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
       theta       = t.theta,
       eps2        = eps2,
+      b           = 53.5,
+      r           = 28.6,
+      vx          = -156,
+      vy          = 79,
+      vz          = 107,
       treeRSize   = t.treeRSize,
       criterion   = t.criterion,
       useQuad     = t.useQuad,
       BestLikeStart = 0.95,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
+      DistSigma     = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
+      DistCorrect   = 1.111,
       IterMax       = 6,
       allowIncest = t.allowIncest,
-      quietErrors = true
+      quietErrors = true,
+      LMC         = t.LMC
    }
    --Add potential to context
    ctx:addPotential(pot)
@@ -66,13 +74,14 @@ local resultTable = {
    treeRSizes   = { 8.0, 4.0, 2.0, 1.0 },
    criterion    = { "SW93", "TreeCode", "BH86", "Exact" },
    useQuads     = { true, false },
-   allowIncests = { true }  -- Might as well allow it for the tests.
+   allowIncests = { true },  -- Might as well allow it for the tests.
+   LMC          = { true, false }
 }
 
 -- Get list of all tests
 local function generateFullTestSet()
    return buildAllCombinations(
-      function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest)
+      function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest, LMC)
          local c = { }
          c.doublePrec  = true
          c.potential   = potential
@@ -85,6 +94,7 @@ local function generateFullTestSet()
          c.criterion   = crit
          c.useQuad     = useQuad
          c.allowIncest = allowIncest
+         c.LMC         = LMC
          return c
       end,
       resultTable.potentials,
@@ -96,7 +106,8 @@ local function generateFullTestSet()
       resultTable.treeRSizes,
       resultTable.criterion,
       resultTable.useQuads,
-      resultTable.allowIncests)
+      resultTable.allowIncests,
+      resultTable.LMC)
 end
 
 if generatingResults then

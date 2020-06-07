@@ -27,7 +27,8 @@
 extern "C" {
 #endif
 
-mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time);
+mwvector nbExtAcceleration(const Potential* pot, mwvector pos);
+mwvector pointAccel(mwvector pos, mwvector pos1, real mass);
 
 #ifdef __cplusplus
 }

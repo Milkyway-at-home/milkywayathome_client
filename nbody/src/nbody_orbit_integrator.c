@@ -39,6 +39,9 @@ mwvector* backwardOrbitPositions;//this is the l coordinate of the backwards
 //note: make sure to free it
 int backwardOrbitArraySize;
 
+
+mwvector** shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
+
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
                     const Potential* pot,
@@ -84,8 +87,6 @@ void nbReverseOrbit(mwvector* finalPos,
         LArrayIndex--;
     }
     
-    
-
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
     
@@ -102,6 +103,110 @@ void getBackwardOrbitArray(mwvector** ptr) {
 int getOrbitArraySize(){
     return backwardOrbitArraySize;
 }
+
+void nbReverseOrbit_LMC(mwvector* finalPos,
+                    mwvector* finalVel,
+                    mwvector* LMCfinalPos,
+                    mwvector* LMCfinalVel,
+                    const Potential* pot,
+                    mwvector pos,
+                    mwvector vel,
+                    mwvector LMCpos,
+                    mwvector LMCvel,
+                    real tstop,
+                    real dt,
+                    real LMCmass
+                    )
+{	
+   
+	unsigned int steps = (tstop)/ (dt) + 1;
+    unsigned int i = 0, j = 0;
+    mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
+    mwvector mw_x = mw_vec(0, 0, 0);
+    mwvector array[steps + 1];
+    real t;
+    real dt_half = dt / 2.0;
+    // Set the initial conditions
+    x = pos;
+    v = vel;
+    LMCv = LMCvel;
+    LMCx = LMCpos;
+    mw_incnegv(v);
+    mw_incnegv(LMCv);
+
+
+    // Get the initial acceleration
+    mw_acc = pointAccel(mw_x, LMCx, LMCmass);
+    LMC_acc = nbExtAcceleration(pot, LMCx);
+    acc = nbExtAcceleration(pot, x);
+    tmp = pointAccel(x, LMCx, LMCmass);
+    mw_incaddv(acc, tmp);
+
+    // Shift the body
+    mw_incnegv(mw_acc);
+    mw_incaddv(LMC_acc, mw_acc);
+    mw_incaddv(acc, mw_acc);
+
+    for (t = 0; t <= tstop; t += dt)
+    {   
+    	steps = t/dt;
+    	if( steps % 10 == 0){ 
+    		array[i] = mw_acc;
+        	i++;
+    	}
+
+        // Update the velocities and positions
+        mw_incaddv_s(v, acc, dt_half);
+        mw_incaddv_s(x, v, dt);
+        mw_incaddv_s(LMCv, LMC_acc, dt_half);
+        mw_incaddv_s(LMCx, LMCv, dt);
+        
+        // Compute the new acceleration
+        mw_acc = pointAccel(mw_x, LMCx, LMCmass);
+        LMC_acc = nbExtAcceleration(pot, LMCx);
+        acc = nbExtAcceleration(pot, x);
+    	tmp = pointAccel(x, LMCx, LMCmass);
+    	mw_incaddv(acc, tmp);
+
+    	// Shift the body
+    	mw_incnegv(mw_acc);
+        mw_incaddv(LMC_acc, mw_acc);
+        mw_incaddv(acc, mw_acc);
+        
+        mw_incaddv_s(v, acc, dt_half);
+        mw_incaddv_s(LMCv, LMC_acc, dt_half);
+
+    }
+    array[i] = mw_acc; //set the last index after the loop ends
+    
+    //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
+    unsigned int size = i+ 40*tstop;
+    shiftByLMC = (mwvector**)mwMalloc((size)* sizeof(mwvector*)); 
+    for(j = 0; j < (size); j++) {
+        shiftByLMC[j] = (mwvector*)mwMalloc(sizeof(mwvector));
+    }
+    
+    //Fill the shift array forward
+    for(j = 0; j < i+1; j++) {
+        tmp = array[i-j];
+        shiftByLMC[j][0] = tmp;
+    }
+
+    /* Report the final values (don't forget to reverse the velocities) */
+    mw_incnegv(v);
+    mw_incnegv(LMCv);
+    *finalPos = x;
+    *finalVel = v;
+    *LMCfinalPos = LMCx;
+    *LMCfinalVel = LMCv;
+}
+
+void getLMCArray(mwvector *** shiftArrayPtr) {
+    //Allows access to shift array
+    *shiftArrayPtr = shiftByLMC;
+}
+
+
 
 void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector* finalVel,

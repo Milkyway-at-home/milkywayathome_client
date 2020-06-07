@@ -33,30 +33,41 @@ const NBodyCtx defaultNBodyCtx =
     /* .treeRSize       */  DEFAULT_TREE_ROOT_SIZE,
     /* .sunGCDist       */  DEFAULT_SUN_GC_DISTANCE,
 
+    /* .b               */  DEFAULT_B_START_COORD,
+    /* .r               */  DEFAULT_R_START_COORD,
+    /* .vx              */  DEFAULT_VX_START_COORD,
+    /* .vy              */  DEFAULT_VY_START_COORD,
+    /* .vz              */  DEFAULT_VZ_START_COORD,
+
     /* .criterion       */  DEFAULT_CRITERION,
     /* .potentialType   */  EXTERNAL_POTENTIAL_DEFAULT,
 
-    /* .MultiOutput     */  FALSE,
-    /* .OutputFreq      */  1,
-    
-    /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
-    /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
-    
-    /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
-    /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
-    /* .IterMax         */  DEFAULT_SIGMA_ITER,
-    /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
-    /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
-       
     /* .Nstep_control   */  FALSE,
-    /* .Ntsteps         */  0,
+    /* .useBestLike     */  DEFAULT_USE_BEST_LIKELIHOOD,
     /* .useVelDisp      */  DEFAULT_USE_VEL_DISP,
     /* .useBetaDisp     */  DEFAULT_USE_BETA_DISP,
+    /* .useBetaComp     */  DEFAULT_USE_BETA_COMP,
+    /* .useVlos         */  DEFAULT_USE_VLOS,
+    /* .useDist         */  DEFAULT_USE_DIST, 
+    /* .MultiOutput     */  FALSE,
+
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,
 
+    /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
+    /* .OutputFreq      */  1,
+    
+    /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
+    /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
+    /* .DistSigma       */  DEFAULT_SIGMA_CUTOFF,
+    /* .IterMax         */  DEFAULT_SIGMA_ITER,
+    /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
+    /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
+    /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
+    /* .LMC             */  FALSE,
 
+    /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
 
