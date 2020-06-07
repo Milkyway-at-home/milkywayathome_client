@@ -213,7 +213,7 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     }
 
     //calculate angle to return 
-    angle = ((highestBinNum)/(float)st->numBarBins) * histSpread;
+    angle = ((highestBinNum + .5)/(float)st->numBarBins) * histSpread;
     if(angle < 0){
         angle += 2*M_PI;
     }else if(angle > 2*M_PI){
@@ -247,9 +247,9 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
     real streamCenter;
 
     //if(st->barTimeStep/(float)arraySize > 0.9)
-    streamCenter = highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp, &tmp);
+    //streamCenter = highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp, &tmp);
     //else{
-    //    streamCenter = meanBodyAngle(bodies, nbody, st);
+        streamCenter = meanBodyAngle(bodies, nbody, st);
     //    highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp);
     //}
 

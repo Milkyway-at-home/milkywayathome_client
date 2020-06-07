@@ -143,7 +143,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     }
     
     int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates ctx with new bar timestep
-    if(st->step % 10 == 0)
+    if(st->step % 10 == 0 || st->step > 7600)
         mw_printf("barTimeStep: %d, reg timeStep: %d\n", barTimeStep, st->step);
     real barTime = barTimeStep * ctx->timestep - ctx->timeBack;
     
