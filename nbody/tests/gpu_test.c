@@ -101,7 +101,9 @@ int main(int argc, char* argv[]){
     steps = 1;
     nbf.debugLuaLibs = 0;
     nbf.outputlbrCartesian = 1;
-    nbf.inputFile = "four_developers.lua";
+	//TODO: This needs a file path prefix to point it to the for_developers lua file in the testing directory.
+	
+    nbf.inputFile = "for_developers.lua";
     nbf.checkpointFileName = "checkpoint.dat";
     nbf.printHistogram = 1;
     nbf.seed = 1459;
