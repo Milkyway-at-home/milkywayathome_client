@@ -53,7 +53,7 @@ set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
 add_executable(gpu_test gpu_test.c)
 
-set(gpu_test_link_libs nbody milkyway "${nbody_exe_link_libs}")
+set(gpu_test_link_libs "${nbody_exe_link_libs}")
 
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
@@ -90,7 +90,9 @@ add_test(NAME bessel_test COMMAND bessel_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
-add_test(NAME gpu_test COMMAND gpu_test)
+add_test(NAME gpu_test
+          WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+          COMMAND gpu_test "gpuTest.lua")
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")

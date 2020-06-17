@@ -193,8 +193,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
 
 
 if(NBODY_OPENCL)
-  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/nbody_cl.c)
-  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_cl.h)
+   list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/nbody_cl.c)
+   list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_cl.h)
 endif()
 
 

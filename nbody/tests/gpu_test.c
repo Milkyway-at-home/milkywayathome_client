@@ -9,6 +9,7 @@
 #include <nbody_histogram.h>
 #include "nbody_cl.h"
 #include "milkyway_util.h"
+#include "milkyway_cl.h"
 #include "nbody.h"
 #include "nbody_io.h"
 #include "nbody_plain.h"
@@ -94,16 +95,15 @@ NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
     return st;
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[]){
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
     omp_set_num_threads(16);
     steps = 1;
     nbf.debugLuaLibs = 0;
     nbf.outputlbrCartesian = 1;
-	//TODO: This needs a file path prefix to point it to the for_developers lua file in the testing directory.
 	
-    nbf.inputFile = "for_developers.lua";
+    nbf.inputFile = argv[1];
     nbf.checkpointFileName = "checkpoint.dat";
     nbf.printHistogram = 1;
     nbf.seed = 1459;
