@@ -53,9 +53,6 @@ NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
     CLRequest clr;
     lua_State* luaSt;
     st->checkpointResolved = "checkpoint.dat";
-    for(int i = 0;i < 6;i++){
-        printf("%s\n",nbf->forwardedArgs[i]);
-    }
     CLR(&clr,nbf);
     int rc = nbInitCL(st, ctx, &clr);
     if(rc){
@@ -63,12 +60,8 @@ NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
         exit(-2);
     }
     nbSetup(ctx,st,nbf);
-//    ctx->useQuad = TRUE;
-//    ctx->criterion = TreeCode;
     ctx->nStep = steps;
-    printf("%d\n",ctx->nStep);
     rc = nbInitNBodyStateCL(st, ctx);
-
     if(rc){
         exit(-1);
     }
@@ -83,12 +76,8 @@ NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
     NBodyState* st = &Cst;
     st->checkpointResolved = "checkpoint.dat";
     nbSetup(ctx,st,nbf);
-//    ctx->useQuad = TRUE;
-//    ctx->criterion = TreeCode;
     ctx->nStep = steps;
-    printf("%d\n",ctx->nStep);
     nbRunSystemPlain(ctx,st,nbf);
-
     nbWriteBodies(ctx, st, nbf);
     MainStruct* hist = nbCreateHistogram(ctx,st,hp);
     nbWriteHistogram(nbf->histoutFileName,ctx,st,hist);
@@ -98,7 +87,7 @@ NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
 int main(int argc, char *argv[]){
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
-    omp_set_num_threads(16);
+    omp_set_num_threads(omp_get_max_threads());
     steps = 1;
     nbf.debugLuaLibs = 0;
     nbf.outputlbrCartesian = 1;
