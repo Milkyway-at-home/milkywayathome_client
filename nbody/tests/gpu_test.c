@@ -38,14 +38,7 @@ static void CLR(CLRequest* clr, const NBodyFlags* nbf){
     clr->devNum = nbf->devNum;    NBodyStatus rc = NBODY_SUCCESS;
     clr->enableProfiling = TRUE;
 }
-int do_nothing(const NBodyFlags* nbf){
-    NBodyCtx* ctx = &_ctx;
-    NBodyState* st = &_st;
-    st->checkpointResolved = "checkpoint.dat";
-    nbSetup(ctx,st,nbf);
-    nbMakeTree(ctx,st);
-    nbWriteBodies(ctx, st, nbf);
-}
+
 
 NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
     NBodyCtx* ctx = &Gctx;
@@ -66,8 +59,6 @@ NBodyState * runGPU(const NBodyFlags* nbf, const HistogramParams* hp){
         exit(-1);
     }
     nbRunSystemCL(ctx,st);
-    MainStruct* hist = nbCreateHistogram(ctx,st,hp);
-    nbWriteHistogram(nbf->histoutFileName,ctx,st,hist);
     return st;
 }
 
@@ -78,9 +69,6 @@ NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
     nbSetup(ctx,st,nbf);
     ctx->nStep = steps;
     nbRunSystemPlain(ctx,st,nbf);
-    nbWriteBodies(ctx, st, nbf);
-    MainStruct* hist = nbCreateHistogram(ctx,st,hp);
-    nbWriteHistogram(nbf->histoutFileName,ctx,st,hist);
     return st;
 }
 
@@ -93,7 +81,8 @@ int main(int argc, char *argv[]){
     nbf.outputlbrCartesian = 1;
 	
     nbf.inputFile = argv[1];
-    nbf.checkpointFileName = "checkpoint.dat";
+    nbf.checkpointPeriod = 0;
+//    nbf.checkpointFileName = "checkpoint.dat";
     nbf.printHistogram = 1;
     nbf.seed = 1459;
     const char** a = mwCalloc(6,sizeof(char*));
