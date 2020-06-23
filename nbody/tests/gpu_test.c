@@ -3,6 +3,7 @@
 //
 
 #include <popt.h>
+#include <stdio.h>
 #include "nbody_lua.h"
 #include <omp.h>
 #include <nbody_likelihood.h>
@@ -152,6 +153,10 @@ int main(int argc, char *argv[]){
     }
     sum /= C_ST.nbody;
     mw_printf("The average distance between the GPU and the CPU results is: %.8lf\n",sum);
+    remove("checkpoint.dat");
+    remove("CPU_hist.dat");
+    remove("GPU_hist.dat");
+    remove("test_outputCPU.txt");
     if(sum >= 1e-6){
         mw_printf("Test failed\n");
         return -1;
