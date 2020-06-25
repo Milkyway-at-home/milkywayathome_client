@@ -331,9 +331,11 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[6] = 256;
         ws->threads[7] = 256;
     }
+	
 	if(ws->threads[0] * 6 * 8 >= di->localMemSize){
 		ws->threads[0] = mw_pow(2,(int)(mw_log(di->localMemSize / (6*8))/mw_log(2)))/2;
 	}
+    printf("Threads[6] = %d\n",ws->threads[6]);
     return CL_FALSE;
 }
 
