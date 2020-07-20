@@ -262,7 +262,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
             }
             
             mwvector meanBinCenter, histCenterVelocity, meanBinVelocity;
-            mwvector histCenter = getStreamCenter(st, &meanBinCenter, &histCenterVelocity, &meanBinVelocity);
+            mwvector histCenter = getStreamCenter(st, ctx, &meanBinCenter, &histCenterVelocity, &meanBinVelocity);
             mw_printf("stream center hist = (%f, %f, %f)\n", histCenter.x, histCenter.y, histCenter.z);
             mw_printf("stream center hist vel = (%f, %f, %f)\n", histCenterVelocity.x, histCenterVelocity.y, histCenterVelocity.z);
             mw_printf("stream center mean = (%f, %f, %f)\n", meanBinCenter.x, meanBinCenter.y, meanBinCenter.z);
@@ -317,7 +317,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     }
     else
         st->numBarBins = 360; //default number of histogram bins
-{   
+   
     if (ctx->LMC){
         mwvector** shiftLMC;
         getLMCArray(&shiftLMC);

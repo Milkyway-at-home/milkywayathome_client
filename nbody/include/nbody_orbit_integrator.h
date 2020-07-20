@@ -31,7 +31,8 @@ void nbReverseOrbit(mwvector* finalPos,
                     mwvector pos,
                     mwvector vel,
                     real tstop,
-                    real dt);
+                    real dt,
+                    real forwardTime);
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
@@ -60,6 +61,15 @@ void nbPrintReverseOrbit(mwvector* finalPos,
 void getBackwardOrbitArray(mwvector** ptr);
 
 int getOrbitArraySize();
+
+void fitOrbitStart(mwvector* finalPos,
+                    mwvector* finalVel,
+                    real* finalTime,
+                    real* dt,
+                    NBodyState* st,
+                    NBodyCtx* ctx,
+                    real targetLambda
+                    );
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 

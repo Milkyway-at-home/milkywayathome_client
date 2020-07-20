@@ -424,7 +424,10 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, \
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
+FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, ZERO_VECTOR, NULL, 0, 0, 0, \
+ NULL}
 
 
 
@@ -572,7 +575,18 @@ typedef enum
     NBODY_SAHA
 } NBodyLikelihoodMethod;
 
+typedef struct MW_ALIGN_TYPE
+{
+    mwvector revOrbitPos;
+    mwvector revOrbitVel;
+    mwvector revOrbitLMCPos;
+    mwvector revOrbitLMCVel;
+    real revOrbitdt;
+    real LMCmass;
+    real revOrbitTstop;
+    Potential pot;
 
+}SingleParticleOrbitParams;
 
 NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
 NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx);

@@ -1,5 +1,6 @@
 #include "milkyway_util.h"
 #include "nbody_bar_time.h"
+#include "nbody.h"
 
 void fillBackwardOrbitAngles(NBodyState* st){
     mwvector* xyPositions;
@@ -9,16 +10,17 @@ void fillBackwardOrbitAngles(NBodyState* st){
     int i;
     int totalZ = 0;
     st->backwardOrbitAngles = (real*)mwMalloc(backwardArrayLength * sizeof(real));
-    //mw_printf("len: %d\n", backwardArrayLength);
+    mw_printf("len: %d\n", backwardArrayLength);
     for(i = 0; i < backwardArrayLength; i++){
-        tmpPos = mw_3DRotation(xyPositions[i], st->backwardOrbitRotationAngles);
+        st->backwardOrbitAngles[i] = getLambda(xyPositions[i], st);
+        /*tmpPos = mw_3DRotation(xyPositions[i], st->backwardOrbitRotationAngles);
         st->backwardOrbitAngles[i] = mw_atan(tmpPos.y/tmpPos.x);
         if(tmpPos.x < 0 && tmpPos.y > 0)
             st->backwardOrbitAngles[i] += M_PI;
         if(tmpPos.x < 0 && tmpPos.y < 0)
             st->backwardOrbitAngles[i] += M_PI;
         if(tmpPos.x > 0 && tmpPos.y < 0)
-            st->backwardOrbitAngles[i] += 2*M_PI;
+            st->backwardOrbitAngles[i] += 2*M_PI;*/
     }
 }
 
@@ -81,14 +83,15 @@ real meanBodyAngle(Body *bodies, int nbody, NBodyState* st)
     
     for (i = 0; i < nbody; i++)
         {
-            tmpPos = mw_3DRotation(bodies[i].bodynode.pos, st->backwardOrbitRotationAngles);
+            angle = getLambda(bodies[i].bodynode.pos, st);
+            /*tmpPos = mw_3DRotation(bodies[i].bodynode.pos, st->backwardOrbitRotationAngles);
             angle = mw_atan(tmpPos.y/tmpPos.x);
             if(tmpPos.x < 0 && tmpPos.y > 0)
                 angle += M_PI;
             if(tmpPos.x < 0 && tmpPos.y < 0)
                 angle += M_PI;
             if(tmpPos.x > 0 && tmpPos.y < 0)
-                angle += 2*M_PI;
+                angle += 2*M_PI;*/
             x_part += cos (angle);
             y_part += sin (angle);
         }
@@ -104,18 +107,23 @@ real stdevBodyAngle(Body *bodies, int nbody, real meanAngle, NBodyState* st){
     
     for (i = 0; i < nbody; i++)
         {
-            tmpPos = mw_3DRotation(bodies[i].bodynode.pos, st->backwardOrbitRotationAngles);
-            angle = mw_atan(tmpPos.y/tmpPos.x);
-            if(tmpPos.x < 0 && tmpPos.y > 0)
-                angle += M_PI;
-            if(tmpPos.x < 0 && tmpPos.y < 0)
-                angle += M_PI;
-            if(tmpPos.x > 0 && tmpPos.y < 0)
-                angle += 2*M_PI;
+            angle = getLambda(bodies[i].bodynode.pos, st);
             sum += (angle - meanAngle)*(angle - meanAngle);
         }
     
     return mw_sqrt(sum/(nbody - 1));
+}
+
+real getLambda(mwvector pos, NBodyState* st){
+    mwvector tmpPos = mw_3DRotation(pos, st->backwardOrbitRotationAngles);
+    real angle = mw_atan(tmpPos.y/tmpPos.x);
+    if(tmpPos.x < 0 && tmpPos.y > 0)
+        angle += M_PI;
+    if(tmpPos.x < 0 && tmpPos.y < 0)
+        angle += M_PI;
+    if(tmpPos.x > 0 && tmpPos.y < 0)
+        angle += 2*M_PI;
+    return angle;
 }
 
 //creates a histogram of bodies (using backward orbit rotations in st) and 
@@ -134,6 +142,7 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     real histSpread = 2*M_PI;
     unsigned int* histogram = mwMalloc(st->numBarBins * sizeof(unsigned int));
     mwvector* coordinateTotals;
+    real* lambdaTotals;
     mwvector* velocityTotals;
     mwvector tmpPos;
     real angle, angleDiff, binSize = histSpread/st->numBarBins;
@@ -143,6 +152,7 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     if(returnBinCenter){
         coordinateTotals = (mwvector*)mwMalloc(st->numBarBins * sizeof(mwvector));
         velocityTotals = (mwvector*)mwMalloc(st->numBarBins * sizeof(mwvector));
+        lambdaTotals = (mwvector*)mwMalloc(st->numBarBins * sizeof(real));
         for(i = 0; i < st->numBarBins; i++){
             coordinateTotals[i].x = 0;
             coordinateTotals[i].y = 0;
@@ -150,7 +160,6 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
             velocityTotals[i].x = 0;
             velocityTotals[i].y = 0;
             velocityTotals[i].z = 0;
-
         }
     }
 
@@ -160,14 +169,7 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     }
     //fill histogram
     for(i = 0; i < nbody; i++){
-        tmpPos = mw_3DRotation(bodies[i].bodynode.pos, st->backwardOrbitRotationAngles);
-        angle = mw_atan(tmpPos.y/tmpPos.x);
-        if(tmpPos.x < 0 && tmpPos.y > 0)
-            angle += M_PI;
-        if(tmpPos.x < 0 && tmpPos.y < 0)
-            angle += M_PI;
-        if(tmpPos.x > 0 && tmpPos.y < 0)
-            angle += 2*M_PI;
+        angle = getLambda(bodies[i].bodynode.pos, st);
         
         binNum = (st->numBarBins*(angle))/histSpread;
         histogram[binNum] += 1;
@@ -247,9 +249,9 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
     real streamCenter;
 
     //if(st->barTimeStep/(float)arraySize > 0.9)
-    //streamCenter = highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp, &tmp);
+    streamCenter = highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp, &tmp);
     //else{
-        streamCenter = meanBodyAngle(bodies, nbody, st);
+        //streamCenter = meanBodyAngle(bodies, nbody, st);
     //    highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp);
     //}
 
@@ -257,6 +259,11 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
         mw_printf("stream center %f:\n", streamCenter);
     oldTime = st->barTimeStep;
     oldBackwardOrbitTheta = st->backwardOrbitAngles[oldTime];
+
+
+    if(st->step % 10 == 0)
+        mw_printf("theta %f:\n", oldBackwardOrbitTheta);
+
     if(st->barTimeStep + 1 < arraySize){
         newTime = st->barTimeStep + 1;
         newBackwardOrbitTheta = st->backwardOrbitAngles[newTime];
@@ -280,18 +287,26 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
         newDiff = getAngleDiff(newBackwardOrbitTheta, streamCenter);
     }
     st->barTimeStep = oldTime;
-    if(st->step % 100 == 0 && st->step > 10){
+    /*if(st->step % 100 == 0 && st->step > 10){
         for(int i = oldTime - 10; i < oldTime + 10; i++){
             mw_printf("theta: %f\n", st->backwardOrbitAngles[i]);
         }
-    }
+    }*/
     return oldTime;
 }
 
-//returns hist center
-mwvector getStreamCenter(NBodyState* st, mwvector* meanBinCenter, 
+//returns hist center, calculates and printfs a new starting position and back time
+//that is on the original single particle orbit
+mwvector getStreamCenter(NBodyState* st, NBodyCtx* ctx, mwvector* meanBinCenter,
 mwvector* histCenterVelocity, mwvector* meanBinVelocity){
-    mwvector ans;
-    highestHistPeak(st->bodytab, st->nbody, st, TRUE, &ans, meanBinCenter, histCenterVelocity, meanBinVelocity);
-    return ans;
+    mwvector histCenter, finalPos, finalVel;
+    real finalTime;
+    real streamAngle = highestHistPeak(st->bodytab, st->nbody, st, TRUE, &histCenter, meanBinCenter, histCenterVelocity, meanBinVelocity);
+    real dt;
+    fitOrbitStart(&finalPos, &finalVel, &finalTime, &dt, st, ctx, streamAngle);
+    mw_printf("final pos (on single orbit): (%lf, %lf, %lf)\n", finalPos.x, finalPos.y, finalPos.z);
+    mw_printf("final vel: (%lf, %lf, %lf)\n", finalVel.x, finalVel.y, finalVel.z);
+    mw_printf("final time: %lf\n", finalTime);
+    mw_printf("dt: %lf\n", dt);
+    return histCenter;
 }

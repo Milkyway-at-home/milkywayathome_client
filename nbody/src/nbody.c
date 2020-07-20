@@ -384,9 +384,6 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     return NBODY_SUCCESS;
 }
 
-static NBodyCtx _ctx = EMPTY_NBODYCTX;
-static NBodyState _st = EMPTY_NBODYSTATE;
-
 int nbMain(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
@@ -499,4 +496,3 @@ int nbMain(const NBodyFlags* nbf)
 
     return rc;
 }
-

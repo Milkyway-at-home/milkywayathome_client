@@ -20,6 +20,7 @@ real getAngleDiff(real a1, real a2);
 mwbool angleIsBetween(real start, real end, real mid);
 
 
-mwvector getStreamCenter(NBodyState* st, mwvector* meanBinCenter, 
+mwvector getStreamCenter(NBodyState* st, NBodyCtx* ctx, mwvector* meanBinCenter, 
 mwvector* histCenterVelocity, mwvector* meanBinVelocity);
+real getLambda(mwvector pos, NBodyState* st);
 #endif

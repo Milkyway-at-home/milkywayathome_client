@@ -188,6 +188,7 @@ static int luaReverseOrbit(lua_State* luaSt)
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
+    static real forwardTime;
 
     static const MWNamedArg argTable[] =
         {
@@ -196,6 +197,7 @@ static int luaReverseOrbit(lua_State* luaSt)
             { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
             { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
             { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
+            { "forwardTime", LUA_TNUMBER,   NULL,           TRUE, &forwardTime  },
             END_MW_NAMED_ARG
         };
 
@@ -205,28 +207,32 @@ static int luaReverseOrbit(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 5:
+        case 6:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
             tstop = luaL_checknumber(luaSt, 4);
             dt = luaL_checknumber(luaSt, 5);
+            forwardTime = luaL_checknumber(luaSt, 6);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 5 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 6 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
+    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt, forwardTime);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
     return 2;
 }
+
+
+static Potential* pot = NULL;
 
 static int luaReverseOrbit_LMC(lua_State* luaSt)
 {
@@ -234,7 +240,6 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     static real dt = 0.0;
     static real tstop = 0.0;
     static real LMCmass = 0.0;
-    static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
     static const mwvector* LMCpos = NULL;
