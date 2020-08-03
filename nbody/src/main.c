@@ -311,7 +311,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
 
         {
-            "gpu-disable-checkpointing", 'k',
+            "gpu-disable-checkpointing", 'q',
             POPT_ARG_NONE, &nbf.disableGPUCheckpointing,
             0, "Disable checkpointing with GPUs" , NULL
         },
@@ -389,7 +389,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
 
         {
-            "platform", 'p',
+            "platform", 'l',
             POPT_ARG_INT, &nbf.platform,
             0, "OpenCL platform", NULL
         },
