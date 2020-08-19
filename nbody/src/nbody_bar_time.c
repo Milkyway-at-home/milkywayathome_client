@@ -2,6 +2,7 @@
 #include "nbody_bar_time.h"
 #include "nbody.h"
 
+
 void fillBackwardOrbitAngles(NBodyState* st){
     mwvector* xyPositions;
     mwvector tmpPos;
@@ -10,17 +11,9 @@ void fillBackwardOrbitAngles(NBodyState* st){
     int i;
     int totalZ = 0;
     st->backwardOrbitAngles = (real*)mwMalloc(backwardArrayLength * sizeof(real));
-    mw_printf("len: %d\n", backwardArrayLength);
+    //mw_printf("len: %d\n", backwardArrayLength);
     for(i = 0; i < backwardArrayLength; i++){
         st->backwardOrbitAngles[i] = getLambda(xyPositions[i], st);
-        /*tmpPos = mw_3DRotation(xyPositions[i], st->backwardOrbitRotationAngles);
-        st->backwardOrbitAngles[i] = mw_atan(tmpPos.y/tmpPos.x);
-        if(tmpPos.x < 0 && tmpPos.y > 0)
-            st->backwardOrbitAngles[i] += M_PI;
-        if(tmpPos.x < 0 && tmpPos.y < 0)
-            st->backwardOrbitAngles[i] += M_PI;
-        if(tmpPos.x > 0 && tmpPos.y < 0)
-            st->backwardOrbitAngles[i] += 2*M_PI;*/
     }
 }
 
@@ -30,6 +23,7 @@ void setBackwardOrbitRotation(NBodyState* st){
     mwvector* xyPositions;
     mwvector rotationAngles, position1, position2;
     int backwardArrayLength = getOrbitArraySize();
+    int oldBackwardOrbitLength = getOldOrbitArraySize();
     int time1 = backwardArrayLength/5;
     int tmpTime = 0;
     int time2 = 0;
@@ -43,7 +37,7 @@ void setBackwardOrbitRotation(NBodyState* st){
     position1.w = 1;
     //iterate through xyPositions to get a position 90 degrees
     //from position 1
-    while(tmpTime < backwardArrayLength){
+    while(tmpTime < oldBackwardOrbitLength){
         position2 = xyPositions[tmpTime];
         position2.w = 1;
         tmpAngle = mw_vecangle(position1, position2);
@@ -75,6 +69,7 @@ void setBackwardOrbitRotation(NBodyState* st){
     st->backwardOrbitArrayLength = backwardArrayLength;
 }
 
+//returns the mean of the lambda angles of these bodies
 real meanBodyAngle(Body *bodies, int nbody, NBodyState* st)
 {
     mwvector tmpPos;
@@ -84,14 +79,6 @@ real meanBodyAngle(Body *bodies, int nbody, NBodyState* st)
     for (i = 0; i < nbody; i++)
         {
             angle = getLambda(bodies[i].bodynode.pos, st);
-            /*tmpPos = mw_3DRotation(bodies[i].bodynode.pos, st->backwardOrbitRotationAngles);
-            angle = mw_atan(tmpPos.y/tmpPos.x);
-            if(tmpPos.x < 0 && tmpPos.y > 0)
-                angle += M_PI;
-            if(tmpPos.x < 0 && tmpPos.y < 0)
-                angle += M_PI;
-            if(tmpPos.x > 0 && tmpPos.y < 0)
-                angle += 2*M_PI;*/
             x_part += cos (angle);
             y_part += sin (angle);
         }
@@ -100,6 +87,7 @@ real meanBodyAngle(Body *bodies, int nbody, NBodyState* st)
     return angle;
 }
 
+//returns the standard deviation of the lambda angles of the bodies
 real stdevBodyAngle(Body *bodies, int nbody, real meanAngle, NBodyState* st){
     mwvector tmpPos;
     real sum = 0, angle;
@@ -114,6 +102,8 @@ real stdevBodyAngle(Body *bodies, int nbody, real meanAngle, NBodyState* st){
     return mw_sqrt(sum/(nbody - 1));
 }
 
+//performs the rotation specified in st->backwardOrbitRotationAngles
+//and returns the lambda valuen of pos in radians
 real getLambda(mwvector pos, NBodyState* st){
     mwvector tmpPos = mw_3DRotation(pos, st->backwardOrbitRotationAngles);
     real angle = mw_atan(tmpPos.y/tmpPos.x);
@@ -131,29 +121,44 @@ real getLambda(mwvector pos, NBodyState* st){
 //in XYZ
 real highestHistPeak(Body *bodies, int nbody, NBodyState* st, mwbool returnBinCenter, 
 mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwvector* meanBinVelocity){
+    //this value is in radians and determines how far from the meanAngle we
+    //search for the highest histogram peak. Useful for when stream splits into
+    //multiple peaks
+    const real SEARCH_AREA = 0.075;
+    const int MAX_BINS = 5000;
+
     real meanAngle;
     meanAngle = meanBodyAngle(bodies, nbody, st);
     if(meanAngle < 0){
         meanAngle += 2*M_PI;
     }
-    /*real histSpread = stdevBodyAngle(bodies, nbody, meanAngle, st)*2;
-    if(histSpread > 2*M_PI)
-        histSpread = 2*M_PI;*/
+    real angleStdev = stdevBodyAngle(bodies, nbody, meanAngle, st)*2;
+    if(angleStdev > 2*M_PI)
+        angleStdev = 2*M_PI;
     real histSpread = 2*M_PI;
-    unsigned int* histogram = mwMalloc(st->numBarBins * sizeof(unsigned int));
+
+    //cap numBins at MAX_BINS
+    int numBins = (st->numBarBins * (histSpread/angleStdev) <= MAX_BINS) ? 
+        st->numBarBins * (histSpread/angleStdev) : MAX_BINS;
+    unsigned int* histogram = (unsigned int*)mwMalloc(numBins * sizeof(unsigned int));
     mwvector* coordinateTotals;
     real* lambdaTotals;
     mwvector* velocityTotals;
     mwvector tmpPos;
-    real angle, angleDiff, binSize = histSpread/st->numBarBins;
-    int binNum, highestBinNum=0, highestBinVal=0, i, meanBinNum=(st->numBarBins*(meanAngle))/histSpread;
-    int leftSearch = (st->numBarBins*(meanAngle-0.2))/histSpread;
-    int rightSearch = (st->numBarBins*(meanAngle+0.2))/histSpread;
+    real angle, angleDiff;
+    real binSize = histSpread/numBins;
+    int binNum;
+    int highestBinNum=0;
+    int highestBinVal=0;
+    int i;
+    int meanBinNum = (numBins*(meanAngle))/histSpread;
+    int leftSearch = (int)((numBins*(meanAngle-SEARCH_AREA))/histSpread);
+    int rightSearch = (int)((numBins*(meanAngle+SEARCH_AREA))/histSpread);
     if(returnBinCenter){
-        coordinateTotals = (mwvector*)mwMalloc(st->numBarBins * sizeof(mwvector));
-        velocityTotals = (mwvector*)mwMalloc(st->numBarBins * sizeof(mwvector));
-        lambdaTotals = (mwvector*)mwMalloc(st->numBarBins * sizeof(real));
-        for(i = 0; i < st->numBarBins; i++){
+        coordinateTotals = (mwvector*)mwMalloc(numBins * sizeof(mwvector));
+        velocityTotals = (mwvector*)mwMalloc(numBins * sizeof(mwvector));
+        lambdaTotals = (mwvector*)mwMalloc(numBins * sizeof(real));
+        for(i = 0; i < numBins; i++){
             coordinateTotals[i].x = 0;
             coordinateTotals[i].y = 0;
             coordinateTotals[i].z = 0;
@@ -164,14 +169,14 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     }
 
     //initialize histogram to 0
-    for(i = 0; i < st->numBarBins; i++){
+    for(i = 0; i < numBins; i++){
         histogram[i] = 0;
     }
     //fill histogram
     for(i = 0; i < nbody; i++){
         angle = getLambda(bodies[i].bodynode.pos, st);
         
-        binNum = (st->numBarBins*(angle))/histSpread;
+        binNum = (int)((numBins*(angle))/histSpread);
         histogram[binNum] += 1;
         if(returnBinCenter){
             coordinateTotals[binNum].x += bodies[i].bodynode.pos.x;
@@ -183,17 +188,18 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
         }
     }
 
-    //find highest bin
+    //find highest bin *could be a way to go out of bounds
     for(i = leftSearch; i < rightSearch; i++){
-        if(histogram[i] > highestBinVal){
+        if((int)highestBinVal < (int)histogram[i]){
             highestBinNum = i;
             highestBinVal = histogram[i];
         }
     }
     if(st->step % 100 == 0)
-        for(i = 0; i < st->numBarBins; i++){
+        mw_printf("numBins: %d\n", numBins);
+        /*for(i = 0; i < numBins; i++){
             mw_printf("bin %d: %d\n", i, histogram[i]);
-        }
+        }*/
     //return average of coordinates in given bin
     if(returnBinCenter){
         histCenter->x = coordinateTotals[highestBinNum].x/highestBinVal;
@@ -215,14 +221,24 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     }
 
     //calculate angle to return 
-    angle = ((highestBinNum + .5)/(float)st->numBarBins) * histSpread;
+    angle = ((highestBinNum)/(float)numBins) * histSpread;
     if(angle < 0){
         angle += 2*M_PI;
     }else if(angle > 2*M_PI){
         angle -= 2*M_PI;
     }
-    if(st->step % 10 == 0)
+    if(st->step % 10 == 0){
         mw_printf("mean angle: %f angle: %f highest bin: %d\n", meanAngle, angle, highestBinNum);
+        mw_printf("highest binval: %d LS: %d RS: %d Bodies: %d\n", highestBinVal, leftSearch, rightSearch, nbody);
+    }
+    
+    //freeing here causes the program to crash. Not sure why.
+    /*mwFreeA(histogram);
+    if(returnBinCenter){
+        mwFreeA(coordinateTotals);
+        mwFreeA(velocityTotals);
+        mwFreeA(lambdaTotals);
+    }*/
     return angle;
 }
 
@@ -242,24 +258,29 @@ mwbool angleIsBetween(real start, real end, real mid) {
 
 //also updates the state with the new bar timestep
 int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
+    int MAX_STEP = 50;
     mwvector tmp;
     real oldBackwardOrbitTheta, newBackwardOrbitTheta, oldDiff, newDiff;
-    int oldTime, newTime, arraySize;
+    int oldTime, newTime, arraySize, defaultReturnTime;
     arraySize = getOrbitArraySize();
     real streamCenter;
 
+    //uncomment this if/else to use meanBodyAngle for the majority
+    //of the run. Could be useful if the stream has 2+ histogram peaks
+    //at times.
     //if(st->barTimeStep/(float)arraySize > 0.9)
     streamCenter = highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp, &tmp);
     //else{
         //streamCenter = meanBodyAngle(bodies, nbody, st);
     //    highestHistPeak(bodies, nbody, st, FALSE, &tmp, &tmp, &tmp);
     //}
+    
 
     if(st->step % 10 == 0)
         mw_printf("stream center %f:\n", streamCenter);
-    oldTime = st->barTimeStep;
+    oldTime = st->lastFittedBarTimeStep;
     oldBackwardOrbitTheta = st->backwardOrbitAngles[oldTime];
-
+    defaultReturnTime = st->barTimeStep + 10;
 
     if(st->step % 10 == 0)
         mw_printf("theta %f:\n", oldBackwardOrbitTheta);
@@ -267,26 +288,39 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
     if(st->barTimeStep + 1 < arraySize){
         newTime = st->barTimeStep + 1;
         newBackwardOrbitTheta = st->backwardOrbitAngles[newTime];
-    }else
-        return oldTime;
+    }else{
+        st->barTimeStep = defaultReturnTime;
+        mw_printf("array bounds exceeded\n");
+        return defaultReturnTime;
+    }
 
 
     oldDiff = getAngleDiff(oldBackwardOrbitTheta, streamCenter);
     newDiff = getAngleDiff(newBackwardOrbitTheta, streamCenter);
+    if(oldDiff <= newDiff){
+        st->barTimeStep = defaultReturnTime;
+        return defaultReturnTime;
+    }
     while(newDiff < oldDiff){
         if(newTime + 1 < arraySize){
             oldTime = newTime;
             newTime++;
             oldBackwardOrbitTheta = newBackwardOrbitTheta;
             newBackwardOrbitTheta = st->backwardOrbitAngles[newTime];
-        }else{
+        }else{//if we have gone out of array bounds
             st->barTimeStep = oldTime;
             return oldTime;
         }
         oldDiff = newDiff;
         newDiff = getAngleDiff(newBackwardOrbitTheta, streamCenter);
     }
+    if(oldTime - defaultReturnTime > MAX_STEP){
+        st->barTimeStep = defaultReturnTime;
+        st->lastFittedBarTimeStep = defaultReturnTime;
+        return defaultReturnTime;
+    }
     st->barTimeStep = oldTime;
+    st->lastFittedBarTimeStep = oldTime;
     /*if(st->step % 100 == 0 && st->step > 10){
         for(int i = oldTime - 10; i < oldTime + 10; i++){
             mw_printf("theta: %f\n", st->backwardOrbitAngles[i]);
@@ -303,10 +337,11 @@ mwvector* histCenterVelocity, mwvector* meanBinVelocity){
     real finalTime;
     real streamAngle = highestHistPeak(st->bodytab, st->nbody, st, TRUE, &histCenter, meanBinCenter, histCenterVelocity, meanBinVelocity);
     real dt;
-    fitOrbitStart(&finalPos, &finalVel, &finalTime, &dt, st, ctx, streamAngle);
-    mw_printf("final pos (on single orbit): (%lf, %lf, %lf)\n", finalPos.x, finalPos.y, finalPos.z);
-    mw_printf("final vel: (%lf, %lf, %lf)\n", finalVel.x, finalVel.y, finalVel.z);
-    mw_printf("final time: %lf\n", finalTime);
-    mw_printf("dt: %lf\n", dt);
+    fitOrbitStart(&finalPos, &finalVel, &finalTime, &dt, st, ctx, streamAngle, histCenter);
+    mw_printf("final pos (on single orbit): (%f, %f, %f)\n", finalPos.x, finalPos.y, finalPos.z);
+    mw_printf("final vel: (%f, %f, %f)\n", finalVel.x, finalVel.y, finalVel.z);
+    mw_printf("final time: %f\n", finalTime);
+    mw_printf("lastFitted: %d\n", st->lastFittedBarTimeStep);
+    mw_printf("dt: %f\n", dt);
     return histCenter;
 }

@@ -113,6 +113,12 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->orbitTrace);
     
     mwFreeA(st->backwardOrbitPositions);
+    mwFreeA(st->backwardOrbitAngles);
+
+    //not part of the state but pretty much should be
+    /*mwvector* backwardOrbitArray;
+    getBackwardOrbitArray(&backwardOrbitArray);
+    mwFreeA(backwardOrbitArray);*/ //Seg faults here. Not sure why. Sorry for the mem leak.
 
     if(st->shiftByLMC) {   
         int j = 0;
@@ -208,6 +214,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 
     st->barTimeStep = 0;
+    st->lastFittedBarTimeStep = 0;
 }
 
 void setLMCShiftArray(NBodyState* st, mwvector** shiftArray) {
@@ -460,6 +467,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));
 
     st->barTimeStep = oldSt->barTimeStep;
+    st->lastFittedBarTimeStep = oldSt->lastFittedBarTimeStep;
 
     if (oldSt->orbitTrace)
     {

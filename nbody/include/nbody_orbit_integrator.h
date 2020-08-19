@@ -62,13 +62,18 @@ void getBackwardOrbitArray(mwvector** ptr);
 
 int getOrbitArraySize();
 
+int getPrevForwardTime();
+
+int getOldOrbitArraySize();
+
 void fitOrbitStart(mwvector* finalPos,
                     mwvector* finalVel,
                     real* finalTime,
                     real* dt,
                     NBodyState* st,
                     NBodyCtx* ctx,
-                    real targetLambda
+                    real targetLambda,
+                    mwvector targetPos
                     );
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */

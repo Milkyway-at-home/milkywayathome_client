@@ -393,7 +393,8 @@ typedef struct MW_ALIGN_TYPE
     mwbool reportProgress;
 
     
-    //the xyz position of the backward particle at all timesteps 
+    //the 
+    //xyz position of the backward particle at all timesteps 
     //index 0 is the end of the backward orbit
     mwvector* backwardOrbitPositions; 
     mwvector backwardOrbitRotationAngles;
@@ -407,7 +408,7 @@ typedef struct MW_ALIGN_TYPE
     int backwardOrbitArrayLength;
 
     int barTimeStep; //the last timestep used by the bar. Timestep 0 is the beginning of forward orbit
-
+    int lastFittedBarTimeStep; //the last timestep that wasn't updated by default
     unsigned int numBarBins; //number of bins to use when determining bar time
     
   #if NBODY_OPENCL
@@ -426,7 +427,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, \
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, ZERO_VECTOR, NULL, 0, 0, 0, \
+FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, ZERO_VECTOR, NULL, 0, 0, 0, 0, 0,\
  NULL}
 
 
@@ -496,7 +497,7 @@ typedef struct MW_ALIGN_TYPE
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                      \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
                          0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, 0, 0, 0,                                 \
-                         EMPTY_POTENTIAL }
+                         EMPTY_POTENTIAL, 0 }
 
 /* Negative codes can be nonfatal but useful return statuses.
    Positive can be different hard failures.
@@ -585,6 +586,7 @@ typedef struct MW_ALIGN_TYPE
     real LMCmass;
     real revOrbitTstop;
     Potential pot;
+    real previousForwardTime;
 
 }SingleParticleOrbitParams;
 

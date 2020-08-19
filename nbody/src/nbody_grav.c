@@ -142,11 +142,13 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         fillBackwardOrbitAngles(st);
     }
     
-    int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates ctx with new bar timestep
-    if(st->step % 10 == 0 || st->step > 7600)
+    //SingleParticleOrbitParams* revOrbitParams = getOrbitParams();
+    int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates st with new bar timestep
+    real barTime = barTimeStep * ctx->timestep*(ctx->timeBack/getPrevForwardTime());
+    if(st->step % 10 == 0 || st->step > 8000){
         mw_printf("barTimeStep: %d, reg timeStep: %d\n", barTimeStep, st->step);
-    real barTime = barTimeStep * ctx->timestep - ctx->timeBack;
-    
+        mw_printf("barTime: %f\n", barTime);
+    }
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
   #endif
@@ -164,7 +166,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("POTENTIAL_DEFAULT...\n");
                 a = nbGravity(ctx, st, b);
 
-                externAcc = nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack);
+                externAcc = nbExtAcceleration(&ctx->pot, Pos(b), barTime - ctx->timeBack);
                 mw_incaddv(a, externAcc);
                 accels[i] = a;
                 break;

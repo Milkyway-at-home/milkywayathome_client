@@ -39,11 +39,11 @@ mwvector* backwardOrbitPositions;//this is the l coordinate of the backwards
 //orbit point mass at each timestep (timestep being the index)
 //index 0 is the end of the backward orbit
 //note: make sure to free it
-int backwardOrbitArraySize;
+int backwardOrbitArraySize, oldOrbitArraySize, prevForwardTime;
 
 const int fitReverseOrbit = 0;
 
-SingleParticleOrbitParams reverseOrbitParams;
+SingleParticleOrbitParams* reverseOrbitParams;
 
 
 mwvector** shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
@@ -65,16 +65,23 @@ void nbReverseOrbit(mwvector* finalPos,
     real dt_half = dt / 2.0;
     int initialLArrayIndex = tstop/dt;
     backwardOrbitArraySize = ((forwardTime > tstop) ? forwardTime : tstop) / dt;
+    oldOrbitArraySize = tstop/dt;
     int LArrayIndex = initialLArrayIndex;
+    int barTime;
     mw_printf("Array Length = %d\n", backwardOrbitArraySize);
     
     //allocate backwardsOrbitL
     backwardOrbitPositions = (mwvector*)mwMalloc(backwardOrbitArraySize * sizeof(mwvector));
+    reverseOrbitParams = (SingleParticleOrbitParams*)mwMalloc(sizeof(SingleParticleOrbitParams));
     
     //set initial conditions (forward orbit)
-    //this is only to fill the backward orbit positions array
+    //this is only to fill
     x = pos;
     v = vel;
+
+    //this loop only occurs when forwardTime > tstop
+    //for(t = tstop - forwardTime; t <= 0)//for bar time
+    //starting at end of previous iteration
     for(t = 0; t <= forwardTime - tstop; t += dt){
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);
@@ -101,6 +108,7 @@ void nbReverseOrbit(mwvector* finalPos,
 
     for (t = 0; t >= tstop*(-1); t -= dt)
     {
+        //barTime = t + (tstop - forwardTime);
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);
         mw_incaddv_s(x, v, dt); 
@@ -119,18 +127,20 @@ void nbReverseOrbit(mwvector* finalPos,
     mw_printf("end of backward orbit: (%f, %f, %f)\n", x.x, x.y, x.z);
     mw_printf("vel: (%f, %f, %f)\n", v.x, v.y, v.z);
     //set the state variables
-    reverseOrbitParams.revOrbitPos = pos;
-    reverseOrbitParams.revOrbitVel = vel;
-    reverseOrbitParams.revOrbitLMCPos = (mwvector)ZERO_VECTOR;
-    reverseOrbitParams.revOrbitLMCVel = (mwvector)ZERO_VECTOR;
-    reverseOrbitParams.revOrbitdt = dt;
-    reverseOrbitParams.LMCmass = -1;
-    reverseOrbitParams.revOrbitTstop = tstop;
+    reverseOrbitParams->revOrbitPos = pos;
+    reverseOrbitParams->revOrbitVel = vel;
+    reverseOrbitParams->revOrbitLMCPos = (mwvector)ZERO_VECTOR;
+    reverseOrbitParams->revOrbitLMCVel = (mwvector)ZERO_VECTOR;
+    reverseOrbitParams->revOrbitdt = dt;
+    reverseOrbitParams->LMCmass = -1;
+    reverseOrbitParams->revOrbitTstop = tstop;
     //_st.pot = memcpy(&_st.pot, pot, sizeof(Potential));
-    reverseOrbitParams.pot.sphere[0]  = pot->sphere[0];
-    reverseOrbitParams.pot.disk  = pot->disk;
-    reverseOrbitParams.pot.disk2  = pot->disk2;
-    reverseOrbitParams.pot.halo  = pot->halo;
+    reverseOrbitParams->pot.sphere[0]  = pot->sphere[0];
+    reverseOrbitParams->pot.disk  = pot->disk;
+    reverseOrbitParams->pot.disk2  = pot->disk2;
+    reverseOrbitParams->pot.halo  = pot->halo;
+    reverseOrbitParams->previousForwardTime = forwardTime;
+    prevForwardTime = forwardTime;
     
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
@@ -147,6 +157,19 @@ void getBackwardOrbitArray(mwvector** ptr) {
 
 int getOrbitArraySize(){
     return backwardOrbitArraySize;
+}
+
+int getPrevForwardTime(){
+    return prevForwardTime;
+}
+
+//this one is only based off tstop
+int getOldOrbitArraySize(){
+    return oldOrbitArraySize;
+}
+
+SingleParticleOrbitParams* getOrbitParams(){
+    return reverseOrbitParams;
 }
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
@@ -193,18 +216,18 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
     
     //set the state variables
-    reverseOrbitParams.revOrbitPos = pos;
-    reverseOrbitParams.revOrbitVel = vel;
-    reverseOrbitParams.revOrbitLMCPos = LMCpos;
-    reverseOrbitParams.revOrbitLMCVel = LMCvel;
-    reverseOrbitParams.revOrbitdt = dt;
-    reverseOrbitParams.LMCmass = LMCmass;
-    reverseOrbitParams.revOrbitTstop = tstop;
+    reverseOrbitParams->revOrbitPos = pos;
+    reverseOrbitParams->revOrbitVel = vel;
+    reverseOrbitParams->revOrbitLMCPos = LMCpos;
+    reverseOrbitParams->revOrbitLMCVel = LMCvel;
+    reverseOrbitParams->revOrbitdt = dt;
+    reverseOrbitParams->LMCmass = LMCmass;
+    reverseOrbitParams->revOrbitTstop = tstop;
     //_st.pot = memcpy(&_st.pot, pot, sizeof(Potential));
-    reverseOrbitParams.pot.sphere[0]  = pot->sphere[0];
-    reverseOrbitParams.pot.disk  = pot->disk;
-    reverseOrbitParams.pot.disk2  = pot->disk2;
-    reverseOrbitParams.pot.halo  = pot->halo;
+    reverseOrbitParams->pot.sphere[0]  = pot->sphere[0];
+    reverseOrbitParams->pot.disk  = pot->disk;
+    reverseOrbitParams->pot.disk2  = pot->disk2;
+    reverseOrbitParams->pot.halo  = pot->halo;
 
 
     // Get the initial acceleration
@@ -344,7 +367,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
 
-    mw_printf("end of backward orbit: (%f, %f, %f)\n", x.x, x.y, x.z);
+    //mw_printf("end of backward orbit: (%f, %f, %f)\n", x.x, x.y, x.z);
 }
 
 void getLMCArray(mwvector *** shiftArrayPtr) {
@@ -353,44 +376,52 @@ void getLMCArray(mwvector *** shiftArrayPtr) {
 }
 
 //using a target lambda value and the initial orbit params,
-//go backward and then forward to find the 
+//go backward and then forward to find the point on the single body
+//orbit that is closest to the result of the stream
+//useful for the first ("calibration") run to get the previous forward time correct
 void fitOrbitStart(mwvector* finalPos,
                     mwvector* finalVel,
                     real* finalTime,
                     real* dt,
                     NBodyState* st,
                     NBodyCtx* ctx,
-                    real targetLambda
+                    real targetLambda,
+                    mwvector targetPos
                     )
 {	
-	unsigned int steps = (reverseOrbitParams.revOrbitTstop)/ (reverseOrbitParams.revOrbitdt) + 1;
+    const real MAX_DIST_FROM_TARGET = 0.4;
+    //only arccept single orbit positions this close
+    //to the target pos
+
+	unsigned int steps = (reverseOrbitParams->revOrbitTstop)/ (reverseOrbitParams->revOrbitdt) + 1;
     unsigned int i = 0, j = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp, bestX, bestV;
     mwvector mw_x = mw_vec(-35.849678, -57.758362, 51.630098);
     mwvector array[steps + 1];
-    real t, bestTime, bestDist = -1, lambda, bestLambda = 10;
-    real dt_half = reverseOrbitParams.revOrbitdt / 2.0;
+    real t, bestTime, lambda, bestLambda = 10;
+    real bestDist = -1;
+    real dt_half = reverseOrbitParams->revOrbitdt / 2.0;
     int LArrayIndex, bestTimeStep, timeStep = 0;
 
     // Set the initial conditions
-    x = reverseOrbitParams.revOrbitPos;
-    v = reverseOrbitParams.revOrbitVel;
-    LMCv = reverseOrbitParams.revOrbitLMCVel;
-    LMCx = reverseOrbitParams.revOrbitLMCPos;
+    x = reverseOrbitParams->revOrbitPos;
+    v = reverseOrbitParams->revOrbitVel;
+    LMCv = reverseOrbitParams->revOrbitLMCVel;
+    LMCx = reverseOrbitParams->revOrbitLMCPos;
     mw_incnegv(v);
     mw_incnegv(LMCv);
 
     // Get the initial acceleration
-    if(reverseOrbitParams.LMCmass != -1){
-        mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams.LMCmass);
-        LMC_acc = nbExtAcceleration(&reverseOrbitParams.pot, LMCx, 0);
+    if(reverseOrbitParams->LMCmass != -1){
+        mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams->LMCmass);
+        LMC_acc = nbExtAcceleration(&reverseOrbitParams->pot, LMCx, 0);
     }
-    acc = nbExtAcceleration(&reverseOrbitParams.pot, x, 0);
-    tmp = pointAccel(x, LMCx, reverseOrbitParams.LMCmass);
+    acc = nbExtAcceleration(&reverseOrbitParams->pot, x, 0);
+    tmp = pointAccel(x, LMCx, reverseOrbitParams->LMCmass);
     mw_incaddv(acc, tmp);
 
 
-    if(reverseOrbitParams.LMCmass != -1){
+    if(reverseOrbitParams->LMCmass != -1){
         // Shift the body
         mw_incnegv(mw_acc);
         mw_incaddv(LMC_acc, mw_acc);
@@ -398,21 +429,21 @@ void fitOrbitStart(mwvector* finalPos,
     }else
         mw_printf("LMC not in fit orbid\n");
 
-    for (t = 0; t >= 0.05*reverseOrbitParams.revOrbitTstop*(-1); t -= reverseOrbitParams.revOrbitdt)
+    for (t = 0; t >= 0.03*reverseOrbitParams->revOrbitTstop*(-1); t -= reverseOrbitParams->revOrbitdt)
     {
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);
-        mw_incaddv_s(x, v, reverseOrbitParams.revOrbitdt);
+        mw_incaddv_s(x, v, reverseOrbitParams->revOrbitdt);
 
-        if(reverseOrbitParams.LMCmass != -1){
+        if(reverseOrbitParams->LMCmass != -1){
             mw_incaddv_s(LMCv, LMC_acc, dt_half);
-            mw_incaddv_s(LMCx, LMCv, reverseOrbitParams.revOrbitdt);
+            mw_incaddv_s(LMCx, LMCv, reverseOrbitParams->revOrbitdt);
         
             // Compute the new acceleration
-            mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams.LMCmass);
-            LMC_acc = nbExtAcceleration(&reverseOrbitParams.pot, LMCx, 0);
+            mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams->LMCmass);
+            LMC_acc = nbExtAcceleration(&reverseOrbitParams->pot, LMCx, 0);
 
-            tmp = pointAccel(x, LMCx, reverseOrbitParams.LMCmass);
+            tmp = pointAccel(x, LMCx, reverseOrbitParams->LMCmass);
             mw_incaddv(acc, tmp);
 
             // Shift the body
@@ -423,15 +454,16 @@ void fitOrbitStart(mwvector* finalPos,
             mw_incaddv_s(LMCv, LMC_acc, dt_half);
         }
 
-        acc = nbExtAcceleration(&reverseOrbitParams.pot, x, t);
+        acc = nbExtAcceleration(&reverseOrbitParams->pot, x, t);
         
         mw_incaddv_s(v, acc, dt_half);
 
         lambda = getLambda(x, st);
 
+        real tmpDiff = getAngleDiff(lambda, targetLambda);
         //check to see if this is better than our current bestDist
-        if(bestDist == -1 || bestDist > getAngleDiff(lambda, targetLambda)){
-            bestDist = getAngleDiff(lambda, targetLambda);
+        if(bestDist == -1 || (bestDist > tmpDiff && mw_distv(targetPos, x) < MAX_DIST_FROM_TARGET)){
+            bestDist = tmpDiff;
             bestTime = t;
             bestTimeStep = timeStep;
             bestLambda = lambda;
@@ -442,19 +474,19 @@ void fitOrbitStart(mwvector* finalPos,
         ++timeStep;
     }
 
-    mw_printf("best dist 1: %f\n", bestDist);
+    //mw_printf("best dist 1: %f\n", bestDist);
 
     // Reset the initial conditions but dont negate the velocity
-    x = reverseOrbitParams.revOrbitPos;
-    v = reverseOrbitParams.revOrbitVel;
-    LMCv = reverseOrbitParams.revOrbitLMCVel;
-    LMCx = reverseOrbitParams.revOrbitLMCPos;
+    x = reverseOrbitParams->revOrbitPos;
+    v = reverseOrbitParams->revOrbitVel;
+    LMCv = reverseOrbitParams->revOrbitLMCVel;
+    LMCx = reverseOrbitParams->revOrbitLMCPos;
 
     // Get the initial acceleration
-    mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams.LMCmass);
-    LMC_acc = nbExtAcceleration(&reverseOrbitParams.pot, LMCx, 0);
-    acc = nbExtAcceleration(&reverseOrbitParams.pot, x, 0);
-    tmp = pointAccel(x, LMCx, reverseOrbitParams.LMCmass);
+    mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams->LMCmass);
+    LMC_acc = nbExtAcceleration(&reverseOrbitParams->pot, LMCx, 0);
+    acc = nbExtAcceleration(&reverseOrbitParams->pot, x, 0);
+    tmp = pointAccel(x, LMCx, reverseOrbitParams->LMCmass);
     mw_incaddv(acc, tmp);
 
     // Shift the body
@@ -462,21 +494,21 @@ void fitOrbitStart(mwvector* finalPos,
     mw_incaddv(LMC_acc, mw_acc);
     mw_incaddv(acc, mw_acc);
 
-    for (t = 0; t <= 0.05*reverseOrbitParams.revOrbitTstop; t += reverseOrbitParams.revOrbitdt)
+    for (t = 0; t <= 0.03*reverseOrbitParams->revOrbitTstop; t += reverseOrbitParams->revOrbitdt)
     {
         // Update the velocities and positions
         mw_incaddv_s(v, acc, dt_half);
-        mw_incaddv_s(x, v, reverseOrbitParams.revOrbitdt);
+        mw_incaddv_s(x, v, reverseOrbitParams->revOrbitdt);
 
-        if(reverseOrbitParams.LMCmass != -1){
+        if(reverseOrbitParams->LMCmass != -1){
             mw_incaddv_s(LMCv, LMC_acc, dt_half);
-            mw_incaddv_s(LMCx, LMCv, reverseOrbitParams.revOrbitdt);
+            mw_incaddv_s(LMCx, LMCv, reverseOrbitParams->revOrbitdt);
         
             // Compute the new acceleration
-            mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams.LMCmass);
-            LMC_acc = nbExtAcceleration(&reverseOrbitParams.pot, LMCx, 0);
+            mw_acc = pointAccel(mw_x, LMCx, reverseOrbitParams->LMCmass);
+            LMC_acc = nbExtAcceleration(&reverseOrbitParams->pot, LMCx, 0);
 
-            tmp = pointAccel(x, LMCx, reverseOrbitParams.LMCmass);
+            tmp = pointAccel(x, LMCx, reverseOrbitParams->LMCmass);
             mw_incaddv(acc, tmp);
 
             // Shift the body
@@ -487,13 +519,13 @@ void fitOrbitStart(mwvector* finalPos,
             mw_incaddv_s(LMCv, LMC_acc, dt_half);
         }
         
-        acc = nbExtAcceleration(&reverseOrbitParams.pot, x, t);
+        acc = nbExtAcceleration(&reverseOrbitParams->pot, x, t);
         
         mw_incaddv_s(v, acc, dt_half);
 
         lambda = getLambda(x, st);
 
-        if(bestDist == -1 || bestDist > getAngleDiff(lambda, targetLambda)){
+        if(bestDist == -1 || bestDist > getAngleDiff(lambda, targetLambda)&& mw_distv(targetPos, x) < MAX_DIST_FROM_TARGET){
             bestDist = getAngleDiff(lambda, targetLambda);
             bestTime = t;
             bestTimeStep = timeStep;
@@ -505,13 +537,13 @@ void fitOrbitStart(mwvector* finalPos,
         ++timeStep;
     }
     
-    mw_printf("best dist 2: %f\n", bestDist);
+    //mw_printf("best dist 2: %f\n", bestDist);
 
     /* Report the final values (don't forget to reverse the velocities) */
     *finalPos = bestX;
     *finalVel = bestV;
     *finalTime = bestTime;
-    *dt = reverseOrbitParams.revOrbitdt;
+    *dt = reverseOrbitParams->revOrbitdt;
 }
 
 

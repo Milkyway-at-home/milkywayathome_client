@@ -315,8 +315,10 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         st->numBarBins = (hp.lambdaBins/getAngleDiffDegrees(hp.lambdaEnd, hp.lambdaStart)) * 2 * M_PI;
         mw_printf("numBarBins: %d\n", st->numBarBins);
     }
-    else
+    else{
         st->numBarBins = 360; //default number of histogram bins
+        mw_printf("numBarBins: %d\n", st->numBarBins);
+    }
    
     if (ctx->LMC){
         mwvector** shiftLMC;
