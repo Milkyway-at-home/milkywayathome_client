@@ -24,6 +24,7 @@ real isotropic_v_dispersion(real a, real v0, real r){
 	Uses the Maxwell's distribution dynamical friction formula.**/
 mwvector dynamicalFriction(mwvector pos, mwvector vel, real mass, const Potential* pot){
     mwvector result; //Vector with change in velocity due to DF
+    real density = 0.0;    //Density of Halo
 
     real const G_CONST = 6.67*mw_pow(10, -11); //figure out better place to get this from
     real k = 1.428; 
@@ -39,8 +40,109 @@ mwvector dynamicalFriction(mwvector pos, mwvector vel, real mass, const Potentia
     real sigma = isotropic_v_dispersion(a, v0, r); 
     //ratio of the velocity of the object to the modal velocity
     real X = objectVel / (mw_pow(2, 0.5) * sigma);
-    //density of the field
-    real density = NFWMHaloDensity(&(pot->halo), r);//milky halo density LMC_mass * temp_N;
+
+    //Calculate densities from each individual component
+
+    switch (pot->sphere[0].type)
+    {
+        case HernquistSpherical:
+            density += hernquistSphericalDensity(&(pot->sphere[0]), r);
+            break;
+        case PlummerSpherical:
+            density += plummerSphericalDensity(&(pot->sphere[0]), r);
+            break;
+        case NoSpherical:
+            density += 0.0;
+            break;
+        case InvalidSpherical:
+        default:
+            mw_fail("Invalid bulge type in density\n");
+    }
+
+    switch (pot->disk.type)
+    {
+        case FreemanDisk:
+            density += 0.0; /*Density negligible since infinitely thin*/
+            break;
+        case MiyamotoNagaiDisk:
+            density += miyamotoNagaiDiskDensity(&(pot->disk), pos);
+            break;
+        case DoubleExponentialDisk:
+            density += doubleExponentialDiskDensity(&(pot->disk), pos);
+            break;
+        case Sech2ExponentialDisk:
+            density += sech2ExponentialDiskDensity(&(pot->disk), pos);
+            break;
+        case NoDisk:
+            density += 0.0;
+            break;
+        case InvalidDisk:
+        default:
+            mw_fail("Invalid primary disk type in density\n");
+    }
+
+    switch (pot->disk2.type)
+    {
+        case FreemanDisk:
+            density += 0.0; /*Density negligible since infinitely thin*/
+            break;
+        case MiyamotoNagaiDisk:
+            density += miyamotoNagaiDiskDensity(&(pot->disk2), pos);
+            break;
+        case DoubleExponentialDisk:
+            density += doubleExponentialDiskDensity(&(pot->disk2), pos);
+            break;
+        case Sech2ExponentialDisk:
+            density += sech2ExponentialDiskDensity(&(pot->disk2), pos);
+            break;
+        case NoDisk:
+            density += 0.0;
+            break;
+        case InvalidDisk:
+        default:
+            mw_fail("Invalid secondary disk type in density\n");
+    }
+
+    switch (pot->halo.type)
+    {
+        case LogarithmicHalo:
+            density += logarithmicHaloDensity(&(pot->halo), pos);
+            break;
+        case NFWHalo:
+            density += 0.0; /*FIXME: Add density profile for NFW using vhalo once it is working*/
+            break;
+        case TriaxialHalo:
+            density += triaxialHaloDensity(&(pot->halo), pos);
+            break;
+        case CausticHalo:
+            density += 0.0; /*FIXME: Add density profile for caustic halo when we actually plan on making this work*/
+            break;
+        case AllenSantillanHalo:
+            density += allenSantillanHaloDensity(&(pot->halo), r);
+            break;
+        case WilkinsonEvansHalo:
+            density += wilkinsonEvansHaloDensity(&(pot->halo), r);
+	    break;
+        case NFWMassHalo:
+            density += NFWMHaloDensity(&(pot->halo), r);
+            break;
+        case PlummerHalo:
+            density += plummerHaloDensity(&(pot->halo), r);
+            break;
+        case HernquistHalo:
+            density += hernquistHaloDensity(&(pot->halo), r);
+            break;
+        case NinkovicHalo:
+            density += ninkovicHaloDensity(&(pot->halo), r);
+            break;
+        case NoHalo:
+            density += 0.0;
+            break;
+        case InvalidHalo:
+        default:
+            mw_fail("Invalid halo type in density\n");
+    }
+
     //force from DF
     real F = (-4*pi*mw_pow(G_CONST, 2)*mw_pow(mass, 2)* mw_log(lambda)*density 
     	/ mw_pow(objectVel, 3)) * (erf(X) - 2*X/mw_pow(pi, 0.5)*exp(mw_pow(-1*X, 2)));

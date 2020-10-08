@@ -591,6 +591,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case WilkinsonEvansHalo:
             acctmp = WEHaloAccel(&pot->halo, pos, r);
+            break;
         case NFWMassHalo:
             acctmp = NFWMHaloAccel(&pot->halo, pos, r);
             break;
