@@ -20,6 +20,7 @@ static inline real doubleExponentialDiskDensity(const Disk* disk, mwvector pos);
 static inline real sech2ExponentialDiskDensity(const Disk* disk, mwvector pos);
 
 static inline real logarithmicHaloDensity(const Halo* h, mwvector pos);
+static inline real NFWHaloDensity(const Halo* h,  real r);
 static inline real triaxialHaloDensity(const Halo* h, mwvector pos);
 static inline real hernquistHaloDensity(const Halo* h,  real r);
 static inline real plummerHaloDensity(const Halo* h, real r);

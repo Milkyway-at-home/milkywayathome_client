@@ -390,13 +390,13 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector pos, real r)
     return acc;
 }
 
-static inline mwvector nfwHaloAccel(const Halo* halo, mwvector pos, real r)
+static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real a  = halo->scaleLength;
+    const real a = h->scaleLength;
+    const real M = sqr(h->vhalo)*a/0.2162165954; /*Maximum of [ln(1+x)/x - 1/(1+x)]*/
     const real ar = a + r;
-//     const real c  = a * sqr(halo->vhalo) * (r - ar * mw_log((r + a) / a)) / (0.2162165954 * cube(r) * ar);
-    /* this is done to agree with NEMO. IDK WHY. IDK where 0.2162165954 comes from */
-    const real c  = a * sqr(a) * 237.209949228 * (r - ar * mw_log((r + a) / a)) / ( cube(r) * ar);
+
+    const real c = (-M/sqr(r))*(mw_log(ar/a)/r - 1/ar);
 
     return mw_mulvs(pos, c);
 }

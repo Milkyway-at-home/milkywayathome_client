@@ -197,6 +197,19 @@ static inline real logarithmicHaloDensity(const Halo* h, mwvector pos)
     return v*v*numer/2.0/pi/denom;
 }
 
+static inline real NFWHaloDensity(const Halo* h,  real r)
+{
+    const real a = h->scaleLength;
+    const real v = h->vhalo;
+
+    real rho = v*v/4.0/pi/a/a/0.2162165954;
+
+    if(r == 0) return 0;
+    
+    return rho / (r/a) / mw(1.0+(r/a),2.0);
+
+}
+
 static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
 {
     const real v   = h->vhalo;
