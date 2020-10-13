@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -103,15 +103,15 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-orbit_parameter_l  = 218
+orbit_parameter_l  = 258
 
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-orbit_parameter_b  = 53.5
-orbit_parameter_r  = 28.6
-orbit_parameter_vx = -156 
-orbit_parameter_vy = 79 
-orbit_parameter_vz = 107
+orbit_parameter_b  = 45.8
+orbit_parameter_r  = 21.5
+orbit_parameter_vx = -185.5
+orbit_parameter_vy = 54.7
+orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -227,7 +227,8 @@ function makeBodies(ctx, potential)
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
-              LMCmass     = LMC_Mass,
+                    LMCmass     = LMC_Mass,
+                    LMCscale    = LMC_scaleRadius,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
 	            }

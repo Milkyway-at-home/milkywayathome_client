@@ -140,6 +140,15 @@ mwvector pointAccel(mwvector pos, mwvector pos1, real mass)
     return v;
 }
 
+mwvector plummerAccel(mwvector pos, mwvector pos1, real mass, real scale)
+{
+    mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mw_sqrt(sqr(scale) + sqr(dist));
+    mw_incmulvs(v, mass/cube(tmp));
+    return v;
+}
+
 
 /*spherical bulge potentials*/
 
