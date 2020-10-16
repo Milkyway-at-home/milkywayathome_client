@@ -145,11 +145,11 @@ mwvector dynamicalFriction(mwvector pos, mwvector vel, real mass, const Potentia
             mw_fail("Invalid halo type in density\n");
     }
 
-    //force from DF
-    real F = (-4*pi*mw_pow(G_CONST, 2)*mw_pow(mass, 2)* mw_log(lambda)*density / mw_pow(objectVel, 2)) * (erf(X) - 2*X/mw_pow(pi, 0.5)*exp(-1.0*mw_pow(X, 2)));
+    //acceleration from DF
+    real acc = (-4*pi*mw_pow(G_CONST, 2)*mass* mw_log(lambda)*density / mw_pow(objectVel, 2)) * (erf(X) - 2*X/mw_pow(pi, 0.5)*exp(-1.0*mw_pow(X, 2)));
     
-    result.x = (F * vel.x / objectVel);
-    result.y = (F * vel.y / objectVel);
-    result.z = (F * vel.z / objectVel);
+    result.x = (acc * vel.x / objectVel);
+    result.y = (acc * vel.y / objectVel);
+    result.z = (acc * vel.z / objectVel);
     return result;
 }
