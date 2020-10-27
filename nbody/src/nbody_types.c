@@ -119,6 +119,8 @@ int destroyNBodyState(NBodyState* st)
             j++;
         }
         mwFreeA(st->shiftByLMC);
+        mwFreeA(st->LMCpos);
+        mwFreeA(st->LMCvel);
     }
     
     free(st->checkpointResolved);
@@ -177,6 +179,8 @@ int destroyNBodyState(NBodyState* st)
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
+    mwvector zero;
+    SET_VECTOR(zero,0,0,0);
 
     st->tree = emptyTree;
     st->freeCell = NULL;
@@ -196,7 +200,9 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
     st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
     st->bestLikelihood_time    = DEFAULT_WORST_CASE;
-    st->bestLikelihood_count = 0;
+    st->bestLikelihood_count   = 0;
+    st->LMCpos                 = zero;
+    st->LMCvel                 = zero;
     
     /* We'll report the center of mass for each step + the initial one */
     st->nOrbitTrace = ctx->nStep + 1;
@@ -651,6 +657,14 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)
         && equalPotential(&ctx1->pot, &ctx2->pot)
-        && feqWithNan(ctx1->LMC, ctx2->LMC);
+        && feqWithNan(ctx1->LMC, ctx2->LMC)
+        && feqWithNan(ctx1->LMCposX, ctx2->LMCposX)
+        && feqWithNan(ctx1->LMCposY, ctx2->LMCposY)
+        && feqWithNan(ctx1->LMCposZ, ctx2->LMCposZ)
+        && feqWithNan(ctx1->LMCposVX, ctx2->LMCposVX)
+        && feqWithNan(ctx1->LMCposVY, ctx2->LMCposVY)
+        && feqWithNan(ctx1->LMCposVZ, ctx2->LMCposVZ)
+        && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
+        && feqWithNan(ctx1->LMCscale, ctx2->LMCscale);
 }
 

@@ -136,7 +136,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
         LMC_acc = nbExtAcceleration(pot, LMCx);
         acc = nbExtAcceleration(pot, x);
-    	tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
+        tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
     	mw_incaddv(acc, tmp);
 
     	// Shift the body

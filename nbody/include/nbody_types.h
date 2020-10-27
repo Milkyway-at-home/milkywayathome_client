@@ -350,7 +350,10 @@ typedef struct MW_ALIGN_TYPE
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
-    mwvector** shiftByLMC;
+
+    mwvector** shiftByLMC;    /* Accelerations on MW from LMC */
+    mwvector** LMCpos;        /* Position of LMC */
+    mwvector** LMCvel;        /* Velocity of LMC */
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */
@@ -406,7 +409,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
 
 
 
@@ -461,19 +464,27 @@ typedef struct MW_ALIGN_TYPE
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     real DistCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     mwbool LMC;
+    real LMCposX;              /* final X coordinate of LMC position */
+    real LMCposY;              /* final Y coordinate of LMC position */
+    real LMCposZ;              /* final Z coordinate of LMC position */
+    real LMCposVX;             /* final X coordinate of LMC velocity */
+    real LMCposVY;             /* final Y coordinate of LMC velocity */
+    real LMCposVZ;             /* final Z coordinate of LMC velocity*/
+    real LMCmass;              /* Mass of LMC */
+    real LMCscale;             /* Scale radius of LMC */
     
-    real Ntsteps;     /* number of time steps to run when manual control is on */
-    time_t checkpointT;       /* Period to checkpoint when not using BOINC */
+    real Ntsteps;              /* number of time steps to run when manual control is on */
+    time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
 
     Potential pot;
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                             \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                      \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,            \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, 0, 0, 0,                                 \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,           \
                          EMPTY_POTENTIAL }
 
 /* Negative codes can be nonfatal but useful return statuses.
