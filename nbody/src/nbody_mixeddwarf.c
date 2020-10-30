@@ -268,11 +268,11 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
 
     int N = 4;
     unsigned int intervals = N;
-    real interval_bound;
+    real interval_bound = 0;
 
     /*interval + 1 because for N intervals there are N + 1 values*/
-    real * values = mwCalloc(intervals + 1, sizeof(real));
-    real * interval_bounds = mwCalloc(intervals + 1, sizeof(real));
+    real *values = mwCalloc(intervals + 1, sizeof(real));
+    real *interval_bounds = mwCalloc(intervals + 1, sizeof(real));
     /*intervals+1 because you want to include the upperbound in the interval*/
     for(i = 0; i < intervals + 1; i++)
     {

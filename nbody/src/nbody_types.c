@@ -119,8 +119,6 @@ int destroyNBodyState(NBodyState* st)
             j++;
         }
         mwFreeA(st->shiftByLMC);
-        mwFreeA(st->LMCpos);
-        mwFreeA(st->LMCvel);
     }
     
     free(st->checkpointResolved);

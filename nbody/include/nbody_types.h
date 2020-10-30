@@ -352,8 +352,8 @@ typedef struct MW_ALIGN_TYPE
     scene_t* scene;
 
     mwvector** shiftByLMC;    /* Accelerations on MW from LMC */
-    mwvector** LMCpos;        /* Position of LMC */
-    mwvector** LMCvel;        /* Velocity of LMC */
+    mwvector LMCpos;        /* Position of LMC */
+    mwvector LMCvel;        /* Velocity of LMC */
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */
@@ -409,7 +409,16 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, NULL, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL,                  \
+                           NULL, ZERO_VECTOR, ZERO_VECTOR,                                   \
+                           NULL,                                                            \
+                           0,                                                               \
+                           0, 0,                                                            \
+                           0, 0, 0, 0, 0,                                                   \
+                           0,                                                               \
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
+                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,          \
+                           NULL, NULL, NULL, NULL }
 
 
 

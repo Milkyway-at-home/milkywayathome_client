@@ -314,13 +314,13 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
-	acc_LMC = nbExtAcceleration(ctx->pot, st->LMCpos);
+	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos);
         advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     }
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-	acc_LMC = nbExtAcceleration(ctx->pot, st->LMCpos);
+	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos);
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 
@@ -340,8 +340,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         getLMCArray(&shiftLMC);
         setLMCShiftArray(st, shiftLMC);
 
-        st->LMCpos = mw_vec(ctx->LMCposX, ctx->LMCposY, ctx->LMCposZ);
-        st->LMCvel = mw_vec(ctx->LMCposVX, ctx->LMCposVY, ctx->LMCposVZ);
+        SET_VECTOR(st->LMCpos, ctx->LMCposX, ctx->LMCposY, ctx->LMCposZ);
+        SET_VECTOR(st->LMCvel, ctx->LMCposVX, ctx->LMCposVY, ctx->LMCposVZ);
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
