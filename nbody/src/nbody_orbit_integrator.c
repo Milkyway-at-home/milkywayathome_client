@@ -86,8 +86,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector LMCvel,
                     real tstop,
                     real dt,
-                    real LMCmass,
-                    real LMCscale
+                    real LMCmass
+                    //real LMCscale
                     )
 {	
     unsigned int steps = (tstop)/ (dt) + 1;
@@ -107,10 +107,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
 
     // Get the initial acceleration
-    mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
+    mw_acc = pointAccel(mw_x, LMCx, LMCmass);
     LMC_acc = nbExtAcceleration(pot, LMCx);
     acc = nbExtAcceleration(pot, x);
-    tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
+    tmp = pointAccel(x, LMCx, LMCmass);
     mw_incaddv(acc, tmp);
 
     // Shift the body
@@ -133,10 +133,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv_s(LMCx, LMCv, dt);
         
         // Compute the new acceleration
-        mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
+        mw_acc = pointAccel(mw_x, LMCx, LMCmass);
         LMC_acc = nbExtAcceleration(pot, LMCx);
         acc = nbExtAcceleration(pot, x);
-        tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
+        tmp = pointAccel(x, LMCx, LMCmass);
     	mw_incaddv(acc, tmp);
 
     	// Shift the body

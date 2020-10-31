@@ -31,7 +31,7 @@
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
 #include "nbody_orbit_integrator.h"
-#include "nbody_potential.h"
+//#include "nbody_potential.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -107,20 +107,20 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real dt,
 
 }
 
-static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
-{
-    real dtHalf = 0.5 * dt;
-    mwvector dr;
-    mwvector dv;
-
-    dr = mw_mulvs(st->LMCvel,dt);
-    mw_incaddv(st->LMCpos,dr);
-
-    mwvector acc_total = mw_addv(acc, acc_i);
-    dv = mw_mulvs(acc_total, dtHalf);
-    mw_incaddv(st->LMCvel,dv);
-    
-}
+//static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
+//{
+//    real dtHalf = 0.5 * dt;
+//    mwvector dr;
+//    mwvector dv;
+//
+//    dr = mw_mulvs(st->LMCvel,dt);
+//    mw_incaddv(st->LMCpos,dr);
+//
+//    mwvector acc_total = mw_addv(acc, acc_i);
+//    dv = mw_mulvs(acc_total, dtHalf);
+//    mw_incaddv(st->LMCvel,dv);
+//    
+//}
 
 static inline void advanceVelocities(NBodyState* st, const int nbody, const real dt, const mwvector acc_i1)
 {
@@ -138,15 +138,15 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     }
 }
 
-static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
-{
-    real dtHalf = 0.5 * dt;
-    mwvector dv;
-
-    mwvector acc_total = mw_addv(acc, acc_i);
-    dv = mw_mulvs(acc_total, dtHalf);
-    mw_incaddv(st->LMCvel,dv);
-}
+//static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
+//{
+//    real dtHalf = 0.5 * dt;
+//    mwvector dv;
+//
+//    mwvector acc_total = mw_addv(acc, acc_i);
+//    dv = mw_mulvs(acc_total, dtHalf);
+//    mw_incaddv(st->LMCvel,dv);
+//}
 
 
 static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
@@ -308,21 +308,21 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
 {
     NBodyStatus rc;
-    mwvector acc_LMC;
+//    mwvector acc_LMC;
     
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
-    if(ctx->LMC){
-	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos);
-        advancePosVel_LMC(st, dt, acc_LMC, acc_i);
-    }
+//    if(ctx->LMC){
+//	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos);
+//        advancePosVel_LMC(st, dt, acc_LMC, acc_i);
+//    }
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
-    if(ctx->LMC){
-	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos);
-        advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
-    }
+//    if(ctx->LMC){
+//	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos);
+//        advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
+//    }
 
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT
@@ -340,8 +340,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         getLMCArray(&shiftLMC);
         setLMCShiftArray(st, shiftLMC);
 
-        SET_VECTOR(st->LMCpos, ctx->LMCposX, ctx->LMCposY, ctx->LMCposZ);
-        SET_VECTOR(st->LMCvel, ctx->LMCposVX, ctx->LMCposVY, ctx->LMCposVZ);
+//        SET_VECTOR(st->LMCpos, ctx->LMCposX, ctx->LMCposY, ctx->LMCposZ);
+//        SET_VECTOR(st->LMCvel, ctx->LMCposVX, ctx->LMCposVY, ctx->LMCposVZ);
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
