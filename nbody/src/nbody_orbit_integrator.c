@@ -35,6 +35,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 mwvector** shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
+mwvector* LMCpos = NULL; //Ptr to LMC position (default is NULL)
+mwvector* LMCvel = NULL; //Ptr to LMC velocity (default is NULL)
 
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
@@ -82,8 +84,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     const Potential* pot,
                     mwvector pos,
                     mwvector vel,
-                    mwvector LMCpos,
-                    mwvector LMCvel,
+                    mwvector LMCposition,
+                    mwvector LMCvelocity,
                     real tstop,
                     real dt,
                     real LMCmass
@@ -100,8 +102,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     // Set the initial conditions
     x = pos;
     v = vel;
-    LMCv = LMCvel;
-    LMCx = LMCpos;
+    LMCv = LMCvelocity;
+    LMCx = LMCposition;
     mw_incnegv(v);
     mw_incnegv(LMCv);
 
@@ -170,11 +172,25 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *finalVel = v;
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
+
+    //Allocate memory for LMC position and velocity
+    mwvector *LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));
+    mwvector *LMCvel = (mwvector*)mwMalloc(sizeof(mwvector));
+
+    //Store LMC position and velocity
+    *LMCpos = LMCx;
+    *LMCvel = LMCv;
 }
 
 void getLMCArray(mwvector *** shiftArrayPtr) {
     //Allows access to shift array
     *shiftArrayPtr = shiftByLMC;
+}
+
+void getLMCPosVel(mwvector ** LMCposPtr, mwvector ** LMCvelPtr) {
+    //Allows access to LMC position and velocity
+    *LMCposPtr = LMCpos;
+    *LMCvelPtr = LMCvel;
 }
 
 
