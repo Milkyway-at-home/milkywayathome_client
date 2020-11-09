@@ -336,14 +336,17 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {   
     if (ctx->LMC){
-        mwvector** shiftLMC;
-        getLMCArray(&shiftLMC);
-        setLMCShiftArray(st, shiftLMC);
-
+        mwvector* shiftLMC;
+        size_t sizeLMC;
 //        mwvector* LMCx;
 //        mwvector* LMCv;
-//        getLMCPosVel(&LMCx, &LMCv);
-//        setLMCPosVel(st, LMCx, LMCv);
+
+        if (!st->shiftByLMC) {
+            getLMCArray(&shiftLMC, &sizeLMC);
+            setLMCShiftArray(st, shiftLMC, sizeLMC);
+//            getLMCPosVel(&LMCx, &LMCv);
+//            setLMCPosVel(st, LMCx, LMCv);
+        }
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
@@ -392,10 +395,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             SET_VECTOR(zero,0,0,0);
             rc |= nbStepSystemPlain(ctx, st, zero, zero); 
         } else {
-            //mwvector* prevAccel = st->shiftByLMC[st->step];
-            //mwvector* nextAccel = st->shiftByLMC[st->step+1];
-            //rc |= nbStepSystemPlain(ctx, st, prevAccel[0], nextAccel[0]);
-            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step][0], st->shiftByLMC[st->step +1][0]);
+            mwvector prevAccel = st->shiftByLMC[st->step];
+            mwvector nextAccel = st->shiftByLMC[st->step+1];
+            rc |= nbStepSystemPlain(ctx, st, prevAccel, nextAccel);
         }
         curStep = st->step;
         

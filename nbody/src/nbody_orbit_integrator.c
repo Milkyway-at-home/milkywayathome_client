@@ -34,7 +34,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-mwvector** shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
+mwvector* shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
+size_t nShiftLMC = 0;
+
 //mwvector* LMCpos = NULL; //Ptr to LMC position (default is NULL)
 //mwvector* LMCvel = NULL; //Ptr to LMC velocity (default is NULL)
 
@@ -154,16 +156,14 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     
     //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
     unsigned int size = i+ 40*tstop;
-    shiftByLMC = (mwvector**)mwMalloc((size)* sizeof(mwvector*)); 
-    for(j = 0; j < (size); j++) {
-        shiftByLMC[j] = (mwvector*)mwMalloc(sizeof(mwvector));
-    }
-    
+    shiftByLMC = (mwvector*)mwCallocA(size, sizeof(mwvector)); 
     //Fill the shift array forward
     for(j = 0; j < i+1; j++) {
         tmp = array[i-j];
-        shiftByLMC[j][0] = tmp;
+        shiftByLMC[j] = tmp;
     }
+
+    nShiftLMC = size;
 
     /* Report the final values (don't forget to reverse the velocities) */
     mw_incnegv(v);
@@ -182,9 +182,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 //    *LMCvel = LMCv;
 }
 
-void getLMCArray(mwvector *** shiftArrayPtr) {
+void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr) {
     //Allows access to shift array
     *shiftArrayPtr = shiftByLMC;
+    *shiftSizePtr = nShiftLMC;
 }
 
 //void getLMCPosVel(mwvector ** LMCposPtr, mwvector ** LMCvelPtr) {

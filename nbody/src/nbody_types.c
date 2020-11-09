@@ -113,11 +113,6 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->orbitTrace);
     
     if(st->shiftByLMC) {   
-        int j = 0;
-        while(j < st->step) {
-            mwFreeA(st->shiftByLMC[j]);
-            j++;
-        }
         mwFreeA(st->shiftByLMC);
     }
 
@@ -214,9 +209,10 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 }
 
-void setLMCShiftArray(NBodyState* st, mwvector** shiftArray) {
+void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize) {
     //Set the state variable for the LMC shift array
     st->shiftByLMC = shiftArray;
+    st->nShiftLMC = shiftSize;
 }
 
 //void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray) {
@@ -666,12 +662,6 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->nStep, ctx2->nStep)
         && equalPotential(&ctx1->pot, &ctx2->pot)
         && feqWithNan(ctx1->LMC, ctx2->LMC);
-//        && feqWithNan(ctx1->LMCposX, ctx2->LMCposX)
-//        && feqWithNan(ctx1->LMCposY, ctx2->LMCposY)
-//        && feqWithNan(ctx1->LMCposZ, ctx2->LMCposZ)
-//        && feqWithNan(ctx1->LMCposVX, ctx2->LMCposVX)
-//        && feqWithNan(ctx1->LMCposVY, ctx2->LMCposVY)
-//        && feqWithNan(ctx1->LMCposVZ, ctx2->LMCposVZ)
 //        && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
 //        && feqWithNan(ctx1->LMCscale, ctx2->LMCscale);
 }

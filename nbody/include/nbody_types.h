@@ -351,7 +351,7 @@ typedef struct MW_ALIGN_TYPE
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
 
-    mwvector** shiftByLMC;    /* Accelerations on MW from LMC */
+    mwvector* shiftByLMC;      /* Accelerations on MW from LMC */
 //    mwvector* LMCpos;        /* Position of LMC */
 //    mwvector* LMCvel;        /* Velocity of LMC */
 
@@ -360,6 +360,7 @@ typedef struct MW_ALIGN_TYPE
     int* potEvalClosures;       /* Lua closure for each state */
 
     size_t nOrbitTrace;         /* Number of items in orbitTrace */
+    size_t nShiftLMC;          /* Size of LMC Acceleration array */
     time_t lastCheckpoint;
 
     unsigned int step;
@@ -413,7 +414,7 @@ typedef struct MW_ALIGN_TYPE
                            NULL, /*NULL , NULL,*/                                                \
                            NULL,                                                            \
                            0,                                                               \
-                           0, 0,                                                            \
+                           0, 0, 0,                                                         \
                            0, 0, 0, 0, 0,                                                   \
                            0,                                                               \
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
@@ -474,12 +475,6 @@ typedef struct MW_ALIGN_TYPE
     real DistCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     mwbool LMC;
 
-//    real LMCposX;              /* final X coordinate of LMC position */
-//    real LMCposY;              /* final Y coordinate of LMC position */
-//    real LMCposZ;              /* final Z coordinate of LMC position */
-//    real LMCposVX;             /* final X coordinate of LMC velocity */
-//    real LMCposVY;             /* final Y coordinate of LMC velocity */
-//    real LMCposVZ;             /* final Z coordinate of LMC velocity*/
 //    real LMCmass;              /* Mass of LMC */
 //    real LMCscale;             /* Scale radius of LMC */
     
@@ -494,7 +489,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, /*0, 0, 0, 0, 0, 0, 0, 0,*/                    \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, /*0, 0,*/                    \
                          0, 0, 0,                                                                     \
                          EMPTY_POTENTIAL }
 
@@ -582,7 +577,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx);
 
 int destroyNBodyState(NBodyState* st);
 int nbDetachSharedScene(NBodyState* st);
-void setLMCShiftArray(NBodyState* st, mwvector** shiftArray);
+void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize);
 //void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
