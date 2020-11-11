@@ -123,8 +123,8 @@ static int createNBodyCtx(lua_State* luaSt)
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
             { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect   },
             { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           },
-//            { "LMCmass",       LUA_TNUMBER,  NULL, FALSE, &ctx.LMCmass       },
-//            { "LMCscale",      LUA_TNUMBER,  NULL, FALSE, &ctx.LMCscale      },
+            { "LMCmass",       LUA_TNUMBER,  NULL, FALSE, &ctx.LMCmass       },
+            { "LMCscale",      LUA_TNUMBER,  NULL, FALSE, &ctx.LMCscale      },
             END_MW_NAMED_ARG
         };
 
@@ -269,8 +269,8 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)    },
     { "DistCorrect",     getNumber,     offsetof(NBodyCtx, DistCorrect)   },
     { "LMC",             getBool,       offsetof(NBodyCtx, LMC)           },
-//    { "LMCmass",         getNumber,     offsetof(NBodyCtx, LMCmass)       },
-//    { "LMCscale",        getNumber,     offsetof(NBodyCtx, LMCscale)      },
+    { "LMCmass",         getNumber,     offsetof(NBodyCtx, LMCmass)       },
+    { "LMCscale",        getNumber,     offsetof(NBodyCtx, LMCscale)      },
     { NULL, NULL, 0 }
 };
 
@@ -306,8 +306,8 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)    },
     { "DistCorrect",     setNumber,     offsetof(NBodyCtx, DistCorrect)   },
     { "LMC",             setBool,       offsetof(NBodyCtx, LMC)           },
-//    { "LMCmass",         setNumber,     offsetof(NBodyCtx, LMCmass)       },
-//    { "LMCscale",        setNumber,     offsetof(NBodyCtx, LMCscale)      },
+    { "LMCmass",         setNumber,     offsetof(NBodyCtx, LMCmass)       },
+    { "LMCscale",        setNumber,     offsetof(NBodyCtx, LMCscale)      },
     { NULL, NULL, 0 }
 };
 

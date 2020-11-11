@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 1000   -- -- NUMBER OF BODIES           -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 
@@ -34,7 +34,6 @@ print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
 
 LMC_body              = true    -- -- PRESENCE OF LMC            -- --
-LMCtotalBodies        = 2000    -- -- DON'T SET TO VALUES SMALLER THAN 100 
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -202,7 +201,9 @@ function makeContext()
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
-      LMC           = LMC_body
+      LMC           = LMC_body,
+      LMCmass       = LMC_mass,
+      LMCscale      = LMC_scaleRadius
    }
 end
 
@@ -228,7 +229,7 @@ function makeBodies(ctx, potential)
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
                     LMCmass     = LMC_Mass,
-                    --LMCscale    = LMC_scaleRadius,
+                    LMCscale    = LMC_scaleRadius,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
 	            }
@@ -256,18 +257,7 @@ function makeBodies(ctx, potential)
         }
         print('Printing reverse orbit')
     end
-    
-  	if(LMC_body) then
-  		LMCModel = predefinedModels.plummer{
-            nbody       = LMCtotalBodies,
-            prng        = prng,
-            position    = LMCfinalPosition,
-            velocity    = LMCfinalVelocity,
-            mass        = LMC_Mass,
-            scaleRadius = LMC_scaleRadius,
-            ignore      = false
-        }
-    end
+
 
     if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
@@ -304,8 +294,6 @@ function makeBodies(ctx, potential)
         return firstModel, manualModel
     elseif(ModelComponents == 0 and manual_bodies) then
         return manualModel
-    elseif(ModelComponents > 0 and not manual_bodies and LMC_body) then
-        return firstModel, LMCModel
     elseif(ModelComponents > 0 and not manual_bodies) then
         return firstModel
     else    

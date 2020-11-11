@@ -37,8 +37,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 mwvector* shiftByLMC = NULL; //Ptr to LMC Shift Array (default is NULL)
 size_t nShiftLMC = 0;
 
-//mwvector* LMCpos = NULL; //Ptr to LMC position (default is NULL)
-//mwvector* LMCvel = NULL; //Ptr to LMC velocity (default is NULL)
+mwvector* LMCpos = NULL; //Ptr to LMC position (default is NULL)
+mwvector* LMCvel = NULL; //Ptr to LMC velocity (default is NULL)
 
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
@@ -90,8 +90,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector LMCvelocity,
                     real tstop,
                     real dt,
-                    real LMCmass
-                    //real LMCscale
+                    real LMCmass,
+                    real LMCscale
                     )
 {	
     unsigned int steps = (tstop)/ (dt) + 1;
@@ -111,10 +111,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
 
     // Get the initial acceleration
-    mw_acc = pointAccel(mw_x, LMCx, LMCmass);
+    mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
     LMC_acc = nbExtAcceleration(pot, LMCx);
     acc = nbExtAcceleration(pot, x);
-    tmp = pointAccel(x, LMCx, LMCmass);
+    tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
     mw_incaddv(acc, tmp);
 
     // Shift the body
@@ -137,10 +137,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv_s(LMCx, LMCv, dt);
         
         // Compute the new acceleration
-        mw_acc = pointAccel(mw_x, LMCx, LMCmass);
+        mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
         LMC_acc = nbExtAcceleration(pot, LMCx);
         acc = nbExtAcceleration(pot, x);
-        tmp = pointAccel(x, LMCx, LMCmass);
+        tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
     	mw_incaddv(acc, tmp);
 
     	// Shift the body
@@ -174,12 +174,12 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *LMCfinalVel = LMCv;
 
     //Allocate memory for LMC position and velocity
-//    mwvector *LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));
-//    mwvector *LMCvel = (mwvector*)mwMalloc(sizeof(mwvector));
+    LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));
+    LMCvel = (mwvector*)mwMalloc(sizeof(mwvector));
 
     //Store LMC position and velocity
-//    *LMCpos = LMCx;
-//    *LMCvel = LMCv;
+    LMCpos[0] = LMCx;
+    LMCvel[0] = LMCv;
 }
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr) {
@@ -188,11 +188,11 @@ void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr) {
     *shiftSizePtr = nShiftLMC;
 }
 
-//void getLMCPosVel(mwvector ** LMCposPtr, mwvector ** LMCvelPtr) {
-//    //Allows access to LMC position and velocity
-//    *LMCposPtr = LMCpos;
-//    *LMCvelPtr = LMCvel;
-//}
+void getLMCPosVel(mwvector ** LMCposPtr, mwvector ** LMCvelPtr) {
+    //Allows access to LMC position and velocity
+    *LMCposPtr = LMCpos;
+    *LMCvelPtr = LMCvel;
+}
 
 
 

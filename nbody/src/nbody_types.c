@@ -116,13 +116,13 @@ int destroyNBodyState(NBodyState* st)
         mwFreeA(st->shiftByLMC);
     }
 
-//    if(st->LMCpos) {
-//        mwFreeA(st->LMCpos);
-//    }
+    if(st->LMCpos) {
+        mwFreeA(st->LMCpos);
+    }
 
-//    if(st->LMCvel) {
-//        mwFreeA(st->LMCvel);
-//    }
+    if(st->LMCvel) {
+        mwFreeA(st->LMCvel);
+    }
     
     free(st->checkpointResolved);
 
@@ -215,11 +215,11 @@ void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize) {
     st->nShiftLMC = shiftSize;
 }
 
-//void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray) {
+void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray) {
     //Set the state variable for the LMC position and velocity
-//    st->LMCpos = PosArray;
-//    st->LMCvel = VelArray;
-//}
+    st->LMCpos = PosArray;
+    st->LMCvel = VelArray;
+}
 
 NBodyState* newNBodyState()
 {
@@ -439,11 +439,11 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 
     st->freeCell = NULL;
 
-    st->lastCheckpoint = oldSt->lastCheckpoint;
-    st->step           = oldSt->step;
-    st->nbody          = oldSt->nbody;
-    st->effNBody       = oldSt->effNBody;
-    st->bestLikelihood = oldSt->bestLikelihood;
+    st->lastCheckpoint       = oldSt->lastCheckpoint;
+    st->step                 = oldSt->step;
+    st->nbody                = oldSt->nbody;
+    st->effNBody             = oldSt->effNBody;
+    st->bestLikelihood       = oldSt->bestLikelihood;
     st->bestLikelihood_count = oldSt->bestLikelihood_count;
     
     st->ignoreResponsive = oldSt->ignoreResponsive;
@@ -470,6 +470,20 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
         st->orbitTrace = (mwvector*) mwMallocA(oldSt->nOrbitTrace * sizeof(mwvector));
         memcpy(st->orbitTrace, oldSt->orbitTrace, oldSt->nOrbitTrace * sizeof(mwvector));
         st->nOrbitTrace = oldSt->nOrbitTrace;
+    }
+
+    if (oldSt->shiftByLMC)
+    {
+        st->shiftByLMC = (mwvector*) mwMallocA(oldSt->nShiftLMC * sizeof(mwvector));
+        memcpy(st->shiftByLMC, oldSt->shiftByLMC, oldSt->nShiftLMC * sizeof(mwvector));
+        st->nShiftLMC = oldSt->nShiftLMC;
+    }
+
+    if (oldSt->LMCpos && oldSt->LMCvel) {
+        st->LMCpos = (mwvector*) mwMallocA(sizeof(mwvector));
+        memcpy(st->LMCpos, oldSt->LMCpos, sizeof(mwvector));
+        st->LMCvel = (mwvector*) mwMallocA(sizeof(mwvector));
+        memcpy(st->LMCvel, oldSt->LMCvel, sizeof(mwvector));
     }
 
     if (st->ci)
@@ -661,8 +675,8 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)
         && equalPotential(&ctx1->pot, &ctx2->pot)
-        && feqWithNan(ctx1->LMC, ctx2->LMC);
-//        && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
-//        && feqWithNan(ctx1->LMCscale, ctx2->LMCscale);
+        && feqWithNan(ctx1->LMC, ctx2->LMC)
+        && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
+        && feqWithNan(ctx1->LMCscale, ctx2->LMCscale);
 }
 
