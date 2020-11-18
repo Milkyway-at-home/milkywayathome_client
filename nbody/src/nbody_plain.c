@@ -324,6 +324,9 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 
+//    mw_printf("(%.15f) LMC position: [%.15f,%.15f,%.15f] | ",(int)(st->step)*(ctx->timestep),X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
+//    mw_printf("LMC velocity: [%.15f,%.15f,%.15f]\n",X(st->LMCvel[0]),Y(st->LMCvel[0]),Z(st->LMCvel[0]));
+
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT
         blenderPrintBodies(st, ctx);
@@ -336,7 +339,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {   
     if (ctx->LMC){
-        //Checkpointing sets these variables already, so we want to ignore these lines in the event of a checkpoint
+        //These values are set in nbody_orbit_integrator.c. In the event of a checkpoint, these values are already stored, so running this code would reset them to NULL pointers.
         if (!st->shiftByLMC) {
             mwvector* shiftLMC;
             size_t sizeLMC;

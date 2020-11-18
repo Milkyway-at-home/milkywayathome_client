@@ -88,20 +88,78 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector vel,
                     mwvector LMCposition,
                     mwvector LMCvelocity,
+                    real ftime,
                     real tstop,
                     real dt,
                     real LMCmass,
                     real LMCscale
                     )
 {	
-    unsigned int steps = (tstop)/ (dt) + 1;
-    unsigned int i = 0, j = 0;
+    unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
+    unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
+    unsigned int i = 0, j = 0, k = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
-    mwvector array[steps + 1];
+    mwvector bacArray[steps + 1];
+    mwvector forArray[exSteps + 1];
     real t;
     real dt_half = dt / 2.0;
-    // Set the initial conditions
+
+    // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
+    if (ftime > tstop) {
+
+        // Set the initial conditions for forward orbit
+        x = pos;
+        v = vel;
+        LMCv = LMCvelocity;
+        LMCx = LMCposition;
+
+        // Get the initial acceleration
+        mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
+        LMC_acc = nbExtAcceleration(pot, LMCx);
+        acc = nbExtAcceleration(pot, x);
+        tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
+        mw_incaddv(acc, tmp);
+
+        // Shift the body
+        mw_incnegv(mw_acc);
+        mw_incaddv(LMC_acc, mw_acc);
+        mw_incaddv(acc, mw_acc);
+
+        for (t = 0; t <= (ftime-tstop); t += dt)
+        {   
+    	    exSteps = t/dt;
+    	    if ((exSteps % 10 == 0)&&(t!=0)) { 
+    	        forArray[k] = mw_acc;
+                k++;
+    	    }
+
+            // Update the velocities and positions
+            mw_incaddv_s(v, acc, dt_half);
+            mw_incaddv_s(x, v, dt);
+            mw_incaddv_s(LMCv, LMC_acc, dt_half);
+            mw_incaddv_s(LMCx, LMCv, dt);
+        
+            // Compute the new acceleration
+            mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
+            LMC_acc = nbExtAcceleration(pot, LMCx);
+            acc = nbExtAcceleration(pot, x);
+            tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
+    	    mw_incaddv(acc, tmp);
+
+    	    // Shift the body
+    	    mw_incnegv(mw_acc);
+            mw_incaddv(LMC_acc, mw_acc);
+            mw_incaddv(acc, mw_acc);
+        
+            mw_incaddv_s(v, acc, dt_half);
+            mw_incaddv_s(LMCv, LMC_acc, dt_half);
+
+        }
+        forArray[k] = mw_acc; //set the last index after the loop ends
+    }
+
+    // Set the initial conditions for reverse orbit
     x = pos;
     v = vel;
     LMCv = LMCvelocity;
@@ -126,7 +184,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     {   
     	steps = t/dt;
     	if( steps % 10 == 0){ 
-    		array[i] = mw_acc;
+    		bacArray[i] = mw_acc;
         	i++;
     	}
 
@@ -152,15 +210,24 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv_s(LMCv, LMC_acc, dt_half);
 
     }
-    array[i] = mw_acc; //set the last index after the loop ends
+    bacArray[i] = mw_acc; //set the last index after the loop ends
     
     //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
-    unsigned int size = i+ 40*tstop;
+    unsigned int size = i + k + 2;
     shiftByLMC = (mwvector*)mwCallocA(size, sizeof(mwvector)); 
-    //Fill the shift array forward
+
+    //Fill reverse orbit of shift array
     for(j = 0; j < i+1; j++) {
-        tmp = array[i-j];
+        tmp = bacArray[i-j];
         shiftByLMC[j] = tmp;
+    }
+
+    //Fill forward orbit of shift array
+    if (ftime > tstop) {
+        for(j = 0; j < k+1; j++) {
+            tmp = forArray[j];
+            shiftByLMC[i+1+j] = tmp;
+        }
     }
 
     nShiftLMC = size;
@@ -172,6 +239,9 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *finalVel = v;
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
+
+//    mw_printf("Initial LMC position: [%.15f,%.15f,%.15f]\n",X(LMCx),Y(LMCx),Z(LMCx));
+//    mw_printf("Initial LMC velocity: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
 
     //Allocate memory for LMC position and velocity
     LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));

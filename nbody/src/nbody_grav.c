@@ -127,9 +127,9 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-//    const mwvector LMCx = st->LMCpos;
+    const mwvector LMCx = st->LMCpos[0];
     mwvector a, externAcc;
-//    mwvector LMCAcc;
+    mwvector LMCAcc;
     const Body* b;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
@@ -154,10 +154,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
                 mw_incaddv(a, externAcc);
-//                if(ctx->LMC) {
-//                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-//                    mw_incaddv(a, LMCAcc);
-//                }
+                if(ctx->LMC) {
+                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
+                    mw_incaddv(a, LMCAcc);
+                }
                 accels[i] = a;
                 break;
 
@@ -172,10 +172,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("CUSTOM_LUA...\n");
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc);
-//                if(ctx->LMC) {
-//                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-//                    mw_incaddv(a, LMCAcc);
-//                }
+                if(ctx->LMC) {
+                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
+                    mw_incaddv(a, LMCAcc);
+                }
                 accels[i] = a;
                 break;
 
@@ -213,9 +213,9 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-//    const mwvector LMCx = st->LMCpos;
+    const mwvector LMCx = st->LMCpos[0];
     mwvector a, externAcc;
-//    mwvector LMCAcc;
+    mwvector LMCAcc;
     const Body* b;
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
@@ -233,10 +233,10 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b)));
-//                if(ctx->LMC) {
-//                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-//                   mw_incaddv(a, LMCAcc);
-//                }
+                if(ctx->LMC) {
+                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
+                   mw_incaddv(a, LMCAcc);
+                }
                 accels[i] = a;
                 break;
 
@@ -250,10 +250,10 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
                 mw_incaddv(a, externAcc);
-//                if(ctx->LMC) {
-//                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-//                    mw_incaddv(a, LMCAcc);
-//                }
+                if(ctx->LMC) {
+                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
+                    mw_incaddv(a, LMCAcc);
+                }
                 accels[i] = a;
                 break;
 

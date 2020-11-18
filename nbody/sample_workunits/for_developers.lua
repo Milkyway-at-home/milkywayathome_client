@@ -73,7 +73,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code
+use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -202,7 +202,7 @@ function makeContext()
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
       LMC           = LMC_body,
-      LMCmass       = LMC_mass,
+      LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius
    }
 end
@@ -230,6 +230,7 @@ function makeBodies(ctx, potential)
 	            LMCvelocity = Vector.create(-57, -226, 221), 
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
+                    ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
 	            }

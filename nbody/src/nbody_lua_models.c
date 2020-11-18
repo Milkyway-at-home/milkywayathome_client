@@ -233,6 +233,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     mwvector finalPos, finalVel, LMCfinalPos, LMCfinalVel;
     static real dt = 0.0;
     static real tstop = 0.0;
+    static real ftime = 0.0;
     static real LMCmass = 0.0;
     static real LMCscale = 0.0;
     static Potential* pot = NULL;
@@ -251,6 +252,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             { "LMCmass",     LUA_TNUMBER,   NULL,           TRUE, &LMCmass  },
             { "LMCscale",    LUA_TNUMBER,   NULL,           TRUE, &LMCscale },
             { "tstop",       LUA_TNUMBER,   NULL,           TRUE, &tstop    },
+            { "ftime",       LUA_TNUMBER,   NULL,           TRUE, &ftime    },
             { "dt",          LUA_TNUMBER,   NULL,           TRUE, &dt       },
             END_MW_NAMED_ARG
         };
@@ -261,7 +263,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 9:
+        case 10:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
@@ -269,19 +271,20 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             LMCvel = checkVector(luaSt, 5);
             LMCmass = luaL_checknumber(luaSt, 6);
             LMCscale = luaL_checknumber(luaSt, 7);
-            tstop = luaL_checknumber(luaSt, 7);
-            dt = luaL_checknumber(luaSt, 8);
+            tstop = luaL_checknumber(luaSt, 8);
+            ftime = luaL_checknumber(luaSt, 9);
+            dt = luaL_checknumber(luaSt, 10);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 9 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 10 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, tstop, dt, LMCmass, LMCscale);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, ftime, tstop, dt, LMCmass, LMCscale);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);
