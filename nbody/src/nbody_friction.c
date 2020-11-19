@@ -10,177 +10,102 @@
 #include "milkyway_util.h"
 #include "nbody_caustic.h"
 #include "nbody_bessel.h"
+#include "nbody_potential.h"
 
 #include "milkway_math.h"
 #include "nbody_friction.h"
 
-/** Helper function
-	Calculates the integral of Maxwell's distrubution DF formula**/
+/** Isotropic Velocity Dispersion Formulas **/
+real pi = 3.14159265;
 
-/*FIXME: Find v_dispersion formulas for each type of halo*/
-real isotropic_v_dispersion(real a, real v0, real r){
-    return (v0*v0) / 2 * (4 * r * (a+r) * (a+r) * mw_log(1 + r/a) - a * r * (5*a + 4*r)) / (a*a * (2*a + r));
+static inline real dispIntegrand(const Potential* pot, const mwvector pos){
+    mwvector acc = nbExtAcceleration(&pot, pos);
+
+    real mag = mw_pow(mw_dotv(pos,pos), 0.5);
+    mwvector unit_v = mw_mulvs(pos, 1.0/mag);
+
+    real a_r = mw_abs(mw_dotv(acc,unit_v));
+
+    real rho = nbExtDensity(&pot, pos);
+    return rho*a_r;
 }
 
-/** Adds the change in velocity that is the result of DF from a massive body. 
-	Uses the Maxwell's distribution dynamical friction formula.**/
-mwvector dynamicalFriction(mwvector pos, mwvector vel, real mass, const Potential* pot){
-    mwvector result;        //Vector with change in velocity due to DF
-    real density = 0.0;     //Galactic density placeholder
+static inline real velDispersion(const Potential* pot, const mwvector pos, real upperlimit){
+    /** Use 5-point Gaussian Quadrature to calculate the RADIAL (1-dimensional) velocity dispersion integral **/
+    int i,j;
+    real a,b,integral,r;
+    mwvector input_vec;
+    const real weights[5];
+    weights[0] = 0.2369268850561891;
+    weights[1] = 0.4786286704993665;
+    weights[2] = 0.5688888888888889;
+    weights[3] = 0.4786286704993665;
+    weights[4] = 0.2369268850561891;
+
+    const real points[5];
+    points[0] = -0.9061798459386640;
+    points[1] = -0.5384693101056831;
+    points[2] = 0.0;
+    points[3] = 0.5384693101056831;
+    points[4] = 0.9061798459386640;
+
+    real dist = mw_pow(mw_dotv(pos,pos), 0.5);
+    int nDivs = 10;
+    real width = (upperlimit - dist)/(nDivs*1.0);
+    integral = 0.0;
+    for (i = 0; i < nDivs; i++) {
+        a = dist + i*width;
+        b = dist + (i+1)*width;
+        for (j = 0; j < 5; j++) {
+            r = width*points[j]/2.0 + (a+b)/2.0;
+            input_vec = mw_mulvs(pos,r/dist);
+            integral += weights[j]*dispIntegrand(&pot,input_vec);
+        }
+    }
+    integral *= width/2.0;
+
+    return integral/nbExtDensity(&pot,pos); /** Reutrns a velocity squared **/
+}
+
+/** Coulomb Logarithm for plummer spheres derived from Esquivel and Fuchs (2018) **/
+static inline real CoulombLogPlummer(real scale_plummer, real scale_mwhalo){
+    real u, c_log;
+    if (scale_mwhalo==0) {
+        return 0.0;
+    }
+
+    u = scale_plummer * (pi/scale_mwhalo); /** LMC scale radius times smallest wavenumber (k_min) **/
+    c_log = u*u*( besselK0(u)*besselK2(u) - mw_pow(besselK1(u),2.0) )/2.0;
+
+    return c_log;
+}
+
+/** Formula for Dynamical Friction from Merritt 2013 Eqn. 5.23 **/
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC){
+    mwvector result;        //Vector with acceleration due to DF
 
     real const G_CONST = 1; //(Time: Gyrs, Distance: kpc, Mass: SMU = 222288.47 solar masses)
-    real k = 1.428;         /*FIXME: Need better way of calculating this quantity*/
-    real r = mw_pow(mw_dotv(pos,pos), 0.5); 
-    real a;
-    real v0 = 0.0;
-    real sigma = 0.0;
-    real M = 0.0;
     real thresh = mw_pow(2,-8);
 
     //object velocity where center of gravity is initially at rest
-    real objectVel = mw_pow(mw_dotv(vel,vel), 0.5); 
-    //for Coulomb logarithm
-    real lambda = r / 1.6 / k; 
+    real objectVel = mw_pow(mw_dotv(vel,vel), 0.5);
+    objectVel = (objectVel >= thresh)*objectVel + (objectVel < thresh)*thresh; // To avoid divide-by-zero error.
+
+    //Coloumb Logarithm
+    real scaleLength_halo = (pot->halo)->scaleLength;
+    real ln_lambda = CoulombLogPlummer(scaleLength_LMC, scaleLength_halo);
 
     //Calculate densities from each individual component
+    real density = nbExtDensity(&pot, pos);
 
-    switch (pot->sphere[0].type)
-    {
-        case HernquistSpherical:
-            density += hernquistSphericalDensity(&(pot->sphere[0]), r);
-            break;
-        case PlummerSpherical:
-            density += plummerSphericalDensity(&(pot->sphere[0]), r);
-            break;
-        case NoSpherical:
-            density += 0.0;
-            break;
-        case InvalidSpherical:
-        default:
-            mw_fail("Invalid bulge type in density\n");
-    }
-
-    switch (pot->disk.type)
-    {
-        case FreemanDisk:
-            density += 0.0; /*Density negligible since infinitely thin*/
-            break;
-        case MiyamotoNagaiDisk:
-            density += miyamotoNagaiDiskDensity(&(pot->disk), pos);
-            break;
-        case DoubleExponentialDisk:
-            density += doubleExponentialDiskDensity(&(pot->disk), pos);
-            break;
-        case Sech2ExponentialDisk:
-            density += sech2ExponentialDiskDensity(&(pot->disk), pos);
-            break;
-        case NoDisk:
-            density += 0.0;
-            break;
-        case InvalidDisk:
-        default:
-            mw_fail("Invalid primary disk type in density\n");
-    }
-
-    switch (pot->disk2.type)
-    {
-        case FreemanDisk:
-            density += 0.0; /*Density negligible since infinitely thin*/
-            break;
-        case MiyamotoNagaiDisk:
-            density += miyamotoNagaiDiskDensity(&(pot->disk2), pos);
-            break;
-        case DoubleExponentialDisk:
-            density += doubleExponentialDiskDensity(&(pot->disk2), pos);
-            break;
-        case Sech2ExponentialDisk:
-            density += sech2ExponentialDiskDensity(&(pot->disk2), pos);
-            break;
-        case NoDisk:
-            density += 0.0;
-            break;
-        case InvalidDisk:
-        default:
-            mw_fail("Invalid secondary disk type in density\n");
-    }
-
-    switch (pot->halo.type)
-    {
-        case LogarithmicHalo:
-            density += logarithmicHaloDensity(&(pot->halo), pos);
-            a = (pot->halo)->scaleLength;
-            v0 = (pot->halo)->vhalo;
-            sigma = mw_sqrt((v0*v0) / 2 * (4 * r * (a+r) * (a+r) * mw_log(1 + r/a) - a * r * (5*a + 4*r)) / (a*a * (2*a + r)));
-            break;
-        case NFWHalo:
-            density += NFWHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            v0 = (pot->halo)->vhalo;
-            sigma = 0.0; /*FIXME: Find velocity dispersion of NFW Profile*/
-            break;
-        case TriaxialHalo:
-            density += triaxialHaloDensity(&(pot->halo), pos);
-            a = (pot->halo)->scaleLength;
-            v0 = (pot->halo)->vhalo;
-            sigma = 0.0; /*FIXME: Find velocity dispersion of Triaxial Profile*/
-            break;
-        case CausticHalo:
-            density += 0.0; /*FIXME: Add density profile for caustic halo when we actually plan on making this work*/
-            a = (pot->halo)->scaleLength;
-            v0 = 0.0;
-            break;
-        case AllenSantillanHalo:
-            density += allenSantillanHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            M = 0.0;
-            sigma = 0.0; /*FIXME: Find velocity dispersion of Allen-Santillan Profile*/
-            break;
-        case WilkinsonEvansHalo:
-            density += wilkinsonEvansHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            M = 0.0;
-            sigma = 0.0; /*FIXME: Find velocity dispersion of Wilkinson-Evans Profile*/
-	    break;
-        case NFWMassHalo:
-            density += NFWMHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            M = 0.0;
-            sigma = 0.0; /*FIXME: Find velocity dispersion of NFW Profile*/
-            break;
-        case PlummerHalo:
-            density += plummerHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            M = (pot->halo)->mass;
-            sigma = mw_sqrt(mass/mw_sqrt(r*r + a*a)/6.0);
-            break;
-        case HernquistHalo:
-            density += hernquistHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            M = (pot->halo)->mass;
-            real R = (!(r<thresh))*r/a + (r<thresh)*thresh;
-            sigma = mw_sqrt((M/a)*(R*mw_pow(1+R,3)*mw_log((1+R)/R) - R*(25.0 + 52.0*R + 42.0*R*R + 12.0*R*R*R)/12.0/(1+R)));
-            break;
-        case NinkovicHalo:
-            density += ninkovicHaloDensity(&(pot->halo), r);
-            a = (pot->halo)->scaleLength;
-            v0 = 0.0;
-            sigma = 0.0; /*FIXME: Find velocity dispersion of Ninkovic Profile*/
-            break;
-        case NoHalo:
-            density += 0.0;
-            a = (pot->halo)->scaleLength;
-            v0 = 0.0;
-            break;
-        case InvalidHalo:
-        default:
-            mw_fail("Invalid halo type in density\n");
-    }
+    //Get velocity dispersion of MW galaxy assuming isotropy
+    real sigma2 = velDispersion(&pot, pos, 50.0*scaleLength_halo);
  
     //ratio of the velocity of the object to the modal velocity
-    real X = objectVel / (mw_pow(2, 0.5) * sigma);
+    real X = objectVel / (mw_pow(2*sigma2, 0.5));
 
-    //acceleration from DF
-    real acc = (-4*pi*mw_pow(G_CONST, 2)*mass* mw_log(lambda)*density / mw_pow(objectVel, 2)) * (erf(X) - 2*X/mw_pow(pi, 0.5)*exp(-1.0*mw_pow(X, 2)));
+    //Acceleration from DF
+    real acc = (-4 * pi * mw_pow(G_CONST, 2) * mass_LMC * ln_lambda * density / mw_pow(objectVel, 2)) * (erf(X) - 2*X/mw_pow(pi, 0.5)*exp(-1.0*mw_pow(X, 2)));
     
     result.x = (acc * vel.x / objectVel);
     result.y = (acc * vel.y / objectVel);

@@ -32,6 +32,8 @@
 
 /*Methods to be called by potentials*/
 
+const real pi = 3.1415926535
+
 static inline real lnfact(int n)
 {
      int counter;
@@ -117,14 +119,14 @@ static inline real ZExpIntegrand (real k, real R, real Rd, real z, real zd)
 
 static inline real RSechIntegrand (real k, real R, real Rd, real z, real zd)
 {
-    real val = sqr(k)*zd/mw_sinh(3.1415926535*k*zd/2.0)*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R));
+    real val = sqr(k)*zd/mw_sinh(pi*k*zd/2.0)*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R));
     //mw_printf("RSech(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
     return val;
 }
 
 static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
 {
-    real val = sqr(k)*zd/mw_sinh(3.1415926535*k*zd/2.0)*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R));
+    real val = sqr(k)*zd/mw_sinh(pi*k*zd/2.0)*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R));
     //mw_printf("ZSech = %.15f\n",val);
     return val;
 }
@@ -303,8 +305,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         integralZ  = integralZ + Zpiece;
     }
 
-    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/3.1415926535*integralR);
-    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/3.1415926535*integralZ);
+    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/pi*integralR);
+    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/pi*integralZ);
 
     X(acc) = X(R_comp) + X(Z_comp);
     Y(acc) = Y(R_comp) + Y(Z_comp);
@@ -502,7 +504,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 
     const real z = r/a;
     const real zl = lambda/a;
-    const real f = 4.0*3.1415926535/3.0*rho0*cube(a);
+    const real f = 4.0*pi/3.0*rho0*cube(a);
 
     real mass_enc;
 

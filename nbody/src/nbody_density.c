@@ -18,107 +18,6 @@
 
 const real pi = 3.1415926535;
 
-/*Methods to be called by densities*/
-
-static inline real lnfact(int n)
-{
-     int counter;
-     real result = 0.0;
-     if (n > 0)
-     {
-          for (counter = n; counter >= 1; counter--)
-          {
-               result += mw_log((real) counter);
-          }
-     }
-     /*mw_printf("ln(%u!) = %.15f \n",n,result);*/
-     return result;
-}
-
-static inline real binom(int n, int k)
-{
-    return mw_exp(lnfact(n)-lnfact(k)-lnfact(n-k));
-}
-
-static inline real leg_pol(real x, int l)
-{
-    real sum = 0.0;
-    for (int m = 0; m < mw_floor(l/2)+1; m++)
-    {
-        sum += mw_pow(-1, m)*mw_pow(x, l-2*m)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l);
-    }
-    if (x == 0.0)
-    {
-        if (l*1.0/2.0 == mw_ceil(l*1.0/2.0))
-        {
-            sum = mw_pow(-1,l/2)*mw_exp(lnfact(l)-2*lnfact(l/2) - l*mw_log(2));
-        }
-        else
-        {
-            sum = 0.0;
-        }
-    }
-    /*mw_printf("P(%.15f, %u) = %.15f \n",x,l,sum);*/
-    return sum;
-}
-
-static inline real leg_pol_derv(real x, int l)
-{
-    real sum = 0.0;
-    for (int m = 0; m < mw_floor((l-1)/2)+1; m++)
-    {
-        sum += mw_pow(-1, m)*mw_pow(x, l - 2*m - 1)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m);
-    }
-    /*mw_printf("P'(%.15f, %u) = %.15f \n",x,l,sum);*/
-    return sum;
-}
-
-static inline real lower_gamma(int n, real x)
-{
-    real sum = 0;
-    for (int k = 0; k < n; k++)
-    {
-       sum += mw_pow(x,k)/mw_exp(lnfact(k));
-    }
-    /*mw_printf("g(%u, %.15f) = %.15f \n",n,x,mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum));*/
-    return mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum);
-}
-
-static inline real GenExpIntegral(int n, real x) /*Optimized for convergence at n=1,x=0.5*/
-{
-    return mw_exp(-x)/(x + n/(1+1/(x + (n+1)/(1 + 2/(x + (n+2)/(1 + 3/(x + (n+3)/(1 + 4/(x + (n+4)/(1 + 5/(x + (n+5)/(1 + 6/(x + (n+6)/(1 + 7/(x + (n+7)/(1 + 8/(x + (n+8)/(1 + 9/(x + (n+9)/11)))))))))))))))))));
-}
-
-static inline real RExpIntegrand (real k, real R, real Rd, real z, real zd)
-{
-    real val = k*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R))/(sqr(zd*k) + 1);
-    //mw_printf("RExp(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
-    return val;
-}
-
-static inline real ZExpIntegrand (real k, real R, real Rd, real z, real zd)
-{
-    real val = k*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R))/(sqr(zd*k) + 1);
-    //mw_printf("ZExp = %.15f\n",val);
-    return val;
-}
-
-static inline real RSechIntegrand (real k, real R, real Rd, real z, real zd)
-{
-    real val = sqr(k)*zd/mw_sinh(3.1415926535*k*zd/2.0)*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R));
-    //mw_printf("RSech(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
-    return val;
-}
-
-static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
-{
-    real val = sqr(k)*zd/mw_sinh(3.1415926535*k*zd/2.0)*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R));
-    //mw_printf("ZSech = %.15f\n",val);
-    return val;
-}
-
-
-/*************************************************************************************************************************************************************************************************************************************/
 /*Spherical Buldge Densities*/
 static inline real hernquistSphericalDensity(const Spherical* sph, real r)
 {
@@ -285,7 +184,7 @@ static inline real ninkovicHaloDensity(const Halo* h, real r)
     const real rho = h->rho0;
     const real lam = h->lambda;
 
-    const real density = 1.0/(1.0 + mw_pow(r/a,3.0)) - 1.0/(1.0 + mw_pow(lambda/a,3.0))
+    const real density = rho*(1.0/(1.0 + mw_pow(r/a,3.0)) - 1.0/(1.0 + mw_pow(lam/a,3.0)));
 
     if(density < 0)  return 0.0; 
 
@@ -300,4 +199,112 @@ static inline real KVHalo(const Halo* h, real r) /*What is this one?*/
 
     return (1/(4*pi)) * (M/(r*mw_pow(r+a, 2))) - ((2*M)/(mw_pow(r+a, 3)));
 }
+
+real nbExtDensity(const Potential* pot, mwvector pos)
+{
+    real density = 0.0;
+    switch (pot->sphere[0].type)
+    {
+        case HernquistSpherical:
+            density += hernquistSphericalDensity(&(pot->sphere[0]), r);
+            break;
+        case PlummerSpherical:
+            density += plummerSphericalDensity(&(pot->sphere[0]), r);
+            break;
+        case NoSpherical:
+            density += 0.0;
+            break;
+        case InvalidSpherical:
+        default:
+            mw_fail("Invalid bulge type in density\n");
+    }
+
+    switch (pot->disk.type)
+    {
+        case FreemanDisk:
+            density += 0.0; /*Density negligible since infinitely thin*/
+            break;
+        case MiyamotoNagaiDisk:
+            density += miyamotoNagaiDiskDensity(&(pot->disk), pos);
+            break;
+        case DoubleExponentialDisk:
+            density += doubleExponentialDiskDensity(&(pot->disk), pos);
+            break;
+        case Sech2ExponentialDisk:
+            density += sech2ExponentialDiskDensity(&(pot->disk), pos);
+            break;
+        case NoDisk:
+            density += 0.0;
+            break;
+        case InvalidDisk:
+        default:
+            mw_fail("Invalid primary disk type in density\n");
+    }
+
+    switch (pot->disk2.type)
+    {
+        case FreemanDisk:
+            density += 0.0; /*Density negligible since infinitely thin*/
+            break;
+        case MiyamotoNagaiDisk:
+            density += miyamotoNagaiDiskDensity(&(pot->disk2), pos);
+            break;
+        case DoubleExponentialDisk:
+            density += doubleExponentialDiskDensity(&(pot->disk2), pos);
+            break;
+        case Sech2ExponentialDisk:
+            density += sech2ExponentialDiskDensity(&(pot->disk2), pos);
+            break;
+        case NoDisk:
+            density += 0.0;
+            break;
+        case InvalidDisk:
+        default:
+            mw_fail("Invalid secondary disk type in density\n");
+    }
+
+    switch (pot->halo.type)
+    {
+        case LogarithmicHalo:
+            density += logarithmicHaloDensity(&(pot->halo), pos);
+            break;
+        case NFWHalo:
+            density += NFWHaloDensity(&(pot->halo), r);
+            break;
+        case TriaxialHalo:
+            density += triaxialHaloDensity(&(pot->halo), pos);
+            break;
+        case CausticHalo:
+            density += 0.0; /*FIXME: Add density profile for caustic halo when we actually plan on making this work*/
+            break;
+        case AllenSantillanHalo:
+            density += allenSantillanHaloDensity(&(pot->halo), r);
+            break;
+        case WilkinsonEvansHalo:
+            density += wilkinsonEvansHaloDensity(&(pot->halo), r);
+	    break;
+        case NFWMassHalo:
+            density += NFWMHaloDensity(&(pot->halo), r);
+            break;
+        case PlummerHalo:
+            density += plummerHaloDensity(&(pot->halo), r);
+            break;
+        case HernquistHalo:
+            density += hernquistHaloDensity(&(pot->halo), r);
+            break;
+        case NinkovicHalo:
+            density += ninkovicHaloDensity(&(pot->halo), r);
+            break;
+        case NoHalo:
+            density += 0.0;
+            break;
+        case InvalidHalo:
+        default:
+            mw_fail("Invalid halo type in density\n");
+    }
+
+    return density;
+
+}
+
  
