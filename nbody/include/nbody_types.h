@@ -477,6 +477,7 @@ typedef struct MW_ALIGN_TYPE
 
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
+    mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
     
     real Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
@@ -489,7 +490,8 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, 0, 0,                                      \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                            \
+                         0, 0, FALSE,                                                                 \
                          0, 0, 0,                                                                     \
                          EMPTY_POTENTIAL }
 

@@ -24,18 +24,19 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES           -- --
-nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
+nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
+nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION                               -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
-print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
+run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
+use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
+print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
+print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC            -- --
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
+LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -203,7 +204,8 @@ function makeContext()
       theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
-      LMCscale      = LMC_scaleRadius
+      LMCscale      = LMC_scaleRadius,
+      LMCDynaFric   = LMC_DynamicalFriction
    }
 end
 
@@ -230,6 +232,7 @@ function makeBodies(ctx, potential)
 	            LMCvelocity = Vector.create(-57, -226, 221), 
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
+                    LMCDynaFric = LMC_DynamicalFriction,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0

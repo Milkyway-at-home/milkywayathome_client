@@ -125,6 +125,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           },
             { "LMCmass",       LUA_TNUMBER,  NULL, FALSE, &ctx.LMCmass       },
             { "LMCscale",      LUA_TNUMBER,  NULL, FALSE, &ctx.LMCscale      },
+            { "LMCDynaFric",   LUA_TBOOLEAN, NULL, FALSE, &ctx.LMCDynaFric   },
             END_MW_NAMED_ARG
         };
 
@@ -271,6 +272,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "LMC",             getBool,       offsetof(NBodyCtx, LMC)           },
     { "LMCmass",         getNumber,     offsetof(NBodyCtx, LMCmass)       },
     { "LMCscale",        getNumber,     offsetof(NBodyCtx, LMCscale)      },
+    { "LMCDynaFric",     getBool,       offsetof(NBodyCtx, LMCDynaFric)   },
     { NULL, NULL, 0 }
 };
 
@@ -308,6 +310,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "LMC",             setBool,       offsetof(NBodyCtx, LMC)           },
     { "LMCmass",         setNumber,     offsetof(NBodyCtx, LMCmass)       },
     { "LMCscale",        setNumber,     offsetof(NBodyCtx, LMCscale)      },
+    { "LMCDynaFric",     setBool,       offsetof(NBodyCtx, LMCDynaFric)   },
     { NULL, NULL, 0 }
 };
 

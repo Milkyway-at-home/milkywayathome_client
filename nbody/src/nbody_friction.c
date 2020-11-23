@@ -16,7 +16,7 @@
 #include "nbody_friction.h"
 
 /** Isotropic Velocity Dispersion Formulas **/
-real pi = 3.14159265;
+real pi = 3.1415926535;
 
 static inline real dispIntegrand(const Potential* pot, const mwvector pos){
     mwvector acc = nbExtAcceleration(&pot, pos);
@@ -75,12 +75,12 @@ static inline real CoulombLogPlummer(real scale_plummer, real scale_mwhalo){
     }
 
     u = scale_plummer * (pi/scale_mwhalo); /** LMC scale radius times smallest wavenumber (k_min) **/
-    c_log = u*u*( besselK0(u)*besselK2(u) - mw_pow(besselK1(u),2.0) )/2.0;
+    c_log = u*u*(besselK0(u)*besselK2(u) - mw_pow(besselK1(u),2.0))/2.0;
 
     return c_log;
 }
 
-/** Formula for Dynamical Friction from Merritt 2013 Eqn. 5.23 **/
+/** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
 mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC){
     mwvector result;        //Vector with acceleration due to DF
 

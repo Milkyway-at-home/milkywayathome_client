@@ -56,7 +56,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,
 
     /* .BestLikeStart   */  DEFAULT_BEST_LIKELIHOOD_START,
-    /* .OutputFreq      */  1,
+    /* .OutputFreq      */  DEFAULT_OUTPUT_FREQUENCY,
     
     /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
     /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
@@ -68,6 +68,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .LMC             */  FALSE,
     /* .LMCmass         */  0.0,
     /* .LMCscale        */  0.0,
+    /* .LMCDynaFric     */  FALSE,
 
     /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,

@@ -677,6 +677,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && equalPotential(&ctx1->pot, &ctx2->pot)
         && feqWithNan(ctx1->LMC, ctx2->LMC)
         && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
-        && feqWithNan(ctx1->LMCscale, ctx2->LMCscale);
+        && feqWithNan(ctx1->LMCscale, ctx2->LMCscale)
+        && feqWithNan(ctx1->LMCDynaFric, ctx2->LMCDynaFric);
 }
 
