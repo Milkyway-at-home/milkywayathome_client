@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "nbody_coordinates.h"
 #include "nbody_defaults.h"
+#include "nbody_friction.h"
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
@@ -99,7 +100,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
     unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
-    mwvector acc, v, x, mw_acc, LMC_acc, LMCv, LMCx, tmp;
+    mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
     mwvector bacArray[steps + 1];
     mwvector forArray[exSteps + 1];
@@ -118,6 +119,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         // Get the initial acceleration
         mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
         LMC_acc = nbExtAcceleration(pot, LMCx);
+        if (LMCDynaFric) {
+            DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale);
+            mw_incaddv(LMC_acc, DF_acc)
+        }
         acc = nbExtAcceleration(pot, x);
         tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
         mw_incaddv(acc, tmp);
@@ -144,6 +149,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
             // Compute the new acceleration
             mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
             LMC_acc = nbExtAcceleration(pot, LMCx);
+            if (LMCDynaFric) {
+                DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale);
+                mw_incaddv(LMC_acc, DF_acc)
+            }
             acc = nbExtAcceleration(pot, x);
             tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
     	    mw_incaddv(acc, tmp);
@@ -172,6 +181,11 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     // Get the initial acceleration
     mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
     LMC_acc = nbExtAcceleration(pot, LMCx);
+    if (LMCDynaFric) {
+        DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale);
+        mw_incnegv(DF_acc); /* Inverting drag force for reverse orbit */
+        mw_incaddv(LMC_acc, DF_acc)
+     }
     acc = nbExtAcceleration(pot, x);
     tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
     mw_incaddv(acc, tmp);
@@ -198,6 +212,12 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         // Compute the new acceleration
         mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale);
         LMC_acc = nbExtAcceleration(pot, LMCx);
+        if (LMCDynaFric) {
+            DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale);
+            //mw_printf("DF: [%.15f,%.15f,%.15f]\n",X(DF_acc),Y(DF_acc),Z(DF_acc));
+            mw_incnegv(DF_acc); /* Inverting drag force for reverse orbit */
+            mw_incaddv(LMC_acc, DF_acc)
+        }
         acc = nbExtAcceleration(pot, x);
         tmp = plummerAccel(x, LMCx, LMCmass, LMCscale);
     	mw_incaddv(acc, tmp);
@@ -209,6 +229,9 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         
         mw_incaddv_s(v, acc, dt_half);
         mw_incaddv_s(LMCv, LMC_acc, dt_half);
+
+        //mw_printf("LMCx: [%.15f,%.15f,%.15f] | ",X(LMCx),Y(LMCx),Z(LMCx));
+        //mw_printf("LMCv: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
 
     }
     bacArray[i] = mw_acc; //set the last index after the loop ends
@@ -241,8 +264,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
 
-//    mw_printf("Initial LMC position: [%.15f,%.15f,%.15f]\n",X(LMCx),Y(LMCx),Z(LMCx));
-//    mw_printf("Initial LMC velocity: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
+    //mw_printf("Initial LMC position: [%.15f,%.15f,%.15f]\n",X(LMCx),Y(LMCx),Z(LMCx));
+    //mw_printf("Initial LMC velocity: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
 
     //Allocate memory for LMC position and velocity
     LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));

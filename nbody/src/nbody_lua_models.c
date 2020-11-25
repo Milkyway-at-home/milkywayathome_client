@@ -236,6 +236,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     static real ftime = 0.0;
     static real LMCmass = 0.0;
     static real LMCscale = 0.0;
+    static mwbool LMCDynaFric = FALSE;
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
@@ -271,7 +272,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             LMCpos = checkVector(luaSt, 4);
             LMCvel = checkVector(luaSt, 5);
             LMCmass = luaL_checknumber(luaSt, 6);
-            LMCscale = luaL_checknumber(luaSt, 7)
+            LMCscale = luaL_checknumber(luaSt, 7);
             LMCDynaFric = luaL_checknumber(luaSt, 8);
             tstop = luaL_checknumber(luaSt, 9);
             ftime = luaL_checknumber(luaSt, 10);

@@ -16,7 +16,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-const real pi = 3.1415926535;
+static const real pi = 3.1415926535;
 
 /*Spherical Buldge Densities*/
 static inline real hernquistSphericalDensity(const Spherical* sph, real r)
@@ -105,7 +105,7 @@ static inline real NFWHaloDensity(const Halo* h,  real r)
 
     if(r == 0) return 0;
     
-    return rho / (r/a) / mw(1.0+(r/a),2.0);
+    return rho / (r/a) / mw_pow(1.0+(r/a),2.0);
 
 }
 
@@ -203,6 +203,11 @@ static inline real KVHalo(const Halo* h, real r) /*What is this one?*/
 real nbExtDensity(const Potential* pot, mwvector pos)
 {
     real density = 0.0;
+    const real limit = mw_pow(2.0,-8.0);
+
+    /* Change r if less than limit. Done this way to pipeline this step*/
+    real r = (mw_absv(pos) <= limit)*limit + (mw_absv(pos) > limit)*mw_absv(pos);
+
     switch (pot->sphere[0].type)
     {
         case HernquistSpherical:

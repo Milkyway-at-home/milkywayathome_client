@@ -32,7 +32,7 @@
 
 /*Methods to be called by potentials*/
 
-const real pi = 3.1415926535
+static const real pi = 3.1415926535;
 
 static inline real lnfact(int n)
 {
@@ -525,11 +525,10 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
-    real r = mw_absv(pos);
-    const real limit = mw_pow(2.0,-8.0);
+    real limit = mw_pow(2.0,-8.0);
 
     /* Change r if less than limit. Done this way to pipeline this step*/
-    r = (r <= limit)*limit + (r > limit)*r;
+    real r = (mw_absv(pos) <= limit)*limit + (mw_absv(pos) > limit)*mw_absv(pos);
 
     /*Calculate the Disk Accelerations*/
     switch (pot->disk.type)

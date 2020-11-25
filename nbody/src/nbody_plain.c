@@ -32,6 +32,7 @@
 #include "nbody_devoptions.h"
 #include "nbody_orbit_integrator.h"
 #include "nbody_potential.h"
+#include "nbody_friction.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -309,18 +310,27 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 {
     NBodyStatus rc;
     mwvector acc_LMC;
+    mwvector DF_LMC;
     
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
 	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos[0]);
+        if (ctx->LMCDynaFric) {
+            DF_LMC = dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale);
+            mw_incaddv(acc_LMC, DF_LMC);
+        }
         advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     }
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
 	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos[0]);
+        if (ctx->LMCDynaFric) {
+            DF_LMC = dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale);
+            mw_incaddv(acc_LMC, DF_LMC);
+        }
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 
