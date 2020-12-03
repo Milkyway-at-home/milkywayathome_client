@@ -127,7 +127,40 @@ static int createNBodyState(lua_State* luaSt)
         return luaL_argerror(luaSt, 2, "Expected model tables");
 
     setInitialNBodyState(&st, &ctx, bodies, nbody);
-    //mw_printf("Checking status...\n");
+
+    /* Run the first pseudostep to fill accelerations */
+    if (nbStatusIsFatal(nbGravMap(&ctx, &st)))
+    {
+        destroyNBodyState(&st);
+        lua_pushnil(luaSt);
+        return 1;
+    }
+
+    pushNBodyState(luaSt, &st);
+    return 1;
+}
+
+static int createRandomLMCNBodyState(lua_State* luaSt)       /** Only used in to create valid NBodyState for checkpoint test **/
+{
+    Body* bodies;
+    NBodyCtx ctx;
+    int nbody;
+    size_t nShift;
+    dsfmt_t* dsfmtState;
+    real r;
+    NBodyState st = EMPTY_NBODYSTATE;
+
+    ctx = *checkNBodyCtx(luaSt, 1);
+    nShift = luaL_checknumber(luaSt, 2);
+    dsfmtState = checkDSFMT(luaSt, 3);
+    bodies = readModels(luaSt, lua_gettop(luaSt) - 3, &nbody);
+    if (!bodies)
+        return luaL_argerror(luaSt, 4, "Expected model tables");
+
+    setInitialNBodyState(&st, &ctx, bodies, nbody);
+    setRandomLMCNBodyState(&st, nShift, dsfmtState);
+
+    //mw_printf("Created LMC position: [%.15f,%.15f,%.15f]\n",X(st.LMCpos[0]),Y(st.LMCpos[0]),Z(st.LMCpos[0]));
 
     /* Run the first pseudostep to fill accelerations */
     if (nbStatusIsFatal(nbGravMap(&ctx, &st)))
@@ -315,15 +348,16 @@ static const luaL_reg metaMethodsNBodyState[] =
 
 static const luaL_reg methodsNBodyState[] =
 {
-    { "create",          createNBodyState     },
-    { "step",            stepNBodyState       },
-    { "runSystem",       luaRunSystem         },
-    { "sortBodies",      sortBodiesNBodyState },
-    { "clone",           luaCloneNBodyState   },
-    { "writeCheckpoint", luaWriteCheckpoint   },
-    { "readCheckpoint",  luaReadCheckpoint    },
-    { "initCL",          luaInitCL            },
-    { "initCLState",     luaInitNBodyStateCL  },
+    { "create",          createNBodyState          },
+    { "createRandomLMC", createRandomLMCNBodyState },     /** Only used in to create valid NBodyState for checkpoint test **/
+    { "step",            stepNBodyState            },
+    { "runSystem",       luaRunSystem              },
+    { "sortBodies",      sortBodiesNBodyState      },
+    { "clone",           luaCloneNBodyState        },
+    { "writeCheckpoint", luaWriteCheckpoint        },
+    { "readCheckpoint",  luaReadCheckpoint         },
+    { "initCL",          luaInitCL                 },
+    { "initCLState",     luaInitNBodyStateCL       },
     { NULL, NULL }
 };
 

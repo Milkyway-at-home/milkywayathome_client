@@ -443,6 +443,8 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
         st->LMCvel = (mwvector*)mwMallocA(sizeof(mwvector));
         memcpy(st->LMCvel, p, sizeof(mwvector));
         p+= sizeof(mwvector);
+
+        //mw_printf("Read LMC position: [%.15f,%.15f,%.15f]\n",X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
     }
 
     if (strncmp(p, tail, sizeof(tail)))

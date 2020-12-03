@@ -127,13 +127,24 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-    const mwvector LMCx = st->LMCpos[0];
+    mwvector LMCx;
     mwvector a, externAcc;
-    mwvector LMCAcc;
     const Body* b;
+    real lmcmass, lmcscale;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
+
+    if (ctx->LMC) {
+        LMCx = st->LMCpos[0];
+        lmcmass = ctx->LMCmass;
+        lmcscale = ctx->LMCscale;
+    }
+    else {
+        SET_VECTOR(LMCx,0.0,0.0,0.0);
+        lmcmass = 0.0;
+        lmcscale = 1.0;
+    }
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
@@ -146,18 +157,12 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         switch (ctx->potentialType)
         {
             case EXTERNAL_POTENTIAL_DEFAULT:
-                /* Include the external potential */
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
-                //mw_printf("POTENTIAL_DEFAULT...\n");
                 a = nbGravity(ctx, st, b);
-
-                externAcc = nbExtAcceleration(&ctx->pot, Pos(b));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b)), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 mw_incaddv(a, externAcc);
-                if(ctx->LMC) {
-                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-                    mw_incaddv(a, LMCAcc);
-                }
+
                 accels[i] = a;
                 break;
 
@@ -169,13 +174,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
-                //mw_printf("CUSTOM_LUA...\n");
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
+                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
                 mw_incaddv(a, externAcc);
-                if(ctx->LMC) {
-                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-                    mw_incaddv(a, LMCAcc);
-                }
+
                 accels[i] = a;
                 break;
 
@@ -213,13 +215,24 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-    const mwvector LMCx = st->LMCpos[0];
+    mwvector LMCx;
     mwvector a, externAcc;
-    mwvector LMCAcc;
     const Body* b;
+    real lmcmass, lmcscale;
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
+
+    if (ctx->LMC) {
+        LMCx = st->LMCpos[0];
+        lmcmass = ctx->LMCmass;
+        lmcscale = ctx->LMCscale;
+    }
+    else {
+        SET_VECTOR(LMCx,0.0,0.0,0.0);
+        lmcmass = 0.0;
+        lmcscale = 1.0;
+    }
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
@@ -232,11 +245,9 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - EXACT\n");
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
-                mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b)));
-                if(ctx->LMC) {
-                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-                   mw_incaddv(a, LMCAcc);
-                }
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b)), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                mw_incaddv(a, externAcc);
+
                 accels[i] = a;
                 break;
 
@@ -249,11 +260,9 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("CUSTOM POTENTIAL - EXACT\n");
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
+                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
                 mw_incaddv(a, externAcc);
-                if(ctx->LMC) {
-                    LMCAcc = plummerAccel(Pos(b), LMCx, ctx->LMCmass, ctx->LMCscale);
-                    mw_incaddv(a, LMCAcc);
-                }
+
                 accels[i] = a;
                 break;
 
@@ -282,7 +291,7 @@ NBodyStatus nbGravMap(const NBodyCtx* ctx, NBodyState* st)
         rc = nbMakeTree(ctx, st);
         if (nbStatusIsFatal(rc))
             return rc;
-        //mw_printf("Running ForceBody...\n");
+
         nbMapForceBody(ctx, st);
     }
     else

@@ -209,6 +209,25 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 }
 
+void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState)
+{
+    int j;
+
+    st->shiftByLMC = (mwvector*)mwCallocA(nShift, sizeof(mwvector));
+    for(j = 0; j < nShift; j++) {
+        st->shiftByLMC[j] = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.0,1.0));
+        //SET_VECTOR(st->shiftByLMC[j],0.0,0.0,0.0);
+    }
+
+    st->LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));
+    st->LMCvel = (mwvector*)mwMalloc(sizeof(mwvector));
+    st->LMCpos[0] = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
+    st->LMCvel[0] = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
+    //SET_VECTOR(*(st->LMCpos),0.0,0.0,0.0);
+    //SET_VECTOR(*(st->LMCvel),0.0,0.0,0.0);
+    st->nShiftLMC = nShift;
+}
+
 void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize) {
     //Set the state variable for the LMC shift array
     st->shiftByLMC = shiftArray;
@@ -353,12 +372,12 @@ int equalBody(const Body* a, const Body* b)
     }
     if (!equalVector(&Pos(a), &Pos(b)))
     {
-        mw_printf("pos differ\n");
+        mw_printf("Position difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(Pos(a))-X(Pos(b)),Y(Pos(a))-Y(Pos(b)),Z(Pos(a))-Z(Pos(b)));
         return FALSE;
     }
     if (!equalVector(&Vel(a), &Vel(b)))
     {
-        mw_printf("velocity differ\n");
+        mw_printf("Velocity difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(Vel(a))-X(Vel(b)),Y(Vel(a))-Y(Vel(b)),Z(Vel(a))-Z(Vel(b)));
         return FALSE;
     }
 
@@ -379,6 +398,7 @@ static int equalVectorArray(const mwvector* a, const mwvector* b, size_t n)
     {
         if (!equalVector(&a[i], &b[i]))
         {
+            mw_printf("   Difference = [%.15f,%.15f,%.15f]\n", X(a[i])-X(b[i]),Y(a[i])-Y(b[i]),Z(a[i])-Z(b[i]));
             return FALSE;
         }
     }
@@ -398,6 +418,7 @@ static int equalBodyArray(const Body* a, const Body* b, size_t n)
 
     for (i = 0; i < n; ++i)
     {
+        //mw_printf("Body Number: %d\n",i+1);
         if (!equalBody(&a[i], &b[i]))
         {
             return FALSE;
@@ -420,12 +441,84 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
         return FALSE;
     }
 
+    if (st1->shiftByLMC || st2->shiftByLMC)
+    {
+        if (!st1->shiftByLMC || !st2->shiftByLMC)
+        {
+            mw_printf("Comparing non-NULL shiftByLMC to NULL pointer!\n");
+            return FALSE;
+        }
+        if (st1->nShiftLMC != st2->nShiftLMC)
+        {
+            mw_printf("shiftByLMC Size Difference!\n");
+            return FALSE;
+        }
+        if (!equalVectorArray(st1->shiftByLMC, st2->shiftByLMC, st1->nShiftLMC))
+        {
+            mw_printf("Different LMC Shifts Detected!\n");
+            return FALSE;
+        }
+    }
+
+    if (st1->LMCpos || st2->LMCpos)
+    {
+        if (!st1->LMCpos || !st2->LMCpos)
+        {
+            mw_printf("Comparing non-NULL shiftByLMC to NULL pointer!\n");
+            return FALSE;
+        }
+        if (!equalVector(st1->LMCpos, st2->LMCpos))
+        {
+            mw_printf("LMC Position difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCpos[0])-X(st2->LMCpos[0]),Y(st1->LMCpos[0])-Y(st2->LMCpos[0]),Z(st1->LMCpos[0])-Z(st2->LMCpos[0]));
+            return FALSE;
+        }
+    }
+
+    if (st1->LMCvel || st2->LMCvel)
+    {
+        if (!st1->LMCvel || !st2->LMCvel)
+        {
+            mw_printf("Comparing non-NULL shiftByLMC to NULL pointer!\n");
+            return FALSE;
+        }
+        if (!equalVector(st1->LMCvel, st2->LMCvel))
+        {
+            mw_printf("LMC Velocity difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCvel[0])-X(st2->LMCvel[0]),Y(st1->LMCvel[0])-Y(st2->LMCvel[0]),Z(st1->LMCvel[0])-Z(st2->LMCvel[0]));
+            return FALSE;
+        }
+    }
+
+    if (st1->orbitTrace || st2->orbitTrace)
+    {
+        if (!st1->orbitTrace || !st2->orbitTrace)
+        {
+            mw_printf("Comparing non-NULL orbitTrace to NULL pointer!\n");
+            return FALSE;
+        }
+        if (st1->nOrbitTrace != st2->nOrbitTrace)
+        {
+            mw_printf("orbitTrace Size Difference!\n");
+            return FALSE;
+        }
+        if (!equalVectorArray(st1->orbitTrace, st2->orbitTrace, st1->nOrbitTrace))
+        {
+            mw_printf("Different Orbits Detected!\n");
+            return FALSE;
+        }
+    }
+
     if (!equalBodyArray(st1->bodytab, st2->bodytab, st1->nbody))
     {
         return FALSE;
     }
 
-    return equalVectorArray(st1->acctab, st2->acctab, st1->nbody);
+    if (!equalVectorArray(st1->acctab, st2->acctab, st1->nbody))
+    {
+        mw_printf("Different Accelerations Detected!\n");
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /* TODO: Doesn't clone tree or CL stuffs */
@@ -480,10 +573,10 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     }
 
     if (oldSt->LMCpos && oldSt->LMCvel) {
-        st->LMCpos = (mwvector*) mwMallocA(sizeof(mwvector));
-        memcpy(st->LMCpos, oldSt->LMCpos, sizeof(mwvector));
-        st->LMCvel = (mwvector*) mwMallocA(sizeof(mwvector));
-        memcpy(st->LMCvel, oldSt->LMCvel, sizeof(mwvector));
+        st->LMCpos = (mwvector*) mwMalloc(sizeof(mwvector));
+        st->LMCpos[0] = oldSt->LMCpos[0];
+        st->LMCvel = (mwvector*) mwMalloc(sizeof(mwvector));
+        st->LMCvel[0] = oldSt->LMCvel[0];
     }
 
     if (st->ci)

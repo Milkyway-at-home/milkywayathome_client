@@ -133,21 +133,21 @@ static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
 
 /**********************************************************************************************************************************************************************************************/
 
-mwvector pointAccel(mwvector pos, mwvector pos1, real mass)
+mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
-    real tmp = mass/cube(dist);
+    real tmp = mass/mw_pow(dist,3.0);
     mw_incmulvs(v, tmp);
     return v;
 }
 
-mwvector plummerAccel(mwvector pos, mwvector pos1, real mass, real scale)
+mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
-    real tmp = mw_sqrt(sqr(scale) + sqr(dist));
-    mw_incmulvs(v, mass/cube(tmp));
+    real tmp = mw_sqrt(mw_pow(scale,2.0) + mw_pow(dist,2.0));
+    mw_incmulvs(v, mass/mw_pow(tmp,3.0));
     return v;
 }
 

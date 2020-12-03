@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 1000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION                               -- --
 

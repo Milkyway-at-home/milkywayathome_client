@@ -507,7 +507,9 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
      * for various reasons, such as avoiding depending on openssl and
      * to not include useless / and or less safe versions of
      * functions. */
+    //mw_printf("BEFORE REGISTER\n");
     registerNBodyState(luaSt);
+    //mw_printf("AFTER REGISTER\n");
 
   #if USE_SSL_TESTS
     installHashFunctions(luaSt);
@@ -521,8 +523,9 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     lua_pushboolean(luaSt, TRUE);
     lua_setglobal(luaSt, "NBODY_TESTING");
 
-
+    //mw_printf("BEFORE DO FILE\n");
     rc = dofileWithArgs(luaSt, file, args, nArgs);
+    //mw_printf("AFTER DO FILE\n");
     if (rc)
         mw_lua_perror(luaSt, "Error evaluating script '%s'\n", file);
 
@@ -544,8 +547,9 @@ int main(int argc, const char* argv[])
     }
 
     nbodyTestInit();
-
+    //mw_printf("BEFORE TEST\n");
     rc = runNBodyTest(testScript, &argv[2], argc - 2);
+    //mw_printf("AFTER TEST\n");
 
     nbodyTestCleanup();
 
