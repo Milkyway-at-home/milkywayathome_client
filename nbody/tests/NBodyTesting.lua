@@ -213,7 +213,8 @@ function printResult(t)
    doublePrec  = %s,
    model       = "%s",
    useQuad     = %s,
-   LMC         = %s
+   LMC         = %s,
+   LMCDynaFric = %s
 ]]
 
    local str
@@ -229,7 +230,8 @@ function printResult(t)
                        tostring(t.doublePrec),
                        t.model,
                        tostring(t.useQuad),
-                       tostring(t.LMC))
+                       tostring(t.LMC),
+                       tostring(t.LMCDynaFric))
 
    local resultFmt =
 [[

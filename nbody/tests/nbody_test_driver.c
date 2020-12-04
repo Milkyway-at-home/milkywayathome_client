@@ -47,6 +47,7 @@ typedef struct
     criterion_t criterion;
 
     mwbool LMC;
+    mwbool LMCDynaFric;
     mwbool useQuad;
     mwbool allowIncest;
 } NBodyCtxTest;
@@ -140,6 +141,8 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
     rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.criterion,   sizeof(t->ctx.criterion));
     rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.useQuad,     sizeof(t->ctx.useQuad));
     rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.allowIncest, sizeof(t->ctx.allowIncest));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.LMC,         sizeof(t->ctx.LMC));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.LMCDynaFric, sizeof(t->ctx.LMCDynaFric));
 
     rc |= !EVP_DigestUpdate(hashCtx, &t->seed,            sizeof(t->seed));
     rc |= !EVP_DigestUpdate(hashCtx, &t->nSteps,          sizeof(t->nSteps));
@@ -213,6 +216,7 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
             { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
             { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
             { "LMC",         LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMC         },
+            { "LMCDynaFric", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMCDynaFric },
 
             /* Unused in hash; these ones may or may not exist, just don't error if there */
             { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },

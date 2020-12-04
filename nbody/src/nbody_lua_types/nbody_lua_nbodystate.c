@@ -140,7 +140,7 @@ static int createNBodyState(lua_State* luaSt)
     return 1;
 }
 
-static int createRandomLMCNBodyState(lua_State* luaSt)       /** Only used in to create valid NBodyState for checkpoint test **/
+static int createRandomLMCNBodyState(lua_State* luaSt)       /** Only used to create valid NBodyState for checkpoint test **/
 {
     Body* bodies;
     NBodyCtx ctx;
