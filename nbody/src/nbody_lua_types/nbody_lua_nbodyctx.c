@@ -31,7 +31,10 @@
 #include "nbody_lua_misc.h"
 #include "nbody_util.h"
 #include "nbody_lua_util.h"
+#include "nbody_potential.h"
+#include "nbody_density.h"
 
+static const real pi = 3.1415926535;
 
 static const MWEnumAssociation criterionOptions[] =
 {

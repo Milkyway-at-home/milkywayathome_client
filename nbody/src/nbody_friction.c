@@ -53,7 +53,9 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
     real dist = mw_pow(mw_dotv(pos,pos), 0.5);
     int nDivs = 10;
     real width = (upperlimit - dist)/(nDivs*1.0);
-    if (width <= 0) {
+    real rho0 = nbExtDensity(pot,pos);
+    if ((width <= 0)||(rho0 == 0.0)) /** To avoid divide by zero later **/
+    {
         return -1;       /** Want to ignore any contribution more than 50 scale radii from galactic center. Chose this value because dispersion is never negative. **/
     }
     integral = 0.0;
@@ -68,9 +70,8 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
     }
 
     integral *= width/2.0;
-    real rho = nbExtDensity(pot,pos);
 
-    return integral/rho; /** Reutrns a velocity squared **/
+    return integral/rho0; /** Reutrns a velocity squared **/
 }
 
 /** Coulomb Logarithm for plummer spheres derived from Esquivel and Fuchs (2018) **/
@@ -88,12 +89,19 @@ static inline real CoulombLogPlummer(real scale_plummer, real scale_mwhalo){
 
 static inline real getHaloScaleLength(const Halo* halo){
     real scale = halo->scaleLength;
+    if (scale == 0.0)
+    {
+        scale = 1.0;    /** This is the case when there is no halo **/
+    }
     return scale;
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC){
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric){
     mwvector result = mw_vec(0.0,0.0,0.0);        //Vector with acceleration due to DF
+    if (!dynaFric) {
+        return result;
+    }
     real X;
     Halo *mw_halo;
 

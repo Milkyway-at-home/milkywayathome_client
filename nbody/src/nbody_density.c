@@ -11,6 +11,7 @@
 #include "milkyway_util.h"
 #include "nbody_caustic.h"
 #include "nbody_bessel.h"
+#include "nbody_show.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -34,9 +35,16 @@ static inline real hernquistSphericalDensity(const Spherical* sph, real r)
 static inline real plummerSphericalDensity(const Spherical* sph, real r)
 {
     const real a = sph->scale;
-    if((4*pi*mw_pow(a, 3))*mw_pow((1+(r/a)*(r/a)), -5/2) == 0) return 0;
+    const real M = sph->mass;
+    if(a == 0)
+    {
+        return 0;
+    }
+    real r_a = r/a;
 
-    return ((3*sph->mass)/(4*pi*mw_pow(a, 3))*mw_pow((1+(r/a)*(r/a)), -5/2));
+    real rho_peak = 3*M/(4.0*pi*mw_pow(a, 3.0));
+
+    return rho_peak*mw_pow((1.0+mw_pow(r_a,2.0)), -2.5);
 }
 
 /*Disk Densities*/
@@ -44,12 +52,13 @@ static inline real miyamotoNagaiDiskDensity(const Disk* disk, mwvector pos)
 {
     const real a   = disk->scaleLength;
     const real b   = disk->scaleHeight;
-    const real zp  = mw_sqrt(sqr(Z(pos)) + sqr(b));
-    const real R   = mw_sqrt(mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0));
-    
+    const real M   = disk->mass;
+    const real R   = mw_pow(mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0), 0.5);
+    const real zp  = mw_pow(mw_pow(Z(pos),2.0) + mw_pow(b,2.0), 0.5);
+    const real azp = a + zp;
 
-    real numer = disk->mass*b*b*(a*R*R + (a + 3.0*mw_pow(zp*zp+b*b, 0.5) * mw_pow(a+mw_pow(zp*zp+b*b, 0.5), 2)));
-    real denom = 4.0*pi*mw_pow(R*R + mw_pow(a+mw_pow(zp*zp+b*b, 0.5), 2.0), 2.5)*mw_pow(zp*zp+b*b, 1.5);
+    real numer = M*b*b*(a*R*R + (a + 3.0*zp) * mw_pow(azp, 2));
+    real denom = 4.0*pi*mw_pow(R*R + azp*azp, 2.5)*mw_pow(zp, 3.0);
 
     if(denom == 0) return 0;
 
@@ -83,7 +92,7 @@ static inline real sech2ExponentialDiskDensity(const Disk* disk, mwvector pos)
 }
 
 /*Halo Densities*/
-static inline real logarithmicHaloDensity(const Halo* h, mwvector pos)
+static inline real logarithmicHaloDensity(const Halo* h, mwvector pos) /** flattenZ should be greater than 1/sqrt(2) to keep positive definite **/
 {
     const real v  = h->vhalo;
     const real q  = h->flattenZ;
@@ -91,7 +100,7 @@ static inline real logarithmicHaloDensity(const Halo* h, mwvector pos)
     const real R2 = mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0);
 
     real numer = (2.0*q*q + 1.0)*a*a + R2 + mw_pow(Z(pos),2.0)*(2.0-1.0/q/q);
-    real denom = mw_pow(R2+a*a+mw_pow(Z(pos),2.0)/q/q,2.0);
+    real denom = q*q*mw_pow(R2 + a*a + mw_pow(Z(pos)/q,2.0),2.0);
 
     return v*v*numer/2.0/pi/denom;
 }
@@ -116,7 +125,7 @@ static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
     const real a   = h->scaleLength;
 
     const real D   = a*a + (h->c1)*mw_pow(X(pos),2.0) + (h->c2)*mw_pow(Y(pos),2.0) + (h->c3)*X(pos)*Y(pos) + mw_pow(Z(pos),2.0)/q/q;
-    const real num = 2.0*(h->c1)*D + 2.0*(h->c2)*D + 2.0*Z(pos)/q/q - mw_pow(2.0*(h->c1)*X(pos) + (h->c3)*Y(pos),2.0) - mw_pow(2.0*(h->c2)*Y(pos) + (h->c3)*X(pos),2.0) - mw_pow(2.0*Z(pos)/q/q,2.0);
+    const real num = 2.0*(h->c1)*D + 2.0*(h->c2)*D + 2.0*D/q/q - mw_pow(2.0*(h->c1)*X(pos) + (h->c3)*Y(pos),2.0) - mw_pow(2.0*(h->c2)*Y(pos) + (h->c3)*X(pos),2.0) - mw_pow(2.0*Z(pos)/q/q,2.0);
 
     return v*v*num/4.0/pi/D/D;
 }
@@ -133,9 +142,16 @@ static inline real hernquistHaloDensity(const Halo* h,  real r)
 static inline real plummerHaloDensity(const Halo* h, real r)
 {
     const real a = h->scaleLength;
-    if(a == 0 || 4*pi*mw_pow(a, 3)*mw_pow((1+(r/a)*(r/a)), -5/2) == 0) return 0;
+    const real M = h->mass;
+    if(a == 0)
+    {
+        return 0;
+    }
+    real r_a = r/a;
 
-    return ((3*h->mass)/((4*pi*mw_pow(a, 3))*mw_pow((1+(r/a)*(r/a)), -5/2)));
+    real rho_peak = 3*M/(4.0*pi*mw_pow(a, 3.0));
+
+    return rho_peak*mw_pow((1.0+mw_pow(r_a,2.0)), -2.5);
 }
 
 static inline real NFWMHaloDensity(const Halo* h,  real r)
@@ -164,7 +180,7 @@ static inline real allenSantillanHaloDensity(const Halo* h, real r)
 
     if(r > lam) return 0.0;
 
-    return M*numer/a/denom;
+    return M*numer/a/denom/4.0/pi;
 }
 
 static inline real wilkinsonEvansHaloDensity(const Halo* h, real r)
@@ -172,9 +188,9 @@ static inline real wilkinsonEvansHaloDensity(const Halo* h, real r)
     const real a = h->scaleLength;
     const real M = h->mass;
 
-    if((r*r*mw_pow(r*r + a*a, 1/2)) == 0)  return 0; 
+    if(r==0.0) return 0.0;
 
-    return (1/(4*pi)) * ((M/(r*r*mw_pow(r*r + a*a, 1/2))) - ((M * (2*r*r + a*a))/(r*r*mw_pow(r*r + a*a, 3/2))));
+    return (1/(4*pi)) * M*a*a/(r*r*mw_pow(r*r + a*a,1.5));
 
 }
 
@@ -306,6 +322,11 @@ real nbExtDensity(const Potential* pot, mwvector pos)
         case InvalidHalo:
         default:
             mw_fail("Invalid halo type in density\n");
+    }
+
+    if (density < 0.0)
+    {
+        mw_fail("Negative density calculated!\n    Faulty Potential = %s\n", showPotential(pot));
     }
 
     return density;

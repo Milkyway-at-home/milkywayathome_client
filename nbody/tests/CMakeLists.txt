@@ -47,6 +47,10 @@ add_executable(bessel_test bessel_test.c)
 set(bessel_test_link_libs nbody
                           milkyway)
 
+add_executable(poisson_test poisson_test.c)
+
+set(poisson_test_link_libs "${nbody_exe_link_libs}")
+
 add_executable(mixeddwarf_test mixeddwarf_test.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
@@ -54,11 +58,13 @@ set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND poisson_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
 milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_link_libs}")
+milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 
 if(BOINC_APPLICATION)
@@ -72,7 +78,6 @@ add_test(NAME checkpoint_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
            COMMAND nbody_test_driver "CheckpointTest.lua")
 
-
 add_test(NAME custom_arg_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
            COMMAND nbody_test_driver "RunArgumentTests.lua" $<TARGET_FILE:milkyway_nbody>)
@@ -81,6 +86,8 @@ add_test(NAME custom_arg_test
 add_test(NAME emd_test COMMAND emd_test)
 
 add_test(NAME bessel_test COMMAND bessel_test)
+
+add_test(NAME poisson_test COMMAND poisson_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
@@ -125,7 +132,8 @@ set(orphan_model_names model_1
                        model_triaxial
                        model_newhist1
                        model_newhist2
-                       model_newhist3)
+                       model_newhist3
+                       model_LMC)
 
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})

@@ -310,27 +310,18 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 {
     NBodyStatus rc;
     mwvector acc_LMC;
-    mwvector DF_LMC;
     
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
-	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos[0]);
-        if (ctx->LMCDynaFric) {
-            DF_LMC = dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale);
-            mw_incaddv(acc_LMC, DF_LMC);
-        }
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos[0]), dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric));
         advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     }
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-	acc_LMC = nbExtAcceleration(&ctx->pot, st->LMCpos[0]);
-        if (ctx->LMCDynaFric) {
-            DF_LMC = dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale);
-            mw_incaddv(acc_LMC, DF_LMC);
-        }
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos[0]), dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric));
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 
@@ -409,10 +400,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             SET_VECTOR(zero,0,0,0);
             rc |= nbStepSystemPlain(ctx, st, zero, zero); 
         } else {
-            mwvector prevAccel = st->shiftByLMC[st->step];
-            mwvector nextAccel = st->shiftByLMC[st->step+1];
-            rc |= nbStepSystemPlain(ctx, st, prevAccel, nextAccel);
+            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
         }
+
         curStep = st->step;
         
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)

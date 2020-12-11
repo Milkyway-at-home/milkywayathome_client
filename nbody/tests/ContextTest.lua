@@ -84,7 +84,7 @@ local resultTable = {
    useQuads     = { true, false },
    allowIncests = { true },  -- Might as well allow it for the tests.
    LMCs         = { true, false },
-   LMCDynaFrics = { true, false }
+   LMCDynaFrics = { true }   -- Setting to true to save time
 }
 
 -- Get list of all tests

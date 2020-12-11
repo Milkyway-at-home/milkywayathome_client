@@ -83,7 +83,7 @@ const char* showDiskT(disk_t x)
         case DoubleExponentialDisk:
             return "DoubleExponentialDisk";
         case Sech2ExponentialDisk:
-            return "DoubleExponentialDisk";
+            return "Sech2ExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
         case NoDisk:

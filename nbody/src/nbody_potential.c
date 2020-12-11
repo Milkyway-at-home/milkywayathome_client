@@ -165,7 +165,7 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos,
 {
     const real tmp = mw_sqrt(sqr(sph->scale) + sqr(r));
 
-    return mw_mulvs(pos, -sph->mass / cube(tmp));
+    return mw_mulvs(pos, -sph->mass / mw_pow(tmp,3.0));
 }
 
 /* Disk Potentials */
@@ -175,11 +175,11 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
     mwvector acc;
     const real a   = disk->scaleLength;
     const real b   = disk->scaleHeight;
-    const real zp  = mw_sqrt(sqr(Z(pos)) + sqr(b));
+    const real zp  = mw_pow(mw_pow(Z(pos),2.0) + mw_pow(b,2.0), 0.5);
     const real azp = a + zp;
 
-    const real rp  = sqr(X(pos)) + sqr(Y(pos)) + sqr(azp);
-    const real rth = mw_sqrt(cube(rp));  /* rp ^ (3/2) */
+    const real rp  = mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + mw_pow(azp,2.0);
+    const real rth = mw_pow(rp,1.5);  /* rp ^ (3/2) */
 
     X(acc) = -disk->mass * X(pos) / rth;
     Y(acc) = -disk->mass * Y(pos) / rth;
@@ -382,21 +382,20 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
 
 /*Halo potentials*/
 
-static inline mwvector logHaloAccel(const Halo* halo, mwvector pos, real r)
+static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 {
     mwvector acc;
 
-    const real tvsqr = -2.0 * sqr(halo->vhalo);
-    const real qsqr  = sqr(halo->flattenZ);
-    const real d     = halo->scaleLength;
-    const real zsqr  = sqr(Z(pos));
+    const real v0 = halo->vhalo;
+    const real q  = halo->flattenZ;
+    const real d  = halo->scaleLength;
 
-    const real arst  = sqr(d) + sqr(X(pos)) + sqr(Y(pos));
-    const real denom = (zsqr / qsqr) +  arst;
+    const real denom = mw_pow(d,2.0) + mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + mw_pow(Z(pos)/q,2.0);
+    const real k = -2.0*v0*v0/denom;
 
-    X(acc) = tvsqr * X(pos) / denom;
-    Y(acc) = tvsqr * Y(pos) / denom;
-    Z(acc) = tvsqr * Z(pos) / ((qsqr * arst) + zsqr);
+    X(acc) = k * X(pos);
+    Y(acc) = k * Y(pos);
+    Z(acc) = k * Z(pos)/(q*q);
 
     return acc;
 }
@@ -413,7 +412,7 @@ static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)
+static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)  /** Triaxial Logarithmic **/
 {
     mwvector acc;
 
@@ -449,10 +448,10 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
     real c;
 
     if (r<lam)
-    {    c = -(M/sqr(a))*mw_pow(scaleR,gam-2)/(1+mw_pow(scaleR,gam-1));
+    {    c = -(M/(a*r))*mw_pow(scaleR,gam-1.0)/(1.0+mw_pow(scaleR,gam-1.0));
     }
     else
-    {    c = -(M/sqr(r))*mw_pow(scaleL,gam)/(1+mw_pow(scaleL,gam-1));
+    {    c = -(M/mw_pow(r,2.0))*mw_pow(scaleL,gam)/(1.0+mw_pow(scaleL,gam-1.0));
     }
 
     return mw_mulvs(pos, c/r);
@@ -585,7 +584,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
     switch (pot->halo.type)
     {
         case LogarithmicHalo:
-            acctmp = logHaloAccel(&pot->halo, pos, r);
+            acctmp = logHaloAccel(&pot->halo, pos);
             break;
         case NFWHalo:
             acctmp = nfwHaloAccel(&pot->halo, pos, r);

@@ -161,6 +161,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
                 externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b)), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
+                    sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
+                    take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
+                    moving potential. **/
                 mw_incaddv(a, externAcc);
 
                 accels[i] = a;

@@ -170,7 +170,7 @@ end
 
 
 function makeContext()
-   soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
+   soften_length  = rscale_l*rscale_d*((mass_l + mass_d) / (mass_d * ((rscale_l)^3.0) + mass_l * ((rscale_d)^3.0)))^(1.0/3.0)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,

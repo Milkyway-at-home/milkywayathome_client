@@ -156,8 +156,9 @@ static int luaCalculateTimestep(lua_State* luaSt)
 
 static real nbCalculateEps2(real nbody, real r0)
 {
-    real eps = r0 / (10.0 * mw_sqrt(nbody));
-    real eps2 = sqr(eps);
+    real beta = 1.0;  /** Tunable parameter for softening length **/
+    real eps = r0 / mw_pow(nbody,-0.26); /** Relation pulled from Athanassoula et al. 1999 **/
+    real eps2 = sqr(eps)/beta;
     if (eps2 <= REAL_EPSILON) {
         eps2 = 2.0*REAL_EPSILON;
     }
