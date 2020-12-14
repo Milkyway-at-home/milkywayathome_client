@@ -113,7 +113,7 @@ typedef MW_ALIGN_TYPE_V(32) double double4[4];
 #define mw_fmod fmod
 
 /* CHECKME: mw_fract */
-#define mw_fract(x) mw_fmin((x) – mw_floor(x), 0x1.fffffep-1f)
+#define mw_fract(x) mw_fmin((x) - mw_floor(x), 0x1.fffffep-1f)
 
 #define mw_frexp frexp
 #define mw_hypot(x, y) mw_sqrt(sqr(x) + sqr(y))
