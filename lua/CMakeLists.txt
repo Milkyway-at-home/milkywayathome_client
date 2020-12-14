@@ -32,7 +32,10 @@ set( LUA_CPATH "LUA_CPATH" CACHE INTERNAL "Environment variable to use as packag
 set( LUA_INIT "LUA_INIT" CACHE INTERNAL "Environment variable for initial script." )
 
 #option( LUA_ANSI "Use only ansi features." OFF )
+
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 option( LUA_USE_RELATIVE_LOADLIB "Use modified loadlib.c with support for relative paths on posix systems." ON)
+endif()
 mark_as_advanced(LUA_USE_RELATIVE_LOADLIB)
 
 set( LUA_IDSIZE 60 CACHE INTERNAL "gives the maximum size for the description of the source." )
@@ -69,6 +72,13 @@ if( WIN32 AND NOT CYGWIN )
   string( REPLACE "/" ${LUA_DIRSEP} LUA_CDIR "${LUA_CDIR}" )
   string( REPLACE "/" ${LUA_DIRSEP} LUA_PATH_DEFAULT "${LUA_PATH_DEFAULT}" )
   string( REPLACE "/" ${LUA_DIRSEP} LUA_CPATH_DEFAULT "${LUA_CPATH_DEFAULT}" )
+elseif( CMAKE_SYSTEM_NAME STREQUAL "Emscripten" )
+  # Emscripten
+  option( LUA_USE_POSIX "Use POSIX functionality." OFF )
+  option( LUA_USE_DLOPEN "Use dynamic linker to load modules." OFF)
+  option( LUA_USE_ISATTY "Use tty." OFF )
+  option( LUA_USE_POPEN "Use popen." OFF )
+  option( LUA_USE_ULONGJMP "Use ulongjmp" OFF)
 else()
   # Posix systems (incl. Cygwin)
   option( LUA_USE_POSIX "Use POSIX functionality." ON )
