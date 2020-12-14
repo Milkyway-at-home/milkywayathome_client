@@ -65,7 +65,7 @@
 
 /* An init function which sets FPU flags when needed */
 unsigned long long crlibm_init() {
-#ifndef CRLIBM_TYPEOS_BSD
+#if !defined(CRLIBM_TYPEOS_BSD) && !defined(__EMSCRIPTEN__)
 #if defined(CRLIBM_HAS_FPU_CONTROL) && (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
@@ -124,7 +124,7 @@ unsigned long long crlibm_init() {
 
 /* An exit function which sets FPU flags to initial value */
 void crlibm_exit(unsigned long long int oldcw) {
-#ifndef CRLIBM_TYPEOS_BSD
+#if !defined(CRLIBM_TYPEOS_BSD) && !defined(__EMSCRIPTEN__)
 #if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
 
 #ifndef _MSC_VER

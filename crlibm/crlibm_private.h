@@ -22,7 +22,7 @@
 
 
 
-#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
+#if ( defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) ) && !defined(__EMSCRIPTEN__)
 #  ifdef HAVE_FPU_CONTROL_H
 #    include <fpu_control.h>
 #  endif
