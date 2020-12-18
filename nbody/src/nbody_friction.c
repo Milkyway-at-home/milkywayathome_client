@@ -65,11 +65,9 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
         for (j = 0; j < 5; j++) {
             r = width*points[j]/2.0 + (a+b)/2.0;
             input_vec = mw_mulvs(pos,r/dist);
-            integral += weights[j]*dispIntegrand(pot,input_vec);
+            integral += weights[j]*dispIntegrand(pot,input_vec)*width/2.0;
         }
     }
-
-    integral *= width/2.0;
 
     return integral/rho0; /** Reutrns a velocity squared **/
 }

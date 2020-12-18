@@ -48,7 +48,7 @@ LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF 
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
+ModelComponents   = 1         -- -- TWO COMPONENTS SWITCH      -- --
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -170,12 +170,11 @@ end
 
 
 function makeContext()
-   soften_length  = rscale_l*rscale_d*((mass_l + mass_d) / (mass_d * ((rscale_l)^3.0) + mass_l * ((rscale_d)^3.0)))^(1.0/3.0)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, soften_length),
+      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
@@ -366,10 +365,18 @@ else
 end
 
 
-dwarfMass = mass_l / light_mass_ratio
-rscale_t  = rscale_l / light_r_ratio
-rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+if(ModelComponents == 1) then
+   dwarfMass = mass_l
+   rscale_t  = rscale_l
+   rscale_d  = 1.0
+   mass_d    = 0.0
+else
+   dwarfMass = mass_l / light_mass_ratio
+   rscale_t  = rscale_l / light_r_ratio
+   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+end
+   
 
 if(manual_bodies and manual_body_file == nil) then 
     print 'WARNING: No body list given. Manual body input turn off'
@@ -389,7 +396,7 @@ else
 end
 
 if(print_out_parameters) then
-    print('forward time=', evolveTime, '\nrev time=',  revOrbTime)
+    print('forward time=', evolveTime, '\nreverse time=',  revOrbTime)
     print('mass_l sim=', mass_l, '\nmass_d sim=', mass_d)
     print('light mass solar=', mass_l * 222288.47, '\ndark mass solar=', mass_d * 222288.47)
     print('total mass solar= ', (mass_d + mass_l) * 222288.47)

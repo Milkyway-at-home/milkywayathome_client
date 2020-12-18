@@ -157,7 +157,7 @@ mwbool checkHaloConstants(Halo* h)
             }
             break;
 
-        case TriaxialHalo:
+        case TriaxialHalo:   /** FIXME: This code still has the capacity to produce negative densities. Find under which parameters the density becomes positive definite. **/
             if (   !isfinite(h->triaxAngle)
                 || !isfinite(h->flattenX)
                 || !isfinite(h->flattenY)
