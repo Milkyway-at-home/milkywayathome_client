@@ -51,6 +51,11 @@ add_executable(poisson_test poisson_test.c)
 
 set(poisson_test_link_libs "${nbody_exe_link_libs}")
 
+add_executable(virial_test virial_test.c)
+
+set(virial_test_link_libs nbody
+                          milkyway)
+
 add_executable(mixeddwarf_test mixeddwarf_test.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
@@ -59,12 +64,14 @@ if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND poisson_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND virial_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
 milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_link_libs}")
 milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_link_libs}")
+milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 
 if(BOINC_APPLICATION)
@@ -88,6 +95,8 @@ add_test(NAME emd_test COMMAND emd_test)
 add_test(NAME bessel_test COMMAND bessel_test)
 
 add_test(NAME poisson_test COMMAND poisson_test)
+
+add_test(NAME virial_test COMMAND virial_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
