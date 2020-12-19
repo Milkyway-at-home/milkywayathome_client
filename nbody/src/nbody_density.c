@@ -156,6 +156,24 @@ static inline real miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r
     return numer/denom;
 }
 
+static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real r, real time)
+{
+    real b = 0;//Triaxial softening length
+    real c = 1;//Prolate softening length
+    mwvector pointPos;
+    pointPos.z = 0;
+    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
+    curAngle = curAngle - M_PI;
+    pointPos.x = cos (curAngle) * disk->scaleLength;
+    pointPos.y = sin (curAngle) * disk->scaleLength;
+    mwvector posDiff = mw_subv(pos, pointPos);//x,y,z
+    real zc = sqr(mw_pow(posDiff.z,2)+mw_pow(c,2));
+    real bzc2 = mw_pow(b+zc,2);
+    bigA = b*mw_pow(posDiff.y,2) + (b+3*zc)*bzc2;
+    bigC = mw_pow(posDiff.y,2)+bzc2;
+    return mw_pow(c,2)/24/pi/a/mw_pow(bigC,2)/mw_pow(zc,3)*((posDiff.x+a)*(3*bigA*bigC+(2*bigA+b*bigC)*mw_pow(posDiff.x+a,2))/mw_pow(bigC+mw_pow(posDiff.x+a,2),2)-(posDiff.x-a)*(3*bigA*bigC+(2*bigA+b+bigC)*mw_pow(posDiff.x-a,2))/mw_pow(bigC+mw_pow(posDiff.x-a,2),1.5));
+}
+
 /*Halo Densities*/
 static inline real hernquistHaloDensity(const Halo* h,  real r)
 {

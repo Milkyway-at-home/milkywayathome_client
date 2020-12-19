@@ -593,11 +593,13 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  "-DFREEMAN_DISK=%d "
                  "-DDOUBEXPO_DISK=%d "
                  "-DSECHEXPO_DISK=%d "
+		 "-DORBITING_BAR=%d "
                  "-DNO_DISK=%d "
                  "-DMIYAMOTO_NAGAI_DISK2=%d "
                  "-DFREEMAN_DISK2=%d "
                  "-DDOUBEXPO_DISK2=%d "
                  "-DSECHEXPO_DISK2=%d "
+		 "-DORBITING_BAR2=%d "
                  "-DNO_DISK2=%d "
                  "-DLOG_HALO=%d "
                  "-DNFW_HALO=%d "
@@ -686,6 +688,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->disk2.type == FreemanDisk,
                  p->disk2.type == DoubleExponentialDisk,
                  p->disk2.type == Sech2ExponentialDisk,
+		 p->disk2.type == OrbitiongBar,
                  p->disk2.type == NoDisk,
                  p->halo.type == LogarithmicHalo,
                  p->halo.type == NFWHalo,

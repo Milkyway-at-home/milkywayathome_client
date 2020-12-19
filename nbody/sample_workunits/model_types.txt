@@ -11,6 +11,7 @@ Disk:
       Disk.doubleExponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
       Disk.sech2Exponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
       Disk.freeman{ mass = <structure mass units>, scaleLength = <kpc> }
+      Disk.orbitingBar{ mass = <structure mass units>, scaleLength = <kpc>, patternSpeed = {}, startAngle = <rad>}
       Disk.none{ mass = <whatever> }
 
 Halo:

@@ -86,8 +86,8 @@ const char* showDiskT(disk_t x)
             return "DoubleExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
-        case OrbitingPointMassBar:
-            return "OrbitingPointMassBar";
+        case OrbitingBar:
+            return "OrbitingBar";
         case NoDisk:
             return "NoDisk";
         case InvalidDisk:

@@ -326,9 +326,9 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->disk.scaleLength);
             break;
 
-        case OrbitingPointMassBar:
+        case OrbitingBar:
             fprintf(f,
-                    "# Secondary Disk: OrbitingPointMassBar\n"
+                    "# Secondary Disk: OrbitingBar\n"
                     "#   mass = %f\n"
                     "#   b = %f\n"
                     "#   pattern speed = %f\n"

@@ -48,7 +48,7 @@ LMC_Mass              = 449865.888
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 2       -- -- TWO COMPONENTS SWITCH      -- --
+ModelComponents   = 1       -- -- TWO COMPONENTS SWITCH      -- --
 manual_bodies     = false    -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -74,7 +74,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code
+use_best_likelihood  = false    -- use the best likelihood return code
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -106,12 +106,12 @@ previousForwardTime = 3.559326
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-orbit_parameter_l  = 250.0
-orbit_parameter_b  = 48.6
-orbit_parameter_r  = 22.6
-orbit_parameter_vx = 182.9 
-orbit_parameter_vy = -63.4
-orbit_parameter_vz = -140.6
+orbit_parameter_l  = 1.0
+orbit_parameter_b  = 46.0
+orbit_parameter_r  = 22.9
+orbit_parameter_vx = -121 
+orbit_parameter_vy = -4
+orbit_parameter_vz = 57
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -126,8 +126,8 @@ function makePotential()
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            --disk2     = Disk.orbitingPointMass{ mass = 2.429275796e4, scaleLength = 5.4, patternSpeed = 40.9, startAngle = 0.488692},
-            disk2     = Disk.none{ mass = 2.429275796e3},
+           -disk2     = Disk.orbitingBar{ mass = 2.689340798e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
+           -- disk2     = Disk.none{ mass = 2.429275796e3},
             halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
         }--vhalo = 74.61 kpc/gy = 73 km/s
    end
