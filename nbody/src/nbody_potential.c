@@ -388,9 +388,9 @@ static inline mwvector orbitingPointMassBarAccel(const Disk* disk, mwvector pos,
     real dist = mw_distv(pos, pointPos);
 
     mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
-    real totalAcc = disk->mass/(disk->scaleLength*disk->scaleLength);//a = Gm/r^2
+    real totalAcc = disk->mass/(dist*dist);//a = Gm/r^2
     acc = mw_mulvs(acc, totalAcc);
-    
+
     /*mw_printf("curAngle: %.15f\n", curAngle);
     mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
     mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));

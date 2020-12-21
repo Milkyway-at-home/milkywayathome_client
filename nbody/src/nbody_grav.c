@@ -167,6 +167,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 a = nbGravity(ctx, st, b);
 
                 externAcc = nbExtAcceleration(&ctx->pot, Pos(b), barTime - ctx->timeBack);
+		//mw_printf("barTime: %f\n", barTime);
+		//mw_printf("timeBack: %f\n", ctx->timeBack);
+		//mw_printf("pos: %f\n", Pos(b));
+
                 mw_incaddv(a, externAcc);
                 accels[i] = a;
                 break;
