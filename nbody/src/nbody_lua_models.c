@@ -164,22 +164,37 @@ static real nbCalculateEps2(real nbody, real a_b, real a_d, real M_b, real M_d)
     if (eps2 <= REAL_EPSILON) {
         eps2 = REAL_EPSILON;
     }
+    mw_printf("Optimal Softening Length = %.15f kpc\n", eps);
     return eps2;
 }
 
 static int luaCalculateEps2(lua_State* luaSt)
 {
-    int nbody;
+    int nbody, arg_num;
     real r0, a_b, a_d, M_b, M_d;
 
-    if (lua_gettop(luaSt) != 5)
-        return luaL_argerror(luaSt, 0, "Expected 5 arguments");
+    arg_num = lua_gettop(luaSt);
 
-    nbody = (int) luaL_checkinteger(luaSt, 1);
-    a_b = luaL_checknumber(luaSt, 2);
-    a_d = luaL_checknumber(luaSt, 3);
-    M_b = luaL_checknumber(luaSt, 4);
-    M_d = luaL_checknumber(luaSt, 5);
+    if (arg_num == 5)
+    {
+        nbody = (int) luaL_checkinteger(luaSt, 1);
+        a_b = luaL_checknumber(luaSt, 2);
+        a_d = luaL_checknumber(luaSt, 3);
+        M_b = luaL_checknumber(luaSt, 4);
+        M_d = luaL_checknumber(luaSt, 5);
+    }
+    else if (arg_num == 2) /** Single component only requires scale radius. **/
+    {
+        nbody = (int) luaL_checkinteger(luaSt, 1);
+        a_b = luaL_checknumber(luaSt, 2);
+        a_d = 1.0; /** can be anything but zero **/
+        M_b = 1.0; /** can be anything but zero **/
+        M_d = 0.0; /** must be zero **/
+    }
+    else
+    {
+        return luaL_argerror(luaSt, 0, "Expected 2 or 5 arguments");
+    }
 
     lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, a_b, a_d, M_b, M_d));
 

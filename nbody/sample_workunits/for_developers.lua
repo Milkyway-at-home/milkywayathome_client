@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 1000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -48,7 +48,7 @@ LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF 
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 1         -- -- TWO COMPONENTS SWITCH      -- --
+ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
