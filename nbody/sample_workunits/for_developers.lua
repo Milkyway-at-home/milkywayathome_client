@@ -24,19 +24,19 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
-nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
+nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
+nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION                               -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
-print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
+run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
+use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
+print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
+print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC            -- --
-LMCtotalBodies        = 2000    -- -- DON'T SET TO VALUES SMALLER THAN 100 
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
+LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -74,7 +74,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -103,15 +103,15 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-orbit_parameter_l  = 218
+orbit_parameter_l  = 258
 
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-orbit_parameter_b  = 53.5
-orbit_parameter_r  = 28.6
-orbit_parameter_vx = -156 
-orbit_parameter_vy = 79 
-orbit_parameter_vz = 107
+orbit_parameter_b  = 45.8
+orbit_parameter_r  = 21.5
+orbit_parameter_vx = -185.5
+orbit_parameter_vy = 54.7
+orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -170,12 +170,11 @@ end
 
 
 function makeContext()
-   soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, soften_length),
+      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
@@ -202,7 +201,10 @@ function makeContext()
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
-      LMC           = LMC_body
+      LMC           = LMC_body,
+      LMCmass       = LMC_Mass,
+      LMCscale      = LMC_scaleRadius,
+      LMCDynaFric   = LMC_DynamicalFriction
    }
 end
 
@@ -227,7 +229,10 @@ function makeBodies(ctx, potential)
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
-              LMCmass     = LMC_Mass,
+                    LMCmass     = LMC_Mass,
+                    LMCscale    = LMC_scaleRadius,
+                    LMCDynaFric = LMC_DynamicalFriction,
+                    ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
 	            }
@@ -255,18 +260,7 @@ function makeBodies(ctx, potential)
         }
         print('Printing reverse orbit')
     end
-    
-  	if(LMC_body) then
-  		LMCModel = predefinedModels.plummer{
-            nbody       = LMCtotalBodies,
-            prng        = prng,
-            position    = LMCfinalPosition,
-            velocity    = LMCfinalVelocity,
-            mass        = LMC_Mass,
-            scaleRadius = LMC_scaleRadius,
-            ignore      = false
-        }
-    end
+
 
     if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
@@ -303,8 +297,6 @@ function makeBodies(ctx, potential)
         return firstModel, manualModel
     elseif(ModelComponents == 0 and manual_bodies) then
         return manualModel
-    elseif(ModelComponents > 0 and not manual_bodies and LMC_body) then
-        return firstModel, LMCModel
     elseif(ModelComponents > 0 and not manual_bodies) then
         return firstModel
     else    
@@ -373,10 +365,18 @@ else
 end
 
 
-dwarfMass = mass_l / light_mass_ratio
-rscale_t  = rscale_l / light_r_ratio
-rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+if(ModelComponents == 1) then
+   dwarfMass = mass_l
+   rscale_t  = rscale_l
+   rscale_d  = 1.0
+   mass_d    = 0.0
+else
+   dwarfMass = mass_l / light_mass_ratio
+   rscale_t  = rscale_l / light_r_ratio
+   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+end
+   
 
 if(manual_bodies and manual_body_file == nil) then 
     print 'WARNING: No body list given. Manual body input turn off'
@@ -396,7 +396,7 @@ else
 end
 
 if(print_out_parameters) then
-    print('forward time=', evolveTime, '\nrev time=',  revOrbTime)
+    print('forward time=', evolveTime, '\nreverse time=',  revOrbTime)
     print('mass_l sim=', mass_l, '\nmass_d sim=', mass_d)
     print('light mass solar=', mass_l * 222288.47, '\ndark mass solar=', mass_d * 222288.47)
     print('total mass solar= ', (mass_d + mass_l) * 222288.47)

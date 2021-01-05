@@ -186,15 +186,16 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
         return nbStepSystemCL(ctx, st);
     }
   #endif
-    mwvector tmp;
-    tmp.x = 0.0;
-    tmp.y = 0.0;
-    tmp.z = 0.0;
-    mwvector tmp1;
-    tmp1.x = 0.0;
-    tmp1.y = 0.0;
-    tmp1.z = 0.0;
-    return nbStepSystemPlain(ctx, st, tmp, tmp1);
+    if(!ctx->LMC)
+    {
+        mwvector zero;
+        SET_VECTOR(zero,0,0,0);
+        return nbStepSystemPlain(ctx, st, zero, zero); 
+    }
+    else
+    {
+        return nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
+    }
 }
 
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)

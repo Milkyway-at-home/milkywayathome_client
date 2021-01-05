@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-mwvector dynamicalFriction(mwvector pos, mwvector vel, real mass, const Potential* pot);
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric);
 
 #ifdef __cplusplus
 }

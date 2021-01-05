@@ -74,7 +74,10 @@ function randomNBodyCtx(prng)
       IterMax       = prng:randomListItem({ 2, 3, 4, 5 }),
       allowIncest   = true,
       quietErrors   = true,
-      LMC = true
+      LMC           = prng:randomBool(),
+      LMCmass       = prng:random(1.0e5,1.0e6),
+      LMCscale      = prng:random(1.0,20.0),
+      LMCDynaFric   = prng:randomBool()
    }
 end
 
@@ -88,10 +91,12 @@ end
 function runInterruptedSteps(st, totalSteps, ctx, prng)
    local tmpDir = os.getenv("TMP") or ""
    local checkpoint = tmpDir .. os.tmpname()
+   local checks = 0
 
    for i = 1, totalSteps do
       st:step(ctx)
       if prng:randomBool() then
+         checks = checks + 1
          local tmp = tmpDir .. os.tmpname()
          st:writeCheckpoint(ctx, checkpoint, tmp)
          ctx, st = NBodyState.readCheckpoint(checkpoint)
@@ -99,39 +104,54 @@ function runInterruptedSteps(st, totalSteps, ctx, prng)
       end
    end
 
-   return ctx, st
+   return ctx, st, checks
 end
 
 
-local nTests = 5
+local nTests = 20
 
 for i = 1, nTests do
    local testSteps, st, stCopy
    local ctx, m
+   local lmcpos, lmcvel
    local prng = DSFMT.create()
 
    m = SM.randomPlummer(prng, 500)
    ctx = randomNBodyCtx(prng)
    ctx:addPotential(SP.randomPotential(prng))
 
-   st = NBodyState.create(ctx, m)
-   stClone = st:clone()
-
    testSteps = floor(prng:random(0, 51))
 
+   if (ctx.LMC) then
+      st = NBodyState.createRandomLMC(ctx, testSteps + 1, prng, m)
+   else
+      st = NBodyState.create(ctx, m)
+   end
+
+   stClone = st:clone()
+
+   assert(st == stClone,
+          string.format("Failed to properly clone state:\nstate 1 = %s\nstate 2 = %s\n",
+                        tostring(st),
+                        tostring(stClone))
+       )
+
    ctx, st = runNSteps(st, testSteps, ctx)
-   ctxClone, stClone = runInterruptedSteps(stClone, testSteps, ctx, prng)
+   ctxClone, stClone, nCheckpoints = runInterruptedSteps(stClone, testSteps, ctx, prng)
 
    assert(ctx == ctxClone,
-          string.format("Checkpointed context does not match:\nctx 1 = %s\n ctx 2 = %s\n",
+          string.format("Checkpointed context does not match after %d checkpoints:\nctx 1 = %s\nctx 2 = %s\n",
+                        nCheckpoints,
                         tostring(ctx),
                         tostring(ctxClone))
        )
 
    assert(st == stClone,
-          string.format("Checkpointed state does not match:\nstate 1 = %s\n state 2 = %s\n",
+          string.format("Checkpointed state does not match after %d checkpoints:\nstate 1 = %s\nstate 2 = %s\n%s",
+                        nCheckpoints,
                         tostring(st),
-                        tostring(stClone))
+                        tostring(stClone),
+                        tostring(ctx))
        )
 end
 

@@ -31,6 +31,8 @@
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
 #include "nbody_orbit_integrator.h"
+#include "nbody_potential.h"
+#include "nbody_friction.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -106,6 +108,21 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real dt,
 
 }
 
+static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
+{
+    real dtHalf = 0.5 * dt;
+    mwvector dr;
+    mwvector dv;
+
+    dr = mw_mulvs(st->LMCvel[0],dt);
+    mw_incaddv(st->LMCpos[0],dr);
+
+    mwvector acc_total = mw_addv(acc, acc_i);
+    dv = mw_mulvs(acc_total, dtHalf);
+    mw_incaddv(st->LMCvel[0],dv);
+    
+}
+
 static inline void advanceVelocities(NBodyState* st, const int nbody, const real dt, const mwvector acc_i1)
 {
     int i;
@@ -120,6 +137,16 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     {
         bodyAdvanceVel(&bodies[i], mw_addv(accs[i], acc_i1), dtHalf);
     }
+}
+
+static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
+{
+    real dtHalf = 0.5 * dt;
+    mwvector dv;
+
+    mwvector acc_total = mw_addv(acc, acc_i);
+    dv = mw_mulvs(acc_total, dtHalf);
+    mw_incaddv(st->LMCvel[0],dv);
 }
 
 
@@ -282,12 +309,24 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
 {
     NBodyStatus rc;
+    mwvector acc_LMC;
     
     const real dt = ctx->timestep;
 
-    advancePosVel(st, st->nbody, dt, acc_i);
+    advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
+    if(ctx->LMC){
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos[0]), dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric));
+        advancePosVel_LMC(st, dt, acc_LMC, acc_i);
+    }
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
+    if(ctx->LMC){
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos[0]), dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric));
+        advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
+    }
+
+//    mw_printf("(%.15f) LMC position: [%.15f,%.15f,%.15f] | ",(int)(st->step)*(ctx->timestep),X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
+//    mw_printf("LMC velocity: [%.15f,%.15f,%.15f]\n",X(st->LMCvel[0]),Y(st->LMCvel[0]),Z(st->LMCvel[0]));
 
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT
@@ -301,9 +340,18 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {   
     if (ctx->LMC){
-        mwvector** shiftLMC;
-        getLMCArray(&shiftLMC);
-        setLMCShiftArray(st, shiftLMC);
+        //These values are set in nbody_orbit_integrator.c. In the event of a checkpoint, these values are already stored, so running this code would reset them to NULL pointers.
+        if (!st->shiftByLMC) {
+            mwvector* shiftLMC;
+            size_t sizeLMC;
+            mwvector* LMCx;
+            mwvector* LMCv;
+
+            getLMCArray(&shiftLMC, &sizeLMC);
+            setLMCShiftArray(st, shiftLMC, sizeLMC);
+            getLMCPosVel(&LMCx, &LMCv);
+            setLMCPosVel(st, LMCx, LMCv);
+        }
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
@@ -352,8 +400,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             SET_VECTOR(zero,0,0,0);
             rc |= nbStepSystemPlain(ctx, st, zero, zero); 
         } else {
-            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step][0], st->shiftByLMC[st->step +1][0]); 
+            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
         }
+
         curStep = st->step;
         
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)

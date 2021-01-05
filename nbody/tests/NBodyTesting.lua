@@ -133,11 +133,12 @@ function runTest(t)
    local ctx, st = getTestNBodyState(t)
    --eprintf("TEST - Before Step Loop\n")
    for i = 1, t.nSteps do
-     --eprintf("TEST - Before State Step\n")
+      --eprintf("TEST - Before State Step\n")
       status = st:step(ctx)
       --eprintf("TEST - Before Status Check\n")
       fatal = statusIsFatal(status)
       if fatal then
+         assert(false, string.format("Fatal Context after %d steps: %s\n", i, tostring(ctx)))
          break
       end
    end
@@ -213,7 +214,8 @@ function printResult(t)
    doublePrec  = %s,
    model       = "%s",
    useQuad     = %s,
-   LMC         = %s
+   LMC         = %s,
+   LMCDynaFric = %s
 ]]
 
    local str
@@ -229,7 +231,8 @@ function printResult(t)
                        tostring(t.doublePrec),
                        t.model,
                        tostring(t.useQuad),
-                       tostring(t.LMC))
+                       tostring(t.LMC),
+                       tostring(t.LMCDynaFric))
 
    local resultFmt =
 [[
