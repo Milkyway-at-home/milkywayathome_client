@@ -32,6 +32,8 @@
 
 /*Methods to be called by potentials*/
 
+static const real pi = 3.1415926535;
+
 static inline real lnfact(int n)
 {
      int counter;
@@ -117,26 +119,35 @@ static inline real ZExpIntegrand (real k, real R, real Rd, real z, real zd)
 
 static inline real RSechIntegrand (real k, real R, real Rd, real z, real zd)
 {
-    real val = sqr(k)*zd/mw_sinh(3.1415926535*k*zd/2.0)*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R));
+    real val = sqr(k)*zd/mw_sinh(pi*k*zd/2.0)*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R));
     //mw_printf("RSech(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
     return val;
 }
 
 static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
 {
-    real val = sqr(k)*zd/mw_sinh(3.1415926535*k*zd/2.0)*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R));
+    real val = sqr(k)*zd/mw_sinh(pi*k*zd/2.0)*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R));
     //mw_printf("ZSech = %.15f\n",val);
     return val;
 }
 
 /**********************************************************************************************************************************************************************************************/
 
-mwvector pointAccel(mwvector pos, mwvector pos1, real mass)
+mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
-    real tmp = mass/cube(dist);
+    real tmp = mass/mw_pow(dist,3.0);
     mw_incmulvs(v, tmp);
+    return v;
+}
+
+mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
+{
+    mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mw_sqrt(mw_pow(scale,2.0) + mw_pow(dist,2.0));
+    mw_incmulvs(v, mass/mw_pow(tmp,3.0));
     return v;
 }
 
@@ -154,7 +165,7 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos,
 {
     const real tmp = mw_sqrt(sqr(sph->scale) + sqr(r));
 
-    return mw_mulvs(pos, -sph->mass / cube(tmp));
+    return mw_mulvs(pos, -sph->mass / mw_pow(tmp,3.0));
 }
 
 /* Disk Potentials */
@@ -164,11 +175,11 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
     mwvector acc;
     const real a   = disk->scaleLength;
     const real b   = disk->scaleHeight;
-    const real zp  = mw_sqrt(sqr(Z(pos)) + sqr(b));
+    const real zp  = mw_pow(mw_pow(Z(pos),2.0) + mw_pow(b,2.0), 0.5);
     const real azp = a + zp;
 
-    const real rp  = sqr(X(pos)) + sqr(Y(pos)) + sqr(azp);
-    const real rth = mw_sqrt(cube(rp));  /* rp ^ (3/2) */
+    const real rp  = mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + mw_pow(azp,2.0);
+    const real rth = mw_pow(rp,1.5);  /* rp ^ (3/2) */
 
     X(acc) = -disk->mass * X(pos) / rth;
     Y(acc) = -disk->mass * Y(pos) / rth;
@@ -297,8 +308,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         integralZ  = integralZ + Zpiece;
     }
 
-    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/3.1415926535*integralR);
-    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/3.1415926535*integralZ);
+    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/pi*integralR);
+    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/pi*integralZ);
 
     X(acc) = X(R_comp) + X(Z_comp);
     Y(acc) = Y(R_comp) + Y(Z_comp);
@@ -455,39 +466,37 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     return acc;
 }
 
-/*Halo potentials*/
-static inline mwvector logHaloAccel(const Halo* halo, mwvector pos, real r)
+static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 {
     mwvector acc;
 
-    const real tvsqr = -2.0 * sqr(halo->vhalo);
-    const real qsqr  = sqr(halo->flattenZ);
-    const real d     = halo->scaleLength;
-    const real zsqr  = sqr(Z(pos));
+    const real v0 = halo->vhalo;
+    const real q  = halo->flattenZ;
+    const real d  = halo->scaleLength;
 
-    const real arst  = sqr(d) + sqr(X(pos)) + sqr(Y(pos));
-    const real denom = (zsqr / qsqr) +  arst;
+    const real denom = mw_pow(d,2.0) + mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + mw_pow(Z(pos)/q,2.0);
+    const real k = -2.0*v0*v0/denom;
 
-    X(acc) = tvsqr * X(pos) / denom;
-    Y(acc) = tvsqr * Y(pos) / denom;
-    Z(acc) = tvsqr * Z(pos) / ((qsqr * arst) + zsqr);
+    X(acc) = k * X(pos);
+    Y(acc) = k * Y(pos);
+    Z(acc) = k * Z(pos)/(q*q);
 
     return acc;
 }
 
-static inline mwvector nfwHaloAccel(const Halo* halo, mwvector pos, real r)
+static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real a  = halo->scaleLength;
+    const real a = h->scaleLength;
+    const real M = sqr(h->vhalo)*a/0.2162165954; /*Maximum of [ln(1+x)/x - 1/(1+x)]*/
     const real ar = a + r;
-//     const real c  = a * sqr(halo->vhalo) * (r - ar * mw_log((r + a) / a)) / (0.2162165954 * cube(r) * ar);
-    /* this is done to agree with NEMO. IDK WHY. IDK where 0.2162165954 comes from */
-    const real c  = a * sqr(a) * 237.209949228 * (r - ar * mw_log((r + a) / a)) / ( cube(r) * ar);
+
+    const real c = (-M/sqr(r))*(mw_log(ar/a)/r - 1/ar);
 
     return mw_mulvs(pos, c);
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)
+static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)  /** Triaxial Logarithmic **/
 {
     mwvector acc;
 
@@ -523,10 +532,10 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
     real c;
 
     if (r<lam)
-    {    c = -(M/sqr(a))*mw_pow(scaleR,gam-2)/(1+mw_pow(scaleR,gam-1));
+    {    c = -(M/(a*r))*mw_pow(scaleR,gam-1.0)/(1.0+mw_pow(scaleR,gam-1.0));
     }
     else
-    {    c = -(M/sqr(r))*mw_pow(scaleL,gam)/(1+mw_pow(scaleL,gam-1));
+    {    c = -(M/mw_pow(r,2.0))*mw_pow(scaleL,gam)/(1.0+mw_pow(scaleL,gam-1.0));
     }
 
     return mw_mulvs(pos, c/r);
@@ -578,7 +587,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 
     const real z = r/a;
     const real zl = lambda/a;
-    const real f = 4.0*3.1415926535/3.0*rho0*cube(a);
+    const real f = 4.0*pi/3.0*rho0*cube(a);
 
     real mass_enc;
 
@@ -599,11 +608,10 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 {
     mwvector acc, acctmp;
-    real r = mw_absv(pos);
-    const real limit = mw_pow(2.0,-8.0);
+    real limit = mw_pow(2.0,-8.0);
 
     /* Change r if less than limit. Done this way to pipeline this step*/
-    r = (r <= limit)*limit + (r > limit)*r;
+    real r = (mw_absv(pos) <= limit)*limit + (mw_absv(pos) > limit)*mw_absv(pos);
 
     /*Calculate the Disk Accelerations*/
     switch (pot->disk.type)
@@ -663,7 +671,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
     switch (pot->halo.type)
     {
         case LogarithmicHalo:
-            acctmp = logHaloAccel(&pot->halo, pos, r);
+            acctmp = logHaloAccel(&pot->halo, pos);
             break;
         case NFWHalo:
             acctmp = nfwHaloAccel(&pot->halo, pos, r);
@@ -679,6 +687,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
             break;
         case WilkinsonEvansHalo:
             acctmp = WEHaloAccel(&pot->halo, pos, r);
+            break;
         case NFWMassHalo:
             acctmp = NFWMHaloAccel(&pot->halo, pos, r);
             break;

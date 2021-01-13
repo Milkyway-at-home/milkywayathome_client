@@ -30,6 +30,7 @@ function getTestNBodyState(t)
    pot = SP.samplePotentials[t.potential]
    model = SM.sampleModels[t.model]
    bodies, eps2, dt = model(t.nbody, t.seed)
+   local prng = DSFMT.create(t.seed)
 
    ctx = NBodyCtx.create{
       timestep    = dt,
@@ -54,12 +55,19 @@ function getTestNBodyState(t)
       IterMax       = 6,
       allowIncest = t.allowIncest,
       quietErrors = true,
-      LMC         = t.LMC
+      LMC         = t.LMC,
+      LMCmass     = 449865.888,
+      LMCscale    = 15.0,
+      LMCDynaFric = t.LMCDynaFric
    }
    --Add potential to context
    ctx:addPotential(pot)
 
-   st = NBodyState.create(ctx, bodies)
+   if (ctx.LMC) then
+      st = NBodyState.createRandomLMC(ctx, 51, prng, bodies)
+   else
+       st = NBodyState.create(ctx, bodies)
+   end
 
    return ctx, st
 end
@@ -75,13 +83,14 @@ local resultTable = {
    criterion    = { "SW93", "TreeCode", "BH86", "Exact" },
    useQuads     = { true, false },
    allowIncests = { true },  -- Might as well allow it for the tests.
-   LMC          = { true, false }
+   LMCs         = { true, false },
+   LMCDynaFrics = { true }   -- Setting to true to save time
 }
 
 -- Get list of all tests
 local function generateFullTestSet()
    return buildAllCombinations(
-      function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest, LMC)
+      function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest, LMC, LMCDynaFric)
          local c = { }
          c.doublePrec  = true
          c.potential   = potential
@@ -95,6 +104,7 @@ local function generateFullTestSet()
          c.useQuad     = useQuad
          c.allowIncest = allowIncest
          c.LMC         = LMC
+         c.LMCDynaFric = LMCDynaFric
          return c
       end,
       resultTable.potentials,
@@ -107,7 +117,8 @@ local function generateFullTestSet()
       resultTable.criterion,
       resultTable.useQuads,
       resultTable.allowIncests,
-      resultTable.LMC)
+      resultTable.LMCs,
+      resultTable.LMCDynaFrics)
 end
 
 if generatingResults then

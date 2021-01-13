@@ -75,6 +75,7 @@ typedef struct
    NBodyCheckpointHeader
    bodytab       Body[]     anything   Array of bodies
    orbitTrace    mwvector[] anything   Array of center of mass history
+   shiftByLMC    mwvector[] anything   Array of LMC accelerations on MW
    ending        string     "end"      Kind of dumb and pointless
  */
 
@@ -90,6 +91,7 @@ typedef struct
     uint32_t realSize;                   /* Does the checkpoint use float or double */
     uint32_t ptrSize;
     uint32_t nOrbitTrace;
+    uint32_t nShiftLMC;
     uint32_t treeIncest;
     real rsize;
     NBodyCtx ctx;
@@ -105,6 +107,7 @@ static void nbPrepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBod
     cp->realSize = sizeof(real);
     cp->ptrSize = sizeof(void*);
     cp->nOrbitTrace = st->nOrbitTrace;
+    cp->nShiftLMC = st->nShiftLMC;
 
     cp->majorVersion = NBODY_VERSION_MAJOR;
     cp->minorVersion= NBODY_VERSION_MINOR;
@@ -205,7 +208,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector);
+                   /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -311,7 +315,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-        cp->cpFileSize = (DWORD) (hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector));
+                            /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = (DWORD) (hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
     }
     else
     {
@@ -389,7 +394,7 @@ static int nbCloseCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    size_t bodySize, traceSize, supposedCheckpointSize;
+    size_t bodySize, traceSize, ShiftLMCSize, LMCPosVelSize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
     char* p = cp->mptr;
 
@@ -402,7 +407,9 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     assert(cp->cpFileSize != 0);
     bodySize = st->nbody * sizeof(Body);
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
-    supposedCheckpointSize = hdrSize + bodySize + traceSize;
+    ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
+    LMCPosVelSize = 2*sizeof(mwvector);
+    supposedCheckpointSize = hdrSize + bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
 
     if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
@@ -422,6 +429,24 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
         p += traceSize;
     }
 
+    if (ShiftLMCSize != 0)
+    {
+        st->nShiftLMC = cpHdr.nShiftLMC;
+        st->shiftByLMC = (mwvector*)mwMallocA(ShiftLMCSize); 
+        memcpy(st->shiftByLMC, p, ShiftLMCSize);
+        p += ShiftLMCSize;
+
+        st->LMCpos = (mwvector*)mwMallocA(sizeof(mwvector));
+        memcpy(st->LMCpos, p, sizeof(mwvector));
+        p+= sizeof(mwvector);
+
+        st->LMCvel = (mwvector*)mwMallocA(sizeof(mwvector));
+        memcpy(st->LMCvel, p, sizeof(mwvector));
+        p+= sizeof(mwvector);
+
+        //mw_printf("Read LMC position: [%.15f,%.15f,%.15f]\n",X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
+    }
+
     if (strncmp(p, tail, sizeof(tail)))
     {
         mwFreeA(st->bodytab);
@@ -429,6 +454,15 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
         mwFreeA(st->orbitTrace);
         st->orbitTrace = NULL;
+
+        mwFreeA(st->shiftByLMC);
+        st->shiftByLMC = NULL;
+
+        mwFreeA(st->LMCpos);
+        st->LMCpos = NULL;
+
+        mwFreeA(st->LMCvel);
+        st->LMCvel = NULL;
 
         mw_printf("Failed to find end marker in checkpoint file.\n");
         return TRUE;
@@ -441,6 +475,7 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
 {
     const size_t bodySize = st->nbody * sizeof(Body);
     const size_t traceSize = st->nOrbitTrace * sizeof(mwvector);
+    const size_t ShiftLMCSize = st->nShiftLMC * sizeof(mwvector);
     char* p = cp->mptr;
     NBodyCheckpointHeader cpHdr;
 
@@ -458,6 +493,18 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
     {
         memcpy(p, st->orbitTrace, traceSize);
         p += traceSize;
+    }
+
+    if (st->shiftByLMC)
+    {
+        memcpy(p, st->shiftByLMC, ShiftLMCSize);
+        p += ShiftLMCSize;
+
+        memcpy(p, st->LMCpos, sizeof(mwvector));
+        p+= sizeof(mwvector);
+
+        memcpy(p, st->LMCvel, sizeof(mwvector));
+        p+= sizeof(mwvector);
     }
 
     strcpy(p, tail);

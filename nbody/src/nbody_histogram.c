@@ -114,7 +114,7 @@ static void nbPrintHistogramHeader(FILE* f,
     const Potential* p = &ctx->pot;
     if (bestLikelihood_time == 0.0)
     {
-        bestLikelihood_time = ctx->timeBack;
+        bestLikelihood_time = ctx->timeEvolve;
     }
 
     mwLocalTimeFull(tBuf, sizeof(tBuf));

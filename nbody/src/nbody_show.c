@@ -83,7 +83,7 @@ const char* showDiskT(disk_t x)
         case DoubleExponentialDisk:
             return "DoubleExponentialDisk";
         case Sech2ExponentialDisk:
-            return "DoubleExponentialDisk";
+            return "Sech2ExponentialDisk";
         case FreemanDisk:
             return "FreemanDisk";
         case OrbitingBar:
@@ -502,6 +502,10 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  criterion       = %s\n"
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
+                     "  LMC             = %s\n"
+                     "  LMCmass         = %f\n"
+                     "  LMCscale        = %f\n"
+                     "  LMCDynaFric     = %s\n"
                      "  checkpointT     = %d\n"
                      "  nStep           = %u\n"
                      "  potentialType   = %s\n"
@@ -516,6 +520,10 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      showCriterionT(ctx->criterion),
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
+                     showBool(ctx->LMC),
+                     ctx->LMCmass,
+                     ctx->LMCscale,
+                     showBool(ctx->LMCDynaFric),
                      (int) ctx->checkpointT,
                      ctx->nStep,
                      showExternalPotentialType(ctx->potentialType),

@@ -8,16 +8,15 @@ Spherical:
 
 Disk:
       Disk.miyamotoNagai{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
-      Disk.doubleExponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
-      Disk.sech2Exponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }
-      Disk.freeman{ mass = <structure mass units>, scaleLength = <kpc> }
-      Disk.orbitingBar{ mass = <structure mass units>, scaleLength = <kpc>, patternSpeed = {}, startAngle = <rad>}
+      Disk.doubleExponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }    /** FAILS POISSON TEST!!! **/
+      Disk.sech2Exponential{ mass = <structure mass units>, scaleLength = <kpc>, scaleHeight = <kpc> }     /** FAILS POISSON TEST!!! **/
+      Disk.freeman{ mass = <structure mass units>, scaleLength = <kpc> }                                   /** FAILS POISSON TEST!!! **/
       Disk.none{ mass = <whatever> }
 
 Halo:
       Halo.logarithmic{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenZ = <q> }
       Halo.nfw{ vhalo = <kpc/Gyr>, scaleLength = <kpc> }
-      Halo.triaxial{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenX = <q>, flattenY = <q>, flattenZ = <q>, triaxAngle = <q> }
+      Halo.triaxial{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenX = <q>, flattenY = <q>, flattenZ = <q>, triaxAngle = <q> }   /** FAILS POISSON TEST!!! **/
       Halo.caustic{}??? (Don't use this one.)
       Halo.allenSantillan{ mass = <structure mass units>, scaleLength = <kpc>, lambda = <kpc>, gamma = <q> }
       Halo.wilkinsonEvans{ mass = <structure mass units>, scaleLength = <kpc> }
