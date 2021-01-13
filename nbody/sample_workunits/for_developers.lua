@@ -92,10 +92,10 @@ use_avg_dist         = false  -- calculate average distance, use in likelihood
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
 useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 6            -- -- FREQUENCY OF WRITING OUTPUTS -- --
+freqOfOutputs         = 100            -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control     = false         -- -- control number of steps      -- --
-Ntime_steps          = 10            -- -- number of timesteps to run   -- --
+Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -103,10 +103,9 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
-orbit_parameter_l  = 258
-
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
+orbit_parameter_l  = 258
 orbit_parameter_b  = 45.8
 orbit_parameter_r  = 21.5
 orbit_parameter_vx = -185.5
@@ -122,7 +121,7 @@ function makePotential()
        print("running in null potential")
        return nil
    else
-        --NOTE: To exculde a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
+        --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
@@ -160,7 +159,7 @@ function get_timestep()
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
 
-    if (evolveTime/t > 150000 or t ~= t) then
+    if ((evolveTime/t > 150000 or t ~= t) and not timestep_control) then
         TooManyTimesteps = 1
         t = evolveTime/4.0
     end
@@ -217,10 +216,12 @@ function makeBodies(ctx, potential)
         totalBodies = 1
     end
 
-    if(run_null_potential == true) then
+    if(run_null_potential == true and manual_bodies == true) then
+        finalPosition = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
+        finalVelocity = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+    elseif(run_null_potential == true) then
         print("placing dwarf at origin")
         finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
-        LMCfinalPosition, LMCfinalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
     else 
     	if (LMC_body) then
     		finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbit_LMC{
@@ -325,7 +326,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expects either 6 or 11 arguments")
+assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
@@ -344,13 +345,14 @@ rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-if((#arg == 11)or(#arg == 12)) then
-  orbit_parameter_b   = round( tonumber(arg[7]), dec )
-  orbit_parameter_r   = round( tonumber(arg[8]), dec )
-  orbit_parameter_vx  = round( tonumber(arg[9]), dec )
-  orbit_parameter_vy  = round( tonumber(arg[10]), dec )
-  orbit_parameter_vz  = round( tonumber(arg[11]), dec )
-  manual_body_file = arg[12]
+if (#arg >= 12) then
+  orbit_parameter_l   = round( tonumber(arg[7]), dec )
+  orbit_parameter_b   = round( tonumber(arg[8]), dec )
+  orbit_parameter_r   = round( tonumber(arg[9]), dec )
+  orbit_parameter_vx  = round( tonumber(arg[10]), dec )
+  orbit_parameter_vy  = round( tonumber(arg[11]), dec )
+  orbit_parameter_vz  = round( tonumber(arg[12]), dec )
+  manual_body_file = arg[13]
 else
   manual_body_file = arg[7] -- File with Individual Particles (.out file)
 end
