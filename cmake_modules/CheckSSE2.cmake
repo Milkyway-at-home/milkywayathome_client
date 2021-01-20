@@ -208,17 +208,24 @@ endif()
 mark_as_advanced(HAVE_AVX)
 
 
+#FIXME: Later versions of Ubuntu seem to have trouble with these commented lines.
+#It builds now, but I don't know how to set the CACHE INTERNAL porition.
+#-----------------------------------------------------------------------------------------
 set(CMAKE_REQUIRED_FLAGS "${SSE41_FLAGS}")
-check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
+#check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
+check_include_files(smmintrin.h HAVE_SSE41)
 mark_as_advanced(HAVE_SSE41)
 
 set(CMAKE_REQUIRED_FLAGS "${SSE3_FLAGS}")
-check_include_files(pmmintrin.h HAVE_SSE3 CACHE INTERNAL "Compiler has SSE3 headers")
+#check_include_files(pmmintrin.h HAVE_SSE3 CACHE INTERNAL "Compiler has SSE3 headers")
+check_include_files(pmmintrin.h HAVE_SSE3)
 mark_as_advanced(HAVE_SSE3)
 
 set(CMAKE_REQUIRED_FLAGS "${SSE2_FLAGS}")
-check_include_files(emmintrin.h HAVE_SSE2 CACHE INTERNAL "Compiler has SSE2 headers")
+#check_include_files(emmintrin.h HAVE_SSE2 CACHE INTERNAL "Compiler has SSE2 headers")
+check_include_files(emmintrin.h HAVE_SSE2)
 mark_as_advanced(HAVE_SSE2)
+#-----------------------------------------------------------------------------------------
 
 set(CMAKE_REQUIRED_FLAGS "")
 
