@@ -58,6 +58,7 @@ extern "C" {
 #define DEFAULT_USE_DIST FALSE
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
+#define DEFAULT_OUTPUT_FREQUENCY ((int) 1000)
 #define DEFAULT_SIGMA_CUTOFF ((real) 2.5)
 #define DEFAULT_SIGMA_ITER ((real) 6)
 #define DEFAULT_DISP_CORRECTION ((real) 1.111)

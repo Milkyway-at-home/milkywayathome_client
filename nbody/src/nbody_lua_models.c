@@ -28,6 +28,7 @@
 #include "nbody_lua.h"
 #include "nbody_lua_types.h"
 #include "milkyway_lua.h"
+#include "nbody_virial.h"
 #include "nbody_plummer.h"
 #include "nbody_nfw.h"
 #include "nbody_hernq.h"
@@ -154,28 +155,48 @@ static int luaCalculateTimestep(lua_State* luaSt)
     return 1;
 }
 
-static real nbCalculateEps2(real nbody, real r0)
+static real nbCalculateEps2(real nbody, real a_b, real a_d, real M_b, real M_d)
 {
-    real eps = r0 / (10.0 * mw_sqrt(nbody));
-    real eps2 = sqr(eps);
+    real beta = 1.0;                                  /** Tunable parameter for softening length **/
+    real r_v = nbCalculateVirial(a_b, a_d, M_b, M_d); /** Calculate virial radius using formula for Henon length unit **/
+    real eps = r_v * 0.98 * mw_pow(nbody, -0.26);     /** Optimal softening length pulled from Athanassoula et al. 1998 **/
+    real eps2 = sqr(eps)/beta;
     if (eps2 <= REAL_EPSILON) {
-        eps2 = 2.0*REAL_EPSILON;
+        eps2 = REAL_EPSILON;
     }
+    mw_printf("Optimal Softening Length = %.15f kpc\n", eps);
     return eps2;
 }
 
 static int luaCalculateEps2(lua_State* luaSt)
 {
-    int nbody;
-    real r0;
+    int nbody, arg_num;
+    real r0, a_b, a_d, M_b, M_d;
 
-    if (lua_gettop(luaSt) != 2)
-        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+    arg_num = lua_gettop(luaSt);
 
-    nbody = (int) luaL_checkinteger(luaSt, 1);
-    r0 = luaL_checknumber(luaSt, 2);
+    if (arg_num == 5)
+    {
+        nbody = (int) luaL_checkinteger(luaSt, 1);
+        a_b = luaL_checknumber(luaSt, 2);
+        a_d = luaL_checknumber(luaSt, 3);
+        M_b = luaL_checknumber(luaSt, 4);
+        M_d = luaL_checknumber(luaSt, 5);
+    }
+    else if (arg_num == 2) /** Single component only requires scale radius. **/
+    {
+        nbody = (int) luaL_checkinteger(luaSt, 1);
+        a_b = luaL_checknumber(luaSt, 2);
+        a_d = 1.0; /** can be anything but zero **/
+        M_b = 1.0; /** can be anything but zero **/
+        M_d = 0.0; /** must be zero **/
+    }
+    else
+    {
+        return luaL_argerror(luaSt, 0, "Expected 2 or 5 arguments");
+    }
 
-    lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, r0));
+    lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, a_b, a_d, M_b, M_d));
 
     return 1;
 }
@@ -239,7 +260,11 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     mwvector finalPos, finalVel, LMCfinalPos, LMCfinalVel;
     static real dt = 0.0;
     static real tstop = 0.0;
+    static real ftime = 0.0;
     static real LMCmass = 0.0;
+    static real LMCscale = 0.0;
+    static mwbool LMCDynaFric = FALSE;
+    static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
     static const mwvector* LMCpos = NULL;
@@ -247,14 +272,17 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
-            { "position",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos           },
-            { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
-            { "LMCposition",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos           },
-            { "LMCvelocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel           },
-            { "LMCmass",      LUA_TNUMBER,   NULL,           TRUE, &LMCmass         },
-            { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
-            { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
+            { "potential",   LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot         },
+            { "position",    LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos         },
+            { "velocity",    LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel         },
+            { "LMCposition", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos      },
+            { "LMCvelocity", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel      },
+            { "LMCmass",     LUA_TNUMBER,   NULL,           TRUE, &LMCmass     },
+            { "LMCscale",    LUA_TNUMBER,   NULL,           TRUE, &LMCscale    },
+            { "LMCDynaFric", LUA_TBOOLEAN,  NULL,           TRUE, &LMCDynaFric },
+            { "tstop",       LUA_TNUMBER,   NULL,           TRUE, &tstop       },
+            { "ftime",       LUA_TNUMBER,   NULL,           TRUE, &ftime       },
+            { "dt",          LUA_TNUMBER,   NULL,           TRUE, &dt          },
             END_MW_NAMED_ARG
         };
 
@@ -264,25 +292,29 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 7:
+        case 11:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
             LMCpos = checkVector(luaSt, 4);
             LMCvel = checkVector(luaSt, 5);
-            tstop = luaL_checknumber(luaSt, 6);
-            dt = luaL_checknumber(luaSt, 7);
+            LMCmass = luaL_checknumber(luaSt, 6);
+            LMCscale = luaL_checknumber(luaSt, 7);
+            LMCDynaFric = luaL_checknumber(luaSt, 8);
+            tstop = luaL_checknumber(luaSt, 9);
+            ftime = luaL_checknumber(luaSt, 10);
+            dt = luaL_checknumber(luaSt, 11);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 7 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 11 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, tstop, dt, LMCmass);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

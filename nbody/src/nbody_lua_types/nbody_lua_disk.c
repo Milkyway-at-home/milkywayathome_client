@@ -41,7 +41,7 @@ static const MWEnumAssociation diskOptions[] =
     { "freeman",    FreemanDisk   },
     { "miyamoto-nagai", MiyamotoNagaiDisk },
     { "double-exponential", DoubleExponentialDisk },
-    { "orbiting-point-mass", OrbitingPointMassBar}, //this is a time-dependent test potential
+    { "orbiting-bar", OrbitingBar}, //this is a time-dependent test potential
     { "none", NoDisk },
     END_MW_ENUM_ASSOCIATION
 };
@@ -112,9 +112,9 @@ static int createFreemanDisk(lua_State* luaSt)
     return createDisk(luaSt, argTable, &d);
 }
 
-static int createPointMassBar(lua_State* luaSt)
+static int createBar(lua_State* luaSt)
 {
-    static Disk d = { OrbitingPointMassBar, 0.0, 0.0, 0.0, 0.0 };
+    static Disk d = { OrbitingBar, 0.0, 0.0, 0.0, 0.0 };
 
     static const MWNamedArg argTable[] =
         {
@@ -182,7 +182,7 @@ static const luaL_reg methodsDisk[] =
     { "freeman",   createFreemanDisk   },
     { "doubleExponential",   createDoubleExponentialDisk   },
     { "sech2Exponential",   createSech2ExponentialDisk   },
-    { "orbitingPointMass", createPointMassBar  },
+    { "orbitingBar", createBar  },
     { "none",   createNoDisk   },
     { NULL, NULL }
 };
@@ -229,7 +229,7 @@ int registerDiskKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createFreemanDisk, "freeman");
     setModelTableItem(luaSt, table, createDoubleExponentialDisk, "doubleExponential");
     setModelTableItem(luaSt, table, createSech2ExponentialDisk, "sech2Exponential");
-    setModelTableItem(luaSt, table, createPointMassBar, "orbitingPointMass");
+    setModelTableItem(luaSt, table, createBar, "orbitingBar");
     setModelTableItem(luaSt, table, createNoDisk, "none");
 
     lua_setglobal(luaSt, "diskModels");

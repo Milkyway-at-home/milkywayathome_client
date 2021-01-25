@@ -1,8 +1,21 @@
-/*********************** DISCLAIMER *************************
-* This code is included for its potential usefulness but    *
-* has not been fully tested. It is not currently used in    *
-* any other milkyway@home files. Use at your own risk.      *
-************************************************************/
+/*
+ *  Copyright (c) 2018-2021 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #ifndef _NBODY_DENSITY_H_
 #define _NBODY_DENSITY_H_
 
@@ -15,11 +28,13 @@ extern "C" {
 static inline real hernquistSphericalDensity(const Spherical* sph, real r);
 static inline real plummerSpherical(const Spherical* sph, real r);
 static inline real miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r);
+static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real r, real time);
 static inline real hernquistHaloDensity(const Halo* h,  real r);
 static inline real plummerHaloDensity(const Halo* h, real r);
 static inline real NFWMHaloDensity(const Halo* h,  real r);
 static inline real wilkinsonHalo(const Halo* h, real r);
 static inline real KVHalo(const Halo* h, real r);
+real nbExtDensity(const Potential* pot, mwvector pos);
 
 #ifdef __cplusplus
 }

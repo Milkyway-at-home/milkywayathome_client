@@ -38,6 +38,7 @@ real besselI0(const real x);
 real besselI1(const real x);
 real besselK0(const real x);
 real besselK1(const real x);
+real besselK2(const real x);
 real aExp(const real k, const real R, const real Rd);
 real bExp(const real k, const real R, const real Rd);
 
