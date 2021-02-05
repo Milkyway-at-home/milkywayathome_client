@@ -82,9 +82,9 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 
 -- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = false  -- calculate average beta, use in likelihood
-use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
-use_avg_dist         = false  -- calculate average distance, use in likelihood
+use_beta_comp        = true  -- calculate average beta, use in likelihood
+use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
+use_avg_dist         = true  -- calculate average distance, use in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 

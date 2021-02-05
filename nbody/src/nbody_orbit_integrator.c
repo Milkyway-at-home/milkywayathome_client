@@ -102,8 +102,13 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     unsigned int i = 0, j = 0, k = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
-    mwvector bacArray[steps + 1];
-    mwvector forArray[exSteps + 1];
+    mwvector* bacArray = NULL;
+    mwvector* forArray = NULL;
+
+    //Placeholder arrays for LMC acceleration corrections
+    bacArray = (mwvector*)mwCallocA(steps + 1, sizeof(mwvector));
+    forArray = (mwvector*)mwCallocA(exSteps + 1, sizeof(mwvector));
+
     real t;
     real dt_half = dt / 2.0;
 
@@ -245,6 +250,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
             shiftByLMC[i+1+j] = tmp;
         }
     }
+
+    //Free placeholder arrays
+    mwFreeA(bacArray);
+    mwFreeA(forArray);
 
     nShiftLMC = size;
 
