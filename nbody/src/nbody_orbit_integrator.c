@@ -64,6 +64,9 @@ void nbReverseOrbit(mwvector* finalPos,
 
     // Get the initial acceleration
     acc = nbExtAcceleration(pot, x, 0);
+   // mw_printf("initial conditions reverse orbit pos: (x: %f, y: %f, z: %f)\n", x.x, x.y, x.z);
+   // mw_printf("initial conditions reverse orbit v: (vx: %f, vy: %f, vz: %f)\n", v.x, v.y, v.z);
+   // mw_printf("initial conditions reverse orbit acc: (accx: %f, accy: %f, accz: %f)", acc.x, acc.y, acc.z);
 
     for (t = 0; t >= tstop*(-1); t -= dt)
     {

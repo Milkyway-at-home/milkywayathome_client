@@ -383,12 +383,11 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     return acc;
 }
 
-//start angle is the current day angle of the bar
 static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
 {
-    /*mw_printf("Calculating Acceleration\n");
-    mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-    mw_printf("r = %.15f\n", r);*/
+    //mw_printf("Calculating Acceleration\n");
+    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+    //mw_printf("r = %.15f\n", r);
     real amp = disk->mass;
     real a = disk->scaleLength;
     real b = 1.4;//Triaxial softening length
@@ -407,16 +406,16 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     real y = Radi*sin(Phi); 
     real z = pos.z;
     
-   /*
-    mw_printf("point x: %.20f\n", x);
-    mw_printf("point y: %.20f\n", y);
-    mw_printf("point z: %.20f\n", z);
    
-    mw_printf("point Position x: %.20f\n", X(pos));
-    mw_printf("point Position y: %.20f\n", Y(pos));
-    mw_printf("point Position z: %.20f\n", Z(pos));
+    //mw_printf("point x: %.20f\n", x);
+    //mw_printf("point y: %.20f\n", y);
+    //mw_printf("point z: %.20f\n", z);
+   
+    //mw_printf("point Position x: %.20f\n", X(pos));
+    //mw_printf("point Position y: %.20f\n", Y(pos));
+    //mw_printf("point Position z: %.20f\n", Z(pos));
     
-    */
+    
     //real dist = mw_distv(pos, pointPos);
 
     real secondpart = mw_pow(y,2.) + mw_pow(b+mw_sqrt(mw_pow(c,2) + mw_pow(z,2)),2);
@@ -428,17 +427,19 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     force.y = -y/2./Tp/Tm*(Tp+Tm-4.*mw_pow(x,2.)/(Tp+Tm))/(mw_pow(y,2.)+mw_pow(b+mw_sqrt(mw_pow(z,2.)+mw_pow(c,2)),2.));
     force.z = force.y*z/y*(b+mw_sqrt(mw_pow(z,2)+mw_pow(c,2)))/mw_sqrt(mw_pow(z,2)+mw_pow(c,2));
    
-    /*
-    if ((y>-0.0001 & y<0.0001) & (z<0.0001 & z> -0.001)) { 
-        mw_printf("point x force: %.20f\n", X(force));
-        mw_printf("point y force: %.20f\n", Y(force));
-        mw_printf("point z force: %.20f\n", Z(force));
-    }
-    */
-    /*
-    mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
-    real totalAcc = mw_mulvs(force,disk->mass);//a = Gm/r^2
-    */
+    
+    //if ((y>-0.0001 & y<0.0001) & (z<0.0001 & z> -0.001)) { 
+    //    mw_printf("point x force: %.20f\n", X(force));
+    //    mw_printf("point y force: %.20f\n", Y(force));
+    //    mw_printf("point z force: %.20f\n", Z(force));
+    //}
+    
+    
+    //mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
+
+    //real totalAcc = disk->mass/(dist*dist);//a = Gm/r^2
+    //real totalAcc = mw_mulvs(force,disk->mass);//a = Gm/r^2
+    
     mwvector acc;
     real cp = cos (curAngle);
     real sp = sin (curAngle);
@@ -450,22 +451,56 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     acc.y = acc.y*amp;
     acc.z = acc.z*amp;
 
-    /*
-    if ((y>-0.0001 & y<0.0001) & (z<0.0001 & z> -0.001)) {
-        mw_printf("point x acc: %.20f\n", X(acc));
-        mw_printf("point y acc: %.20f\n", Y(acc));
-        mw_printf("point z acc: %.20f\n", Z(acc));    
-    }
-    */
+    
+    //if ((y>-0.0001 & y<0.0001) & (z<0.0001 & z> -0.001)) {
+    //    mw_printf("point x acc: %.20f\n", X(acc));
+    //    mw_printf("point y acc: %.20f\n", Y(acc));
+    //    mw_printf("point z acc: %.20f\n", Z(acc));    
+    //}
+    
 
-    /*mw_printf("curAngle: %.15f\n", curAngle);
-    mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
-    mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
-    mw_printf("point x acc: %.15f\n", X(acc));
-    mw_printf("point y acc: %.15f\n", Y(acc));
-    mw_printf("point z acc: %.15f\n", Z(acc));*/
+    //mw_printf("curAngle: %.15f\n", curAngle);
+    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
+    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
+    //mw_printf("point x acc: %.15f\n", X(acc));
+    //mw_printf("point y acc: %.15f\n", Y(acc));
+    //mw_printf("point z acc: %.15f\n", Z(acc));
     return acc;
 }
+
+
+/*If you want to test the time dependency of the bar with the bar as a point mass, comment out 
+the above function and uncomment the one below*/
+
+/*
+static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
+{
+    //mw_printf("Calculating Acceleration\n");
+    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+    //mw_printf("r = %.15f\n", r);
+
+    mwvector pointPos;
+    pointPos.z = 0;
+    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
+    curAngle = curAngle - M_PI;//this is because the sun is negative in our coordinate system
+    pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
+    pointPos.y = sin (curAngle) * disk->scaleLength;
+
+    real dist = mw_distv(pos, pointPos);
+
+    mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
+    real totalAcc = disk->mass/(dist*dist);//a = Gm/r^2
+    acc = mw_mulvs(acc, totalAcc);
+
+    //mw_printf("curAngle: %.15f\n", curAngle);
+    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
+    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
+    //mw_printf("point x acc: %.15f\n", X(acc));
+    //mw_printf("point y acc: %.15f\n", Y(acc));
+    //mw_printf("point z acc: %.15f\n", Z(acc));
+    return acc;
+}
+*/
 
 static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 {
