@@ -191,7 +191,7 @@ typedef struct MW_ALIGN_TYPE
     int structureError;
 } NBodyTree;
 
-#define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
+#define EMPTY_TREE { NULL, 0.0, 0, 0, 0 }
 
 
 #if NBODY_OPENCL
@@ -397,23 +397,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool reportProgress;
 
     
-    //the 
-    //xyz position of the backward particle at all timesteps 
-    //index 0 is the end of the backward orbit
-    mwvector* backwardOrbitPositions; 
-    mwvector backwardOrbitRotationAngles;
-    //how to rotate coordinates
-    //to align the stream with xy plane
-
-    //the theta values of the above where theta is the angle between 
-    //the the x axis and the point (ignoring z coordinate)
-    real* backwardOrbitAngles;
-
-    int backwardOrbitArrayLength;
-
-    int barTimeStep; //the last timestep used by the bar. Timestep 0 is the beginning of forward orbit
-    int lastFittedBarTimeStep; //the last timestep that wasn't updated by default
-    unsigned int numBarBins; //number of bins to use when determining bar time
+    real previousForwardTime;   //used to calibrate bar time
     
   #if NBODY_OPENCL
     CLInfo* ci;
@@ -431,25 +415,8 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, \
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, NULL, ZERO_VECTOR, NULL, 0, 0, 0, 0, NULL,\
+FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL,\
 NULL, NULL, NULL}
-
-/*#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL,                  \
-                           NULL, NULL, NULL,                                               \
-                           NULL, NULL,                                                            \
-                           0,                                                               \
-                           0, 0, 0,                                                         \
-                           0, 0, 0, 0, 0,                                                   \
-                           0,                                                               \
-                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,          \
-                           NULL, ZERO_VECTOR, NULL, 0, 0, 0, 0,                                     \
-                           NULL, NULL, NULL, NULL }*/
-
-
-
-
-
 
 
 /* The context tracks settings of the simulation.  It should be set
@@ -503,12 +470,15 @@ typedef struct MW_ALIGN_TYPE
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
-    
+
+    unsigned int calibrationRuns; //for calibrating time-dependent potentials
+
     real Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
 
     Potential pot;
+
 
 } NBodyCtx;
 
@@ -516,10 +486,10 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                            \
-                         0, 0, FALSE,                                                                 \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                           \
+                         0, 0, FALSE, 0,                                                                \
                          0, 0, 0,                                                                     \
-                         EMPTY_POTENTIAL }
+                         EMPTY_POTENTIAL}
 
 /* Negative codes can be nonfatal but useful return statuses.
    Positive can be different hard failures.

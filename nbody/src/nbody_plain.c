@@ -30,7 +30,6 @@
 #include "nbody_histogram.h"
 #include "nbody_likelihood.h"
 #include "nbody_devoptions.h"
-#include "nbody_bar_time.h"
 #include "nbody_orbit_integrator.h"
 #include "nbody_potential.h"
 #include "nbody_friction.h"
@@ -288,12 +287,14 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
             }
             
-            mwvector meanBinCenter, histCenterVelocity, meanBinVelocity;
+            //This code shows the stream center as calculated in nbody_bar_time.c
+            /*mwvector meanBinCenter, histCenterVelocity, meanBinVelocity;
             mwvector histCenter = getStreamCenter(st, ctx, &meanBinCenter, &histCenterVelocity, &meanBinVelocity);
             mw_printf("stream center hist = (%f, %f, %f)\n", histCenter.x, histCenter.y, histCenter.z);
             mw_printf("stream center hist vel = (%f, %f, %f)\n", histCenterVelocity.x, histCenterVelocity.y, histCenterVelocity.z);
             mw_printf("stream center mean = (%f, %f, %f)\n", meanBinCenter.x, meanBinCenter.y, meanBinCenter.z);
-            mw_printf("stream center mean vel = (%f, %f, %f)\n\n", meanBinVelocity.x, meanBinVelocity.y, meanBinVelocity.z);
+            mw_printf("stream center mean vel = (%f, %f, %f)\n\n", meanBinVelocity.x, meanBinVelocity.y, meanBinVelocity.z);*/
+            mw_printf("new best fit found!\n");
         }
     }
     
@@ -350,14 +351,6 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     NBodyLikelihoodMethod method;
     HistogramParams hp;
     nbGetLikelihoodInfo(nbf, &hp, &method);
-    if(hp.lambdaBins != 0){
-        st->numBarBins = (hp.lambdaBins/getAngleDiffDegrees(hp.lambdaEnd, hp.lambdaStart)) * 2 * M_PI;
-        mw_printf("numBarBins: %d\n", st->numBarBins);
-    }
-    else{
-        st->numBarBins = 360; //default number of histogram bins
-        mw_printf("numBarBins: %d\n", st->numBarBins);
-    }
    
     if (ctx->LMC){
         //These values are set in nbody_orbit_integrator.c. In the event of a checkpoint, these values are already stored, so running this code would reset them to NULL pointers.

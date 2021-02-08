@@ -195,9 +195,9 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
             highestBinVal = histogram[i];
         }
     }
-    if(st->step % 100 == 0)
+    /*if(st->step % 100 == 0)
         mw_printf("numBins: %d\n", numBins);
-        /*for(i = 0; i < numBins; i++){
+        for(i = 0; i < numBins; i++){
             mw_printf("bin %d: %d\n", i, histogram[i]);
         }*/
     //return average of coordinates in given bin
@@ -227,10 +227,10 @@ mwvector* histCenter, mwvector* meanBinCenter, mwvector* histCenterVelocity, mwv
     }else if(angle > 2*M_PI){
         angle -= 2*M_PI;
     }
-    if(st->step % 10 == 0){
+    /*if(st->step % 10 == 0){
         mw_printf("mean angle: %f angle: %f highest bin: %d\n", meanAngle, angle, highestBinNum);
         mw_printf("highest binval: %d LS: %d RS: %d Bodies: %d\n", highestBinVal, leftSearch, rightSearch, nbody);
-    }
+    }*/
     
     //freeing here causes the program to crash. Not sure why.
     /*mwFreeA(histogram);
@@ -276,14 +276,14 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
     //}
     
 
-    if(st->step % 10 == 0)
-        mw_printf("stream center %f:\n", streamCenter);
+    /*if(st->step % 10 == 0)
+        mw_printf("stream center %f:\n", streamCenter);*/
     oldTime = st->lastFittedBarTimeStep;
     oldBackwardOrbitTheta = st->backwardOrbitAngles[oldTime];
     defaultReturnTime = st->barTimeStep + 10;
 
-    if(st->step % 10 == 0)
-        mw_printf("theta %f:\n", oldBackwardOrbitTheta);
+    /*if(st->step % 10 == 0)
+        mw_printf("theta %f:\n", oldBackwardOrbitTheta);*/
 
     if(st->barTimeStep + 1 < arraySize){
         newTime = st->barTimeStep + 1;
@@ -330,13 +330,16 @@ int getBarTime(Body* bodies, int nbody, NBodyState* st, NBodyCtx* ctx){
 }
 
 //returns hist center, calculates and printfs a new starting position and back time
-//that is on the original single particle orbit
+//that is on the original single particle orbit. I'm planning on deprecating this
 mwvector getStreamCenter(NBodyState* st, NBodyCtx* ctx, mwvector* meanBinCenter,
 mwvector* histCenterVelocity, mwvector* meanBinVelocity){
     mwvector histCenter, finalPos, finalVel;
     real finalTime;
     real streamAngle = highestHistPeak(st->bodytab, st->nbody, st, TRUE, &histCenter, meanBinCenter, histCenterVelocity, meanBinVelocity);
     real dt;
+    //This function did a single body orbit to find out how far off the forward time was
+    //from the backtime. I'm replacing this with simply checking how far off the bar time
+    //is from 0.
     fitOrbitStart(&finalPos, &finalVel, &finalTime, &dt, st, ctx, streamAngle, histCenter);
     mw_printf("final pos (on single orbit): (%f, %f, %f)\n", finalPos.x, finalPos.y, finalPos.z);
     mw_printf("final vel: (%f, %f, %f)\n", finalVel.x, finalVel.y, finalVel.z);

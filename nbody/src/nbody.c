@@ -31,7 +31,7 @@
 #include "nbody_plain.h"
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
-#include "nbody_bar_time.h"
+#include "nbody_types.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -420,48 +420,80 @@ int nbMain(const NBodyFlags* nbf)
         return rc;
     }
 
-    nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
-    nbSetStateFromFlags(st, nbf);
+    //for the first run, just assume the best likelihood is at 100%
+    st->previousForwardTime = ctx->timeEvolve;
+    mw_printf("calibrationRuns: %d\n", ctx->calibrationRuns);
+    for(int i = 0; i <= ctx->calibrationRuns; i++){
+        //these for checkpointing
+        nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
+        nbSetStateFromFlags(st, nbf); 
 
-    if (NBODY_OPENCL && !nbf->noCL)
-    {
-        rc = nbInitNBodyStateCL(st, ctx);
-        if (nbStatusIsFatal(rc))
+        if (NBODY_OPENCL && !nbf->noCL)
         {
-            destroyNBodyState(st);
-            return rc;
+            rc = nbInitNBodyStateCL(st, ctx);
+            if (nbStatusIsFatal(rc))
+            {
+                destroyNBodyState(st);
+                return rc;
+            }
         }
+
+        if (nbCreateSharedScene(st, ctx))
+        {
+            mw_printf("Failed to create shared scene\n");
+        }
+
+        if (nbf->visualizer && st->scene)
+        {
+            /* Make sure the first scene is available for the launched graphics */
+            nbForceUpdateDisplayedBodies(ctx, st);
+
+            /* Launch graphics and make sure we are sure the graphics is
+            * attached in case we are using blocking mode */
+            nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
+        }
+
+        if (nbf->reportProgress)
+        {
+            nbSetupCursesOutput();
+        }
+
+        ts = mwGetTime();
+
+        st->useVelDisp = ctx->useVelDisp;
+        st->useBetaDisp = ctx->useBetaDisp;
+        st->useBetaComp = ctx->useBetaComp;
+        st->useVlos = ctx->useVlos;
+        st->useDist = ctx->useDist;
+
+        //save the state
+        NBodyState tmpState = EMPTY_NBODYSTATE;
+        cloneNBodyState(&tmpState, st);
+
+        rc = nbRunSystem(ctx, st, nbf);
+
+        real expectedForwardTime = tmpState.previousForwardTime;
+        if(i == 0){
+            expectedForwardTime = ctx->timeBack;
+        }
+        mw_printf("run: %d forwardTime: %f\n", i, st->bestLikelihood_time);
+        mw_printf("expected forward time - real forward time = %f\n\n", expectedForwardTime - st->bestLikelihood_time);
+        /*if (!nbf->noCleanCheckpoint)
+        {
+            mw_report("Removing checkpoint file '%s'\n", nbf->checkpointFileName);
+            mw_remove(nbf->checkpointFileName);
+        }\*/
+        
+        if(i < ctx->calibrationRuns){
+            //grab the best likelihood time
+            tmpState.previousForwardTime = st->bestLikelihood_time;
+            //reset the state for the next run
+            *st = (NBodyState)EMPTY_NBODYSTATE;
+            cloneNBodyState(st, &tmpState);
+        }
+        nbResolveCheckpoint(st, nbf->checkpointFileName);
+        destroyNBodyState(&tmpState);
     }
-
-    if (nbCreateSharedScene(st, ctx))
-    {
-        mw_printf("Failed to create shared scene\n");
-    }
-
-    if (nbf->visualizer && st->scene)
-    {
-        /* Make sure the first scene is available for the launched graphics */
-        nbForceUpdateDisplayedBodies(ctx, st);
-
-        /* Launch graphics and make sure we are sure the graphics is
-         * attached in case we are using blocking mode */
-        nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
-    }
-
-    if (nbf->reportProgress)
-    {
-        nbSetupCursesOutput();
-    }
-
-    ts = mwGetTime();
-
-    st->useVelDisp = ctx->useVelDisp;
-    st->useBetaDisp = ctx->useBetaDisp;
-    st->useBetaComp = ctx->useBetaComp;
-    st->useVlos = ctx->useVlos;
-    st->useDist = ctx->useDist;
-    
-    rc = nbRunSystem(ctx, st, nbf);
 
     te = mwGetTime();
 

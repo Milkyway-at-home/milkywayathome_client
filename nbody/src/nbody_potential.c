@@ -383,6 +383,7 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     return acc;
 }
 
+//start angle is the current day angle of the bar
 static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
 {
     /*mw_printf("Calculating Acceleration\n");

@@ -112,14 +112,6 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
     
-    mwFreeA(st->backwardOrbitPositions);
-    mwFreeA(st->backwardOrbitAngles);
-
-    //not part of the state but pretty much should be
-    /*mwvector* backwardOrbitArray;
-    getBackwardOrbitArray(&backwardOrbitArray);
-    mwFreeA(backwardOrbitArray);*/ //Seg faults here. Not sure why. Sorry for the mem leak.
-
     if(st->shiftByLMC) {   
         mwFreeA(st->shiftByLMC);
     }
@@ -216,8 +208,6 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 
-    st->barTimeStep = 0;
-    st->lastFittedBarTimeStep = 0;
 }
 
 void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState)
@@ -535,9 +525,8 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
 /* TODO: Doesn't clone tree or CL stuffs */
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
-    static const NBodyTree emptyTree = EMPTY_TREE;
+    NBodyTree emptyTree = EMPTY_TREE;
     unsigned int nbody = oldSt->nbody;
-
     st->tree = emptyTree;
     st->tree.rsize = oldSt->tree.rsize;
 
@@ -569,8 +558,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->acctab = (mwvector*) mwMallocA(nbody * sizeof(mwvector));
     memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));
 
-    st->barTimeStep = oldSt->barTimeStep;
-    st->lastFittedBarTimeStep = oldSt->lastFittedBarTimeStep;
+    st->previousForwardTime = oldSt->previousForwardTime;
 
     if (oldSt->orbitTrace)
     {
@@ -785,6 +773,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->LMC, ctx2->LMC)
         && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
         && feqWithNan(ctx1->LMCscale, ctx2->LMCscale)
-        && feqWithNan(ctx1->LMCDynaFric, ctx2->LMCDynaFric);
+        && feqWithNan(ctx1->LMCDynaFric, ctx2->LMCDynaFric)
+        && feqWithNan(ctx1->calibrationRuns, ctx2->calibrationRuns);
 }
 

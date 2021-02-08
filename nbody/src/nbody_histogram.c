@@ -106,10 +106,11 @@ unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /*
 static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
-                                   int nbody,
-                                   real bestLikelihood_time,
-                                   real bestLikelihood)
+                                   NBodyState* st)
 {
+    int nbody = st->nbody;
+    real bestLikelihood_time = st->bestLikelihood_time;
+    real bestLikelihood = st->bestLikelihood;
     char tBuf[256];
     const Potential* p = &ctx->pot;
     if (bestLikelihood_time == 0.0)
@@ -137,6 +138,13 @@ static void nbPrintHistogramHeader(FILE* f,
             nbHistogramLambdaBinSize(hp),
             nbHistogramBetaBinSize(hp));
     
+    real barTimeError = bestLikelihood_time - st->previousForwardTime;
+    if(ctx->pot.disk2.type == _NO_DISK){//no bar
+        barTimeError = 0;
+    }else if(ctx->calibrationRuns == 0){//no calibration bar
+        barTimeError = bestLikelihood_time - ctx->timeEvolve;
+    }
+    real barAngleError = barTimeError * ctx->pot.disk2.patternSpeed;
     fprintf(f,
             "# Nbody = %d\n"
             "# Evolve backward time = %f\n"
@@ -148,17 +156,21 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Theta = %f\n"
             "# Quadrupole Moments = %s\n"
             "# Eps = %f\n"
+            "# Bar Time Error = %f\n"
+            "# Bar Angle Error = %f rad\n"
             "#\n",
             nbody,
             ctx->timeBack,
             bestLikelihood_time,
-            -bestLikelihood,
+            bestLikelihood,
             ctx->timestep,
             ctx->sunGCDist,
             showCriterionT(ctx->criterion),
             ctx->theta,
             showBool(ctx->useQuad),
-            mw_sqrt(ctx->eps2)
+            mw_sqrt(ctx->eps2),
+            barTimeError,
+            barAngleError
 
         );
 
@@ -588,7 +600,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &all->histograms[0]->params, st->nbody, st->bestLikelihood_time, st->bestLikelihood);
+    nbPrintHistogramHeader(f, ctx, &all->histograms[0]->params, st);
     nbPrintHistogram(f, all);
 
     if (f != DEFAULT_OUTPUT_FILE)

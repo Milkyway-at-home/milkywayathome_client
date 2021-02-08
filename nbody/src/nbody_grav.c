@@ -136,19 +136,15 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
     real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
-
-    getBackwardOrbitArray(&(st->backwardOrbitPositions));//set state pointer to this array
-    //so checkpointing works
-    if(st->backwardOrbitArrayLength == NULL){
-        setBackwardOrbitRotation(st);
-        fillBackwardOrbitAngles(st);
-    }
     
     //SingleParticleOrbitParams* revOrbitParams = getOrbitParams();
-    int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates st with new bar timestep
-    real barTime = barTimeStep * ctx->timestep*(ctx->timeBack/getPrevForwardTime());
-    if(st->step % 10 == 0 || st->step > 8000){
-        mw_printf("barTimeStep: %d, reg timeStep: %d\n", barTimeStep, st->step);
+    //int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates st with new bar timestep
+    //real barTime = barTimeStep * ctx->timestep*(ctx->timeBack/getPrevForwardTime());
+    //bar time is in Gyr. It is 0 at the present day and negative for the entire simulation. 
+    //real barTime = barTimeStep * ctx->timestep*(ctx->timeBack/getPrevForwardTime()) - ctx->timeBack; //with stream tracking
+    //real barTime = st->step * ctx->timestep*(ctx->timeBack/getPrevForwardTime()) - ctx->timeBack; //without stream tracking
+    real barTime = st->step * ctx->timestep - st->previousForwardTime; //without stream tracking, shift beginning point
+    if(st->step % 100 == 0){
         mw_printf("barTime: %f\n", barTime);
     }
 
@@ -177,7 +173,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), 0), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
                     sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
                     take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
@@ -245,16 +241,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
     real timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
-
-    getBackwardOrbitArray(&(st->backwardOrbitPositions));//set state pointer to this array
-    //so checkpointing works
-    if(st->backwardOrbitArrayLength == NULL){
-        setBackwardOrbitRotation(st);
-        fillBackwardOrbitAngles(st);
-    }
-    int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//change this back when it gets fixed in Master
-    real barTime = barTimeStep * ctx->timestep - ctx->timeBack;
-    
+    real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
         LMCx = st->LMCpos[0];
@@ -280,7 +267,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), 0), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 mw_incaddv(a, externAcc);
 
                 accels[i] = a;

@@ -218,7 +218,6 @@ static int luaReverseOrbit(lua_State* luaSt)
             { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
             { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
             { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
-            { "forwardTime", LUA_TNUMBER,   NULL,           TRUE, &forwardTime  },
             END_MW_NAMED_ARG
         };
 
@@ -245,7 +244,7 @@ static int luaReverseOrbit(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt, forwardTime);
+    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
