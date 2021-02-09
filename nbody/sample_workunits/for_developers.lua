@@ -24,15 +24,27 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+<<<<<<< Updated upstream
+totalBodies           = 20000   -- -- NUMBER OF BODIES           -- --
+=======
 totalBodies           = 50000    -- -- NUMBER OF BODIES           -- --
+>>>>>>> Stashed changes
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
+
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH -- --
+<<<<<<< Updated upstream
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS   -- --
-LMC_body              = false    -- -- PRESENCE OF LMC            -- --
+
+LMC_body              = true    -- -- PRESENCE OF LMC            -- --
+LMCtotalBodies        = 2000    -- -- DON'T SET TO VALUES SMALLER THAN 100 
+=======
+print_out_parameters  = true  -- -- PRINT OUT ALL PARAMETERS   -- --
+LMC_body              = false  -- -- PRESENCE OF LMC            -- --
 LMCtotalBodies        = 3000    -- -- DON'T SET TO VALUES SMALLER THAN 100 
+>>>>>>> Stashed changes
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -101,14 +113,24 @@ Ntime_steps          = 10            -- -- number of timesteps to run   -- --
 
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
+<<<<<<< Updated upstream
+orbit_parameter_l  = 218
+
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
+orbit_parameter_b  = 53.5
+orbit_parameter_r  = 28.6
+orbit_parameter_vx = -156 
+orbit_parameter_vy = 79 
+orbit_parameter_vz = 107
+=======
 orbit_parameter_l  = 7.16 --sagittarius
 orbit_parameter_b  = -13.7
 orbit_parameter_r  = 27
 orbit_parameter_vx = 202 
 orbit_parameter_vy = -32
 orbit_parameter_vz = 158
+>>>>>>> Stashed changes
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
