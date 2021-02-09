@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 1
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 76
+set(nbody_VERSION_MINOR 78
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
@@ -130,6 +130,9 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
                   ${NBODY_SRC_DIR}/nbody_potential.c
                   ${NBODY_SRC_DIR}/nbody_bessel.c
+                  ${NBODY_SRC_DIR}/nbody_virial.c
+                  ${NBODY_SRC_DIR}/nbody_density.c
+                  ${NBODY_SRC_DIR}/nbody_friction.c
                   ${NBODY_SRC_DIR}/nbody.c
                   ${NBODY_SRC_DIR}/nbody_plain.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
@@ -163,6 +166,9 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_bessel.h
+                      ${NBODY_INCLUDE_DIR}/nbody_virial.h
+                      ${NBODY_INCLUDE_DIR}/nbody_density.h
+                      ${NBODY_INCLUDE_DIR}/nbody_friction.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/nbody_isotropic.h
                       ${NBODY_INCLUDE_DIR}/nbody_mixeddwarf.h
