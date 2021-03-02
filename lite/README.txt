@@ -31,10 +31,11 @@ working as of the time you read this)
 Usage
 ======================================================
 
- - Change settings in run.sh and ./bin/for_developers.lua 
+ - Change settings in ./bin/settings.lua 
 (optional, which settings you change depends on what type
 of simulation you are running, and the parameters for that
-specific simulation)
+specific simulation. The parameters that you can change
+are explained in the settings.lua file.)
 
  - Open Terminal in the mwah_nbody_lite folder and run
 
@@ -46,4 +47,15 @@ chmod +x run.sh
 
 once before executing the run.sh file if you get an error that
 you do not have the necessary permissions to execute run.sh. 
+
+======================================================
+Manual Body Input
+======================================================
+Nbody Lite supports the input of a list of bodies with manually
+determined positions, velocities, and masses. These files must 
+be in a specific format (tab separated value, or TSV) with a 
+simple header. 
+
+An example file with the correct formatting is provided in the
+./bin folder as "manual_bodies_example.in". 
  
