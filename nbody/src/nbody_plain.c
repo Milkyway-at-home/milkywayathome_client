@@ -286,6 +286,12 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
             {
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
             }
+            
+            /* if we are creating an out file, store the body tab */
+            if(nbf->outFileName)
+            {
+                memcpy(st->bestLikelihoodBodyTab, st->bodytab, st->nbody * sizeof(Body));
+            }
         }
     }
     
