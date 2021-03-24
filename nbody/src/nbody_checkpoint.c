@@ -209,7 +209,7 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
     if (writing)
     {
                    /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
+        cp->cpFileSize = hdrSize + 2 * st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -409,7 +409,7 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
     LMCPosVelSize = 2*sizeof(mwvector);
-    supposedCheckpointSize = hdrSize + bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
+    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
 
     if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
@@ -419,6 +419,11 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     /* Read the bodies */
     st->bodytab = (Body*) mwMallocA(bodySize);
     memcpy(st->bodytab, p, bodySize);
+    p += bodySize;
+
+    
+    st->bestLikelihoodBodyTab = (Body*) mwMallocA(bodySize);
+    memcpy(st->bestLikelihoodBodyTab, p, bodySize);
     p += bodySize;
 
     if (traceSize != 0)
@@ -451,6 +456,9 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     {
         mwFreeA(st->bodytab);
         st->bodytab = NULL;
+        
+        mwFreeA(st->bestLikelihoodBodyTab);
+        st->bestLikelihoodBodyTab = NULL;
 
         mwFreeA(st->orbitTrace);
         st->orbitTrace = NULL;
@@ -487,6 +495,10 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
 
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);
+    p += bodySize;
+
+    
+    memcpy(p, st->bestLikelihoodBodyTab, bodySize);
     p += bodySize;
 
     if (st->orbitTrace)
