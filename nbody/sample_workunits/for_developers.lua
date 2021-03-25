@@ -26,7 +26,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.78"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
@@ -210,7 +210,7 @@ end
 
 
 function makeBodies(ctx, potential)
-  local firstModel, LMCModel
+  local firstModel
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
     if TooManyTimesteps == 1 then
         totalBodies = 1
@@ -339,9 +339,9 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
 time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
-rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
+rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
