@@ -73,10 +73,11 @@ typedef struct
    Name        Type         Values     Notes
 -------------------------------------------------------
    NBodyCheckpointHeader
-   bodytab       Body[]     anything   Array of bodies
-   orbitTrace    mwvector[] anything   Array of center of mass history
-   shiftByLMC    mwvector[] anything   Array of LMC accelerations on MW
-   ending        string     "end"      Kind of dumb and pointless
+   bodytab                 Body[]     anything   Array of bodies
+   bestLikelihoodBodyTab   Body[]     anything   Array of bodies at best likelihood
+   orbitTrace              mwvector[] anything   Array of center of mass history
+   shiftByLMC              mwvector[] anything   Array of LMC accelerations on MW
+   ending                  string     "end"      Kind of dumb and pointless
  */
 
 static const char hdr[] = "mwnbody";
@@ -208,8 +209,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                   /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = hdrSize + 2 * st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
+                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -315,8 +316,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                            /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = (DWORD) (hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
+                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
     }
     else
     {
