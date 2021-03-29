@@ -174,7 +174,7 @@ TooManyTimesteps = 0
 
 function get_timestep()
     if(timestep_control) then
-      t = (evolveTime) / (Ntime_step)
+      t = (evolveTime) / (Ntime_steps)
     elseif(ModelComponents == 2) then
 
         --Mass of a single dark matter sphere enclosed within light rscale
