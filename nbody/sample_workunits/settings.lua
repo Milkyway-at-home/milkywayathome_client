@@ -1,5 +1,6 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
--- /*               2018-2021         Tom Donlon */
+-- /*               2021              Tom Donlon */
+-- /*      Rensselaer Polytechnic Institute      */
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR USER:
@@ -16,7 +17,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.78"   -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.79"   -- -- MINIMUM APP VERSION
 
 run_null_potential    = false    -- -- NULL POTENTIAL SWITCH
 use_tree_code         = true     -- -- USE TREE CODE NOT EXACT
@@ -48,24 +49,23 @@ LMC_DynamicalFriction = true     -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF
 -- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
 -- --       1 - SINGLE COMPONENT MODEL -- -- -- -- -- -- -- -- -- -- -- -- --
 -- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- -- -- -- --
-manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
-
-
+ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH
+manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- Change the parameters below to specify the settings   -- -- --
--- -- -- -- -- of the generation of the dwarf bodies  -- -- -- -- -- -- -- --
+-- -- -- -- -- for the generation of the dwarf bodies -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies      = 40000        -- -- Number of Bodies
-evolveTime       = 1.0          -- -- Forward Time
-time_ratio       = 1.0          -- -- Forward Time / Backward Time
-rscale_l         = 0.3          -- -- Baryonic Radius
+evolveTime       = 3.0          -- -- Forward Time (Gyr)
+revOrbTime       = 3.0          -- -- Reverse Orbit Time (Gyr)
+rscale_l         = 0.3          -- -- Baryonic Radius (kpc)
 light_r_ratio    = 0.2          -- -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = 45.0         -- -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = 0.1          -- -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l  = 258        -- -- Galactic coordinates of dwarf position
+orbit_parameter_l  = 258        -- -- Galactic coordinates of dwarf position (deg)
 orbit_parameter_b  = 45.8
-orbit_parameter_r  = 21.5       -- -- Distance from Sun to dwarf
-orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocities of dwarf
+orbit_parameter_r  = 21.5       -- -- Distance from Sun to dwarf (kpc)
+orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocities of dwarf (km/s)
 orbit_parameter_vy = 54.7
 orbit_parameter_vz = 147.4
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil.
@@ -251,7 +251,7 @@ end
 
 
 function makeBodies(ctx, potential)
-  local firstModel, LMCModel
+  local firstModel
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
     if TooManyTimesteps == 1 then
         totalBodies = 1
@@ -352,7 +352,6 @@ argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 -- -- -- -- -- -- -- -- -- DWARF CREATION -- -- -- -- -- -- -- --
-revOrbTime = evolveTime / time_ratio
 if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)
