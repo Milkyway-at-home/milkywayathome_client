@@ -91,11 +91,14 @@ use_avg_dist         = true  -- calculate average distance, use in likelihood
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100            -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control     = false         -- -- control number of steps      -- --
-Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
+timestep_control      = false       -- -- control number of steps      -- --
+Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
+
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -133,7 +136,7 @@ end
 
 function get_timestep()
     if(timestep_control) then
-      t = (evolveTime) / (Ntime_steps)
+        t = (evolveTime) / (Ntime_steps)
     elseif(ModelComponents == 2) then
 
         --Mass of a single dark matter sphere enclosed within light rscale
@@ -168,12 +171,26 @@ function get_timestep()
 end
 
 
+function get_soft_par()
+    --softening parameter only calculated based on dwarf,
+    --so if manual bodies is turned on the calculated s.p. may be too large
+    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+
+    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
+        print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
+        return max_soft_par^2
+    else
+        return sp
+    end
+end
+
+
 function makeContext()
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
+      eps2        = get_soft_par(),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,

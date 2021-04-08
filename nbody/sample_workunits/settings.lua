@@ -90,6 +90,20 @@ Ntime_steps          = 3000   -- -- number of timesteps to run (ignored if times
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- --  MISC OPTIONS  -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Any other options for the simulation   -- -- -- -- -- -- -- -- 
+-- -- -- -- -- are provided here                      -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
+                                    -- -- (NOTE: This is turned on automatically if manual_bodies is true,
+                                    -- -- since the softening parameter is determined only by the dwarf bodies)
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- -- POTENTIAL OPTIONS -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- Control the shape of the external gravitational -- -- -- -- --
@@ -209,12 +223,26 @@ function get_timestep()
 end
 
 
+function get_soft_par()
+    --softening parameter only calculated based on dwarf,
+    --so if manual bodies is turned on the calculated s.p. may be too large
+    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+
+    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with s.p. squared
+        print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
+        return max_soft_par^2
+    else
+        return sp
+    end
+end
+
+
 function makeContext()
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
+      eps2        = get_soft_par(),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
