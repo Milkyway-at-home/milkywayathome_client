@@ -347,6 +347,7 @@ typedef struct MW_ALIGN_TYPE
     NBodyNode* freeCell;      /* list of free cells */
     char* checkpointResolved;
     Body* bodytab;            /* points to array of bodies */
+    Body* bestLikelihoodBodyTab;     /* this one used for out file generation */
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
     scene_t* scene;
@@ -414,7 +415,7 @@ typedef struct MW_ALIGN_TYPE
 #define NBODYSTATE_TYPE "NBodyState"
 
 #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, \
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
+NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL,\
 NULL, NULL, NULL}
 

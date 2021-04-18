@@ -109,6 +109,7 @@ int destroyNBodyState(NBodyState* st)
     freeNBodyTree(&st->tree);
     freeFreeCells(st->freeCell);
     mwFreeA(st->bodytab);
+    mwFreeA(st->bestLikelihoodBodyTab);
     mwFreeA(st->acctab);
     mwFreeA(st->orbitTrace);
     
@@ -190,6 +191,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->step = 0;
     st->nbody = nbody;
     st->bodytab = bodies;
+    st->bestLikelihoodBodyTab = (Body*) mwMallocA(nbody * sizeof(Body));
+    memcpy(st->bestLikelihoodBodyTab, st->bodytab, nbody * sizeof(Body));
     st->bestLikelihood         = DEFAULT_WORST_CASE;
     st->bestLikelihood_EMD     = DEFAULT_WORST_CASE;
     st->bestLikelihood_Mass    = DEFAULT_WORST_CASE;
@@ -513,6 +516,11 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
         return FALSE;
     }
 
+    if (!equalBodyArray(st1->bestLikelihoodBodyTab, st2->bestLikelihoodBodyTab, st1->nbody))
+    {
+        return FALSE;
+    }
+
     if (!equalVectorArray(st1->acctab, st2->acctab, st1->nbody))
     {
         mw_printf("Different Accelerations Detected!\n");
@@ -554,6 +562,10 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 
     st->bodytab = (Body*) mwMallocA(nbody * sizeof(Body));
     memcpy(st->bodytab, oldSt->bodytab, nbody * sizeof(Body));
+    
+    st->bestLikelihoodBodyTab = (Body*) mwMallocA(nbody * sizeof(Body));
+    memcpy(st->bestLikelihoodBodyTab, oldSt->bestLikelihoodBodyTab, nbody * sizeof(Body));
+
 
     st->acctab = (mwvector*) mwMallocA(nbody * sizeof(mwvector));
     memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));

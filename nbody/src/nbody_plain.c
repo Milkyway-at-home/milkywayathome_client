@@ -287,14 +287,11 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
             }
             
-            //This code shows the stream center as calculated in nbody_bar_time.c
-            /*mwvector meanBinCenter, histCenterVelocity, meanBinVelocity;
-            mwvector histCenter = getStreamCenter(st, ctx, &meanBinCenter, &histCenterVelocity, &meanBinVelocity);
-            mw_printf("stream center hist = (%f, %f, %f)\n", histCenter.x, histCenter.y, histCenter.z);
-            mw_printf("stream center hist vel = (%f, %f, %f)\n", histCenterVelocity.x, histCenterVelocity.y, histCenterVelocity.z);
-            mw_printf("stream center mean = (%f, %f, %f)\n", meanBinCenter.x, meanBinCenter.y, meanBinCenter.z);
-            mw_printf("stream center mean vel = (%f, %f, %f)\n\n", meanBinVelocity.x, meanBinVelocity.y, meanBinVelocity.z);*/
-            mw_printf("new best fit found!\n");
+            /* if we are creating an out file, store the body tab */
+            if(nbf->outFileName)
+            {
+                memcpy(st->bestLikelihoodBodyTab, st->bodytab, st->nbody * sizeof(Body));
+            }
         }
     }
     

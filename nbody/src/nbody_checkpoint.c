@@ -73,10 +73,11 @@ typedef struct
    Name        Type         Values     Notes
 -------------------------------------------------------
    NBodyCheckpointHeader
-   bodytab       Body[]     anything   Array of bodies
-   orbitTrace    mwvector[] anything   Array of center of mass history
-   shiftByLMC    mwvector[] anything   Array of LMC accelerations on MW
-   ending        string     "end"      Kind of dumb and pointless
+   bodytab                 Body[]     anything   Array of bodies
+   bestLikelihoodBodyTab   Body[]     anything   Array of bodies at best likelihood
+   orbitTrace              mwvector[] anything   Array of center of mass history
+   shiftByLMC              mwvector[] anything   Array of LMC accelerations on MW
+   ending                  string     "end"      Kind of dumb and pointless
  */
 
 static const char hdr[] = "mwnbody";
@@ -208,8 +209,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                   /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
+                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -315,8 +316,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                            /*Header Size +     Total Body Size      +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = (DWORD) (hdrSize + st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
+                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
     }
     else
     {
@@ -409,7 +410,7 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
     LMCPosVelSize = 2*sizeof(mwvector);
-    supposedCheckpointSize = hdrSize + bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
+    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
 
     if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
@@ -419,6 +420,11 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     /* Read the bodies */
     st->bodytab = (Body*) mwMallocA(bodySize);
     memcpy(st->bodytab, p, bodySize);
+    p += bodySize;
+
+    
+    st->bestLikelihoodBodyTab = (Body*) mwMallocA(bodySize);
+    memcpy(st->bestLikelihoodBodyTab, p, bodySize);
     p += bodySize;
 
     if (traceSize != 0)
@@ -451,6 +457,9 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     {
         mwFreeA(st->bodytab);
         st->bodytab = NULL;
+        
+        mwFreeA(st->bestLikelihoodBodyTab);
+        st->bestLikelihoodBodyTab = NULL;
 
         mwFreeA(st->orbitTrace);
         st->orbitTrace = NULL;
@@ -487,6 +496,10 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
 
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);
+    p += bodySize;
+
+    
+    memcpy(p, st->bestLikelihoodBodyTab, bodySize);
     p += bodySize;
 
     if (st->orbitTrace)

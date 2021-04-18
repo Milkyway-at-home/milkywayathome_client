@@ -161,7 +161,7 @@ SamplePotentials.buildAllHalos = function()
       end,
       { 73, 100, 50 },
       { 12, 20, 6 },
-      { 1, 1.4, 0.7 }
+      { 1, 1.4, 0.71 }
    )
 
    nfwHalos = buildAllCombinations(
@@ -432,7 +432,7 @@ SamplePotentials.randomHalo = function(prng)
       return Halo.logarithmic{
          vhalo       = prng:random(10, 200),
          scaleLength = prng:random(3, 100),
-         flattenZ    = prng:random(0, 3)
+         flattenZ    = prng:random(0.708, 3)
       }
    elseif (typ == 2) then
       return Halo.nfw{

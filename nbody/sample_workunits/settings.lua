@@ -1,65 +1,159 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
+-- /*               2021              Tom Donlon */
+-- /*      Rensselaer Polytechnic Institute      */
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- DEAR LUA USER:
--- This is the developer version of the lua parameter file. 
--- It gives all the options you can have. 
--- Many of these the client will not need.
-
--- NOTE --
--- to fully utilize this lua, need to compile with -DNBODY_DEV_OPTIONS=ON
--- if you are using single component plummer model, it will take the baryonic
--- matter component parameters. meaning you input should look like
--- ft, time_ratio, rscale_baryon, radius_ratio, baryon mass, mass ratio
--- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2 (52.5, 28.6, -156, 79, 107)
-
--- available option: using a user inputted list of bodies. Sent in as an 
--- optional arguement after dwarf parameter list
--- MUST still include dwarf parameter list
--- can control what model to use below
--- simulation time still taken as the first parameter in the list
+-- DEAR USER:
+-- This is the end user version of the lua parameter file. 
+-- It gives all the options you can change. You may not need all of them.
+-- The first half of the file is settings the Nbody simulation. 
+-- The second half of the file is code for generating the initial 
+-- conditions of the simulation, and is not something that
+-- the typical end user needs to change. 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
-nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
-print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+nbodyMinVersion       = "1.79"   -- -- MINIMUM APP VERSION
 
-LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
-LMC_scaleRadius       = 15
+run_null_potential    = false    -- -- NULL POTENTIAL SWITCH
+use_tree_code         = true     -- -- USE TREE CODE NOT EXACT
+print_reverse_orbit   = false    -- -- PRINT REVERSE ORBIT SWITCH 
+print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- LMC  SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+LMC_body              = true     -- -- RUN WITH LMC 
+LMC_scaleRadius       = 15       
 LMC_Mass              = 449865.888
-LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
+LMC_DynamicalFriction = true     -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --         
+-- -- -- -- -- -- -- -- -- -- DWARF PARAMETERS  -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
-
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- Switch for whether to use a single component or -- -- -- -- --
+-- -- -- -- -- two component (baryon & dark matter) model for  -- -- -- -- --
+-- -- -- -- -- the generated dwarf galaxy -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- ModelComponent Options: 
--- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
--- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
--- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
-manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
+-- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
+-- --       1 - SINGLE COMPONENT MODEL -- -- -- -- -- -- -- -- -- -- -- -- --
+-- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
+ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH
+manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Change the parameters below to specify the settings   -- -- --
+-- -- -- -- -- for the generation of the dwarf bodies -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+totalBodies      = 40000        -- -- Number of Bodies
+evolveTime       = 3.0          -- -- Forward Time (Gyr)
+revOrbTime       = 3.0          -- -- Reverse Orbit Time (Gyr)
+rscale_l         = 0.3          -- -- Baryonic Radius (kpc)
+light_r_ratio    = 0.2          -- -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = 45.0         -- -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = 0.1          -- -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l  = 258        -- -- Galactic coordinates of dwarf position (deg)
+orbit_parameter_b  = 45.8
+orbit_parameter_r  = 21.5       -- -- Distance from Sun to dwarf (kpc)
+orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocities of dwarf (km/s)
+orbit_parameter_vy = 54.7
+orbit_parameter_vz = 147.4
+manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil.
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- TIME CONTROL OPTIONS -- -- -- -- -- -- -- -- --   
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Control how often to output data and   -- -- -- -- -- -- -- -- 
+-- -- -- -- -- whether to manually set timestep size  -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+useMultiOutputs      = false  -- -- WRITE MULTIPLE OUTPUTS
+freqOfOutputs        = 100    -- -- FREQUENCY OF WRITING OUTPUTS 
+
+timestep_control     = false  -- -- control number of steps
+Ntime_steps          = 3000   -- -- number of timesteps to run (ignored if timestep_control == false)
+                              -- -- (<1 Myr timestep size strongly recommended)
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- --  MISC OPTIONS  -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Any other options for the simulation   -- -- -- -- -- -- -- -- 
+-- -- -- -- -- are provided here                      -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
+                                    -- -- (NOTE: This is turned on automatically if manual_bodies is true,
+                                    -- -- since the softening parameter is determined only by the dwarf bodies)
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
--- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- POTENTIAL OPTIONS -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Control the shape of the external gravitational -- -- -- -- --
+-- -- -- -- -- potential of the simulation.  -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Add/remove/change potentials in the -- -- -- -- -- -- -- -- --
+-- -- -- -- -- Potential.create{ } brackets to edit the potential.   -- -- --
+-- -- -- -- -- More information about avaiable potentials   -- -- -- -- -- --
+-- -- -- -- -- coming soon.   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+function makePotential()
+   if(run_null_potential == true) then
+       print("running in null potential")
+       return nil
+   else
+        --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
+        return  Potential.create{
+            spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
+            disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+            disk2     = Disk.none{ mass = 3.0e5 },
+            halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
+        }--vhalo = 74.61 kpc/gy = 73 km/s
+   end
+end
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
+-- XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX --
+-- XX -- -- -- -- -- -- -- -- DEVELOPER OPTIONS -- -- -- -- -- -- -- -- XX --
+-- XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX --
+-- XX -- -- -- The actual setup for the simulation is done below. -- -- XX --
+-- XX -- -- -- The typical user should not have to change anything   -- XX --
+-- XX -- -- -- in this file beyond this point.  -- -- -- -- -- -- -- -- XX --
+-- XX -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- XX --
+-- XX -- -- -- -- -- -- -- -- -- WARNING  -- -- -- -- -- -- -- -- -- -- XX --
+-- XX -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- XX --
+-- XX -- -- -- Changing anything below this point may result in   -- -- XX --
+-- XX -- -- -- undesired behavior of the Nbody Lite software and  -- -- XX --
+-- XX -- -- -- may generate inaccurate/unphysical results   -- -- -- -- XX --
+-- XX -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- XX --
+-- XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX --
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- HISTOGRAM SETTINGS   -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- Left this in the file in order to not mess up the  -- -- -- --
+-- -- -- -- -- initial nbody context, but it's not meant for use  -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
 lda_upper_range = 150     -- upepr range for lamdba
@@ -74,6 +168,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
+nbodyLikelihoodMethod = "EMD"   -- Hist compare method
 use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
@@ -86,57 +181,14 @@ use_beta_comp        = true  -- calculate average beta, use in likelihood
 use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
 use_avg_dist         = true  -- calculate average distance, use in likelihood
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
--- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
-
-timestep_control      = false       -- -- control number of steps      -- --
-Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
-
-use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
-max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-        
-
-
-
-
--- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
--- these only get used if only 6 parameters are input from shell script
--- otherwise they get reset later with the inputs (if 11 given)
-orbit_parameter_l  = 258
-orbit_parameter_b  = 45.8
-orbit_parameter_r  = 21.5
-orbit_parameter_vx = -185.5
-orbit_parameter_vy = 54.7
-orbit_parameter_vz = 147.4
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
 TooManyTimesteps = 0
-        
-function makePotential()
-   if(run_null_potential == true) then
-       print("running in null potential")
-       return nil
-   else
-        --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
-        return  Potential.create{
-            spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
-            disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            disk2     = Disk.orbitingBar{ mass = 2.429275796e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
-            halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
-        }--vhalo = 74.61 kpc/gy = 73 km/s
-   end
-end
 
 function get_timestep()
     if(timestep_control) then
-        t = (evolveTime) / (Ntime_steps)
+      t = (evolveTime) / (Ntime_steps)
     elseif(ModelComponents == 2) then
 
         --Mass of a single dark matter sphere enclosed within light rscale
@@ -176,7 +228,7 @@ function get_soft_par()
     --so if manual bodies is turned on the calculated s.p. may be too large
     sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
 
-    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
+    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with s.p. squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
         return max_soft_par^2
     else
@@ -323,59 +375,11 @@ function makeBodies(ctx, potential)
     
 end
 
-function makeHistogram()
-    return HistogramParams.create{
-     --Orphan Stream coordinate transformation angles
-     phi = 128.79,
-     theta = 54.39,
-     psi = 90.70,
-     
-     -- ANGULAR RANGE AND NUMBER OF BINS
-     lambdaStart = lda_lower_range,
-     lambdaEnd   = lda_upper_range,
-     lambdaBins  = lda_bins,
-     
-     betaStart = bta_lower_range,
-     betaEnd   = bta_upper_range,
-     betaBins  = bta_bins
-}
-end
-
-
-arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
--- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
-function round(num, places)
-  local mult = 10.0^(places)
-  return floor(num * mult + 0.5) / mult
-end
-
--- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
-dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
-time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
-rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
-light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-if (#arg >= 12) then
-  orbit_parameter_l   = round( tonumber(arg[7]), dec )
-  orbit_parameter_b   = round( tonumber(arg[8]), dec )
-  orbit_parameter_r   = round( tonumber(arg[9]), dec )
-  orbit_parameter_vx  = round( tonumber(arg[10]), dec )
-  orbit_parameter_vy  = round( tonumber(arg[11]), dec )
-  orbit_parameter_vz  = round( tonumber(arg[12]), dec )
-  manual_body_file = arg[13]
-else
-  manual_body_file = arg[7] -- File with Individual Particles (.out file)
-end
-
--- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-revOrbTime = evolveTime / time_ratio
+-- -- -- -- -- -- -- -- -- DWARF CREATION -- -- -- -- -- -- -- --
 if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)

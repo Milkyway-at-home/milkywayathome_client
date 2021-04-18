@@ -27,6 +27,7 @@
 #include "nbody_coordinates.h"
 #include "nbody_mass.h"
 #include <string.h>
+#include "nbody_defaults.h"
 
 static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx* ctx, const NBodyState* st)
 {
@@ -99,11 +100,16 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     real vLOS;
     const Body* endp = st->bodytab + st->nbody;
     mwbool isLight = FALSE;
+    Body* outputTab = st->bestLikelihoodBodyTab;
+    if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
+        outputTab = st->bodytab;
+    }
+    const Body* endp = outputTab + st->nbody;
 
     nbPrintSimInfoHeader(f, nbf, ctx, st);
     nbPrintBodyOutputHeader(f, nbf->outputCartesian, nbf->outputlbrCartesian);
 
-    for (p = st->bodytab; p < endp; p++)
+    for (p = outputTab; p < endp; p++)
     {
         fprintf(f, "%8d, %8d,", ignoreBody(p), idBody(p));  /* Print if model it belongs to is ignored */
         char type[20] = "";
