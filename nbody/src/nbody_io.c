@@ -104,7 +104,6 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
         outputTab = st->bodytab;
     }
-    const Body* endp = outputTab + st->nbody;
 
     nbPrintSimInfoHeader(f, nbf, ctx, st);
     nbPrintBodyOutputHeader(f, nbf->outputCartesian, nbf->outputlbrCartesian);
