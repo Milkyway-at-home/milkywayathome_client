@@ -114,12 +114,12 @@ static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvect
     mwvector dr;
     mwvector dv;
 
-    dr = mw_mulvs(st->LMCvel[0],dt);
-    mw_incaddv(st->LMCpos[0],dr);
+    dr = mw_mulvs(st->LMCvel,dt);
+    mw_incaddv(st->LMCpos,dr);
 
     mwvector acc_total = mw_addv(acc, acc_i);
     dv = mw_mulvs(acc_total, dtHalf);
-    mw_incaddv(st->LMCvel[0],dv);
+    mw_incaddv(st->LMCvel,dv);
     
 }
 
@@ -146,7 +146,7 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mw
 
     mwvector acc_total = mw_addv(acc, acc_i);
     dv = mw_mulvs(acc_total, dtHalf);
-    mw_incaddv(st->LMCvel[0],dv);
+    mw_incaddv(st->LMCvel,dv);
 }
 
 
@@ -318,16 +318,18 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     mwvector acc_LMC;
     
     const real dt = ctx->timestep;
+    
+    real barTime = st->step * dt - st->previousForwardTime;
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos[0], 0), dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric));
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
         advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     }
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos[0], 0), dynamicalFriction_LMC(&ctx->pot, st->LMCpos[0], st->LMCvel[0], ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric));
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 
@@ -354,8 +356,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         if (!st->shiftByLMC) {
             mwvector* shiftLMC;
             size_t sizeLMC;
-            mwvector* LMCx;
-            mwvector* LMCv;
+            mwvector LMCx;
+            mwvector LMCv;
 
             getLMCArray(&shiftLMC, &sizeLMC);
             setLMCShiftArray(st, shiftLMC, sizeLMC);

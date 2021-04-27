@@ -340,6 +340,35 @@ char* showDisk(const Disk* d)
     return buf;
 }
 
+char* showDisk2(const Disk* d)
+{
+    char* buf;
+
+    if (!d)
+        return NULL;
+
+    if (0 > asprintf(&buf,
+                     "{\n"
+                     "      type        = %s\n"
+                     "      mass        = %g\n"
+                     "      scaleLength = %g\n"
+                     "      scaleHeight = %g\n"
+                     "      patternSpeed = %g\n"
+                     "      startAngle = %g\n"
+                     "    };\n",
+                     showDiskT(d->type),
+                     d->mass,
+                     d->scaleLength,
+                     d->scaleHeight,
+                     d->patternSpeed,
+                     d->startAngle))
+    {
+        mw_fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
 
 char* showCell(const NBodyCell* c)
 {
@@ -448,6 +477,7 @@ char* showPotential(const Potential* p)
     char* buf;
     char* sphBuf;
     char* diskBuf;
+    char* disk2Buf;
     char* haloBuf;
 
     if (!p)
@@ -455,17 +485,20 @@ char* showPotential(const Potential* p)
 
     sphBuf  = showSpherical(&p->sphere[0]);
     diskBuf = showDisk(&p->disk);
+    disk2Buf = showDisk2(&p->disk2);
     haloBuf = showHalo(&p->halo);
 
     rc = asprintf(&buf,
                   "{\n"
                   "    sphere = %s\n"
                   "    disk = %s\n"
+                  "    disk2 = %s\n"
                   "    halo = %s\n"
                   "    rings  = { unused pointer %p }\n"
                   "  };\n",
                   sphBuf,
                   diskBuf,
+                  disk2Buf,
                   haloBuf,
                   p->rings);
     if (rc < 0)
@@ -473,6 +506,7 @@ char* showPotential(const Potential* p)
 
     free(sphBuf);
     free(diskBuf);
+    free(disk2Buf);
     free(haloBuf);
 
     return buf;

@@ -191,7 +191,7 @@ typedef struct MW_ALIGN_TYPE
     int structureError;
 } NBodyTree;
 
-#define EMPTY_TREE { NULL, 0.0, 0, 0, 0 }
+#define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
 
 
 #if NBODY_OPENCL
@@ -353,8 +353,8 @@ typedef struct MW_ALIGN_TYPE
     scene_t* scene;
 
     mwvector* shiftByLMC;      /* Accelerations on MW from LMC */
-    mwvector* LMCpos;        /* Position of LMC */
-    mwvector* LMCvel;        /* Velocity of LMC */
+    mwvector LMCpos;        /* Position of LMC */
+    mwvector LMCvel;        /* Velocity of LMC */
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */
@@ -414,7 +414,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, \
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ZERO_VECTOR, ZERO_VECTOR, NULL, 0, \
 NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL,\
 NULL, NULL, NULL}
@@ -569,27 +569,13 @@ typedef enum
     NBODY_SAHA
 } NBodyLikelihoodMethod;
 
-typedef struct MW_ALIGN_TYPE
-{
-    mwvector revOrbitPos;
-    mwvector revOrbitVel;
-    mwvector revOrbitLMCPos;
-    mwvector revOrbitLMCVel;
-    real revOrbitdt;
-    real LMCmass;
-    real revOrbitTstop;
-    Potential pot;
-    real previousForwardTime;
-
-}SingleParticleOrbitParams;
-
 NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
 NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx);
 
 int destroyNBodyState(NBodyState* st);
 int nbDetachSharedScene(NBodyState* st);
 void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize);
-void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray);
+void setLMCPosVel(NBodyState* st, mwvector PosArray, mwvector VelArray);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);

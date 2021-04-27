@@ -209,8 +209,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
+                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       +  LMC Pos Vel size*/
+        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2 * sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -316,8 +316,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
+                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size*/
+        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector));
     }
     else
     {
@@ -395,7 +395,7 @@ static int nbCloseCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    size_t bodySize, traceSize, ShiftLMCSize, LMCPosVelSize, supposedCheckpointSize;
+    size_t bodySize, traceSize, ShiftLMCSize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
     char* p = cp->mptr;
 
@@ -409,8 +409,7 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     bodySize = st->nbody * sizeof(Body);
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
-    LMCPosVelSize = 2*sizeof(mwvector);
-    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
+    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + 2 * sizeof(mwvector);
 
     if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
@@ -441,15 +440,10 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
         st->shiftByLMC = (mwvector*)mwMallocA(ShiftLMCSize); 
         memcpy(st->shiftByLMC, p, ShiftLMCSize);
         p += ShiftLMCSize;
-
-        st->LMCpos = (mwvector*)mwMallocA(sizeof(mwvector));
-        memcpy(st->LMCpos, p, sizeof(mwvector));
-        p+= sizeof(mwvector);
-
-        st->LMCvel = (mwvector*)mwMallocA(sizeof(mwvector));
-        memcpy(st->LMCvel, p, sizeof(mwvector));
-        p+= sizeof(mwvector);
-
+        memcpy(&st->LMCpos, p, sizeof(mwvector));
+        p += sizeof(mwvector);
+        memcpy(&st->LMCvel, p, sizeof(mwvector));
+        p += sizeof(mwvector);
         //mw_printf("Read LMC position: [%.15f,%.15f,%.15f]\n",X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
     }
 
@@ -466,12 +460,6 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
         mwFreeA(st->shiftByLMC);
         st->shiftByLMC = NULL;
-
-        mwFreeA(st->LMCpos);
-        st->LMCpos = NULL;
-
-        mwFreeA(st->LMCvel);
-        st->LMCvel = NULL;
 
         mw_printf("Failed to find end marker in checkpoint file.\n");
         return TRUE;
@@ -512,12 +500,10 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
     {
         memcpy(p, st->shiftByLMC, ShiftLMCSize);
         p += ShiftLMCSize;
-
-        memcpy(p, st->LMCpos, sizeof(mwvector));
-        p+= sizeof(mwvector);
-
-        memcpy(p, st->LMCvel, sizeof(mwvector));
-        p+= sizeof(mwvector);
+        memcpy(p, &st->LMCpos, sizeof(mwvector));
+        p += sizeof(mwvector);
+        memcpy(p, &st->LMCvel, sizeof(mwvector));
+        p += sizeof(mwvector);
     }
 
     strcpy(p, tail);

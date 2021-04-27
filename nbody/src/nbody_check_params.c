@@ -109,7 +109,18 @@ mwbool checkDiskConstants(Disk* d)
                           d->scaleLength);
                 badDisk = TRUE;
             }
-
+            break;
+        case OrbitingBar:
+            if (mwCheckNormalPosNum(d->scaleLength) || mwCheckNormalPosNum(d->scaleHeight) || mwCheckNormalNum(d->patternSpeed) || mwCheckNormalNum(d->startAngle))
+            {
+                mw_printf("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f, patternSpeed = %.15f, startAngle = %.15f\n",
+                          showDiskT(d->type),
+                          d->scaleLength,
+                          d->scaleHeight,
+                          d->patternSpeed,
+                          d->startAngle);
+                badDisk = TRUE;
+            }
             break;
 
         case NoDisk:

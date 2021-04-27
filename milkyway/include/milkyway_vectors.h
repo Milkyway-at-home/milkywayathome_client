@@ -349,35 +349,5 @@ static inline void mw_incmulms(mwmatrix p, real s)
     mw_incmulvs(p[2], s);
 }
 
-//rotates p angle a counterclockwise around x axis
-static inline mwvector mw_rotateX(mwvector p, real a){
-    real newY = p.y * cos(a) - p.z * sin(a);
-    p.z = p.y * sin(a) + p.z * cos(a);
-    p.y = newY;
-    return p;
-}
-
-static inline mwvector mw_rotateY(mwvector p, real a){
-    real newX = p.x * cos(a) + p.z * sin(a);
-    p.z = -p.x * sin(a) + p.z * cos(a);
-    p.x = newX;
-    return p;
-}
-
-static inline mwvector mw_rotateZ(mwvector p, real a){
-    real newX = p.x * cos(a) - p.y * sin(a);
-    p.y = p.x * sin(a) + p.y * cos(a);
-    p.x = newX;
-    return p;
-}
-
-//performs X,Y, and Z rotation using the angles in a
-static inline mwvector mw_3DRotation(mwvector p, mwvector a){
-    p = mw_rotateX(p, a.x);
-    p = mw_rotateY(p, a.y);
-    p = mw_rotateZ(p, a.z);
-    return p;
-}
-
 
 #endif /* _MILKYWAY_VECTORS_H_ */

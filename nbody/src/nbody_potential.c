@@ -383,41 +383,27 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     return acc;
 }
 
+//Softened needle bar potential
 static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
 {
-    //mw_printf("Calculating Acceleration\n");
-    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-    //mw_printf("r = %.15f\n", r);
     real amp = disk->mass;
     real a = disk->scaleLength;
     real b = 1.4;//Triaxial softening length
     real c = 1;//Prolate softening length
-    //mwvector pointPos;
-    //pointPos.z = 0;
+    
     real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
-    curAngle = curAngle - M_PI;//this is because the sun is negative in our coordinate system
-    //pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
-    //pointPos.y = sin (curAngle) * disk->scaleLength;
-
+    //first rotate pos curAngle * -1 radians to emulate the current angle of the bar
     real Radi = mw_sqrt(pos.x*pos.x+pos.y*pos.y);
     real Phi = mw_atan(pos.y/pos.x);
     Phi -= curAngle;
+    if(pos.x < 0){
+        Radi = Radi * -1;
+    }
     real x = Radi*cos(Phi);
     real y = Radi*sin(Phi); 
     real z = pos.z;
-    
-   
-    //mw_printf("point x: %.20f\n", x);
-    //mw_printf("point y: %.20f\n", y);
-    //mw_printf("point z: %.20f\n", z);
-   
-    //mw_printf("point Position x: %.20f\n", X(pos));
-    //mw_printf("point Position y: %.20f\n", Y(pos));
-    //mw_printf("point Position z: %.20f\n", Z(pos));
-    
-    
-    //real dist = mw_distv(pos, pointPos);
 
+    //calculate force in accordance with the galpy implementation
     real secondpart = mw_pow(y,2.) + mw_pow(b+mw_sqrt(mw_pow(c,2) + mw_pow(z,2)),2);
     real Tp = mw_sqrt(mw_pow(a + x,2) + secondpart);
     real Tm = mw_sqrt(mw_pow(a - x,2) + secondpart);
@@ -426,20 +412,8 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     force.x = -2.*x/Tp/Tm/(Tp+Tm);
     force.y = -y/2./Tp/Tm*(Tp+Tm-4.*mw_pow(x,2.)/(Tp+Tm))/(mw_pow(y,2.)+mw_pow(b+mw_sqrt(mw_pow(z,2.)+mw_pow(c,2)),2.));
     force.z = force.y*z/y*(b+mw_sqrt(mw_pow(z,2)+mw_pow(c,2)))/mw_sqrt(mw_pow(z,2)+mw_pow(c,2));
-   
     
-    //if ((y>-0.0001 & y<0.0001) & (z<0.0001 & z> -0.001)) { 
-    //    mw_printf("point x force: %.20f\n", X(force));
-    //    mw_printf("point y force: %.20f\n", Y(force));
-    //    mw_printf("point z force: %.20f\n", Z(force));
-    //}
-    
-    
-    //mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
-
-    //real totalAcc = disk->mass/(dist*dist);//a = Gm/r^2
-    //real totalAcc = mw_mulvs(force,disk->mass);//a = Gm/r^2
-    
+    //undo the pos rotation and calculate acceleration from the force vector we got
     mwvector acc;
     real cp = cos (curAngle);
     real sp = sin (curAngle);
@@ -451,20 +425,6 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     acc.y = acc.y*amp;
     acc.z = acc.z*amp;
 
-    
-    //if ((y>-0.0001 & y<0.0001) & (z<0.0001 & z> -0.001)) {
-    //    mw_printf("point x acc: %.20f\n", X(acc));
-    //    mw_printf("point y acc: %.20f\n", Y(acc));
-    //    mw_printf("point z acc: %.20f\n", Z(acc));    
-    //}
-    
-
-    //mw_printf("curAngle: %.15f\n", curAngle);
-    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
-    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
-    //mw_printf("point x acc: %.15f\n", X(acc));
-    //mw_printf("point y acc: %.15f\n", Y(acc));
-    //mw_printf("point z acc: %.15f\n", Z(acc));
     return acc;
 }
 

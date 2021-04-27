@@ -209,7 +209,6 @@ static int luaReverseOrbit(lua_State* luaSt)
     static Potential* pot = NULL;
     static const mwvector* pos = NULL;
     static const mwvector* vel = NULL;
-    static real forwardTime;
 
     static const MWNamedArg argTable[] =
         {
@@ -227,17 +226,16 @@ static int luaReverseOrbit(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 6:
+        case 5:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
             tstop = luaL_checknumber(luaSt, 4);
             dt = luaL_checknumber(luaSt, 5);
-            forwardTime = luaL_checknumber(luaSt, 6);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 6 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 5 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
@@ -250,9 +248,6 @@ static int luaReverseOrbit(lua_State* luaSt)
 
     return 2;
 }
-
-
-static Potential* pot = NULL;
 
 static int luaReverseOrbit_LMC(lua_State* luaSt)
 {

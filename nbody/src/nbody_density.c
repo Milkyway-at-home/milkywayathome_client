@@ -130,23 +130,34 @@ static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
     return v*v*num/4.0/pi/D/D;
 }
 
-static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real r, real time)
+static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real time)
 {
-    real a = r;// Bar half-length
-    real b = 0;//Triaxial softening length
+    real a = disk->scaleLength;// Bar half-length
+    real b = 1.4;//Triaxial softening length
     real c = 1;//Prolate softening length
-    mwvector pointPos;
-    pointPos.z = 0;
+
     real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
-    curAngle = curAngle - M_PI;
-    pointPos.x = cos (curAngle) * disk->scaleLength;
-    pointPos.y = sin (curAngle) * disk->scaleLength;
-    mwvector posDiff = mw_subv(pos, pointPos);//x,y,z
-    real zc = sqr(mw_pow(posDiff.z,2)+mw_pow(c,2));
+    //first rotate pos curAngle * -1 radians to emulate the current angle of the bar
+    real Radi = mw_sqrt(pos.x*pos.x+pos.y*pos.y);
+    real Phi = mw_atan(pos.y/pos.x);
+    Phi -= curAngle;
+    if(pos.x < 0){
+        Radi = Radi * -1;
+    }
+    real x = Radi*cos(Phi);
+    real y = Radi*sin(Phi); 
+    real z = pos.z;
+
+    real zc = mw_sqrt(mw_pow(z,2)+mw_pow(c,2));
     real bzc2 = mw_pow(b+zc,2);
-    real bigA = b*mw_pow(posDiff.y,2) + (b+3*zc)*bzc2;
-    real bigC = mw_pow(posDiff.y,2)+bzc2;
-    return mw_pow(c,2)/24/pi/a/mw_pow(bigC,2)/mw_pow(zc,3)*((posDiff.x+a)*(3*bigA*bigC+(2*bigA+b*bigC)*mw_pow(posDiff.x+a,2))/mw_pow(bigC+mw_pow(posDiff.x+a,2),2)-(posDiff.x-a)*(3*bigA*bigC+(2*bigA+b+bigC)*mw_pow(posDiff.x-a,2))/mw_pow(bigC+mw_pow(posDiff.x-a,2),1.5));
+    real bigA = b*mw_pow(y,2) + (b+3*zc)*bzc2;
+    real bigC = mw_pow(y,2)+bzc2;
+    real unscaledDens = mw_pow(c,2)/24/pi/a/mw_pow(bigC,2)/mw_pow(zc,3)*
+    ((x+a)*(3*bigA*bigC+(2*bigA+b*bigC)*mw_pow(x+a,2))/
+    mw_pow(bigC+mw_pow(x+a,2),1.5)-(x-a)*(3*bigA*bigC+(2*bigA+b*bigC)*
+    mw_pow(x-a,2))/mw_pow(bigC+mw_pow(x-a,2),1.5));
+
+    return unscaledDens * disk->mass;
 }
 
 /*Halo Densities*/
@@ -236,7 +247,7 @@ static inline real KVHalo(const Halo* h, real r) /*What is this one?*/
     return (1/(4*pi)) * (M/(r*mw_pow(r+a, 2))) - ((2*M)/(mw_pow(r+a, 3)));
 }
 
-real nbExtDensity(const Potential* pot, mwvector pos)
+real nbExtDensity(const Potential* pot, mwvector pos, real time)
 {
     real density = 0.0;
     const real limit = mw_pow(2.0,-8.0);
@@ -274,6 +285,8 @@ real nbExtDensity(const Potential* pot, mwvector pos)
         case Sech2ExponentialDisk:
             density += sech2ExponentialDiskDensity(&(pot->disk), pos);
             break;
+        case OrbitingBar:
+            density += orbitingBarDensity(&(pot->disk), pos, time);
         case NoDisk:
             density += 0.0;
             break;
@@ -296,6 +309,8 @@ real nbExtDensity(const Potential* pot, mwvector pos)
         case Sech2ExponentialDisk:
             density += sech2ExponentialDiskDensity(&(pot->disk2), pos);
             break;
+        case OrbitingBar:
+            density += orbitingBarDensity(&(pot->disk2), pos, time);
         case NoDisk:
             density += 0.0;
             break;
@@ -346,6 +361,7 @@ real nbExtDensity(const Potential* pot, mwvector pos)
 
     if (density < 0.0)
     {
+        mw_printf("Density: %f\n", density);
         mw_fail("Negative density calculated!\n    Faulty Potential = %s\n", showPotential(pot));
     }
 

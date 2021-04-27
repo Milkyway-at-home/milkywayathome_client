@@ -25,16 +25,7 @@
 extern "C" {
 #endif
 
-static inline real hernquistSphericalDensity(const Spherical* sph, real r);
-static inline real plummerSpherical(const Spherical* sph, real r);
-static inline real miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r);
-static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real r, real time);
-static inline real hernquistHaloDensity(const Halo* h,  real r);
-static inline real plummerHaloDensity(const Halo* h, real r);
-static inline real NFWMHaloDensity(const Halo* h,  real r);
-static inline real wilkinsonHalo(const Halo* h, real r);
-static inline real KVHalo(const Halo* h, real r);
-real nbExtDensity(const Potential* pot, mwvector pos);
+real nbExtDensity(const Potential* pot, mwvector pos, real time);
 
 #ifdef __cplusplus
 }

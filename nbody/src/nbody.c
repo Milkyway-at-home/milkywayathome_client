@@ -420,9 +420,10 @@ int nbMain(const NBodyFlags* nbf)
         return rc;
     }
 
-    //for the first run, just assume the best likelihood is at 100%
+    NBodyState initialState = EMPTY_NBODYSTATE;
+    //for the first run, just assume the best likelihood timestep will occur at timeEvolve
     st->previousForwardTime = ctx->timeEvolve;
-    mw_printf("calibrationRuns: %d\n", ctx->calibrationRuns);
+    //Run forward evolution calibrationRuns + 1 times
     for(int i = 0; i <= ctx->calibrationRuns; i++){
         //these for checkpointing
         nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
@@ -466,33 +467,23 @@ int nbMain(const NBodyFlags* nbf)
         st->useVlos = ctx->useVlos;
         st->useDist = ctx->useDist;
 
-        //save the state
-        NBodyState tmpState = EMPTY_NBODYSTATE;
-        cloneNBodyState(&tmpState, st);
+        //save the state if about to start first calibration run
+        if(ctx->calibrationRuns > 0 && i == 0){
+            cloneNBodyState(&initialState, st);
+        }
 
         rc = nbRunSystem(ctx, st, nbf);
 
-        real expectedForwardTime = tmpState.previousForwardTime;
-        if(i == 0){
-            expectedForwardTime = ctx->timeBack;
-        }
-        mw_printf("run: %d forwardTime: %f\n", i, st->bestLikelihood_time);
-        mw_printf("expected forward time - real forward time = %f\n\n", expectedForwardTime - st->bestLikelihood_time);
-        /*if (!nbf->noCleanCheckpoint)
-        {
-            mw_report("Removing checkpoint file '%s'\n", nbf->checkpointFileName);
-            mw_remove(nbf->checkpointFileName);
-        }\*/
-        
         if(i < ctx->calibrationRuns){
             //grab the best likelihood time
-            tmpState.previousForwardTime = st->bestLikelihood_time;
+            real forwardTime = st->bestLikelihood_time;
             //reset the state for the next run
             *st = (NBodyState)EMPTY_NBODYSTATE;
-            cloneNBodyState(st, &tmpState);
+            cloneNBodyState(st, &initialState);
+            //set previous forward time for the next run
+            st->previousForwardTime = forwardTime;
         }
         nbResolveCheckpoint(st, nbf->checkpointFileName);
-        destroyNBodyState(&tmpState);
     }
 
     te = mwGetTime();
@@ -526,6 +517,7 @@ int nbMain(const NBodyFlags* nbf)
     rc = nbReportResults(ctx, st, nbf);
 
     destroyNBodyState(st);
+    destroyNBodyState(&initialState);
 
     return rc;
 }

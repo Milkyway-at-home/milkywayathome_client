@@ -125,7 +125,8 @@ function makePotential()
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.18972480e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            disk2     = Disk.orbitingBar{ mass = 2.689340798e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
+            --                                                                      250.6097 rad/Gyr = 39 km/s/kpc
+            disk2     = Disk.orbitingBar{ mass = 2.689340798e4, scaleLength = 5.4, patternSpeed = 250.6097, startAngle = 0.488692},
            -- disk2     = Disk.none{ mass = 2.429275796e3},
             halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
         }--vhalo = 74.61 kpc/gy = 73 km/s

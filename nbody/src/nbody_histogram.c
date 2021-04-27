@@ -138,10 +138,13 @@ static void nbPrintHistogramHeader(FILE* f,
             nbHistogramLambdaBinSize(hp),
             nbHistogramBetaBinSize(hp));
     
+    //calculate how far off the bar time was for different situations
+    
+    //bar on calibration on
     real barTimeError = bestLikelihood_time - st->previousForwardTime;
     if(ctx->pot.disk2.type == _NO_DISK){//no bar
         barTimeError = 0;
-    }else if(ctx->calibrationRuns == 0){//no calibration bar
+    }else if(ctx->calibrationRuns == 0){//no calibration but bar on
         barTimeError = bestLikelihood_time - ctx->timeEvolve;
     }
     real barAngleError = barTimeError * ctx->pot.disk2.patternSpeed;

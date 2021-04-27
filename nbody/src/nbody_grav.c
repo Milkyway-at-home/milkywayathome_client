@@ -136,20 +136,12 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
     real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
-    
-    //SingleParticleOrbitParams* revOrbitParams = getOrbitParams();
-    //int barTimeStep = getBarTime(bodies, nbody, st, ctx)/10;//updates st with new bar timestep
-    //real barTime = barTimeStep * ctx->timestep*(ctx->timeBack/getPrevForwardTime());
-    //bar time is in Gyr. It is 0 at the present day and negative for the entire simulation. 
-    //real barTime = barTimeStep * ctx->timestep*(ctx->timeBack/getPrevForwardTime()) - ctx->timeBack; //with stream tracking
-    //real barTime = st->step * ctx->timestep*(ctx->timeBack/getPrevForwardTime()) - ctx->timeBack; //without stream tracking
-    real barTime = st->step * ctx->timestep - st->previousForwardTime; //without stream tracking, shift beginning point
-    if(st->step % 100 == 0){
-        mw_printf("barTime: %f\n", barTime);
-    }
+
+    //use previous calibration run to shift time and calibrate the bar
+    real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
-        LMCx = st->LMCpos[0];
+        LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
     }
@@ -244,7 +236,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
-        LMCx = st->LMCpos[0];
+        LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
     }

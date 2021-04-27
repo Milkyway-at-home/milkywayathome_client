@@ -688,7 +688,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
                  p->disk2.type == FreemanDisk,
                  p->disk2.type == DoubleExponentialDisk,
                  p->disk2.type == Sech2ExponentialDisk,
-		 p->disk2.type == OrbitiongBar,
+		         p->disk2.type == OrbitingBar,
                  p->disk2.type == NoDisk,
                  p->halo.type == LogarithmicHalo,
                  p->halo.type == NFWHalo,
