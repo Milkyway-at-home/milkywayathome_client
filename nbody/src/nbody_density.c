@@ -361,7 +361,6 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
 
     if (density < 0.0)
     {
-        mw_printf("Density: %f\n", density);
         mw_fail("Negative density calculated!\n    Faulty Potential = %s\n", showPotential(pot));
     }
 

@@ -209,8 +209,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       +  LMC Pos Vel size*/
-        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2 * sizeof(mwvector);
+                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -316,8 +316,8 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size*/
-        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector));
+                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
     }
     else
     {
@@ -395,7 +395,7 @@ static int nbCloseCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    size_t bodySize, traceSize, ShiftLMCSize, supposedCheckpointSize;
+    size_t bodySize, traceSize, ShiftLMCSize, LMCPosVelSize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
     char* p = cp->mptr;
 
@@ -409,7 +409,8 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     bodySize = st->nbody * sizeof(Body);
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
-    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + 2 * sizeof(mwvector);
+    LMCPosVelSize = 2*sizeof(mwvector);
+    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
 
     if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {

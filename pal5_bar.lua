@@ -24,9 +24,9 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 20000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.78"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
@@ -60,13 +60,13 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-lda_bins        = 75      -- number of bins in lamdba direction
-lda_lower_range = -150    -- lower range for lambda
-lda_upper_range = 200      -- upepr range for lamdba
+lda_bins        = 60      -- number of bins in lamdba direction
+lda_lower_range = 40    -- lower range for lambda
+lda_upper_range = 100     -- upepr range for lamdba
 
 bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
-bta_lower_range = -15     -- lower range for beta
-bta_upper_range = 15      -- upper range for beta
+bta_lower_range = -90     -- lower range for beta
+bta_upper_range = 0      -- upper range for beta
 
 SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
 SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
@@ -97,7 +97,7 @@ freqOfOutputs         = 100            -- -- FREQUENCY OF WRITING OUTPUTS -- --
 timestep_control     = false         -- -- control number of steps      -- --
 Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
 
-numCalibrationRuns = 1 --number of extra runs to do to calibrate position  
+numCalibrationRuns = 5 --number of extra runs to do to calibrate position  
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -107,12 +107,13 @@ numCalibrationRuns = 1 --number of extra runs to do to calibrate position
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-orbit_parameter_l  = 1.0
-orbit_parameter_b  = 46.0
+--Casey's pm's (taken from Pearson et al. 2017 paper)
+orbit_parameter_l  = 0.83456365
+orbit_parameter_b  = 45.85478167
 orbit_parameter_r  = 22.9
-orbit_parameter_vx = -121
-orbit_parameter_vy = -4
-orbit_parameter_vz = 57
+orbit_parameter_vx = -66.31076601
+orbit_parameter_vy = -105.30530344
+orbit_parameter_vz = -15.94920697
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -125,14 +126,16 @@ function makePotential()
    else
         --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
         return  Potential.create{
-            --spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             spherical = Spherical.none{mass=3.0e5},
-            --disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 }, --standard
-            disk      = Disk.miyamotoNagai{ mass = 3.61291101e5, scaleLength = 6.5, scaleHeight = 0.26 }, --mass of bar taken out
-            disk2     = Disk.orbitingBar{ mass = 8.457478699e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
-           -- disk2     = Disk.none{ mass = 2.429275796e3},
-            halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
-        }--vhalo = 74.61 kpc/gy = 73 km/s
+            --Sarah Pearson disk with mass of bar removed
+            disk      = Disk.miyamotoNagai{ mass = 2.699195329e5, scaleLength = 3.0, scaleHeight = 0.280 },
+            --1.88E10 M. mass of bar (Sarah), 60 km s^-1 kpc^-1 -> 385.2981165 rad/Gyr, scaleLength 1.1
+            -- pattern speed of 60 km/s/kpc
+            disk2       = Disk.orbitingBar{mass = 4.498658882e4, scaleLength = 1.1, patternSpeed = 385.2981165, startAngle = 0.471238898},
+            --disk2     = Disk.none{ mass = 2.429275796e3},
+            --5E11M mass of halo (Sarah)
+            halo = Halo.nfwmass{mass = 2.249329441e6, scaleLength=18}
+        }
    end
 end
 

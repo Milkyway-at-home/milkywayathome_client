@@ -58,8 +58,6 @@ typedef mwvector mwmatrix[NDIM];
 
 #define MWVECTOR_TYPE "Vector"
 
-#include "milkyway_math.h"
-
 
 CONST_F
 static inline mwvector mw_addv(mwvector a, mwvector b)
