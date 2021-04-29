@@ -263,20 +263,22 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     static const mwvector* vel = NULL;
     static const mwvector* LMCpos = NULL;
     static const mwvector* LMCvel = NULL;
+    static real bestLikeStart = 1.0;
 
     static const MWNamedArg argTable[] =
         {
-            { "potential",   LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot         },
-            { "position",    LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos         },
-            { "velocity",    LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel         },
-            { "LMCposition", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos      },
-            { "LMCvelocity", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel      },
-            { "LMCmass",     LUA_TNUMBER,   NULL,           TRUE, &LMCmass     },
-            { "LMCscale",    LUA_TNUMBER,   NULL,           TRUE, &LMCscale    },
-            { "LMCDynaFric", LUA_TBOOLEAN,  NULL,           TRUE, &LMCDynaFric },
-            { "tstop",       LUA_TNUMBER,   NULL,           TRUE, &tstop       },
-            { "ftime",       LUA_TNUMBER,   NULL,           TRUE, &ftime       },
-            { "dt",          LUA_TNUMBER,   NULL,           TRUE, &dt          },
+            { "potential",     LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
+            { "position",      LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos           },
+            { "velocity",      LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
+            { "LMCposition",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos        },
+            { "LMCvelocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel        },
+            { "LMCmass",       LUA_TNUMBER,   NULL,           TRUE, &LMCmass       },
+            { "LMCscale",      LUA_TNUMBER,   NULL,           TRUE, &LMCscale      },
+            { "LMCDynaFric",   LUA_TBOOLEAN,  NULL,           TRUE, &LMCDynaFric   },
+            { "tstop",         LUA_TNUMBER,   NULL,           TRUE, &tstop         },
+            { "ftime",         LUA_TNUMBER,   NULL,           TRUE, &ftime         },
+            { "dt",            LUA_TNUMBER,   NULL,           TRUE, &dt            },
+            { "bestLikeStart", LUA_TNUMBER,   NULL,           TRUE, &bestLikeStart },
             END_MW_NAMED_ARG
         };
 
@@ -286,7 +288,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 11:
+        case 12:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
@@ -298,17 +300,18 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             tstop = luaL_checknumber(luaSt, 9);
             ftime = luaL_checknumber(luaSt, 10);
             dt = luaL_checknumber(luaSt, 11);
+            bestLikeStart = luaL_checknumber(luaSt, 12);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 11 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 12 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale, bestLikeStart);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

@@ -26,7 +26,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.78"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
@@ -36,6 +36,12 @@ print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                  
 LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
+LMC_pos_x = -1.1
+LMC_pos_y = -41.1
+LMC_pos_z = -27.9
+LMC_vel_x = -57
+LMC_vel_y = -226
+LMC_vel_z = 221
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -178,7 +184,7 @@ function makeContext()
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
       eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
-      b           = orbit_parameter_b,
+      l           = orbit_parameter_l,
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
@@ -208,6 +214,12 @@ function makeContext()
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
+      LMCpositionX = LMC_pos_x,
+      LMCpositionY = LMC_pos_y,
+      LMCpositionZ = LMC_pos_z,
+      LMCvelocityX = LMC_vel_x, 
+      LMCvelocityY = LMC_vel_y, 
+      LMCvelocityZ = LMC_vel_z, 
       LMCDynaFric   = LMC_DynamicalFriction,
       calibrationRuns = numCalibrationRuns
    }
@@ -233,14 +245,15 @@ function makeBodies(ctx, potential)
                   potential   = potential,
                   position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
                   velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-                  LMCposition = Vector.create(-1.1, -41.1, -27.9),
-                  LMCvelocity = Vector.create(-57, -226, 221), 
+                  LMCposition = Vector.create(LMC_pos_x, LMC_pos_y, LMC_pos_z),
+                  LMCvelocity = Vector.create(LMC_vel_x, LMC_vel_y, LMC_vel_z), 
                       LMCmass     = LMC_Mass,
                       LMCscale    = LMC_scaleRadius,
                       LMCDynaFric = LMC_DynamicalFriction,
                       ftime       = evolveTime,
                   tstop       = revOrbTime,
-                  dt          = ctx.timestep / 10.0
+                  dt          = ctx.timestep / 10.0,
+                  bestLikeStart = best_like_start
                   }
   
                 

@@ -96,11 +96,13 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real tstop,
                     real dt,
                     real LMCmass,
-                    real LMCscale
+                    real LMCscale,
+                    real bestLikeStart
                     )
 {	
+    real bestLikeEnd = 2.0 - bestLikeStart;
     unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
-    unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
+    unsigned int exSteps = mw_abs(mw_ceil((bestLikeEnd * ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
@@ -114,8 +116,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     real t;
     real dt_half = dt / 2.0;
 
-    // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
-    if (ftime > tstop) {
+    // Check if extra steps beyond the reverse orbit ones are needed. We will need to manually compute additional LMC accelerations in that case.
+    if (exSteps > 0) {
 
         // Set the initial conditions for forward orbit
         x = pos;
@@ -135,7 +137,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv(LMC_acc, mw_acc);
         mw_incaddv(acc, mw_acc);
 
-        for (t = 0; t <= (ftime-tstop); t += dt)
+        for (t = 0; t <= (bestLikeEnd * ftime-tstop); t += dt)
         {   
     	    exSteps = t/dt;
     	    if ((exSteps % 10 == 0)&&(t!=0)) { 
@@ -197,8 +199,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     real negT = 0;
     for (t = 0; t <= tstop; t += dt)
     {   
-        //negate this time for use in time-dependent potentials
-        negT = t*-1;
+        //the time used for time-dependent potentials
+        negT = -1*t;
     	steps = t/dt;
     	if( steps % 10 == 0){ 
     		bacArray[i] = mw_acc;
@@ -243,6 +245,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     shiftByLMC = (mwvector*)mwCallocA(size, sizeof(mwvector)); 
 
     //Fill reverse orbit of shift array
+    //first index of shiftByLMC = end of reverse orbit
     for(j = 0; j < i+1; j++) {
         tmp = bacArray[i-j];
         shiftByLMC[j] = tmp;

@@ -434,7 +434,8 @@ typedef struct MW_ALIGN_TYPE
     real treeRSize;
     real sunGCDist;
 
-    real b;     /* orbital parameters */
+    real l;                   /* orbital parameters */
+    real b;     
     real r;
     real vx;
     real vy;
@@ -467,6 +468,12 @@ typedef struct MW_ALIGN_TYPE
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     real DistCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     mwbool LMC;
+    real LMCpositionX;
+    real LMCpositionY;
+    real LMCpositionZ;
+    real LMCvelocityX;
+    real LMCvelocityY;
+    real LMCvelocityZ;
 
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
@@ -484,11 +491,11 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                 \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
                          0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                           \
-                         0, 0, FALSE, 0,                                                                \
+                         0, 0, 0, 0, 0, 0, 0, 0, FALSE, 0,                                                                \
                          0, 0, 0,                                                                     \
                          EMPTY_POTENTIAL}
 

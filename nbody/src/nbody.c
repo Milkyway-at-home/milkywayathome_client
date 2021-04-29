@@ -32,6 +32,7 @@
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
 #include "nbody_types.h"
+#include "nbody_coordinates.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -482,6 +483,16 @@ int nbMain(const NBodyFlags* nbf)
             cloneNBodyState(st, &initialState);
             //set previous forward time for the next run
             st->previousForwardTime = forwardTime;
+            //do another reverse orbit in order to calibrate the LMC starting pos/vel
+            //This orbit will not make us regenerate the progenitor (st->bodies tab)
+            mwvector finalPos, finalVel, posLBR, pos, vel, LMCstartPos, LMCstartVel;
+            SET_VECTOR(posLBR, ctx->l, ctx->b, ctx->r);
+            pos = lbrToCartesian_rad(posLBR, ctx->sunGCDist);
+            SET_VECTOR(vel, ctx->vx, ctx->vy, ctx->vz);
+            SET_VECTOR(LMCstartPos, ctx->LMCpositionX, ctx->LMCpositionY, ctx->LMCpositionZ);
+            SET_VECTOR(LMCstartVel, ctx->LMCvelocityX, ctx->LMCvelocityY, ctx->LMCvelocityZ);
+            nbReverseOrbit_LMC(&finalPos, &finalVel, &st->LMCpos, &st->LMCvel, &ctx->pot, pos, vel, 
+            LMCstartPos, LMCstartVel, ctx->LMCDynaFric, forwardTime, forwardTime, ctx->timestep, ctx->LMCmass, ctx->LMCscale, ctx->BestLikeStart);
         }
         nbResolveCheckpoint(st, nbf->checkpointFileName);
     }

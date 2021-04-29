@@ -364,6 +364,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             getLMCPosVel(&LMCx, &LMCv);
             setLMCPosVel(st, LMCx, LMCv);
         }
+        mw_printf("LMC pos: %f, %f, %f\n", st->LMCpos.x, st->LMCpos.y, st->LMCpos.z);
+        mw_printf("LMC vel: %f, %f, %f\n", st->LMCvel.x, st->LMCvel.y, st->LMCvel.z);
+        mw_printf("LMC shift[0]: %f, %f, %f\n", st->shiftByLMC[0].x, st->shiftByLMC[0].y, st->shiftByLMC[0].z);
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
