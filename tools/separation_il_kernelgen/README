@@ -1,0 +1,48 @@
+
+This is a small tool for generating AMD IL kernels for
+separation. They do not support the aux_bg_profile option, but I don't
+think that's ever actually used. This also would be trivial to add
+back in if ever needed.
+
+
+To generate a kernel, it takes 3 arguments.
+  1: Number of streams for the kernel.
+      If using FLEXIBLE_KERNEL, this will be the maximum number of
+      streams. Otherwise, the fixed number of streams.
+
+  2: Device type.
+      This is one of the names of the values for CALtargetEnum with the
+      CAL_TARGET_ prefix dropped. e.g. "770" and "Cypress" will be create a kernel for
+      CAL_TARGET_770, or CAL_TARGET_CYPRESS respectively. This is case
+      insensitive.
+
+      IL is supposed to be forward compatible to new GPUs. OpenCL is
+      only supported on Radeon 4xxx and later, and then doubles are
+      also required, so the 770 type should be the oldest which will
+      work on all targets where this is expected to work.
+
+      A more recent / specific version may be slightly faster. For
+      example, Cypress has a double precision native_reciprocal
+      instruction for double which will be slightly faster.
+
+  3: Output file; e.g. "kernel_Cypress_3stream.il"
+
+
+There are a couple of hardcoded constants you can change for slightly different behaviour.
+
+FLEXIBLE_KERNEL:
+  By changing the definition of FLEXIBLE_KERNEL to 1, you can have a single
+  kernel that can handle a variable number of streams up to some limit,
+  but will be somewhat slower.
+
+USE_KAHAN:
+  By changing this to 1, can use Kahan summation
+
+IL_MAX_CONVOLVE:
+  Maximum acceptable value for convolve. This should always match the
+  same value as in the reference generated OpenCL binary. This isn't
+  actually used by the IL kernel, since it doesn't support the
+
+
+
+

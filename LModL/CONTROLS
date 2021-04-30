@@ -1,0 +1,36 @@
+CONTROLS
+
+ESC - Exit application
+Tab : Start over
+Shift-Tab : save new start-point
+Alt-tab : leave application temporarily when in full-screen mode
+Prtsc or Print-screen: saves a screenshot
+
+MOVEMENT
+
+< / > : accelerate backwards /forwards
+F1-F9 : change acceleration (each step is 10 times faster than the previous)
+
+Arrow : look around
+Ctrl-arrow : rotate view
+Shift-arrow : revolve camera around galaxy center (inverted)
+Alt-arrow : accelerate up/down/left/right
+Spacebar : stop motion
+
+Backspace : Reset focus of view
+Shift-backspace : focus on Sol ??? Secondary view focus?
+
+Enter : travel to center of galaxy  ???  Move to focus point?
+Shift-enter : travel to Sol (gives an Earth view of the wedge)    ???  Move to secondary focus point?
+
+
+APPEARANCE
+
+1 / 2 / 3 : select object 1-3 (wedge, stream, galaxy) (If multiple objects are present)
+
++ / - : increase/decrease luminosity of object
+Shift- + / - : increase/decrease star blur radius
+Alt- + / - : increase, decrease number of stars visible
+
+A : toggle axes view
+C : toggle camera view

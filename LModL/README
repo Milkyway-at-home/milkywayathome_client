@@ -1,0 +1,52 @@
+LModL - Light Modeling Library
+A 3D graphics engine and modeling library for rendering point-light.
+
+See COPYING for license information.
+See INSTALL for information on compiling.
+
+Library overview:
+
+    3dproj.hpp          3D projection library
+    binfile.hpp         binary file io
+    draw.hpp            high-level drawing routines
+    draw8.hpp           8-bit low-level drawing
+    draw24.hpp          24-bit low-level drawing routines
+    draw32.hpp          32-bit low-level drawing (24 bits used)
+    draw32p.hpp         32-bit low-level drawing (30-bits used)
+    drawcore.hpp        primary low-level drawing routines
+    drawhalo.hpp        halo field rendering routines
+    hlstorgb.hpp        hue/lighting/saturation conversions
+    imgplot.hpp         generates halo fields from bmp images
+    quatmath.hpp        quaternion ADT
+    rgbconv.hpp         color palette routines
+    trigtbl.hpp         trigonometric lookup tables / functions
+    vectmath.hpp        vector ADT
+
+Application overview:
+
+    coltest.cpp         test 32-bit color
+    cubetest.cpp        visual rendering test
+    fpstest.cpp         test frames-per-second of graphics engine
+    gfxinfo.cpp         graphics resource description
+    imgrender.cpp       render specified image
+    quattest.cpp        test for quaternion ADT
+    text2bin.c          converts integer/float text files to binary
+    trigtblm.cpp        generate table portion of trigtbl.hpp
+
+Note: run application without arguments to for parameter information
+
+Known bugs:
+
+    3d line clipping buggy at close range
+    Issues with custom bitmaps
+    24-bit routines not compatable with Mac
+    Needs generic get/putPixel option for compatibilty
+
+Project Page:
+
+    MilkyWay@Home:
+        http://milkyway.cs.rpi.edu/milkyway/
+    Source page:
+        http://github.com/Milkyway-at-home/LModL
+    Affiliation:
+        Rensselaer Polytechnic Institute (RPI)

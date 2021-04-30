@@ -1,0 +1,72 @@
+
+separation 1.0:
+	- CAL version removed.
+	- Added IL injection for AMD GPUs (Only R770, Cypress, Cayman)
+	- AVX detection, and --force-avx argument
+	- Added --force-no-opencl argument
+	- Added --force-no-il-kernel argument
+	- Project preferences work for GPU target frequency
+	- Increase default target frequency to 60
+	- Kernel source is now always inlined
+	- Fix Kahan summation on CPU
+	- Add Kahan summation GPU
+	- Use GPU for summarization of GPU results
+	- Use BOINC app_init_data OpenCL device index if available
+	- Workaround for high CPU usage with recent Nvidia drivers
+	- Redid chunking yet again
+
+
+nbody 0.80:
+	- Added OpenCL version
+	- Add progress reporting if Ncurses is available
+	- "Exact" criterion is now an actual exact implementation. To get
+	       the old "Exact" behaviour, use theta = 0.0 with the BH86 criterion
+
+	- Histogram no longer needed to generate histogram
+	- Histogram is now CSV
+	- Histogram now have comments (#) and ignores blank lines
+	- Histogram now includes lambda
+	- Fix possibility of checkpoints breaking for simulations running the same directory
+	- Fix not using SSE2 intrinsics in dSFMT
+	- Can now return a Lua function from makePotential() as external potential.
+	     Must take 3 numbers as x, y, z and return acceleration as a_x, a_y, a_z
+
+	- Add --static-draw option to display body output file to visualizer
+	- Slightly reduced memory usage of cells
+	- Fixed annoying creation of empty output files at beginning
+	- Last checkpoint is now deleted by default on completion
+	- Added 'make bench' simple benchmark
+	- Setting NBODY_FLAGS environment variable will pass extra flags to tests/benchmark
+	- Add more user documentation using texinfo.
+	- Add --match-histogram argument
+	- Add new likelihood options
+
+
+separation 0.80:
+	- GPU checkpointing for CAL and OpenCL builds
+	- New arguments to disable GPU checkpointing: --gpu-disable-checkpointing
+	- SSE2 intrinsics
+	- Different SSE levels all in one binary
+	- New optional Lua parameters file
+	- Better chunking for CAL and OpenCL builds
+	- Better automated tests
+	- Argument --responsiveness-factor removed
+	- Argument --non-responsive added (use with caution)
+	- Arguments for controlling which path is used (--force-x87, --force-sse2, --force-sse3, --force-no-intrinsics)
+
+
+nbody 0.40:
+	- Replace JSON config file with Lua
+	- Support for arbitrary initial distributions with Lua
+	- Bindings to old utility functions for Plummer sphere, timestep calculation, eps2 etc.
+	- Simulation can now be run with no background potential
+	- Fix "No error" message for some checkpointing failures on Windows
+	- Improved partial automated testing (mostly incomplete)
+	- Add option to silence tree structure errors
+	- No longer immediately aborts on tree structure errors
+	- Add argument to prevent BOINC from eating stderr
+	- Fix conflicts with Apple headers when using Macports GCC
+	- Checkpointing no longer requires initial config file (likely to change again)
+	- Checkpointing now works without BOINC
+
+

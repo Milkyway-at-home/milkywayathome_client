@@ -1,0 +1,73 @@
+/*
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef _SEPARATION_CONFIG_H_
+#define _SEPARATION_CONFIG_H_
+
+#include "milkyway_config.h"
+
+#define SEPARATION_VERSION_MAJOR ${separation_VERSION_MAJOR}
+#define SEPARATION_VERSION_MINOR ${separation_VERSION_MINOR}
+#define SEPARATION_VERSION       ${separation_VERSION}
+
+#cmakedefine01 SEPARATION_CRLIBM
+#cmakedefine01 SEPARATION_OPENCL
+
+#cmakedefine01 NVIDIA_OPENCL
+#cmakedefine01 AMD_OPENCL
+
+#cmakedefine01 SEPARATION_GRAPHICS
+
+#cmakedefine01 HAVE_SSE2
+#cmakedefine01 HAVE_SSE3
+#cmakedefine01 HAVE_SSE4
+#cmakedefine01 HAVE_SSE41
+#cmakedefine01 HAVE_AVX
+
+
+
+
+#define ENABLE_CRLIBM SEPARATION_CRLIBM
+
+#define ENABLE_OPENCL SEPARATION_OPENCL
+
+
+#if SEPARATION_OPENCL
+  #define SEPARATION_SPECIAL_STR " OpenCL"
+#else
+  #define SEPARATION_SPECIAL_STR ""
+#endif
+
+#if SEPARATION_CRLIBM
+  #define SEPARATION_SPECIAL_LIBM_STR " crlibm"
+#elif SEPARATION_USE_CUSTOM_MATH
+   #define SEPARATION_SPECIAL_LIBM_STR " custom"
+#else
+  #define SEPARATION_SPECIAL_LIBM_STR ""
+#endif /* SEPARATION_CRLIBM */
+
+#define SEPARATION_PROJECT_NAME "${PROJECT_NAME}"
+
+
+#endif /* _SEPARATION_CONFIG_H_ */
+

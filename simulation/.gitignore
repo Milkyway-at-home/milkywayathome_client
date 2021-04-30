@@ -1,0 +1,48 @@
+# Folders
+
+test/
+sim/
+data/
+
+# Compiled files
+
+*.o
+*.a
+*.exe
+*.dll
+*~
+mwdemo
+nbody
+
+# Packages
+
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Temp files
+
+*~
+
+# Windows files
+
+Thumbs.db
+desktop.ini
+
+# Mac files
+
+.DS_Store
+
+#Output files
+
+stderr.txt
+stdout.txt
+*.bmp
+
+# Exceptions
+!eso32.bmp

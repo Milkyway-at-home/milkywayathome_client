@@ -1,0 +1,14 @@
+Name: FindNBodyTimes
+Version: 0.1
+Cabal-Version: >= 1.2
+License: GPL-3
+Synopsis: Run lots of Nbodies
+Build-Type: Simple
+
+Executable FindNBodyTimes
+  Main-is: FindNBodyTimes.hs
+  Build-Depends: base, process, spawn
+  GHC-Options: -O2 -W -threaded
+  Extensions: BangPatterns, PatternGuards
+
+

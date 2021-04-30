@@ -1,0 +1,223 @@
+
+Building the target doc, e.g. "make doc" should build PDF
+documentation if texinfo is found.
+
+--------------------------------------------------------------------------------
+Dependencies:
+  Everything can be built independently of BOINC and TAO for separate use it is recommend to use a submodule for these
+
+  separation: Only if necessary
+    OpenCL: Optional, for AMD APP SDK or Nvidia CUDA SDK
+
+  nbody:
+    OpenSSL: Optional, only used for tests
+    OpenGL: Optional, for building graphics
+    OpenCL: Optional, for AMD APP SDK or Nvidia CUDA SDK
+
+  If you are using git, after cloning be sure to run:
+    $ git submodule init
+    $ git submodule update --recursive (or use the recursive option with git clone)
+
+--------------------------------------------------------------------------------
+Dependency Installation Notes:
+
+    Linux:
+        Ubuntu / Debian:
+              - Make sure the necessary build tools are installed
+
+              $ apt-get install build-essential
+              $ apt-get install cmake git-core diffutils patch libssl-dev
+
+          Other Distributions: Install equivalent packages.
+
+    OS X:
+                - Install Xcode and the Apple developer tools. This may involve joining some sort of cult.
+                - Install macports
+
+                $ port install cmake git-core
+
+                To build as 32 bit, there are 2 options.
+
+                If using Apple GCC,
+                - To build as 32 bit, or as a universal binary (no PPC), build with
+                  -DCMAKE_C_FLAGS="-m32" -DCMAKE_CXX_FLAGS="-m32"
+                 - 32 bit OS X  build may require Apple GCC 4.0 and  the 10.4u SDK
+
+               -If using Macports GCC, make sure you've installed the
+                +universal variant. Then build normally with the addition of -DCMAKE_C_FLAG="-m32" -DCMAKE_CXX_FLAGS="-m32" This however won't work on 10.4
+
+
+    Windows:
+        - Visual Studio 2010 should work for Separation, but not will
+           not work with N-body with crlibm. It should build without crlibm however.
+
+        - MinGW: Try using TDM-GCC http://tdm-gcc.tdragon.net/
+
+      - Install cmake if you haven't already www.cmake.org/cmake/resources/software.html
+
+      - build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason
+          helps find things with MinGW
+
+       -If you are trying to build a 32-bit version which will work on  Windows 2000 you must configure with the option
+        MSVC32_AVX_WORKAROUND enabled, and then manually set the platform toolset to each target in VS to v90.
+
+
+        Install OpenSSL for Win64:
+          - Install MSVC++ redistributables:
+               http://www.microsoft.com/downloads/details.aspx?familyid=bd2a6171-e2d6-4230-b809-9a8d7548c1b6
+          - Install OpenSSL itself:
+               http://www.slproweb.com/download/Win64OpenSSL-1_0_0d.exe
+
+          - Copy these: DLLs from their default install location
+               C:\OpenSSL-Win64\libeay32.dll
+               C:\OpenSSL-Win64\ssleay32.dll
+               to milkywayathome_client\lib directory to avoid finding
+               the 32 bit libraries.
+
+          - For MSVC 32 bit, either use VS 2008 or at least install
+            it, and set the platform toolset to v90 for all targets
+            (for now at least it can't be set from cmake) or else it
+            won't run on Windows 2000 (anything before XP SP2)
+
+     FreeBSD:
+       - Building 32 bit is sort of broken on 64 bit, so in addition
+            to -m32, you need to add -B/usr/lib32 to your flags
+     - /proc must be mounted for Lua to work which seems to not happen
+          by default
+     - Undefined reference from BOINC stuff on 32 bit I'm too lasy to figure out now
+
+
+BOINC:
+    Without a submodule, dropping a copy of the BOINC source at
+     milkywayathome_client/boinc/boinc should also include BOINC in the
+     build.
+
+    If BOINC isn't found there, it will try to find the BOINC libraries
+     installed on the system or dumped in include and lib in the binary directory
+
+    If the compiler gives an error complaining about directory not being or svn, then git submodule update has failed.  To fix this:
+      $ cd milkywayathome_client/boinc/
+      $ rm -r boinc/ --force
+      $ git clone https://github.com/Milkyway-at-home/BOINC.git boinc
+
+TAO:
+  This package has only been tests on 64-bit linux machines.  Support for other platforms is not available.  Use at your own risk.
+
+  **There is currently an issue with the submodule undvc_common.  To include use:
+      $ cd tao
+      $ rm -r undvc_common
+      $ git clone https://github.com/travisdesell/undvc_common.git
+
+  Required Dependency:
+    Boost:
+       The best way I have found to get the necessary packages are to install directly from the source.  Some outdated, but very useful directions are here:  http://ubuntuforums.org/showthread.php?t=1180792
+       (These work for versions of Linux other than ubuntu and similar commands for newer versions of Boost).
+       For version 1.50.0 the specific commands once in the unpacked directory are:
+         $ ./bootstrap.sh --with-libraries=filesystem,system --libdir=/usr/lib64 --includedir=/usr/include
+         $ ./b2
+         $ sudo ./b2 install
+
+--------------------------------------------------------------------------------
+Using Build Options:
+  Build options are passed to cmake with -D on the command line, or
+  are check boxes if using the GUI
+
+   Example options:
+    $ cmake . -DBOINC_APPLICATION=OFF -DCMAKE_C_COMPILER=clang
+
+ Using -i argument with cmake will walk you through various build options
+
+--------------------------------------------------------------------------------
+Build Options:
+
+Common ON/OFF options:
+    BOINC_APPLICATION: Build with BOINC or not. More convenient to not
+                                        use BOINC for general use, testing. Not useful for most people
+    BOINC_RELEASE_NAMES: Use the long names BOINC uses which include version and system information
+
+Build Options:
+  CMAKE_BUILD_TYPE = one of Release, RelWithDebInfo, MinSizeRel, or Profile
+                                      defaults to Release
+             Some of the libraries the build handles (popt, lua, and BOINC) default to MinSizeRel unless debugging
+
+Common system options:
+  CMAKE_C_FLAGS, CMAKE_CXX_FLAGS - compiler flags
+  CMAKE_C_COMPILER, CMAKE_CXX_COMPILER - specify compiler
+    - note that if you want to change the compiler, you must delete CMakeCache.txt
+
+--------------------------------------------------------------------------------
+
+Building:
+  Linux:
+    $ cmake -i /path/to/source
+    $ make
+
+  OS X:
+    Same as Linux. Alternatively, Xcode projects could be built, but I have never tried or tested it
+
+  The -i switch will prompt for default values, in most cases accepting the default values will suffice.
+
+  Windows/MinGW (TDM-GCC)
+     $ cmake /path/to/source -G "MinGW Makefiles"
+     $ mingw32-make
+
+  Windows/MinGW (MSYS, most likely with MinGW home installer"
+     $ cmake /path/to/source -G "MSYS Makefiles"
+     $ make
+
+     To build 32 bit version, add -m32 to the CFLAGS when
+     building. Add -DCMAKE_C_FLAGS="-m32" -DCMAKE_CXX_FLAGS="-m32" to the cmake build line.
+
+  Windows/Visual Studio
+     1. Use the cmake gui to generate VS projects
+     2. Open the generated sln and build the project
+
+
+
+
+--------------------------------------------------------------------------------
+
+
+For building Linux binaries with against an old glibc for
+compatability, install an old system in a chroot, but it's easier to
+build using new tools (gcc, cmake etc.) outside of the chroot.
+
+To do this install a chroot (mostly following these instructions
+https://help.ubuntu.com/community/DebootstrapChroot for Hardy
+
+To go even older, something is broken with debootstrap but you can get
+cdebootstrap to work. You will need to edit
+/usr/share/cdebootstrap/suites and copy one of the Ubuntu lines and
+add the name of the old one you are trying to.
+I had issues getting one installe older than breezy.
+
+For building with very old glibcs, add -fgnu89-inline to CMAKE_C_FLAGS
+to avoid multiple definitions (this is necessary with breezy)
+
+# cdebootstrap --flavour=build --arch=i386 breezy /srv/chroot/breezy_i386 http://old-releases.ubuntu.com/ubuntu/
+
+Make sure that gcc-multilib and g++-multilib are installed on the host
+system. Inside the chroot install libssl-dev and, then do
+
+  $ mkdir build_i386; cd build_i386
+  $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_i386 \
+                                           -DCMAKE_C_COMPILER=/usr/bin/gcc  \
+                                           -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+                                           -DCMAKE_AR=/usr/bin/ar  \
+                                           -DCMAKE_RANLIB=/usr/bin/ranlib \
+                                           -DCMAKE_C_FLAGS="-m32 --sysroot=/srv/chroot/hardy_i386/"  \
+                                           -DCMAKE_CXX_FLAGS="-m32 --sysroot=/srv/chroot/hardy_i386/"
+   $  make
+
+for 64 bit
+  $ mkdir build_amd64; cd build_amd64
+  $ cmake /path/to/source -DCMAKE_FIND_ROOT_PATH=/srv/chroot/hardy_amd64 \
+                                           -DCMAKE_C_COMPILER=/usr/bin/gcc  \
+                                           -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+                                           -DCMAKE_AR=/usr/bin/ar  \
+                                           -DCMAKE_RANLIB=/usr/bin/ranlib \
+                                           -DCMAKE_C_FLAGS="-m64 --sysroot=/srv/chroot/hardy_amd64/"  \
+                                           -DCMAKE_CXX_FLAGS="-m64 --sysroot=/srv/chroot/hardy_amd64/"
+  $ make
+
+

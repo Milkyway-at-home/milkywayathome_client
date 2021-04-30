@@ -1,0 +1,40 @@
+/* Platform independent version definitions... */
+
+#ifndef BOINC_VERSION_H
+#define BOINC_VERSION_H
+
+/* Major part of BOINC version number */
+#define BOINC_MAJOR_VERSION ${BOINC_MAJOR_VERSION}
+
+/* Minor part of BOINC version number */
+#define BOINC_MINOR_VERSION ${BOINC_MINOR_VERSION}
+
+/* Release part of BOINC version number */
+#define BOINC_RELEASE ${BOINC_RELEASE}
+
+/* String representation of BOINC version number */
+#define BOINC_VERSION_STRING "${BOINC_MAJOR_VERSION}.${BOINC_MINOR_VERSION}.${BOINC_RELEASE}"
+
+/* Package is a pre-release (Alpha/Beta) package */
+#cmakedefine01 BOINC_PRERELEASE
+
+/* Name of package */
+#define PACKAGE "${PROJECT_NAME}"
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "${BOINC_BUGREPORT}"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "${PROJECT_NAME}"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "${PROJECT_NAME} ${BOINC_VERSION_STRING}"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "${PROJECT_NAME}"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION  "${BOINC_MAJOR_VERSION}.${BOINC_MINOR_VERSION}.${BOINC_RELEASE}"
+
+#endif /* #ifndef BOINC_VERSION_H */
+

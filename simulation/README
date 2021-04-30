@@ -1,0 +1,29 @@
+See 'COPYING' for license information.
+
+Library overview:
+
+    astroconv.h         astronomy conversions
+    demofile.hpp        demo file I/O
+
+Application overview:
+
+    mwdemo.cpp          MilkyWay@Home demo app
+    nbody.cpp           animation of n-body simulation file
+
+Note: run application without arguments to for parameter information
+
+Known bugs:
+
+    -
+
+Project information:
+
+    MilkyWay@Home
+
+        Project Page:
+            http://milkyway.cs.rpi.edu/milkyway/
+        Source page:
+            http://github.com/Milkyway-at-home
+        Affiliation:
+            Rensselaer Polytechnic Institute (RPI)
+

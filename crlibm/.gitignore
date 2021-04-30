@@ -1,0 +1,15 @@
+*.o
+*.a
+*.lib
+*.dll
+CMakeFiles/
+Testing/
+CTestTestfile.cmake
+cmake_install.cmake
+tests/blind_test
+tests/blindtest
+*.orig
+*.rej
+crlibm_config.h
+CMakeCache.txt
+Makefile
