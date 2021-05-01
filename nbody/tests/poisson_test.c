@@ -88,7 +88,7 @@ static inline void generateRandomHaloParams(real* vhalo,
 
 }
 
-static inline mwbool checkPoisson(const Potential* pot, const mwvector pos)
+static inline mwbool checkPoisson(const Potential* pot, mwvector pos)//const pos
 {
     mwvector pos_xp, pos_xm, pos_yp, pos_ym, pos_zp, pos_zm;
     mwvector acc_xp, acc_xm, acc_yp, acc_ym, acc_zp, acc_zm;
@@ -100,15 +100,16 @@ static inline mwbool checkPoisson(const Potential* pot, const mwvector pos)
     SET_VECTOR(pos_zp, X(pos), Y(pos), Z(pos)+0.5*h);
     SET_VECTOR(pos_zm, X(pos), Y(pos), Z(pos)-0.5*h);
 
-    acc_xp = nbExtAcceleration(pot, pos_xp);
-    acc_xm = nbExtAcceleration(pot, pos_xm);
-    acc_yp = nbExtAcceleration(pot, pos_yp);
-    acc_ym = nbExtAcceleration(pot, pos_ym);
-    acc_zp = nbExtAcceleration(pot, pos_zp);
-    acc_zm = nbExtAcceleration(pot, pos_zm);
+    real time = 0;
+    acc_xp = nbExtAcceleration(pot, pos_xp, time);
+    acc_xm = nbExtAcceleration(pot, pos_xm, time);
+    acc_yp = nbExtAcceleration(pot, pos_yp, time);
+    acc_ym = nbExtAcceleration(pot, pos_ym, time);
+    acc_zp = nbExtAcceleration(pot, pos_zp, time);
+    acc_zm = nbExtAcceleration(pot, pos_zm, time);
 
     real div_acc = (X(acc_xp)-X(acc_xm)+Y(acc_yp)-Y(acc_ym)+Z(acc_zp)-Z(acc_zm))/h;
-    real density = nbExtDensity(pot, pos);
+    real density = nbExtDensity(pot, pos, time);
 
     real diff = mw_abs(1.0 + 4.0*pi*density/div_acc);
 
@@ -118,10 +119,8 @@ static inline mwbool checkPoisson(const Potential* pot, const mwvector pos)
         mw_printf("  Potential = %s\n", showPotential(pot));
         return TRUE;
     }
-    else
-    {
-        return FALSE;
-    }
+    
+    return FALSE;
 }
 
 static inline void createNullPotential(Potential* p)
@@ -177,6 +176,10 @@ static inline mwbool testDiskPotential(disk_t t)
     p.disk.mass = mass;
     p.disk.scaleLength = scaleLength;
     p.disk.scaleHeight = scaleHeight;
+    if(p.disk.type == OrbitingBar){
+        p.disk.startAngle = 0;
+        p.disk.patternSpeed = 250;
+    }
     if(checkDiskConstants(&(p.disk)))
     {
         mw_printf("Bad Disk Constants in %s\n", showDiskT(t));
@@ -185,6 +188,45 @@ static inline mwbool testDiskPotential(disk_t t)
     for (j = 0; j < nPositions; j++)
     {
         SET_VECTOR(pos, randomValueReal(min_pos,max_pos), randomValueReal(min_pos,max_pos), randomValueReal(min_pos,max_pos));
+        if(checkPoisson(&p,pos))
+        {
+            pot_failed = TRUE;
+            mw_printf("    %s failed Poisson Test at pos %d = [%.15f,%.15f,%.15f]!\n", showDiskT(t), j, X(pos), Y(pos), Z(pos));
+            break;
+        }
+    }
+    return pot_failed;
+}
+
+static inline mwbool testBarPotential(disk_t t)
+{
+    Potential p = EMPTY_POTENTIAL;
+    real mass, scaleLength, scaleHeight;
+    int j;
+    mwbool pot_failed = FALSE;
+    mwvector pos;
+    createNullPotential(&p);
+
+    generateRandomDiskParams(&mass, &scaleLength, &scaleHeight);
+    p.disk2.type = t;
+    p.disk2.mass = mass;
+    p.disk2.scaleLength = scaleLength;
+    p.disk2.scaleHeight = scaleHeight;
+    if(p.disk2.type == OrbitingBar){
+        p.disk2.startAngle = 0;
+        p.disk2.patternSpeed = 250;
+    }
+    if(checkDiskConstants(&(p.disk2)))
+    {
+        mw_printf("Bad Disk Constants in %s\n", showDiskT(t));
+        return TRUE;
+    }
+    for (j = 0; j < nPositions; j++)
+    {
+        SET_VECTOR(pos, randomValueReal(-4,4), randomValueReal(-0.2,0.2), randomValueReal(-0.2,0.02));
+        while(mw_abs(X(pos)) < 0.01){
+            pos.x = randomValueReal(-4,4);
+        }
         if(checkPoisson(&p,pos))
         {
             pot_failed = TRUE;
@@ -283,6 +325,16 @@ int main()
     for (i = 0; i < nPotentials; i++)
     {
         if (testDiskPotential(MiyamotoNagaiDisk))
+        {
+            failed = 1;
+            break;
+        }
+    }
+    
+    //Orbiting Bar Potential
+    for (i = 0; i < nPotentials; i++)
+    {
+        if (testBarPotential(OrbitingBar))
         {
             failed = 1;
             break;

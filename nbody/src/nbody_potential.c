@@ -186,7 +186,10 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
     Z(acc) = -disk->mass * Z(pos) * azp / (zp * rth);
 
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]\n",X(acc),Y(acc),Z(acc));
-
+    
+    /*mw_printf("disk x acc: %.15f\n", X(acc));
+    mw_printf("disk y acc: %.15f\n", Y(acc));
+    mw_printf("disk z acc: %.15f\n", Z(acc));*/
     return acc;
 }
 
@@ -380,7 +383,84 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     return acc;
 }
 
-/*Halo potentials*/
+//Softened needle bar potential
+static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
+{
+    real amp = disk->mass;
+    real a = disk->scaleLength;
+    real b = 1.4;//Triaxial softening length
+    real c = 1;//Prolate softening length
+    
+    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
+    //first rotate pos curAngle * -1 radians to emulate the current angle of the bar
+    real Radi = mw_sqrt(pos.x*pos.x+pos.y*pos.y);
+    real Phi = mw_atan(pos.y/pos.x);
+    Phi -= curAngle;
+    if(pos.x < 0){
+        Radi = Radi * -1;
+    }
+    real x = Radi*cos(Phi);
+    real y = Radi*sin(Phi); 
+    real z = pos.z;
+
+    //calculate force in accordance with the galpy implementation
+    real secondpart = mw_pow(y,2.) + mw_pow(b+mw_sqrt(mw_pow(c,2) + mw_pow(z,2)),2);
+    real Tp = mw_sqrt(mw_pow(a + x,2) + secondpart);
+    real Tm = mw_sqrt(mw_pow(a - x,2) + secondpart);
+
+    mwvector force;
+    force.x = -2.*x/Tp/Tm/(Tp+Tm);
+    force.y = -y/2./Tp/Tm*(Tp+Tm-4.*mw_pow(x,2.)/(Tp+Tm))/(mw_pow(y,2.)+mw_pow(b+mw_sqrt(mw_pow(z,2.)+mw_pow(c,2)),2.));
+    force.z = force.y*z/y*(b+mw_sqrt(mw_pow(z,2)+mw_pow(c,2)))/mw_sqrt(mw_pow(z,2)+mw_pow(c,2));
+    
+    //undo the pos rotation and calculate acceleration from the force vector we got
+    mwvector acc;
+    real cp = cos (curAngle);
+    real sp = sin (curAngle);
+    acc.x=cp*force.x-sp*force.y;
+    acc.y=sp*force.x+cp*force.y;
+    acc.z=force.z;
+    
+    acc.x = acc.x*amp;
+    acc.y = acc.y*amp;
+    acc.z = acc.z*amp;
+
+    return acc;
+}
+
+
+/*If you want to test the time dependency of the bar with the bar as a point mass, comment out 
+the above function and uncomment the one below*/
+
+/*
+static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
+{
+    //mw_printf("Calculating Acceleration\n");
+    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
+    //mw_printf("r = %.15f\n", r);
+
+    mwvector pointPos;
+    pointPos.z = 0;
+    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
+    curAngle = curAngle - M_PI;//this is because the sun is negative in our coordinate system
+    pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
+    pointPos.y = sin (curAngle) * disk->scaleLength;
+
+    real dist = mw_distv(pos, pointPos);
+
+    mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
+    real totalAcc = disk->mass/(dist*dist);//a = Gm/r^2
+    acc = mw_mulvs(acc, totalAcc);
+
+    //mw_printf("curAngle: %.15f\n", curAngle);
+    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
+    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
+    //mw_printf("point x acc: %.15f\n", X(acc));
+    //mw_printf("point y acc: %.15f\n", Y(acc));
+    //mw_printf("point z acc: %.15f\n", Z(acc));
+    return acc;
+}
+*/
 
 static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 {
@@ -521,7 +601,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
     return acc;
 }
 
-mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
+mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 {
     mwvector acc, acctmp;
     real limit = mw_pow(2.0,-8.0);
@@ -568,6 +648,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos)
             break;
         case Sech2ExponentialDisk:
             acctmp = sech2ExponentialDiskAccel(&pot->disk2, pos, r);
+            break;
+        case OrbitingBar:
+            acctmp = orbitingBarAccel(&pot->disk2, pos, r, time);
             break;
         case NoDisk:
             X(acctmp) = 0.0;

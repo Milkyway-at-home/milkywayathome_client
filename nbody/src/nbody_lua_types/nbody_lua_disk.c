@@ -41,6 +41,7 @@ static const MWEnumAssociation diskOptions[] =
     { "freeman",    FreemanDisk   },
     { "miyamoto-nagai", MiyamotoNagaiDisk },
     { "double-exponential", DoubleExponentialDisk },
+    { "orbiting-bar", OrbitingBar}, //this is a time-dependent test potential
     { "none", NoDisk },
     END_MW_ENUM_ASSOCIATION
 };
@@ -111,6 +112,22 @@ static int createFreemanDisk(lua_State* luaSt)
     return createDisk(luaSt, argTable, &d);
 }
 
+static int createBar(lua_State* luaSt)
+{
+    static Disk d = { OrbitingBar, 0.0, 0.0, 0.0, 0.0 };
+
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &d.mass        },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &d.scaleLength },
+            { "patternSpeed", LUA_TNUMBER, NULL, TRUE, &d.patternSpeed },
+            { "startAngle", LUA_TNUMBER, NULL, TRUE, &d.startAngle },
+            END_MW_NAMED_ARG
+        };
+
+    return createDisk(luaSt, argTable, &d);
+}
+
 static int createNoDisk(lua_State* luaSt)
 {
     static Disk d = { NoDisk, 0.0, 0.0, 0.0 };
@@ -165,6 +182,7 @@ static const luaL_reg methodsDisk[] =
     { "freeman",   createFreemanDisk   },
     { "doubleExponential",   createDoubleExponentialDisk   },
     { "sech2Exponential",   createSech2ExponentialDisk   },
+    { "orbitingBar", createBar  },
     { "none",   createNoDisk   },
     { NULL, NULL }
 };
@@ -175,6 +193,8 @@ static const Xet_reg_pre gettersDisk[] =
     { "mass" ,       getNumber, offsetof(Disk, mass)        },
     { "scaleLength", getNumber, offsetof(Disk, scaleLength) },
     { "scaleHeight", getNumber, offsetof(Disk, scaleHeight) },
+    { "patternSpeed", getNumber, offsetof(Disk, patternSpeed) },
+    { "startAngle", getNumber, offsetof(Disk, startAngle) },
     { NULL, NULL, 0 }
 };
 
@@ -183,6 +203,8 @@ static const Xet_reg_pre settersDisk[] =
     { "mass",        setNumber, offsetof(Disk, mass)        },
     { "scaleLength", setNumber, offsetof(Disk, scaleLength) },
     { "scaleHeight", setNumber, offsetof(Disk, scaleHeight) },
+    { "patternSpeed", getNumber, offsetof(Disk, patternSpeed) },
+    { "startAngle", getNumber, offsetof(Disk, startAngle) },
     { NULL, NULL, 0 }
 };
 
@@ -207,6 +229,7 @@ int registerDiskKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createFreemanDisk, "freeman");
     setModelTableItem(luaSt, table, createDoubleExponentialDisk, "doubleExponential");
     setModelTableItem(luaSt, table, createSech2ExponentialDisk, "sech2Exponential");
+    setModelTableItem(luaSt, table, createBar, "orbitingBar");
     setModelTableItem(luaSt, table, createNoDisk, "none");
 
     lua_setglobal(luaSt, "diskModels");

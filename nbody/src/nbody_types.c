@@ -116,14 +116,6 @@ int destroyNBodyState(NBodyState* st)
     if(st->shiftByLMC) {   
         mwFreeA(st->shiftByLMC);
     }
-
-    if(st->LMCpos) {
-        mwFreeA(st->LMCpos);
-    }
-
-    if(st->LMCvel) {
-        mwFreeA(st->LMCvel);
-    }
     
     free(st->checkpointResolved);
 
@@ -210,6 +202,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
+
 }
 
 void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState)
@@ -222,10 +215,8 @@ void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState)
         //SET_VECTOR(st->shiftByLMC[j],0.0,0.0,0.0);
     }
 
-    st->LMCpos = (mwvector*)mwMalloc(sizeof(mwvector));
-    st->LMCvel = (mwvector*)mwMalloc(sizeof(mwvector));
-    st->LMCpos[0] = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
-    st->LMCvel[0] = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
+    st->LMCpos = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
+    st->LMCvel = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
     //SET_VECTOR(*(st->LMCpos),0.0,0.0,0.0);
     //SET_VECTOR(*(st->LMCvel),0.0,0.0,0.0);
     st->nShiftLMC = nShift;
@@ -237,10 +228,10 @@ void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize) {
     st->nShiftLMC = shiftSize;
 }
 
-void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray) {
+void setLMCPosVel(NBodyState* st, mwvector Pos, mwvector Vel) {
     //Set the state variable for the LMC position and velocity
-    st->LMCpos = PosArray;
-    st->LMCvel = VelArray;
+    st->LMCpos = Pos;
+    st->LMCvel = Vel;
 }
 
 NBodyState* newNBodyState()
@@ -463,32 +454,16 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
         }
     }
 
-    if (st1->LMCpos || st2->LMCpos)
+    if (!equalVector(&st1->LMCpos, &st2->LMCpos))
     {
-        if (!st1->LMCpos || !st2->LMCpos)
-        {
-            mw_printf("Comparing non-NULL shiftByLMC to NULL pointer!\n");
-            return FALSE;
-        }
-        if (!equalVector(st1->LMCpos, st2->LMCpos))
-        {
-            mw_printf("LMC Position difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCpos[0])-X(st2->LMCpos[0]),Y(st1->LMCpos[0])-Y(st2->LMCpos[0]),Z(st1->LMCpos[0])-Z(st2->LMCpos[0]));
-            return FALSE;
-        }
+        mw_printf("LMC Position difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCpos)-X(st2->LMCpos),Y(st1->LMCpos)-Y(st2->LMCpos),Z(st1->LMCpos)-Z(st2->LMCpos));
+        return FALSE;
     }
 
-    if (st1->LMCvel || st2->LMCvel)
+    if (!equalVector(&st1->LMCvel, &st2->LMCvel))
     {
-        if (!st1->LMCvel || !st2->LMCvel)
-        {
-            mw_printf("Comparing non-NULL shiftByLMC to NULL pointer!\n");
-            return FALSE;
-        }
-        if (!equalVector(st1->LMCvel, st2->LMCvel))
-        {
-            mw_printf("LMC Velocity difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCvel[0])-X(st2->LMCvel[0]),Y(st1->LMCvel[0])-Y(st2->LMCvel[0]),Z(st1->LMCvel[0])-Z(st2->LMCvel[0]));
-            return FALSE;
-        }
+        mw_printf("LMC Velocity difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCvel)-X(st2->LMCvel),Y(st1->LMCvel)-Y(st2->LMCvel),Z(st1->LMCvel)-Z(st2->LMCvel));
+        return FALSE;
     }
 
     if (st1->orbitTrace || st2->orbitTrace)
@@ -534,7 +509,6 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
     unsigned int nbody = oldSt->nbody;
-
     st->tree = emptyTree;
     st->tree.rsize = oldSt->tree.rsize;
 
@@ -570,6 +544,8 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     st->acctab = (mwvector*) mwMallocA(nbody * sizeof(mwvector));
     memcpy(st->acctab, oldSt->acctab, nbody * sizeof(mwvector));
 
+    st->previousForwardTime = oldSt->previousForwardTime;
+
     if (oldSt->orbitTrace)
     {
         st->orbitTrace = (mwvector*) mwMallocA(oldSt->nOrbitTrace * sizeof(mwvector));
@@ -584,12 +560,8 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
         st->nShiftLMC = oldSt->nShiftLMC;
     }
 
-    if (oldSt->LMCpos && oldSt->LMCvel) {
-        st->LMCpos = (mwvector*) mwMalloc(sizeof(mwvector));
-        st->LMCpos[0] = oldSt->LMCpos[0];
-        st->LMCvel = (mwvector*) mwMalloc(sizeof(mwvector));
-        st->LMCvel[0] = oldSt->LMCvel[0];
-    }
+    st->LMCpos = oldSt->LMCpos;
+    st->LMCvel = oldSt->LMCvel;
 
     if (st->ci)
     {
@@ -783,6 +755,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->LMC, ctx2->LMC)
         && feqWithNan(ctx1->LMCmass, ctx2->LMCmass)
         && feqWithNan(ctx1->LMCscale, ctx2->LMCscale)
-        && feqWithNan(ctx1->LMCDynaFric, ctx2->LMCDynaFric);
+        && feqWithNan(ctx1->LMCDynaFric, ctx2->LMCDynaFric)
+        && feqWithNan(ctx1->calibrationRuns, ctx2->calibrationRuns);
 }
 

@@ -215,6 +215,8 @@ mwvector mwRandomVector(dsfmt_t* dsfmtState, real r);
 mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState);
 mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 
+real constrainAngle(real a);
+
 
 #define mwEven(x) ((x) % 2 == 0)
 #define mwDivisible(x, n) ((x) % (n) == 0)
@@ -230,6 +232,7 @@ mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 #define mwMax(a, b) ((a) < (b) ? (b) : (a));
 
 
+int mwCheckNormalNum(real n);
 int mwCheckNormalPosNum(real n);
 int mwCheckNormalPosNumEps(real n);
 

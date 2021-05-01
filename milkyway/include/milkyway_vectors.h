@@ -347,4 +347,5 @@ static inline void mw_incmulms(mwmatrix p, real s)
     mw_incmulvs(p[2], s);
 }
 
+
 #endif /* _MILKYWAY_VECTORS_H_ */
