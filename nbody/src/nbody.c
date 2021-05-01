@@ -477,6 +477,15 @@ int nbMain(const NBodyFlags* nbf)
 
         rc = nbRunSystem(ctx, st, nbf);
 
+        //debug output for calibration runs
+        /*real expectedForwardTime = st->timeEvolve;
+        if(i == 0){
+            expectedForwardTime = ctx->timeBack;
+        }
+        mw_printf("run: %d forwardTime: %f\n", i, st->bestLikelihood_time);
+        mw_printf("expected forward time - real forward time = %f\n\n", expectedForwardTime - st->bestLikelihood_time);
+        */
+
         if(i < ctx->calibrationRuns){
             //grab the best likelihood time
             real forwardTime = st->bestLikelihood_time;

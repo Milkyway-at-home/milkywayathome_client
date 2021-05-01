@@ -33,7 +33,7 @@ use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                   
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
@@ -61,8 +61,8 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
 lda_bins        = 50      -- number of bins in lamdba direction
-lda_lower_range = -75    -- lower range for lambda
-lda_upper_range = 225     -- upepr range for lamdba
+lda_lower_range = -150    -- lower range for lambda
+lda_upper_range = 150     -- upepr range for lamdba
 
 bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
 bta_lower_range = -15     -- lower range for beta
@@ -74,7 +74,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -82,22 +82,31 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 
 -- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = false  -- calculate average beta, use in likelihood
-use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
-use_avg_dist         = false  -- calculate average distance, use in likelihood
+use_beta_comp        = true  -- calculate average beta, use in likelihood
+use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
+use_avg_dist         = true  -- calculate average distance, use in likelihood
+
+-- The number of additional forward evolutions to do in order to calibrate the rotation of the bar.
+-- calibrationRuns + 1 total forward evolutions will be conducted.
+-- If no bar potential is in use, no calibration runs will be done.
+-- At the end, calibration error is displayed in the .hist file
+calibrationRuns     = 0 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100            -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control     = false         -- -- control number of steps      -- --
-Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
+timestep_control      = false       -- -- control number of steps      -- --
+Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
+
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-numCalibrationRuns = 5 --number of extra runs to do to calibrate position  
+        
 
 
 
@@ -117,27 +126,23 @@ orbit_parameter_vz = 147.4
 TooManyTimesteps = 0
         
 function makePotential()
-   if(run_null_potential) then
+   if(run_null_potential == true) then
        print("running in null potential")
        return nil
    else
-        --NOTE: To exculde a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
+        --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
-            disk      = Disk.miyamotoNagai{ mass = 4.18972480e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            -- these bar params taken from Portail et al. 2016                250.6097 rad/Gyr = 39 km/s/kpc
-            disk2     = Disk.orbitingBar{ mass = 2.689340798e4, scaleLength = 5.4, patternSpeed = 250.6097, startAngle = 0.488692},
-           -- disk2     = Disk.none{ mass = 2.429275796e3},
+            disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+            disk2     = Disk.none{ mass = 3.0e5 },
             halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
         }--vhalo = 74.61 kpc/gy = 73 km/s
    end
 end
 
-
-
 function get_timestep()
     if(timestep_control) then
-      t = (evolveTime) / (Ntime_step)
+        t = (evolveTime) / (Ntime_steps)
     elseif(ModelComponents == 2) then
 
         --Mass of a single dark matter sphere enclosed within light rscale
@@ -163,7 +168,7 @@ function get_timestep()
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
 
-    if (evolveTime/t > 150000 or t ~= t) then
+    if ((evolveTime/t > 150000 or t ~= t) and not timestep_control) then
         TooManyTimesteps = 1
         t = evolveTime/4.0
     end
@@ -172,13 +177,26 @@ function get_timestep()
 end
 
 
+function get_soft_par()
+    --softening parameter only calculated based on dwarf,
+    --so if manual bodies is turned on the calculated s.p. may be too large
+    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+
+    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
+        print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
+        return max_soft_par^2
+    else
+        return sp
+    end
+end
+
+
 function makeContext()
-    return NBodyCtx.create{ 
+   return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
-      b           = orbit_parameter_b,
+      eps2        = get_soft_par(),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
@@ -204,209 +222,208 @@ function makeContext()
       DistCorrect   = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
-      theta       = 1.0,
+      theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
-      LMCDynaFric   = LMC_DynamicalFriction,
-      calibrationRuns = numCalibrationRuns
+      LMCDynaFric   = LMC_DynamicalFriction
    }
 end
 
 
+
 function makeBodies(ctx, potential)
-    local firstModel, LMCModel
-    local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
-      if TooManyTimesteps == 1 then
-          totalBodies = 1
-      end
-  
-      if(run_null_potential == true and manual_bodies == true) then
-          finalPosition = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
-          finalVelocity = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
-      elseif(run_null_potential == true) then
-          print("placing dwarf at origin")
-          finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
-      else 
-          if (LMC_body) then
-              finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbit_LMC{
-                  potential   = potential,
-                  position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-                  velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-                  LMCposition = Vector.create(-1.1, -41.1, -27.9),
-                  LMCvelocity = Vector.create(-57, -226, 221), 
-                      LMCmass     = LMC_Mass,
-                      LMCscale    = LMC_scaleRadius,
-                      LMCDynaFric = LMC_DynamicalFriction,
-                      ftime       = evolveTime,
-                  tstop       = revOrbTime,
-                  dt          = ctx.timestep / 10.0
-                  }
-  
-                
-          else
-              finalPosition, finalVelocity = reverseOrbit{
-                  potential = potential,
-                  position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-                  velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-                  tstop     = revOrbTime,
-                  dt        = ctx.timestep / 10.0
-                  }
-           end
-      end
-      
-      if(print_reverse_orbit == true) then
-          local placeholderPos, placeholderVel = PrintReverseOrbit{
-              potential = potential,
-              position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-              velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-              tstop     = .14,
-              tstopf    = .20,
-              dt        = ctx.timestep / 10.0
-          }
-          print('Printing reverse orbit')
-      end
-  
-  
-      if(ModelComponents == 2) then 
-          firstModel = predefinedModels.mixeddwarf{
-              nbody       = totalBodies,
-              prng        = prng,
-              position    = finalPosition,
-              velocity    = finalVelocity,
-              comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-              comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
-              ignore      = true
-          }
-          
-      elseif(ModelComponents == 1) then
-          firstModel = predefinedModels.plummer{
-              nbody       = totalBodies,
-              prng        = prng,
-              position    = finalPosition,
-              velocity    = finalVelocity,
-              mass        = mass_l,
-              scaleRadius = rscale_l,
-              ignore      = false
-          }
+  local firstModel
+  local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
+    if TooManyTimesteps == 1 then
+        totalBodies = 1
+    end
+
+    if(run_null_potential == true and manual_bodies == true) then
+        finalPosition = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
+        finalVelocity = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+    elseif(run_null_potential == true) then
+        print("placing dwarf at origin")
+        finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
+    else 
+    	if (LMC_body) then
+    		finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbit_LMC{
+	            potential   = potential,
+	            position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
+	            LMCvelocity = Vector.create(-57, -226, 221), 
+                    LMCmass     = LMC_Mass,
+                    LMCscale    = LMC_scaleRadius,
+                    LMCDynaFric = LMC_DynamicalFriction,
+                    ftime       = evolveTime,
+	            tstop       = revOrbTime,
+	            dt          = ctx.timestep / 10.0
+	            }
+
+              
+	    else
+	        finalPosition, finalVelocity = reverseOrbit{
+	            potential = potential,
+	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	            tstop     = revOrbTime,
+	            dt        = ctx.timestep / 10.0
+	            }
+         end
+    end
     
-      end
+    if(print_reverse_orbit == true) then
+        local placeholderPos, placeholderVel = PrintReverseOrbit{
+            potential = potential,
+            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+            tstop     = .14,
+            tstopf    = .20,
+            dt        = ctx.timestep / 10.0
+        }
+        print('Printing reverse orbit')
+    end
+
+
+    if(ModelComponents == 2) then 
+        firstModel = predefinedModels.mixeddwarf{
+            nbody       = totalBodies,
+            prng        = prng,
+            position    = finalPosition,
+            velocity    = finalVelocity,
+            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            ignore      = true
+        }
+        
+    elseif(ModelComponents == 1) then
+        firstModel = predefinedModels.plummer{
+            nbody       = totalBodies,
+            prng        = prng,
+            position    = finalPosition,
+            velocity    = finalVelocity,
+            mass        = mass_l,
+            scaleRadius = rscale_l,
+            ignore      = false
+        }
+  
+    end
+  
+    if(manual_bodies) then
+        manualModel = predefinedModels.manual_bodies{
+        body_file   = manual_body_file,
+    }
+         
+    end
     
-      if(manual_bodies) then
-          manualModel = predefinedModels.manual_bodies{
-          body_file   = manual_body_file,
-      }
-           
-      end
-      
-      if(ModelComponents > 0 and manual_bodies) then 
-          return firstModel, manualModel
-      elseif(ModelComponents == 0 and manual_bodies) then
-          return manualModel
-      elseif(ModelComponents > 0 and not manual_bodies) then
-          return firstModel
-      else    
-          print("Don't you want to simulate something?")
-      end
-      
-  end
-  
-  function makeHistogram()
-      return HistogramParams.create{
-       --Orphan Stream coordinate transformation angles
-       phi = 128.79,
-       theta = 54.39,
-       psi = 90.70,
-       
-       -- ANGULAR RANGE AND NUMBER OF BINS
-       lambdaStart = lda_lower_range,
-       lambdaEnd   = lda_upper_range,
-       lambdaBins  = lda_bins,
-       
-       betaStart = bta_lower_range,
-       betaEnd   = bta_upper_range,
-       betaBins  = bta_bins
-  }
-  end
-  
-  
-  arg = { ... } -- -- TAKING USER INPUT
-  assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
-  assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
-  argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
-  prng = DSFMT.create(argSeed)
-  
-  -- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
-  function round(num, places)
-    local mult = 10.0^(places)
-    return floor(num * mult + 0.5) / mult
-  end
-  
-  -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
-  dec = 9.0
-  evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time
-  time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
-  rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
-  light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-  mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
-  light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-  if (#arg >= 12) then
-    orbit_parameter_l   = round( tonumber(arg[7]), dec )
-    orbit_parameter_b   = round( tonumber(arg[8]), dec )
-    orbit_parameter_r   = round( tonumber(arg[9]), dec )
-    orbit_parameter_vx  = round( tonumber(arg[10]), dec )
-    orbit_parameter_vy  = round( tonumber(arg[11]), dec )
-    orbit_parameter_vz  = round( tonumber(arg[12]), dec )
-    manual_body_file = arg[13]
-  else
-    manual_body_file = arg[7] -- File with Individual Particles (.out file)
-  end
-  
-  -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-  revOrbTime = evolveTime / time_ratio
-  if use_best_likelihood then
-      evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
-      eff_best_like_start = best_like_start / (2.0 - best_like_start)
-  else
-      eff_best_like_start = best_like_start
-  end
-  
-  
-  if(ModelComponents == 1) then
-     dwarfMass = mass_l
-     rscale_t  = rscale_l
-     rscale_d  = 1.0
-     mass_d    = 0.0
-  else
-     dwarfMass = mass_l / light_mass_ratio
-     rscale_t  = rscale_l / light_r_ratio
-     rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-     mass_d    = dwarfMass * (1.0 - light_mass_ratio)
-  end
+    if(ModelComponents > 0 and manual_bodies) then 
+        return firstModel, manualModel
+    elseif(ModelComponents == 0 and manual_bodies) then
+        return manualModel
+    elseif(ModelComponents > 0 and not manual_bodies) then
+        return firstModel
+    else    
+        print("Don't you want to simulate something?")
+    end
+    
+end
+
+function makeHistogram()
+    return HistogramParams.create{
+     --Orphan Stream coordinate transformation angles
+     phi = 128.79,
+     theta = 54.39,
+     psi = 90.70,
      
-  
-  if(manual_bodies and manual_body_file == nil) then 
-      print 'WARNING: No body list given. Manual body input turn off'
-      manual_bodies = false  --optional body list was not included
-  elseif(manual_bodies and ModelComponents == 0) then
-      print 'Using user inputted body list only' 
-      print( manual_body_file)
-  elseif(manual_bodies and ModelComponents ~= 0) then
-      print 'Using dwarf model and user inputted body list'
-  end
-  
-  
-  if(use_tree_code) then
-      criterion = "TreeCode"
-  else
-      criterion = "Exact"
-  end
-  
-  if(print_out_parameters) then
-      print('forward time=', evolveTime, '\nreverse time=',  revOrbTime)
-      print('mass_l sim=', mass_l, '\nmass_d sim=', mass_d)
-      print('light mass solar=', mass_l * 222288.47, '\ndark mass solar=', mass_d * 222288.47)
-      print('total mass solar= ', (mass_d + mass_l) * 222288.47)
-      print('rl = ', rscale_l, 'rd = ', rscale_d)
-  end
-  
+     -- ANGULAR RANGE AND NUMBER OF BINS
+     lambdaStart = lda_lower_range,
+     lambdaEnd   = lda_upper_range,
+     lambdaBins  = lda_bins,
+     
+     betaStart = bta_lower_range,
+     betaEnd   = bta_upper_range,
+     betaBins  = bta_bins
+}
+end
+
+
+arg = { ... } -- -- TAKING USER INPUT
+assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
+assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
+argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+prng = DSFMT.create(argSeed)
+
+-- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
+function round(num, places)
+  local mult = 10.0^(places)
+  return floor(num * mult + 0.5) / mult
+end
+
+-- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
+dec = 9.0
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
+time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
+rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
+light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+if (#arg >= 12) then
+  orbit_parameter_l   = round( tonumber(arg[7]), dec )
+  orbit_parameter_b   = round( tonumber(arg[8]), dec )
+  orbit_parameter_r   = round( tonumber(arg[9]), dec )
+  orbit_parameter_vx  = round( tonumber(arg[10]), dec )
+  orbit_parameter_vy  = round( tonumber(arg[11]), dec )
+  orbit_parameter_vz  = round( tonumber(arg[12]), dec )
+  manual_body_file = arg[13]
+else
+  manual_body_file = arg[7] -- File with Individual Particles (.out file)
+end
+
+-- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
+revOrbTime = evolveTime / time_ratio
+if use_best_likelihood then
+    evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
+    eff_best_like_start = best_like_start / (2.0 - best_like_start)
+else
+    eff_best_like_start = best_like_start
+end
+
+
+if(ModelComponents == 1) then
+   dwarfMass = mass_l
+   rscale_t  = rscale_l
+   rscale_d  = 1.0
+   mass_d    = 0.0
+else
+   dwarfMass = mass_l / light_mass_ratio
+   rscale_t  = rscale_l / light_r_ratio
+   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+end
+   
+
+if(manual_bodies and manual_body_file == nil) then 
+    print 'WARNING: No body list given. Manual body input turn off'
+    manual_bodies = false  --optional body list was not included
+elseif(manual_bodies and ModelComponents == 0) then
+    print 'Using user inputted body list only' 
+    print( manual_body_file)
+elseif(manual_bodies and ModelComponents ~= 0) then
+    print 'Using dwarf model and user inputted body list'
+end
+
+
+if(use_tree_code) then
+    criterion = "TreeCode"
+else
+    criterion = "Exact"
+end
+
+if(print_out_parameters) then
+    print('forward time=', evolveTime, '\nreverse time=',  revOrbTime)
+    print('mass_l sim=', mass_l, '\nmass_d sim=', mass_d)
+    print('light mass solar=', mass_l * 222288.47, '\ndark mass solar=', mass_d * 222288.47)
+    print('total mass solar= ', (mass_d + mass_l) * 222288.47)
+    print('rl = ', rscale_l, 'rd = ', rscale_d)
+end

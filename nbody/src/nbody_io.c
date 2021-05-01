@@ -98,12 +98,12 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     Body* p;
     mwvector lbr;
     real vLOS;
-    const Body* endp = st->bodytab + st->nbody;
     mwbool isLight = FALSE;
     Body* outputTab = st->bestLikelihoodBodyTab;
     if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
         outputTab = st->bodytab;
     }
+    const Body* endp = outputTab + st->nbody;
 
     nbPrintSimInfoHeader(f, nbf, ctx, st);
     nbPrintBodyOutputHeader(f, nbf->outputCartesian, nbf->outputlbrCartesian);
