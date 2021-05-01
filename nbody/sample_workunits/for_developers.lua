@@ -33,7 +33,7 @@ use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                   
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
@@ -61,8 +61,8 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
 lda_bins        = 50      -- number of bins in lamdba direction
-lda_lower_range = -75    -- lower range for lambda
-lda_upper_range = 225     -- upepr range for lamdba
+lda_lower_range = -150    -- lower range for lambda
+lda_upper_range = 150     -- upepr range for lamdba
 
 bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
 bta_lower_range = -15     -- lower range for beta
@@ -74,7 +74,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -82,22 +82,30 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 
 -- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = false  -- calculate average beta, use in likelihood
-use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
-use_avg_dist         = false  -- calculate average distance, use in likelihood
+use_beta_comp        = true  -- calculate average beta, use in likelihood
+use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
+use_avg_dist         = true  -- calculate average distance, use in likelihood
+
+-- number of additional forward evolutions to do to calibrate the rotation of the bar
+-- numCalibrationRuns + 1 additional forward evolutions will be done
+-- if no bar potential is being used, this variable will be ignored
+numCalibrationRuns = 0
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100            -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control     = false         -- -- control number of steps      -- --
-Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
+timestep_control      = false       -- -- control number of steps      -- --
+Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
+
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-numCalibrationRuns = 0 --number of extra runs to do to calibrate position  
+        
 
 
 
@@ -213,7 +221,7 @@ function makeContext()
       DistCorrect   = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
-      theta       = 1.0,
+      theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
