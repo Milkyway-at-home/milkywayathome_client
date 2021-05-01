@@ -464,15 +464,19 @@ int nbMain(const NBodyFlags* nbf)
     st->useDist = ctx->useDist;
     
     rc = nbRunSystem(ctx, st, nbf);
+    mw_printf("After RunSystem\n");
 
     te = mwGetTime();
+    mw_printf("After end GetTime\n");
 
     if (nbf->reportProgress)
     {
         nbCleanupCursesOutput();
     }
+    mw_printf("After reportProgress\n");
 
     nbReportSimulationComplete(st);
+    mw_printf("After nbReportSimulationComplete\n");
 
     if (nbStatusIsFatal(rc))
     {
@@ -492,10 +496,13 @@ int nbMain(const NBodyFlags* nbf)
             printf("<run_time> %f </run_time>\n", te - ts);
         }
     }
+    mw_printf("After Status Check\n");
 
     rc = nbReportResults(ctx, st, nbf);
+    mw_printf("After nbReportResults\n");
 
     destroyNBodyState(st);
+    mw_printf("After destroyNBodyState\n");
 
     return rc;
 }
