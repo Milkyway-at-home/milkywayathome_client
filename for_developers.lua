@@ -26,14 +26,14 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.78"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
@@ -74,7 +74,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -97,7 +97,7 @@ freqOfOutputs         = 100            -- -- FREQUENCY OF WRITING OUTPUTS -- --
 timestep_control     = false         -- -- control number of steps      -- --
 Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-numCalibrationRuns = 0 --number of extra runs to do to calibrate position  
+        
 
 
 
@@ -133,7 +133,7 @@ end
 
 function get_timestep()
     if(timestep_control) then
-        t = (evolveTime) / (Ntime_steps)
+      t = (evolveTime) / (Ntime_step)
     elseif(ModelComponents == 2) then
 
         --Mass of a single dark matter sphere enclosed within light rscale
@@ -168,26 +168,12 @@ function get_timestep()
 end
 
 
-function get_soft_par()
-    --softening parameter only calculated based on dwarf,
-    --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
-
-    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
-        print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
-        return max_soft_par^2
-    else
-        return sp
-    end
-end
-
-
 function makeContext()
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = get_soft_par(),
+      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
@@ -213,19 +199,18 @@ function makeContext()
       DistCorrect   = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
-      theta       = 1.0,
+      theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
-      LMCDynaFric   = LMC_DynamicalFriction,
-      calibrationRuns = numCalibrationRuns
+      LMCDynaFric   = LMC_DynamicalFriction
    }
 end
 
 
 
 function makeBodies(ctx, potential)
-  local firstModel
+  local firstModel, LMCModel
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
     if TooManyTimesteps == 1 then
         totalBodies = 1
@@ -354,9 +339,9 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time
 time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
-rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
+rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)

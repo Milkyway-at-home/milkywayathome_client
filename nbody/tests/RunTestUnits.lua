@@ -19,8 +19,8 @@ math.randomseed(os.time())
 
 -- Pick one of the random seeds used in generating these tests
 local testSeeds = { "670828913", "886885833", "715144259", "430281807", "543966758" }
---local testSeed = testSeeds[math.random(1, #testSeeds)]
-local testSeed = testSeeds[3]
+local testSeed = testSeeds[math.random(1, #testSeeds)]
+--local testSeed = testSeeds[5]
 
 
 refResults = {
