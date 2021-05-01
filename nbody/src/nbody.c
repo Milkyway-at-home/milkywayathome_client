@@ -31,6 +31,7 @@
 #include "nbody_plain.h"
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
+#include "nbody_types.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -384,9 +385,6 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     return NBODY_SUCCESS;
 }
 
-static NBodyCtx _ctx = EMPTY_NBODYCTX;
-static NBodyState _st = EMPTY_NBODYSTATE;
-
 int nbMain(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
@@ -422,49 +420,83 @@ int nbMain(const NBodyFlags* nbf)
         return rc;
     }
 
-    nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
-    nbSetStateFromFlags(st, nbf);
+    NBodyState initialState = EMPTY_NBODYSTATE;
+    //for the first run, just assume the best likelihood timestep will occur at timeEvolve
+    st->previousForwardTime = ctx->timeEvolve;
+    if(ctx->pot.disk2.type != OrbitingBar){
+        ctx->calibrationRuns = 0;
+    }
+    //Run forward evolution calibrationRuns + 1 times
+    for(int i = 0; i <= ctx->calibrationRuns; i++){
+        //these for checkpointing
+        nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
+        nbSetStateFromFlags(st, nbf); 
 
-    if (NBODY_OPENCL && !nbf->noCL)
-    {
-        rc = nbInitNBodyStateCL(st, ctx);
-        if (nbStatusIsFatal(rc))
+        if (NBODY_OPENCL && !nbf->noCL)
         {
-            destroyNBodyState(st);
-            return rc;
+            rc = nbInitNBodyStateCL(st, ctx);
+            if (nbStatusIsFatal(rc))
+            {
+                destroyNBodyState(st);
+                return rc;
+            }
         }
+
+        if (nbCreateSharedScene(st, ctx))
+        {
+            mw_printf("Failed to create shared scene\n");
+        }
+
+        if (nbf->visualizer && st->scene)
+        {
+            /* Make sure the first scene is available for the launched graphics */
+            nbForceUpdateDisplayedBodies(ctx, st);
+
+            /* Launch graphics and make sure we are sure the graphics is
+            * attached in case we are using blocking mode */
+            nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
+        }
+
+        if (nbf->reportProgress)
+        {
+            nbSetupCursesOutput();
+        }
+
+        ts = mwGetTime();
+
+        st->useVelDisp = ctx->useVelDisp;
+        st->useBetaDisp = ctx->useBetaDisp;
+        st->useBetaComp = ctx->useBetaComp;
+        st->useVlos = ctx->useVlos;
+        st->useDist = ctx->useDist;
+
+        //save the state if about to start first calibration run
+        if(ctx->calibrationRuns > 0 && i == 0){
+            cloneNBodyState(&initialState, st);
+        }
+
+        rc = nbRunSystem(ctx, st, nbf);
+
+        //debug output for calibration runs
+        /*real expectedForwardTime = st->timeEvolve;
+        if(i == 0){
+            expectedForwardTime = ctx->timeBack;
+        }
+        mw_printf("run: %d forwardTime: %f\n", i, st->bestLikelihood_time);
+        mw_printf("expected forward time - real forward time = %f\n\n", expectedForwardTime - st->bestLikelihood_time);
+        */
+
+        if(i < ctx->calibrationRuns){
+            //grab the best likelihood time
+            real forwardTime = st->bestLikelihood_time;
+            //reset the state for the next run
+            *st = (NBodyState)EMPTY_NBODYSTATE;
+            cloneNBodyState(st, &initialState);
+            //set previous forward time for the next run
+            st->previousForwardTime = forwardTime;
+        }
+        nbResolveCheckpoint(st, nbf->checkpointFileName);
     }
-
-    if (nbCreateSharedScene(st, ctx))
-    {
-        mw_printf("Failed to create shared scene\n");
-    }
-
-    if (nbf->visualizer && st->scene)
-    {
-        /* Make sure the first scene is available for the launched graphics */
-        nbForceUpdateDisplayedBodies(ctx, st);
-
-        /* Launch graphics and make sure we are sure the graphics is
-         * attached in case we are using blocking mode */
-        nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
-    }
-
-    if (nbf->reportProgress)
-    {
-        nbSetupCursesOutput();
-    }
-
-    ts = mwGetTime();
-
-    st->useVelDisp = ctx->useVelDisp;
-    st->useBetaDisp = ctx->useBetaDisp;
-    st->useBetaComp = ctx->useBetaComp;
-    st->useVlos = ctx->useVlos;
-    st->useDist = ctx->useDist;
-    
-    rc = nbRunSystem(ctx, st, nbf);
-    mw_printf("After RunSystem\n");
 
     te = mwGetTime();
     mw_printf("After end GetTime\n");
@@ -503,7 +535,7 @@ int nbMain(const NBodyFlags* nbf)
 
     destroyNBodyState(st);
     mw_printf("After destroyNBodyState\n");
+    destroyNBodyState(&initialState);
 
     return rc;
 }
-
