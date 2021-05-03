@@ -424,6 +424,9 @@ int nbMain(const NBodyFlags* nbf)
     NBodyState initialState = EMPTY_NBODYSTATE;
     //for the first run, just assume the best likelihood timestep will occur at timeEvolve
     st->previousForwardTime = ctx->timeEvolve;
+    if(ctx->pot.disk2.type != OrbitingBar){
+        ctx->calibrationRuns = 0;
+    }
     //Run forward evolution calibrationRuns + 1 times
     for(int i = 0; i <= ctx->calibrationRuns; i++){
         //these for checkpointing
@@ -474,6 +477,15 @@ int nbMain(const NBodyFlags* nbf)
         }
 
         rc = nbRunSystem(ctx, st, nbf);
+
+        //debug output for calibration runs
+        /*real expectedForwardTime = st->timeEvolve;
+        if(i == 0){
+            expectedForwardTime = ctx->timeBack;
+        }
+        mw_printf("run: %d forwardTime: %f\n", i, st->bestLikelihood_time);
+        mw_printf("expected forward time - real forward time = %f\n\n", expectedForwardTime - st->bestLikelihood_time);
+        */
 
         if(i < ctx->calibrationRuns){
             //grab the best likelihood time

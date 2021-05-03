@@ -414,10 +414,15 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ZERO_VECTOR, ZERO_VECTOR, NULL, 0, \
-NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0, NULL,\
-NULL, NULL, NULL}
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL,            \
+                           NULL, ZERO_VECTOR, ZERO_VECTOR,                                  \
+                           NULL, 0,                                                         \
+                           0, 0, 0,                                                         \
+                           0, 0, 0, 0, 0,                                                   \
+                           0,                                                               \
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
+                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
+                           NULL, NULL, NULL, NULL}
 
 
 /* The context tracks settings of the simulation.  It should be set
@@ -491,12 +496,13 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                 \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                           \
-                         0, 0, 0, 0, 0, 0, 0, 0, FALSE, 0,                                                                \
-                         0, 0, 0,                                                                     \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                    \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,   \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                              \
+                         0, 0, FALSE,                                                                   \
+                         0,                                                                             \
+                         0, 0, 0,                                                                       \
                          EMPTY_POTENTIAL}
 
 /* Negative codes can be nonfatal but useful return statuses.
