@@ -96,13 +96,12 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real tstop,
                     real dt,
                     real LMCmass,
-                    real LMCscale,
-                    real bestLikeStart
+                    real LMCscale
                     )
 {	
-    real bestLikeEnd = 2.0 - bestLikeStart;
     unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
-    unsigned int exSteps = mw_abs(mw_ceil((bestLikeEnd * ftime-tstop)/(dt)) + 1);
+    //calculate extra steps needed due to ftime > tstop and the best likelihood window
+    unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
     mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp;
     mwvector mw_x = mw_vec(0, 0, 0);
@@ -137,7 +136,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv(LMC_acc, mw_acc);
         mw_incaddv(acc, mw_acc);
 
-        for (t = 0; t <= (bestLikeEnd * ftime-tstop); t += dt)
+        for (t = 0; t <= ftime-tstop; t += dt)
         {   
     	    exSteps = t/dt;
     	    if ((exSteps % 10 == 0)&&(t!=0)) { 
@@ -202,7 +201,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         //the time used for time-dependent potentials
         negT = -1*t;
     	steps = t/dt;
-    	if( steps % 10 == 0){ 
+    	if(steps % 10 == 0){ 
     		bacArray[i] = mw_acc;
         	i++;
     	}

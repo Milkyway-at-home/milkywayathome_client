@@ -422,9 +422,10 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     NBodyState initialState = EMPTY_NBODYSTATE;
-    //for the first run, just assume the best likelihood timestep will occur at timeEvolve
-    st->previousForwardTime = ctx->timeEvolve;
-    if(ctx->pot.disk2.type != OrbitingBar){
+    //for the first run, just assume the best likelihood timestep will occur in middle of best-likelihood window
+    real ogBestLikeStart = (2*ctx->BestLikeStart)/(ctx->BestLikeStart + 1);
+    st->previousForwardTime = ctx->timeEvolve/(2 - ogBestLikeStart);
+    if(ctx->pot.disk2.type != OrbitingBar && !ctx->LMC){
         ctx->calibrationRuns = 0;
     }
     //Run forward evolution calibrationRuns + 1 times
@@ -479,13 +480,13 @@ int nbMain(const NBodyFlags* nbf)
         rc = nbRunSystem(ctx, st, nbf);
 
         //debug output for calibration runs
-        /*real expectedForwardTime = st->timeEvolve;
+        real expectedForwardTime = ctx->timeEvolve;
         if(i == 0){
             expectedForwardTime = ctx->timeBack;
         }
         mw_printf("run: %d forwardTime: %f\n", i, st->bestLikelihood_time);
         mw_printf("expected forward time - real forward time = %f\n\n", expectedForwardTime - st->bestLikelihood_time);
-        */
+        
 
         if(i < ctx->calibrationRuns){
             //grab the best likelihood time
@@ -495,16 +496,30 @@ int nbMain(const NBodyFlags* nbf)
             cloneNBodyState(st, &initialState);
             //set previous forward time for the next run
             st->previousForwardTime = forwardTime;
-            //do another reverse orbit in order to calibrate the LMC starting pos/vel
-            //This orbit will not make us regenerate the progenitor (st->bodies tab)
-            mwvector finalPos, finalVel, posLBR, pos, vel, LMCstartPos, LMCstartVel;
-            SET_VECTOR(posLBR, ctx->l, ctx->b, ctx->r);
-            pos = lbrToCartesian_rad(posLBR, ctx->sunGCDist);
-            SET_VECTOR(vel, ctx->vx, ctx->vy, ctx->vz);
-            SET_VECTOR(LMCstartPos, ctx->LMCpositionX, ctx->LMCpositionY, ctx->LMCpositionZ);
-            SET_VECTOR(LMCstartVel, ctx->LMCvelocityX, ctx->LMCvelocityY, ctx->LMCvelocityZ);
-            nbReverseOrbit_LMC(&finalPos, &finalVel, &st->LMCpos, &st->LMCvel, &ctx->pot, pos, vel, 
-            LMCstartPos, LMCstartVel, ctx->LMCDynaFric, forwardTime, forwardTime, ctx->timestep, ctx->LMCmass, ctx->LMCscale, ctx->BestLikeStart);
+            if(ctx->LMC){
+                //Do another reverse orbit in order to calibrate the LMC starting pos/vel
+                //and the LMC shift array. The calibration will be done such that the LMC
+                //will end up at its current day position and vel (ctx->LMCpositionX, Y, Z)
+                //at st->previousForwardTime for the next run. The same can be said for the
+                //shiftByLMC array. The entire thing will be realigned accordingly.
+                //This orbit will not make us regenerate the progenitor (st->bodies tab)
+                //and is only for calibration purposes.
+
+                //free this for regeneration
+                free(st->shiftByLMC);
+                mwvector finalPos, finalVel, posLBR, pos, vel, LMCstartPos, LMCstartVel;
+                //Calculate best like start to pass to the reverse orbit.
+                //The goal is to fill the shiftByLMC array fully to the end of 
+                //real ourEffBestLikeStart = 2-(ctx->timeEvolve/forwardTime);
+                SET_VECTOR(posLBR, ctx->l, ctx->b, ctx->r);
+                pos = lbrToCartesian_rad(posLBR, ctx->sunGCDist);
+                SET_VECTOR(vel, ctx->vx, ctx->vy, ctx->vz);
+                SET_VECTOR(LMCstartPos, ctx->LMCpositionX, ctx->LMCpositionY, ctx->LMCpositionZ);
+                SET_VECTOR(LMCstartVel, ctx->LMCvelocityX, ctx->LMCvelocityY, ctx->LMCvelocityZ);
+                nbReverseOrbit_LMC(&finalPos, &finalVel, &st->LMCpos, &st->LMCvel, &ctx->pot, pos, vel, 
+                LMCstartPos, LMCstartVel, ctx->LMCDynaFric, ctx->timeEvolve, forwardTime, ctx->timestep/10.0, ctx->LMCmass, ctx->LMCscale);
+
+            }
         }
         nbResolveCheckpoint(st, nbf->checkpointFileName);
     }

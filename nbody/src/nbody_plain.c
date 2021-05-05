@@ -364,9 +364,6 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             getLMCPosVel(&LMCx, &LMCv);
             setLMCPosVel(st, LMCx, LMCv);
         }
-        mw_printf("LMC pos: %f, %f, %f\n", st->LMCpos.x, st->LMCpos.y, st->LMCpos.z);
-        mw_printf("LMC vel: %f, %f, %f\n", st->LMCvel.x, st->LMCvel.y, st->LMCvel.z);
-        mw_printf("LMC shift[0]: %f, %f, %f\n", st->shiftByLMC[0].x, st->shiftByLMC[0].y, st->shiftByLMC[0].z);
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
@@ -423,6 +420,15 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)
         {
             get_likelihood(ctx, st, nbf);
+        }
+
+        //debug
+        real curTime = curStep * ctx->timestep;
+        if(mw_abs(curTime - st->previousForwardTime) < 0.001){
+            mw_printf("time: %f\n", curTime);
+            mw_printf("LMC pos: %f, %f, %f\n", st->LMCpos.x, st->LMCpos.y, st->LMCpos.z);
+            mw_printf("LMC vel: %f, %f, %f\n", st->LMCvel.x, st->LMCvel.y, st->LMCvel.z);
+            mw_printf("LMC shift[%d]: %f, %f, %f\n", st->step, st->shiftByLMC[st->step].x, st->shiftByLMC[st->step].y, st->shiftByLMC[st->step].z);
         }
     
         if (nbStatusIsFatal(rc))   /* advance N-body system */

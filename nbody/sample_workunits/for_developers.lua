@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 20000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -37,6 +37,14 @@ LMC_body              = true    -- -- PRESENCE OF LMC                           
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
+
+-- -- LMC position and velocity -- --
+LMCposX = -1.1
+LMCposY = -41.1
+LMCposZ = -27.9
+LMCvelX = -57
+LMCvelY = -226
+LMCvelZ = 221
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -74,7 +82,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -82,14 +90,10 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 
 -- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = true  -- calculate average beta, use in likelihood
-use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
-use_avg_dist         = true  -- calculate average distance, use in likelihood
-
--- number of additional forward evolutions to do to calibrate the rotation of the bar
--- numCalibrationRuns + 1 additional forward evolutions will be done
--- if no bar potential is being used, this variable will be ignored
-numCalibrationRuns = 0
+use_beta_comp        = false  -- calculate average beta, use in likelihood
+use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
+use_avg_dist         = false  -- calculate average distance, use in likelihood
+numCalibrationRuns = 8
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -133,7 +137,7 @@ function makePotential()
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            disk2     = Disk.none{ mass = 3.0e5 },
+            disk2     = Disk.orbitingBar{ mass = 2.429275796e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
             halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
         }--vhalo = 74.61 kpc/gy = 73 km/s
    end
@@ -226,6 +230,12 @@ function makeContext()
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
       LMCDynaFric   = LMC_DynamicalFriction,
+      LMCpositionX  = LMCposX,
+      LMCpositionY  = LMCposY,
+      LMCpositionZ  = LMCposZ,
+      LMCvelocityX  = LMCvelX,
+      LMCvelocityY  = LMCvelY,
+      LMCvelocityZ  = LMCvelZ,
       calibrationRuns = numCalibrationRuns
    }
 end
@@ -253,10 +263,10 @@ function makeBodies(ctx, potential)
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
-                    LMCmass     = LMC_Mass,
-                    LMCscale    = LMC_scaleRadius,
-                    LMCDynaFric = LMC_DynamicalFriction,
-                    ftime       = evolveTime,
+                LMCmass     = LMC_Mass,
+                LMCscale    = LMC_scaleRadius,
+                LMCDynaFric = LMC_DynamicalFriction,
+                ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
 	            }
