@@ -681,7 +681,7 @@ NBodyStatus nbWriteFinalCheckpoint(const NBodyCtx* ctx, NBodyState* st)
             mw_printf("Failed to write final checkpoint\n");
             return NBODY_CHECKPOINT_ERROR;
         }
-	mw_printf("Made final checkpoint\n");
+	//mw_printf("Made final checkpoint\n");
     }
 
     return NBODY_SUCCESS;

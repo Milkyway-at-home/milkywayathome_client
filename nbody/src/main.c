@@ -722,11 +722,11 @@ int main(int argc, const char* argv[])
         rc = nbMain(&nbf);
         rc = nbStatusToRC(rc);
 
-        mw_printf("Before noCleanCheckpoint\n");
+        //mw_printf("Before noCleanCheckpoint\n");
 
         if (!nbf.noCleanCheckpoint)
         {
-            mw_printf("After noCleanCheckpoint\n");
+            //mw_printf("After noCleanCheckpoint\n");
 
             mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
             mw_remove(nbf.checkpointFileName);

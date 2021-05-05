@@ -499,16 +499,16 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     te = mwGetTime();
-    mw_printf("After end GetTime\n");
+    //mw_printf("After end GetTime\n");
 
     if (nbf->reportProgress)
     {
         nbCleanupCursesOutput();
     }
-    mw_printf("After reportProgress\n");
+    //mw_printf("After reportProgress\n");
 
     nbReportSimulationComplete(st);
-    mw_printf("After nbReportSimulationComplete\n");
+    //mw_printf("After nbReportSimulationComplete\n");
 
     if (nbStatusIsFatal(rc))
     {
@@ -528,13 +528,13 @@ int nbMain(const NBodyFlags* nbf)
             printf("<run_time> %f </run_time>\n", te - ts);
         }
     }
-    mw_printf("After Status Check\n");
+    //mw_printf("After Status Check\n");
 
     rc = nbReportResults(ctx, st, nbf);
-    mw_printf("After nbReportResults\n");
+    //mw_printf("After nbReportResults\n");
 
     destroyNBodyState(st);
-    mw_printf("After destroyNBodyState\n");
+    //mw_printf("After destroyNBodyState\n");
     destroyNBodyState(&initialState);
 
     return rc;

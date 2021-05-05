@@ -105,28 +105,28 @@ int destroyNBodyState(NBodyState* st)
     int failed = FALSE;
     int nThread = nbGetMaxThreads();
     int i;
-    mw_printf("After Initial\n");
+    //mw_printf("After Initial\n");
 
     freeNBodyTree(&st->tree);
-    mw_printf("After Free Tree\n");
+    //mw_printf("After Free Tree\n");
     freeFreeCells(st->freeCell);
-    mw_printf("After Free Cells\n");
+    //mw_printf("After Free Cells\n");
     mwFreeA(st->bodytab);
-    mw_printf("After Free bodytab\n");
+    //mw_printf("After Free bodytab\n");
     mwFreeA(st->bestLikelihoodBodyTab);
-    mw_printf("After Free bestLikeTabl\n");
+    //mw_printf("After Free bestLikeTabl\n");
     mwFreeA(st->acctab);
-    mw_printf("After Free acctab\n");
+    //mw_printf("After Free acctab\n");
     mwFreeA(st->orbitTrace);
-    mw_printf("After Free orbitTrace\n");
+    //mw_printf("After Free orbitTrace\n");
     
     if(st->shiftByLMC) {   
         mwFreeA(st->shiftByLMC);
     }
-    mw_printf("After Free LMCShift\n");
+    //mw_printf("After Free LMCShift\n");
     
     free(st->checkpointResolved);
-    mw_printf("After Free checkpointResolved\n");
+    //mw_printf("After Free checkpointResolved\n");
 
     if (st->potEvalStates)
     {
@@ -137,7 +137,7 @@ int destroyNBodyState(NBodyState* st)
         free(st->potEvalClosures);
         free(st->potEvalStates);
     }
-    mw_printf("After Free potEvalStates\n");
+    //mw_printf("After Free potEvalStates\n");
 
   #if NBODY_OPENCL
 
@@ -173,11 +173,11 @@ int destroyNBodyState(NBodyState* st)
     }
 
   #endif /* NBODY_OPENCL */
-    mw_printf("After OpenCL\n");
+    //mw_printf("After OpenCL\n");
 
 
     failed |= nbDetachSharedScene(st);
-    mw_printf("After nbDetachSharedScene\n");
+    //mw_printf("After nbDetachSharedScene\n");
 
     return failed;
 }
