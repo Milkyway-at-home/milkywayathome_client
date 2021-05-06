@@ -159,7 +159,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Theta = %f\n"
             "# Quadrupole Moments = %s\n"
             "# Eps = %f\n"
-            "# Bar Time Error = %f\n"
+            "# Bar/LMC Calibration Time Error = %f\n"
             "# Bar Angle Error = %f rad\n"
             "#\n",
             nbody,

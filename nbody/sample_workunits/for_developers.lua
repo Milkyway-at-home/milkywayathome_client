@@ -93,7 +93,7 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 use_beta_comp        = false  -- calculate average beta, use in likelihood
 use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
 use_avg_dist         = false  -- calculate average distance, use in likelihood
-numCalibrationRuns = 8
+numCalibrationRuns = 7
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -137,7 +137,8 @@ function makePotential()
         return  Potential.create{
             spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
             disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            disk2     = Disk.orbitingBar{ mass = 2.429275796e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
+            --disk2     = Disk.orbitingBar{ mass = 2.429275796e4, scaleLength = 5.4, patternSpeed = 39, startAngle = 0.488692},
+            disk2     = Disk.none{mass = 0},
             halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
         }--vhalo = 74.61 kpc/gy = 73 km/s
    end
@@ -396,7 +397,7 @@ if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)
 else
-    eff_best_like_start = best_like_start
+    eff_best_like_start = 1.0
 end
 
 
