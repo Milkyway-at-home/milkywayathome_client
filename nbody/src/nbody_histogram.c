@@ -106,13 +106,13 @@ unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /*
 static void nbPrintHistogramHeader(FILE* f,
                                    const NBodyCtx* ctx,
                                    const HistogramParams* hp,
-                                   int nbody,
-                                   real bestLikelihood_time,
-                                   real bestLikelihood)
+                                   NBodyState* st)
 {
+    int nbody = st->nbody;
+    real bestLikelihood_time = st->bestLikelihood_time;
+    real bestLikelihood = st->bestLikelihood;
     char tBuf[256];
     const Potential* p = &ctx->pot;
-
     if (bestLikelihood_time == 0.0)
     {
         bestLikelihood_time = ctx->timeEvolve;
@@ -138,6 +138,16 @@ static void nbPrintHistogramHeader(FILE* f,
             nbHistogramLambdaBinSize(hp),
             nbHistogramBetaBinSize(hp));
     
+    //calculate how far off the bar time was for different situations
+    
+    //bar on calibration on
+    real barTimeError = bestLikelihood_time - st->previousForwardTime;
+    if(ctx->pot.disk2.type == _NO_DISK){//no bar
+        barTimeError = 0;
+    }else if(ctx->calibrationRuns == 0){//no calibration but bar on
+        barTimeError = bestLikelihood_time - ctx->timeEvolve;
+    }
+    real barAngleError = barTimeError * ctx->pot.disk2.patternSpeed;
     fprintf(f,
             "# Nbody = %d\n"
             "# Evolve backward time = %f\n"
@@ -149,17 +159,22 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Theta = %f\n"
             "# Quadrupole Moments = %s\n"
             "# Eps = %f\n"
+            "# Bar Time Error = %f\n"
+            "# Bar Angle Error = %f rad\n"
             "#\n",
             nbody,
             ctx->timeBack,
             bestLikelihood_time,
-            -bestLikelihood,
+            bestLikelihood,
             ctx->timestep,
             ctx->sunGCDist,
             showCriterionT(ctx->criterion),
             ctx->theta,
             showBool(ctx->useQuad),
-            mw_sqrt(ctx->eps2)
+            mw_sqrt(ctx->eps2),
+            barTimeError,
+            barAngleError
+
         );
 
 
@@ -324,6 +339,20 @@ static void nbPrintHistogramHeader(FILE* f,
                     "#\n",
                     p->disk.mass,
                     p->disk.scaleLength);
+            break;
+
+        case OrbitingBar:
+            fprintf(f,
+                    "# Secondary Disk: OrbitingBar\n"
+                    "#   mass = %f\n"
+                    "#   b = %f\n"
+                    "#   pattern speed = %f\n"
+                    "#   start angle = %f\n"
+                    "#\n",
+                    p->disk2.mass,
+                    p->disk2.scaleLength,
+                    p->disk2.patternSpeed,
+                    p->disk2.startAngle);
             break;
 
         case NoDisk:
@@ -574,7 +603,7 @@ void nbWriteHistogram(const char* histoutFileName,
         }
     }
 
-    nbPrintHistogramHeader(f, ctx, &all->histograms[0]->params, st->nbody, st->bestLikelihood_time, st->bestLikelihood);
+    nbPrintHistogramHeader(f, ctx, &all->histograms[0]->params, st);
     nbPrintHistogram(f, all);
 
     if (f != DEFAULT_OUTPUT_FILE)
@@ -1294,3 +1323,46 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     
     return all;
 }
+/*
+mwvector getHistogramCenter(const NBodyHistogram* hist, HistogramParams* hp, NBodyState* st, NBodyCtx* ctx){
+    int i;
+    real bestLambda, highestCount = 0, tmpCount;
+    mwvector center, pos;
+    center.x = 0;
+    center.y = 0;
+    center.z = 0;
+
+    //get lambda from histogram
+    for(i = 0; i < hist->lambdaBins; i++){
+        tmpCount = hist->data[i].count;
+        if(tmpCount > highestCount){
+            highestCount = tmpCount;
+            bestLambda = hist->data[i].lambda;
+        }
+    }
+
+    real lambdaBinSize = getAngleDiffDegrees(hp->lambdaStart, hp->lambdaEnd)/lambdaBins;
+    mwvector lambdaBeta;
+    NBHistTrig histTrig;
+    real maxLambda, minLambda, betaCount, betas = 0;
+    nbGetHistTrig(&histTrig, hp);
+    maxLambda = bestLambda + lambdaBinSize/2;
+    minLambda = bestLambda - lambdaBinSize/2;
+    if(maxLambda >= 360)
+        maxLambda -= 360;
+    if(minLambda < 0)
+        minLambda += 360;
+    //get beta from bodies (mean beta in the lambda bin)
+    for(i = 0; i < st->nbody; i++){
+        pos = st->bodytab[i].bodynode.pos;
+        lambdaBeta = nbXYZToLambdaBeta(&histTrig, pos, ctx->sunGCDist);
+        if(angleIsBetween(minLambda, maxLambda, L(lambdaBeta))){
+            betas += B(lambdaBeta);
+            betaCount += 1;
+        }
+    }
+
+    center = nb
+    
+    return center;
+}*/

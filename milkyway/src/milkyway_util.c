@@ -430,6 +430,13 @@ mwvector mwRandomVector(dsfmt_t* dsfmtState, real r)
     return v;
 }
 
+//constrain angle to [0, 2pi)
+real constrainAngle(real a){
+    a = mw_fmod(a, 2*M_PI);
+    if(a < 0)
+        a += 2*M_PI;
+    return a;
+}
 
 /* Check for a timesteps etc. which will actually finish. */
 int mwCheckNormalPosNumEps(real n)
@@ -441,6 +448,13 @@ int mwCheckNormalPosNumEps(real n)
 int mwCheckNormalPosNum(real n)
 {
     return !isfinite(n) || n <= 0.0;
+}
+
+
+/* Check for real numbers that can be any size */
+int mwCheckNormalNum(real n)
+{
+    return !isfinite(n);
 }
 
 /* Disable the stupid "Windows is checking for a solution to the

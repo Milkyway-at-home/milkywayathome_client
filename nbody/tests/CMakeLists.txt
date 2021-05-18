@@ -108,17 +108,6 @@ add_test(NAME invalid_input_test
                                    $<TARGET_FILE:milkyway_nbody>
                                    ${INVALID_TEST_INPUTS})
 
-
-
-
-#--------UNCOMMENT THIS SECTION TO ADD CONTEXT TEST--------#
-
-add_test(NAME context_test
-           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-           COMMAND nbody_test_driver "ContextTest.lua")
-
-#----------------------------------------------------------#
-
 # Run these first 3 tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,4,1)
 
@@ -142,7 +131,9 @@ set(orphan_model_names model_1
                        model_newhist1
                        model_newhist2
                        model_newhist3
-                       model_LMC)
+                       model_LMC
+                       model_bar
+                       model_LMC_bar)
 
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})
@@ -167,6 +158,14 @@ foreach(n ${body_counts})
   make_bodycount_test_set(${n})
 endforeach()
 
+
+#--------UNCOMMENT THIS SECTION TO ADD CONTEXT TEST--------#
+
+add_test(NAME context_test
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "ContextTest.lua")
+
+#----------------------------------------------------------#
 
 #compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
 #execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"

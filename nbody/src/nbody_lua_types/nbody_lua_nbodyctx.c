@@ -129,6 +129,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "LMCmass",       LUA_TNUMBER,  NULL, FALSE, &ctx.LMCmass       },
             { "LMCscale",      LUA_TNUMBER,  NULL, FALSE, &ctx.LMCscale      },
             { "LMCDynaFric",   LUA_TBOOLEAN, NULL, FALSE, &ctx.LMCDynaFric   },
+            { "calibrationRuns", LUA_TNUMBER, "UINT", FALSE, &ctx.calibrationRuns},
             END_MW_NAMED_ARG
         };
 
@@ -276,6 +277,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "LMCmass",         getNumber,     offsetof(NBodyCtx, LMCmass)       },
     { "LMCscale",        getNumber,     offsetof(NBodyCtx, LMCscale)      },
     { "LMCDynaFric",     getBool,       offsetof(NBodyCtx, LMCDynaFric)   },
+    { "calibrationRuns", getNumber,     offsetof(NBodyCtx, calibrationRuns)},
     { NULL, NULL, 0 }
 };
 
@@ -314,6 +316,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "LMCmass",         setNumber,     offsetof(NBodyCtx, LMCmass)       },
     { "LMCscale",        setNumber,     offsetof(NBodyCtx, LMCscale)      },
     { "LMCDynaFric",     setBool,       offsetof(NBodyCtx, LMCDynaFric)   },
+    { "calibrationRuns", setNumber,     offsetof(NBodyCtx, calibrationRuns)},
     { NULL, NULL, 0 }
 };
 

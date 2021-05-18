@@ -56,7 +56,7 @@ static void nbPrintCopyright(void)
         "Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.\n"
         "Copyright (c) 2010 Ben Willett\n"
         "Copyright (c) 2010-2012 Matthew Arsenault\n"
-        "Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010-2021 Rensselaer Polytechnic Institute.\n"
         "Copyright (c) 2010 The University of Texas at Austin\n"
         "Copyright (c) 2010 Dr. Martin Burtscher\n"
         "\n"
@@ -722,8 +722,12 @@ int main(int argc, const char* argv[])
         rc = nbMain(&nbf);
         rc = nbStatusToRC(rc);
 
+        //mw_printf("Before noCleanCheckpoint\n");
+
         if (!nbf.noCleanCheckpoint)
         {
+            //mw_printf("After noCleanCheckpoint\n");
+
             mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
             mw_remove(nbf.checkpointFileName);
         }
