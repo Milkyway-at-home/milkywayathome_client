@@ -34,7 +34,6 @@ function makeContext()
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
-      BestLikeStart = 0.95,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
