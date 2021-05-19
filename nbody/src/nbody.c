@@ -421,8 +421,15 @@ int nbMain(const NBodyFlags* nbf)
     }
 
     NBodyState initialState = EMPTY_NBODYSTATE;
-    //for the first run, just assume the best likelihood timestep will occur at timeEvolve
-    st->previousForwardTime = ctx->timeEvolve;
+    //for the first run, just assume the best likelihood timestep will occur in middle of best-likelihood window
+    //convert eff_best_like_start to the original best like start
+    real ogBestLikeStart = (2*ctx->BestLikeStart)/(ctx->BestLikeStart + 1);
+    if(ctx->useBestLike){
+        //assume evolve time has been adjusted to be the end of the best-likelihood window
+        st->previousForwardTime = ctx->timeEvolve/(2 - ogBestLikeStart);
+    }else{
+        st->previousForwardTime = ctx->timeEvolve;
+    }
     if(ctx->pot.disk2.type != OrbitingBar){
         ctx->calibrationRuns = 0;
     }

@@ -21,17 +21,23 @@ function makePotential()
    }
 end
 
+evolveTime = 3.945
+best_like_start = 0.95
+
+evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve to end of best-likelihood window
+eff_best_like_start = best_like_start / (2.0 - best_like_start) --correct for changed evolve time
+
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
-      timeEvolve = 3.945,
+      timeEvolve = evolveTime,
       timeBack    = 3.945,
       eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
       useBestLike = true,
-      BestLikeStart = 0.95,
+      BestLikeStart = eff_best_like_start,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
