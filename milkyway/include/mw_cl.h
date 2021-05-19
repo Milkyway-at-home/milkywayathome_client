@@ -30,13 +30,13 @@
 
 /* FIXME: Sometimes when building the Windows executable, we need to use the full pathway.
    Would be nice if this were automated or if the setup was explained better in README.    */
-//  #include "CL/cl.h"
-//  #include "CL/cl_platform.h"
-//  #include "CL/cl_ext.h"
+  #include "CL/cl.h"
+  #include "CL/cl_platform.h"
+  #include "CL/cl_ext.h"
 
-  #include "/usr/include/CL/cl.h"
-  #include "/usr/include/CL/cl_platform.h"
-  #include "/usr/include/CL/cl_ext.h"
+//  #include "/usr/include/CL/cl.h"
+//  #include "/usr/include/CL/cl_platform.h"
+//  #include "/usr/include/CL/cl_ext.h"
 
 #endif /* __APPLE__ */
 
