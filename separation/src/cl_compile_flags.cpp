@@ -27,17 +27,30 @@
 static const char* getNvidiaRegCount(const DevInfo* di)
 {
     const char* regCount32 = "-cl-nv-maxrregcount=32 ";
-    const char* regDefault = "";
+    const char* regCount24 = "-cl-nv-maxrregcount=24 ";
+    const char* regCountNone = "";
 
-    if (mwComputeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
+    if (!mwMinComputeCapabilityCheck(di, 3, 0)) /* Kepler or higher */
+    {
+        /* 32 allows for greatest number of threads at a time */
+        mw_printf("Found a compute capability 3.0+ device. Using %s\n", regCount32);
+        return regCount32;
+    }
+    else if (!mwMinComputeCapabilityCheck(di, 2, 0)) /* Fermi */
+    {
+        /* 24 allows for greatest number of threads at a time on Fermi*/
+        mw_printf("Found a compute capability 2.X device. Using %s\n", regCount24);
+        return regCount24;
+    }
+    else if (mwComputeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
     {
         /* 32 allows for greatest number of threads at a time */
         mw_printf("Found a compute capability 1.3 device. Using %s\n", regCount32);
         return regCount32;
     }
 
-    /* Higher or other is Fermi or unknown, */
-    return regDefault;
+    /* Very old or unknown */
+    return regCountNone;
 }
 
 /* Get string of options to pass to the CL compiler. Result must be freed */
