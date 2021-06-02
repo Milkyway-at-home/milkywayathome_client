@@ -53,16 +53,16 @@ then
     #get binary file
     cp ./build/bin/milkyway_nbody ./mwah_nbody_lite/bin
 
-    #get .lua file
-    cp ./milkywayathome_client/nbody/sample_workunits/settings.lua ./mwah_nbody_lite/bin
+    #get for_developers.lua
+    cp ./milkywayathome_client/nbody/sample_workunits/for_developers.lua ./mwah_nbody_lite/bin
 
-    #get exmaple manual bodies file
-    cp ./milkywayathome_client/nbody/sample_workunits/manual_bodies_example.in ./mwah_nbody_lite/bin
-
-    #get mwah_lite documentation and run.sh
+    #get mwah_lite documentation and make.sh
     cp -r ./milkywayathome_client/lite/. ./mwah_nbody_lite
 
     echo "Nbody Lite: Nbody Lite successfully built"
 
 fi
     
+
+
+
