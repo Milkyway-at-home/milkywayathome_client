@@ -220,8 +220,8 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
     ws->factors[5] = 1;
     ws->factors[6] = 1;
     ws->factors[7] = 1;
-
-    ws->threads[0] = 64;
+	
+	ws->threads[0] = 64;
     ws->threads[1] = 64;
     ws->threads[2] = 64;
     ws->threads[3] = 64;
@@ -331,7 +331,10 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
         ws->threads[6] = 256;
         ws->threads[7] = 256;
     }
-
+	
+	if(ws->threads[0] * 6 * 8 >= di->localMemSize){
+		ws->threads[0] = mw_pow(2,(int)(mw_log(di->localMemSize / (6*8))/mw_log(2)))/2;
+	}
     return CL_FALSE;
 }
 
@@ -586,31 +589,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Potential */
                  "-DUSE_EXTERNAL_POTENTIAL=%d "
-                 "-DHERNQUIST_SPHERICAL=%d "
-                 "-DPLUMMER_SPHERICAL=%d "
-                 "-DNO_SPHERICAL=%d "
-                 "-DMIYAMOTO_NAGAI_DISK=%d "
-                 "-DFREEMAN_DISK=%d "
-                 "-DDOUBEXPO_DISK=%d "
-                 "-DSECHEXPO_DISK=%d "
-		 "-DORBITING_BAR=%d "
-                 "-DNO_DISK=%d "
-                 "-DMIYAMOTO_NAGAI_DISK2=%d "
-                 "-DFREEMAN_DISK2=%d "
-                 "-DDOUBEXPO_DISK2=%d "
-                 "-DSECHEXPO_DISK2=%d "
-		 "-DORBITING_BAR2=%d "
-                 "-DNO_DISK2=%d "
-                 "-DLOG_HALO=%d "
-                 "-DNFW_HALO=%d "
-                 "-DTRIAXIAL_HALO=%d "
-                 "-DAS_HALO=%d "
-                 "-DWE_HALO=%d "
-                 "-DNFWM_HALO=%d "
-                 "-DPLUMMER_HALO=%d "
-                 "-DHERNQUIST_HALO=%d "
-                 "-DNINKOVIC_HALO=%d "
-                 "-DNO_HALO=%d "
+                 "-DDISK_TYPE=%d "
+                 "-DDISK_2_TYPE=%d "
+                 "-DHALO_TYPE=%d "
+                 "-DSPHERE_TYPE=%d "
 
                  /* Spherical constants */
                  "-DSPHERICAL_MASS=%a "
@@ -675,31 +657,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Set potential */
                  ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT,
-
-                 p->sphere[0].type == HernquistSpherical,
-                 p->sphere[0].type == PlummerSpherical,
-                 p->sphere[0].type == NoSpherical,
-                 p->disk.type == MiyamotoNagaiDisk,
-                 p->disk.type == FreemanDisk,
-                 p->disk.type == DoubleExponentialDisk,
-                 p->disk.type == Sech2ExponentialDisk,
-                 p->disk.type == NoDisk,
-                 p->disk2.type == MiyamotoNagaiDisk,
-                 p->disk2.type == FreemanDisk,
-                 p->disk2.type == DoubleExponentialDisk,
-                 p->disk2.type == Sech2ExponentialDisk,
-		         p->disk2.type == OrbitingBar,
-                 p->disk2.type == NoDisk,
-                 p->halo.type == LogarithmicHalo,
-                 p->halo.type == NFWHalo,
-                 p->halo.type == TriaxialHalo,
-                 p->halo.type == AllenSantillanHalo,
-                 p->halo.type == WilkinsonEvansHalo,
-                 p->halo.type == NFWMassHalo,
-                 p->halo.type == PlummerHalo,
-                 p->halo.type == HernquistHalo,
-                 p->halo.type == NinkovicHalo,
-                 p->halo.type == NoHalo,
+                p->disk.type,
+                p->disk2.type,
+                p->halo.type,
+                p->sphere[0].type,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -1012,6 +973,7 @@ static NBodyStatus nbKernelErrorToNBodyStatus(NBodyKernelError x)
         case NBODY_KERNEL_CELL_OVERFLOW:
             return NBODY_CELL_OVERFLOW_ERROR;
         case NBODY_KERNEL_TREE_INCEST:
+//            return NBODY_SUCCESS; /* Somewhat inaccurate but shouldn't happen  */
             return NBODY_TREE_INCEST_FATAL; /* Somewhat inaccurate but shouldn't happen  */
         case NBODY_KERNEL_TREE_STRUCTURE_ERROR:
             return NBODY_TREE_STRUCTURE_ERROR;
@@ -1077,7 +1039,9 @@ static cl_double waitReleaseEventWithTime(cl_event ev)
     cl_double t;
     cl_int err;
 
+//    mw_printf("WAITING......\n");
     err = clWaitForEvents(1, &ev);
+//    mw_printf("DONE!\n");
     if (err != CL_SUCCESS)
         return 0.0;
 
@@ -1225,13 +1189,17 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
     err = clEnqueueNDRangeKernel(ci->queue, kernels->boundingBox, 1,
                                  NULL, &ws->global[0], &ws->local[0],
                                  0, NULL, &boxEv);
-    if (err != CL_SUCCESS)
+    if (err != CL_SUCCESS){
+        fprintf(stderr,"\n\n BAD \n\n");
         goto tree_build_exit;
+    }
 
     /* FIXME: Work sizes */
     err = clEnqueueNDRangeKernel(ci->queue, kernels->buildTreeClear, 1,
                                  NULL, &ws->global[6], &ws->local[6],
                                  0, NULL, &buildTreeClearEv);
+//    mw_printf("Global Mem = %u, Local Mem = %u\n",ws->global[6],ws->local[6]);
+
     if (err != CL_SUCCESS)
         goto tree_build_exit;
 
@@ -1317,8 +1285,12 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
                 goto tree_build_exit;
             }
 
+//            mw_printf("BEFORE EV RELEASE\n");
             ws->timings[1] += mwReleaseEventWithTimingMS(ev);
+//            mw_printf("AFTER EV RELEASE\n");
+//            mw_printf("BEFORE READEV RELEASE\n");
             ws->timings[1] += mwReleaseEventWithTimingMS(readEv);
+//            mw_printf("AFTER READEV RELEASE\n");
 
             if (treeStatus.maxDepth > st->maxDepth)
             {
@@ -1416,16 +1388,24 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
 
 tree_build_exit:
+    mw_printf("BEFORE BOXEV RELEASE\n");
     ws->timings[0] += mwReleaseEventWithTiming(boxEv);
+    mw_printf("AFTER BOXEV RELEASE\n");
     ws->chunkTimings[1] = ws->timings[1] / (double) buildIterations;
 
+    mw_printf("BEFORE BUILDTREECLEAREV RELEASE\n");
     ws->timings[1] += mwReleaseEventWithTiming(buildTreeClearEv);
+    mw_printf("AFTER BUILDTREECLEAREV RELEASE\n");
+//    mw_printf("BEFORE SUMMARIZATIONCLEAREV RELEASE\n");
     ws->timings[2] += mwReleaseEventWithTiming(summarizationClearEv);
+//    mw_printf("AFTER SUMMARIZATIONCLEAREV RELEASE\n");
 
     {
         for (depth = 0; depth < treeStatus.maxDepth; ++depth)
         {
+//            mw_printf("BEFORE SORTEV %u RELEASE\n",depth);
             ws->timings[3] += mwReleaseEventWithTimingMS(sortEvs[depth]);
+//            mw_printf("AFTER SORTEV %u RELEASE\n",depth);
         }
     }
 
@@ -1434,10 +1414,14 @@ tree_build_exit:
 
         for (depth = 0; depth < maxDepth; ++depth)
         {
+//            mw_printf("BEFORE SUMEV %u RELEASE\n",depth);
             ws->timings[2] += mwReleaseEventWithTimingMS(sumEvs[depth]);
+//            mw_printf("AFTER SUMEV %u RELEASE\n",depth);
             if (st->usesQuad)
             {
+//                mw_printf("BEFORE QUADEV %u RELEASE\n",depth);
                 ws->timings[4] += mwReleaseEventWithTimingMS(quadEvs[depth]);
+//                mw_printf("AFTER QUADEV %u RELEASE\n",depth);
             }
         }
     }
@@ -1484,18 +1468,22 @@ static cl_int nbExecuteForceKernels(NBodyState* st, cl_bool updateState)
 
         upperBound = (upperBound > effNBody) ? effNBody : upperBound;
 
+//        mw_printf("SetKernelArg START\n");
         err = clSetKernelArg(forceKern, 28, sizeof(cl_uint), &upperBound);
+//        mw_printf("SetKernelArg END\n");
         if (err != CL_SUCCESS)
             return err;
 
         err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
-                                     offset, global, local,
+                                     offset, &global[0], &local[0],
                                      0, NULL, &ev);
         if (err != CL_SUCCESS)
             return err;
 
         upperBound += (cl_int) global[0];
+//        mw_printf("waitRelease START\n");
         ws->timings[5] += waitReleaseEventWithTime(ev);
+//        mw_printf("waitRelease END\n");
     }
 
     if (mw_likely(updateState))
@@ -1552,15 +1540,19 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     if (!st->usesExact)
     {
+        mw_printf("StepSystemCL Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
+        mw_printf("StepSystemCL Tree Construction END\n");
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error executing tree construction kernels");
             return NBODY_CL_ERROR;
         }
     }
-
+//    printf("%f\n",st->tree.root->cellnode.pos.x);
+    mw_printf("StepSystemCL Force Kernels START\n");
     err = nbExecuteForceKernels(st, CL_TRUE);
+    mw_printf("StepSystemCL Force Kernels END\n");
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error executing force kernels");
@@ -1594,7 +1586,9 @@ static cl_int nbRunPreStep(NBodyState* st)
 
     if (!st->usesExact)
     {
+        mw_printf("RunPreStep Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
+        mw_printf("RunPreStep Tree Construction END\n");
         if (err != CL_SUCCESS)
             return err;
     }
@@ -1630,6 +1624,7 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 
     while (st->step < ctx->nStep)
     {
+
         #ifdef NBODY_BLENDER_OUTPUT
             nbFindCenterOfMass(&nextCmPos, st);
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
@@ -2235,7 +2230,9 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
     {
         cl_int err;
 
+        mw_printf("DebugSummarization Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
+        mw_printf("DebugSummarization Tree Construction END\n");
         if (err != CL_SUCCESS)
             return err;
 
