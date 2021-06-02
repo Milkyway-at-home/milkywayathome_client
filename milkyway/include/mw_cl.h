@@ -27,17 +27,9 @@
   #include <OpenCL/cl_platform.h>
   #include <OpenCL/cl_ext.h>
 #else
-
-/* FIXME: Sometimes when building the Windows executable, we need to use the full pathway.
-   Would be nice if this were automated or if the setup was explained better in README.    */
   #include "CL/cl.h"
   #include "CL/cl_platform.h"
   #include "CL/cl_ext.h"
-
-//  #include "/usr/include/CL/cl.h"
-//  #include "/usr/include/CL/cl_platform.h"
-//  #include "/usr/include/CL/cl_ext.h"
-
 #endif /* __APPLE__ */
 
 /* This doesn't seem to exist on OS X, but the callback on ATI on
