@@ -23,6 +23,7 @@
 
 #include "nbody.h"
 #include "mw_cl.h"
+#include "milkyway_cl.h"
 
 
 #ifdef __cplusplus
