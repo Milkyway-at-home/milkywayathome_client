@@ -755,8 +755,6 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     if(st->useVlos || st->useBetaComp || st-> useDist)
     {
         all->usage[3] = TRUE;
-        all->usage[4] = TRUE;
-        all->usage[5] = TRUE;
         all->histograms[3] = hist3;
         hist3->lambdaBins = lambdaBins;
         hist3->betaBins = betaBins;
@@ -764,6 +762,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         hist3->params = *hp;
         hist3->totalSimulated = (unsigned int) body_count;
 
+        all->usage[4] = TRUE;
         all->histograms[4] = hist4;
         hist4->lambdaBins = lambdaBins;
         hist4->betaBins = betaBins;
@@ -771,8 +770,6 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         hist4->params = *hp;
         hist4->totalSimulated = (unsigned int) body_count;
 
-        all->usage[3] = TRUE;
-        all->usage[4] = TRUE;
         all->usage[5] = TRUE;
         all->histograms[5] = hist5;
         hist5->lambdaBins = lambdaBins;
@@ -910,7 +907,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     if(all->usage[4])    // if using beta average
         nbCalcDisp(all->histograms[4], TRUE, ctx->BetaCorrect);
     if(all->usage[5])    // if using distance average
-        nbCalcDisp(all->histograms[5], TRUE, ctx->DistCorrect); //using beta correct for now, will need to add a dist correct
+        nbCalcDisp(all->histograms[5], TRUE, ctx->DistCorrect);
 
     /* these converge somewhere between 3 and 6 iterations */
     if(all->usage[1])
@@ -942,7 +939,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         for (unsigned int i = 0; i < nBin; ++i)
         {
             int vdenom = all->histograms[3]->data[i].rawCount - all->histograms[3]->data[i].outliersRemoved;
-            if(vdenom != 0) // no data for the bin
+            if(vdenom > 10) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
@@ -951,7 +948,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             }
             else
             {
-                all->histograms[3]->data[i].err = 0;
+                all->histograms[3]->data[i].err = -1;
                 all->histograms[3]->data[i].variable = 0;
             }
         }
@@ -966,7 +963,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         for (unsigned int i = 0; i < nBin; ++i)
         {
             int bdenom = all->histograms[4]->data[i].rawCount - all->histograms[4]->data[i].outliersRemoved;
-            if(bdenom != 0) // no data for the bin
+            if(bdenom > 10) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
@@ -975,7 +972,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             }
             else
             {
-                all->histograms[4]->data[i].err = 0;
+                all->histograms[4]->data[i].err = -1;
                 all->histograms[4]->data[i].variable = 0;
             }
         }
@@ -990,14 +987,14 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         for (unsigned int i = 0; i < nBin; ++i)
         {
             int ddenom = all->histograms[5]->data[i].rawCount - all->histograms[5]->data[i].outliersRemoved;
-            if(ddenom != 0)
+            if(ddenom > 10)
             {
                 all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom);
                 all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
             }
             else
             {
-                all->histograms[5]->data[i].err = 0;
+                all->histograms[5]->data[i].err = -1;
                 all->histograms[5]->data[i].variable = 0;
             }
         }

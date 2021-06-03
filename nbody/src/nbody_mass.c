@@ -381,26 +381,15 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
     {
         if (data->data[i].useBin)
         {
-            Data = data->data[i].variable;
-            /* the data may have incomplete information. Where it does not have will have -1 */
-            if(Data > 0)
+            err_data = data->data[i].err;
+            err_hist = histogram->data[i].err;
+
+            if((err_data > 0)&&(err_hist > 0))
             {
-                
-                err_data = data->data[i].err;
-                err_hist = histogram->data[i].err;
-                
+                Data = data->data[i].variable;
                 Hist = histogram->data[i].variable;
 
-                /* the error in simulation of variable is set to zero. */
-                if(err_data == 0.0)
-                {
-                    //this should never actually end up running
-                    Nsigma_sq += sqr( (Data - Hist) );
-                }
-                else
-                {
-                    Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
-                }
+                Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
             }
         }
 
