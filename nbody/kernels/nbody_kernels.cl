@@ -25,6 +25,10 @@
  * bug on 10.6 where the D will be stripped. -DDOUBLEPREC=1 will
  * actually define OUBLEPREC */
 
+#if cl_khr_fp64
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#endif
+
 #ifdef OUBLEPREC
   #define DOUBLEPREC OUBLEPREC
 #endif
@@ -687,8 +691,8 @@ inline real4 externalAcceleration(real x, real y, real z)
 __attribute__ ((reqd_work_group_size(THREADS1, 1, 1)))
 __kernel void NBODY_KERNEL(boundingBox)
 {
-__local volatile real minX[THREADS1-1], minY[THREADS1-1], minZ[THREADS1-1];
-__local volatile real maxX[THREADS1-1], maxY[THREADS1-1], maxZ[THREADS1-1];
+__local volatile real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
+__local volatile real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
 
     uint i = (uint) get_local_id(0);
     if (i == 0)
@@ -1775,28 +1779,49 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 {
     uint result;
 
-  #if DOUBLEPREC
-    /* Changed to use vote.sync to support new ptx standard, used 0xFFFFFFFF for full mask of threads to emulate utilizing whole warp*/
-    asm("{\n\t"
-        ".reg .pred cond, out;\n\t"
-        "setp.ge.f64 cond, %1, %2;\n\t"
-        "vote.sync.all.pred out, cond, 0xFFFFFFFF;\n\t"
-        "selp.u32 %0, 1, 0, out;\n\t"
-        "}\n\t"
-        : "=r"(result)
-        : "d"(rSq), "d"(rCritSq));
-  #else
-    asm("{\n\t"
-        ".reg .pred cond, out;\n\t"
-        "setp.ge.f32 cond, %1, %2;\n\t"
-        "vote.sync.all.pred out, cond, 0xFFFFFFFF;\n\t"
-        "selp.u32 %0, 1, 0, out;\n\t"
-        "}\n\t"
-        : "=r"(result)
-        : "f"(rSq), "f"(rCritSq));
-  #endif /* DOUBLEPREC */
-
-    return result;
+  #if __CUDA_ARCH__ >= 300
+    #if DOUBLEPREC
+      /* Changed to use vote.sync to support new ptx standard, used 0xFFFFFFFF for full mask of threads to emulate utilizing whole warp*/
+      asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f64 cond, %1, %2;\n\t"
+          "vote.sync.all.pred out, cond, 0xFFFFFFFF;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "d"(rSq), "d"(rCritSq));
+    #else
+      asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f32 cond, %1, %2;\n\t"
+          "vote.sync.all.pred out, cond, 0xFFFFFFFF;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "f"(rSq), "f"(rCritSq));
+    #endif /* DOUBLEPREC */
+  #else 
+     #if DOUBLEPREC
+       asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f64 cond, %1, %2;\n\t"
+          "vote.all.pred out, cond;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "d"(rSq), "d"(rCritSq));
+    #else
+       asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f32 cond, %1, %2;\n\t"
+          "vote.all.pred out, cond;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "f"(rSq), "f"(rCritSq));
+    #endif /* DOUBLEPREC */
+  #endif /* If version is high enough */  
+   return result;
 }
 #endif /* HAVE_INLINE_PTX */
 
