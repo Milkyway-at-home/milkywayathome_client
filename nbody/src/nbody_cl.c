@@ -1388,14 +1388,14 @@ static cl_int nbExecuteTreeConstruction(NBodyState* st)
 
 
 tree_build_exit:
-    mw_printf("BEFORE BOXEV RELEASE\n");
+    //mw_printf("BEFORE BOXEV RELEASE\n");
     ws->timings[0] += mwReleaseEventWithTiming(boxEv);
-    mw_printf("AFTER BOXEV RELEASE\n");
+    //mw_printf("AFTER BOXEV RELEASE\n");
     ws->chunkTimings[1] = ws->timings[1] / (double) buildIterations;
 
-    mw_printf("BEFORE BUILDTREECLEAREV RELEASE\n");
+    //mw_printf("BEFORE BUILDTREECLEAREV RELEASE\n");
     ws->timings[1] += mwReleaseEventWithTiming(buildTreeClearEv);
-    mw_printf("AFTER BUILDTREECLEAREV RELEASE\n");
+    //mw_printf("AFTER BUILDTREECLEAREV RELEASE\n");
 //    mw_printf("BEFORE SUMMARIZATIONCLEAREV RELEASE\n");
     ws->timings[2] += mwReleaseEventWithTiming(summarizationClearEv);
 //    mw_printf("AFTER SUMMARIZATIONCLEAREV RELEASE\n");
@@ -1540,9 +1540,9 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
 
     if (!st->usesExact)
     {
-        mw_printf("StepSystemCL Tree Construction START\n");
+        //mw_printf("StepSystemCL Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
-        mw_printf("StepSystemCL Tree Construction END\n");
+        //mw_printf("StepSystemCL Tree Construction END\n");
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error executing tree construction kernels");
@@ -1550,9 +1550,9 @@ NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
         }
     }
 //    printf("%f\n",st->tree.root->cellnode.pos.x);
-    mw_printf("StepSystemCL Force Kernels START\n");
+    //mw_printf("StepSystemCL Force Kernels START\n");
     err = nbExecuteForceKernels(st, CL_TRUE);
-    mw_printf("StepSystemCL Force Kernels END\n");
+    //mw_printf("StepSystemCL Force Kernels END\n");
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error executing force kernels");
@@ -1586,9 +1586,9 @@ static cl_int nbRunPreStep(NBodyState* st)
 
     if (!st->usesExact)
     {
-        mw_printf("RunPreStep Tree Construction START\n");
+        //mw_printf("RunPreStep Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
-        mw_printf("RunPreStep Tree Construction END\n");
+        //mw_printf("RunPreStep Tree Construction END\n");
         if (err != CL_SUCCESS)
             return err;
     }
@@ -2230,9 +2230,9 @@ static cl_int nbDebugSummarization(const NBodyCtx* ctx, NBodyState* st)
     {
         cl_int err;
 
-        mw_printf("DebugSummarization Tree Construction START\n");
+        //mw_printf("DebugSummarization Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
-        mw_printf("DebugSummarization Tree Construction END\n");
+        //mw_printf("DebugSummarization Tree Construction END\n");
         if (err != CL_SUCCESS)
             return err;
 
