@@ -1779,7 +1779,7 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 {
     uint result;
 
-  #if __CUDA_ARCH__ >= 300
+  #if __OPENCL_VERSION__ >= 120
     #if DOUBLEPREC
       /* Changed to use vote.sync to support new ptx standard, used 0xFFFFFFFF for full mask of threads to emulate utilizing whole warp*/
       asm("{\n\t"
