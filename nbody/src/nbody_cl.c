@@ -657,10 +657,10 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
                  /* Set potential */
                  ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT,
-                p->disk.type,
-                p->disk2.type,
-                p->halo.type,
-                p->sphere[0].type,
+                 p->disk.type,
+                 p->disk2.type,
+                 p->halo.type,
+                 p->sphere[0].type,
 
                  /* Set potential constants */
                  /* Spherical constants */
@@ -700,6 +700,7 @@ static char* nbGetCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const 
 
     return buf;
 }
+
 
 /* Yo momma's so fat she has little mommas in orbit around her. */
 
