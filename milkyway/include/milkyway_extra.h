@@ -79,7 +79,7 @@ typedef char mwbool;
   #define LLU "%I64u"
 #else
   #define ZU "%zu"
-  #define LLU "%"PRIu64
+  #define LLU "%" PRIu64
 #endif /* _WIN32 */
 
 #endif /* _MILKYWAY_EXTRA_H_ */

@@ -51,7 +51,11 @@ if(SYSTEM_IS_PPC)
   set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
 endif()
 
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 option(SEPARATION_STATIC "Build separation as fully static binary" OFF)
+else()
+option(SEPARATION_STATIC "Build separation as fully static binary" ON)
+endif()
 mark_as_advanced(SEPARATION_STATIC)
 
 
