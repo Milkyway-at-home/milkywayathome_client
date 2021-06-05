@@ -95,7 +95,7 @@ useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
 freqOfOutputs         = 6            -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control     = false         -- -- control number of steps      -- --
-Ntime_steps          = 10            -- -- number of timesteps to run   -- --
+Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -257,7 +257,7 @@ function makeBodies(ctx, potential)
     end
     
   	if(LMC_body) then
-  		LMCModel = predefinedModels.plummer{
+            LMCModel = predefinedModels.plummer{
             nbody       = LMCtotalBodies,
             prng        = prng,
             position    = LMCfinalPosition,
