@@ -155,7 +155,10 @@ static void gfield_close(double rho, double z, int n, double *rfield, double *zf
 
     z = z/p_n[n];
     z = (double complex)z;
-    double complex x = ((double complex)rho-(double complex)a_n[n])/(double complex)p_n[n];
+    double complex rho_temp = (double complex)rho;
+    double complex a_n_temp = (double complex)a_n[n];
+    double complex p_n_temp = (double complex)p_n[n];
+    double complex x = (rho_temp-a_n_temp)/p_n_temp;
 
     //two cases; within the caustic, all four roots are real, so we use T1 for d4 and T2,3,4 for d3
     //outside the caustic there should be two real roots and two complex roots
