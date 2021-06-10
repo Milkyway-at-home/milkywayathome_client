@@ -29,6 +29,15 @@ function(add_flag_if_supported flagname)
   endif()
 endfunction()
 
+# The ${suppress_warning_flags} variable is to be added after all other flags.
+function(suppress_warning_if_supported flagname)
+  check_c_compiler_flag("${flagname}" HAVE_FLAG_${flagname})
+
+  if(${HAVE_FLAG_${flagname}})
+    set(suppress_warning_flags "${suppress_warning_flags} ${flagname}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 function(append_supported_flags flags)
   foreach(flag ${flags})
     add_flag_if_supported(${flag})

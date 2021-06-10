@@ -288,6 +288,17 @@ if(SYSTEM_IS_X86 AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
   endif()
 endif()
 
+if(SYSTEM_IS_E2K AND DOUBLEPREC AND NOT SEPARATION_CRLIBM)
+  add_library(separation_core_sse2 STATIC src/probabilities_sse2.c ${core_headers})
+  add_library(separation_core_sse3 STATIC src/probabilities_sse2.c ${core_headers})
+  add_library(separation_core_sse41 STATIC src/probabilities_sse2.c ${core_headers})
+  add_library(separation_core_avx STATIC src/probabilities_sse2.c ${core_headers})
+  target_compile_options(separation_core_sse2  PRIVATE "-U__SSE3__" "-U__SSSE3__" "-U__SSE4_1__" "-U__SSE4_2__" "-U__SSE4A__" "-U__AVX__" "-U__AVX2__")
+  target_compile_options(separation_core_sse3  PRIVATE "-U__SSE4_1__" "-U__SSE4_2__" "-U__SSE4A__" "-U__AVX__" "-U__AVX2__")
+  target_compile_options(separation_core_sse41 PRIVATE "-U__AVX__" "-U__AVX2__")
+  list(APPEND separation_core_libs separation_core_sse2 separation_core_sse3 separation_core_sse41 separation_core_avx)
+endif()
+
 add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
 maybe_disable_ssen(separation)
 

@@ -58,7 +58,8 @@ if(SYSTEM_IS_X86 AND SYSTEM_IS_32)
   set(SYSTEM_IS_X86_32 TRUE CACHE INTERNAL "Is 32-bit x86")
 endif()
 
-
-
-
-
+include(CheckSymbolExists)
+check_symbol_exists(__e2k__ "" HAVE_E2K_DEFINED)
+if(HAVE_E2K_DEFINED)
+  set(SYSTEM_IS_E2K TRUE CACHE INTERNAL "Is e2k")
+endif()
