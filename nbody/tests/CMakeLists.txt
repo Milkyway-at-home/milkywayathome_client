@@ -60,9 +60,25 @@ add_executable(mixeddwarf_test mixeddwarf_test.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
-add_executable(gpu_test gpu_test.c)
+add_executable(gpu_sanity gpu_test.c)
 
-set(gpu_test_link_libs "${nbody_exe_link_libs}")
+set(gpu_sanity_link_libs "${nbody_exe_link_libs}")
+
+add_executable(gpu_checkpoint gpu_test_checkpoint.c)
+
+set(gpu_checkpoint_link_libs "${nbody_exe_link_libs}")
+
+add_executable(gpu_basicModelsPart1 gpu_test_basicmodels.c)
+
+set(gpu_basicModelsPart1_link_libs "${nbody_exe_link_libs}")
+
+add_executable(gpu_basicModelsPart2 gpu_test_morebasicmodels.c)
+
+set(gpu_basicModelsPart2_link_libs "${nbody_exe_link_libs}")
+
+add_executable(gpu_advanceModels gpu_test_moremodels.c)
+
+set(gpu_advanceModels_link_libs "${nbody_exe_link_libs}")
 
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
@@ -70,7 +86,11 @@ if(NBODY_CRLIBM)
     list(APPEND poisson_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND virial_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
-    list(APPEND gpu_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND gpu_sanity_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND gpu_checkpoint_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND gpu_basicModelsPart1_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND gpu_basicModelsPart2_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND gpu_advanceModels_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
@@ -78,7 +98,11 @@ milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_li
 milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_link_libs}")
 milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
-milkyway_link(gpu_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_test_link_libs}")
+milkyway_link(gpu_sanity ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_sanity_link_libs}")
+milkyway_link(gpu_checkpoint ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_checkpoint_link_libs}")
+milkyway_link(gpu_basicModelsPart1 ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_basicModelsPart1_link_libs}")
+milkyway_link(gpu_basicModelsPart2 ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_basicModelsPart2_link_libs}")
+milkyway_link(gpu_advanceModels ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_advanceModels_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -106,9 +130,17 @@ add_test(NAME virial_test COMMAND virial_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
-add_test(NAME gpu_test
+add_test(NAME gpu_sanity
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-          COMMAND gpu_test "gpuTest.lua")
+          COMMAND gpu_sanity "gpuTest.lua")
+          
+add_test(NAME gpu_checkpoint COMMAND gpu_checkpoint)
+
+add_test(NAME gpu_basicModelsPart1 COMMAND gpu_basicModelsPart1)
+
+add_test(NAME gpu_basicModelsPart2 COMMAND gpu_basicModelsPart2)
+
+add_test(NAME gpu_advanceModels COMMAND gpu_advanceModels)
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
