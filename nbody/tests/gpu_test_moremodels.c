@@ -177,51 +177,51 @@ int test(int version, int model) {
     if(sum < 0) { sum *= -1; }
     if(model == 8) {
     	if(version == 100) {
-      		if(sum >= .21){
+      		if(sum >= 12){
       		    mw_printf("Test failed\n");
      		    return -1;
       		} 
     	} else if(version == 1024) {
-      		if(sum >= .45){
+      		if(sum >= 12){
           	    mw_printf("Test failed\n");
                     return -1;
                } 
        } else if(version == 10000) {
-              if(sum >= .45){
+              if(sum >= 12){
                   mw_printf("Test failed\n");
                   return -1;
               } 
        }
     } else if(model == 9) {
        if(version == 100) { 
-             if(sum >= .20) {
+             if(sum >= 5) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 1024) { 
-             if(sum >= .50) { 
+             if(sum >= 5) { 
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= .38) {
+             if(sum >= 5) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }
        }
     } else if(model == 10) {
        if(version == 100) { 
-             if(sum >= 12) {
+             if(sum >= 16) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 1024) { 
-             if(sum >= 13) { 
+             if(sum >= 35) { 
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= 9.5) {
+             if(sum >= 35) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }
@@ -245,7 +245,7 @@ int test(int version, int model) {
        }
     } else if(model == 12) {
        if(version == 100) { 
-             if(sum >= .13) {
+             if(sum >= .35) {
                   mw_printf("Test failed\n");
                   return -1;
              }

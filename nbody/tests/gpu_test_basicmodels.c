@@ -192,7 +192,7 @@ int test(int version, int model) {
        }
     } else if(model == 4) {
        if(version == 100) { // Common Kernel Error
-             if(sum >= 70) {
+             if(sum >= 1.00) {
                   mw_printf("Test failed\n");
                   return -1;
              }
@@ -202,58 +202,58 @@ int test(int version, int model) {
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= .30) {
+             if(sum >= 1.2) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }
        }
     } else if(model == 5) {
        if(version == 100) { 
-             if(sum >= .15) {
+             if(sum >= 54) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 1024) {
-             if(sum >= .41) {
+             if(sum >= 54) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= .44) {
+             if(sum >= 54) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }
        }
     } else if(model == 6) {
        if(version == 100) { 
-             if(sum >= .01) {
+             if(sum >= 17) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 1024) {
-             if(sum >= .035) {
+             if(sum >= 17) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= .08) {
+             if(sum >= 17) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }
        }
     } else if(model == 7) {
        if(version == 100) { 
-             if(sum >= 80) { // Common Kernel Error
+             if(sum >= 16) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 1024) {
-             if(sum >= .42) {
+             if(sum >= 16) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= .32) {
+             if(sum >= 16) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }

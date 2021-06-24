@@ -170,34 +170,34 @@ int test(int version, int model) {
     if(sum < 0) { sum *= -1; }
     if(model == 8) {
     	if(version == 100) {
-      		if(sum >= .21){
+      		if(sum >= 12){
       		    mw_printf("Test failed\n");
      		    return -1;
       		} 
     	} else if(version == 1024) {
-      		if(sum >= .45){
+      		if(sum >= 12){
           	    mw_printf("Test failed\n");
                     return -1;
                } 
        } else if(version == 10000) {
-              if(sum >= .45){
+              if(sum >= 12){
                   mw_printf("Test failed\n");
                   return -1;
               } 
        }
     } else if(model == 9) {
        if(version == 100) { 
-             if(sum >= .20) {
+             if(sum >= 5) {
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 1024) { 
-             if(sum >= .50) { 
+             if(sum >= 5) { 
                   mw_printf("Test failed\n");
                   return -1;
              }
        } else if(version == 10000) {
-             if(sum >= .38) {
+             if(sum >= 5) {
              	   mw_printf("Test failed\n");
              	   return -1;
              }
@@ -213,24 +213,18 @@ int test(int version, int model) {
 int main(int argc, char *argv[]){
     int result = 0;
     
-    //mw_printf(" Running Test 1: model_8_100\n");
-    //result += test(100, 8);
-    //mw_printf(" Running Test 2: model_8_1024\n");
-    //result += test(1024, 8);
-    //mw_printf(" Running Test 3: model_8_10000\n");
-    //result += test(10000, 8);
-    //mw_printf(" Running Test 4: model_9_100\n");
-    //result += test(100, 9);
-    //mw_printf(" Running Test 5: model_9_1024\n");
-    //result += test(1024, 9);
-    //mw_printf(" Running Test 6: model_9_10000\n");
-    //result += test(10000, 9);
-    mw_printf(" Running Test 7: model_bar_100\n");
-    result += test(100, 10);
-    mw_printf(" Running Test 8: model_bar_1024\n");
-    result += test(1024, 10);
-    mw_printf(" Running Test 9: model_bar_10000\n");
-    result += test(10000, 10);
+    mw_printf(" Running Test 1: model_8_100\n");
+    result += test(100, 8);
+    mw_printf(" Running Test 2: model_8_1024\n");
+    result += test(1024, 8);
+    mw_printf(" Running Test 3: model_8_10000\n");
+    result += test(10000, 8);
+    mw_printf(" Running Test 4: model_9_100\n");
+    result += test(100, 9);
+    mw_printf(" Running Test 5: model_9_1024\n");
+    result += test(1024, 9);
+    mw_printf(" Running Test 6: model_9_10000\n");
+    result += test(10000, 9);
     
     if(result < 0) {
         mw_printf("Error Detected...");

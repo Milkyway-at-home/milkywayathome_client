@@ -1,107 +1,43 @@
-arg = { ... } -- -- TAKING USER INPUT
-argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
-prng = DSFMT.create(argSeed) 
+arg = {...}
 
-evolveTime       = 0.1    -- Forward Time
-time_ratio       = 1.0    -- Forward Time / Backward Time
-rscale_l         = 0.2    -- Baryonic Radius
-light_r_ratio    = 0.2   -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = 12.0    -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = 0.2
-dwarfMass = mass_l / light_mass_ratio
-rscale_t  = rscale_l / light_r_ratio
-rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+seed = 34086709
+nbody = arg[1]
 
-totalBodies           = arg[1]   -- -- NUMBER OF BODIES           -- --
-nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
-nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT    -- --
-LMC_body              = false    -- -- PRESENCE OF LMC            -- --
-lda_bins        = 50      -- number of bins in lamdba direction
-lda_lower_range = -150    -- lower range for lambda
-lda_upper_range = 150     -- upepr range for lamdba
-bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
-bta_lower_range = -15     -- lower range for beta
-bta_upper_range = 15      -- upper range for beta
-SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
-SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
-Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
-use_best_likelihood  = true    -- use the best likelihood return code
-best_like_start      = 0.98    -- what percent of sim to start
-use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = false    -- use velocity dispersions in likelihood
-use_beta_comp        = false  -- calculate average beta, use in likelihood
-use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
-use_avg_dist         = false  -- calculate average distance, use in likelihood
-useMultiOutputs       = false        -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 6            -- -- FREQUENCY OF WRITING OUTPUTS -- --
-timestep_control     = false         -- -- control number of steps      -- --
-Ntime_steps          = 3000            -- -- number of timesteps to run   -- --
-        
-orbit_parameter_l  = 218
-orbit_parameter_b  = 53.5
-orbit_parameter_r  = 28.6
-orbit_parameter_vx = -156 
-orbit_parameter_vy = 79 
-orbit_parameter_vz = 107
+prng = DSFMT.create(seed)
 
 dwarfMass = 16
 dwarfRadius = 0.2
-       
+LMCMASS = 449865.888
+LMCSCALE = 15.0
+
 function makePotential()
-   if(run_null_potential == true) then
-       print("running in null potential")
-       return nil
-   else
-        --NOTE: To exculde a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
-   	return  Potential.create{
+   return Potential.create{
       spherical = Spherical.hernquist{ mass = 67479.9, scale = 0.6 },
       disk      = Disk.miyamotoNagai{ mass = 224933, scaleLength = 4, scaleHeight = 0.26 },
       disk2     = Disk.none{ mass = 3.0e5 },
       halo      = Halo.logarithmic{ vhalo = 155, scaleLength = 22.25, flattenZ = 1.1 }
    }
-   end
 end
 
 function makeContext()
-   soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
    return NBodyCtx.create{
-      timeEvolve  = 3.945,
-      timeBack    = revOrbTime,
-      timestep    = calculateTimestep(dwarfMass, dwarfRadius),
-      eps2        = calculateEps2(totalBodies, soften_length),
-      b           = orbit_parameter_b,
-      r           = orbit_parameter_r,
-      vx          = orbit_parameter_vx,
-      vy          = orbit_parameter_vy,
-      vz          = orbit_parameter_vz, 
-      criterion   = "sw93",
-      useQuad     = true,
-      useBestLike   = true,
-      BestLikeStart = .95,
-      useVelDisp    = use_vel_disps,
-      useBetaDisp   = use_beta_disps,
-      useBetaComp   = use_beta_comp,
-      useVlos       = use_vlos_comp,
-      useDist       = use_avg_dist,
-      Nstep_control = timestep_control,
-      Ntsteps       = Ntime_steps,
+      timestep   = calculateTimestep(dwarfMass, dwarfRadius),
+      timeEvolve = 3.945,
+      eps2       = calculateEps2(nbody, dwarfRadius),
+      criterion  = "sw93",
+      useQuad    = true,
+      theta      = 1.0,
+      BestLikeStart = 0.95,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
-      IterMax       = 6,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
-      MultiOutput   = useMultiOutputs,
-      OutputFreq    = freqOfOutputs,
-      theta         = 1.0,
-      calibrationRuns = 2,
+      IterMax       = 6,
       LMC           = true,
-      LMCmass       = LMC_Mass,
-      LMCscale      = 15,
+      LMCmass       = LMCMASS,
+      LMCscale      = LMCSCALE,
       LMCDynaFric   = true
    }
 end
@@ -113,16 +49,16 @@ function makeBodies(ctx, potential)
       velocity    = Vector.create(-170, 94, 108),
       LMCposition = Vector.create(-1.1, -41.1, -27.9),
       LMCvelocity = Vector.create(-57, -226, 221), 
-      LMCmass     = LMC_Mass,
-      LMCscale    = 15,
+      LMCmass     = LMCMASS,
+      LMCscale    = LMCSCALE,
       LMCDynaFric = true,
       ftime       = 4.5,
       tstop       = 4.0,
       dt          = ctx.timestep / 10.0
-   }
-   
+      }
+
    return predefinedModels.plummer{
-      nbody       = totalBodies,
+      nbody       = nbody,
       prng        = prng,
       position    = finalPosition,
       velocity    = finalVelocity,
