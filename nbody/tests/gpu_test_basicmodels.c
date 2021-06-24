@@ -81,45 +81,15 @@ int test(int version, int model) {
     nbf.outputlbrCartesian = 1;
     
     if(model == 1) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_1_100.lua";
-   	 } else if(version == 1024) {
-   	 	nbf.inputFile = "./orphan_models/GPU_Models/model_1_1024.lua";
-  	  } else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_1_10000.lua";
-    	}
+        nbf.inputFile = "./orphan_models/GPU_Models/model_1.lua";
     } else if(model == 4) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_4_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_4_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_4_10000.lua";
-    	}
+        nbf.inputFile = "./orphan_models/GPU_Models/model_4.lua";
     } else if(model == 5) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_5_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_5_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_5_10000.lua";
-    	}
+        nbf.inputFile = "./orphan_models/GPU_Models/model_5.lua";
     } else if(model == 6) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_5_bounds_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_5_bounds_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_5_bounds_10000.lua";
-    	}
+        nbf.inputFile = "./orphan_models/GPU_Models/model_5_bounds.lua";
     } else if(model == 7) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_6_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_6_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_6_10000.lua";
-    	}
+        nbf.inputFile = "./orphan_models/GPU_Models/model_6.lua";
     }
     
     
@@ -127,19 +97,17 @@ int test(int version, int model) {
     nbf.printHistogram = 1;
     nbf.seed = 1459;
     
-    const char** a = mwCalloc(6,sizeof(char*));
+    const char** a = mwCalloc(1,sizeof(char*));
+    
     int i = 0;
     while(a[i] == NULL){
         a[i++] = mwCalloc(20,1);
     }
-    nbf.numForwardedArgs = 6;
-    strcpy(a[0],"0.1");
-    strcpy(a[1],"1.0");
-    strcpy(a[2],"0.2");
-    strcpy(a[3],"0.2");
-    strcpy(a[4],"12.0");
-    strcpy(a[5],"0.2");
-    a[6] = NULL;
+    
+    nbf.numForwardedArgs = 1;
+    if(version == 100) { strcpy(a[0],"100"); }
+    else if(version == 1024) { strcpy(a[0], "1024"); }
+    else { strcpy(a[0], "10000"); }
     
     HistogramParams hp;
     NBodyLikelihoodMethod method;
@@ -207,17 +175,17 @@ int test(int version, int model) {
     if(sum < 0) { sum *= -1; }
     if(model == 1) {
     	if(version == 100) {
-      		if(sum >= 40){
+      		if(sum >= 58){
       		    mw_printf("Test failed\n");
      		    return -1;
       		} 
     	} else if(version == 1024) {
-      		if(sum >= 40){
+      		if(sum >= 58){
           	    mw_printf("Test failed\n");
                     return -1;
                } 
        } else if(version == 10000) {
-              if(sum >= 40){
+              if(sum >= 58){
                   mw_printf("Test failed\n");
                   return -1;
               } 
@@ -229,7 +197,7 @@ int test(int version, int model) {
                   return -1;
              }
        } else if(version == 1024) { 
-             if(sum >= .40) { 
+             if(sum >= 1.00) { 
                   mw_printf("Test failed\n");
                   return -1;
              }

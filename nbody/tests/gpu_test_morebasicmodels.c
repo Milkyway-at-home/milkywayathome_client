@@ -73,48 +73,36 @@ NBodyState* runCPU(const NBodyFlags* nbf, const HistogramParams* hp){
 }
 
 int test(int version, int model) {
+
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
     omp_set_num_threads(omp_get_max_threads());
     steps = 3000;
     nbf.debugLuaLibs = 0;
     nbf.outputlbrCartesian = 1;
-    
+
     if(model == 8) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_8_100.lua";
-   	 } else if(version == 1024) {
-   	 	nbf.inputFile = "./orphan_models/GPU_Models/model_8_1024.lua";
-  	  } else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_8_10000.lua";
-    	}
+        nbf.inputFile = "./orphan_models/GPU_Models/model_8.lua";
     } else if(model == 9) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_9_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_9_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_9_10000.lua";
-    	}
+	nbf.inputFile = "./orphan_models/GPU_Models/model_9.lua";
     } 
+    
     
     nbf.checkpointPeriod = 0;
     nbf.printHistogram = 1;
     nbf.seed = 1459;
     
-    const char** a = mwCalloc(6,sizeof(char*));
+    const char** a = mwCalloc(1,sizeof(char*));
+    
     int i = 0;
     while(a[i] == NULL){
         a[i++] = mwCalloc(20,1);
     }
-    nbf.numForwardedArgs = 6;
-    strcpy(a[0],"0.1");
-    strcpy(a[1],"1.0");
-    strcpy(a[2],"0.2");
-    strcpy(a[3],"0.2");
-    strcpy(a[4],"12.0");
-    strcpy(a[5],"0.2");
-    a[6] = NULL;
+    
+    nbf.numForwardedArgs = 1;
+    if(version == 100) { strcpy(a[0],"100"); }
+    else if(version == 1024) { strcpy(a[0], "1024"); }
+    else { strcpy(a[0], "10000"); }
     
     HistogramParams hp;
     NBodyLikelihoodMethod method;
@@ -225,18 +213,18 @@ int test(int version, int model) {
 int main(int argc, char *argv[]){
     int result = 0;
     
-    mw_printf(" Running Test 1: model_8_100\n");
-    result += test(100, 8);
-    mw_printf(" Running Test 2: model_8_1024\n");
-    result += test(1024, 8);
-    mw_printf(" Running Test 3: model_8_10000\n");
-    result += test(10000, 8);
-    mw_printf(" Running Test 4: model_9_100\n");
-    result += test(100, 9);
-    mw_printf(" Running Test 5: model_9_1024\n");
-    result += test(1024, 9);
-    mw_printf(" Running Test 6: model_9_10000\n");
-    result += test(10000, 9);
+    //mw_printf(" Running Test 1: model_8_100\n");
+    //result += test(100, 8);
+    //mw_printf(" Running Test 2: model_8_1024\n");
+    //result += test(1024, 8);
+    //mw_printf(" Running Test 3: model_8_10000\n");
+    //result += test(10000, 8);
+    //mw_printf(" Running Test 4: model_9_100\n");
+    //result += test(100, 9);
+    //mw_printf(" Running Test 5: model_9_1024\n");
+    //result += test(1024, 9);
+    //mw_printf(" Running Test 6: model_9_10000\n");
+    //result += test(10000, 9);
     mw_printf(" Running Test 7: model_bar_100\n");
     result += test(100, 10);
     mw_printf(" Running Test 8: model_bar_1024\n");

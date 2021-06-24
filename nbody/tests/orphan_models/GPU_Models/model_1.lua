@@ -2,7 +2,18 @@ arg = { ... } -- -- TAKING USER INPUT
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed) 
 
-totalBodies           = arg[0]   -- -- NUMBER OF BODIES           -- --
+evolveTime       = 0.1    -- Forward Time
+time_ratio       = 1.0    -- Forward Time / Backward Time
+rscale_l         = 0.2    -- Baryonic Radius
+light_r_ratio    = 0.2   -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = 12.0    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = 0.2
+dwarfMass = mass_l / light_mass_ratio
+rscale_t  = rscale_l / light_r_ratio
+rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+
+totalBodies           = arg[1]   -- -- NUMBER OF BODIES           -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD        -- --
 nbodyMinVersion       = "1.76"  -- -- MINIMUM APP VERSION        -- --
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH      -- --

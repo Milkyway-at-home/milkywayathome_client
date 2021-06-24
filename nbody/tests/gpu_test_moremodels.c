@@ -81,45 +81,15 @@ int test(int version, int model) {
     nbf.outputlbrCartesian = 1;
     
     if(model == 8) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_8_100.lua";
-   	 } else if(version == 1024) {
-   	 	nbf.inputFile = "./orphan_models/GPU_Models/model_8_1024.lua";
-  	  } else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_8_10000.lua";
-    	}
+	nbf.inputFile = "./orphan_models/GPU_Models/model_8.lua";
     } else if(model == 9) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_9_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_9_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_9_10000.lua";
-    	}
+	nbf.inputFile = "./orphan_models/GPU_Models/model_9.lua";
     } else if(model == 10) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_LMC_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_LMC_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_LMC_10000.lua";
-    	}
+	nbf.inputFile = "./orphan_models/GPU_Models/model_LMC.lua";
     } else if(model == 11) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_ninkovic_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_ninkovic_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_ninkovic_10000.lua";
-    	}
+	nbf.inputFile = "./orphan_models/GPU_Models/model_ninkovic.lua";
     } else if(model == 12) {
-    	if(version == 100) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_triaxial_100.lua";
-    	} else if(version == 1024) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_triaxial_1024.lua";
-    	} else if(version == 10000) {
-    		nbf.inputFile = "./orphan_models/GPU_Models/model_triaxial_10000.lua";
-    	}
+    	nbf.inputFile = "./orphan_models/GPU_Models/model_triaxial.lua";
     } 
     
     
@@ -128,19 +98,17 @@ int test(int version, int model) {
     nbf.printHistogram = 1;
     nbf.seed = 1459;
     
-    const char** a = mwCalloc(6,sizeof(char*));
+    const char** a = mwCalloc(1,sizeof(char*));
+    
     int i = 0;
     while(a[i] == NULL){
         a[i++] = mwCalloc(20,1);
     }
-    nbf.numForwardedArgs = 6;
-    strcpy(a[0],"0.1");
-    strcpy(a[1],"1.0");
-    strcpy(a[2],"0.2");
-    strcpy(a[3],"0.2");
-    strcpy(a[4],"12.0");
-    strcpy(a[5],"0.2");
-    a[6] = NULL;
+    
+    nbf.numForwardedArgs = 1;
+    if(version == 100) { strcpy(a[0],"100"); }
+    else if(version == 1024) { strcpy(a[0], "1024"); }
+    else { strcpy(a[0], "10000"); }
     
     HistogramParams hp;
     NBodyLikelihoodMethod method;
