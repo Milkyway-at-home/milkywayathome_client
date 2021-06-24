@@ -17,9 +17,9 @@
 /** Isotropic Velocity Dispersion Formulas **/
 static const real pi = 3.1415926535;
 
-static inline real dispIntegrand(const Potential* pot, const mwvector pos){
+static inline real dispIntegrand(const Potential* pot, const mwvector pos, real time){
     //mw_printf("Getting External Acceleration\n");
-    mwvector acc = nbExtAcceleration(pot, pos);
+    mwvector acc = nbExtAcceleration(pot, pos, time);
 
     real mag = mw_pow(mw_dotv(pos,pos), 0.5);
     mwvector unit_v = mw_mulvs(pos, 1.0/mag);
@@ -27,11 +27,11 @@ static inline real dispIntegrand(const Potential* pot, const mwvector pos){
     real a_r = mw_abs(mw_dotv(acc,unit_v));
 
     //mw_printf("Getting External Density\n");
-    real rho = nbExtDensity(pot, pos);
+    real rho = nbExtDensity(pot, pos, time);
     return rho*a_r;
 }
 
-static inline real velDispersion(const Potential* pot, const mwvector pos, real upperlimit){
+static inline real velDispersion(const Potential* pot, const mwvector pos, real upperlimit, real time){
     /** Use 5-point Gaussian Quadrature to calculate the RADIAL (1-dimensional) velocity dispersion integral **/
     int i,j;
     real a,b,integral,r;
@@ -53,7 +53,7 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
     real dist = mw_pow(mw_dotv(pos,pos), 0.5);
     int nDivs = 10;
     real width = (upperlimit - dist)/(nDivs*1.0);
-    real rho0 = nbExtDensity(pot,pos);
+    real rho0 = nbExtDensity(pot,pos, time);
     if ((width <= 0)||(rho0 == 0.0)) /** To avoid divide by zero later **/
     {
         return -1;       /** Want to ignore any contribution more than 50 scale radii from galactic center. Chose this value because dispersion is never negative. **/
@@ -65,7 +65,7 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
         for (j = 0; j < 5; j++) {
             r = width*points[j]/2.0 + (a+b)/2.0;
             input_vec = mw_mulvs(pos,r/dist);
-            integral += weights[j]*dispIntegrand(pot,input_vec)*width/2.0;
+            integral += weights[j]*dispIntegrand(pot,input_vec, time)*width/2.0;
         }
     }
 
@@ -95,7 +95,7 @@ static inline real getHaloScaleLength(const Halo* halo){
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric){
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric, real time){
     mwvector result = mw_vec(0.0,0.0,0.0);        //Vector with acceleration due to DF
     if (!dynaFric) {
         return result;
@@ -118,11 +118,11 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     //mw_printf("ln(L) = %.15f\n", ln_lambda);
 
     //Calculate densities from each individual component
-    real density = nbExtDensity(pot, pos);
+    real density = nbExtDensity(pot, pos, time);
     //mw_printf("rho = %.15f\n", density);
 
     //Get velocity dispersion of MW galaxy assuming isotropy
-    real sigma2 = velDispersion(pot, pos, 50.0*scaleLength_halo);
+    real sigma2 = velDispersion(pot, pos, 50.0*scaleLength_halo, time);
     //mw_printf("sig2 = %.15f\n", sigma2);
  
     //ratio of the velocity of the object to the modal velocity

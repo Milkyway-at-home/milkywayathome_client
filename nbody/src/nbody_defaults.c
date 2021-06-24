@@ -74,6 +74,8 @@ const NBodyCtx defaultNBodyCtx =
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
 
+    /* .calibrationRuns */   0,
+
     /* .pot             */  EMPTY_POTENTIAL
 };
 

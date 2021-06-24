@@ -56,7 +56,7 @@ then
     #get .lua file
     cp ./milkywayathome_client/nbody/sample_workunits/settings.lua ./mwah_nbody_lite/bin
 
-    #get exmaple manual bodies file
+    #get example manual bodies file
     cp ./milkywayathome_client/nbody/sample_workunits/manual_bodies_example.in ./mwah_nbody_lite/bin
 
     #get mwah_lite documentation and run.sh

@@ -90,6 +90,8 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st);
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 int nbVerifyFile(const NBodyFlags* nbf);
 int nbMain(const NBodyFlags* nbf);
+static NBodyCtx _ctx = EMPTY_NBODYCTX;
+static NBodyState _st = EMPTY_NBODYSTATE;
 
 #ifdef _cplusplus
 }

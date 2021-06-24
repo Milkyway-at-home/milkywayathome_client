@@ -353,8 +353,8 @@ typedef struct MW_ALIGN_TYPE
     scene_t* scene;
 
     mwvector* shiftByLMC;      /* Accelerations on MW from LMC */
-    mwvector* LMCpos;        /* Position of LMC */
-    mwvector* LMCvel;        /* Velocity of LMC */
+    mwvector LMCpos;        /* Position of LMC */
+    mwvector LMCvel;        /* Velocity of LMC */
 
     lua_State** potEvalStates;  /* If using a Lua closure as a potential, the evaluation states.
                                    We need one per thread in the general case. */
@@ -397,6 +397,9 @@ typedef struct MW_ALIGN_TYPE
     mwbool useCLCheckpointing;
     mwbool reportProgress;
 
+    
+    real previousForwardTime;   //used to calibrate bar time
+    
   #if NBODY_OPENCL
     CLInfo* ci;
     NBodyKernels* kernels;
@@ -411,21 +414,15 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL,                  \
-                           NULL, NULL , NULL,                                               \
-                           NULL,                                                            \
-                           0,                                                               \
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL,            \
+                           NULL, ZERO_VECTOR, ZERO_VECTOR,                                  \
+                           NULL, 0,                                                         \
                            0, 0, 0,                                                         \
                            0, 0, 0, 0, 0,                                                   \
                            0,                                                               \
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,          \
+                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
                            NULL, NULL, NULL, NULL}
-
-
-
-
-
 
 
 /* The context tracks settings of the simulation.  It should be set
@@ -479,22 +476,27 @@ typedef struct MW_ALIGN_TYPE
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
-    
+
+    unsigned int calibrationRuns; //for calibrating time-dependent potentials
+
     real Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
 
     Potential pot;
+
+
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
-                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                            \
-                         0, 0, FALSE,                                                                 \
-                         0, 0, 0,                                                                     \
-                         EMPTY_POTENTIAL }
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                    \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,   \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE,                                              \
+                         0, 0, FALSE,                                                                   \
+                         0,                                                                             \
+                         0, 0, 0,                                                                       \
+                         EMPTY_POTENTIAL}
 
 /* Negative codes can be nonfatal but useful return statuses.
    Positive can be different hard failures.
@@ -573,15 +575,13 @@ typedef enum
     NBODY_SAHA
 } NBodyLikelihoodMethod;
 
-
-
 NBodyStatus nbInitCL(NBodyState* st, const NBodyCtx* ctx, const CLRequest* clr);
 NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx);
 
 int destroyNBodyState(NBodyState* st);
 int nbDetachSharedScene(NBodyState* st);
 void setLMCShiftArray(NBodyState* st, mwvector* shiftArray, size_t shiftSize);
-void setLMCPosVel(NBodyState* st, mwvector* PosArray, mwvector* VelArray);
+void setLMCPosVel(NBodyState* st, mwvector PosArray, mwvector VelArray);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);

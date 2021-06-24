@@ -26,7 +26,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.79"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.80"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
@@ -85,6 +85,11 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 use_beta_comp        = true  -- calculate average beta, use in likelihood
 use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
 use_avg_dist         = true  -- calculate average distance, use in likelihood
+
+-- number of additional forward evolutions to do to calibrate the rotation of the bar
+-- numCalibrationRuns + 1 additional forward evolutions will be done
+-- if no bar potential is being used, this variable will be ignored
+numCalibrationRuns = 0
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -220,7 +225,8 @@ function makeContext()
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
-      LMCDynaFric   = LMC_DynamicalFriction
+      LMCDynaFric   = LMC_DynamicalFriction,
+      calibrationRuns = numCalibrationRuns
    }
 end
 

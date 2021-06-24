@@ -1,0 +1,4 @@
+v1.80:
+ - Added changelog
+ - Fixed context from bar update
+ - Added some informative text to README

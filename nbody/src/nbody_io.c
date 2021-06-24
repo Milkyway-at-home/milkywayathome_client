@@ -26,6 +26,7 @@
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
 #include "nbody_mass.h"
+#include <string.h>
 #include "nbody_defaults.h"
 
 static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx* ctx, const NBodyState* st)
@@ -60,7 +61,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
     if (both)
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 "x", 
                 "y",  
                 "z",  
@@ -71,19 +72,21 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
                 "v_y",
                 "v_z",
                 "mass", 
-                "v_los"
+                "v_los",
+                "type"
             );
     }
     else
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 cartesian ? "x" : "l",
                 cartesian ? "y" : "b",
                 cartesian ? "z" : "r",
                 "v_x",
                 "v_y",
                 "v_z",
-                "mass"
+                "mass",
+                "type"
             );
     }
     
@@ -95,6 +98,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     Body* p;
     mwvector lbr;
     real vLOS;
+    mwbool isLight = FALSE;
     Body* outputTab = st->bestLikelihoodBodyTab;
     if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
         outputTab = st->bodytab;
@@ -107,30 +111,36 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     for (p = outputTab; p < endp; p++)
     {
         fprintf(f, "%8d, %8d,", ignoreBody(p), idBody(p));  /* Print if model it belongs to is ignored */
+        char type[20] = "";
+        if(Type(p) == BODY(isLight)){
+            strcpy(type, "baryonic");
+        }else{
+            strcpy(type, "dark");
+        }
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %10s\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), type);
         }
         else if (nbf->outputlbrCartesian)
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22s\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS, type);   
         }
         else
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22s\n",
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), type);
         }
     }
 

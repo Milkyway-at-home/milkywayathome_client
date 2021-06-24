@@ -1,4 +1,5 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
+-- /*               2019-2021    Eric Mendelsohn */
 -- /*               2021              Tom Donlon */
 -- /*      Rensselaer Polytechnic Institute      */
 
@@ -17,10 +18,10 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.79"   -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.80"   -- -- MINIMUM APP VERSION
 
 run_null_potential    = false    -- -- NULL POTENTIAL SWITCH
-use_tree_code         = true     -- -- USE TREE CODE NOT EXACT
+use_tree_code         = true     -- -- USE TREE CODE (NOT EXACT)
 print_reverse_orbit   = false    -- -- PRINT REVERSE ORBIT SWITCH 
 print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -45,10 +46,11 @@ LMC_DynamicalFriction = true     -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF
 -- -- -- -- -- two component (baryon & dark matter) model for  -- -- -- -- --
 -- -- -- -- -- the generated dwarf galaxy -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- ModelComponent Options: 
--- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
--- --       1 - SINGLE COMPONENT MODEL -- -- -- -- -- -- -- -- -- -- -- -- --
--- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- ModelComponent Options: 
+-- --                2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- --
+-- --                1 - SINGLE COMPONENT MODEL -- -- -- -- -- -- -- -- -- --
+-- --                0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -272,7 +274,8 @@ function makeContext()
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
-      LMCDynaFric   = LMC_DynamicalFriction
+      LMCDynaFric   = LMC_DynamicalFriction,
+      calibrationRuns = 0
    }
 end
 
