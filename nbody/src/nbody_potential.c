@@ -270,6 +270,87 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
 
     const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
     mwvector R_hat;
+    X(R_hat) = X(pos) / R;
+    Y(R_hat) = Y(pos) / R;
+    Z(R_hat) = 0.0;
+
+    mwvector Z_hat;
+    X(Z_hat) = 0.0;
+    Y(Z_hat) = 0.0;
+    Z(Z_hat) = 1.0;
+
+    const real Rd = disk->scaleLength;
+    const real zd = disk->scaleHeight;
+    const real M = disk->mass;
+    const real z = Z(pos);
+    const real h = 1.0e-3;
+
+    const real a = 1.0 / Rd;
+    const real b = 1.0 / zd;
+    
+    real R_piece = 0.0;
+    real z_piece = 0.0;
+
+    real j0_zero;
+    real psi_in_0;
+    real psi_0;
+    real psi_prime_0;
+    real j0_x;
+    real j0_w;
+    real j0_x_val;
+    real j1_in0;
+    real fun_0;
+
+    real j1_zero;
+    real psi_in_1;
+    real psi_1;
+    real psi_prime_1;
+    real j1_x;
+    real j1_w;
+    real j1_x_val;
+    real jv_2;
+    real fun_1;
+
+    for (int n = 0; n < 1000; n++) {
+        j0_zero = besselJ0_zero(n);                                   // Need this function KINDA
+        j1_zero = besselJ1_zero(n);                                   // Need this function KINDA
+        psi_in_0 = h * j0_zero;
+        psi_in_1 = h * j1_zero;
+        psi_0 = psi_in_0 * mw_sinh(pi / 2.0 * mw_sinh(psi_in_0)) / mw_cosh(pi / 2.0 * mw_sinh(psi_in_0));
+        psi_1 = psi_in_1 * mw_sinh(pi / 2.0 * mw_sinh(psi_in_1)) / mw_cosh(pi / 2.0 * mw_sinh(psi_in_1));
+        psi_prime_0 = (mw_sinh(pi * mw_sinh(psi_in_0)) + pi * psi_in_0 * mw_cosh(psi_in_0)) / (mw_cosh(pi * mw_sinh(psi_in_0)) + 1);
+        psi_prime_1 = (mw_sinh(pi * mw_sinh(psi_in_1)) + pi * psi_in_1 * mw_cosh(psi_in_1)) / (mw_cosh(pi * mw_sinh(psi_in_1)) + 1);
+        j0_x = pi / h * psi_0;
+        j1_x = pi / h * psi_1;
+        j0_x_val = besselJ0(j0_x);                                   // Need this function
+        j1_x_val = besselJ1(j1_x);                                   // Need this function
+        j1_in0 = besselJ1(pi * j0_zero);                                   // Need this function
+        jv_2 = besselJ2(pi * j1_zero);                                   // Need this function
+        j0_w = 2.0 / (pi * j0_zero * mw_pow(j1_in0, 2)) * j0_x_val * psi_prime_0;
+        j1_w = 2.0 / (pi * j1_zero * mw_pow(jv_2,2)) * j1_x_val * psi_prime_1;
+        fun_1 = j1_x * mw_pow(mw_pow(a,2.0) + mw_pow(j1_x / R, 2.0), -1.5) * (b * mw_exp(-j1_x / R * mw_abs(z)) - j1_x / R * mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j1_x / R, 2.0));
+        fun_0 = mw_pow(mw_pow(a, 2.0) + mw_pow(j0_x / R, 2.0), -1.5) * j0_x / R * (mw_exp(-j0_x / R * mw_abs(z)) - mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j0_x / R, 2.0));
+        z_piece += (-4 * pi * a * b / R) * fun_0 * j0_w;
+        R_piece += (-4 * pi * a / mw_pow(R, 2.0)) * fun_1 * j1_w;
+        //mw_printf("[n,R_piece,z_piece] = [%.15f,%.15f,%.15f]\n",n,R_piece,z_piece);
+    }
+
+    mwvector R_comp = mw_mulvs(R_hat, -M * mw_pow(a,2) * b / 4 / pi * R_piece);
+    mwvector Z_comp = mw_mulvs(Z_hat, -M * mw_pow(a, 2) * b / 4 / pi * z_piece);
+
+    X(acc) = X(R_comp) + X(Z_comp);
+    Y(acc) = Y(R_comp) + Y(Z_comp);
+    Z(acc) = Z(R_comp) + Z(Z_comp);
+
+    real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
+    
+    mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
+
+    /*
+    mwvector acc;
+
+    const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
+    mwvector R_hat;
     X(R_hat) = X(pos)/R;
     Y(R_hat) = Y(pos)/R;
     Z(R_hat) = 0.0;
@@ -294,6 +375,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     const real h = (b-a)/(n*1.0);
 
     for (int k = 0; k < n; k++)     /*Five-point Gaussian Quadrature*/
+    /*
     {
         real Rpiece = 0.0;
         real Zpiece = 0.0;
@@ -318,7 +400,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     //real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
 
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
-
+    */
     return acc;
 }
 
