@@ -28,6 +28,8 @@
 #include "nbody_mass.h"
 #include <string.h>
 #include "nbody_defaults.h"
+#include "nbody_types.h"
+#include "nbody_likelihood.h"
 
 static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx* ctx, const NBodyState* st)
 {
@@ -57,11 +59,11 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
 
 }
 
-static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
+static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both, mwbool LBavailable)
 {
     if (both)
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s",
                 "x", 
                 "y",  
                 "z",  
@@ -72,22 +74,28 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
                 "v_y",
                 "v_z",
                 "mass", 
-                "v_los",
-                "type"
+                "v_los"
             );
     }
     else
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s",
                 cartesian ? "x" : "l",
                 cartesian ? "y" : "b",
                 cartesian ? "z" : "r",
                 "v_x",
                 "v_y",
                 "v_z",
-                "mass",
-                "type"
+                "mass"
             );
+    }
+    if (LBavailable)
+    {
+        fprintf(f," %22s %22s %22s\n", "type", "Lambda", "Beta");
+    }
+    else
+    {
+        fprintf(f," %22s\n", "type");
     }
     
 }
@@ -97,7 +105,25 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
 {
     Body* p;
     mwvector lbr;
+    mwvector lambdaBetaR;
+    
     real vLOS;
+    real lambda_val;
+    real beta_val;
+
+    /*Get Histogram Parameters for Lambda-Beta Calculation*/
+    NBodyLikelihoodMethod method;
+    HistogramParams hp;
+    NBHistTrig histTrig;
+    mwbool LambdaBetaAvailable = TRUE;
+    if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
+    {
+        mw_printf("Failed to get Histogram Parameters. Not including Lambda-Beta in Output file.\n");
+        LambdaBetaAvailable = FALSE;
+    }
+    nbGetHistTrig(&histTrig, &hp);
+    /*----------------------------------------------------*/
+
     mwbool isLight = FALSE;
     Body* outputTab = st->bestLikelihoodBodyTab;
     if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
@@ -106,7 +132,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     const Body* endp = outputTab + st->nbody;
 
     nbPrintSimInfoHeader(f, nbf, ctx, st);
-    nbPrintBodyOutputHeader(f, nbf->outputCartesian, nbf->outputlbrCartesian);
+    nbPrintBodyOutputHeader(f, nbf->outputCartesian, nbf->outputlbrCartesian, LambdaBetaAvailable);
 
     for (p = outputTab; p < endp; p++)
     {
@@ -120,27 +146,38 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %10s\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f,",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), type);
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
         else if (nbf->outputlbrCartesian)
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22s\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f,",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS, type);   
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
         }
         else
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22s\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f,",
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), type);
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+        }
+        if (LambdaBetaAvailable)
+        {
+            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
+            lambda_val = L(lambdaBetaR);
+            beta_val = B(lambdaBetaR);
+            fprintf(f," %22s, %22.15f, %22.15f\n", type, lambda_val, beta_val);
+        }
+        else
+        {
+            fprintf(f," %22s\n", type);
         }
     }
 

@@ -914,7 +914,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbRemoveOutliers(st, all->histograms[1], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist, nBin);
             nbCalcDisp(all->histograms[1], FALSE, ctx->BetaCorrect);
         }
     }
@@ -922,7 +922,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbRemoveOutliers(st, all->histograms[2], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist, nBin);
             nbCalcDisp(all->histograms[2], FALSE, ctx->VelCorrect);
         }
     }
@@ -933,7 +933,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist);
+            nbRemoveOutliers(st, all->histograms[3], use_velbody, vlos, ctx->VelSigma, ctx->sunGCDist, nBin);
             nbCalcDisp(all->histograms[3], FALSE, ctx->VelCorrect);
         }
         for (unsigned int i = 0; i < nBin; ++i)
@@ -957,7 +957,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist);
+            nbRemoveOutliers(st, all->histograms[4], use_betabody, betas, ctx->BetaSigma, ctx->sunGCDist, nBin);
             nbCalcDisp(all->histograms[4], FALSE, ctx->BetaCorrect);
         }
         for (unsigned int i = 0; i < nBin; ++i)
@@ -981,7 +981,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->DistSigma, ctx->sunGCDist);
+            nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->DistSigma, ctx->sunGCDist, nBin);
             nbCalcDisp(all->histograms[5], FALSE, ctx->DistCorrect);
         }
         for (unsigned int i = 0; i < nBin; ++i)
@@ -989,6 +989,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             int ddenom = all->histograms[5]->data[i].rawCount - all->histograms[5]->data[i].outliersRemoved;
             if(ddenom > 10)
             {
+                // calculates error first because the dispersion is stored as the variable at the moment
+                // dispersion is used for error calc, then variable is overwritten as the average distance (as it should be)
                 all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom);
                 all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
             }

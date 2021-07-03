@@ -243,7 +243,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
     
 }
 
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist)
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist, int histBins)
 {
     unsigned int Histindex;
     Body* p;
@@ -254,7 +254,24 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
     
     histData = histogram->data;
 
-    real bin_ave, bin_sigma, new_count, this_var;
+    real bin_sigma, new_count, this_var;
+
+    /*Calculate old average and reset counters and sums for each histogram bin*/
+    real bin_ave[histBins];
+    real temp_sum[histBins];
+    real temp_sqr[histBins];
+    unsigned int temp_removed[histBins];
+
+    for (unsigned int indx1 = 0; indx1 < histBins; ++indx1)
+    {
+        new_count = (real) (histData[indx1].rawCount - histData[indx1].outliersRemoved);
+        bin_ave[indx1] = histData[indx1].sum / new_count;
+        temp_sum[indx1] = 0.0;
+        temp_sqr[indx1] = 0.0;
+        temp_removed[indx1] = 0;
+        //mw_printf("Cleared Bin %d\n",indx1);
+    }
+    /*------------------------------------------------------------------------*/
     
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -266,24 +283,21 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
             if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
             {   
                 Histindex = (int) use_body[counter];
+                //mw_printf("Histogram Index = %d\n",Histindex);
                 
                 this_var = var[counter];
-
-                /* bin count minus what was already removed */
-                new_count = ((real) histData[Histindex].rawCount - histData[Histindex].outliersRemoved);
                 
-                /* average bin */
-                bin_ave = histData[Histindex].sum / new_count;
-                
-                /* the sigma for the bin is the same as the dispersion */
+                /* Use old standard deviation calculated before */
                 bin_sigma = histData[Histindex].variable;
                 
-                if(mw_fabs(bin_ave - this_var) > sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
+                if(mw_fabs(bin_ave[Histindex] - this_var) < sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
                 {
-                    histData[Histindex].sum -= this_var;//remove from vel dis sums
-                    histData[Histindex].sq_sum -= sqr(this_var);
-                    histData[Histindex].outliersRemoved++;//keep track of how many are being removed
-                    use_body[counter] = DEFAULT_NOT_USE;//marking the body as having been rejected as outlier
+                    temp_sum[Histindex] += this_var;
+                    temp_sqr[Histindex] += this_var*this_var;
+                }
+                else
+                {
+                    temp_removed[Histindex]++;//keep track of how many are being removed
                 }
 
                 
@@ -291,8 +305,14 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
             counter++;
         }
     }
-    
-    
+    //mw_printf("FINISED BODY COUNT\n");
+    for (unsigned int indx2 = 0; indx2 < histBins; ++indx2)
+    {
+        histData[indx2].sum = temp_sum[indx2];
+        histData[indx2].sq_sum = temp_sqr[indx2];
+        histData[indx2].outliersRemoved = temp_removed[indx2];
+        mw_printf("Outliers Removed @ Index %d = %d\n",indx2,histData[indx2].outliersRemoved);
+    }
 }
 
 
