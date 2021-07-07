@@ -44,7 +44,6 @@ static EvaluationState* sharedEs = NULL;
 static void separationGraphicsCallback()
 {
     *sharedEs = *ges;
-    sharedEs->integrals = NULL;
     /* copyEvaluationState(sharedEs, ges); */
 }
 
