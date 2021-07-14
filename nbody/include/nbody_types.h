@@ -585,6 +585,7 @@ void setLMCPosVel(NBodyState* st, mwvector PosArray, mwvector VelArray);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
+void clonePartialNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
 void sortBodies(Body* bodies, int nbody);

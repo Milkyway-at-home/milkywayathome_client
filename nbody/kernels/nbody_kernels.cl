@@ -25,6 +25,10 @@
  * bug on 10.6 where the D will be stripped. -DDOUBLEPREC=1 will
  * actually define OUBLEPREC */
 
+#if cl_khr_fp64
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#endif
+
 #ifdef OUBLEPREC
   #define DOUBLEPREC OUBLEPREC
 #endif
@@ -55,9 +59,9 @@
   #error Opening criterion not set
 #endif
 
-#if USE_EXTERNAL_POTENTIAL && ((!MIYAMOTO_NAGAI_DISK && !EXPONENTIAL_DISK) || (!LOG_HALO && !NFW_HALO && !TRIAXIAL_HALO))
-  #error Potential defines misspecified
-#endif
+//#if USE_EXTERNAL_POTENTIAL && ((!MIYAMOTO_NAGAI_DISK && !FREEMAN_DISK && !DOUBLEEXPO_DISK && !SECHEXPO_DISK) || (!LOG_HALO && !NFW_HALO && !TRIAXIAL_HALO))
+//  #error Potential defines misspecified
+//#endif
 
 #if WARPSIZE <= 0
   #error Invalid warp size
@@ -210,14 +214,71 @@ typedef struct
 typedef __global volatile real* restrict RVPtr;
 typedef __global volatile int* restrict IVPtr;
 
-
-
-inline real4 sphericalAccel(real4 pos, real r)
+inline real lnfact(int n){
+    int counter;
+    real result = 0.0;
+    if(n > 0){
+        for (counter = n; counter >= 1 ; counter--) {
+            result += log((real) counter);
+        }
+    }
+    return result;
+}
+inline real binom(int n, int k)
 {
+    return exp(lnfact(n)-lnfact(k)-lnfact(n-k));
+}
+inline real leg_pol(real x, int l){
+    real sum = 0.0;
+    for (int m = 0; m < floor((double) l/2) + 1; ++m) {
+        sum+= pow((double) -1,m) * pow((double)x,l-2*m)/pow((double)2,l) * binom(l,m) * binom(2*(l-m),l);
+    }
+    if (x == 0.0){
+        if(l*1.0/2.0 == ceil(l*1.0/2.0)){
+            sum = pow((double)-1,l/2)*exp(lnfact(l) - 2 * lnfact(l/2)-l*log((double)2));
+        } else {
+            sum = 0.0;
+        }
+    }
+    return sum;
+}
+inline real leg_pol_derv(real x, int l)
+{
+    real sum = 0.0;
+    for (int m = 0; m < floor( (double) (l-1)/2)+1; m++)
+    {
+        sum += pow((double)-1, m)*pow((double)x, l - 2*m - 1)/pow((double)2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m);
+    }
+    return sum;
+}
+inline real lower_gamma(int n, real x){
+    real sum = 0;
+    for (int k = 0; k < n; ++k) {
+        sum += pow(x,k)/exp(lnfact(k));
+    }
+    return exp(lnfact(n-1))*(1-exp(-x)*sum);
+}
+
+inline real GenExpIntegral(int n, real x){
+    return exp(-x)/(x + n/(1+1/(x + (n+1)/(1 + 2/(x + (n+2)/(1 + 3/(x + (n+3)/(1 + 4/(x + (n+4)/(1 + 5/(x + (n+5)/(1 + 6/(x + (n+6)/(1 + 7/(x + (n+7)/(1 + 8/(x + (n+8)/(1 + 9/(x + (n+9)/11)))))))))))))))))));
+}
+
+
+inline real4 hernquistSphericalAccel(real4 pos, real r)
+{
+
     const real tmp = SPHERICAL_SCALE + r;
 
     return (-SPHERICAL_MASS / (r * sqr(tmp))) * pos;
 }
+
+inline real4 plummerSphericalAccel(real4 pos, real r)
+{
+    const real tmp = sqrt(sqr(SPHERICAL_SCALE)+sqr(r));
+
+    return (-SPHERICAL_MASS / cube(tmp)) * pos;
+}
+
 
 /* gets negative of the acceleration vector of this disk component */
 inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
@@ -239,15 +300,92 @@ inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
     return acc;
 }
 
-inline real4 exponentialDiskAccel(real4 pos, real r)
+inline real4 freemanDiskAccel(real4 pos, real r)
 {
-    const real b = DISK_SCALE_LENGTH;
+    real4 acc;
+    acc.x = 0;
+    acc.y = 0;
+    acc.z = 0;
+    acc.w = 0;
+    const real4 r_hat = (1.0/r) * pos;
+    const real r_proj = sqrt(sqr(pos.x)+sqr(pos.y));
 
-    const real expPiece = exp(-r / b) * (r + b) / b;
-    const real factor   = DISK_MASS * (expPiece - 1.0) / cube(r);
+    real4 theta_hat;
+    theta_hat.x = pos.x *pos.z/r/r_proj;
+    theta_hat.y = pos.y *pos.z/r/r_proj;
+    theta_hat.z = -r_proj/r;
 
-    return factor * pos;
+    const real scl = DISK_SCALE_LENGTH;
+    const real M = DISK_MASS;
+    const real costheta = pos.z/r;
+    const real sintheta = r_proj/r;
+
+    real r_f = 0.0;
+    real theta_f = 0.0;
+    real a_r = 0.0;
+    real b_r = 0.0;
+    real p0 = 0.0;
+    real pcos = 0.0;
+
+    for (int l = 0; l < 5; ++l) {
+        if(l > 0){
+            a_r = GenExpIntegral(2*l,r/scl);
+        } else {
+            a_r = 0.0;
+        }
+        b_r = pow(scl/r,2*l+2)*lower_gamma(2*l+2,r/scl);
+        p0 = leg_pol(0,2*l);
+        pcos = leg_pol(costheta,2*l);
+        r_f += p0*pcos*(2*l*a_r - (2*l+1)*b_r);
+        if(l > 0){
+            theta_f-= p0*(a_r + b_r)*sintheta*leg_pol_derv(costheta,2*l);
+        }
+    }
+
+    real4 r_comp = (r_f*M/sqr(scl)) * r_hat;
+    real4 theta_comp = theta_hat* (theta_f*M/sqr(scl));
+
+    acc.x = r_comp.x + theta_comp.x;
+    acc.x = r_comp.y + theta_comp.y;
+    acc.x = r_comp.z + theta_comp.z;
+
+    return acc;
 }
+//inline real4 doubleExponentialDiskAccel(real4 pos, real r){ //FIXME
+//    real4 acc;
+//    const real R = sqrt(sqr(pos.x)+sqr(pos.y));
+//    real4 R_hat = {pos.x/R,pos.y/R,0};
+//    real4 Z_hat = {0.0,0.0,1.0};
+//    const real Rd = DISK_SCALE_LENGTH;
+//    const real zd = DISK_SCALE_HEIGHT;
+//    const real M = DISK_MASS;
+//    const real z = pos.z;
+//    const int n = 15;
+//    const real a = 0.0;
+//    const real b = 60.0/R;
+//    real integralR = 0.0;
+//    real integralZ = 0.0;
+//    const real weight[] = {0.236927,0.478629,0.568889,0.478629,0.236927};
+//    const real point[] = {-0.90618,-0.538469,0.0,0.538469,0.90618};
+//    const real h = (b-a)/(n*1.0);
+//
+//    for (int k = 0; k < n; k++)     /*Five-point Gaussian Quadrature*/
+//    {
+//        real Rpiece = 0.0;
+//        real Zpiece = 0.0;
+//        real k_val = 0.0;
+//        for (int j = 0; j < 5; j++)
+//        {
+//            k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
+//            Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/2.0; //FIXME
+//            Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/2.0; //FIXME
+//        }
+//        integralR  = integralR + Rpiece;
+//        integralZ  = integralZ + Zpiece;
+//    }
+//    return acc;
+//
+//}
 
 inline real4 logHaloAccel(real4 pos, real r)
 {
@@ -272,7 +410,7 @@ inline real4 nfwHaloAccel(real4 pos, real r)
 {
     const real a  = HALO_SCALE_LENGTH;
     const real ar = a + r;
-    const real c  = a * sqr(HALO_VHALO) * (r - ar * log((a + r) / a)) / (0.2162165954 * cube(r) * ar);
+    const real c  = a * sqr(HALO_VHALO) * (r - ar * log((double)(a + r) / a)) / (0.2162165954 * cube(r) * ar);
 
     return c * pos;
 }
@@ -307,43 +445,224 @@ inline real4 triaxialHaloAccel(real4 pos, real r)
     return acc;
 }
 
+inline real4 ASHaloAccel(real4 pos, real r){
+	const real gam = HALO_GAMMA;
+	const real lam = HALO_LAMBDA;
+	const real M = HALO_MASS;
+	const real a = HALO_SCALE_LENGTH;
+	const real scaleR = r/a;
+	const real scaleL = lam/a;
+	real c;
+
+	if (r<lam){
+	    c = -(M/sqr(a))*pow(scaleR,gam-2)/(1+pow(scaleR,gam-1));
+    } else {
+	    c = -(M/sqr(r))*pow(scaleL,gam)/(1+pow(scaleL,gam-1));
+    }
+
+	real4 acc;
+	acc.x = pos.x * c/r;
+	acc.y = pos.y * c/r;
+	acc.z = pos.z * c/r;
+	return acc;
+}
+
+inline real4 WEHaloAccel(real4 pos, real r){
+	const real a = HALO_SCALE_LENGTH;
+	const real M = HALO_MASS;
+	const real sum2 = sqr(a) + sqr(r);
+	const real c = (-M/r)*(a + sqrt(sum2))/(sum2 + a*sqrt(sum2));
+
+	real4 acc;
+	acc.x = pos.x * c/r;
+	acc.y = pos.y * c/r;
+	acc.z = pos.z * c/r;
+	return acc;
+}
+
+inline real4 NFWMHaloAccel(real4 pos, real r){
+	const real a = HALO_SCALE_LENGTH;
+	const real M = HALO_MASS;
+	const real ar = a + r;
+	const real c = (-M/sqr(r))*(log(ar/a)/r - 1/ar);
+
+	real4 acc;
+	acc.x = pos.x * c;
+	acc.y = pos.y * c;
+	acc.z = pos.z * c;
+	return acc;
+}
+
+inline real4 plummerHaloAccel(real4 pos, real r){
+	const real tmp = sqrt(sqr(HALO_SCALE_LENGTH) + sqr(r));
+	real4 acc;
+	acc.x = pos.x * -HALO_MASS / cube(tmp);
+	acc.y = pos.y * -HALO_MASS / cube(tmp);
+	acc.z = pos.z * -HALO_MASS / cube(tmp);
+	return acc;
+
+}
+
+inline real4 hernquistHaloAccel(real4 pos, real r){
+	const real tmp = HALO_SCALE_LENGTH + r;
+	real4 acc;
+ 	acc.x = pos.x * - HALO_MASS / (r * sqr(tmp));
+ 	acc.y = pos.y * - HALO_MASS / (r * sqr(tmp));
+ 	acc.z = pos.z * - HALO_MASS / (r * sqr(tmp));
+	return acc;
+}
+
+inline real4 ninkovicHaloAccel(real4 pos, real r){
+	const real rho0 = HALO_RHO0;
+	const real a = HALO_SCALE_LENGTH;
+	const real lambda = HALO_LAMBDA;
+	const real z = r/a;
+	const real zl = lambda/a;
+	const real f = 4.0 * 3.1415926535 / 3.0 * rho0 * cube(a);
+	real mass_enc;
+	
+	if(r > lambda){
+		mass_enc = f* (log(1.0+cube(zl)) - cube(zl)/(1+cube(zl)));
+	} else {
+		mass_enc = f* (log(1.0+cube(z)) - cube(z)/(1+cube(zl)));
+	}
+	real4 acc;
+	acc.x = pos.x * -mass_enc/cube(r);
+	acc.y = pos.y * -mass_enc/cube(r);
+	acc.z = pos.z * -mass_enc/cube(r);
+	return acc;
+}
 inline real4 externalAcceleration(real x, real y, real z)
 {
     real4 pos = { x, y, z, 0.0 };
     real r = sqrt(sqr(x) + sqr(y) + sqr(z));
     //real r = length(pos); // crashes AMD compiler
     real4 acc;
+    real4 acctmp;
+    switch(DISK_TYPE){
 
-    if (MIYAMOTO_NAGAI_DISK)
-    {
-        acc = miyamotoNagaiDiskAccel(pos, r);
+        case 0:
+            acc.x = 0;
+            acc.y = 0;
+            acc.z = 0;
+            break;
+        case 1:
+            acc = miyamotoNagaiDiskAccel(pos,r);
+            break;
+        case 2:
+            acc = freemanDiskAccel(pos,r);
+            break;
+        case 3:
+            printf("Not yet implemented\n");
+            break;
+        case 4:
+            printf("Not yet implemented\n");
+            break;
+        default:
+            printf("Invalid Disk\n");
+            break;
     }
-    else if (EXPONENTIAL_DISK)
-    {
-        acc = exponentialDiskAccel(pos, r);
+    switch(DISK_2_TYPE){
+        case 0:
+            acctmp.x = 0;
+            acctmp.y = 0;
+            acctmp.z = 0;
+            break;
+        case 1:
+            acctmp = miyamotoNagaiDiskAccel(pos,r);
+            break;
+        case 2:
+            acctmp = freemanDiskAccel(pos,r);
+            break;
+        case 3:
+            printf("Not yet implemented\n");
+            break;
+        case 4:
+            printf("Not yet implemented\n");
+            break;
+        default:
+            printf("Invalid Disk\n");
+            break;
     }
 
-    if (LOG_HALO)
-    {
-        acc += logHaloAccel(pos, r);
-    }
-    else if (NFW_HALO)
-    {
-        acc += nfwHaloAccel(pos, r);
-    }
-    else if (TRIAXIAL_HALO)
-    {
-        acc += triaxialHaloAccel(pos, r);
+
+    acc.x+=acctmp.x;
+    acc.y+=acctmp.y;
+    acc.z+=acctmp.z;
+    switch(HALO_TYPE){
+		case 0:
+			acctmp.x = 0;
+    		acctmp.y = 0;
+    		acctmp.z = 0;
+    		break;
+		case 1:
+			acctmp = logHaloAccel(pos, r);
+			break;
+		case 2:
+			acctmp = nfwHaloAccel(pos,r);
+			break;
+		case 3:
+			acctmp = triaxialHaloAccel(pos,r);
+			break;
+		case 4:
+			//Caustic halo
+			break;
+		case 5:
+			acctmp = ASHaloAccel(pos,r);
+			break;
+		case 6:
+			acctmp = WEHaloAccel(pos,r);
+			break;
+		case 7:
+			acctmp = NFWMHaloAccel(pos,r);
+			break;
+		case 8:
+			acctmp = plummerHaloAccel(pos,r);
+			break;
+		case 9:
+			acctmp = hernquistHaloAccel(pos,r);
+			break;
+		case 10:
+			acctmp = ninkovicHaloAccel(pos,r);
+			break;
+    	default:
+			printf("Error\n");
+        	acctmp.x = 0;
+        	acctmp.y = 0;
+        	acctmp.z = 0;
+        	break;
     }
 
-    acc += sphericalAccel(pos, r);
+    acc.x+=acctmp.x;
+    acc.y+=acctmp.y;
+    acc.z+=acctmp.z;
+    switch(SPHERE_TYPE){
+        case 0:
+            acctmp.x = 0;
+            acctmp.y = 0;
+            acctmp.z = 0;
+            break;
+            //zero
+        case 1:
+            acctmp = hernquistSphericalAccel(pos,r);
+            break;
+        case 2:
+            acctmp = plummerSphericalAccel(pos,r);
+        default:
+            printf("ERROR\n");
+            acctmp.x = 0;
+            acctmp.y = 0;
+            acctmp.z = 0;
+            break;
+    }
 
+    acc.x+=acctmp.x;
+    acc.y+=acctmp.y;
+    acc.z+=acctmp.z;
     return acc;
+
+
 }
-
-
-
-
 /* All kernels will use the same parameters for now */
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
@@ -372,8 +691,8 @@ inline real4 externalAcceleration(real x, real y, real z)
 __attribute__ ((reqd_work_group_size(THREADS1, 1, 1)))
 __kernel void NBODY_KERNEL(boundingBox)
 {
-    __local volatile real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
-    __local volatile real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
+__local volatile real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
+__local volatile real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
 
     uint i = (uint) get_local_id(0);
     if (i == 0)
@@ -389,9 +708,10 @@ __kernel void NBODY_KERNEL(boundingBox)
     minY[i] = maxY[i] = minY[0];
     minZ[i] = maxZ[i] = minZ[0];
 
+
     uint inc = get_local_size(0) * get_num_groups(0);
     uint j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0) (- get_global_offset(0))
-    while (j < NBODY) /* Scan bodies */
+    while (j < NBODY - 1) /* Scan bodies */
     {
         real tmp = _posX[j];
         minX[i] = fmin(minX[i], tmp);
@@ -404,6 +724,7 @@ __kernel void NBODY_KERNEL(boundingBox)
         tmp = _posZ[j];
         minZ[i] = fmin(minZ[i], tmp);
         maxZ[i] = fmax(maxZ[i], tmp);
+
 
         j += inc;  /* Move on to next body */
     }
@@ -805,7 +1126,9 @@ inline real bmax2Inc(real cmPos, real pPos, real psize)
 
 inline bool checkTreeDim(real cmPos, real pPos, real halfPsize)
 {
+//    printf("%lf %lf %lf %d\n",cmPos,pPos,halfPsize,(cmPos < pPos - halfPsize || cmPos > pPos + halfPsize));
     return (cmPos < pPos - halfPsize || cmPos > pPos + halfPsize);
+
 }
 
 
@@ -1109,6 +1432,7 @@ __kernel void NBODY_KERNEL(summarization)
                 if (SW93 || TREECODE)
                 {
                     /* We don't have the size of the cell for BH86, but really still should check */
+
                     bool xTest = checkTreeDim(px, cx, psize);
                     bool yTest = checkTreeDim(py, cy, psize);
                     bool zTest = checkTreeDim(pz, cz, psize);
@@ -1455,27 +1779,49 @@ inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 {
     uint result;
 
-  #if DOUBLEPREC
-    asm("{\n\t"
-        ".reg .pred cond, out;\n\t"
-        "setp.ge.f64 cond, %1, %2;\n\t"
-        "vote.all.pred out, cond;\n\t"
-        "selp.u32 %0, 1, 0, out;\n\t"
-        "}\n\t"
-        : "=r"(result)
-        : "d"(rSq), "d"(rCritSq));
-  #else
-    asm("{\n\t"
-        ".reg .pred cond, out;\n\t"
-        "setp.ge.f32 cond, %1, %2;\n\t"
-        "vote.all.pred out, cond;\n\t"
-        "selp.u32 %0, 1, 0, out;\n\t"
-        "}\n\t"
-        : "=r"(result)
-        : "f"(rSq), "f"(rCritSq));
-  #endif /* DOUBLEPREC */
-
-    return result;
+  #if __OPENCL_VERSION__ >= 120
+    #if DOUBLEPREC
+      /* Changed to use vote.sync to support new ptx standard, used 0xFFFFFFFF for full mask of threads to emulate utilizing whole warp*/
+      asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f64 cond, %1, %2;\n\t"
+          "vote.sync.all.pred out, cond, 0xFFFFFFFF;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "d"(rSq), "d"(rCritSq));
+    #else
+      asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f32 cond, %1, %2;\n\t"
+          "vote.sync.all.pred out, cond, 0xFFFFFFFF;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "f"(rSq), "f"(rCritSq));
+    #endif /* DOUBLEPREC */
+  #else 
+     #if DOUBLEPREC
+       asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f64 cond, %1, %2;\n\t"
+          "vote.all.pred out, cond;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "d"(rSq), "d"(rCritSq));
+    #else
+       asm("{\n\t"
+          ".reg .pred cond, out;\n\t"
+          "setp.ge.f32 cond, %1, %2;\n\t"
+          "vote.all.pred out, cond;\n\t"
+          "selp.u32 %0, 1, 0, out;\n\t"
+          "}\n\t"
+          : "=r"(result)
+          : "f"(rSq), "f"(rCritSq));
+    #endif /* DOUBLEPREC */
+  #endif /* If version is high enough */  
+   return result;
 }
 #endif /* HAVE_INLINE_PTX */
 
@@ -1834,6 +2180,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             if (!skipSelf)
             {
                 _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST;
+
             }
 
 
