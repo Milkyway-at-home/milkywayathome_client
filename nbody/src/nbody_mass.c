@@ -260,7 +260,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
     real bin_ave[histBins];
     real temp_sum[histBins];
     real temp_sqr[histBins];
-    unsigned int temp_removed[histBins];
+    real temp_removed[histBins];
 
     for (unsigned int indx1 = 0; indx1 < histBins; ++indx1)
     {
@@ -268,7 +268,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
         bin_ave[indx1] = histData[indx1].sum / new_count;
         temp_sum[indx1] = 0.0;
         temp_sqr[indx1] = 0.0;
-        temp_removed[indx1] = 0;
+        temp_removed[indx1] = 0.0;
         //mw_printf("Cleared Bin %d\n",indx1);
     }
     /*------------------------------------------------------------------------*/
@@ -297,7 +297,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                 }
                 else
                 {
-                    temp_removed[Histindex]++;//keep track of how many are being removed
+                    temp_removed[Histindex]+=1.0;//keep track of how many are being removed
                 }
 
                 
@@ -311,7 +311,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
         histData[indx2].sum = temp_sum[indx2];
         histData[indx2].sq_sum = temp_sqr[indx2];
         histData[indx2].outliersRemoved = temp_removed[indx2];
-        mw_printf("Outliers Removed @ Index %d = %d\n",indx2,histData[indx2].outliersRemoved);
+        //mw_printf("Outliers Removed @ Index %d = %.15f\n",indx2,histData[indx2].outliersRemoved);
     }
 }
 
