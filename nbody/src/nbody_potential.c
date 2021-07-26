@@ -277,7 +277,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     mwvector Z_hat;
     X(Z_hat) = 0.0;
     Y(Z_hat) = 0.0;
-    Z(Z_hat) = 1.0;
+    Z(Z_hat) = Z(pos) / mw_abs(Z(pos));
 
     const real Rd = disk->scaleLength;
     const real zd = disk->scaleHeight;
@@ -307,9 +307,9 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     real j1_w;
     real fun_1;
 
-    for (int n = 0; n < 1000; n+=1) {
-        j0_zero = besselJ0_zero(n);                              
-        j1_zero = besselJ1_zero(n);                                  
+    for (int n = 0; n < 300; n+=1) {
+        j0_zero = besselJ0_zero(n)/pi;
+        j1_zero = besselJ1_zero(n)/pi;
         psi_in_0 = h * j0_zero;
         psi_in_1 = h * j1_zero;
         psi_0 = psi_in_0 * mw_sinh(pi / 2.0 * mw_sinh(psi_in_0)) / mw_cosh(pi / 2.0 * mw_sinh(psi_in_0));
@@ -323,14 +323,14 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         j1_w = 2.0 / (pi * j1_zero * mw_pow(besselJ2(pi * j1_zero),2)) * besselJ1(j1_x) * psi_prime_1;
 
         //mw_printf("at n = %.3i , j0_w = 2.0 / (pi * %.6f * %.6f ^2) * %.6f * %.6f =   %.6f \n", n, j0_zero, besselJ1(pi * j0_zero), besselJ0(j0_x), psi_prime_0, j0_w);
-        //mw_printf("at n = %.3i , j1_w = 2.0 / (pi * %.6f * %.6f ^2) * %.6f * %.6f =   %.6f \n", n, j1_zero, besselJ2(pi * j1_zero), besselJ1(j1_x), psi_prime_1, j1_w);
+        //mw_printf("at n = %.3i , j1_w = 2.0 / (pi * %.6f * %.6f ^2) * %.6f * %.6f =  %.6f \n", n, j1_zero, besselJ2(pi * j1_zero), besselJ1(j1_x), psi_prime_1, j1_w);
 
         fun_1 = j1_x * mw_pow(mw_pow(a,2.0) + mw_pow(j1_x / R, 2.0), -1.5) * (b * mw_exp(-j1_x / R * mw_abs(z)) - j1_x / R * mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j1_x / R, 2.0));
         fun_0 = mw_pow(mw_pow(a, 2.0) + mw_pow(j0_x / R, 2.0), -1.5) * j0_x / R * (mw_exp(-j0_x / R * mw_abs(z)) - mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j0_x / R, 2.0));
 
-        real z_pieceAdd = (-4 * pi * a * b / R) * fun_0 * j0_w;
-        real R_pieceAdd = (-4 * pi * a / mw_pow(R, 2.0)) * fun_1 * j1_w;
-        // mw_printf("z_piece Addition = %.6f , R_piece Addition = %.6f\n", z_pieceAdd, R_pieceAdd);
+        real z_pieceAdd = (4.0 * pi * a * b / R) * fun_0 * j0_w;
+        real R_pieceAdd = (4.0 * pi * a / mw_pow(R, 2.0)) * fun_1 * j1_w;
+        //mw_printf("n = %.3i   R_piece Addition = %.10f = 4 * pi * %.6f / %.6f * %.8f * %.6f * %.6f\n",n, R_pieceAdd * -M * mw_pow(a, 2) * b / 4 / pi,a,mw_pow(R,2.0),fun_1,j1_w,-M * mw_pow(a, 2) * b / 4 / pi);
         z_piece += z_pieceAdd;
         R_piece += R_pieceAdd;
         //mw_printf("[n,R_piece,z_piece] = [%.15f,%.15f,%.15f]\n",n,R_piece,z_piece);
@@ -344,7 +344,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     Z(acc) = Z(R_comp) + Z(Z_comp);
 
     real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
-    
+    return acc;
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]  Magnitude = %.15f  Pos[R,z] = [%.15f,%.15f]\n",X(acc),Y(acc),Z(acc),magnitude,R,z);
 
     /*
@@ -402,7 +402,6 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
 
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
     */
-    return acc;
 }
 
 /*WARNING: This potential can take a while to integrate if any part of the orbit extends past 100 times the scaleLength*/
