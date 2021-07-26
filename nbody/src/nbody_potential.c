@@ -307,7 +307,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     real j1_w;
     real fun_1;
 
-    for (int n = 0; n < 300; n+=1) {
+    for (int n = 0; n < 150; n+=1)    // Hidenori Ogata's Numerical Integration Formula Based on the Bessel Functions
+    {
         j0_zero = besselJ0_zero(n)/pi;
         j1_zero = besselJ1_zero(n)/pi;
         psi_in_0 = h * j0_zero;
@@ -322,18 +323,14 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         j0_w = 2.0 / (pi * j0_zero * mw_pow(besselJ1(pi * j0_zero), 2)) * besselJ0(j0_x) * psi_prime_0;
         j1_w = 2.0 / (pi * j1_zero * mw_pow(besselJ2(pi * j1_zero),2)) * besselJ1(j1_x) * psi_prime_1;
 
-        //mw_printf("at n = %.3i , j0_w = 2.0 / (pi * %.6f * %.6f ^2) * %.6f * %.6f =   %.6f \n", n, j0_zero, besselJ1(pi * j0_zero), besselJ0(j0_x), psi_prime_0, j0_w);
-        //mw_printf("at n = %.3i , j1_w = 2.0 / (pi * %.6f * %.6f ^2) * %.6f * %.6f =  %.6f \n", n, j1_zero, besselJ2(pi * j1_zero), besselJ1(j1_x), psi_prime_1, j1_w);
-
         fun_1 = j1_x * mw_pow(mw_pow(a,2.0) + mw_pow(j1_x / R, 2.0), -1.5) * (b * mw_exp(-j1_x / R * mw_abs(z)) - j1_x / R * mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j1_x / R, 2.0));
         fun_0 = mw_pow(mw_pow(a, 2.0) + mw_pow(j0_x / R, 2.0), -1.5) * j0_x / R * (mw_exp(-j0_x / R * mw_abs(z)) - mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j0_x / R, 2.0));
 
         real z_pieceAdd = (4.0 * pi * a * b / R) * fun_0 * j0_w;
         real R_pieceAdd = (4.0 * pi * a / mw_pow(R, 2.0)) * fun_1 * j1_w;
-        //mw_printf("n = %.3i   R_piece Addition = %.10f = 4 * pi * %.6f / %.6f * %.8f * %.6f * %.6f\n",n, R_pieceAdd * -M * mw_pow(a, 2) * b / 4 / pi,a,mw_pow(R,2.0),fun_1,j1_w,-M * mw_pow(a, 2) * b / 4 / pi);
+        
         z_piece += z_pieceAdd;
         R_piece += R_pieceAdd;
-        //mw_printf("[n,R_piece,z_piece] = [%.15f,%.15f,%.15f]\n",n,R_piece,z_piece);
     }
 
     mwvector R_comp = mw_mulvs(R_hat, -M * mw_pow(a,2) * b / 4 / pi * R_piece);
@@ -344,64 +341,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     Z(acc) = Z(R_comp) + Z(Z_comp);
 
     real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
-    return acc;
-    //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]  Magnitude = %.15f  Pos[R,z] = [%.15f,%.15f]\n",X(acc),Y(acc),Z(acc),magnitude,R,z);
-
-    /*
-    mwvector acc;
-
-    const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
-    mwvector R_hat;
-    X(R_hat) = X(pos)/R;
-    Y(R_hat) = Y(pos)/R;
-    Z(R_hat) = 0.0;
-
-    mwvector Z_hat;
-    X(Z_hat) = 0.0;
-    Y(Z_hat) = 0.0;
-    Z(Z_hat) = 1.0;
-
-    const real Rd = disk->scaleLength;
-    const real zd = disk->scaleHeight;
-    const real M = disk->mass;
-    const real z = Z(pos);
-
-    const int n = 15;
-    const real a = 0.0;
-    const real b = 60.0/R;
-    real integralR = 0.0;
-    real integralZ = 0.0;
-    const real weight[] = {0.236927,0.478629,0.568889,0.478629,0.236927};
-    const real point[] = {-0.90618,-0.538469,0.0,0.538469,0.90618};
-    const real h = (b-a)/(n*1.0);
-
-    for (int k = 0; k < n; k++)     /*Five-point Gaussian Quadrature*/
-    /*
-    {
-        real Rpiece = 0.0;
-        real Zpiece = 0.0;
-        real k_val = 0.0;
-        for (int j = 0; j < 5; j++)
-        {
-            k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
-            Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/2.0;
-            Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/2.0;
-        }
-        integralR  = integralR + Rpiece;
-        integralZ  = integralZ + Zpiece;
-    }
-
-    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/pi*integralR);
-    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/pi*integralZ);
-
-    X(acc) = X(R_comp) + X(Z_comp);
-    Y(acc) = Y(R_comp) + Y(Z_comp);
-    Z(acc) = Z(R_comp) + Z(Z_comp);
-
-    //real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
-
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
-    */
+    return acc;
 }
 
 /*WARNING: This potential can take a while to integrate if any part of the orbit extends past 100 times the scaleLength*/
