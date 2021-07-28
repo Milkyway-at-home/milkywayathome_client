@@ -210,7 +210,7 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
     if (writing)
     {
                    /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector);
+        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector) + sizeof(*st) + sizeof(size_t);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -317,7 +317,7 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
     if (writing)
     {
                             /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector));
+        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector) + sizeof(*st) + sizeof(size_t));
     }
     else
     {
@@ -410,18 +410,26 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
     LMCPosVelSize = 2*sizeof(mwvector);
-    supposedCheckpointSize = hdrSize + 2 * bodySize + traceSize + ShiftLMCSize + LMCPosVelSize;
-
-    if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
-    {
-        return TRUE;
+    
+    size_t* sizeOfData = (size_t*)mwMallocA(sizeof(size_t));
+    memcpy(sizeOfData, p, sizeof(size_t));
+    p += sizeof(size_t);
+    
+    NBodyState* extractedSt = (NBodyState*)mwMallocA(*sizeOfData);
+    memcpy(extractedSt, p, *sizeOfData);
+    p += *sizeOfData;
+    
+    if(st->usesCL != extractedSt->usesCL) {
+    	mwPerror("Incompatabile Checkpoint File, please ensure system and checkpoint file both have the same OpenCL setting");
+    	abort();
+    } else {
+    	clonePartialNBodyState(st, extractedSt);
     }
-
+    
     /* Read the bodies */
     st->bodytab = (Body*) mwMallocA(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
-
     
     st->bestLikelihoodBodyTab = (Body*) mwMallocA(bodySize);
     memcpy(st->bestLikelihoodBodyTab, p, bodySize);
@@ -447,6 +455,14 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
         p += sizeof(mwvector);
         //mw_printf("Read LMC position: [%.15f,%.15f,%.15f]\n",X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
     }
+    
+    supposedCheckpointSize = hdrSize + 2*bodySize + traceSize + ShiftLMCSize + LMCPosVelSize + *sizeOfData + sizeof(size_t);
+
+    if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
+    {
+        return TRUE;
+    }
+
 
     if (strncmp(p, tail, sizeof(tail)))
     {
@@ -482,6 +498,14 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
 
     memcpy(p, &cpHdr, sizeof(cpHdr));
     p += sizeof(cpHdr);
+    
+    size_t* value = (size_t*)mwCalloc(1, sizeof(size_t));
+    *value = sizeof(*st);
+    memcpy(p, value, sizeof(size_t));
+    p += sizeof(size_t);
+    
+    memcpy(p, st, sizeof(*st));
+    p += sizeof(*st);
 
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);

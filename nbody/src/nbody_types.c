@@ -596,6 +596,32 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 
 }
 
+void clonePartialNBodyState(NBodyState* st, const NBodyState* oldSt)
+{
+    static const NBodyTree emptyTree = EMPTY_TREE;
+    unsigned int nbody = oldSt->nbody;
+    st->tree = emptyTree;
+    st->tree.rsize = oldSt->tree.rsize;
+    st->freeCell = NULL;
+    st->lastCheckpoint       = oldSt->lastCheckpoint;
+    st->step                 = oldSt->step;
+    st->nbody                = oldSt->nbody;
+    st->effNBody             = oldSt->effNBody;
+    st->bestLikelihood       = oldSt->bestLikelihood;
+    st->bestLikelihood_count = oldSt->bestLikelihood_count;
+    st->ignoreResponsive = oldSt->ignoreResponsive;
+    st->usesExact = oldSt->usesExact;
+    st->usesQuad = oldSt->usesQuad,
+    st->dirty = oldSt->dirty;
+    st->usesCL = oldSt->usesCL;
+    st->reportProgress = oldSt->reportProgress;
+
+    st->treeIncest = oldSt->treeIncest;
+    st->tree.structureError = oldSt->tree.structureError;
+
+    assert(nbody > 0);
+    assert(st->bodytab == NULL && st->acctab == NULL);
+}
 
 static inline int compareComponents(real a, real b)
 {

@@ -584,5 +584,3 @@ end
 if runCheckTest(testName, histogramName, testSeed, testBodies) then
    os.exit(1)
 end
-
-
