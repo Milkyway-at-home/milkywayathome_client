@@ -279,6 +279,30 @@ inline real4 plummerSphericalAccel(real4 pos, real r)
     return (-SPHERICAL_MASS / cube(tmp)) * pos;
 }
 
+/* Added LMC PlummerAccelerationFunction */
+inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
+{
+    real4 acc;
+    real4 v;
+    acc.x = 0.0;
+    v.x = 0.0;
+    acc.y = 0.0;
+    v.y = 0.0;
+    acc.z = 0.0;
+    v.z = 0.0;
+    
+    v.x = pos1.x - pos.x;
+    v.y = pos1.y - pos.y;
+    v.z = pos1.z - pos.z;
+    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
+    real tmp = sqrt(sqr(scale) + sqr(dist));
+    real scalar = mass / pow(tmp, 3.0);
+    acc.x = v.x * scalar;
+    acc.y = v.y * scalar;
+    acc.z = v.z * scalar;
+    
+    return acc;
+}
 
 /* gets negative of the acceleration vector of this disk component */
 inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
@@ -351,32 +375,6 @@ inline real4 freemanDiskAccel(real4 pos, real r)
 
     return acc;
 }
-
-/* Added LMC PlummerAccelerationFunction */
-inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
-{
-    real4 acc;
-    real4 v;
-    acc.x = 0.0;
-    v.x = 0.0;
-    acc.y = 0.0;
-    v.y = 0.0;
-    acc.z = 0.0;
-    v.z = 0.0;
-    
-    v.x = pos1.x - pos.x;
-    v.y = pos1.y - pos.y;
-    v.z = pos1.z - pos.z;
-    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
-    real tmp = sqrt(sqr(scale) + sqr(dist));
-    real scalar = mass / pow(tmp, 3.0);
-    acc.x = v.x * scalar;
-    acc.y = v.y * scalar;
-    acc.z = v.z * scalar;
-    
-    return acc;
-}
-
 //inline real4 doubleExponentialDiskAccel(real4 pos, real r){ //FIXME
 //    real4 acc;
 //    const real R = sqrt(sqr(pos.x)+sqr(pos.y));
@@ -689,9 +687,7 @@ inline real4 externalAcceleration(real x, real y, real z)
 
 
 }
-    
 /* All kernels will use the same parameters for now */
-/* Addition for required LMC arguments */
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
     RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
@@ -717,6 +713,7 @@ inline real4 externalAcceleration(real x, real y, real z)
     RVPtr _LMCmass, RVPtr _LMCscale,                    \
     RVPtr _realbarTime                                  \
     )
+
 
 __attribute__ ((reqd_work_group_size(THREADS1, 1, 1)))
 __kernel void NBODY_KERNEL(boundingBox)
@@ -1875,35 +1872,6 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 #define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellSurvey(allBlock, base, (rSq) >= (dq))
 #endif
 
-/* All kernels will use the same parameters for now
-#define NBODY_KERNEL(name) name(                        \
-    RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
-    RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
-    RVPtr _accX, RVPtr _accY, RVPtr _accZ,              \
-    RVPtr _mass,                                        \
-                                                        \
-    RVPtr _maxX, RVPtr _maxY, RVPtr _maxZ,              \
-    RVPtr _minX, RVPtr _minY, RVPtr _minZ,              \
-                                                        \
-    IVPtr _start, IVPtr _count,                         \
-    IVPtr _child, IVPtr _sort,                          \
-                                                        \
-    RVPtr _critRadii,                                   \
-                                                        \
-    RVPtr _quadXX, RVPtr _quadXY, RVPtr _quadXZ,        \
-    RVPtr _quadYY, RVPtr _quadYZ,                       \
-    RVPtr _quadZZ,                                      \
-                                                        \
-    __global volatile TreeStatus* _treeStatus,          \
-    uint maxNBody,                                      \
-    int updateVel,                                      \
-    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
-    RVPtr _LMCmass, RVPtr _LMCscale,                    \
-    RVPtr _realbarTime                                  \
-    )
-*/
-
-
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
@@ -1932,7 +1900,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
   #endif /* USE_QUAD */
-  
+
+
   #if !HAVE_INLINE_PTX
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
@@ -1940,44 +1909,59 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
 
-    maxDepth = _treeStatus->maxDepth;
-    real rootSize = _treeStatus->radius;
-
-  #if USE_QUAD
-    rootQXX = _quadXX[NNODE];
-    rootQXY = _quadXY[NNODE];
-    rootQXZ = _quadXZ[NNODE];
-    rootQYY = _quadYY[NNODE];
-    rootQYZ = _quadYZ[NNODE];
-    rootQZZ = _quadZZ[NNODE];
-  #endif
-
-    rootCritRadius = _critRadii[NNODE];
-    real rc = (THETA == 0.0)*(rootSize/THETA) + (THETA != 0.0)*(2.0*rootSize); 
-    
-    /* Precompute values that depend only on tree level */
-    dq[0] = rc * rc;
-    for (uint i = 1; i < maxDepth; ++i)
+    if (get_local_id(0) == 0)
     {
-       dq[i] = 0.25 * dq[i - 1];
-    }
+        maxDepth = _treeStatus->maxDepth;
+        real rootSize = _treeStatus->radius;
 
+      #if USE_QUAD
+        rootQXX = _quadXX[NNODE];
+        rootQXY = _quadXY[NNODE];
+        rootQXZ = _quadXZ[NNODE];
+        rootQYY = _quadYY[NNODE];
+        rootQYZ = _quadYZ[NNODE];
+        rootQZZ = _quadZZ[NNODE];
+      #endif
 
-    if (maxDepth > MAXDEPTH)
-    {
-        _treeStatus->errorCode = maxDepth;
+        if (SW93 || TREECODE)
+        {
+            rootCritRadius = _critRadii[NNODE];
+        }
+        else if (BH86)
+        {
+            real rc;
+
+            if (THETA == 0.0)
+            {
+                rc = 2.0 * rootSize;
+            }
+            else
+            {
+                rc = rootSize / THETA;
+            }
+
+            /* Precompute values that depend only on tree level */
+            dq[0] = rc * rc;
+            for (uint i = 1; i < maxDepth; ++i)
+            {
+                dq[i] = 0.25 * dq[i - 1];
+            }
+        }
+
+      #if !HAVE_INLINE_PTX
+        for (uint i = 0; i < THREADS6 / WARPSIZE; ++i)
+        {
+            allBlock[i] = 0;
+        }
+      #endif
+
+        if (maxDepth > MAXDEPTH)
+        {
+            _treeStatus->errorCode = maxDepth;
+        }
     }
-    
-   #if !HAVE_INLINE_PTX
-    /* Used by the fake thread voting function.
-       We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
-    */
-    for (uint i = 0; i < THREADS6 / WARPSIZE; ++i)
-    {
-        allBlock[i] = 0;
-    }
-   #endif
-   
+    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+
     if (maxDepth <= MAXDEPTH)
     {
         /* Figure out first thread in each warp */
@@ -1993,6 +1977,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             {
                 dq[diff + j] = dq[diff];
             }
+            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         }
 
         uint k = get_global_id(0);
@@ -2002,8 +1987,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
       #endif
 
         /* iterate over all bodies assigned to thread */
-        bool result1 = get_local_id(0) == sbase;
-        bool result2 = SW93 || TREECODE;
         while (k < maxNBody)
         {
             int i = _sort[k];  /* Get permuted index */
@@ -2019,12 +2002,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
             /* Initialize iteration stack, i.e., push root node onto stack */
             int depth = j;
-            if (result1)
+            if (get_local_id(0) == sbase)
             {
                 node[j] = NNODE;
                 pos[j] = 0;
 
-                if (result2)
+                if (SW93 || TREECODE)
                 {
                     dq[j] = rootCritRadius;
                 }
@@ -2040,27 +2023,34 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 }
                 #endif
             }
+            mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
             bool skipSelf = false;
             do
             {
                 int curPos;
+
                 /* Stack is not empty */
                 while ((curPos = pos[depth]) < NSUB)
                 {
                     int n;
                     /* Node on top of stack has more children to process */
-                    n = _child[NSUB * node[depth] + curPos]; /* Load child pointer */
-                    pos[depth] = curPos + 1;
-                    ch[base] = n; /* Cache child pointer */
-                    if (n >= 0)
+                    if (get_local_id(0) == sbase)
                     {
-                        /* Cache position and mass */
-                        nx[base] = _posX[n];
-                        ny[base] = _posY[n];
-                        nz[base] = _posZ[n];
-                        nm[base] = _mass[n];
+                        /* I'm the first thread in the warp */
+                        n = _child[NSUB * node[depth] + curPos]; /* Load child pointer */
+                        pos[depth] = curPos + 1;
+                        ch[base] = n; /* Cache child pointer */
+                        if (n >= 0)
+                        {
+                            /* Cache position and mass */
+                            nx[base] = _posX[n];
+                            ny[base] = _posY[n];
+                            nz[base] = _posZ[n];
+                            nm[base] = _mass[n];
+                        }
                     }
+                    mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
                     /* All threads retrieve cached data */
                     n = ch[base];
@@ -2131,12 +2121,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         {
                             /* Push cell onto stack */
                             ++depth;
-                            if (result1)
+                            if (get_local_id(0) == sbase)
                             {
                                 node[depth] = n;
                                 pos[depth] = 0;
 
-                                if (result2)
+                                if (SW93 || TREECODE)
                                 {
                                     dq[depth] = _critRadii[n];
                                 }
@@ -2154,6 +2144,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
                                 }
                                 #endif /* USE_QUAD */
                             }
+                            /* Full barrier not necessary since items only synced on wavefront level */
+                            mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
                         }
                     }
                     else
@@ -2173,6 +2165,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             real vx = _velX[i];
             real vy = _velY[i];
             real vz = _velZ[i];
+
 
             if (USE_EXTERNAL_POTENTIAL)
             {
@@ -2343,7 +2336,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
 
             barrier(CLK_LOCAL_MEM_FENCE);
         }
-        
+
         if (USE_EXTERNAL_POTENTIAL)
         {
             real4 LMCBodypos;
@@ -2358,17 +2351,17 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
                 
             real4 acc = externalAcceleration(px, py, pz);
             real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
-            
             ax += acc.x;
             ay += acc.y;
             az += acc.z;
+                
             if(_LMCmass[0] != -125.0) {
               ax += accLMC.x;
               ay += accLMC.y;
               az += accLMC.z;
-            } 
-       }
-
+            }
+        }
+        
         if (updateVel)
         {
             dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
