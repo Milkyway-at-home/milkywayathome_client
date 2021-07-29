@@ -95,7 +95,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program program, void* user_data)
 cl_int mwBuildProgram(cl_program program, cl_device_id device, const char* options)
 {
     cl_int err = CL_SUCCESS;
-
+    
     err = clBuildProgram(program, 1, &device, options, milkywayBuildCB, device);
     if (err != CL_SUCCESS)
     {
@@ -234,7 +234,7 @@ cl_program mwCreateProgramFromSrc(CLInfo* ci,
         mwPerrorCL(err, "Error creating program");
         return NULL;
     }
-
+    
     err = mwBuildProgram(program, ci->dev, compileDefs);
     if (err != CL_SUCCESS)
     {
