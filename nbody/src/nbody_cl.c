@@ -28,6 +28,19 @@
 #include "nbody_checkpoint.h"
 #include "nbody_tree.h"
 
+#include "nbody_types.h"
+#include "nbody.h"
+#include "nbody_plain.h"
+#include "nbody_defaults.h"
+#include "nbody_mass.h"
+#include "nbody_grav.h"
+#include "nbody_histogram.h"
+#include "nbody_likelihood.h"
+#include "nbody_devoptions.h"
+#include "nbody_orbit_integrator.h"
+#include "nbody_potential.h"
+#include "nbody_friction.h"
+
 #ifdef NBODY_BLENDER_OUTPUT
     #include "blender_visualizer.h"
 #endif
@@ -69,7 +82,7 @@ typedef struct MW_ALIGN_TYPE_V(64)
 } TreeStatus;
 
 
-static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
+static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad, cl_bool useLMC)
 {
     cl_ulong estMaxDepth;
     cl_ulong wgSize = ws->threads[5];
@@ -88,15 +101,18 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     cl_ulong ny = warpPerWG * sizeof(cl_int);
     cl_ulong nz = warpPerWG * sizeof(cl_int);
     cl_ulong nm = warpPerWG * sizeof(cl_int);
-
-    cl_ulong constantPieces = maxDepth + rootCritRadius + allBlock + ch + nx + ny + nz + nm;
+    
+    /* LMC addition, 3 mem spaces for LMC position, 1 mem space for LMC mass, 1 mem space for LMC scale, 1 mem space for LMC real bar time */
+    cl_ulong lmcAdditionWG = ((3 * sizeof(real)) + sizeof(real) + sizeof(real) + sizeof(real)); 
+    
+    cl_ulong constantPieces = maxDepth + rootCritRadius + allBlock + ch + nx + ny + nz + nm + lmcAdditionWG;
 
     /* Individual sizes of elements on the cell stack. */
     cl_ulong pos = sizeof(cl_int);
     cl_ulong node = sizeof(cl_int);
     cl_ulong dq = sizeof(real);
     cl_ulong quadPieces = 6 * sizeof(real);
-
+    
     cl_ulong stackItemCount = pos + node + dq;
 
     if (useQuad)
@@ -113,11 +129,11 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     return estMaxDepth - 1;  /* A bit extra will be used. Some kind of rounding up */
 }
 
-cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad)
+cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad, cl_bool useLMC)
 {
     cl_ulong d;
 
-    d = nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(di, ws, useQuad);
+    d = nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUsage(di, ws, useQuad, useLMC);
 
     /* TODO: We should be able to reduce this; this is usually quite a
      * bit deeper than we can go before hitting precision limits */
@@ -335,6 +351,7 @@ cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx*
 	if(ws->threads[0] * 6 * 8 >= di->localMemSize){
 		ws->threads[0] = mw_pow(2,(int)(mw_log(di->localMemSize / (6*8))/mw_log(2)))/2;
 	}
+	
     return CL_FALSE;
 }
 
@@ -395,10 +412,12 @@ static cl_int nbSetMemArrayArgs(cl_kernel kern, cl_mem mem[3], cl_uint idx)
     return err;
 }
 
-static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool exact)
+static cl_int nbSetKernelArguments(cl_kernel kern, cl_bool exact, const NBodyCtx* ctx, NBodyState* st)
 {
+    NBodyBuffers* nbb = st->nbb;
     cl_int err = CL_SUCCESS;
     cl_int zeroVal = 0;
+    cl_bool lmc = ctx->LMC;
 
     if (!exact)
     {
@@ -465,10 +484,54 @@ static cl_int nbSetKernelArguments(cl_kernel kern, NBodyBuffers* nbb, cl_bool ex
         err |= clSetKernelArg(kern, 29, sizeof(cl_int), &zeroVal);
     }
 
+    real time = st->step * ctx->timestep - st->previousForwardTime;
+    void* timeStor = mapBuffer(st->ci, nbb->LMCtime_buffer, CL_MAP_WRITE, sizeof(real));
+    void* massStor = mapBuffer(st->ci, nbb->LMCmass_buffer, CL_MAP_WRITE, sizeof(real));
+    void* scaleStor = mapBuffer(st->ci, nbb->LMCscale_buffer, CL_MAP_WRITE, sizeof(real));
+    void* posXStor = mapBuffer(st->ci, nbb->LMCposX_buffer, CL_MAP_WRITE, sizeof(real));
+    void* posYStor = mapBuffer(st->ci, nbb->LMCposY_buffer, CL_MAP_WRITE, sizeof(real));
+    void* posZStor = mapBuffer(st->ci, nbb->LMCposZ_buffer, CL_MAP_WRITE, sizeof(real));
+    
+    clFlush(st->ci->queue);
+    clFinish(st->ci->queue);
+    
+    memcpy(timeStor, &time, sizeof(real));
+    
+    if(!ctx->LMC) {
+      real mass[1];
+      mass[0] = -125.0;
+      memcpy(massStor, mass, sizeof(real));
+    } else {
+      memcpy(massStor, &ctx->LMCmass, sizeof(real));
+    }
+    
+    memcpy(scaleStor, &ctx->LMCscale, sizeof(real));
+    memcpy(posXStor, &X(st->LMCpos), sizeof(real));
+    memcpy(posYStor, &Y(st->LMCpos), sizeof(real));
+    memcpy(posZStor, &Z(st->LMCpos), sizeof(real));
+
+    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCtime_buffer, timeStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCmass_buffer, massStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCscale_buffer, scaleStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCposX_buffer, posXStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCposY_buffer, posYStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCposZ_buffer, posZStor, 0, NULL, NULL);
+
+    clFlush(st->ci->queue);
+    clFinish(st->ci->queue); 
+    
+    err |= clSetKernelArg(kern, 30, sizeof(cl_mem), &nbb->LMCposX_buffer);
+    err |= clSetKernelArg(kern, 31, sizeof(cl_mem), &nbb->LMCposY_buffer);
+    err |= clSetKernelArg(kern, 32, sizeof(cl_mem), &nbb->LMCposZ_buffer);
+    err |= clSetKernelArg(kern, 33, sizeof(cl_mem), &nbb->LMCmass_buffer);
+    err |= clSetKernelArg(kern, 34, sizeof(cl_mem), &nbb->LMCscale_buffer);
+    err |= clSetKernelArg(kern, 35, sizeof(cl_mem), &nbb->LMCtime_buffer);
+    
+    
     return err;
 }
 
-cl_int nbSetAllKernelArguments(NBodyState* st)
+cl_int nbSetAllKernelArguments(const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err = CL_SUCCESS;
     NBodyKernels* k = st->kernels;
@@ -476,20 +539,20 @@ cl_int nbSetAllKernelArguments(NBodyState* st)
 
     if (!exact)
     {
-        err |= nbSetKernelArguments(k->boundingBox, st->nbb, exact);
-        err |= nbSetKernelArguments(k->buildTreeClear, st->nbb, exact);
-        err |= nbSetKernelArguments(k->buildTree, st->nbb, exact);
-        err |= nbSetKernelArguments(k->summarizationClear, st->nbb, exact);
-        err |= nbSetKernelArguments(k->summarization, st->nbb, exact);
-        err |= nbSetKernelArguments(k->sort, st->nbb, exact);
-        err |= nbSetKernelArguments(k->quadMoments, st->nbb, exact);
-        err |= nbSetKernelArguments(k->forceCalculation, st->nbb, exact);
-        err |= nbSetKernelArguments(k->integration, st->nbb, exact);
+        err |= nbSetKernelArguments(k->boundingBox, exact, ctx, st);
+        err |= nbSetKernelArguments(k->buildTreeClear, exact, ctx, st);
+        err |= nbSetKernelArguments(k->buildTree, exact, ctx, st);
+        err |= nbSetKernelArguments(k->summarizationClear, exact, ctx, st);
+        err |= nbSetKernelArguments(k->summarization, exact, ctx, st);
+        err |= nbSetKernelArguments(k->sort, exact, ctx, st);
+        err |= nbSetKernelArguments(k->quadMoments, exact, ctx, st);
+        err |= nbSetKernelArguments(k->forceCalculation, exact, ctx, st);
+        err |= nbSetKernelArguments(k->integration, exact, ctx, st);
     }
     else
     {
-        err |= nbSetKernelArguments(k->forceCalculation_Exact, st->nbb, exact);
-        err |= nbSetKernelArguments(k->integration, st->nbb, exact);
+        err |= nbSetKernelArguments(k->forceCalculation_Exact, exact, ctx, st);
+        err |= nbSetKernelArguments(k->integration, exact, ctx, st);
     }
 
     if (err != CL_SUCCESS)
@@ -1529,12 +1592,122 @@ static NBodyStatus nbCheckpointCL(const NBodyCtx* ctx, NBodyState* st)
     return NBODY_SUCCESS;
 }
 
-NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
+static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
+{
+    real dtHalf = 0.5 * dt;
+    mwvector dr;
+    mwvector dv;
+
+    dr = mw_mulvs(st->LMCvel,dt);
+    mw_incaddv(st->LMCpos,dr);
+
+    mwvector acc_total = mw_addv(acc, acc_i);
+    dv = mw_mulvs(acc_total, dtHalf);
+    mw_incaddv(st->LMCvel,dv);
+    
+}
+
+static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
+{
+    real dtHalf = 0.5 * dt;
+    mwvector dv;
+    mwvector acc_total = mw_addv(acc, acc_i);
+    dv = mw_mulvs(acc_total, dtHalf);
+    mw_incaddv(st->LMCvel,dv);
+}
+
+void updateLMCBuffers(const NBodyCtx* ctx, NBodyState* st) {
+    real time = st->step * ctx->timestep - st->previousForwardTime;
+    void* timeStor = mapBuffer(st->ci, st->nbb->LMCtime_buffer, CL_MAP_WRITE, sizeof(real));
+    void* massStor = mapBuffer(st->ci, st->nbb->LMCmass_buffer, CL_MAP_WRITE, sizeof(real));
+    void* scaleStor = mapBuffer(st->ci, st->nbb->LMCscale_buffer, CL_MAP_WRITE, sizeof(real));
+    void* posXStor = mapBuffer(st->ci, st->nbb->LMCposX_buffer, CL_MAP_WRITE, sizeof(real));
+    void* posYStor = mapBuffer(st->ci, st->nbb->LMCposY_buffer, CL_MAP_WRITE, sizeof(real));
+    void* posZStor = mapBuffer(st->ci, st->nbb->LMCposZ_buffer, CL_MAP_WRITE, sizeof(real));
+
+    clFlush(st->ci->queue);
+    clFinish(st->ci->queue);
+    
+    memcpy(timeStor, &time, sizeof(real));
+    memcpy(massStor, &ctx->LMCmass, sizeof(real));
+    memcpy(scaleStor, &ctx->LMCscale, sizeof(real));
+    memcpy(posXStor, &X(st->LMCpos), sizeof(real));
+    memcpy(posYStor, &Y(st->LMCpos), sizeof(real));
+    memcpy(posZStor, &Z(st->LMCpos), sizeof(real));
+
+    clFlush(st->ci->queue);
+    clFinish(st->ci->queue);
+
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCtime_buffer, timeStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCmass_buffer, massStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCscale_buffer, scaleStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposX_buffer, posXStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposY_buffer, posYStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposZ_buffer, posZStor, 0, NULL, NULL);
+
+    clFlush(st->ci->queue);
+    clFinish(st->ci->queue); 
+    return;
+}
+
+NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
 {
     cl_int err;
     cl_uint i;
     NBodyWorkSizes* ws = st->workSizes;
 
+    NBodyStatus rc;
+    mwvector acc_LMC;
+    const real dt = ctx->timestep;
+    real barTime = st->step * dt - st->previousForwardTime;
+    acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
+    advancePosVel_LMC(st, dt, acc_LMC, acc_i);
+    
+    st->dirty = TRUE;
+
+    memset(ws->timings, 0, sizeof(ws->timings));
+
+    if (!st->usesExact)
+    {
+        //mw_printf("StepSystemCL Tree Construction START\n");
+        err = nbExecuteTreeConstruction(st);
+        //mw_printf("StepSystemCL Tree Construction END\n");
+        if (err != CL_SUCCESS)
+        {
+            mwPerrorCL(err, "Error executing tree construction kernels");
+            return NBODY_CL_ERROR;
+        }
+    }
+//    printf("%f\n",st->tree.root->cellnode.pos.x);
+    //mw_printf("StepSystemCL Force Kernels START\n");
+    updateLMCBuffers(ctx, st);
+    err = nbExecuteForceKernels(st, CL_TRUE);
+    //mw_printf("StepSystemCL Force Kernels END\n");
+    if (err != CL_SUCCESS)
+    {
+        mwPerrorCL(err, "Error executing force kernels");
+        return NBODY_CL_ERROR;
+    }
+
+    for (i = 0; i < 7; ++i) /* Add timings to running totals */
+    {
+        ws->kernelTimings[i] += ws->timings[i];
+    }
+    
+    acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
+    advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
+
+    nbReportProgressWithTimings(ctx, st);
+    nbUpdateDisplayedBodies(ctx, st);
+
+    return NBODY_SUCCESS;
+}
+
+NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st)
+{
+    cl_int err;
+    cl_uint i;
+    NBodyWorkSizes* ws = st->workSizes;
     st->dirty = TRUE;
 
     memset(ws->timings, 0, sizeof(ws->timings));
@@ -1607,6 +1780,20 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
     NBodyStatus rc = NBODY_SUCCESS;
     cl_int err;
 
+    if (ctx->LMC){
+        if (!st->shiftByLMC) {
+            mwvector* shiftLMC;
+            size_t sizeLMC;
+            mwvector LMCx;
+            mwvector LMCv;
+
+            getLMCArray(&shiftLMC, &sizeLMC);
+            setLMCShiftArray(st, shiftLMC, sizeLMC);
+            getLMCPosVel(&LMCx, &LMCv);
+            setLMCPosVel(st, LMCx, LMCv);
+        }
+    }
+    
     err = nbRunPreStep(st);
     if (err != CL_SUCCESS)
     {
@@ -1636,7 +1823,14 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
             return rc;
         }
 
-        rc = nbStepSystemCL(ctx, st);
+	if(!ctx->LMC) {
+            mwvector zero;
+            SET_VECTOR(zero,0,0,0);
+            rc |= nbStepSystemCL(ctx, st); 
+        } else {
+            rc |= nbStepSystemCL_LMC(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
+        }
+        
         if (nbStatusIsFatal(rc))
         {
             return rc;
@@ -1714,7 +1908,14 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
     {
         err |= clReleaseMemObject_quiet(nbb->dummy[j]);
     }
-
+    
+    err |= clReleaseMemObject_quiet(nbb->LMCtime_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCmass_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCscale_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCposX_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCposY_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCposZ_buffer);
+    
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error releasing buffers");
@@ -1789,13 +1990,13 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     cl_uint nNode = nbFindNNode(&ci->di, st->effNBody);
     int j;
     const int nDummy = sizeof(nbb->dummy) / sizeof(nbb->dummy[0]);
-
+    
     for (i = 0; i < 3; ++i)
     {
         nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
         nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
         nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->effNBody * sizeof(real));
-
+	
         if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i])
         {
             return MW_CL_ERROR;
@@ -1874,6 +2075,13 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
             }
         }
     }
+    
+    nbb->LMCtime_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCmass_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCscale_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCposX_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCposY_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCposZ_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
 
     return CL_SUCCESS;
 }

@@ -235,6 +235,12 @@ typedef struct
      * cases.
      */
     cl_mem dummy[18];
+    cl_mem LMCtime_buffer;
+    cl_mem LMCmass_buffer;
+    cl_mem LMCscale_buffer;
+    cl_mem LMCposX_buffer;
+    cl_mem LMCposY_buffer;
+    cl_mem LMCposZ_buffer;
 } NBodyBuffers;
 
 

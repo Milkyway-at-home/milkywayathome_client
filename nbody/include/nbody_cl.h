@@ -34,7 +34,7 @@ extern "C" {
 cl_bool nbSetWorkSizes(NBodyWorkSizes* ws, const DevInfo* di, cl_int nbody, cl_bool ignoreResponsive);
 cl_bool nbSetThreadCounts(NBodyWorkSizes* ws, const DevInfo* di, const NBodyCtx* ctx);
 cl_int nbFindEffectiveNBody(const NBodyWorkSizes* ws, cl_bool exact, cl_int nbody);
-cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad);
+cl_uint nbFindMaxDepthForDevice(const DevInfo* di, const NBodyWorkSizes* ws, cl_bool useQuad, cl_bool useLMC);
 
 cl_bool nbLoadKernels(const NBodyCtx* ctx, NBodyState* st);
 cl_bool nbCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx, cl_uint nbody);
@@ -44,7 +44,7 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st);
 cl_int nbReleaseBuffers(NBodyState* st);
 cl_int nbReleaseKernels(NBodyState* st);
 
-cl_int nbSetAllKernelArguments(NBodyState* st);
+cl_int nbSetAllKernelArguments(const NBodyCtx* ctx, NBodyState* st);
 
 cl_int nbMarshalBodies(NBodyState* st, cl_bool marshalIn);
 int nbDisplayUpdateMarshalBodies(NBodyState* st, mwvector* cmPosOut);
@@ -52,6 +52,7 @@ void nbPrintKernelTimings(const NBodyState* st);
 
 
 NBodyStatus nbStepSystemCL(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1);
 NBodyStatus nbRunSystemCL(const NBodyCtx* ctx, NBodyState* st);
 
 

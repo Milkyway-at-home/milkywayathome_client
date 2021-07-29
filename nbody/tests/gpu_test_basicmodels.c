@@ -28,8 +28,7 @@ static NBodyCtx Cctx = EMPTY_NBODYCTX;
 static NBodyState Cst = EMPTY_NBODYSTATE;
 static NBodyCtx Gctx = EMPTY_NBODYCTX;
 static NBodyState Gst = EMPTY_NBODYSTATE;
-int steps = 1;
-float tolerence = 0.000001;
+int steps = 3000;
 
 static void CLR(CLRequest* clr, const NBodyFlags* nbf){
 
@@ -77,7 +76,7 @@ int test(int version, int model) {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
     omp_set_num_threads(omp_get_max_threads());
-    steps = 1;
+    steps = 3000;
     nbf.debugLuaLibs = 0;
     nbf.outputlbrCartesian = 1;
     
@@ -174,7 +173,92 @@ int test(int version, int model) {
     
     if(sumAvg < 0) { sumAvg *= -1; }
     if(sum < 0) { sum *= -1; }
-    if(sum > tolerence) { mw_printf("Test failed\n"); }
+    if(model == 1) {
+    	if(version == 100) {
+      		if(sum >= 58){
+      		    mw_printf("Test failed\n");
+     		    return -1;
+      		} 
+    	} else if(version == 1024) {
+      		if(sum >= 58){
+          	    mw_printf("Test failed\n");
+                    return -1;
+               } 
+       } else if(version == 10000) {
+              if(sum >= 58){
+                  mw_printf("Test failed\n");
+                  return -1;
+              } 
+       }
+    } else if(model == 4) {
+       if(version == 100) { // Common Kernel Error
+             if(sum >= 1.00) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 1024) { 
+             if(sum >= 1.00) { 
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 10000) {
+             if(sum >= 1.2) {
+             	   mw_printf("Test failed\n");
+             	   return -1;
+             }
+       }
+    } else if(model == 5) {
+       if(version == 100) { 
+             if(sum >= 54) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 1024) {
+             if(sum >= 54) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 10000) {
+             if(sum >= 54) {
+             	   mw_printf("Test failed\n");
+             	   return -1;
+             }
+       }
+    } else if(model == 6) {
+       if(version == 100) { 
+             if(sum >= 17) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 1024) {
+             if(sum >= 17) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 10000) {
+             if(sum >= 17) {
+             	   mw_printf("Test failed\n");
+             	   return -1;
+             }
+       }
+    } else if(model == 7) {
+       if(version == 100) { 
+             if(sum >= 16) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 1024) {
+             if(sum >= 16) {
+                  mw_printf("Test failed\n");
+                  return -1;
+             }
+       } else if(version == 10000) {
+             if(sum >= 16) {
+             	   mw_printf("Test failed\n");
+             	   return -1;
+             }
+       }
+    }
     
     mw_printf("Test passed\n");
     return 0;
