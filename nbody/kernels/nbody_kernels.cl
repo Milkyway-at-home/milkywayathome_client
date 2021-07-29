@@ -279,6 +279,30 @@ inline real4 plummerSphericalAccel(real4 pos, real r)
     return (-SPHERICAL_MASS / cube(tmp)) * pos;
 }
 
+/* Added LMC PlummerAccelerationFunction */
+inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
+{
+    real4 acc;
+    real4 v;
+    acc.x = 0.0;
+    v.x = 0.0;
+    acc.y = 0.0;
+    v.y = 0.0;
+    acc.z = 0.0;
+    v.z = 0.0;
+    
+    v.x = pos1.x - pos.x;
+    v.y = pos1.y - pos.y;
+    v.z = pos1.z - pos.z;
+    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
+    real tmp = sqrt(sqr(scale) + sqr(dist));
+    real scalar = mass / pow(tmp, 3.0);
+    acc.x = v.x * scalar;
+    acc.y = v.y * scalar;
+    acc.z = v.z * scalar;
+    
+    return acc;
+}
 
 /* gets negative of the acceleration vector of this disk component */
 inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
@@ -684,7 +708,10 @@ inline real4 externalAcceleration(real x, real y, real z)
                                                         \
     __global volatile TreeStatus* _treeStatus,          \
     uint maxNBody,                                      \
-    int updateVel                                       \
+    int updateVel,                                      \
+    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
+    RVPtr _LMCmass, RVPtr _LMCscale,                    \
+    RVPtr _realbarTime                                  \
     )
 
 
@@ -2154,11 +2181,27 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
             if (USE_EXTERNAL_POTENTIAL)
             {
+                real4 LMCBodypos;
+                LMCBodypos.x = px;
+                LMCBodypos.y = py;
+                LMCBodypos.z = pz;
+                
+                real4 LMCpos;
+                LMCpos.x = _LMCposX[0];
+                LMCpos.y = _LMCposY[0];
+                LMCpos.z = _LMCposZ[0];
+                
                 real4 acc = externalAcceleration(px, py, pz);
-
+                real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
                 ax += acc.x;
                 ay += acc.y;
                 az += acc.z;
+                
+                if(_LMCmass[0] != -125.0) {
+                  ax += accLMC.x;
+                  ay += accLMC.y;
+                  az += accLMC.z;
+                }
             }
 
             vx = mad(0.5 * TIMESTEP, ax - accX, vx);
@@ -2308,13 +2351,29 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
 
         if (USE_EXTERNAL_POTENTIAL)
         {
+            real4 LMCBodypos;
+            LMCBodypos.x = px;
+            LMCBodypos.y = py;
+            LMCBodypos.z = pz;
+                
+            real4 LMCpos;
+            LMCpos.x = _LMCposX[0];
+            LMCpos.y = _LMCposY[0];
+            LMCpos.z = _LMCposZ[0];
+                
             real4 acc = externalAcceleration(px, py, pz);
-
+            real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
             ax += acc.x;
             ay += acc.y;
             az += acc.z;
+                
+            if(_LMCmass[0] != -125.0) {
+              ax += accLMC.x;
+              ay += accLMC.y;
+              az += accLMC.z;
+            }
         }
-
+        
         if (updateVel)
         {
             dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
