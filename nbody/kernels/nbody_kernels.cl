@@ -279,30 +279,6 @@ inline real4 plummerSphericalAccel(real4 pos, real r)
     return (-SPHERICAL_MASS / cube(tmp)) * pos;
 }
 
-/* Added LMC PlummerAccelerationFunction */
-inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
-{
-    real4 acc;
-    real4 v;
-    acc.x = 0.0;
-    v.x = 0.0;
-    acc.y = 0.0;
-    v.y = 0.0;
-    acc.z = 0.0;
-    v.z = 0.0;
-    
-    v.x = pos1.x - pos.x;
-    v.y = pos1.y - pos.y;
-    v.z = pos1.z - pos.z;
-    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
-    real tmp = sqrt(sqr(scale) + sqr(dist));
-    real scalar = mass / pow(tmp, 3.0);
-    acc.x = v.x * scalar;
-    acc.y = v.y * scalar;
-    acc.z = v.z * scalar;
-    
-    return acc;
-}
 
 /* gets negative of the acceleration vector of this disk component */
 inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
@@ -708,10 +684,7 @@ inline real4 externalAcceleration(real x, real y, real z)
                                                         \
     __global volatile TreeStatus* _treeStatus,          \
     uint maxNBody,                                      \
-    int updateVel,                                      \
-    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
-    RVPtr _LMCmass, RVPtr _LMCscale,                    \
-    RVPtr _realbarTime                                  \
+    int updateVel                                       \
     )
 
 
@@ -984,7 +957,6 @@ __kernel void NBODY_KERNEL(buildTree)
                 /* Test if we don't have a consistent view. We
                    initialized these all to NAN so we can be sure we
                    have a good view once actually written.
-
                    This is in case we don't have cross-workgroup global memory consistency
                  */
                 posNotReady = isnan(pnx) || isnan(pny) || isnan(pnz);
@@ -1001,7 +973,6 @@ __kernel void NBODY_KERNEL(buildTree)
             }
 
             /* Skip if child pointer is locked, or the same particle, and try again later.
-
                If we have consistent memory we only need to check if ch != LOCK.
              */
             if ((ch != LOCK) && (ch != i) && !posNotReady)
@@ -1162,45 +1133,35 @@ inline bool checkTreeDim(real cmPos, real pPos, real halfPsize)
 /*
   According to the OpenCL specification, global memory consistency is
   only guaranteed between workitems in the same workgroup.
-
   We rely on AMD and Nvidia GPU implementation details and pretend
   this doesn't exist when possible.
-
   - On AMD GPUs, mem_fence(CLK_GLOBAL_MEM_FENCE) compiles to a
   fence_memory instruction which ensures a write is not in the cache
   and is committed to memory before completing.
   We have to be more careful when it comes to reading.
-
   On previous AMD architectures it was sufficient to have a write
   fence and then other items, not necessarily in the same workgroup,
   would read the value committed by the fence.
-
   On GCN/Tahiti, the caching architecture was changed. A single
   workgroup will run on the same compute unit. A GCN compute unit has
   it's own incoherent L1 cache (and workgroups have always stayed on
   the same compute unit). A write by one compute unit will be
   committed to memory by a fence there, but a second compute unit may
   read a stale value from its private L1 cache afterwards.
-
   We may need to use an atomic to ensure we bypass the L1 cache in
   places where we need stronger consistency across workgroups.
-
   Since Evergreen, the hardware has had a "GDS" buffer for global
   synchronization, however 3 years later we still don't yet have an
   extension to access it from OpenCL. When that finally happens, it
   will probably be a better option to use that for these places.
-
-
   - On Nvidia, mem_fence(CLK_GLOBAL_MEM_FENCE) seems to compile to a
   membar.gl instruction, the same as the global sync
   __threadfence(). It may change to a workgroup level membar.cta at
   some point. To be sure we use the correct global level sync, use
   inline PTX to make sure we use membar.gl
-
   Not sure what to do about Nvidia on Apple's implementation. I'm not
   sure how to even see what PTX it is generating, and there is no
   inline PTX.
-
 */
 
 
@@ -2181,27 +2142,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
             if (USE_EXTERNAL_POTENTIAL)
             {
-                real4 LMCBodypos;
-                LMCBodypos.x = px;
-                LMCBodypos.y = py;
-                LMCBodypos.z = pz;
-                
-                real4 LMCpos;
-                LMCpos.x = _LMCposX[0];
-                LMCpos.y = _LMCposY[0];
-                LMCpos.z = _LMCposZ[0];
-                
                 real4 acc = externalAcceleration(px, py, pz);
-                real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
+
                 ax += acc.x;
                 ay += acc.y;
                 az += acc.z;
-                
-                if(_LMCmass[0] != -125.0) {
-                  ax += accLMC.x;
-                  ay += accLMC.y;
-                  az += accLMC.z;
-                }
             }
 
             vx = mad(0.5 * TIMESTEP, ax - accX, vx);
@@ -2351,29 +2296,13 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
 
         if (USE_EXTERNAL_POTENTIAL)
         {
-            real4 LMCBodypos;
-            LMCBodypos.x = px;
-            LMCBodypos.y = py;
-            LMCBodypos.z = pz;
-                
-            real4 LMCpos;
-            LMCpos.x = _LMCposX[0];
-            LMCpos.y = _LMCposY[0];
-            LMCpos.z = _LMCposZ[0];
-                
             real4 acc = externalAcceleration(px, py, pz);
-            real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
+
             ax += acc.x;
             ay += acc.y;
             az += acc.z;
-                
-            if(_LMCmass[0] != -125.0) {
-              ax += accLMC.x;
-              ay += accLMC.y;
-              az += accLMC.z;
-            }
         }
-        
+
         if (updateVel)
         {
             dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
