@@ -102,10 +102,10 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     cl_ulong nz = warpPerWG * sizeof(cl_int);
     cl_ulong nm = warpPerWG * sizeof(cl_int);
     
-    /* LMC addition, 3 mem spaces for LMC position, 1 mem space for LMC mass, 1 mem space for LMC scale, 1 mem space for LMC real bar time */
-    cl_ulong lmcAdditionWG = ((3 * sizeof(real)) + sizeof(real) + sizeof(real) + sizeof(real)); 
+    /* LMC addition, 3 mem spaces for LMC position, 3 mem spaces for Acci, 3 mem spaces for Acci1, 1 mem space for LMC mass, 1 mem space for LMC scale, 1 mem space for LMC real bar time, 1 mem space for time */
+    cl_ulong lmcAddition = (3*(3 * sizeof(real)) + sizeof(real) + sizeof(real) + sizeof(real) + sizeof(real)); 
     
-    cl_ulong constantPieces = maxDepth + rootCritRadius + allBlock + ch + nx + ny + nz + nm + lmcAdditionWG;
+    cl_ulong constantPieces = maxDepth + rootCritRadius + allBlock + ch + nx + ny + nz + nm + lmcAddition;
 
     /* Individual sizes of elements on the cell stack. */
     cl_ulong pos = sizeof(cl_int);
@@ -484,39 +484,6 @@ static cl_int nbSetKernelArguments(cl_kernel kern, cl_bool exact, const NBodyCtx
         err |= clSetKernelArg(kern, 29, sizeof(cl_int), &zeroVal);
     }
 
-    real time = st->step * ctx->timestep - st->previousForwardTime;
-    void* timeStor = mapBuffer(st->ci, nbb->LMCtime_buffer, CL_MAP_WRITE, sizeof(real));
-    void* massStor = mapBuffer(st->ci, nbb->LMCmass_buffer, CL_MAP_WRITE, sizeof(real));
-    void* scaleStor = mapBuffer(st->ci, nbb->LMCscale_buffer, CL_MAP_WRITE, sizeof(real));
-    void* posXStor = mapBuffer(st->ci, nbb->LMCposX_buffer, CL_MAP_WRITE, sizeof(real));
-    void* posYStor = mapBuffer(st->ci, nbb->LMCposY_buffer, CL_MAP_WRITE, sizeof(real));
-    void* posZStor = mapBuffer(st->ci, nbb->LMCposZ_buffer, CL_MAP_WRITE, sizeof(real));
-    
-    clFlush(st->ci->queue);
-    clFinish(st->ci->queue);
-    
-    memcpy(timeStor, &time, sizeof(real));
-    
-    if(!ctx->LMC) {
-      real mass[1];
-      mass[0] = -125.0;
-      memcpy(massStor, mass, sizeof(real));
-    } else {
-      memcpy(massStor, &ctx->LMCmass, sizeof(real));
-    }
-    
-    memcpy(scaleStor, &ctx->LMCscale, sizeof(real));
-    memcpy(posXStor, &X(st->LMCpos), sizeof(real));
-    memcpy(posYStor, &Y(st->LMCpos), sizeof(real));
-    memcpy(posZStor, &Z(st->LMCpos), sizeof(real));
-
-    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCtime_buffer, timeStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCmass_buffer, massStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCscale_buffer, scaleStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCposX_buffer, posXStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCposY_buffer, posYStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, nbb->LMCposZ_buffer, posZStor, 0, NULL, NULL);
-
     clFlush(st->ci->queue);
     clFinish(st->ci->queue); 
     
@@ -526,7 +493,13 @@ static cl_int nbSetKernelArguments(cl_kernel kern, cl_bool exact, const NBodyCtx
     err |= clSetKernelArg(kern, 33, sizeof(cl_mem), &nbb->LMCmass_buffer);
     err |= clSetKernelArg(kern, 34, sizeof(cl_mem), &nbb->LMCscale_buffer);
     err |= clSetKernelArg(kern, 35, sizeof(cl_mem), &nbb->LMCtime_buffer);
-    
+    err |= clSetKernelArg(kern, 36, sizeof(cl_mem), &nbb->LMCacciX_buffer);
+    err |= clSetKernelArg(kern, 37, sizeof(cl_mem), &nbb->LMCacciY_buffer);
+    err |= clSetKernelArg(kern, 38, sizeof(cl_mem), &nbb->LMCacciZ_buffer);
+    err |= clSetKernelArg(kern, 39, sizeof(cl_mem), &nbb->LMCacci1X_buffer);
+    err |= clSetKernelArg(kern, 40, sizeof(cl_mem), &nbb->LMCacci1Y_buffer);
+    err |= clSetKernelArg(kern, 41, sizeof(cl_mem), &nbb->LMCacci1Z_buffer);
+    err |= clSetKernelArg(kern, 42, sizeof(cl_mem), &nbb->LMCtimedt_buffer);
     
     return err;
 }
@@ -1604,7 +1577,6 @@ static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvect
     mwvector acc_total = mw_addv(acc, acc_i);
     dv = mw_mulvs(acc_total, dtHalf);
     mw_incaddv(st->LMCvel,dv);
-    
 }
 
 static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
@@ -1616,27 +1588,60 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mw
     mw_incaddv(st->LMCvel,dv);
 }
 
-void updateLMCBuffers(const NBodyCtx* ctx, NBodyState* st) {
+/* Run force calculation and integration kernels */
+static cl_int nbRunIntegrationKernel(NBodyState* st)
+{
+    cl_int err;
+    cl_event integrateEv;
+    CLInfo* ci = st->ci;
+    NBodyKernels* kernels = st->kernels;
+    NBodyWorkSizes* ws = st->workSizes;
+
+    err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
+                                     NULL, &ws->global[6], &ws->local[6],
+                                     0, NULL, &integrateEv);
+    clFlush(st->ci->queue);
+    clFinish(st->ci->queue);
+    return CL_SUCCESS;
+}
+
+void updateLMCBuffers(const NBodyCtx* ctx, NBodyState* st, const mwvector acc, const mwvector acc_i, int fakeMass) {
     real time = st->step * ctx->timestep - st->previousForwardTime;
+    
     void* timeStor = mapBuffer(st->ci, st->nbb->LMCtime_buffer, CL_MAP_WRITE, sizeof(real));
+    void* timedtStor = mapBuffer(st->ci, st->nbb->LMCtimedt_buffer, CL_MAP_WRITE, sizeof(real));
     void* massStor = mapBuffer(st->ci, st->nbb->LMCmass_buffer, CL_MAP_WRITE, sizeof(real));
     void* scaleStor = mapBuffer(st->ci, st->nbb->LMCscale_buffer, CL_MAP_WRITE, sizeof(real));
     void* posXStor = mapBuffer(st->ci, st->nbb->LMCposX_buffer, CL_MAP_WRITE, sizeof(real));
     void* posYStor = mapBuffer(st->ci, st->nbb->LMCposY_buffer, CL_MAP_WRITE, sizeof(real));
     void* posZStor = mapBuffer(st->ci, st->nbb->LMCposZ_buffer, CL_MAP_WRITE, sizeof(real));
-
+    void* acciXStor = mapBuffer(st->ci, st->nbb->LMCacciX_buffer, CL_MAP_WRITE, sizeof(real));
+    void* acciYStor = mapBuffer(st->ci, st->nbb->LMCacciY_buffer, CL_MAP_WRITE, sizeof(real));
+    void* acciZStor = mapBuffer(st->ci, st->nbb->LMCacciZ_buffer, CL_MAP_WRITE, sizeof(real));
+    void* acci1XStor = mapBuffer(st->ci, st->nbb->LMCacci1X_buffer, CL_MAP_WRITE, sizeof(real));
+    void* acci1YStor = mapBuffer(st->ci, st->nbb->LMCacci1Y_buffer, CL_MAP_WRITE, sizeof(real));
+    void* acci1ZStor = mapBuffer(st->ci, st->nbb->LMCacci1Z_buffer, CL_MAP_WRITE, sizeof(real));
+    
     clFlush(st->ci->queue);
     clFinish(st->ci->queue);
     
     memcpy(timeStor, &time, sizeof(real));
-    memcpy(massStor, &ctx->LMCmass, sizeof(real));
+    memcpy(timedtStor, &(ctx->timestep), sizeof(real));
+    
+    if(!ctx->LMC) {
+      real mass[1];
+      mass[0] = -125.0;
+      memcpy(massStor, mass, sizeof(real));
+    } else {
+      real mass[1];
+      mass[0] = fakeMass;
+      memcpy(massStor, mass, sizeof(real));
+    }
+    
     memcpy(scaleStor, &ctx->LMCscale, sizeof(real));
-    memcpy(posXStor, &X(st->LMCpos), sizeof(real));
-    memcpy(posYStor, &Y(st->LMCpos), sizeof(real));
-    memcpy(posZStor, &Z(st->LMCpos), sizeof(real));
-
-    clFlush(st->ci->queue);
-    clFinish(st->ci->queue);
+    memcpy(posXStor, &X(st->LMCpos), sizeof(real)); memcpy(posYStor, &Y(st->LMCpos), sizeof(real)); memcpy(posZStor, &Z(st->LMCpos), sizeof(real));
+    memcpy(acciXStor, &X(acc), sizeof(real)); memcpy(acciYStor, &Y(acc), sizeof(real)); memcpy(acciZStor, &Z(acc), sizeof(real));
+    memcpy(acci1XStor, &X(acc_i), sizeof(real)); memcpy(acci1YStor, &Y(acc_i), sizeof(real)); memcpy(acci1ZStor, &Z(acc_i), sizeof(real));
 
     clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCtime_buffer, timeStor, 0, NULL, NULL);
     clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCmass_buffer, massStor, 0, NULL, NULL);
@@ -1644,6 +1649,13 @@ void updateLMCBuffers(const NBodyCtx* ctx, NBodyState* st) {
     clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposX_buffer, posXStor, 0, NULL, NULL);
     clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposY_buffer, posYStor, 0, NULL, NULL);
     clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposZ_buffer, posZStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacciX_buffer, acciXStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacciY_buffer, acciYStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacciZ_buffer, acciZStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacci1X_buffer, acci1XStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacci1Y_buffer, acci1YStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacci1Z_buffer, acci1ZStor, 0, NULL, NULL);
+    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCtimedt_buffer, timedtStor, 0, NULL, NULL);
 
     clFlush(st->ci->queue);
     clFinish(st->ci->queue); 
@@ -1660,7 +1672,11 @@ NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvect
     mwvector acc_LMC;
     const real dt = ctx->timestep;
     real barTime = st->step * dt - st->previousForwardTime;
-    acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
+    updateLMCBuffers(ctx, st, acc_i, acc_i, ctx->LMCmass);
+    nbRunIntegrationKernel(st);
+    
+    acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), 
+                      dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
     advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     
     st->dirty = TRUE;
@@ -1669,20 +1685,18 @@ NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvect
 
     if (!st->usesExact)
     {
-        //mw_printf("StepSystemCL Tree Construction START\n");
         err = nbExecuteTreeConstruction(st);
-        //mw_printf("StepSystemCL Tree Construction END\n");
+
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error executing tree construction kernels");
             return NBODY_CL_ERROR;
         }
     }
-//    printf("%f\n",st->tree.root->cellnode.pos.x);
-    //mw_printf("StepSystemCL Force Kernels START\n");
-    updateLMCBuffers(ctx, st);
+
+    updateLMCBuffers(ctx, st, acc_i, acc_i1, -1024.0);
     err = nbExecuteForceKernels(st, CL_TRUE);
-    //mw_printf("StepSystemCL Force Kernels END\n");
+
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error executing force kernels");
@@ -1915,6 +1929,12 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
     err |= clReleaseMemObject_quiet(nbb->LMCposX_buffer);
     err |= clReleaseMemObject_quiet(nbb->LMCposY_buffer);
     err |= clReleaseMemObject_quiet(nbb->LMCposZ_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCacciX_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCacciY_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCacciZ_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCacci1X_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCacci1Y_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCacci1Z_buffer);
     
     if (err != CL_SUCCESS)
     {
@@ -2082,7 +2102,14 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
     nbb->LMCposX_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
     nbb->LMCposY_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
     nbb->LMCposZ_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-
+    nbb->LMCacciX_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCacciY_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCacciZ_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCacci1X_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCacci1Y_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCacci1Z_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    nbb->LMCtimedt_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
+    
     return CL_SUCCESS;
 }
 

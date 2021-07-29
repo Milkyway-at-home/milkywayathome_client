@@ -711,7 +711,10 @@ inline real4 externalAcceleration(real x, real y, real z)
     int updateVel,                                      \
     RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
     RVPtr _LMCmass, RVPtr _LMCscale,                    \
-    RVPtr _realbarTime                                  \
+    RVPtr _realbarTime,                                 \
+    RVPtr _LMCacciX, RVPtr _LMCacciY, RVPtr _LMCacciZ,  \
+    RVPtr _LMCacci1X, RVPtr _LMCacci1Y,                 \
+    RVPtr _LMCacci1Z, RVPtr _ctxTime                    \
     )
 
 
@@ -1884,6 +1887,15 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 #define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellSurvey(allBlock, base, (rSq) >= (dq))
 #endif
 
+/*
+    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
+    RVPtr _LMCmass, RVPtr _LMCscale,                    \
+    RVPtr _realbarTime,                                 \
+    RVPtr _LMCacciX, RVPtr _LMCacciY, RVPtr _LMCacciZ,  \
+    RVPtr _LMCacci1X, RVPtr _LMCacci1Y,                 \
+    RVPtr _LMCacci1Z, _ctxTime         
+*/
+
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
@@ -2090,6 +2102,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                             ax = mad(ai, dx, ax);
                             ay = mad(ai, dy, ay);
                             az = mad(ai, dz, az);
+                            
 
                           #if USE_QUAD
                             {
@@ -2204,20 +2217,21 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 }
             }
 
-            vx = mad(0.5 * TIMESTEP, ax - accX, vx);
-            vy = mad(0.5 * TIMESTEP, ay - accY, vy);
-            vz = mad(0.5 * TIMESTEP, az - accZ, vz);
-
             /* Save computed acceleration */
             _accX[i] = ax;
             _accY[i] = ay;
             _accZ[i] = az;
-
-            if (updateVel)
-            {
-                _velX[i] = vx;
-                _velY[i] = vy;
-                _velZ[i] = vz;
+            
+            if(_LMCmass[0] != -125.0) {
+               vx = mad(0.5 * TIMESTEP, ax - accX, vx);
+               vy = mad(0.5 * TIMESTEP, ay - accY, vy);
+               vz = mad(0.5 * TIMESTEP, az - accZ, vz);
+               
+               if(updateVel) {
+                  _velX[i] = vx;
+                  _velY[i] = vy;
+                  _velZ[i] = vz;
+               }
             }
 
             if (!skipSelf)
@@ -2252,6 +2266,13 @@ __kernel void NBODY_KERNEL(integration)
         real ax = _accX[i];
         real ay = _accY[i];
         real az = _accZ[i];
+        
+        /* ending uniform acceleration addition for LMC, check */
+        if(_LMCmass[0] != -125.0) {
+           ax += _LMCacci1X[0];
+           ay += _LMCacci1Y[0];
+           az += _LMCacci1Z[0];
+        }
 
         real vx = _velX[i];
         real vy = _velY[i];
@@ -2274,10 +2295,11 @@ __kernel void NBODY_KERNEL(integration)
         vy += dvy;
         vz += dvz;
 
-
-        _posX[i] = px;
-        _posY[i] = py;
-        _posZ[i] = pz;
+        if(_LMCmass[0] == -125.0 || _LMCmass[0] != -1024.0) {
+           _posX[i] = px;
+           _posY[i] = py;
+           _posZ[i] = pz;
+        }
 
         _velX[i] = vx;
         _velY[i] = vy;
@@ -2309,8 +2331,6 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
         real dvx = _velX[i];
         real dvy = _velY[i];
         real dvz = _velZ[i];
-
-
 
         real ax = 0.0;
         real ay = 0.0;
@@ -2374,15 +2394,17 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             }
         }
         
-        if (updateVel)
-        {
-            dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
-            dvy = mad(0.5 * TIMESTEP, ay - day, dvy);
-            dvz = mad(0.5 * TIMESTEP, az - daz, dvz);
+        if(_LMCmass[0] == -125.0) {
+            if (updateVel)
+            {
+                dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
+                dvy = mad(0.5 * TIMESTEP, ay - day, dvy);
+                dvz = mad(0.5 * TIMESTEP, az - daz, dvz);
 
-            _velX[i] = dvx;
-            _velY[i] = dvy;
-            _velZ[i] = dvz;
+                _velX[i] = dvx;
+                _velY[i] = dvy;
+                _velZ[i] = dvz;
+            }
         }
 
         _accX[i] = ax;
