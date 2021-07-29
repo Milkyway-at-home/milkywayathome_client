@@ -177,7 +177,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     EVP_MD_CTX_init(&hashCtx);           //OPENSSL V1.0.2
 
     //mw_printf("HASHN - Before core\n");
-    failed = hashNBodyTestCore(hashCtx, hash, test);
+    failed = hashNBodyTestCore(&hashCtx, hash, test);
 
     //mw_printf("HASHN - Before free\n");
     //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
@@ -376,7 +376,7 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     EVP_MD_CTX_init(&hashCtx);           //OPENSSL V1.0.2
 
     //mw_printf("HASHBOD - Before hashBodiesCore\n");
-    failed = hashBodiesCore(hashCtx, hash, bodies, nbody);
+    failed = hashBodiesCore(&hashCtx, hash, bodies, nbody);
 
     //mw_printf("HASHBOD - Before free\n");
     //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
