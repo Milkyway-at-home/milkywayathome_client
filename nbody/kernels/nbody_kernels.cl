@@ -301,6 +301,10 @@ inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale
     acc.y = v.y * scalar;
     acc.z = v.z * scalar;
     
+    //if(acc.x > 400) {
+    //  printf("Plummer Additive Acceleration (X): %f\n", scalar);
+    //}
+    
     return acc;
 }
 
@@ -1913,7 +1917,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
   #endif /* USE_QUAD */
 
-
   #if !HAVE_INLINE_PTX
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
@@ -2243,7 +2246,10 @@ __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
     uint inc = get_local_size(0) * get_num_groups(0);
-
+    //if(_LMCmass[0] != -1024.0 && get_local_id(0) == 0 && get_global_id(0) == 0) {
+    //  printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", _LMCposX[0], _LMCposY[0], 
+    //       _LMCposZ[0], _LMCmass[0], _LMCscale[0]);
+    //}
     /* Iterate over all bodies assigned to thread */
     for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
     {
@@ -2279,10 +2285,12 @@ __kernel void NBODY_KERNEL(integration)
         py = mad(TIMESTEP, vy, py);
         pz = mad(TIMESTEP, vz, pz);
 
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
-
+        if(_LMCmass[0] == -125.0) {
+          vx += dvx;
+          vy += dvy;
+          vz += dvz;
+        }
+        
         if(_LMCmass[0] == -125.0 || _LMCmass[0] != -1024.0) {
            _posX[i] = px;
            _posY[i] = py;
