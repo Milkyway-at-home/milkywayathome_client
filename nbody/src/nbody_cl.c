@@ -1588,7 +1588,7 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mw
     mw_incaddv(st->LMCvel,dv);
 }
 
-/* Run force calculation and integration kernels */
+/* Run integration kernels */
 static cl_int nbRunIntegrationKernel(NBodyState* st)
 {
     cl_int err;
@@ -1824,9 +1824,9 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         printf("*Total frames: %d\n", kept_frames);
     #endif
 
-    while (st->step < ctx->nStep)
+    /* Ask about this */
+    while (st->step <= ctx->nStep)
     {
-
         #ifdef NBODY_BLENDER_OUTPUT
             nbFindCenterOfMass(&nextCmPos, st);
             blenderPossiblyChangePerpendicularCmPos(&nextCmPos,&perpendicularCmPos,&startCmPos);
@@ -1838,9 +1838,7 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         }
 
 	if(!ctx->LMC) {
-            mwvector zero;
-            SET_VECTOR(zero,0,0,0);
-            rc |= nbStepSystemCL(ctx, st); 
+	    rc |= nbStepSystemCL(ctx, st); 
         } else {
             rc |= nbStepSystemCL_LMC(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
         }
