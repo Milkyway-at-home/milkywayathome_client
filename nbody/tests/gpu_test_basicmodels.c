@@ -29,7 +29,7 @@ static NBodyState Cst = EMPTY_NBODYSTATE;
 static NBodyCtx Gctx = EMPTY_NBODYCTX;
 static NBodyState Gst = EMPTY_NBODYSTATE;
 int steps = 1;
-float tolerence = 0.000001;
+float tolerence = 0.00001;
 
 static void CLR(CLRequest* clr, const NBodyFlags* nbf){
 
