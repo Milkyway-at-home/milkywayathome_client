@@ -1835,9 +1835,8 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         perpendicularCmPos=startCmPos;
         printf("*Total frames: %d\n", kept_frames);
     #endif
-
-    /* Ask about this */
-    while (st->step <= ctx->nStep)
+	
+    while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
             nbFindCenterOfMass(&nextCmPos, st);
