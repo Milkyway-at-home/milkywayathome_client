@@ -32,6 +32,7 @@ function makeContext()
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect    = 1.111,
+      LMC           = false,
       IterMax       = 6
    }
 end
