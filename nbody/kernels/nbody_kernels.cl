@@ -2253,7 +2253,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
     __local real zs[THREADS8];
     __local real ms[THREADS8];
     __local real branch;
-    branc = _LMCbranching[0];
+    branch = _LMCbranching[0];
 
     cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
 
