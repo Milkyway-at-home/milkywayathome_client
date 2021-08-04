@@ -168,7 +168,7 @@ mwbool checkHaloConstants(Halo* h)
             }
             break;
 
-        case TriaxialHalo:   /** FIXME: This code still has the capacity to produce negative densities. Find under which parameters the density becomes positive definite. **/
+        case TriaxialHalo:
             if (   !isfinite(h->triaxAngle)
                 || !isfinite(h->flattenX)
                 || !isfinite(h->flattenY)
@@ -193,6 +193,13 @@ mwbool checkHaloConstants(Halo* h)
 
             /* 2 * sin(x) * cos(x) == sin(2 * x) */
             h->c3 = mw_sin(2.0 * phi) * ((qys - qxs) / (qxs * qys));
+            if (   mw_pow(qxs/(qxs+1),0.5) > (h->flattenZ)
+                || (mw_pow(h->flattenX,-2.718281828459)+1) < (h->flattenZ)
+                || (h->flattenY) < 0.999999 || (h->flattenY) > 1.000001
+                || phi < 0 || phi > 3.141592653589793)
+            {
+                mw_printf("WARNING: The density may not be positive definite for the given parameters of halo type '%s'\n", showHaloT(h->type));
+            }
             break;
 
         case CausticHalo:

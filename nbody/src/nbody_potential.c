@@ -270,55 +270,78 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
 
     const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
     mwvector R_hat;
-    X(R_hat) = X(pos)/R;
-    Y(R_hat) = Y(pos)/R;
+    X(R_hat) = X(pos) / R;
+    Y(R_hat) = Y(pos) / R;
     Z(R_hat) = 0.0;
 
     mwvector Z_hat;
     X(Z_hat) = 0.0;
     Y(Z_hat) = 0.0;
-    Z(Z_hat) = 1.0;
+    Z(Z_hat) = Z(pos) / mw_abs(Z(pos));
 
     const real Rd = disk->scaleLength;
     const real zd = disk->scaleHeight;
     const real M = disk->mass;
     const real z = Z(pos);
+    const real h = 0.001;
 
-    const int n = 15;
-    const real a = 0.0;
-    const real b = 60.0/R;
-    real integralR = 0.0;
-    real integralZ = 0.0;
-    const real weight[] = {0.236927,0.478629,0.568889,0.478629,0.236927};
-    const real point[] = {-0.90618,-0.538469,0.0,0.538469,0.90618};
-    const real h = (b-a)/(n*1.0);
+    const real a = 1.0 / Rd;
+    const real b = 1.0 / zd;
+    
+    real R_piece = 0.0;
+    real z_piece = 0.0;
 
-    for (int k = 0; k < n; k++)     /*Five-point Gaussian Quadrature*/
+    real j0_zero;
+    real psi_in_0;
+    real psi_0;
+    real psi_prime_0;
+    real j0_x;
+    real j0_w;
+    real fun_0;
+
+    real j1_zero;
+    real psi_in_1;
+    real psi_1;
+    real psi_prime_1;
+    real j1_x;
+    real j1_w;
+    real fun_1;
+
+    for (int n = 0; n < 150; n+=1)    // Hidenori Ogata's Numerical Integration Formula Based on the Bessel Functions
     {
-        real Rpiece = 0.0;
-        real Zpiece = 0.0;
-        real k_val = 0.0;
-        for (int j = 0; j < 5; j++)
-        {
-            k_val = h*point[j]/2 + a+(k*1.0+0.5)*h;
-            Rpiece = Rpiece + h*weight[j]*RExpIntegrand(k_val,R,Rd,z,zd)/2.0;
-            Zpiece = Zpiece + h*weight[j]*ZExpIntegrand(k_val,R,Rd,z,zd)/2.0;
-        }
-        integralR  = integralR + Rpiece;
-        integralZ  = integralZ + Zpiece;
+        j0_zero = besselJ0_zero(n)/pi;
+        j1_zero = besselJ1_zero(n)/pi;
+        psi_in_0 = h * j0_zero;
+        psi_in_1 = h * j1_zero;
+        psi_0 = psi_in_0 * mw_sinh(pi / 2.0 * mw_sinh(psi_in_0)) / mw_cosh(pi / 2.0 * mw_sinh(psi_in_0));
+        psi_1 = psi_in_1 * mw_sinh(pi / 2.0 * mw_sinh(psi_in_1)) / mw_cosh(pi / 2.0 * mw_sinh(psi_in_1));
+        psi_prime_0 = (mw_sinh(pi * mw_sinh(psi_in_0)) + pi * psi_in_0 * mw_cosh(psi_in_0)) / (mw_cosh(pi * mw_sinh(psi_in_0)) + 1.0);
+        psi_prime_1 = (mw_sinh(pi * mw_sinh(psi_in_1)) + pi * psi_in_1 * mw_cosh(psi_in_1)) / (mw_cosh(pi * mw_sinh(psi_in_1)) + 1.0);
+        j0_x = pi / h * psi_0;
+        j1_x = pi / h * psi_1;
+
+        j0_w = 2.0 / (pi * j0_zero * mw_pow(besselJ1(pi * j0_zero), 2)) * besselJ0(j0_x) * psi_prime_0;
+        j1_w = 2.0 / (pi * j1_zero * mw_pow(besselJ2(pi * j1_zero),2)) * besselJ1(j1_x) * psi_prime_1;
+
+        fun_1 = j1_x * mw_pow(mw_pow(a,2.0) + mw_pow(j1_x / R, 2.0), -1.5) * (b * mw_exp(-j1_x / R * mw_abs(z)) - j1_x / R * mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j1_x / R, 2.0));
+        fun_0 = mw_pow(mw_pow(a, 2.0) + mw_pow(j0_x / R, 2.0), -1.5) * j0_x / R * (mw_exp(-j0_x / R * mw_abs(z)) - mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j0_x / R, 2.0));
+
+        real z_pieceAdd = (4.0 * pi * a * b / R) * fun_0 * j0_w;
+        real R_pieceAdd = (4.0 * pi * a / mw_pow(R, 2.0)) * fun_1 * j1_w;
+        
+        z_piece += z_pieceAdd;
+        R_piece += R_pieceAdd;
     }
 
-    mwvector R_comp = mw_mulvs(R_hat, -2.0*M/pi*integralR);
-    mwvector Z_comp = mw_mulvs(Z_hat, -2.0*M/pi*integralZ);
+    mwvector R_comp = mw_mulvs(R_hat, -M * mw_pow(a,2) * b / 4 / pi * R_piece);
+    mwvector Z_comp = mw_mulvs(Z_hat, -M * mw_pow(a, 2) * b / 4 / pi * z_piece);
 
     X(acc) = X(R_comp) + X(Z_comp);
     Y(acc) = Y(R_comp) + Y(Z_comp);
     Z(acc) = Z(R_comp) + Z(Z_comp);
 
-    //real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
-
+    real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
-
     return acc;
 }
 

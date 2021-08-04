@@ -38,9 +38,9 @@ static const real thresh = mw_pow(2.0,-8.0);
 static const real pi = 3.1415926535;
 
 static const int nPotentials = 10;
-static const int nPositions = 1000;
-static const real min_pos = -100.0;
-static const real max_pos = 100.0;
+static const int nPositions = 40;
+static const real min_pos = -10.0;
+static const real max_pos = 10.0;
 
 static inline real randomValueReal(real min_val, real max_val)
 {
@@ -77,50 +77,71 @@ static inline void generateRandomHaloParams(real* vhalo,
 {
     *vhalo       = randomValueReal(1.0,200.0);
     *scaleLength = randomValueReal(0.1,30.0);
-    *flattenX    = randomValueReal(0.71,2.0);
-    *flattenY    = randomValueReal(0.71,2.0);
-    *flattenZ    = randomValueReal(0.71,2.0);
+    *flattenX    = randomValueReal(1.0,1.8);
+    *flattenY    = 1.0;
+    *flattenZ    = randomValueReal(mw_sqrt(*flattenX * *flattenX / (*flattenX * *flattenX + 1.0)),(1.0/mw_pow(*flattenX,2.71828))+1);
     *triaxAngle  = randomValueReal(0.0,180.0);
     *gamma       = randomValueReal(2.0,5.0);
     *lambda      = randomValueReal(20.0,300.0);
     *mass        = randomValueReal(1000.0,100000.0);
     *rho0        = randomValueReal(5.0,50.0);
-
 }
 
 static inline mwbool checkPoisson(const Potential* pot, mwvector pos)//const pos
 {
+
     mwvector pos_xp, pos_xm, pos_yp, pos_ym, pos_zp, pos_zm;
     mwvector acc_xp, acc_xm, acc_yp, acc_ym, acc_zp, acc_zm;
+    real h_r = h * (mw_pow(X(pos),2.0)+mw_pow(Y(pos),2.0)+mw_pow(Z(pos),2.0));
+    //real h_r = h * mw_pow((mw_pow(X(pos),2.0)+mw_pow(Y(pos),2.0)+mw_pow(Z(pos),2.0)),0.5);
+    //real h_r = h;
+    real time = 0.0;
+    real flux = 0.0;
+    real boxes = 4.0;
+    //mw_printf("%s\n",showPotential(pot));
+    //mw_printf("%.15f,%.15f,%.15f,%.15f\n",X(pos),Y(pos),Z(pos),mw_pow(mw_pow(X(nbExtAcceleration(pot, pos, time)),2.0)+mw_pow(Y(nbExtAcceleration(pot, pos, time)),2.0)+mw_pow(Z(nbExtAcceleration(pot, pos, time)),2.0),0.5));
+    for (real i = -boxes; i < boxes + 0.5; i = i + 1.0) {
+        for (real j = -boxes; j < boxes + 0.5; j = j + 1.0) {
+            SET_VECTOR(pos_xp, X(pos)+(boxes + 0.5)*h_r, Y(pos)+i*h_r, Z(pos)+j*h_r);
+            SET_VECTOR(pos_xm, X(pos)-(boxes + 0.5)*h_r, Y(pos)+i*h_r, Z(pos)+j*h_r);
+            SET_VECTOR(pos_yp, X(pos)+i*h_r, Y(pos)+(boxes + 0.5)*h_r, Z(pos)+j*h_r);
+            SET_VECTOR(pos_ym, X(pos)+i*h_r, Y(pos)-(boxes + 0.5)*h_r, Z(pos)+j*h_r);
+            SET_VECTOR(pos_zp, X(pos)+i*h_r, Y(pos)+j*h_r, Z(pos)+(boxes + 0.5)*h_r);
+            SET_VECTOR(pos_zm, X(pos)+i*h_r, Y(pos)+j*h_r, Z(pos)-(boxes + 0.5)*h_r);
 
-    SET_VECTOR(pos_xp, X(pos)+0.5*h, Y(pos), Z(pos));
-    SET_VECTOR(pos_xm, X(pos)-0.5*h, Y(pos), Z(pos));
-    SET_VECTOR(pos_yp, X(pos), Y(pos)+0.5*h, Z(pos));
-    SET_VECTOR(pos_ym, X(pos), Y(pos)-0.5*h, Z(pos));
-    SET_VECTOR(pos_zp, X(pos), Y(pos), Z(pos)+0.5*h);
-    SET_VECTOR(pos_zm, X(pos), Y(pos), Z(pos)-0.5*h);
+            acc_xp = nbExtAcceleration(pot, pos_xp, time);
+            acc_xm = nbExtAcceleration(pot, pos_xm, time);
+            acc_yp = nbExtAcceleration(pot, pos_yp, time);
+            acc_ym = nbExtAcceleration(pot, pos_ym, time);
+            acc_zp = nbExtAcceleration(pot, pos_zp, time);
+            acc_zm = nbExtAcceleration(pot, pos_zm, time);
+        
+            flux = flux + (X(acc_xp) - X(acc_xm) + Y(acc_yp) - Y(acc_ym) + Z(acc_zp) - Z(acc_zm))*h_r*h_r;
+        }
+    }
+    mwvector pos_den_xyz;
+    real M_enc = 0.0;
+    for (real i = -boxes; i < boxes + 0.5; i = i + 1.0) {
+        for (real j = -boxes; j < boxes + 0.5; j = j + 1.0) {
+            for (real k = -boxes; k < boxes + 0.5; k = k + 1.0) {
+                SET_VECTOR(pos_den_xyz, X(pos)+i*h_r, Y(pos)+j*h_r, Z(pos)+k*h_r);
+                real density = nbExtDensity(pot, pos_den_xyz, time);
+                M_enc = M_enc + density*h_r*h_r*h_r;
+            }
+        }
+    }
 
-    real time = 0;
-    acc_xp = nbExtAcceleration(pot, pos_xp, time);
-    acc_xm = nbExtAcceleration(pot, pos_xm, time);
-    acc_yp = nbExtAcceleration(pot, pos_yp, time);
-    acc_ym = nbExtAcceleration(pot, pos_ym, time);
-    acc_zp = nbExtAcceleration(pot, pos_zp, time);
-    acc_zm = nbExtAcceleration(pot, pos_zm, time);
-
-    real div_acc = (X(acc_xp)-X(acc_xm)+Y(acc_yp)-Y(acc_ym)+Z(acc_zp)-Z(acc_zm))/h;
-    real density = nbExtDensity(pot, pos, time);
-
-    real diff = mw_abs(1.0 + 4.0*pi*density/div_acc);
-
+    real diff = mw_abs(1.0 + 4.0*pi*M_enc/flux);
+    //mw_printf("%.15f,", diff);
     if (diff > thresh)
     {
-        mw_printf("|1 + 4*pi*RHO/DIV_ACC| = |1 + %.15f/%.15f| = %.15f\n", 4.0*pi*density, div_acc, diff);
+        mw_printf("|1 + 4*pi*M_enc/flux| = |1 + %.15f/%.15f| = %.15f\n", 4.0*pi*M_enc, flux, diff);
         mw_printf("  Potential = %s\n", showPotential(pot));
         return TRUE;
     }
-    
+
     return FALSE;
+
 }
 
 static inline void createNullPotential(Potential* p)
@@ -291,6 +312,7 @@ int main()
 
     //TEST SPHERICAL COMPONENTS
     //Hernquist Spherical Potential
+    
     for (i = 0; i < nPotentials; i++)
     {
         if (testSphericalPotential(HernquistSpherical))
@@ -341,17 +363,17 @@ int main()
         }
     }
 
-    //Double Exponential Disk Potential                       /** FIXME: These two potentials fail the poisson test. Do not use these potentials until we can more accurately calculate them **/
-//    for (i = 0; i < nPotentials; i++)
-//    {
-//        if (testDiskPotential(DoubleExponentialDisk))
-//        {
-//            failed = 1;
-//            break;
-//        }
-//    }
-
-    //Hyperbolic Exponential Disk Potential  
+    //Double Exponential Disk Potential
+    for (i = 0; i < nPotentials; i++)
+    {
+        if (testDiskPotential(DoubleExponentialDisk))
+        {
+            failed = 1;
+            break;
+        }
+    }
+    
+    //Hyperbolic Exponential Disk Potential  /** FIXME: This potential fails the poisson test. Do not use this potential until we can more accurately calculate it **/
 //    for (i = 0; i < nPotentials; i++)
 //    {
 //        if (testDiskPotential(Sech2ExponentialDisk))
@@ -382,15 +404,15 @@ int main()
         }
     }
 
-//    //Triaxial Halo Potential                    FIXME: This halo keeps producing negative densities. Need better way of constraining flattening parameters and triaxAngle.
-//    for (i = 0; i < nPotentials; i++)
-//    {
-//        if (testHaloPotential(TriaxialHalo))
-//        {
-//            failed = 1;
-//            break;
-//        }
-//    }
+    //Triaxial Halo Potential
+    for (i = 0; i < nPotentials; i++)
+    {
+        if (testHaloPotential(TriaxialHalo))
+        {
+            failed = 1;
+            break;
+        }
+    }
 
     //Allen-Santillan Halo Potential
     for (i = 0; i < nPotentials; i++)
