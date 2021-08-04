@@ -2194,8 +2194,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 LMCpos.y = _LMCposY[0];
                 LMCpos.z = _LMCposZ[0];
                 
+                real lmcMass = _LMCmass[0];
+                real lmcScale = _LMCscale[0];
+                
                 real4 acc = externalAcceleration(px, py, pz);
-                real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
+                real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
                 ax += acc.x;
                 ay += acc.y;
                 az += acc.z;
@@ -2308,9 +2311,12 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             LMCpos.x = _LMCposX[0];
             LMCpos.y = _LMCposY[0];
             LMCpos.z = _LMCposZ[0];
+            
+            real lmcMass = _LMCmass[0];
+            real lmcScale = _LMCscale[0];
                 
             real4 acc = externalAcceleration(px, py, pz);
-            real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, _LMCmass[0], _LMCscale[0]);
+            real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
             ax += acc.x;
             ay += acc.y;
             az += acc.z;
