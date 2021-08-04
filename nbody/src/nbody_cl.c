@@ -1944,6 +1944,7 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
     err |= clReleaseMemObject_quiet(nbb->LMCacci1X_buffer);
     err |= clReleaseMemObject_quiet(nbb->LMCacci1Y_buffer);
     err |= clReleaseMemObject_quiet(nbb->LMCacci1Z_buffer);
+    err |= clReleaseMemObject_quiet(nbb->LMCbranching_buffer);
     
     if (err != CL_SUCCESS)
     {
