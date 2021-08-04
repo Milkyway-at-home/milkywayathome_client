@@ -280,32 +280,32 @@ inline real4 plummerSphericalAccel(real4 pos, real r)
 }
 
 /* Added LMC PlummerAccelerationFunction */
-//inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
-//{
-//    real4 acc;
-//    real4 v;
-//    acc.x = 0.0;
-//    v.x = 0.0;
-//    acc.y = 0.0;
-//    v.y = 0.0;
-//    acc.z = 0.0;
-//    v.z = 0.0;
+inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
+{
+    real4 acc;
+    real4 v;
+    acc.x = 0.0;
+    v.x = 0.0;
+    acc.y = 0.0;
+    v.y = 0.0;
+    acc.z = 0.0;
+    v.z = 0.0;
     
-//    v.x = pos1.x - pos.x;
-//    v.y = pos1.y - pos.y;
-//    v.z = pos1.z - pos.z;
-//    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
-//    real tmp = sqrt(sqr(scale) + sqr(dist));
-//    real scalar = mass / pow(tmp, 3.0);
-//    acc.x = v.x * scalar;
-//    acc.y = v.y * scalar;
-//    acc.z = v.z * scalar;
+    v.x = pos1.x - pos.x;
+    v.y = pos1.y - pos.y;
+    v.z = pos1.z - pos.z;
+    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
+    real tmp = sqrt(sqr(scale) + sqr(dist));
+    real scalar = mass / pow(tmp, 3.0);
+    acc.x = v.x * scalar;
+    acc.y = v.y * scalar;
+    acc.z = v.z * scalar;
     
     //if(acc.x > 400) {
     //  printf("Plummer Additive Acceleration (X): %f\n", scalar);
     //}
-//    return acc;
-//}
+    return acc;
+}
 
 /* gets negative of the acceleration vector of this disk component */
 inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
@@ -2204,13 +2204,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 lmcScale = _LMCscale[0];
                 
                 real4 acc = externalAcceleration(px, py, pz);
-                real4 accLMC; real4 vLMC;
-                vLMC.x = LMCBodypos.x - LMCpos.x; vLMC.y = LMCBodypos.y - LMCpos.y; vLMC.z = LMCBodypos.z - LMCpos.z;
-                real dist = sqrt(sqr(LMCpos.x - LMCBodypos.x) + sqr(LMCpos.y - LMCBodypos.y) + sqr(LMCpos.z - LMCBodypos.z));
-                real tmp = sqrt(sqr(lmcScale) + sqr(dist));
-                real scalar = lmcMass / pow(tmp, 3.0);
-                accLMC.x = vLMC.x * scalar; accLMC.y = vLMC.y * scalar; accLMC.z = vLMC.z * scalar;
-
+                real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
                 ax += acc.x;
                 ay += acc.y;
                 az += acc.z;
@@ -2332,13 +2326,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             lmcScale = _LMCscale[0];
                 
             real4 acc = externalAcceleration(px, py, pz);
-            real4 accLMC; real4 vLMC;
-            vLMC.x = LMCBodypos.x - LMCpos.x; vLMC.y = LMCBodypos.y - LMCpos.y; vLMC.z = LMCBodypos.z - LMCpos.z;
-            real dist = sqrt(sqr(LMCpos.x - LMCBodypos.x) + sqr(LMCpos.y - LMCBodypos.y) + sqr(LMCpos.z - LMCBodypos.z));
-            real tmp = sqrt(sqr(lmcScale) + sqr(dist));
-            real scalar = lmcMass / pow(tmp, 3.0);
-            accLMC.x = vLMC.x * scalar; accLMC.y = vLMC.y * scalar; accLMC.z = vLMC.z * scalar;
-            
+            real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
             ax += acc.x;
             ay += acc.y;
             az += acc.z;

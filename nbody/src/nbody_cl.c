@@ -1801,12 +1801,29 @@ static cl_int nbRunPreStep(NBodyState* st)
     return clSetKernelArg(kernel, 29, sizeof(cl_int), &trueVal);
 }
 
+void nbSetupLMCBuffers(const NBodyCtx* ctx, NBodyState* st) {
+    st->nbb->LMCtime_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCmass_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCscale_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCposX_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCposY_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCposZ_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCacciX_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCacciY_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCacciZ_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCacci1X_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCacci1Y_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCacci1Z_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+    st->nbb->LMCbranching_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
+}
+
 static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc = NBODY_SUCCESS;
     cl_int err;
 
     if (ctx->LMC){
+        nbSetupLMCBuffers(ctx, st);
         if (!st->shiftByLMC) {
             mwvector* shiftLMC;
             size_t sizeLMC;
@@ -2105,20 +2122,6 @@ cl_int nbCreateBuffers(const NBodyCtx* ctx, NBodyState* st)
             }
         }
     }
-    
-    nbb->LMCtime_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCmass_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCscale_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCposX_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCposY_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCposZ_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCacciX_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCacciY_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCacciZ_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCacci1X_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCacci1Y_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCacci1Z_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
-    nbb->LMCbranching_buffer = mwCreateZeroReadWriteBuffer(ci, sizeof(real));
     
     return CL_SUCCESS;
 }
