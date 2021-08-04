@@ -1922,7 +1922,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
     */
     __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
-
+  
+    __local real branch = _LMCbranching[0];
+    
     if (get_local_id(0) == 0)
     {
         maxDepth = _treeStatus->maxDepth;
@@ -2180,6 +2182,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             real vx = _velX[i];
             real vy = _velY[i];
             real vz = _velZ[i];
+            
 
 
             if (USE_EXTERNAL_POTENTIAL)
@@ -2194,8 +2197,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 LMCpos.y = _LMCposY[0];
                 LMCpos.z = _LMCposZ[0];
                 
-                real lmcMass = _LMCmass[0];
-                real lmcScale = _LMCscale[0];
+                __local real lmcMass = _LMCmass[0];
+                __local real lmcScale = _LMCscale[0];
                 
                 real4 acc = externalAcceleration(px, py, pz);
                 real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
@@ -2203,7 +2206,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 ay += acc.y;
                 az += acc.z;
                 
-                if(_LMCbranching[0] != -125.0) {
+                if(branch != -125.0) {
                   ax += accLMC.x;
                   ay += accLMC.y;
                   az += accLMC.z;
@@ -2215,7 +2218,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             _accY[i] = ay;
             _accZ[i] = az;
             
-            if(_LMCbranching[0] == -125.0) {
+            if(branch == -125.0) {
                vx = mad(0.5 * TIMESTEP, ax - accX, vx);
                vy = mad(0.5 * TIMESTEP, ay - accY, vy);
                vz = mad(0.5 * TIMESTEP, az - accZ, vz);
@@ -2246,6 +2249,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
     __local real ys[THREADS8];
     __local real zs[THREADS8];
     __local real ms[THREADS8];
+    __local real branch = _LMCbranching[0];
 
     cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
 
@@ -2312,8 +2316,8 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             LMCpos.y = _LMCposY[0];
             LMCpos.z = _LMCposZ[0];
             
-            real lmcMass = _LMCmass[0];
-            real lmcScale = _LMCscale[0];
+            __local real lmcMass = _LMCmass[0];
+            __local real lmcScale = _LMCscale[0];
                 
             real4 acc = externalAcceleration(px, py, pz);
             real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
@@ -2321,14 +2325,14 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             ay += acc.y;
             az += acc.z;
                 
-            if(_LMCbranching[0] != -125.0) {
+            if(branch != -125.0) {
               ax += accLMC.x;
               ay += accLMC.y;
               az += accLMC.z;
             }
         }
         
-        if(_LMCbranching[0] == -125.0) {
+        if(branch == -125.0) {
             if (updateVel)
             {
                 dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
@@ -2351,11 +2355,13 @@ __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
     uint inc = get_local_size(0) * get_num_groups(0);
+    __local real branch = _LMCbranching[0];
     //if(_LMCmass[0] != -1024.0 && get_local_id(0) == 0 && get_global_id(0) == 0) {
     //  printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", _LMCposX[0], _LMCposY[0], 
     //       _LMCposZ[0], _LMCmass[0], _LMCscale[0]);
     //}
     /* Iterate over all bodies assigned to thread */
+    
     for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
     {
         real px = _posX[i];
@@ -2367,7 +2373,7 @@ __kernel void NBODY_KERNEL(integration)
         real az = _accZ[i];
         
         /* ending uniform acceleration addition for LMC, check */
-        if(_LMCbranching[0] != -125.0) {
+        if(branch != -125.0) {
            ax += _LMCacci1X[0];
            ay += _LMCacci1Y[0];
            az += _LMCacci1Z[0];
@@ -2390,13 +2396,13 @@ __kernel void NBODY_KERNEL(integration)
         py = mad(TIMESTEP, vy, py);
         pz = mad(TIMESTEP, vz, pz);
 
-        if(_LMCbranching[0] == -125.0) {
+        if(branch == -125.0) {
           vx += dvx;
           vy += dvy;
           vz += dvz;
         }
         
-        if(_LMCbranching[0] == -125.0 || _LMCbranching[0] != -1024.0) {
+        if(branch == -125.0 || branch != -1024.0) {
            _posX[i] = px;
            _posY[i] = py;
            _posZ[i] = pz;
