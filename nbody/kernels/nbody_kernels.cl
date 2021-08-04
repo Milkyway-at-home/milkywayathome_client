@@ -690,7 +690,18 @@ inline real4 externalAcceleration(real x, real y, real z)
 
 
 }
+
 /* All kernels will use the same parameters for now */
+/* 
+    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
+    RVPtr _LMCmass, RVPtr _LMCscale,                    \
+    RVPtr _realbarTime,                                 \
+    RVPtr _LMCacciX, RVPtr _LMCacciY, RVPtr _LMCacciZ,  \
+    RVPtr _LMCacci1X, RVPtr _LMCacci1Y,                 \
+    RVPtr _LMCacci1Z, RVPtr _LMCbranching               \
+    )
+*/
+
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
     RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
@@ -712,12 +723,12 @@ inline real4 externalAcceleration(real x, real y, real z)
     __global volatile TreeStatus* _treeStatus,          \
     uint maxNBody,                                      \
     int updateVel,                                      \
-    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
-    RVPtr _LMCmass, RVPtr _LMCscale,                    \
-    RVPtr _realbarTime,                                 \
-    RVPtr _LMCacciX, RVPtr _LMCacciY, RVPtr _LMCacciZ,  \
-    RVPtr _LMCacci1X, RVPtr _LMCacci1Y,                 \
-    RVPtr _LMCacci1Z, RVPtr _LMCbranching               \
+    real LMCposX, real LMCposY, real LMCposZ,           \
+    real LMCmass, real LMCscale,                        \
+    real realbarTime,                                   \
+    real LMCacciX, real LMCacciY, real LMCacciZ,        \
+    real LMCacci1X, real LMCacci1Y,                     \
+    real LMCacci1Z, real LMCbranching                   \
     )
 
 
@@ -1923,8 +1934,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
   
-    __local real branch;
-    branch = _LMCbranching[0];
+    real branch = LMCbranching;
     
     if (get_local_id(0) == 0)
     {
@@ -2194,14 +2204,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 LMCBodypos.z = pz;
                 
                 real4 LMCpos;
-                LMCpos.x = _LMCposX[0];
-                LMCpos.y = _LMCposY[0];
-                LMCpos.z = _LMCposZ[0];
+                LMCpos.x = LMCposX;
+                LMCpos.y = LMCposY;
+                LMCpos.z = LMCposZ;
                 
-                __local real lmcMass; 
-                lmcMass = _LMCmass[0];
-                __local real lmcScale;
-                lmcScale = _LMCscale[0];
+                real lmcMass = LMCmass;
+                real lmcScale = LMCscale;
                 
                 real4 acc = externalAcceleration(px, py, pz);
                 real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
@@ -2252,8 +2260,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
     __local real ys[THREADS8];
     __local real zs[THREADS8];
     __local real ms[THREADS8];
-    __local real branch;
-    branch = _LMCbranching[0];
+    real branch = LMCbranching;
 
     cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
 
@@ -2316,14 +2323,12 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             LMCBodypos.z = pz;
                 
             real4 LMCpos;
-            LMCpos.x = _LMCposX[0];
-            LMCpos.y = _LMCposY[0];
-            LMCpos.z = _LMCposZ[0];
+            LMCpos.x = LMCposX;
+            LMCpos.y = LMCposY;
+            LMCpos.z = LMCposZ;
             
-            __local real lmcMass; 
-            lmcMass = _LMCmass[0];
-            __local real lmcScale;
-            lmcScale = _LMCscale[0];
+            real lmcMass = LMCmass;
+            real lmcScale = LMCscale;
                 
             real4 acc = externalAcceleration(px, py, pz);
             real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
@@ -2361,8 +2366,9 @@ __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
     uint inc = get_local_size(0) * get_num_groups(0);
-    __local real branch;
-    branch = _LMCbranching[0];
+    real branch = LMCbranching;
+    
+    //if(get_local_id(0) * get_global_id(0) == 0) { printf("Time: %f, Mass: %f, Branch: %f", realbarTime, LMCmass, branch); }
     //if(_LMCmass[0] != -1024.0 && get_local_id(0) == 0 && get_global_id(0) == 0) {
     //  printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", _LMCposX[0], _LMCposY[0], 
     //       _LMCposZ[0], _LMCmass[0], _LMCscale[0]);
@@ -2381,9 +2387,9 @@ __kernel void NBODY_KERNEL(integration)
         
         /* ending uniform acceleration addition for LMC, check */
         if(branch != -125.0) {
-           ax += _LMCacci1X[0];
-           ay += _LMCacci1Y[0];
-           az += _LMCacci1Z[0];
+           ax += LMCacci1X;
+           ay += LMCacci1Y;
+           az += LMCacci1Z;
         }
 
         real vx = _velX[i];

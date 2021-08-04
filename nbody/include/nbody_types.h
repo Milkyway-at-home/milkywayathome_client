@@ -237,12 +237,14 @@ typedef struct
     cl_mem dummy[18];
     
     /* LMC Additions */
+    /*
     cl_mem LMCtime_buffer; cl_mem LMCbranching_buffer;
     cl_mem LMCmass_buffer;
     cl_mem LMCscale_buffer;
     cl_mem LMCposX_buffer; cl_mem LMCposY_buffer; cl_mem LMCposZ_buffer;
     cl_mem LMCacciX_buffer; cl_mem LMCacciY_buffer; cl_mem LMCacciZ_buffer;
     cl_mem LMCacci1X_buffer; cl_mem LMCacci1Y_buffer; cl_mem LMCacci1Z_buffer;
+    */
 } NBodyBuffers;
 
 

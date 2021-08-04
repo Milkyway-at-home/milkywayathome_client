@@ -103,7 +103,7 @@ static cl_ulong nbCalculateDepthLimitationFromCalculatedForceKernelLocalMemoryUs
     cl_ulong nm = warpPerWG * sizeof(cl_int);
     
     /* LMC addition, 3 mem spaces for LMC position, 3 mem spaces for Acci, 3 mem spaces for Acci1, 1 mem space for LMC mass, 1 mem space for LMC scale, 1 mem space for LMC real bar time, 1 mem space for time */
-    cl_ulong lmcAddition = (3*(3 * sizeof(real)) + sizeof(real) + sizeof(real) + sizeof(real) + sizeof(real)); 
+    cl_ulong lmcAddition = 13 * sizeof(real);
     
     cl_ulong constantPieces = maxDepth + rootCritRadius + allBlock + ch + nx + ny + nz + nm + lmcAddition;
 
@@ -484,39 +484,26 @@ static cl_int nbSetKernelArguments(cl_kernel kern, cl_bool exact, const NBodyCtx
         err |= clSetKernelArg(kern, 29, sizeof(cl_int), &zeroVal);
     }
     
-    void* massStor = mapBuffer(st->ci, st->nbb->LMCmass_buffer, CL_MAP_WRITE, sizeof(real));
-    void* branchStor = mapBuffer(st->ci, st->nbb->LMCbranching_buffer, CL_MAP_WRITE, sizeof(real));
+    real time = st->step * ctx->timestep - st->previousForwardTime;
+    real xLMCpos = 0.0; real yLMCpos = 0.0; real zLMCpos = 0.0;
+    real LMCmass = 0.0; real LMCscale = 0.0;
+    real xLMCacc = 0.0; real yLMCacc = 0.0; real zLMCacc = 0.0;
+    real xLMCacci = 0.0; real yLMCacci = 0.0; real zLMCacci = 0.0;
+    real massBranch = -125.0;
     
-    clFlush(st->ci->queue);
-    clFinish(st->ci->queue); 
-    
-    real mass[1];
-    mass[0] = ctx->LMCmass;
-    memcpy(massStor, mass, sizeof(real));
-    
-    real branch[1];
-    branch[0] = -125.0;
-    memcpy(branchStor, branch, sizeof(real));
-    
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCmass_buffer, massStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCbranching_buffer, branchStor, 0, NULL, NULL);
-    
-    clFlush(st->ci->queue);
-    clFinish(st->ci->queue); 
-    
-    err |= clSetKernelArg(kern, 30, sizeof(cl_mem), &nbb->LMCposX_buffer);
-    err |= clSetKernelArg(kern, 31, sizeof(cl_mem), &nbb->LMCposY_buffer);
-    err |= clSetKernelArg(kern, 32, sizeof(cl_mem), &nbb->LMCposZ_buffer);
-    err |= clSetKernelArg(kern, 33, sizeof(cl_mem), &nbb->LMCmass_buffer);
-    err |= clSetKernelArg(kern, 34, sizeof(cl_mem), &nbb->LMCscale_buffer);
-    err |= clSetKernelArg(kern, 35, sizeof(cl_mem), &nbb->LMCtime_buffer);
-    err |= clSetKernelArg(kern, 36, sizeof(cl_mem), &nbb->LMCacciX_buffer);
-    err |= clSetKernelArg(kern, 37, sizeof(cl_mem), &nbb->LMCacciY_buffer);
-    err |= clSetKernelArg(kern, 38, sizeof(cl_mem), &nbb->LMCacciZ_buffer);
-    err |= clSetKernelArg(kern, 39, sizeof(cl_mem), &nbb->LMCacci1X_buffer);
-    err |= clSetKernelArg(kern, 40, sizeof(cl_mem), &nbb->LMCacci1Y_buffer);
-    err |= clSetKernelArg(kern, 41, sizeof(cl_mem), &nbb->LMCacci1Z_buffer);
-    err |= clSetKernelArg(kern, 42, sizeof(cl_mem), &nbb->LMCbranching_buffer);
+    err |= clSetKernelArg(kern, 30, sizeof(real), &xLMCpos);
+    err |= clSetKernelArg(kern, 31, sizeof(real), &yLMCpos);
+    err |= clSetKernelArg(kern, 32, sizeof(real), &zLMCpos);
+    err |= clSetKernelArg(kern, 33, sizeof(real), &LMCmass);
+    err |= clSetKernelArg(kern, 34, sizeof(real), &LMCscale);
+    err |= clSetKernelArg(kern, 35, sizeof(real), &time);
+    err |= clSetKernelArg(kern, 36, sizeof(real), &xLMCacc);
+    err |= clSetKernelArg(kern, 37, sizeof(real), &yLMCacc);
+    err |= clSetKernelArg(kern, 38, sizeof(real), &zLMCacc);
+    err |= clSetKernelArg(kern, 39, sizeof(real), &xLMCacci);
+    err |= clSetKernelArg(kern, 40, sizeof(real), &yLMCacci);
+    err |= clSetKernelArg(kern, 41, sizeof(real), &zLMCacci);
+    err |= clSetKernelArg(kern, 42, sizeof(real), &massBranch);
     
     return err;
 }
@@ -1605,73 +1592,154 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mw
     mw_incaddv(st->LMCvel,dv);
 }
 
-/* Run integration kernels */
-static cl_int nbRunIntegrationKernel(NBodyState* st)
+/* Run force calculation and integration kernels (LMC) */
+static cl_int nbExecuteForceKernelsLMC(const NBodyCtx* ctx, NBodyState* st, const mwvector acc, const mwvector acc_i, int massBranch, cl_bool updateState)
+{
+    cl_int err;
+    size_t chunk;
+    size_t nChunk;
+    cl_int upperBound;
+    size_t global[1];
+    size_t local[1];
+    size_t offset[1];
+    cl_event integrateEv;
+    cl_kernel forceKern;
+    CLInfo* ci = st->ci;
+    NBodyKernels* kernels = st->kernels;
+    NBodyWorkSizes* ws = st->workSizes;
+    cl_int effNBody = st->effNBody;
+
+
+    if (st->usesExact)
+    {
+        forceKern = kernels->forceCalculation_Exact;
+        global[0] = ws->global[7];
+        local[0] = ws->local[7];
+    }
+    else
+    {
+        forceKern = kernels->forceCalculation;
+        global[0] = ws->global[5];
+        local[0] = ws->local[5];
+    }
+    
+    real time = st->step * ctx->timestep - st->previousForwardTime;
+    real xLMCpos = X(st->LMCpos); real yLMCpos = Y(st->LMCpos); real zLMCpos = Z(st->LMCpos);
+    real LMCmass = ctx->LMCmass; real LMCscale = ctx->LMCscale;
+    real xLMCacc = X(acc); real yLMCacc = Y(acc); real zLMCacc = Z(acc);
+    real xLMCacci = X(acc_i); real yLMCacci = Y(acc_i); real zLMCacci = Z(acc_i);
+    real branchMass = massBranch;
+     
+    err |= clSetKernelArg(forceKern, 30, sizeof(real), &xLMCpos);
+    err |= clSetKernelArg(forceKern, 31, sizeof(real), &yLMCpos);
+    err |= clSetKernelArg(forceKern, 32, sizeof(real), &zLMCpos);
+    err |= clSetKernelArg(forceKern, 33, sizeof(real), &LMCmass);
+    err |= clSetKernelArg(forceKern, 34, sizeof(real), &LMCscale);
+    err |= clSetKernelArg(forceKern, 35, sizeof(real), &time);
+    err |= clSetKernelArg(forceKern, 36, sizeof(real), &xLMCacc);
+    err |= clSetKernelArg(forceKern, 37, sizeof(real), &yLMCacc);
+    err |= clSetKernelArg(forceKern, 38, sizeof(real), &zLMCacc);
+    err |= clSetKernelArg(forceKern, 39, sizeof(real), &xLMCacci);
+    err |= clSetKernelArg(forceKern, 40, sizeof(real), &yLMCacci);
+    err |= clSetKernelArg(forceKern, 41, sizeof(real), &zLMCacci);
+    err |= clSetKernelArg(forceKern, 42, sizeof(real), &branchMass);
+    
+    err |= clSetKernelArg(kernels->integration, 30, sizeof(real), &xLMCpos);
+    err |= clSetKernelArg(kernels->integration, 31, sizeof(real), &yLMCpos);
+    err |= clSetKernelArg(kernels->integration, 32, sizeof(real), &zLMCpos);
+    err |= clSetKernelArg(kernels->integration, 33, sizeof(real), &LMCmass);
+    err |= clSetKernelArg(kernels->integration, 34, sizeof(real), &LMCscale);
+    err |= clSetKernelArg(kernels->integration, 35, sizeof(real), &time);
+    err |= clSetKernelArg(kernels->integration, 36, sizeof(real), &xLMCacc);
+    err |= clSetKernelArg(kernels->integration, 37, sizeof(real), &yLMCacc);
+    err |= clSetKernelArg(kernels->integration, 38, sizeof(real), &zLMCacc);
+    err |= clSetKernelArg(kernels->integration, 39, sizeof(real), &xLMCacci);
+    err |= clSetKernelArg(kernels->integration, 40, sizeof(real), &yLMCacci);
+    err |= clSetKernelArg(kernels->integration, 41, sizeof(real), &zLMCacci);
+    err |= clSetKernelArg(kernels->integration, 42, sizeof(real), &branchMass);
+
+    nChunk = st->ignoreResponsive ? 1 : mwDivRoundup((size_t) effNBody, global[0]);
+    upperBound = st->ignoreResponsive ? effNBody : (cl_int) global[0];
+    for (chunk = 0, offset[0] = 0; chunk < nChunk; ++chunk, offset[0] += global[0])
+    {
+        cl_event ev;
+
+        upperBound = (upperBound > effNBody) ? effNBody : upperBound;
+
+//        mw_printf("SetKernelArg START\n");
+        err = clSetKernelArg(forceKern, 28, sizeof(cl_uint), &upperBound);
+//        mw_printf("SetKernelArg END\n");
+        if (err != CL_SUCCESS)
+            return err;
+
+        err = clEnqueueNDRangeKernel(ci->queue, forceKern, 1,
+                                     offset, &global[0], &local[0],
+                                     0, NULL, &ev);
+        if (err != CL_SUCCESS)
+            return err;
+
+        upperBound += (cl_int) global[0];
+//        mw_printf("waitRelease START\n");
+        ws->timings[5] += waitReleaseEventWithTime(ev);
+//        mw_printf("waitRelease END\n");
+    }
+
+
+    if (mw_likely(updateState))
+    {
+        err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
+                                     NULL, &ws->global[6], &ws->local[6],
+                                     0, NULL, &integrateEv);
+        if (err != CL_SUCCESS)
+            return err;
+    }
+
+
+    ws->chunkTimings[5] = ws->timings[5] / (double) nChunk;
+    if (mw_likely(updateState))
+    {
+        ws->timings[6] += waitReleaseEventWithTime(integrateEv);
+    }
+
+    return CL_SUCCESS;
+}
+
+/* Run integration kernels (LMC) */
+static cl_int nbRunIntegrationKernel(const NBodyCtx* ctx, NBodyState* st, const mwvector acc, const mwvector acc_i, int massBranch)
 {
     cl_int err;
     cl_event integrateEv;
     CLInfo* ci = st->ci;
     NBodyKernels* kernels = st->kernels;
     NBodyWorkSizes* ws = st->workSizes;
+    
+    real time = st->step * ctx->timestep - st->previousForwardTime;
+    real xLMCpos = X(st->LMCpos); real yLMCpos = Y(st->LMCpos); real zLMCpos = Z(st->LMCpos);
+    real LMCmass = ctx->LMCmass; real LMCscale = ctx->LMCscale;
+    real xLMCacc = X(acc); real yLMCacc = Y(acc); real zLMCacc = Z(acc);
+    real xLMCacci = X(acc_i); real yLMCacci = Y(acc_i); real zLMCacci = Z(acc_i);
+    real branchMass = massBranch;
 
+    err |= clSetKernelArg(kernels->integration, 30, sizeof(real), &xLMCpos);
+    err |= clSetKernelArg(kernels->integration, 31, sizeof(real), &yLMCpos);
+    err |= clSetKernelArg(kernels->integration, 32, sizeof(real), &zLMCpos);
+    err |= clSetKernelArg(kernels->integration, 33, sizeof(real), &LMCmass);
+    err |= clSetKernelArg(kernels->integration, 34, sizeof(real), &LMCscale);
+    err |= clSetKernelArg(kernels->integration, 35, sizeof(real), &time);
+    err |= clSetKernelArg(kernels->integration, 36, sizeof(real), &xLMCacc);
+    err |= clSetKernelArg(kernels->integration, 37, sizeof(real), &yLMCacc);
+    err |= clSetKernelArg(kernels->integration, 38, sizeof(real), &zLMCacc);
+    err |= clSetKernelArg(kernels->integration, 39, sizeof(real), &xLMCacci);
+    err |= clSetKernelArg(kernels->integration, 40, sizeof(real), &yLMCacci);
+    err |= clSetKernelArg(kernels->integration, 41, sizeof(real), &zLMCacci);
+    err |= clSetKernelArg(kernels->integration, 42, sizeof(real), &branchMass);
+    
     err = clEnqueueNDRangeKernel(ci->queue, kernels->integration, 1,
                                      NULL, &ws->global[6], &ws->local[6],
                                      0, NULL, &integrateEv);
     clFlush(st->ci->queue);
     clFinish(st->ci->queue);
     return CL_SUCCESS;
-}
-
-void updateLMCBuffers(const NBodyCtx* ctx, NBodyState* st, const mwvector acc, const mwvector acc_i, int massBranch) {
-    real time = st->step * ctx->timestep - st->previousForwardTime;
-    
-    void* timeStor = mapBuffer(st->ci, st->nbb->LMCtime_buffer, CL_MAP_WRITE, sizeof(real));
-    void* branchStor = mapBuffer(st->ci, st->nbb->LMCbranching_buffer, CL_MAP_WRITE, sizeof(real));
-    void* massStor = mapBuffer(st->ci, st->nbb->LMCmass_buffer, CL_MAP_WRITE, sizeof(real));
-    void* scaleStor = mapBuffer(st->ci, st->nbb->LMCscale_buffer, CL_MAP_WRITE, sizeof(real));
-    void* posXStor = mapBuffer(st->ci, st->nbb->LMCposX_buffer, CL_MAP_WRITE, sizeof(real));
-    void* posYStor = mapBuffer(st->ci, st->nbb->LMCposY_buffer, CL_MAP_WRITE, sizeof(real));
-    void* posZStor = mapBuffer(st->ci, st->nbb->LMCposZ_buffer, CL_MAP_WRITE, sizeof(real));
-    void* acciXStor = mapBuffer(st->ci, st->nbb->LMCacciX_buffer, CL_MAP_WRITE, sizeof(real));
-    void* acciYStor = mapBuffer(st->ci, st->nbb->LMCacciY_buffer, CL_MAP_WRITE, sizeof(real));
-    void* acciZStor = mapBuffer(st->ci, st->nbb->LMCacciZ_buffer, CL_MAP_WRITE, sizeof(real));
-    void* acci1XStor = mapBuffer(st->ci, st->nbb->LMCacci1X_buffer, CL_MAP_WRITE, sizeof(real));
-    void* acci1YStor = mapBuffer(st->ci, st->nbb->LMCacci1Y_buffer, CL_MAP_WRITE, sizeof(real));
-    void* acci1ZStor = mapBuffer(st->ci, st->nbb->LMCacci1Z_buffer, CL_MAP_WRITE, sizeof(real));
-    
-    clFlush(st->ci->queue);
-    clFinish(st->ci->queue);
-    
-    memcpy(timeStor, &time, sizeof(real));
-    
-    real branch[1];
-    branch[0] = massBranch;
-    memcpy(branchStor, branch, sizeof(real));
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCbranching_buffer, branchStor, 0, NULL, NULL);
-    
-    memcpy(massStor, &ctx->LMCmass, sizeof(real));
-    memcpy(scaleStor, &ctx->LMCscale, sizeof(real));
-    memcpy(posXStor, &X(st->LMCpos), sizeof(real)); memcpy(posYStor, &Y(st->LMCpos), sizeof(real)); memcpy(posZStor, &Z(st->LMCpos), sizeof(real));
-    memcpy(acciXStor, &X(acc), sizeof(real)); memcpy(acciYStor, &Y(acc), sizeof(real)); memcpy(acciZStor, &Z(acc), sizeof(real));
-    memcpy(acci1XStor, &X(acc_i), sizeof(real)); memcpy(acci1YStor, &Y(acc_i), sizeof(real)); memcpy(acci1ZStor, &Z(acc_i), sizeof(real));
-
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCtime_buffer, timeStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCmass_buffer, massStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCscale_buffer, scaleStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposX_buffer, posXStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposY_buffer, posYStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCposZ_buffer, posZStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacciX_buffer, acciXStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacciY_buffer, acciYStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacciZ_buffer, acciZStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacci1X_buffer, acci1XStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacci1Y_buffer, acci1YStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCacci1Z_buffer, acci1ZStor, 0, NULL, NULL);
-    clEnqueueUnmapMemObject(st->ci->queue, st->nbb->LMCbranching_buffer, branchStor, 0, NULL, NULL);
-
-    clFlush(st->ci->queue);
-    clFinish(st->ci->queue); 
-    return;
 }
 
 NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
@@ -1684,8 +1752,7 @@ NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvect
     mwvector acc_LMC;
     const real dt = ctx->timestep;
     real barTime = st->step * dt - st->previousForwardTime;
-    updateLMCBuffers(ctx, st, acc_i, acc_i, ctx->LMCmass);
-    nbRunIntegrationKernel(st);
+    nbRunIntegrationKernel(ctx, st, acc_i, acc_i, ctx->LMCmass);
     
     acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), 
                       dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
@@ -1706,8 +1773,7 @@ NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvect
         }
     }
 
-    updateLMCBuffers(ctx, st, acc_i1, acc_i1, -1024.0);
-    err = nbExecuteForceKernels(st, CL_TRUE);
+    err = nbExecuteForceKernelsLMC(ctx, st, acc_i1, acc_i1, -1024.0, CL_TRUE);
 
     if (err != CL_SUCCESS)
     {
@@ -1801,29 +1867,12 @@ static cl_int nbRunPreStep(NBodyState* st)
     return clSetKernelArg(kernel, 29, sizeof(cl_int), &trueVal);
 }
 
-void nbSetupLMCBuffers(const NBodyCtx* ctx, NBodyState* st) {
-    st->nbb->LMCtime_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCmass_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCscale_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCposX_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCposY_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCposZ_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCacciX_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCacciY_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCacciZ_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCacci1X_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCacci1Y_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCacci1Z_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-    st->nbb->LMCbranching_buffer = mwCreateZeroReadWriteBuffer(st->ci, sizeof(real));
-}
-
 static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
 {
     NBodyStatus rc = NBODY_SUCCESS;
     cl_int err;
 
     if (ctx->LMC){
-        nbSetupLMCBuffers(ctx, st);
         if (!st->shiftByLMC) {
             mwvector* shiftLMC;
             size_t sizeLMC;
@@ -1838,6 +1887,7 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
     }
     
     err = nbRunPreStep(st);
+    
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error running pre step");
@@ -1948,20 +1998,6 @@ static cl_int _nbReleaseBuffers(NBodyBuffers* nbb)
     {
         err |= clReleaseMemObject_quiet(nbb->dummy[j]);
     }
-    
-    err |= clReleaseMemObject_quiet(nbb->LMCtime_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCmass_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCscale_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCposX_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCposY_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCposZ_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCacciX_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCacciY_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCacciZ_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCacci1X_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCacci1Y_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCacci1Z_buffer);
-    err |= clReleaseMemObject_quiet(nbb->LMCbranching_buffer);
     
     if (err != CL_SUCCESS)
     {
