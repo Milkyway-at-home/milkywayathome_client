@@ -845,7 +845,7 @@ __local volatile real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
     }
 }
 
-#if HAVE_INLINE_PTX && __OPENCL_VERSION__ >= 120
+#if HAVE_INLINE_PTX
 inline void strong_global_mem_fence_ptx()
 {
     asm("{\n\t"
@@ -855,7 +855,7 @@ inline void strong_global_mem_fence_ptx()
 }
 #endif
 
-#if HAVE_INLINE_PTX && __OPENCL_VERSION__ >= 120
+#if HAVE_INLINE_PTX
   #define maybe_strong_global_mem_fence() strong_global_mem_fence_ptx()
 #else
   #define maybe_strong_global_mem_fence() mem_fence(CLK_GLOBAL_MEM_FENCE)
@@ -1795,7 +1795,7 @@ __kernel void NBODY_KERNEL(quadMoments)
     }
 }
 
-#if HAVE_INLINE_PTX && __OPENCL_VERSION__ >= 120
+#if HAVE_INLINE_PTX
 inline int warpAcceptsCellPTX(real rSq, real rCritSq)
 {
     uint result;
@@ -1871,7 +1871,7 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
     return ret;
 }
 
-#if HAVE_INLINE_PTX && __OPENCL_VERSION__ >= 120
+#if HAVE_INLINE_PTX
 /* Need to do this horror to avoid wasting __local if we can use the real warp vote */
 #define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellPTX(rSq, dq)
 #else
@@ -1916,7 +1916,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
   #endif /* USE_QUAD */
 
-  #if !HAVE_INLINE_PTX || __OPENCL_VERSION__ < 120
+  #if !HAVE_INLINE_PTX
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
     */
@@ -1962,7 +1962,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             }
         }
 
-      #if !HAVE_INLINE_PTX || __OPENCL_VERSION__ < 120
+      #if !HAVE_INLINE_PTX
         for (uint i = 0; i < THREADS6 / WARPSIZE; ++i)
         {
             allBlock[i] = 0;
@@ -1996,7 +1996,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
         uint k = get_global_id(0);
 
-      #if !HAVE_INLINE_PTX || __OPENCL_VERSION__ < 120
+      #if !HAVE_INLINE_PTX
         (void) atom_add(&allBlock[base], k >= maxNBody);
       #endif
 
@@ -2227,7 +2227,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             if (!skipSelf) { _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST; }
             k += get_local_size(0) * get_num_groups(0);
 
-          #if !HAVE_INLINE_PTX || __OPENCL_VERSION__ < 120
+          #if !HAVE_INLINE_PTX
             /* In case this thread is done with bodies and others in the wavefront aren't */
             (void) atom_add(&allBlock[base], k >= maxNBody);
           #endif /* !HAVE_INLINE_PTX */

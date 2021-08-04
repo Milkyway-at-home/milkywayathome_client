@@ -867,6 +867,6 @@ cl_bool mwNvidiaInlinePTXAvailable(cl_platform_id platform)
         return CL_FALSE;
     }
 
-    return (cudaMajor >= 4) && (clMajor >= 1 && clMinor >= 2);
+    return (cudaMajor >= 4);
 }
 
