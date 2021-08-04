@@ -1923,7 +1923,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
   
-    __local real branch = _LMCbranching[0];
+    __local real branch;
+    branch = _LMCbranching[0];
     
     if (get_local_id(0) == 0)
     {
@@ -2197,8 +2198,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 LMCpos.y = _LMCposY[0];
                 LMCpos.z = _LMCposZ[0];
                 
-                __local real lmcMass = _LMCmass[0];
-                __local real lmcScale = _LMCscale[0];
+                __local real lmcMass; 
+                lmcMass = _LMCmass[0];
+                __local real lmcScale;
+                lmcScale = _LMCscale[0];
                 
                 real4 acc = externalAcceleration(px, py, pz);
                 real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
@@ -2249,7 +2252,8 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
     __local real ys[THREADS8];
     __local real zs[THREADS8];
     __local real ms[THREADS8];
-    __local real branch = _LMCbranching[0];
+    __local real branch;
+    branc = _LMCbranching[0];
 
     cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
 
@@ -2316,8 +2320,10 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
             LMCpos.y = _LMCposY[0];
             LMCpos.z = _LMCposZ[0];
             
-            __local real lmcMass = _LMCmass[0];
-            __local real lmcScale = _LMCscale[0];
+            __local real lmcMass; 
+            lmcMass = _LMCmass[0];
+            __local real lmcScale;
+            lmcScale = _LMCscale[0];
                 
             real4 acc = externalAcceleration(px, py, pz);
             real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
@@ -2355,7 +2361,8 @@ __attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
     uint inc = get_local_size(0) * get_num_groups(0);
-    __local real branch = _LMCbranching[0];
+    __local real branch;
+    branch = _LMCbranching[0];
     //if(_LMCmass[0] != -1024.0 && get_local_id(0) == 0 && get_global_id(0) == 0) {
     //  printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", _LMCposX[0], _LMCposY[0], 
     //       _LMCposZ[0], _LMCmass[0], _LMCscale[0]);
