@@ -1835,8 +1835,12 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         perpendicularCmPos=startCmPos;
         printf("*Total frames: %d\n", kept_frames);
     #endif
+<<<<<<< HEAD
 
     /* Ask about this */
+=======
+	
+>>>>>>> 03590f1c959570477d9e4136f23f62e3277901db
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
