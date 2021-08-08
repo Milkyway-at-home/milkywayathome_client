@@ -4,27 +4,39 @@
 
 # Specify YOUR OWN path here, in the folder which contains the milkywayathome_client directory
 PathToMilkyWayAtHomeClientFolder='/home/dylansheils/Desktop/pushToLMCBranch/'
-# Note, you need to specify if you plan to run the GPU testing suite. 
+# Note, you need to specify if you plan to run the GPU testing suite. 'true' for true, 'false' for false 
 includeGPUtesting=false
 
 # In that case, you would need to first run this with includeGPUtesting to false to test everything except the GPU
 # Then, set to true to run the rest of test with "make test" when in the test_env directory and stop after they have completed. Note, the GPU tests are very quick when compared to the other tests, so this should take around 30 minutes - 1 hour at MOST even on older GPUs.
 
+<<<<<<< HEAD
+if $includeGPUtesting; then
+=======
 if [includeGPUtesting == false]; then
+>>>>>>> f2b2663a614c213989c1a836fd1728873379d66e
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/makeCPUfile.txt $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/makeGPUfile.txt $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
   
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test.c
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpuTest.lua
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_basicmodel.c
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_checkpoint.lua
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_morebasicmodels.c
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test.c
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpuTest.lua $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpuTest.lua
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_basicmodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_basicmodels.c
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_checkpoint.lua $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_checkpoint.lua
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_morebasicmodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_morebasicmodels.c 
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_moremodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
   
-  cp $PathToMilkyWayAtHomeClientFolder
+  cd $PathToMilkyWayAtHomeClientFolder/
   rm -r test_env
   mkdir test_env
   cd test_env
+  
+  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENCL=ON $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
+
+  make gpu_sanity 
+  make gpu_checkpoint
+  make gpu_basicModelsPart1
+  make gpu_basicModelsPart2
+  make gpu_advanceModels
 
   cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
 
@@ -41,31 +53,21 @@ if [includeGPUtesting == false]; then
   make mixeddwarf_test
   make nbody_test_driver
   make all
-fi
-
-if [includeGPUtesting == true]; then
-  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/GPUTesting/CMakeLists.txt
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/makeGPUfile.txt $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
+else
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
+  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/makeCPUfile.txt $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
   
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test.c
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpuTest.lua $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpuTest.lua
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_basicmodel.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_basicmodel.c
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_checkpoint.lua $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_checkpoint.lua
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_morebasicmodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_morebasicmodels.c 
-  cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_moremodels.c PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test.c
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpuTest.lua
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_basicmodels.c
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_checkpoint.lua
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_morebasicmodels.c
+  rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
   
-  cp $PathToMilkyWayAtHomeClientFolder
+  cd $PathToMilkyWayAtHomeClientFolder/
   rm -r test_env
   mkdir test_env
   cd test_env
-  
-  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENCL=ON $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
-
-  make gpu_sanity 
-  make gpu_checkpoint
-  make gpu_basicModelsPart1
-  make gpu_basicModelsPart2
-  make gpu_advanceModels
 
   cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
 
