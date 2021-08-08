@@ -10,15 +10,6 @@ includeGPUtesting=false
 # In that case, you would need to first run this with includeGPUtesting to false to test everything except the GPU
 # Then, set to true to run the rest of test with "make test" when in the test_env directory and stop after they have completed. Note, the GPU tests are very quick when compared to the other tests, so this should take around 30 minutes - 1 hour at MOST even on older GPUs.
 
-
-cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENCL=ON $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
-
-make gpu_sanity 
-make gpu_checkpoint
-make gpu_basicModelsPart1
-make gpu_basicModelsPart2
-make gpu_advanceModels
-
 if [includeGPUtesting == false]; then
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
   cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/makeCPUfile.txt $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
