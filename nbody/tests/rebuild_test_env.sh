@@ -22,7 +22,7 @@ if $includeGPUtesting; then
   cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_moremodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
   
   cd $PathToMilkyWayAtHomeClientFolder/
-  rm -r test_env
+  rm -rf test_env
   mkdir test_env
   cd test_env
   
@@ -61,7 +61,7 @@ else
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
   
   cd $PathToMilkyWayAtHomeClientFolder/
-  rm -r test_env
+  rm -rf test_env
   mkdir test_env
   cd test_env
 
