@@ -171,6 +171,12 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                     take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
                     moving potential. **/
                 mw_incaddv(a, externAcc);
+                //real test = X(plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+    	        //if(test > 400) {
+      		//   mw_printf("Plummer Additive Acceleration (X): %f\n", test);
+      		//   printf("Plummer Additive Acceleration (X): %f\n", test);
+    		//}
+    
 
                 accels[i] = a;
                 break;
@@ -261,7 +267,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
                 externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 mw_incaddv(a, externAcc);
-
+                
                 accels[i] = a;
                 break;
 

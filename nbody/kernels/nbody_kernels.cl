@@ -279,6 +279,33 @@ inline real4 plummerSphericalAccel(real4 pos, real r)
     return (-SPHERICAL_MASS / cube(tmp)) * pos;
 }
 
+/* Added LMC PlummerAccelerationFunction */
+inline real4 plummerLMCAcceleration(real4 pos, real4 pos1, real mass, real scale)
+{
+    real4 acc;
+    real4 v;
+    acc.x = 0.0;
+    v.x = 0.0;
+    acc.y = 0.0;
+    v.y = 0.0;
+    acc.z = 0.0;
+    v.z = 0.0;
+    
+    v.x = pos1.x - pos.x;
+    v.y = pos1.y - pos.y;
+    v.z = pos1.z - pos.z;
+    real dist = sqrt(sqr(pos.x - pos1.x) + sqr(pos.y - pos1.y) + sqr(pos.z - pos1.z));
+    real tmp = sqrt(sqr(scale) + sqr(dist));
+    real scalar = mass / pow(tmp, 3.0);
+    acc.x = v.x * scalar;
+    acc.y = v.y * scalar;
+    acc.z = v.z * scalar;
+    
+    //if(acc.x > 400) {
+    //  printf("Plummer Additive Acceleration (X): %f\n", scalar);
+    //}
+    return acc;
+}
 
 /* gets negative of the acceleration vector of this disk component */
 inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
@@ -663,7 +690,18 @@ inline real4 externalAcceleration(real x, real y, real z)
 
 
 }
+
 /* All kernels will use the same parameters for now */
+/* 
+    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
+    RVPtr _LMCmass, RVPtr _LMCscale,                    \
+    RVPtr _realbarTime,                                 \
+    RVPtr _LMCacciX, RVPtr _LMCacciY, RVPtr _LMCacciZ,  \
+    RVPtr _LMCacci1X, RVPtr _LMCacci1Y,                 \
+    RVPtr _LMCacci1Z, RVPtr _LMCbranching               \
+    )
+*/
+
 #define NBODY_KERNEL(name) name(                        \
     RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
     RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
@@ -684,7 +722,13 @@ inline real4 externalAcceleration(real x, real y, real z)
                                                         \
     __global volatile TreeStatus* _treeStatus,          \
     uint maxNBody,                                      \
-    int updateVel                                       \
+    int updateVel,                                      \
+    real LMCposX, real LMCposY, real LMCposZ,           \
+    real LMCmass, real LMCscale,                        \
+    real realbarTime,                                   \
+    real LMCacciX, real LMCacciY, real LMCacciZ,        \
+    real LMCacci1X, real LMCacci1Y,                     \
+    real LMCacci1Z, real LMCbranching                   \
     )
 
 
@@ -1845,6 +1889,15 @@ inline int warpAcceptsCellSurvey(__local volatile int allBlock[THREADS6 / WARPSI
 #define warpAcceptsCell(allBlock, base, rSq, dq) warpAcceptsCellSurvey(allBlock, base, (rSq) >= (dq))
 #endif
 
+/*
+    RVPtr _LMCposX, RVPtr _LMCposY, RVPtr _LMCposZ,     \
+    RVPtr _LMCmass, RVPtr _LMCscale,                    \
+    RVPtr _realbarTime,                                 \
+    RVPtr _LMCacciX, RVPtr _LMCacciY, RVPtr _LMCacciZ,  \
+    RVPtr _LMCacci1X, RVPtr _LMCacci1Y,                 \
+    RVPtr _LMCacci1Z, RVPtr _LMCbranching         
+*/
+
 __attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
@@ -1874,14 +1927,15 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local volatile real quadZZ[MAXDEPTH * THREADS6 / WARPSIZE];
   #endif /* USE_QUAD */
 
-
   #if !HAVE_INLINE_PTX
     /* Used by the fake thread voting function.
        We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
     */
     __local volatile int allBlock[THREADS6 / WARPSIZE];
   #endif /* !HAVE_INLINE_PTX */
-
+  
+    real branch = LMCbranching;
+    
     if (get_local_id(0) == 0)
     {
         maxDepth = _treeStatus->maxDepth;
@@ -2051,6 +2105,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                             ax = mad(ai, dx, ax);
                             ay = mad(ai, dy, ay);
                             az = mad(ai, dz, az);
+                            
 
                           #if USE_QUAD
                             {
@@ -2138,40 +2193,55 @@ __kernel void NBODY_KERNEL(forceCalculation)
             real vx = _velX[i];
             real vy = _velY[i];
             real vz = _velZ[i];
+            
 
 
             if (USE_EXTERNAL_POTENTIAL)
             {
+                real4 LMCBodypos;
+                LMCBodypos.x = px;
+                LMCBodypos.y = py;
+                LMCBodypos.z = pz;
+                
+                real4 LMCpos;
+                LMCpos.x = LMCposX;
+                LMCpos.y = LMCposY;
+                LMCpos.z = LMCposZ;
+                
+                real lmcMass = LMCmass;
+                real lmcScale = LMCscale;
+                
                 real4 acc = externalAcceleration(px, py, pz);
-
+                real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
                 ax += acc.x;
                 ay += acc.y;
                 az += acc.z;
+                
+                if(branch != -125.0) {
+                  ax += accLMC.x;
+                  ay += accLMC.y;
+                  az += accLMC.z;
+                }
             }
-
-            vx = mad(0.5 * TIMESTEP, ax - accX, vx);
-            vy = mad(0.5 * TIMESTEP, ay - accY, vy);
-            vz = mad(0.5 * TIMESTEP, az - accZ, vz);
 
             /* Save computed acceleration */
             _accX[i] = ax;
             _accY[i] = ay;
             _accZ[i] = az;
-
-            if (updateVel)
-            {
-                _velX[i] = vx;
-                _velY[i] = vy;
-                _velZ[i] = vz;
+            
+            if(branch == -125.0) {
+               vx = mad(0.5 * TIMESTEP, ax - accX, vx);
+               vy = mad(0.5 * TIMESTEP, ay - accY, vy);
+               vz = mad(0.5 * TIMESTEP, az - accZ, vz);
+               
+               if(updateVel) {
+                  _velX[i] = vx;
+                  _velY[i] = vy;
+                  _velZ[i] = vz;
+               }
             }
 
-            if (!skipSelf)
-            {
-                _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST;
-
-            }
-
-
+            if (!skipSelf) { _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST; }
             k += get_local_size(0) * get_num_groups(0);
 
           #if !HAVE_INLINE_PTX
@@ -2179,54 +2249,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
             (void) atom_add(&allBlock[base], k >= maxNBody);
           #endif /* !HAVE_INLINE_PTX */
         }
-    }
-}
-
-__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
-__kernel void NBODY_KERNEL(integration)
-{
-    uint inc = get_local_size(0) * get_num_groups(0);
-
-    /* Iterate over all bodies assigned to thread */
-    for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
-    {
-        real px = _posX[i];
-        real py = _posY[i];
-        real pz = _posZ[i];
-
-        real ax = _accX[i];
-        real ay = _accY[i];
-        real az = _accZ[i];
-
-        real vx = _velX[i];
-        real vy = _velY[i];
-        real vz = _velZ[i];
-
-
-        real dvx = (0.5 * TIMESTEP) * ax;
-        real dvy = (0.5 * TIMESTEP) * ay;
-        real dvz = (0.5 * TIMESTEP) * az;
-
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
-
-        px = mad(TIMESTEP, vx, px);
-        py = mad(TIMESTEP, vy, py);
-        pz = mad(TIMESTEP, vz, pz);
-
-        vx += dvx;
-        vy += dvy;
-        vz += dvz;
-
-
-        _posX[i] = px;
-        _posY[i] = py;
-        _posZ[i] = pz;
-
-        _velX[i] = vx;
-        _velY[i] = vy;
-        _velZ[i] = vz;
     }
 }
 
@@ -2238,6 +2260,7 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
     __local real ys[THREADS8];
     __local real zs[THREADS8];
     __local real ms[THREADS8];
+    real branch = LMCbranching;
 
     cl_assert(_treeStatus, EFFNBODY % THREADS8 == 0);
 
@@ -2254,8 +2277,6 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
         real dvx = _velX[i];
         real dvy = _velY[i];
         real dvz = _velZ[i];
-
-
 
         real ax = 0.0;
         real ay = 0.0;
@@ -2296,27 +2317,113 @@ __kernel void NBODY_KERNEL(forceCalculation_Exact)
 
         if (USE_EXTERNAL_POTENTIAL)
         {
+            real4 LMCBodypos;
+            LMCBodypos.x = px;
+            LMCBodypos.y = py;
+            LMCBodypos.z = pz;
+                
+            real4 LMCpos;
+            LMCpos.x = LMCposX;
+            LMCpos.y = LMCposY;
+            LMCpos.z = LMCposZ;
+            
+            real lmcMass = LMCmass;
+            real lmcScale = LMCscale;
+                
             real4 acc = externalAcceleration(px, py, pz);
-
+            real4 accLMC = plummerLMCAcceleration(LMCBodypos, LMCpos, lmcMass, lmcScale);
             ax += acc.x;
             ay += acc.y;
             az += acc.z;
+                
+            if(branch != -125.0) {
+              ax += accLMC.x;
+              ay += accLMC.y;
+              az += accLMC.z;
+            }
         }
+        
+        if(branch == -125.0) {
+            if (updateVel)
+            {
+                dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
+                dvy = mad(0.5 * TIMESTEP, ay - day, dvy);
+                dvz = mad(0.5 * TIMESTEP, az - daz, dvz);
 
-        if (updateVel)
-        {
-            dvx = mad(0.5 * TIMESTEP, ax - dax, dvx);
-            dvy = mad(0.5 * TIMESTEP, ay - day, dvy);
-            dvz = mad(0.5 * TIMESTEP, az - daz, dvz);
-
-            _velX[i] = dvx;
-            _velY[i] = dvy;
-            _velZ[i] = dvz;
+                _velX[i] = dvx;
+                _velY[i] = dvy;
+                _velZ[i] = dvz;
+            }
         }
 
         _accX[i] = ax;
         _accY[i] = ay;
         _accZ[i] = az;
+    }
+}
+
+__attribute__ ((reqd_work_group_size(THREADS7, 1, 1)))
+__kernel void NBODY_KERNEL(integration)
+{
+    uint inc = get_local_size(0) * get_num_groups(0);
+    real branch = LMCbranching;
+    
+    //if(get_local_id(0) * get_global_id(0) == 0) { printf("Time: %f, Mass: %f, Branch: %f", realbarTime, LMCmass, branch); }
+    //if(_LMCmass[0] != -1024.0 && get_local_id(0) == 0 && get_global_id(0) == 0) {
+    //  printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", _LMCposX[0], _LMCposY[0], 
+    //       _LMCposZ[0], _LMCmass[0], _LMCscale[0]);
+    //}
+    /* Iterate over all bodies assigned to thread */
+    
+    for (uint i = (uint) get_global_id(0); i < NBODY; i += inc)
+    {
+        real px = _posX[i];
+        real py = _posY[i];
+        real pz = _posZ[i];
+
+        real ax = _accX[i];
+        real ay = _accY[i];
+        real az = _accZ[i];
+        
+        /* ending uniform acceleration addition for LMC, check */
+        if(branch != -125.0) {
+           ax += LMCacci1X;
+           ay += LMCacci1Y;
+           az += LMCacci1Z;
+        }
+
+        real vx = _velX[i];
+        real vy = _velY[i];
+        real vz = _velZ[i];
+
+
+        real dvx = (0.5 * TIMESTEP) * ax;
+        real dvy = (0.5 * TIMESTEP) * ay;
+        real dvz = (0.5 * TIMESTEP) * az;
+
+        vx += dvx;
+        vy += dvy;
+        vz += dvz;
+
+        px = mad(TIMESTEP, vx, px);
+        py = mad(TIMESTEP, vy, py);
+        pz = mad(TIMESTEP, vz, pz);
+
+        if(branch == -125.0) {
+          vx += dvx;
+          vy += dvy;
+          vz += dvz;
+        }
+        
+        if(branch == -125.0 || branch != -1024.0) {
+           _posX[i] = px;
+           _posY[i] = py;
+           _posZ[i] = pz;
+        }
+
+        _velX[i] = vx;
+        _velY[i] = vy;
+        _velZ[i] = vz;
     }
 }
 
