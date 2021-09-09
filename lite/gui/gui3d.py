@@ -1,7 +1,13 @@
 import tkinter as tk
 import os
 import re
+import matplotlib
+from matplotlib.figure import Figure
+import numpy as np
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
 #-------------------------------------------------------------------------------
+#Created by: Tom Donlon, Shreyas Seethalla, Rene Saenz
 #read in settings from lua file
 #and construct a dictionary to access them
 #-------------------------------------------------------------------------------
@@ -10,7 +16,8 @@ dirname = os.path.dirname(os.path.abspath(__file__))
 dirname = dirname[:dirname.rindex('/')] #each time removes last directory from dirname
 dirname = dirname[:dirname.rindex('/')]
 filename = dirname + '/nbody/sample_workunits/settings2.lua'
-
+filename2= filename #grabs filename for input
+filename2 = filename2[:filename2.rindex('/')]
 with open(filename, 'r') as file:
     data = file.readlines()
 
@@ -19,14 +26,14 @@ settings = {}
 
 for i in range(len(data)):
     line = data[i]
-
+    
     if line != '\n':
         if (line.split() and line.split()[0] == 'function'): #first line that isn't commented starting
                                           #with actual lua code is where settings stop
             break
         elif line.lstrip()[:2] != '--':
             settings[i] = line
-
+            
 #Splicing form:
 ##nbodyMinVersion       |~= ~|"1.80"|  | ~--~| |~--~| MINIMUM APP VERSION |~$~ |entry | 1.80 |~^~ |4 |~*~ |.5
 #Tildas surround what is not included in dictionary
@@ -54,53 +61,37 @@ for key in settings:
 #8 - minimum value
 
 
-#-------------------------------------------------------------------------------
-#Creates the GUI from the lua file
-#-------------------------------------------------------------------------------
 
-window = tk.Tk()
-settingColor = "blue"
-fillLength = 12
-
-#horizontal padding
-fillText = ""
-for x in range(0, fillLength):
-    fillText+= " "
-
-#headers
-hPadLabel = tk.Label(text=fillText)
-
-hPadLabel.grid(row=0, column =1)
 
 
 #BreakPoint makes a (sub)title. Called breakpoint because both
 #in settings.lua and in this GUI they are breaks from settings.
-def BreakPoint(name, position):
-    aLabel = tk.Label(text=name)
-    aLabel.grid(row=position, column = 6)
-
+def BreakPoint(name, position, frameName):
+    aLabel = tk.Label(frameName, text=name)
+    aLabel.pack(row=position, column = 0)
+    
 #Textual entry boxes. All update when return is pressed.
-def EntryBuild(name, position, current_default, upper, downer, current_key, box_width):
+def EntryBuild(name, position, current_default, upper, downer, current_key, box_width, frameName):
     current_default = current_default.strip()
     def update(self):
         nonlocal a
         settings[current_key][1] = a.get()
         a.config(text = settings[current_key][1])
-    defaultString = tk.StringVar(window, value = current_default)
-    a = tk.Entry(width=box_width, textvariable= defaultString)
-    aLabel = tk.Label(text= name)
+    defaultString = tk.StringVar(root, value = current_default)
+    a = tk.Entry(frameName, width=box_width, textvariable= defaultString)
+    aLabel = tk.Label(frameName, text= name)
     a.grid(row=position, column = 2)
     aLabel.grid(row = position, column = 0)
     #Creates a limit label to let users know what can be inputed
     limits = f"Min: {downer}; Max: {upper.strip()}"
-    aLimit = tk.Label(text = limits)
+    aLimit = tk.Label(frameName, text = limits)
     aLimit.grid(row = position, column = 4, padx=10) #Adds limits to the left of the entries
-    window.bind("<Return>", update)
+    root.bind("<Return>", update)
 
-
+    
 #Clickable buttons, update the dataframe on toggle
-def ButtonBuild(name,  position,  current_default, current_key):
-    current_default = 'true' if current_default == '1' else 'false'
+def ButtonBuild(name,  position,  current_default, current_key, frameName):
+    current_default = 'true' if current_default == '1' else 'false' #lmits use binary, need to convert
     def aToggle():
         nonlocal aButton
         # remember to figure out the correct syntax for this (and comment your code correctly)
@@ -110,93 +101,138 @@ def ButtonBuild(name,  position,  current_default, current_key):
         else:
             aButton.config(text='true')
             settings[key][1] = "true"
-
+    
     boolean = current_default
     global settings
-
-    aButton = tk.Button(text = current_default, command = aToggle)
-    aLabel = tk.Label(text=name)
+    
+    aButton = tk.Button(frameName, text = current_default, command = aToggle)
+    aLabel = tk.Label(frameName, text=name)
     aButton.grid(row = position, column = 2)
     aLabel.grid(row = position, column = 0)
-
-
+    
 #Increment/Decrement readout
-def ValuesBuild(name, position, default,  upper, downer, current_key):
-
+def ValuesBuild(name, position, default,  upper, downer, current_key, frameName):
+    
     def Increment(position, value, higher, lower, current_key): # also remember to use that same correct syntax here.
-
+        
         global settings
         nonlocal aValue
         nonlocal tempval
-
+        
         if (tempval< higher):
             tempval+= 1
         aValue.config(text=tempval)
-
-
+        
+        
         default = tempval
         settings[current_key][1]= tempval
         return tempval
-
+        
     def Decrement(position, value, higher, lower, current_key):
-
+        
         global settings
         nonlocal aValue
         nonlocal tempval
+
         if (tempval > lower):
             tempval -= 1
         aValue.config(text= tempval)
         default = tempval
         settings[current_key][1] = tempval
-
+        
         return tempval
-
+    
     tempval = int(default)
-    aTitle = tk.Label(text = name)
-    aValue = tk.Label(text = default)
-    aIncrement =tk.Button(text = ">", command = lambda:Increment(position, int(tempval), int(upper), int(downer), key))
-    aDecrement= tk.Button(text = "<", command = lambda:Decrement(position, int(tempval), int(upper), int(downer), key))
-    aValue.grid(row = position, column = 2)
-    aTitle.grid(row=position, column = 0)
-    aIncrement.grid(row = position, column = 3)
-    aDecrement.grid(row = position, column = 1)
+    aTitle = tk.Label(frameName, text = name)
+    aValue = tk.Label(frameName, text = default)
+    aIncrement =tk.Button(frameName, text = ">", command = lambda:Increment(position, int(tempval), int(upper), int(downer), key))
+    aDecrement= tk.Button(frameName, text = "<", command = lambda:Decrement(position, int(tempval), int(upper), int(downer), key))
+    aValue.pack(row = position, column = 2)
+    aTitle.pack(row=position, column = 0)
+    aIncrement.pack(row = position, column = 3)
+    aDecrement.pack(row = position, column = 1)
     #Creates a limit label to let users know what can be inputed
     limits = f"Min: {downer}; Max: {upper.strip()}"
     aLimit = tk.Label(text = limits)
-    aLimit.grid(row = position, column = 4, padx=10) #Adds limits to the left of the entries
+    aLimit.pack(row = position, column = 4, padx=10) #Adds limits to the left of the entries
+    
 
-#this section of code increments a position and builds
-#lines of GUI according to the type outlined in the
-#dataframe
-pos = 0
+def onFrameConfigure(canvas):
+    '''Reset the scroll region to encompass the inner frame'''
+    canvas.configure( scrollregion=canvas.bbox("all"))
+
+root = tk.Tk()
+canvas = tk.Canvas(root, borderwidth=0, background="light gray")
+frame = tk.Frame(canvas, background="light gray")
+vsb = tk.Scrollbar(root, orient="vertical", command=canvas.yview) #creates scrollbar to far right
+canvas.configure(yscrollcommand=vsb.set)
+
+vsb.pack(side="right", fill="y")
+canvas.pack(side="left", fill="both", expand=True)
+canvas.create_window((4,4), window=frame, anchor="nw")
+
+frame.bind("<Configure>", lambda event, canvas=canvas: onFrameConfigure(canvas))
+
+pos = 0 #represents which row widgets appear on
+
+#Creates the widgets in the frame based on the interface type specified
 for key in settings:
-
+    
     if (len(settings[key])<9):
         continue
-
+    
+    if settings[key][5] == "break ":
+        BreakPoint(settings[key][0], pos, frame)
+        pos = int((pos/100 +1)*100)
     if settings[key][5] == "button ":
-        ButtonBuild(settings[key][0], pos, settings[key][6].strip(), key)
+        ButtonBuild(settings[key][0], pos, settings[key][6].strip(), key, frame)
         pos += 1
     if settings[key][5] == "short ":
-        ValuesBuild(settings[key][0], pos, settings[key][6], settings[key][7], settings[key][8], key)
+        ValuesBuild(settings[key][0], pos, settings[key][6], settings[key][7], settings[key][8], key, frame)
         pos += 1
         continue
     if settings[key][5] == "l-entry " or settings[key][5] == "l-q-entry ":
-        EntryBuild(settings[key][0], pos, settings[key][6], settings[key][7], settings[key][8], key, 12)
+        EntryBuild(settings[key][0], pos, settings[key][6], settings[key][7],  settings[key][8], key, 12, frame)
         pos+=1
     if settings[key][5] == "entry " or settings[key][5] == "q-entry ":
-        EntryBuild(settings[key][0], pos, settings[key][6], settings[key][7], settings[key][8], key, 6)
+        EntryBuild(settings[key][0], pos, settings[key][6], settings[key][7],  settings[key][8], key, 6, frame)
         pos+=1
+        
+childList = canvas.winfo_children #creates a list of all widgets in the first (most shallow) level
+
+fig = Figure(figsize=(5, 4), dpi=100)
+t = np.arange(0, 3, .01)
+ax =fig.add_subplot(projection='3d')
+filename2 += '/manual_bodies_example.in'
+with open(filename2, 'r') as file:
+  lines=file.readlines()
+coords = []
+
+for i in range(len(lines)):
+  if(i>0):
+    coords.append([float(x) for x in lines[i].split()[2:]])
+
+x, y, z = [i[0] for i in coords],[i[1] for i in coords],[i[2] for i in coords]
+
+
+u,v,w = [i[3] for i in coords],[i[4] for i in coords],[i[5] for i in coords]
+ax.quiver(x, y, z, u, v, w, length = 20,normalize = "True")
+
+
+canvas2 = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+canvas2.draw()
+canvas2.get_tk_widget().pack()
+root.wm_title("NBody Lite")
 
 #-------------------------------------------------------------------------------
 #print out settings to file when you click the run button
 #-------------------------------------------------------------------------------
 
-
 def updateSettings():
     def readFromSettings(i):
         if(settings[i][5].strip() == 'q-entry' or settings[i][5].strip() == 'l-q-entry'): #Adds quotes around designated settings
             settings[i][1] = '\"' + settings[i][1].strip() + '\"'
+
         file.write(f'{settings[i][0]}= {settings[i][1]}{settings[i][2]} -- --{settings[i][4]}$ {settings[i][5]}| {settings[i][6]}^ {settings[i][7]}* {settings[i][8]}\n')
 
     filename2 = dirname + '/nbody/sample_workunits/settings2.lua'
@@ -220,12 +256,10 @@ def updateSettings():
             file.write(data[i])
 
 
-def retrieve_input():
-    childList = window.winfo_children()
+def retrieve_input(childList):
 
-    #Remove label objects and apply button
-    childList = [i for i in childList if i.winfo_class() != 'Label']
-    childList.pop()
+    #Remove label objects
+    childList = [child for child in childList if child.winfo_class() != 'Label']
 
     #iterate through entries
     for key, childIndex in zip(settings, range(0, len(childList))):
@@ -234,17 +268,18 @@ def retrieve_input():
             childIndex -= 1
             continue
         if child.cget('text') == '>': #for short interface, not in use
-            row = child.grid_info()['row']
-            settings[key][1] = window.grid_slaves(row, 2)[0].cget('text')
+            row = child.pack_info()['row']
+            settings[key][1] = window.pack_slaves(row, 2)[0].cget('text')
             continue
         if child.winfo_class() == 'Entry':
             settings[key][1] = child.get()
         if child.winfo_class() == 'Button':
             settings[key][1] = child.cget('text')
 
+
     updateSettings()
 
-buttonCommit=tk.Button(window, height=1, width=10, text="Apply",
-                    command=lambda: retrieve_input())
-buttonCommit.grid(row=pos, column = 2)
-window.mainloop()
+buttonCommit=tk.Button(root, height=1, width=10, text="Apply",
+                    command=lambda: retrieve_input(childList[0].winfo_children()))
+buttonCommit.pack(side="bottom")
+root.mainloop()
