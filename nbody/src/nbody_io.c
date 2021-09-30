@@ -61,7 +61,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
 {
     if (both)
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s\n",
                 "x", 
                 "y",  
                 "z",  
@@ -72,21 +72,19 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both)
                 "v_y",
                 "v_z",
                 "mass", 
-                "v_los",
-                "type"
+                "v_los"
             );
     }
     else
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s\n",
                 cartesian ? "x" : "l",
                 cartesian ? "y" : "b",
                 cartesian ? "z" : "r",
                 "v_x",
                 "v_y",
                 "v_z",
-                "mass",
-                "type"
+                "mass"
             );
     }
     
@@ -112,35 +110,30 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     {
         fprintf(f, "%8d, %8d,", ignoreBody(p), idBody(p));  /* Print if model it belongs to is ignored */
         char type[20] = "";
-        if(Type(p) == BODY(isLight)){
-            strcpy(type, "baryonic");
-        }else{
-            strcpy(type, "dark");
-        }
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %10s\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), type);
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
         else if (nbf->outputlbrCartesian)
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22s\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS, type);   
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
         }
         else
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22s\n",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f\n",
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), type);
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
     }
 
