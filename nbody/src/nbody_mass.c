@@ -404,12 +404,19 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
             err_data = data->data[i].err;
             err_hist = histogram->data[i].err;
 
-            if((err_data > 0)&&(err_hist > 0))
+            if(err_data > 0)
             {
                 Data = data->data[i].variable;
                 Hist = histogram->data[i].variable;
 
-                Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
+                if(err_hist > 0)
+                {
+                    Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
+                }
+                else
+                {
+                    Nsigma_sq += 25;    /*Adding 5 sigma*/
+                }
             }
         }
 
