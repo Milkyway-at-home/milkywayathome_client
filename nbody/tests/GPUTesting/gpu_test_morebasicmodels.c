@@ -170,7 +170,7 @@ int test(int version, int model) {
     int result = 0;
     if(sumAvg < 0) { sumAvg *= -1; }
     if(sum < 0) { sum *= -1; }
-    if(sum > tolerence) { mw_printf("Test failed\n"); result--; abort(); }
+    if(sum > tolerence) { mw_printf("Test failed\n"); result--; }
     else { mw_printf("Test passed\n"); }
     return result;
 }
