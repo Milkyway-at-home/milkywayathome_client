@@ -308,7 +308,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
         return NBODY_ERROR;
 
     st->effNBody = nbFindEffectiveNBody(st->workSizes, st->usesExact, st->nbody);
-    st->maxDepth = nbFindMaxDepthForDevice(devInfo, st->workSizes, ctx->useQuad);
+    st->maxDepth = nbFindMaxDepthForDevice(devInfo, st->workSizes, ctx->useQuad, ctx->LMC);
 
     st->usesConsistentMemory =  (mwIsNvidiaGPUDevice(devInfo) && mwNvidiaInlinePTXAvailable(st->ci->plat))
                               || mwDeviceHasConsistentMemory(devInfo);
@@ -324,7 +324,7 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 
-    err = nbSetAllKernelArguments(st);
+    err = nbSetAllKernelArguments(ctx, st);
     if (err != CL_SUCCESS)
         return NBODY_CL_ERROR;
 

@@ -91,11 +91,11 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both, mwbool LBa
     }
     if (LBavailable)
     {
-        fprintf(f," %22s %22s %22s\n", "type", "Lambda", "Beta");
+        fprintf(f," %22s %22s\n", "Lambda", "Beta");
     }
     else
     {
-        fprintf(f," %22s\n", "type");
+        fprintf(f,"\n");
     }
     
 }
@@ -138,15 +138,10 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     {
         fprintf(f, "%8d, %8d,", ignoreBody(p), idBody(p));  /* Print if model it belongs to is ignored */
         char type[20] = "";
-        if(Type(p) == BODY(isLight)){
-            strcpy(type, "baryonic");
-        }else{
-            strcpy(type, "dark");
-        }
         if (nbf->outputCartesian)
         {
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f,",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
@@ -155,7 +150,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f,",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
                     X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
@@ -164,7 +159,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f,",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
                     L(lbr), B(lbr), R(lbr),
                     X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
         }
@@ -173,11 +168,11 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
             lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
             lambda_val = L(lambdaBetaR);
             beta_val = B(lambdaBetaR);
-            fprintf(f," %22s, %22.15f, %22.15f\n", type, lambda_val, beta_val);
+            fprintf(f,", %22.15f, %22.15f\n", lambda_val, beta_val);
         }
         else
         {
-            fprintf(f," %22s\n", type);
+            fprintf(f,"\n");
         }
     }
 
