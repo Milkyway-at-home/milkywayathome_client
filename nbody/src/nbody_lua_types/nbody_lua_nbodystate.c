@@ -33,7 +33,9 @@
 #include "nbody_lua_misc.h"
 #include "nbody_grav.h"
 #include "nbody.h"
-
+#if NBODY_OPENCL
+  #include "nbody_cl.h"
+#endif
 
 NBodyState* checkNBodyState(lua_State* luaSt, int idx)
 {
@@ -69,7 +71,11 @@ static int stepNBodyState(lua_State* luaSt)
     ctx = *checkNBodyCtx(luaSt, 2);
 
     //mw_printf("STEP - Before RC\n");
+#if NBODY_OPENCL
+    rc = nbStepSystemCL(&ctx, st);
+#else
     rc = nbStepSystem(&ctx, st);
+#endif
     //mw_printf("STEP - Before pushstring\n");
     lua_pushstring(luaSt, showNBodyStatus(rc));
     //mw_printf("STEP - After\n");
