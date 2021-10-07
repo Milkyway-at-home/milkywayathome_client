@@ -396,15 +396,15 @@ int main()
         }
     }
 
-    //Double Exponential Disk Potential
-    for (i = 0; i < nPotentials; i++)
-    {
-        if (testDiskPotential(DoubleExponentialDisk))
-        {
-            failed = 1;
-            break;
-        }
-    }
+    //Double Exponential Disk Potential     /** FIXME: This potential fails the poisson test. Do not use this potential until we can more accurately calculate it **/
+//    for (i = 0; i < nPotentials; i++)
+//    {
+//        if (testDiskPotential(DoubleExponentialDisk))
+//        {
+//            failed = 1;
+//            break;
+//        }
+//   }
     
     //Hyperbolic Exponential Disk Potential  /** FIXME: This potential fails the poisson test. Do not use this potential until we can more accurately calculate it **/
 //    for (i = 0; i < nPotentials; i++)

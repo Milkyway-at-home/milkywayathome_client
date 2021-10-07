@@ -54,7 +54,9 @@ static real nbHistogramBetaBinSize(const HistogramParams* hp)
 
 real nbNormalizedHistogramError(unsigned int n, real total)
 {
-    return (n == 0) ? inv(total) : mw_sqrt((real) n) / total;
+    real real_n = (real) n;
+    real norm_n = real_n / total;
+    return (n == 0) ? inv(total) : mw_sqrt((1.0 - 2.0*norm_n) * real_n + norm_n*norm_n*total) / total;
 }
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
