@@ -29,7 +29,7 @@ static NBodyState Cst = EMPTY_NBODYSTATE;
 static NBodyCtx Gctx = EMPTY_NBODYCTX;
 static NBodyState Gst = EMPTY_NBODYSTATE;
 int steps = 1;
-float tolerence = 0.000001;
+float tolerence = 0.00003;
 
 static void CLR(CLRequest* clr, const NBodyFlags* nbf){
 
@@ -172,12 +172,12 @@ int test(int version, int model) {
     remove("GPU_hist.dat");
     remove("test_outputCPU.txt");
     
+    int result = 0;
     if(sumAvg < 0) { sumAvg *= -1; }
     if(sum < 0) { sum *= -1; }
-    if(sum > tolerence) { mw_printf("Test failed\n"); }
-    
-    mw_printf("Test passed\n");
-    return 0;
+    if(sum > tolerence) { mw_printf("Test failed\n"); result--; }
+    else { mw_printf("Test passed\n"); }
+    return result;
 }
 
 
