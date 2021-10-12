@@ -466,7 +466,8 @@ typedef struct MW_ALIGN_TYPE
     mwbool useVlos;           /* use the line of sight velocity comparison calc */
     mwbool useDist;           /* use the average distance comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
-    
+
+    mwbool OutputLB;          /* Puts LB information in output file '-o' */
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
@@ -481,9 +482,6 @@ typedef struct MW_ALIGN_TYPE
     real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     real DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
-    real BetaStatErr;         /* correction factor applied to error in average Beta to more clearly reflect true statistical error */
-    real VLOSStatErr;         /* correction factor applied to error in average VLOS to more clearly reflect true statistical error */
-    real DistStatErr;         /* correction factor applied to error in average Distance to more clearly reflect true statistical error */
 
     mwbool LMC;
 
@@ -503,13 +501,13 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                              \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
-                         FALSE, FALSE, FALSE,                                                           \
+                         FALSE, FALSE, FALSE, FALSE,                                                    \
                          0, 0,                                                                          \
-                         0, 0, 0, 0, 0, 0, 0, 1.0, 1.0, 1.0,                                            \
+                         0, 0, 0, 0, 0, 0, 0,                                                           \
                          FALSE,                                                                         \
                          0, 0, FALSE,                                                                   \
                          0,                                                                             \

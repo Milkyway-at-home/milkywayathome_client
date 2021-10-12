@@ -945,7 +945,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
-                all->histograms[3]->data[i].err = all->histograms[3]->data[i].variable / sqrt(vdenom * ctx->VLOSStatErr);
+                all->histograms[3]->data[i].err = all->histograms[3]->data[i].variable / sqrt(vdenom);
                 all->histograms[3]->data[i].variable = all->histograms[3]->data[i].sum / vdenom;
             }
             else
@@ -969,7 +969,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
-                all->histograms[4]->data[i].err = all->histograms[4]->data[i].variable / sqrt(bdenom * ctx->BetaStatErr);
+                all->histograms[4]->data[i].err = all->histograms[4]->data[i].variable / sqrt(bdenom);
                 all->histograms[4]->data[i].variable = all->histograms[4]->data[i].sum / bdenom;
             }
             else
@@ -993,7 +993,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average distance (as it should be)
-                all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom * ctx->DistStatErr);
+                all->histograms[5]->data[i].err = all->histograms[5]->data[i].variable / sqrt(ddenom);
                 all->histograms[5]->data[i].variable  = all->histograms[5]->data[i].sum / ddenom;
             }
             else

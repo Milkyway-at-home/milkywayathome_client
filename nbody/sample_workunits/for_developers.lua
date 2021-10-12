@@ -60,6 +60,8 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
+Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
+
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
 lda_upper_range = 150     -- upepr range for lamdba
@@ -71,10 +73,6 @@ bta_upper_range = 15      -- upper range for beta
 SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
 SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
 Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
-
-BetaStatCorrection   = 1.0     -- -- statistical correction for error in Beta average DO NOT CHANGE -- --
-VLOSStatCorrection   = 1.0     -- -- statistical correction for error in VLOS average DO NOT CHANGE -- --
-DistStatCorrection   = 1.0     -- -- statistical correction for error in Distance average DO NOT CHANGE -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
@@ -206,6 +204,7 @@ function makeContext()
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
       criterion   = criterion,
+      OutputLB    = Output_LB_coord,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
@@ -223,9 +222,6 @@ function makeContext()
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
-      BetaStatErr   = BetaStatCorrection,
-      VLOSStatErr   = VLOSStatCorrection,
-      DistStatErr   = DistStatCorrection,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
