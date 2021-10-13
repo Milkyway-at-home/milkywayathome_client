@@ -60,6 +60,8 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
+Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
+
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
 lda_upper_range = 150     -- upepr range for lamdba
@@ -202,6 +204,7 @@ function makeContext()
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
       criterion   = criterion,
+      OutputLB    = Output_LB_coord,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,

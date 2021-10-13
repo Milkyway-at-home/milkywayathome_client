@@ -104,6 +104,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "vz",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vz  },
             
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName     },
+            { "OutputLB",      LUA_TBOOLEAN, NULL, FALSE, &ctx.OutputLB      },
             { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad       },
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest   },
             { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors   },
@@ -252,6 +253,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)     },
     { "sunGCDist",       getNumber,     offsetof(NBodyCtx, sunGCDist)     },
     { "criterion",       getCriterionT, offsetof(NBodyCtx, criterion)     },
+    { "OutputLB",        getBool,       offsetof(NBodyCtx, OutputLB)      },
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)       },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest)   },
     { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors)   },
@@ -291,6 +293,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)     },
     { "sunGCDist",       setNumber,     offsetof(NBodyCtx, sunGCDist)     },
     { "criterion",       setCriterionT, offsetof(NBodyCtx, criterion)     },
+    { "OutputLB",        setBool,       offsetof(NBodyCtx, OutputLB)      },
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)       },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest)   },
     { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors)   },

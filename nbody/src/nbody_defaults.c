@@ -51,6 +51,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .useDist         */  DEFAULT_USE_DIST, 
     /* .MultiOutput     */  FALSE,
 
+    /* .OutputLB        */  FALSE,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,
@@ -65,6 +66,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
+
     /* .LMC             */  FALSE,
     /* .LMCmass         */  0.0,
     /* .LMCscale        */  0.0,
