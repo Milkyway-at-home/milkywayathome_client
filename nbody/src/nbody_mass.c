@@ -280,7 +280,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
         {
             
             /* Check if the position is within the bounds of the histogram */
-            if (use_body[counter] >= 0)//if its not -1 then it was in the hist and set to the Histindex   
+            if (use_body[counter] >= 0)//if it's not -1 then it was in the hist and set to the Histindex   
             {   
                 Histindex = (int) use_body[counter];
                 //mw_printf("Histogram Index = %d\n",Histindex);
@@ -290,7 +290,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                 /* Use old standard deviation calculated before */
                 bin_sigma = histData[Histindex].variable;
                 
-                if(mw_fabs(bin_ave[Histindex] - this_var) < sigma_cutoff * bin_sigma)//if it is outside of the sigma limit
+                if(mw_fabs(bin_ave[Histindex] - this_var) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
                 {
                     temp_sum[Histindex] += this_var;
                     temp_sqr[Histindex] += this_var*this_var;
@@ -305,7 +305,6 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
             counter++;
         }
     }
-    //mw_printf("FINISED BODY COUNT\n");
     for (unsigned int indx2 = 0; indx2 < histBins; ++indx2)
     {
         histData[indx2].sum = temp_sum[indx2];
