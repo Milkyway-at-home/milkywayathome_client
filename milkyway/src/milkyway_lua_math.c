@@ -21,6 +21,49 @@
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_math.h"
 
+real checkReal(lua_State* luaSt, int idx)
+{
+    real* num = mw_checknamedudata(luaSt, idx, REAL_TYPE);
+    return num*;
+}
+
+real toReal(lua_State* luaSt, int idx)
+{
+    real* num = mw_tonamedudata(luaSt, idx, REAL_TYPE);
+    return num*;
+}
+
+real expectReal(lua_State* luaSt, int idx)
+{
+    real* num = expectType(luaSt, idx, REAL_TYPE);
+    return num*;
+}
+
+int pushReal(lua_State* luaSt, real realIn)
+{
+    real* realNew;
+
+    realNew = (real*) lua_newuserdata(luaSt, sizeof(real));
+    *realNew = realIn;
+
+    luaL_getmetatable(luaSt, REAL_TYPE);
+    lua_setmetatable(luaSt, -2);
+
+    return 1;
+}
+
+int getReal(lua_State* luaSt, void* r)
+{
+    pushReal(luaSt, *(real*) v);
+    return 1;
+}
+
+int setReal(lua_State* luaSt, void* r)
+{
+    *(real*)r = checkReal(luaSt, 3);
+    return 0;
+}
+
 
 #define DEFINE_LUA_MW_FUNC_1(cname, name)                               \
      static int lua_##cname(lua_State* luaSt)                           \
@@ -33,9 +76,9 @@
          if (nArgs != 1)                                                \
              return luaL_argerror(luaSt, 0, "Expected 1 argument");     \
                                                                         \
-         number = (real) luaL_checknumber(luaSt, 1);                    \
+         number = (real) checkReal(luaSt, 1);                           \
          lua_pop(luaSt, 1);                                             \
-         lua_pushnumber(luaSt, cname(number));                          \
+         pushReal(luaSt, cname(number));                                \
                                                                         \
          return 1;                                                      \
      }                                                                  \
@@ -56,10 +99,10 @@
          if (nArgs != 2)                                                \
              return luaL_argerror(luaSt, 0, "Expected 2 arguments");    \
                                                                         \
-         number1 = (real) luaL_checknumber(luaSt, 1);                   \
-         number2 = (real) luaL_checknumber(luaSt, 2);                   \
+         number1 = (real) checkReal(luaSt, 1);                          \
+         number2 = (real) checkReal(luaSt, 2);                          \
          lua_pop(luaSt, 2);                                             \
-         lua_pushnumber(luaSt, cname(number1, number2));                \
+         pushReal(luaSt, cname(number1, number2));                      \
                                                                         \
          return 1;                                                      \
      }                                                                  \
@@ -68,6 +111,59 @@
      {                                                                  \
          lua_register(luaSt, #name, lua_##cname);                       \
      }
+
+//------------------------------------------------------------------------------- These methods allow us to convert real number into real structures in lua
+static int lua_mw_real_const(lua_State* luaSt)
+{
+    int nArgs;
+    real_0 number;
+
+    nArgs = lua_gettop(luaSt);
+
+    if (nArgs != 1)
+        return luaL_argerror(luaSt, 0, "Expected 1 argument");
+
+    number = (real_0) luaL_checknumber(luaSt, 1);
+    lua_pop(luaSt, 1);
+    pushReal(luaSt, mw_real_const(number));
+
+    return 1;
+}
+
+static void register_lua_mw_real_const(lua_State* luaSt)
+{
+    lua_register(luaSt, real_const, mw_real_const);
+}
+
+static int lua_mw_real_var(lua_State* luaSt)
+{
+    int nArgs;
+    real_0 number1;
+    int number2;
+
+    nArgs = lua_gettop(luaSt);
+
+    if (nArgs != 2)
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+
+    number1 = (real_0) luaL_checknumber(luaSt, 1);
+    number2 = (int) luaL_checknumber(luaSt, 2);
+    lua_pop(luaSt, 2);
+    pushReal(luaSt, mw_real_var(number1,number2));
+
+    return 1;
+}
+
+static void register_lua_mw_real_var(lua_State* luaSt)
+{
+    lua_register(luaSt, real_var, mw_real_var);
+}
+//-------------------------------------------------------------------------------
+
+DEFINE_LUA_MW_FUNC_2(mw_add,add)
+DEFINE_LUA_MW_FUNC_2(mw_sub,sub)
+DEFINE_LUA_MW_FUNC_2(mw_mul,mul)
+DEFINE_LUA_MW_FUNC_2(mw_div,div)
 
 DEFINE_LUA_MW_FUNC_1(sqr, sqr)
 DEFINE_LUA_MW_FUNC_1(cube, cube)
@@ -156,7 +252,7 @@ DEFINE_LUA_MW_FUNC_1(mw_ilogb, ilogb)
 
 static void registerConstant(lua_State* luaSt, const char* name, real val)
 {
-    lua_pushnumber(luaSt, val);
+    pushReal(luaSt, val);
     lua_setglobal(luaSt, name);
 }
 
@@ -183,6 +279,14 @@ static void registerConstants(lua_State* luaSt)
 void registerMilkywayMath(lua_State* luaSt)
 {
     registerConstants(luaSt);
+
+    register_lua_mw_real_const(luaSt);
+    register_lua_mw_real_var(luaSt);
+
+    register_lua_mw_add(luaSt);
+    register_lua_mw_sub(luaSt);
+    register_lua_mw_mul(luaSt);
+    register_lua_mw_div(luaSt);
 
     register_lua_mw_sin(luaSt);
     register_lua_mw_cos(luaSt);

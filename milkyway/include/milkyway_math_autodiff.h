@@ -59,6 +59,17 @@ extern "C" {
         result.hessian = ZERO_HESSIAN;
         return result;
     }
+
+    CONST_F ALWAYS_INLINE
+    static inline real mw_real_var(real_0 a, int n)
+    {
+        real result;
+	result.value = a;
+        result.gradient = ZERO_GRADIENT;
+        result.hessian = ZERO_HESSIAN;
+        result.gradient[n] = 1.0;
+        return result;
+    }
     #define INIT_REAL_CONST(r,x) {(r).value = (x); (r).gradient = ZERO_GRADIENT; (r).hessian = ZERO_HESSIAN;}
     #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x)); (r).gradient[n] = 1.0}
 
@@ -73,6 +84,13 @@ extern "C" {
     {
         return a;
     }
+
+    CONST_F ALWAYS_INLINE
+    static inline real mw_real_var(real a, int n)
+    {
+        return a;
+    }
+
     #define INIT_REAL_CONST(r,x) {(r) = (x);}
     #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x));}
 
@@ -216,6 +234,8 @@ extern "C" {
 
 
 #endif /*AUTODIFF*/
+
+#define REAL_TYPE "Real"
 
 #if DOUBLEPREC
     typedef MW_ALIGN_TYPE_V(2*sizeof(real)) real double2[2];
