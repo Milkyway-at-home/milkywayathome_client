@@ -37,10 +37,6 @@
 
 
 typedef MW_ALIGN_TYPE_V(4) float real_0;
-typedef MW_ALIGN_TYPE_V(8) float float2_0[2];
-typedef MW_ALIGN_TYPE_V(16) float float4_0[4];
-
-# define M_PI_0 ((real_0) 3.14159265358979323846) /* pi */
 
 #define REAL_EPSILON_0 FLT_EPSILON
 #define REAL_MAX_0 FLT_MAX
@@ -66,19 +62,19 @@ typedef MW_ALIGN_TYPE_V(16) float float4_0[4];
 #define mw_abs_0   fabsf
 
 #define mw_acosh_0 acoshf
-#define mw_acospi_0(x) (mw_acos_0(x) / M_PI_0)
+#define mw_acospi_0(x) (mw_acos_0(x) / M_PI)
 #define mw_asinh_0 asinhf
-#define mw_asinpi_0 (mw_asin_0(x) / M_PI_0)
+#define mw_asinpi_0 (mw_asin_0(x) / M_PI)
 #define mw_atan2_0 atan2f
 #define mw_atanh_0 atanhf
-#define mw_atanpi_0(x) (mw_atan_0(x) / M_PI_0)
-#define mw_atan2pi_0(x) (mw_atan2_0(x) / M_PI_0)
+#define mw_atanpi_0(x) (mw_atan_0(x) / M_PI)
+#define mw_atan2pi_0(x) (mw_atan2_0(x) / M_PI)
 #define mw_cbrt_0 cbrtf
 #define mw_ceil_0 ceilf
 #define mw_copysign_0 copysignf
-#define mw_cospi_0(x) mw_cos_0(M_PI_0 * (x))
-#define mw_sinpi_0(x) mw_sin_0(M_PI_0 * (x))
-#define mw_tanpi_0(x) (mw_tan_0(M_PI_0 * (x)))
+#define mw_cospi_0(x) mw_cos_0(M_PI * (x))
+#define mw_sinpi_0(x) mw_sin_0(M_PI * (x))
+#define mw_tanpi_0(x) (mw_tan_0(M_PI * (x)))
 #define mw_erfc_0 erfcf
 #define mw_erf_0 erff
 

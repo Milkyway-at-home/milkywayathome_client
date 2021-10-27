@@ -31,13 +31,9 @@
   #error DOUBLEPREC not defined
 #endif
 
+#if AUTODIFF /*Define types outside of main()*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#if AUTODIFF
-    int NumberOfModelParameters = 20     /*Change this number to add more space for parameters to differentiate over*/
+    #define NumberOfModelParameters 20     /*Change this number to add more space for parameters to differentiate over*/
 
     typedef struct MW_ALIGN_TYPE_V(sizeof(real_0)*(1 + NumberOfModelParameters + NumberOfModelParameters*NumberOfModelParameters))
     {
@@ -50,6 +46,33 @@ extern "C" {
     real_0 ZERO_HESSIAN[NumberOfModelParameters][NumberOfModelParameters] = {0.0};
     #define ZERO_REAL {0.0, ZERO_GRADIENT, ZERO_HESSIAN}
 
+#else
+
+    typedef MW_ALIGN_TYPE_V(sizeof(real_0)) real_0 real;
+    #define ZERO_REAL 0.0
+
+#endif       /*Define types outside of main()*/
+
+
+
+#define REAL_TYPE "Real"
+
+
+
+#if DOUBLEPREC
+    typedef MW_ALIGN_TYPE_V(2*sizeof(real)) real double2[2];
+    typedef MW_ALIGN_TYPE_V(4*sizeof(real)) real double4[4];
+#else
+    typedef MW_ALIGN_TYPE_V(2*sizeof(real)) real float2[2];
+    typedef MW_ALIGN_TYPE_V(4*sizeof(real)) real float4[4];
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if AUTODIFF /*Math functions*/
     CONST_F ALWAYS_INLINE
     static inline real mw_real_const(real_0 a)
     {
@@ -74,11 +97,6 @@ extern "C" {
     #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x)); (r).gradient[n] = 1.0}
 
 #else
-
-    typedef struct MW_ALIGN_TYPE_V(sizeof(real_0)) real_0 real;
-
-    #define ZERO_REAL 0.0
-
     CONST_F ALWAYS_INLINE
     static inline real mw_real_const(real a)
     {
@@ -233,20 +251,7 @@ extern "C" {
     #define dsign dsign_0
 
 
-#endif /*AUTODIFF*/
-
-#define REAL_TYPE "Real"
-
-#if DOUBLEPREC
-    typedef MW_ALIGN_TYPE_V(2*sizeof(real)) real double2[2];
-    typedef MW_ALIGN_TYPE_V(4*sizeof(real)) real double4[4];
-#else
-    typedef MW_ALIGN_TYPE_V(2*sizeof(real)) real float2[2];
-    typedef MW_ALIGN_TYPE_V(4*sizeof(real)) real float4[4];
-#endif
-
-
-
+#endif /*Math Functions*/
 
 
 #ifdef __cplusplus

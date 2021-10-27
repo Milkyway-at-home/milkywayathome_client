@@ -111,9 +111,10 @@ static inline real mw_dotv(mwvector a, mwvector b)
 CONST_F
 static inline mwvector mw_crossv(mwvector a, mwvector b)
 {
-    mwvector tmp = mw_vec(mw_sub(mw_mul(b.z, a.y), mw_mul(b.y, a.z)),
-                          mw_sub(mw_mul(b.x, a.z), mw_mul(b.z, a.x)),
-                          mw_sub(mw_mul(b.y, a.x), mw_mul(b.x, a.y));
+    mwvector tmp;
+    tmp.x = mw_sub(mw_mul(b.z, a.y), mw_mul(b.y, a.z));
+    tmp.y = mw_sub(mw_mul(b.x, a.z), mw_mul(b.z, a.x));
+    tmp.z = mw_sub(mw_mul(b.y, a.x), mw_mul(b.x, a.y));
     return tmp;
 }
 
