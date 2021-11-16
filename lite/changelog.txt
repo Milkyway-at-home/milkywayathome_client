@@ -1,3 +1,7 @@
+v1.80.1:
+ - Added /gui folder for GUI development
+ - Added /gui/gui.py
+
 v1.80:
  - Added changelog
  - Fixed context from bar update
