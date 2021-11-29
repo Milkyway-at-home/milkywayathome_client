@@ -32,9 +32,9 @@
 #endif
 
 typedef MW_ALIGN_TYPE_V(8) double real_0;
-#define REAL_EPSILON_0 DBL_EPSILON
-#define REAL_MAX_0 DBL_MAX
-#define REAL_MIN_0 DBL_MIN
+#define REAL_EPSILON DBL_EPSILON
+#define REAL_MAX DBL_MAX
+#define REAL_MIN DBL_MIN
 
 #if ENABLE_CRLIBM
   #define mw_sin_0   sin_rn
@@ -64,7 +64,7 @@ typedef MW_ALIGN_TYPE_V(8) double real_0;
   #define mw_log1p_0 log1p
   #define mw_exp_0   exp
   #define mw_expm1_0 expm1
-  #define mw_log10_1 log10
+  #define mw_log10_0 log10
   #define mw_sinh_0  sinh
   #define mw_cosh_0  cosh
   #define mw_tanh_0  tanh

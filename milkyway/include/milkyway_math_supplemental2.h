@@ -67,11 +67,6 @@ typedef struct MW_ALIGN_TYPE_V(2*sizeof(real))
         (inOut).sum = newSum;                                                              \
     }
 
-/*Set epsilon and max values to correct type*/
-
-#define REAL_EPSILON mw_real_const(REAL_EPSILON_0)
-#define REAL_MAX mw_real_const(REAL_MAX_0)
-#define REAL_MIN mw_real_const(REAL_MIN_0)
 
 /* other useful nonstandard constants */
 

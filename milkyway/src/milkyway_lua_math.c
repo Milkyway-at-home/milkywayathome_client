@@ -24,19 +24,19 @@
 real checkReal(lua_State* luaSt, int idx)
 {
     real* num = mw_checknamedudata(luaSt, idx, REAL_TYPE);
-    return num*;
+    return *num;
 }
 
 real toReal(lua_State* luaSt, int idx)
 {
     real* num = mw_tonamedudata(luaSt, idx, REAL_TYPE);
-    return num*;
+    return *num;
 }
 
 real expectReal(lua_State* luaSt, int idx)
 {
     real* num = expectType(luaSt, idx, REAL_TYPE);
-    return num*;
+    return *num;
 }
 
 int pushReal(lua_State* luaSt, real realIn)
@@ -54,7 +54,7 @@ int pushReal(lua_State* luaSt, real realIn)
 
 int getReal(lua_State* luaSt, void* r)
 {
-    pushReal(luaSt, *(real*) v);
+    pushReal(luaSt, *(real*) r);
     return 1;
 }
 
@@ -76,9 +76,9 @@ int setReal(lua_State* luaSt, void* r)
          if (nArgs != 1)                                                \
              return luaL_argerror(luaSt, 0, "Expected 1 argument");     \
                                                                         \
-         number = (real) checkReal(luaSt, 1);                           \
+         number = (real) luaL_checknumber(luaSt, 1);                    \
          lua_pop(luaSt, 1);                                             \
-         pushReal(luaSt, cname(number));                                \
+         lua_pushnumber(luaSt, cname(number));                          \
                                                                         \
          return 1;                                                      \
      }                                                                  \
@@ -99,10 +99,10 @@ int setReal(lua_State* luaSt, void* r)
          if (nArgs != 2)                                                \
              return luaL_argerror(luaSt, 0, "Expected 2 arguments");    \
                                                                         \
-         number1 = (real) checkReal(luaSt, 1);                          \
-         number2 = (real) checkReal(luaSt, 2);                          \
+         number1 = (real) luaL_checknumber(luaSt, 1);                   \
+         number2 = (real) luaL_checknumber(luaSt, 2);                   \
          lua_pop(luaSt, 2);                                             \
-         pushReal(luaSt, cname(number1, number2));                      \
+         lua_pushnumber(luaSt, cname(number1, number2));                \
                                                                         \
          return 1;                                                      \
      }                                                                  \
@@ -112,147 +112,94 @@ int setReal(lua_State* luaSt, void* r)
          lua_register(luaSt, #name, lua_##cname);                       \
      }
 
-//------------------------------------------------------------------------------- These methods allow us to convert real number into real structures in lua
-static int lua_mw_real_const(lua_State* luaSt)
-{
-    int nArgs;
-    real_0 number;
+DEFINE_LUA_MW_FUNC_1(sqr_0, sqr)
+DEFINE_LUA_MW_FUNC_1(cube_0, cube)
+DEFINE_LUA_MW_FUNC_1(d2r_0, d2r)
+DEFINE_LUA_MW_FUNC_1(r2d_0, r2d)
 
-    nArgs = lua_gettop(luaSt);
+DEFINE_LUA_MW_FUNC_1(mw_sin_0, sin)
+DEFINE_LUA_MW_FUNC_1(mw_cos_0, cos)
+DEFINE_LUA_MW_FUNC_1(mw_tan_0, tan)
 
-    if (nArgs != 1)
-        return luaL_argerror(luaSt, 0, "Expected 1 argument");
-
-    number = (real_0) luaL_checknumber(luaSt, 1);
-    lua_pop(luaSt, 1);
-    pushReal(luaSt, mw_real_const(number));
-
-    return 1;
-}
-
-static void register_lua_mw_real_const(lua_State* luaSt)
-{
-    lua_register(luaSt, real_const, mw_real_const);
-}
-
-static int lua_mw_real_var(lua_State* luaSt)
-{
-    int nArgs;
-    real_0 number1;
-    int number2;
-
-    nArgs = lua_gettop(luaSt);
-
-    if (nArgs != 2)
-        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
-
-    number1 = (real_0) luaL_checknumber(luaSt, 1);
-    number2 = (int) luaL_checknumber(luaSt, 2);
-    lua_pop(luaSt, 2);
-    pushReal(luaSt, mw_real_var(number1,number2));
-
-    return 1;
-}
-
-static void register_lua_mw_real_var(lua_State* luaSt)
-{
-    lua_register(luaSt, real_var, mw_real_var);
-}
-//-------------------------------------------------------------------------------
-
-DEFINE_LUA_MW_FUNC_2(mw_add,add)
-DEFINE_LUA_MW_FUNC_2(mw_sub,sub)
-DEFINE_LUA_MW_FUNC_2(mw_mul,mul)
-DEFINE_LUA_MW_FUNC_2(mw_div,div)
-
-DEFINE_LUA_MW_FUNC_1(sqr, sqr)
-DEFINE_LUA_MW_FUNC_1(cube, cube)
-DEFINE_LUA_MW_FUNC_1(d2r, d2r)
-DEFINE_LUA_MW_FUNC_1(r2d, r2d)
-
-DEFINE_LUA_MW_FUNC_1(mw_sin, sin)
-DEFINE_LUA_MW_FUNC_1(mw_cos, cos)
-DEFINE_LUA_MW_FUNC_1(mw_tan, tan)
-
-DEFINE_LUA_MW_FUNC_1(mw_asin, asin)
-DEFINE_LUA_MW_FUNC_1(mw_acos, atan)
-DEFINE_LUA_MW_FUNC_1(mw_log, log)
-DEFINE_LUA_MW_FUNC_1(mw_exp, exp)
+DEFINE_LUA_MW_FUNC_1(mw_asin_0, asin)
+DEFINE_LUA_MW_FUNC_1(mw_acos_0, atan)
+DEFINE_LUA_MW_FUNC_1(mw_log_0, log)
+DEFINE_LUA_MW_FUNC_1(mw_exp_0, exp)
 
 
-DEFINE_LUA_MW_FUNC_1(mw_log10, log10)
+DEFINE_LUA_MW_FUNC_1(mw_log10_0, log10)
 
-DEFINE_LUA_MW_FUNC_1(mw_sinh, sinh)
-DEFINE_LUA_MW_FUNC_1(mw_cosh, cosh)
-DEFINE_LUA_MW_FUNC_1(mw_tanh, tanh)
-
-
-DEFINE_LUA_MW_FUNC_1(mw_fabs, fabs)
-
-DEFINE_LUA_MW_FUNC_1(mw_ceil, ceil)
+DEFINE_LUA_MW_FUNC_1(mw_sinh_0, sinh)
+DEFINE_LUA_MW_FUNC_1(mw_cosh_0, cosh)
+DEFINE_LUA_MW_FUNC_1(mw_tanh_0, tanh)
 
 
-DEFINE_LUA_MW_FUNC_1(mw_exp2, exp2)
-DEFINE_LUA_MW_FUNC_1(mw_exp10, exp10)
+DEFINE_LUA_MW_FUNC_1(mw_fabs_0, fabs)
 
-DEFINE_LUA_MW_FUNC_1(mw_floor, floor)
-DEFINE_LUA_MW_FUNC_2(mw_fmod, fmod)
-DEFINE_LUA_MW_FUNC_2(mw_ldexp, ldexp)
-DEFINE_LUA_MW_FUNC_1(mw_rsqrt, rsqrt)
-DEFINE_LUA_MW_FUNC_1(mw_sqrt, sqrt)
+DEFINE_LUA_MW_FUNC_1(mw_ceil_0, ceil)
 
-DEFINE_LUA_MW_FUNC_1(mw_tanpi, tanpi)
-DEFINE_LUA_MW_FUNC_1(mw_sinpi, sinpi)
-DEFINE_LUA_MW_FUNC_1(mw_cospi, cospi)
 
-DEFINE_LUA_MW_FUNC_2(mw_pow, pow)
-DEFINE_LUA_MW_FUNC_2(mw_hypot, hypot)
-DEFINE_LUA_MW_FUNC_2(mw_atan2, atan2)
+DEFINE_LUA_MW_FUNC_1(mw_exp2_0, exp2)
+DEFINE_LUA_MW_FUNC_1(mw_exp10_0, exp10)
+
+DEFINE_LUA_MW_FUNC_1(mw_floor_0, floor)
+DEFINE_LUA_MW_FUNC_2(mw_fmod_0, fmod)
+DEFINE_LUA_MW_FUNC_2(mw_ldexp_0, ldexp)
+DEFINE_LUA_MW_FUNC_1(mw_rsqrt_0, rsqrt)
+DEFINE_LUA_MW_FUNC_1(mw_sqrt_0, sqrt)
+
+DEFINE_LUA_MW_FUNC_1(mw_tanpi_0, tanpi)
+DEFINE_LUA_MW_FUNC_1(mw_sinpi_0, sinpi)
+DEFINE_LUA_MW_FUNC_1(mw_cospi_0, cospi)
+
+DEFINE_LUA_MW_FUNC_2(mw_pow_0, pow)
+DEFINE_LUA_MW_FUNC_2(mw_hypot_0, hypot)
+DEFINE_LUA_MW_FUNC_2(mw_atan2_0, atan2)
 
 
 #if 0
 /* MSVC is missing all of these */
-DEFINE_LUA_MW_FUNC_1(mw_expm1, expm1)
-DEFINE_LUA_MW_FUNC_2(mw_nextafter, nextafter)
-DEFINE_LUA_MW_FUNC_2(mw_remainder, remainder)
-DEFINE_LUA_MW_FUNC_2(mw_fmax, fmax)
-DEFINE_LUA_MW_FUNC_2(mw_fmin, fmin)
-DEFINE_LUA_MW_FUNC_1(mw_erf, erf)
-DEFINE_LUA_MW_FUNC_1(mw_erfc, erfc)
-DEFINE_LUA_MW_FUNC_1(mw_cbrt, cbrt)
-DEFINE_LUA_MW_FUNC_1(mw_log2, log2)
-DEFINE_LUA_MW_FUNC_1(mw_rint, rint)
+DEFINE_LUA_MW_FUNC_1(mw_expm1_0, expm1)
+DEFINE_LUA_MW_FUNC_2(mw_nextafter_0, nextafter)
+DEFINE_LUA_MW_FUNC_2(mw_remainder_0, remainder)
+DEFINE_LUA_MW_FUNC_2(mw_fmax_0, fmax)
+DEFINE_LUA_MW_FUNC_2(mw_fmin_0, fmin)
+DEFINE_LUA_MW_FUNC_1(mw_erf_0, erf)
+DEFINE_LUA_MW_FUNC_1(mw_erfc_0, erfc)
+DEFINE_LUA_MW_FUNC_1(mw_cbrt_0, cbrt)
+DEFINE_LUA_MW_FUNC_1(mw_log2_0, log2)
+DEFINE_LUA_MW_FUNC_1(mw_rint_0, rint)
 
-DEFINE_LUA_MW_FUNC_1(mw_tgamma, tgamma)
-DEFINE_LUA_MW_FUNC_1(mw_lgamma, lgamma)
-DEFINE_LUA_MW_FUNC_1(mw_logb, logb)
+DEFINE_LUA_MW_FUNC_1(mw_tgamma_0, tgamma)
+DEFINE_LUA_MW_FUNC_1(mw_lgamma_0, lgamma)
+DEFINE_LUA_MW_FUNC_1(mw_logb_0, logb)
 
-DEFINE_LUA_MW_FUNC_1(mw_acosh, acosh)
-DEFINE_LUA_MW_FUNC_1(mw_asinh, asinh)
-DEFINE_LUA_MW_FUNC_1(mw_atanh, atanh)
+DEFINE_LUA_MW_FUNC_1(mw_acosh_0, acosh)
+DEFINE_LUA_MW_FUNC_1(mw_asinh_0, asinh)
+DEFINE_LUA_MW_FUNC_1(mw_atanh_0, atanh)
 
-DEFINE_LUA_MW_FUNC_1(mw_trunc, trunc)
-DEFINE_LUA_MW_FUNC_1(mw_log1p, log1p)
-DEFINE_LUA_MW_FUNC_1(mw_round, round)
+DEFINE_LUA_MW_FUNC_1(mw_trunc_0, trunc)
+DEFINE_LUA_MW_FUNC_1(mw_log1p_0, log1p)
+DEFINE_LUA_MW_FUNC_1(mw_round_0, round)
 
-DEFINE_LUA_MW_FUNC_2(mw_fdim, fdim)
-DEFINE_LUA_MW_FUNC_1(mw_ilogb, ilogb)
+DEFINE_LUA_MW_FUNC_2(mw_fdim_0, fdim)
+DEFINE_LUA_MW_FUNC_1(mw_ilogb_0, ilogb)
 
 #endif /* 0 */
 
 
 
 // these have different / annoying
-//DEFINE_LUA_MW_FUNC_1(mw_fract, fract)
-//DEFINE_LUA_MW_FUNC_1(mw_frexp, frexp)
-//DEFINE_LUA_MW_FUNC_1(mw_modf, modf)
-//DEFINE_LUA_MW_FUNC_1(mw_nan, nan)
-//DEFINE_LUA_MW_FUNC_1(mw_remquo, remquo)
-// #define mw_sincos sincos
+//DEFINE_LUA_MW_FUNC_1(mw_fract_0, fract)
+//DEFINE_LUA_MW_FUNC_1(mw_frexp_0, frexp)
+//DEFINE_LUA_MW_FUNC_1(mw_modf_0, modf)
+//DEFINE_LUA_MW_FUNC_1(mw_nan_0, nan)
+//DEFINE_LUA_MW_FUNC_1(mw_remquo_0, remquo)
+// #define mw_sincos_0 sincos
 
 static void registerConstant(lua_State* luaSt, const char* name, real val)
 {
-    pushReal(luaSt, val);
+    lua_pushnumber(luaSt, val);
     lua_setglobal(luaSt, name);
 }
 
@@ -280,74 +227,63 @@ void registerMilkywayMath(lua_State* luaSt)
 {
     registerConstants(luaSt);
 
-    register_lua_mw_real_const(luaSt);
-    register_lua_mw_real_var(luaSt);
+    register_lua_mw_sin_0(luaSt);
+    register_lua_mw_cos_0(luaSt);
+    register_lua_mw_tan_0(luaSt);
+    register_lua_mw_asin_0(luaSt);
+    register_lua_mw_acos_0(luaSt);
+    register_lua_mw_log_0(luaSt);
+    register_lua_mw_exp_0(luaSt);
 
-    register_lua_mw_add(luaSt);
-    register_lua_mw_sub(luaSt);
-    register_lua_mw_mul(luaSt);
-    register_lua_mw_div(luaSt);
+    register_lua_mw_log10_0(luaSt);
+    register_lua_mw_sinh_0(luaSt);
+    register_lua_mw_cosh_0(luaSt);
+    register_lua_mw_tanh_0(luaSt);
+    register_lua_mw_fabs_0(luaSt);
+    register_lua_mw_ceil_0(luaSt);
+    register_lua_mw_exp2_0(luaSt);
+    register_lua_mw_exp10_0(luaSt);
+    register_lua_mw_floor_0(luaSt);
+    register_lua_mw_rsqrt_0(luaSt);
+    register_lua_mw_sqrt_0(luaSt);
+    register_lua_mw_cospi_0(luaSt);
+    register_lua_mw_tanpi_0(luaSt);
 
-    register_lua_mw_sin(luaSt);
-    register_lua_mw_cos(luaSt);
-    register_lua_mw_tan(luaSt);
-    register_lua_mw_sin(luaSt);
-    register_lua_mw_cos(luaSt);
-    register_lua_mw_tan(luaSt);
-    register_lua_mw_asin(luaSt);
-    register_lua_mw_acos(luaSt);
-    register_lua_mw_log(luaSt);
-    register_lua_mw_exp(luaSt);
+    register_lua_mw_fmod_0(luaSt);
+    register_lua_mw_ldexp_0(luaSt);
 
-    register_lua_mw_log10(luaSt);
-    register_lua_mw_sinh(luaSt);
-    register_lua_mw_cosh(luaSt);
-    register_lua_mw_tanh(luaSt);
-    register_lua_mw_fabs(luaSt);
-    register_lua_mw_ceil(luaSt);
-    register_lua_mw_exp2(luaSt);
-    register_lua_mw_exp10(luaSt);
-    register_lua_mw_floor(luaSt);
-    register_lua_mw_rsqrt(luaSt);
-    register_lua_mw_sqrt(luaSt);
-    register_lua_mw_cospi(luaSt);
-    register_lua_mw_tanpi(luaSt);
+    register_lua_mw_sinpi_0(luaSt);
+    register_lua_mw_pow_0(luaSt);
+    register_lua_mw_hypot_0(luaSt);
+    register_lua_mw_atan2_0(luaSt);
 
-    register_lua_mw_fmod(luaSt);
-    register_lua_mw_ldexp(luaSt);
-
-    register_lua_mw_sinpi(luaSt);
-    register_lua_mw_pow(luaSt);
-    register_lua_mw_hypot(luaSt);
-    register_lua_mw_atan2(luaSt);
-
-    register_lua_sqr(luaSt);
-    register_lua_cube(luaSt);
-    register_lua_r2d(luaSt);
-    register_lua_d2r(luaSt);
+    register_lua_sqr_0(luaSt);
+    register_lua_cube_0(luaSt);
+    register_lua_r2d_0(luaSt);
+    register_lua_d2r_0(luaSt);
 
 #if 0
     /* The missing from MSVC functions */
-    register_lua_mw_log1p(luaSt);
-    register_lua_mw_expm1(luaSt);
-    register_lua_mw_logb(luaSt);
-    register_lua_mw_log2(luaSt);
-    register_lua_mw_acosh(luaSt);
-    register_lua_mw_asinh(luaSt);
-    register_lua_mw_atanh(luaSt);
-    register_lua_mw_cbrt(luaSt);
-    register_lua_mw_erfc(luaSt);
-    register_lua_mw_erf(luaSt);
-    register_lua_mw_tgamma(luaSt);
-    register_lua_mw_lgamma(luaSt);
-    register_lua_mw_rint(luaSt);
-    register_lua_mw_round(luaSt);
-    register_lua_mw_trunc(luaSt);
-    register_lua_mw_fdim(luaSt);
-    register_lua_mw_fmax(luaSt);
-    register_lua_mw_fmin(luaSt);
-    register_lua_mw_remainder(luaSt);
-    register_lua_mw_nextafter(luaSt);
-    register_lua_mw_ilogb(luaSt);
+    register_lua_mw_log1p_0(luaSt);
+    register_lua_mw_expm1_0(luaSt);
+    register_lua_mw_logb_0(luaSt);
+    register_lua_mw_log2_0(luaSt);
+    register_lua_mw_acosh_0(luaSt);
+    register_lua_mw_asinh_0(luaSt);
+    register_lua_mw_atanh_0(luaSt);
+    register_lua_mw_cbrt_0(luaSt);
+    register_lua_mw_erfc_0(luaSt);
+    register_lua_mw_erf_0(luaSt);
+    register_lua_mw_tgamma_0(luaSt);
+    register_lua_mw_lgamma_0(luaSt);
+    register_lua_mw_rint_0(luaSt);
+    register_lua_mw_round_0(luaSt);
+    register_lua_mw_trunc_0(luaSt);
+    register_lua_mw_fdim_0(luaSt);
+    register_lua_mw_fmax_0(luaSt);
+    register_lua_mw_fmin_0(luaSt);
+    register_lua_mw_remainder_0(luaSt);
+    register_lua_mw_nextafter_0(luaSt);
+    register_lua_mw_ilogb_0(luaSt);
 #endif /* 0 */
 }

@@ -33,7 +33,7 @@
 
 #if AUTODIFF /*Define types outside of main()*/
 
-    #define NumberOfModelParameters 20     /*Change this number to add more space for parameters to differentiate over*/
+    #define NumberOfModelParameters 21     /*Change this number to add more space for parameters to differentiate over*/
 
     typedef struct MW_ALIGN_TYPE_V(sizeof(real_0)*(1 + NumberOfModelParameters + NumberOfModelParameters*NumberOfModelParameters))
     {
@@ -52,11 +52,6 @@
     #define ZERO_REAL 0.0
 
 #endif       /*Define types outside of main()*/
-
-
-
-#define REAL_TYPE "Real"
-
 
 
 #if DOUBLEPREC

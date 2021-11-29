@@ -38,9 +38,9 @@
 
 typedef MW_ALIGN_TYPE_V(4) float real_0;
 
-#define REAL_EPSILON_0 FLT_EPSILON
-#define REAL_MAX_0 FLT_MAX
-#define REAL_MIN_0 FLT_MIN
+#define REAL_EPSILON FLT_EPSILON
+#define REAL_MAX FLT_MAX
+#define REAL_MIN FLT_MIN
 
 
 #define mw_sin_0   sinf
