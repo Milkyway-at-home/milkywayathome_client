@@ -69,14 +69,14 @@ int setReal(lua_State* luaSt, void* r)
      static int lua_##cname(lua_State* luaSt)                           \
      {                                                                  \
          int nArgs;                                                     \
-         real number;                                                   \
+         real_0 number;                                                   \
                                                                         \
          nArgs = lua_gettop(luaSt);                                     \
                                                                         \
          if (nArgs != 1)                                                \
              return luaL_argerror(luaSt, 0, "Expected 1 argument");     \
                                                                         \
-         number = (real) luaL_checknumber(luaSt, 1);                    \
+         number = (real_0) luaL_checknumber(luaSt, 1);                    \
          lua_pop(luaSt, 1);                                             \
          lua_pushnumber(luaSt, cname(number));                          \
                                                                         \
@@ -92,6 +92,30 @@ int setReal(lua_State* luaSt, void* r)
      static int lua_##cname(lua_State* luaSt)                           \
      {                                                                  \
          int nArgs;                                                     \
+         real_0 number1, number2;                                         \
+                                                                        \
+         nArgs = lua_gettop(luaSt);                                     \
+                                                                        \
+         if (nArgs != 2)                                                \
+             return luaL_argerror(luaSt, 0, "Expected 2 arguments");    \
+                                                                        \
+         number1 = (real_0) luaL_checknumber(luaSt, 1);                   \
+         number2 = (real_0) luaL_checknumber(luaSt, 2);                   \
+         lua_pop(luaSt, 2);                                             \
+         lua_pushnumber(luaSt, cname(number1, number2));                \
+                                                                        \
+         return 1;                                                      \
+     }                                                                  \
+                                                                        \
+     static void register_lua_##cname(lua_State* luaSt)                 \
+     {                                                                  \
+         lua_register(luaSt, #name, lua_##cname);                       \
+     }
+
+#define DEFINE_LUA_MW_FUNC_REAL(cname, name)                            \
+     static int lua_##cname(lua_State* luaSt)                           \
+     {                                                                  \
+         int nArgs;                                                     \
          real number1, number2;                                         \
                                                                         \
          nArgs = lua_gettop(luaSt);                                     \
@@ -99,10 +123,10 @@ int setReal(lua_State* luaSt, void* r)
          if (nArgs != 2)                                                \
              return luaL_argerror(luaSt, 0, "Expected 2 arguments");    \
                                                                         \
-         number1 = (real) luaL_checknumber(luaSt, 1);                   \
-         number2 = (real) luaL_checknumber(luaSt, 2);                   \
+         number1 = (real) checkReal(luaSt, 1);                   \
+         number2 = (real) checkReal(luaSt, 2);                   \
          lua_pop(luaSt, 2);                                             \
-         lua_pushnumber(luaSt, cname(number1, number2));                \
+         pushReal(luaSt, cname(number1, number2));                \
                                                                         \
          return 1;                                                      \
      }                                                                  \
@@ -195,7 +219,6 @@ DEFINE_LUA_MW_FUNC_1(mw_ilogb_0, ilogb)
 //DEFINE_LUA_MW_FUNC_1(mw_modf_0, modf)
 //DEFINE_LUA_MW_FUNC_1(mw_nan_0, nan)
 //DEFINE_LUA_MW_FUNC_1(mw_remquo_0, remquo)
-// #define mw_sincos_0 sincos
 
 static void registerConstant(lua_State* luaSt, const char* name, real val)
 {

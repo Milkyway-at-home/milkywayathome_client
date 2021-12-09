@@ -128,7 +128,7 @@ static int dsfmtRandomVector(lua_State* luaSt)
     else if (nArgs == 2)
     {
         dsfmtState = checkDSFMT(luaSt, 1);
-        r = luaL_checknumber(luaSt, 2);
+        r = checkReal(luaSt, 2);
         pushVector(luaSt, mwRandomVector(dsfmtState, r));
         return 1;
     }

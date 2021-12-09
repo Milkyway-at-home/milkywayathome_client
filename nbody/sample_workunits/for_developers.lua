@@ -262,9 +262,7 @@ function makeBodies(ctx, potential)
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
-	            }
-
-              
+	            }              
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
 	            potential = potential,
@@ -277,15 +275,31 @@ function makeBodies(ctx, potential)
     end
     
     if(print_reverse_orbit == true) then
-        local placeholderPos, placeholderVel = PrintReverseOrbit{
-            potential = potential,
-            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-            tstop     = .14,
-            tstopf    = .20,
-            dt        = ctx.timestep / 10.0
-        }
         print('Printing reverse orbit')
+        if (LMC_body) then
+            local placeholderPos, placeholderVel, LMCplaceholderPos, LMCplaceholderVel = PrintReverseOrbit_LMC{
+                potential = potential,
+                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	        LMCposition = Vector.create(-1.1, -41.1, -27.9),
+	        LMCvelocity = Vector.create(-57, -226, 221), 
+                LMCmass     = LMC_Mass,
+                LMCscale    = LMC_scaleRadius,
+                LMCDynaFric = LMC_DynamicalFriction,
+                tstop     = .14,
+                tstopf    = .20,
+                dt        = ctx.timestep / 10.0
+            }
+        else
+            local placeholderPos, placeholderVel = PrintReverseOrbit{
+                potential = potential,
+                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+                tstop     = .14,
+                tstopf    = .20,
+                dt        = ctx.timestep / 10.0
+            }
+        end
     end
 
 
@@ -365,7 +379,7 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
+revOrbTime       = round( tonumber(arg[1]), dec )    -- Backward Time (Gyrs)
 time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
 rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
@@ -384,7 +398,7 @@ else
 end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-revOrbTime = evolveTime / time_ratio
+evolveTime = revOrbTime * time_ratio
 if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)

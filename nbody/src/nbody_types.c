@@ -197,14 +197,14 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->bodytab = bodies;
     st->bestLikelihoodBodyTab = (Body*) mwMallocA(nbody * sizeof(Body));
     memcpy(st->bestLikelihoodBodyTab, st->bodytab, nbody * sizeof(Body));
-    st->bestLikelihood         = DEFAULT_WORST_CASE;
-    st->bestLikelihood_EMD     = DEFAULT_WORST_CASE;
-    st->bestLikelihood_Mass    = DEFAULT_WORST_CASE;
-    st->bestLikelihood_Beta    = DEFAULT_WORST_CASE;
-    st->bestLikelihood_Vel     = DEFAULT_WORST_CASE;
-    st->bestLikelihood_BetaAvg = DEFAULT_WORST_CASE;
-    st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
-    st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
+    st->bestLikelihood         = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_EMD     = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_Mass    = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_Beta    = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_Vel     = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_BetaAvg = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_VelAvg  = mw_real_const(DEFAULT_WORST_CASE);
+    st->bestLikelihood_Dist    = mw_real_const(DEFAULT_WORST_CASE);
     st->bestLikelihood_time    = 0.0;
     st->bestLikelihood_count   = 0;
     
@@ -361,12 +361,12 @@ NBodyStatus nbInitNBodyStateCL(NBodyState* st, const NBodyCtx* ctx)
 
 static int equalVector(const mwvector* a, const mwvector* b)
 {
-    return (a->x == b->x && a->y == b->y && a->z == b->z);
+    return (equalReal(&(a->x), &(b->x)) && equalReal(&(a->y), &(b->y)) && equalReal(&(a->z), &(b->z)));
 }
 
 int equalBody(const Body* a, const Body* b)
 {
-    if (Mass(a) != Mass(b))
+    if (!equalReal(&Mass(a), &Mass(b)))
     {
         mw_printf("mass differ\n");
         return FALSE;
@@ -378,12 +378,12 @@ int equalBody(const Body* a, const Body* b)
     }
     if (!equalVector(&Pos(a), &Pos(b)))
     {
-        mw_printf("Position difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(Pos(a))-X(Pos(b)),Y(Pos(a))-Y(Pos(b)),Z(Pos(a))-Z(Pos(b)));
+        mw_printf("Position difference detected!\n");
         return FALSE;
     }
     if (!equalVector(&Vel(a), &Vel(b)))
     {
-        mw_printf("Velocity difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(Vel(a))-X(Vel(b)),Y(Vel(a))-Y(Vel(b)),Z(Vel(a))-Z(Vel(b)));
+        mw_printf("Velocity difference detected!\n");
         return FALSE;
     }
 
@@ -404,7 +404,7 @@ static int equalVectorArray(const mwvector* a, const mwvector* b, size_t n)
     {
         if (!equalVector(&a[i], &b[i]))
         {
-            mw_printf("   Difference = [%.15f,%.15f,%.15f]\n", X(a[i])-X(b[i]),Y(a[i])-Y(b[i]),Z(a[i])-Z(b[i]));
+            //mw_printf("   Difference = [%.15f,%.15f,%.15f]\n", X(a[i])-X(b[i]),Y(a[i])-Y(b[i]),Z(a[i])-Z(b[i]));
             return FALSE;
         }
     }
@@ -468,13 +468,13 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
 
     if (!equalVector(&st1->LMCpos, &st2->LMCpos))
     {
-        mw_printf("LMC Position difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCpos)-X(st2->LMCpos),Y(st1->LMCpos)-Y(st2->LMCpos),Z(st1->LMCpos)-Z(st2->LMCpos));
+        mw_printf("LMC Position difference detected!\n");
         return FALSE;
     }
 
     if (!equalVector(&st1->LMCvel, &st2->LMCvel))
     {
-        mw_printf("LMC Velocity difference detected!\n   Difference = [%.15f,%.15f,%.15f]\n", X(st1->LMCvel)-X(st2->LMCvel),Y(st1->LMCvel)-Y(st2->LMCvel),Z(st1->LMCvel)-Z(st2->LMCvel));
+        mw_printf("LMC Velocity difference detected!\n");
         return FALSE;
     }
 
@@ -625,9 +625,9 @@ void clonePartialNBodyState(NBodyState* st, const NBodyState* oldSt)
 
 static inline int compareComponents(real a, real b)
 {
-    if (a > b)
+    if (showRealValue(a) > showRealValue(b))
         return 1;
-    if (a < b)
+    if (showRealValue(a) < showRealValue(b))
         return -1;
 
     return 0;
@@ -641,9 +641,9 @@ static int compareVectors(mwvector a, mwvector b)
     ar = mw_absv(a);
     br = mw_absv(b);
 
-    if (ar > br)
+    if (showRealValue(ar) > showRealValue(br))
         return 1;
-    else if (ar < br)
+    else if (showRealValue(ar) < showRealValue(br))
         return -1;
     else
     {
@@ -697,7 +697,7 @@ void sortBodies(Body* bodies, int nbody)
 }
 
 /* Floating point comparison where nan compares equal */
-static int feqWithNan(real a, real b)
+static int feqWithNan(real_0 a, real_0 b)
 {
     return (isnan(a) && isnan(b)) ? TRUE : (a == b);
 }

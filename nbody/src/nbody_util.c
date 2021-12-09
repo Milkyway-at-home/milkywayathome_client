@@ -23,9 +23,9 @@
 
 /* Correct timestep so an integer number of steps covers the exact
  * evolution time */
-real nbCorrectTimestep(real timeEvolve, real dt)
+real_0 nbCorrectTimestep(real_0 timeEvolve, real_0 dt)
 {
-    real nStep = mw_ceil(timeEvolve / dt);
+    real_0 nStep = mw_ceil_0(timeEvolve / dt);
     return timeEvolve / nStep;
 }
 
@@ -40,7 +40,9 @@ mwvector nbCenterOfMass(const NBodyState* st)
     Kahan pos[3];
 
     CLEAR_KAHAN(mass);
-    memset(pos, 0, sizeof(pos));
+    CLEAR_KAHAN(pos[0]);
+    CLEAR_KAHAN(pos[1]);
+    CLEAR_KAHAN(pos[2]);
 
     for (i = 0; i < nbody; ++i)
     {
@@ -54,9 +56,9 @@ mwvector nbCenterOfMass(const NBodyState* st)
         KAHAN_ADD(mass, Mass(b));
     }
 
-    X(cm) = pos[0].sum / mass.sum;
-    Y(cm) = pos[1].sum / mass.sum;
-    Z(cm) = pos[2].sum / mass.sum;
+    X(cm) = mw_div(pos[0].sum, mass.sum);
+    Y(cm) = mw_div(pos[1].sum, mass.sum);
+    Z(cm) = mw_div(pos[2].sum, mass.sum);
     W(cm) = mass.sum;
 
     return cm;
@@ -73,7 +75,9 @@ mwvector nbCenterOfMom(const NBodyState* st)
     Kahan pos[3];
 
     CLEAR_KAHAN(mass);
-    memset(pos, 0, sizeof(pos));
+    CLEAR_KAHAN(pos[0]);
+    CLEAR_KAHAN(pos[1]);
+    CLEAR_KAHAN(pos[2]);
 
     for (i = 0; i < nbody; ++i)
     {
@@ -86,30 +90,30 @@ mwvector nbCenterOfMom(const NBodyState* st)
         KAHAN_ADD(mass, Mass(b));
     }
 
-    X(cm) = pos[0].sum / mass.sum;
-    Y(cm) = pos[1].sum / mass.sum;
-    Z(cm) = pos[2].sum / mass.sum;
+    X(cm) = mw_div(pos[0].sum, mass.sum);
+    Y(cm) = mw_div(pos[1].sum, mass.sum);
+    Z(cm) = mw_div(pos[2].sum, mass.sum);
     W(cm) = mass.sum;
 
     return cm;
 }
 
-static inline real log8(real x)
+static inline real_0 log8(real_0 x)
 {
-    return mw_log(x) / mw_log(8.0);
+    return mw_log_0(x) / mw_log_0(8.0);
 }
 
 /* The estimate formula has the unfortunate property of being negative
    for small n.  This will be the most negative. Add this as an extra
    boost to prevent negative flops estimates.
  */
-static real worstFlops(real cQ, real d, real f)
+static real_0 worstFlops(real_0 cQ, real_0 d, real_0 f)
 {
-    real a = mw_pow(2.0, 3.0 - 3.0 * d / cQ);
-    real b = (cQ - d) * mw_log(8.0);
-    real c = cQ * mw_log(mw_pow(8.0, 1.0 - d / cQ));
+    real_0 a = mw_pow_0(2.0, 3.0 - 3.0 * d / cQ);
+    real_0 b = (cQ - d) * mw_log_0(8.0);
+    real_0 c = cQ * mw_log_0(mw_pow_0(8.0, 1.0 - d / cQ));
 
-    return -a * sqr(f) * (cQ + b - c) / (M_E * mw_log(8.0));
+    return -a * sqr_0(f) * (cQ + b - c) / (M_E * mw_log_0(8.0));
 }
 
 /* Estimate number of operations based on formula derived in
@@ -122,21 +126,21 @@ static real worstFlops(real cQ, real d, real f)
 
    Does not account for newer opening criteria.
  */
-real nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
+real_0 nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
 {
-    real quadTerm, baseTerm;
+    real_0 quadTerm, baseTerm;
 
-    real n = (real) nbody;
-    real nSteps = ctx->timeEvolve / ctx->timestep;
+    real_0 n = (real_0) nbody;
+    real_0 nSteps = ctx->timeEvolve / ctx->timestep;
 
     /* Cost of interaction for a cell using a quadrupole moment. */
-    const real cQ = ctx->useQuad ? 50.0 : 0;
+    const real_0 cQ = ctx->useQuad ? 50.0 : 0;
 
     /* Cost of a direct interaction */
-    const real d = 13;
+    const real_0 d = 13;
 
     /* Based on BH86 opening criterion. */
-    real f = 28.0 * M_PI / (3.0 * cube(ctx->theta));
+    real_0 f = 28.0 * M_PI / (3.0 * cube(ctx->theta));
 
     /* FIXME: Don't be lazy and try rederiving for these. It should be
      * some number larger than for BH86. Somewhere I remember
@@ -155,17 +159,17 @@ real nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
 }
 
 /* These estimates seem to sometimes work OK but very often not */
-real nbEstimateTime(const NBodyCtx* ctx, int nbody, real flops)
+real_0 nbEstimateTime(const NBodyCtx* ctx, int nbody, real_0 flops)
 {
     /* Spends < ~5% of the time in tree construction. Spends about
      * half the time in tree traversal / memory access as actually
      * calculating forces. */
-    const real factor = 2.05;
+    const real_0 factor = 2.05;
 
     /* Not 100% efficient. Bullshit number */
-    const real efficiency = 0.95;
+    const real_0 efficiency = 0.95;
 
-    real nflop = nbEstimateNumberFlops(ctx, nbody);
+    real_0 nflop = nbEstimateNumberFlops(ctx, nbody);
 
     return factor * nflop / (efficiency * flops);
 }
@@ -183,7 +187,7 @@ void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
                 mw_printf("[tree-incest detected at step %u / %u (%f%%)]\n",
                           st->step,
                           ctx->nStep,
-                          100.0 * (real) st->step / (real) ctx->nStep
+                          100.0 * (real_0) st->step / (real_0) ctx->nStep
                     );
             }
             else
@@ -191,7 +195,7 @@ void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
                 mw_printf("tree-incest detected (fatal) at step %u / %u (%f%%)\n",
                           st->step,
                           ctx->nStep,
-                          100.0 * (real) st->step / (real) ctx->nStep
+                          100.0 * (real_0) st->step / (real_0) ctx->nStep
                     );
             }
         }

@@ -32,8 +32,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-real get_potential(const Dwarf* args, real r);
-real get_density(const Dwarf* args, real r);
+real_0 get_potential(const Dwarf* args, real_0 r);
+real_0 get_density(const Dwarf* args, real_0 r);
 
 #ifdef __cplusplus
 }

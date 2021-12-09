@@ -35,12 +35,12 @@ extern "C" {
 #define _nbValidPositionItem(x) (!isinf(x) && !isnan(x))
 #define nbPositionValid(r) (_nbValidPositionItem(r.x) && _nbValidPositionItem(r.y) && _nbValidPositionItem(r.z))
 
-real nbCorrectTimestep(real timeEvolve, real dt);
+real_0 nbCorrectTimestep(real_0 timeEvolve, real_0 dt);
 mwvector nbCenterOfMass(const NBodyState* st);
 mwvector nbCenterOfMom(const NBodyState* st);
 
-real nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
-real nbEstimateTime(const NBodyCtx* ctx, int nbody, real flops);
+real_0 nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody);
+real_0 nbEstimateTime(const NBodyCtx* ctx, int nbody, real_0 flops);
 
 void nbReportTreeIncest(const NBodyCtx* ctx, NBodyState* st);
 

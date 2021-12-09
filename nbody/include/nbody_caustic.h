@@ -31,7 +31,7 @@
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
-mwvector causticHaloAccel(const Halo* h, mwvector pos, real r);
+mwvector causticHaloAccel(const Halo* h, mwvector pos, double r);
 
 
 #endif

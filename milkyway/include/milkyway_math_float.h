@@ -64,11 +64,11 @@ typedef MW_ALIGN_TYPE_V(4) float real_0;
 #define mw_acosh_0 acoshf
 #define mw_acospi_0(x) (mw_acos_0(x) / M_PI)
 #define mw_asinh_0 asinhf
-#define mw_asinpi_0 (mw_asin_0(x) / M_PI)
+#define mw_asinpi_0(x) (mw_asin_0(x) / M_PI)
 #define mw_atan2_0 atan2f
 #define mw_atanh_0 atanhf
 #define mw_atanpi_0(x) (mw_atan_0(x) / M_PI)
-#define mw_atan2pi_0(x) (mw_atan2_0(x) / M_PI)
+#define mw_atan2pi_0(x,y) (mw_atan2_0(x,y) / M_PI)
 #define mw_cbrt_0 cbrtf
 #define mw_ceil_0 ceilf
 #define mw_copysign_0 copysignf
@@ -97,10 +97,10 @@ typedef MW_ALIGN_TYPE_V(4) float real_0;
 #define mw_fmod_0 fmodf
 
 /* CHECKME: mw_fract */
-#define mw_fract_0(x) mw_fmin_0((x) – mw_floor_0(x), 0x1.fffffep-1f)
+//#define mw_fract_0(x) mw_fmin_0((x) – mw_floor_0(x), 0x1.fffffep-1f)  NOT USED ANYWHERE IN CODE!
 
-#define mw_frexp_0 frexpf
-#define mw_ilogb_0 ilogbf
+//#define mw_frexp_0 frexpf                                       NOT USED ANYWHERE IN CODE!
+//#define mw_ilogb_0 ilogbf                                       NOT USED ANYWHERE IN CODE!
 #define mw_ldexp_0 ldexpf
 #define mw_tgamma_0 tgammaf
 #define mw_tgamma_r_0 tgamma_rf
@@ -109,22 +109,22 @@ typedef MW_ALIGN_TYPE_V(4) float real_0;
 #define mw_log2_0 log2f
 #define mw_logb_0 logbf
 #define mw_mad_0(a, b, c) (((a) * (b)) + (c))
-#define mw_modf_0 modff
-#define mw_nan_0 nanf
+//#define mw_modf_0 modff                                         NOT USED ANYWHERE IN CODE!
+//#define mw_nan_0 nanf                                           NOT USED ANYWHERE IN CODE!
 #define mw_nextafter_0 nextafterf
 
 /* TODO: assertions that these satisfy integer y or x >= 0 */
-//#define mw_pown_0(x, iy) powf(x, iy)  NOT USED ANYWHERE IN CODE!
+//#define mw_pown_0(x, iy) powf(x, iy)                            NOT USED ANYWHERE IN CODE!
 #define mw_powr_0(x, y) powf(x, y)
 
-#define mw_remainder_0 remainderf
-#define mw_remquo_0 remquof
-#define mw_rint_0 rintf
-#define mw_rootn_0(x, y) mw_pow_0((x), 1.0f / (y))
+//#define mw_remainder_0 remainderf                               NOT USED ANYWHERE IN CODE!
+//#define mw_remquo_0 remquof                                     NOT USED ANYWHERE IN CODE!
+//#define mw_rint_0 rintf                                         NOT USED ANYWHERE IN CODE!
+//#define mw_rootn_0(x, y) mw_pow_0((x), 1.0f / (y))              NOT USED ANYWHERE IN CODE!
 #define mw_round_0 roundf
 
 #define mw_sqrt_0 sqrtf
-#define mw_trunc_0 truncf
+//#define mw_trunc_0 truncf                                       NOT USED ANYWHERE IN CODE!
 
 
 #endif /* _MILKYWAY_MATH_FLOAT_H_ */

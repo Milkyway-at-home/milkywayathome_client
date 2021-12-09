@@ -97,10 +97,10 @@ static int createVector(lua_State* luaSt)
             return 1;
 
         case 3:
-            v.x = luaL_checknumber(luaSt, 1);
-            v.y = luaL_checknumber(luaSt, 2);
-            v.z = luaL_checknumber(luaSt, 3);
-            v.w = 0.0;
+            v.x = mw_real_const(luaL_checknumber(luaSt, 1));
+            v.y = mw_real_const(luaL_checknumber(luaSt, 2));
+            v.z = mw_real_const(luaL_checknumber(luaSt, 3));
+            v.w = ZERO_REAL;
             pushVector(luaSt, v);
             return 1;
 
@@ -135,14 +135,14 @@ static int checkScalarVectorArgs(lua_State* luaSt, real* s, mwvector* v)
 {
     if (lua_isnumber(luaSt, 1))
     {
-        *s = lua_tonumber(luaSt, 1);
+        *s = toReal(luaSt, 1);
         *v = *checkVector(luaSt, 2);
         return 1;
     }
     else if (lua_isnumber(luaSt, 2))
     {
         *v = *checkVector(luaSt, 1);
-        *s = lua_tonumber(luaSt, 2);
+        *s = toReal(luaSt, 2);
         return -1;
     }
     else
@@ -202,7 +202,7 @@ static int divVector(lua_State* luaSt)
     if (lua_isnumber(luaSt, 2))
     {
         v1 = *checkVector(luaSt, 1);
-        s = lua_tonumber(luaSt, 2);
+        s = toReal(luaSt, 2);
         pushVector(luaSt, mw_divvs(v1, s));
     }
     else
@@ -269,17 +269,17 @@ static const luaL_reg methodsVector[] =
 
 static const Xet_reg_pre gettersVector[] =
 {
-    { "x", getNumber, offsetof(mwvector, x) },
-    { "y", getNumber, offsetof(mwvector, y) },
-    { "z", getNumber, offsetof(mwvector, z) },
+    { "x", getReal, offsetof(mwvector, x) },
+    { "y", getReal, offsetof(mwvector, y) },
+    { "z", getReal, offsetof(mwvector, z) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersVector[] =
 {
-    { "x", setNumber, offsetof(mwvector, x) },
-    { "y", setNumber, offsetof(mwvector, y) },
-    { "z", setNumber, offsetof(mwvector, z) },
+    { "x", setReal, offsetof(mwvector, x) },
+    { "y", setReal, offsetof(mwvector, y) },
+    { "z", setReal, offsetof(mwvector, z) },
     { NULL, NULL, 0 }
 };
 

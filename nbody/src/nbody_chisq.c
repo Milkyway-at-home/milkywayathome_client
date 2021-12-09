@@ -62,13 +62,13 @@ static real nbSahaTerm(real m, real s)
        ln(0!0!) - ln(0!) - ln(0!) == 0
      */
 
-    if (mw_fabs(m) < 1.0e-10 || mw_fabs(s) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(m)) < 1.0e-10 || mw_fabs_0(showRealValue(s)) < 1.0e-10)
     {
-        return 0.0;
+        return ZERO_REAL;
     }
     else
     {
-        return -0.5 * mw_log(M_2PI) + (m + s + 0.5) * mw_log(m + s) - (m + 0.5) * mw_log(m) - (s + 0.5) * mw_log(s);
+        return mw_sub(mw_sub(mw_mul(mw_add(mw_add(m, s), mw_real_const(0.5)), mw_log(mw_add(m, s))), 0.5*mw_log(M_2PI)), mw_add(mw_mul(mw_add(m, mw_real_const(0.5)), mw_log(m)), mw_mul(mw_add(s, mw_real_const(0.5)), mw_log(s))));
     }
 }
 
@@ -80,13 +80,13 @@ static real nbPoissonTerm(real f, real y)
       2 sum(f_i - y_i) - sum(i != 1, y_i != 0) y_i * ln(f_i / y_i))
      */
 
-    if (mw_fabs(f) < 1.0e-10 || mw_fabs(y) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(f)) < 1.0e-10 || mw_fabs_0(mw_real_const(y)) < 1.0e-10)
     {
-        return 2.0 * f;
+        return mw_mul_s(f,2.0);
     }
     else
     {
-        return 2.0 * ((f - y) - y * mw_log(f / y));
+        return mw_mul_s(mw_sub(f, y) - mw_mul(y, mw_log(mw_div(f, y))),2.0);
     }
 }
 
@@ -95,14 +95,14 @@ static real nbKullbackLeiblerTerm(real h, real k)
     /* Symmetrized version. (Jeffrey divergence?) */
     real m;
 
-    if (mw_fabs(h) < 1.0e-10 || mw_fabs(k) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(h)) < 1.0e-10 || mw_fabs_0(showRealValue(k)) < 1.0e-10)
     {
-        return 0.0;
+        return ZERO_REAL;
     }
     else
     {
-        m = (h + k) / 2.0;
-        return h * mw_log(h / m) + k * mw_log(k / m);
+        m = mw_mul_s(mw_add(h, k),0.5);
+        return mw_add(mw_mul(h, mw_log(mw_div(h, m))), mw_mul(k, mw_log(mw_div(k, m))));
     }
 
 
@@ -124,7 +124,7 @@ static real nbKullbackLeiblerTerm(real h, real k)
 
 static real nbChisqAlt(real p, real q)
 {
-    return 0.5 * sqr(p - q) / (p + q);
+    return mw_mul_s(mw_div(sqr(mw_sub(p, q)), mw_add(p, q)),0.5);
 }
 
 /* Calculate chisq from read data histogram and the generated histogram */
@@ -135,11 +135,11 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     unsigned int i;
     real tmp;
     real effTotalNum;
-    real chiSq = 0.0;
+    real chiSq = ZERO_REAL;
     real n;
     real err;
     real simErr;
-    real scale = 1.0;
+    real scale = mw_real_const(1.0);
     unsigned int nBin = data->lambdaBins * histogram->lambdaBins;
 
     assert(data->lambdaBins == histogram->lambdaBins);
@@ -149,7 +149,7 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     if (!histogram->hasRawCounts)
     {
         mw_printf("FIXME: other likelihoods need raw count on generated histogram\n");
-        return NAN;
+        return mw_real_const(NAN);
     }
 
     if (method == NBODY_SAHA)
@@ -160,13 +160,13 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
         if (data->totalNum == 0 || histogram->totalNum == 0)
         {
             mw_printf("Histogram scales required for Saha likelihood but missing\n");
-            return NAN;
+            return mw_real_const(NAN);
         }
     }
 
     if (histogram->totalNum == 0)
     {
-        return INFINITY;
+        return mw_real_const(INFINITY);
     }
 
     effTotalNum = (real) nbCorrectTotalNumberInHistogram(histogram, data);
@@ -181,8 +181,8 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
             switch (method)
             {
                 case NBODY_ORIG_CHISQ:
-                    tmp = (data->data[i].variable - (n / effTotalNum)) / err;
-                    chiSq += sqr(tmp);
+                    tmp = mw_div(mw_sub(data->data[i].variable, mw_div(n, effTotalNum)), err);
+                    chiSq = mw_add(chiSq, sqr(tmp));
                     break;
 
                 case NBODY_ORIG_ALT:
@@ -193,32 +193,32 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                     simErr = nbNormalizedHistogramError(histogram->data[i].variable, effTotalNum);
 
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
-                    err = sqrt(sqr(err) + sqr(simErr));
-                    tmp = (data->data[i].variable - (n / effTotalNum)) / err;
-                    chiSq += sqr(tmp);
+                    err = mw_hypot(err, simErr);
+                    tmp = mw_div(mw_sub(data->data[i].variable, mw_div(n, effTotalNum)), err);
+                    chiSq = mw_add(chiSq, sqr(tmp));
                     break;
 
                 case NBODY_CHISQ_ALT:
-                    chiSq += nbChisqAlt(data->data[i].variable, n / effTotalNum);
+                    chiSq = mw_add(chiSq, nbChisqAlt(data->data[i].variable, mw_div(n, effTotalNum)));
                     break;
 
                 case NBODY_POISSON:
                     /* Poisson one */
-                    chiSq += nbPoissonTerm(data->data[i].variable, n / effTotalNum);
+                    chiSq = mw_add(chiSq, nbPoissonTerm(data->data[i].variable, mw_div(n, effTotalNum)));
                     break;
 
                 case NBODY_KOLMOGOROV:
-                    chiSq = mw_fmax(chiSq, fabs(data->data[i].variable - (n / effTotalNum)));
+                    chiSq = mw_fmax(chiSq, mw_fabs(mw_sub(data->data[i].variable, mw_div(n, effTotalNum))));
                     break;
 
                 case NBODY_KULLBACK_LEIBLER:
                     /* "Relative entropy" */
-                    chiSq += nbKullbackLeiblerTerm(data->data[i].variable, n / effTotalNum);
+                    chiSq = mw_add(chiSq, nbKullbackLeiblerTerm(data->data[i].variable, mw_div(n, effTotalNum)));
                     break;
 
                 case NBODY_SAHA:
                     /* This will actually find ln(W). W is an unreasonably large number. */
-                    chiSq += nbSahaTerm(n, scale * data->data[i].variable);
+                    chiSq = mw_add(chiSq, nbSahaTerm(n, mw_mul(scale, data->data[i].variable)));
                     break;
 
                 case NBODY_INVALID_METHOD:

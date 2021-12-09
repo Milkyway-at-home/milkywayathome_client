@@ -28,12 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    real cosphi;
-    real sinphi;
-    real sinpsi;
-    real cospsi;
-    real costh;
-    real sinth;
+    real_0 cosphi;
+    real_0 sinphi;
+    real_0 sinpsi;
+    real_0 cospsi;
+    real_0 costh;
+    real_0 sinth;
 } NBHistTrig;
 
 #ifdef __cplusplus
@@ -41,14 +41,14 @@ extern "C" {
 #endif
 
 /* Coordinate conversion */
-mwvector cartesianToLbr(mwvector r, real sunGCDist);
-mwvector cartesianToLbr_rad(mwvector r, real sunGCDist);
-mwvector lbrToCartesian(mwvector lbr, real sunGCDist);
-mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist);
+mwvector cartesianToLbr(mwvector r, real_0 sunGCDist);
+mwvector cartesianToLbr_rad(mwvector r, real_0 sunGCDist);
+mwvector lbrToCartesian(mwvector lbr, real_0 sunGCDist);
+mwvector lbrToCartesian_rad(mwvector lbr, real_0 sunGCDist);
 
 void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp);
-real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real runGCDist);
-mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real runGCDist);
+real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real_0 runGCDist);
+mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real_0 runGCDist);
 #ifdef __cplusplus
 }
 #endif

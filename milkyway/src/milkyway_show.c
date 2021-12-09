@@ -24,7 +24,7 @@ char* showVector(mwvector v)
 {
     char* buf;
 
-    if (asprintf(&buf, "{ %g, %g, %g }", X(v), Y(v), Z(v)) < 0)
+    if (asprintf(&buf, "{ %g, %g, %g }", showRealValue(X(v)), showRealValue(Y(v)), showRealValue(Z(v))) < 0)
         mw_fail("asprintf() failed\n");
 
     return buf;
@@ -47,9 +47,9 @@ char* showMatrix(mwmatrix m)
                      "  { %g, %g, %g }\n"
                      "  { %g, %g, %g }\n"
                      "}\n",
-                     X(m[0]), Y(m[0]), Z(m[0]),
-                     X(m[1]), Y(m[1]), Z(m[1]),
-                     X(m[2]), Y(m[2]), Z(m[2])))
+                     showRealValue(X(m[0])), showRealValue(Y(m[0])), showRealValue(Z(m[0])),
+                     showRealValue(X(m[1])), showRealValue(Y(m[1])), showRealValue(Z(m[1])),
+                     showRealValue(X(m[2])), showRealValue(Y(m[2])), showRealValue(Z(m[2]))))
     {
         mw_fail("asprintf() failed\n");
     }

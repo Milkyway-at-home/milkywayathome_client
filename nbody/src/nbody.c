@@ -218,14 +218,14 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 {
     MainStruct* data = NULL;
     MainStruct* histogram = NULL;
-    real likelihood = NAN;
-    real likelihood_EMD = NAN;
-    real likelihood_Mass = NAN;
-    real likelihood_Beta = NAN;
-    real likelihood_Vel = NAN;
-    real likelihood_VelAvg = NAN;
-    real likelihood_BetaAvg = NAN;
-    real likelihood_Dist = NAN;
+    real likelihood = mw_real_const(NAN);
+    real likelihood_EMD = mw_real_const(NAN);
+    real likelihood_Mass = mw_real_const(NAN);
+    real likelihood_Beta = mw_real_const(NAN);
+    real likelihood_Vel = mw_real_const(NAN);
+    real likelihood_VelAvg = mw_real_const(NAN);
+    real likelihood_BetaAvg = mw_real_const(NAN);
+    real likelihood_Dist = mw_real_const(NAN);
     NBodyLikelihoodMethod method;
 
     real *likelihoodArray;
@@ -392,7 +392,7 @@ int nbMain(const NBodyFlags* nbf)
     CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
-    real ts = 0.0, te = 0.0;
+    real_0 ts = 0.0, te = 0.0;
 
     if (!nbOutputIsUseful(nbf))
     {
@@ -423,7 +423,7 @@ int nbMain(const NBodyFlags* nbf)
     NBodyState initialState = EMPTY_NBODYSTATE;
     //for the first run, just assume the best likelihood timestep will occur in middle of best-likelihood window
     //convert eff_best_like_start to the original best like start
-    real ogBestLikeStart = (2*ctx->BestLikeStart)/(ctx->BestLikeStart + 1);
+    real_0 ogBestLikeStart = (2*ctx->BestLikeStart)/(ctx->BestLikeStart + 1);
     if(ctx->useBestLike){
         //assume evolve time has been adjusted to be the end of the best-likelihood window
         st->previousForwardTime = ctx->timeEvolve/(2 - ogBestLikeStart);
@@ -495,7 +495,7 @@ int nbMain(const NBodyFlags* nbf)
 
         if(i < ctx->calibrationRuns){
             //grab the best likelihood time
-            real forwardTime = st->bestLikelihood_time;
+            real_0 forwardTime = st->bestLikelihood_time;
             //reset the state for the next run
             *st = (NBodyState)EMPTY_NBODYSTATE;
             cloneNBodyState(st, &initialState);

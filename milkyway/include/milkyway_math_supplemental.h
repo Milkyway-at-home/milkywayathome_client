@@ -51,10 +51,6 @@ extern "C" {
 #define minusthreehalves_0(x) (inv_0(threehalves_0(x)) )
 #define minushalf_0(x) ( inv_0(mw_sqrt_0(x)) )
 
-
-/* TODO: Have fma */
-#define mw_fma_0(a, b, c) (((a) * (b)) + (c))
-
 /* TODO: Have hypot */
 #define mw_hypot_0(x, y) mw_sqrt_0(sqr_0(x) + sqr_0(y))
 
@@ -126,9 +122,9 @@ static inline real_0 mw_fmin_0(real_0 a, real_0 b)
  *  MAX: returns the argument with the highest value
  *  MIN: returns the argument with the lowest value
  */
-#define   ABS_0(x)       (((x) < 0) ? -(x) : (x))
-#define   MAX_0(x,y)     (((x) > (y)) ? (x) : (y))
-#define   MIN_0(x,y)     (((x) < (y)) ? (x) : (y))
+#define   ABS(x)       (((x) < 0) ? -(x) : (x))
+#define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
+#define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
 
 /* Different variants on floating point comparisons */
 
@@ -137,15 +133,15 @@ static inline real_0 mw_fmin_0(real_0 a, real_0 b)
 #define mw_cmpnzero_machineeps_0(x) (mw_fabs_0(x) >= REAL_EPSILON_0)
 
 /* Compare to zero using custom epsilon */
-#define mw_cmpzero_eps_0(x, eps) (mw_fabs_0(x) < (eps))
-#define mw_cmpnzero_eps_0(x, eps) (mw_fabs_0(x) >= (eps))
+#define mw_cmpzero_eps(x, eps) (mw_fabs_0(x) < (eps))
+#define mw_cmpnzero_eps(x, eps) (mw_fabs_0(x) >= (eps))
 
 /* Compare to zero using custom epsilon to multiplied by the value */
-#define mw_cmpzero_muleps_0(x, eps) (mw_fabs_0(x) < (mw_fabs_0(x) * (eps)))
-#define mw_cmpnzero_muleps_0(x, eps) (mw_fabs_0(x) >= (mw_fabs_0(x) * (eps)))
+#define mw_cmpzero_muleps(x, eps) (mw_fabs_0(x) < (mw_fabs_0(x) * (eps)))
+#define mw_cmpnzero_muleps(x, eps) (mw_fabs_0(x) >= (mw_fabs_0(x) * (eps)))
 
-#define mw_cmpf_0(a, b, eps) (mw_fabs_0((a) - (b)) < (mw_fmax_0(mw_fabs_0(a), mw_fabs_0(b)) * (eps)))
-#define mw_cmpnf_0(a, b, eps) (mw_fabs_0((a) - (b)) >= (mw_fmax_0(mw_fabs_0(a), mw_fabs_0(b)) * (eps)))
+#define mw_cmpf(a, b, eps) (mw_fabs_0((a) - (b)) < (mw_fmax_0(mw_fabs_0(a), mw_fabs_0(b)) * (eps)))
+#define mw_cmpnf(a, b, eps) (mw_fabs_0((a) - (b)) >= (mw_fmax_0(mw_fabs_0(a), mw_fabs_0(b)) * (eps)))
 
 
 /* degrees to radians */
@@ -154,7 +150,7 @@ static inline real_0 mw_fmin_0(real_0 a, real_0 b)
 /* radians to degrees */
 #define r2d_0(x) ((x) * (real_0) 180.0 / (real_0) M_PI)
 
-#define dsign_0(A,B) ((B) < 0.0 ? -(A) : (A))
+//#define dsign_0(A,B) ((B) < 0.0 ? -(A) : (A))
 
 #ifdef __cplusplus
 }

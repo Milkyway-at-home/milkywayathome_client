@@ -30,8 +30,8 @@ void nbReverseOrbit(mwvector* finalPos,
                     const Potential* pot,
                     mwvector pos,
                     mwvector vel,
-                    real tstop,
-                    real dt);
+                    real_0 tstop,
+                    real_0 dt);
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
@@ -43,9 +43,9 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector LMCposition,
                     mwvector LMCvelocity,
                     mwbool LMCDynaFric,
-                    real ftime,
-                    real tstop,
-                    real dt,
+                    real_0 ftime,
+                    real_0 tstop,
+                    real_0 dt,
                     real LMCmass,
                     real LMCscale);
 
@@ -58,9 +58,25 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          const Potential* pot,
                          mwvector pos,
                          mwvector vel,
-                         real tstop,
-                         real tstopforward,
-                         real dt);
+                         real_0 tstop,
+                         real_0 tstopforward,
+                         real_0 dt);
+
+void nbPrintReverseOrbit_LMC(mwvector* finalPos,
+                         mwvector* finalVel,
+                         mwvector* LMCfinalPos,
+                         mwvector* LMCfinalVel,
+                         const Potential* pot,
+                         mwvector pos,
+                         mwvector vel,
+                         mwvector LMCposition,
+                         mwvector LMCvelocity,
+                         mwbool LMCDynaFric,
+                         real_0 tstop,
+                         real_0 tstopforward,
+                         real_0 dt,
+                         real LMCmass,
+                         real LMCscale);
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 

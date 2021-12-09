@@ -53,7 +53,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
         mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
         real drSq = mw_sqrv(dr);               /* and distance squared */
 
-        if (isBody(q) || (drSq >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
+        if (isBody(q) || (showRealValue(drSq) >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
         {
             if (mw_likely((const Body*) q != p))   /* self-interaction? */
             {
@@ -61,14 +61,14 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
                 /* Compute gravity */
 
-                drSq += ctx->eps2;   /* use standard softening */
+                drSq = mw_add(drSq, mw_real_const(ctx->eps2));   /* use standard softening */
                 drab = mw_sqrt(drSq);
-                phii = Mass(q) / drab;
-                mor3 = phii / drSq;
+                phii = mw_div(Mass(q), drab);
+                mor3 = mw_div(phii, drSq);
 
-                acc0.x += mor3 * dr.x;
-                acc0.y += mor3 * dr.y;
-                acc0.z += mor3 * dr.z;
+                acc0.x = mw_add(acc0.x, mw_mul(mor3, dr.x));
+                acc0.y = mw_add(acc0.y, mw_mul(mor3, dr.y));
+                acc0.z = mw_add(acc0.z, mw_mul(mor3, dr.z));
 
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
@@ -76,27 +76,27 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                     mwvector Qdr;
 
                     /* form Q * dr */
-                    Qdr.x = Quad(q).xx * dr.x + Quad(q).xy * dr.y + Quad(q).xz * dr.z;
-                    Qdr.y = Quad(q).xy * dr.x + Quad(q).yy * dr.y + Quad(q).yz * dr.z;
-                    Qdr.z = Quad(q).xz * dr.x + Quad(q).yz * dr.y + Quad(q).zz * dr.z;
+                    Qdr.x = mw_add(mw_mul(Quad(q).xx, dr.x), mw_add(mw_mul(Quad(q).xy, dr.y), mw_mul(Quad(q).xz, dr.z)));
+                    Qdr.y = mw_add(mw_mul(Quad(q).yx, dr.x), mw_add(mw_mul(Quad(q).yy, dr.y), mw_mul(Quad(q).yz, dr.z)));
+                    Qdr.z = mw_add(mw_mul(Quad(q).zx, dr.x), mw_add(mw_mul(Quad(q).zy, dr.y), mw_mul(Quad(q).zz, dr.z)));
 
 
                     /* form dr * Q * dr */
-                    drQdr = Qdr.x * dr.x + Qdr.y * dr.y + Qdr.z * dr.z;
+                    drQdr = mw_add(mw_mul(Qdr.x, dr.x), mw_add(mw_mul(Qdr.y, dr.y), mw_mul(Qdr.z, dr.z)));
 
-                    dr5inv = 1.0 / (sqr(drSq) * drab);  /* form dr^-5 */
+                    dr5inv = inv(mw_mul(sqr(drSq), drab));  /* form dr^-5 */
 
                     /* get quad. part of phi */
-                    phiQ = 2.5 * (dr5inv * drQdr) / drSq;
+                    phiQ = mw_mul_s(mw_div(mw_mul(dr5inv, drQdr), drSq),2.5);
 
-                    acc0.x += phiQ * dr.x;
-                    acc0.y += phiQ * dr.y;
-                    acc0.z += phiQ * dr.z;
+                    acc0.x = mw_add(acc0.x, mw_mul(phiQ, dr.x));
+                    acc0.y = mw_add(acc0.y, mw_mul(phiQ, dr.y));
+                    acc0.z = mw_add(acc0.z, mw_mul(phiQ, dr.z));
 
                     /* acceleration */
-                    acc0.x -= dr5inv * Qdr.x;
-                    acc0.y -= dr5inv * Qdr.y;
-                    acc0.z -= dr5inv * Qdr.z;
+                    acc0.x = mw_sub(acc0.x, mw_mul(dr5inv, Qdr.x));
+                    acc0.y = mw_sub(acc0.y, mw_mul(dr5inv, Qdr.y));
+                    acc0.z = mw_sub(acc0.z, mw_mul(dr5inv, Qdr.z));
                 }
             }
             else
@@ -134,21 +134,21 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
-    real curTime = st->step * ctx->timestep;
-    real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
+    real_0 curTime = st->step * ctx->timestep;
+    real_0 timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
 
     //use previous calibration run to shift time and calibrate the bar
-    real barTime = st->step * ctx->timestep - st->previousForwardTime;
+    real_0 barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
         LMCx = st->LMCpos;
-        lmcmass = ctx->LMCmass;
-        lmcscale = ctx->LMCscale;
+        lmcmass = mw_real_var(ctx->LMCmass, 19);      //Sets LMC mass and radius at positions 19 and 20 in the gradient
+        lmcscale = mw_real_var(ctx->LMCscale, 20);
     }
     else {
-        SET_VECTOR(LMCx,0.0,0.0,0.0);
-        lmcmass = 0.0;
-        lmcscale = 1.0;
+        SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
+        lmcmass = mw_real_var(0.0, 19);
+        lmcscale = mw_real_var(1.0, 20);
     }
 
   #ifdef _OPENMP
@@ -207,18 +207,18 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     int i;
     const int nbody = st->nbody;
     mwvector a = ZERO_VECTOR;
-    const real eps2 = ctx->eps2;
+    const real eps2 = mw_real_const(ctx->eps2);
 
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
 
         mwvector dr = mw_subv(Pos(b), Pos(p));
-        real drSq = mw_sqrv(dr) + eps2;
+        real drSq = mw_add(mw_sqrv(dr), eps2);
 
         real drab = mw_sqrt(drSq);
-        real phii = Mass(b) / drab;
-        real mor3 = phii / drSq;
+        real phii = mw_div(Mass(b), drab);
+        real mor3 = mw_div(phii, drSq);
 
         mw_incaddv(a, mw_mulvs(dr, mor3));
     }
@@ -237,20 +237,19 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
-    real curTime = st->step * ctx->timestep;
-    real timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
-    real barTime = st->step * ctx->timestep - st->previousForwardTime;
+    real_0 curTime = st->step * ctx->timestep;
+    real_0 timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
+    real_0 barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
         LMCx = st->LMCpos;
-        lmcmass = ctx->LMCmass;
-        lmcscale = ctx->LMCscale;
+        lmcmass = mw_real_var(ctx->LMCmass, 19);      //Sets LMC mass and radius at positions 19 and 20 in the gradient
+        lmcscale = mw_real_var(ctx->LMCscale, 20);
     }
     else {
-        SET_VECTOR(LMCx,0.0,0.0,0.0);
-        lmcmass = 0.0;
-        lmcscale = 1.0;
-    }
+        SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
+        lmcmass = mw_real_var(0.0, 19);
+        lmcscale = mw_real_var(1.0, 20);
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))

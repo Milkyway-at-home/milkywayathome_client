@@ -29,37 +29,37 @@
 /*In order to decrease the size of the numbers
  * computed all these functions are
  * calculated in log space*/
-static real factorial(int n)
+static real_0 factorial(int n)
 {
      int counter;
-     real result = 0.0;
+     real_0 result = 0.0;
 
      for (counter = n; counter >= 1; counter--)
        {
-          result += mw_log((real) counter);
+          result += mw_log_0((real_0) counter);
        }
 
      return result;
 }
 
 
-static real choose(int n, int c)
+static real_0 choose(int n, int c)
 {
     unsigned int i;
-    real result = 0.0;
+    real_0 result = 0.0;
     
     /* This for loop calulates log(n!/(n-c)!) */
     for (i = n - c + 1; i <= (unsigned int) n; ++i)
     {
-        result += mw_log(i);
+        result += mw_log_0(i);
     }
     result -= factorial(c);
     return result;
 }
 
-real probability_match(int n, real ktmp, real pobs)
+real_0 probability_match(int n, real_0 ktmp, real_0 pobs)
 {
-    real result = 0.0;
+    real_0 result = 0.0;
 
     /*
      * Previously, this function took in k as an int. Bad move.
@@ -70,33 +70,33 @@ real probability_match(int n, real ktmp, real pobs)
      * different likelihood values).
      * 
      */
-    int k = (int) mw_round(ktmp);    //patch. See above. 
+    int k = (int) mw_round_0(ktmp);    //patch. See above. 
     //The previous calculation does not return the right values.  Furthermore, we need a zeroed metric.                                                                                              
-    result =  (real) choose(n, k);
-    result += k * mw_log(pobs); 
-    result += (n - k) * mw_log(1.0 - pobs);
+    result =  (real_0) choose(n, k);
+    result += k * mw_log_0(pobs); 
+    result += (n - k) * mw_log_0(1.0 - pobs);
     
     
-    return mw_exp(result);
+    return mw_exp_0(result);
 }
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 // IMPLEMENTATION OF GAMMA FUNCTIONS. COMPLETE AND INCOMPLETE
-real GammaFunc(const real z) 
+real_0 GammaFunc(const real_0 z) 
 {
     //Alogrithm for the calculation of the Lanczos Approx of the complete Gamma function 
     //as implemented in Numerical Recipes 3rd ed, 2007.
-    real g = 4.7421875; //g parameter for the gamma function
-    real x, tmp, y, A_g;
+    real_0 g = 4.7421875; //g parameter for the gamma function
+    real_0 x, tmp, y, A_g;
     
     //these are the cn's
-    static const real coeff[14] = {57.1562356658629235,-59.5979603554754912,
+    static const real_0 coeff[14] = {57.1562356658629235,-59.5979603554754912,
                                 14.1360979747417471,-0.491913816097620199,.339946499848118887e-4,
                                 .465236289270485756e-4,-.983744753048795646e-4,.158088703224912494e-3,
                                 -.210264441724104883e-3,.217439618115212643e-3,-.164318106536763890e-3,
                                 .844182239838527433e-4,-.261908384015814087e-4,.368991826595316234e-5};
     y = x = z;
     tmp = x + g + 0.5;
-    tmp = (x + 0.5) * mw_log(tmp) - tmp;
+    tmp = (x + 0.5) * mw_log_0(tmp) - tmp;
     A_g = 0.999999999999997092; //this is c0
     
     for (int j = 0; j < 14; j++) 
@@ -105,30 +105,30 @@ real GammaFunc(const real z)
     } //calculates the series approx sum
         
     //sqrt(2 * pi) = 2.5066282746310005
-    tmp += mw_log(2.5066282746310005 * A_g / x);//returns the log of the gamma function
+    tmp += mw_log_0(2.5066282746310005 * A_g / x);//returns the log of the gamma function
     
-    return mw_exp(tmp);
+    return mw_exp_0(tmp);
 }
 
-static real shift_factorial(real z, real n)
+static real_0 shift_factorial(real_0 z, real_0 n)
 {
     int counter;
-    real result = 0.0;
+    real_0 result = 0.0;
     for(counter = n; counter >= 1; counter--)
     {
-        result += mw_log(z + (real) counter);
+        result += mw_log_0(z + (real_0) counter);
     }
-    return mw_exp(result);
+    return mw_exp_0(result);
     
     
 }
 
 
-static real series_approx(real a, real x)
+static real_0 series_approx(real_0 a, real_0 x)
 {
 
-    real sum, del, ap;
-    real pow_x = 1.0;
+    real_0 sum, del, ap;
+    real_0 pow_x = 1.0;
 //     ap = a;
     ap = 0.0;
     del = sum = 1.0 / a;//starting: gammma(a) / gamma(a+1) = 1/a
@@ -142,22 +142,22 @@ static real series_approx(real a, real x)
         del = pow_x / (a * shift_factorial(a, ap));
         
         sum += del;
-        if (mw_fabs(del) < mw_fabs(sum) * 1.0e-15) 
+        if (mw_fabs_0(del) < mw_fabs_0(sum) * 1.0e-15) 
         {
-            return sum * exp(-x + a * log(x));
+            return sum * mw_exp_0(-x + a * mw_log_0(x));
         }
     }
     
 }
                             
-real IncompleteGammaFunc(real a, real x)
+real_0 IncompleteGammaFunc(real_0 a, real_0 x)
 {
     //the series approx returns gamma from 0 to X but we want from X to INF
     //Therefore, we subtract it from GammaFunc which is from 0 to INF
     //The continued frac approx is already from X to INF
     
 //     static const real max_a = 100;
-    real gamma = GammaFunc(a);
+    real_0 gamma = GammaFunc(a);
 
     if (x == 0.0) return gamma;
     // Use the series representation. 
@@ -168,26 +168,26 @@ real IncompleteGammaFunc(real a, real x)
 
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 
-real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
+real calc_vLOS(const mwvector v, const mwvector p, real_0 sunGCdist)
 {
-    real xsol = X(p) + sunGCdist;
-    real mag = mw_sqrt( xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p) );
-    real vl = xsol * X(v) + Y(p) * Y(v) + Z(p) * Z(v);
-    vl = vl / mag;
+    real xsol = mw_add(X(p), mw_real_const(sunGCdist));
+    real mag = mw_hypot(mw_hypot(xsol, Y(p)), Z(p));
+    real vl = mw_add(mw_add(mw_mul(xsol, X(v)), mw_mul(Y(p), Y(v))), mw_mul(Z(p), Z(v)));
+    vl = mw_div(vl, mag);
     
     return vl;
 }
 
-real calc_distance(const mwvector p, real sunGCdist)  /**Calculating the distance to each body **/
+real calc_distance(const mwvector p, real_0 sunGCdist)  /**Calculating the distance to each body **/
 {
-    real xsol = X(p) + sunGCdist;
-    real distance = mw_sqrt(xsol * xsol + Y(p) * Y(p) + Z(p) * Z(p) );
+    real xsol = mw_add(X(p), mw_real_const(sunGCdist));
+    real distance = mw_hypot(mw_hypot(xsol, Y(p)), Z(p));
 
     return distance;
 }
 
 /* Get the dispersion in each bin*/
-void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor)
+void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_factor)
 {
     unsigned int i;
     unsigned int j;
@@ -209,18 +209,17 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
         for(j = 0; j < betaBins; ++j)
         {
             Histindex = i * betaBins + j;
-            count = (real) histData[Histindex].rawCount;
-            count -= histData[Histindex].outliersRemoved;
+            count = mw_sub(histData[Histindex].rawCount, histData[Histindex].outliersRemoved);
             
             if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
-                n_new = count - 1.0; //because the mean is calculated from the same populations set
-                n_ratio = count / (n_new); 
+                n_new = mw_sub(count, mw_real_const(1.0)); //because the mean is calculated from the same populations set
+                n_ratio = mw_div(count, n_new); 
                 
                 sq_sum = histData[Histindex].sq_sum;
                 sum = histData[Histindex].sum;
                 
-                 dispsq = (sq_sum / n_new) - n_ratio * sqr(sum / count);
+                 dispsq = mw_sub(mw_div(sq_sum, n_new), mw_mul(n_ratio, sqr(mw_div(sum, count))));
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
@@ -231,11 +230,11 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
                 
                 if(!initial)
                 {
-                    dispsq *= correction_factor;
+                    dispsq = mw_mul_s(dispsq, correction_factor);
                 }//correcting for truncating the distribution when removing outliers.
 
                 histData[Histindex].variable = mw_sqrt(dispsq);
-                histData[Histindex].err =  mw_sqrt( (count + 1) /(count * n_new ) ) * histData[Histindex].variable ;
+                histData[Histindex].err =  mw_mul(mw_sqrt(mw_div(mw_add(count, mw_real_const(1.0)), mw_mul(count, n_new))), histData[Histindex].variable) ;
                 
             }
         }
@@ -243,7 +242,8 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
     
 }
 
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist, int histBins)
+//FIXME:Need to determine how derivatives here propagate
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins)
 {
     unsigned int Histindex;
     Body* p;
@@ -254,7 +254,8 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
     
     histData = histogram->data;
 
-    real bin_sigma, new_count, this_var;
+    real_0 bin_sigma;
+    real new_count, this_var;
 
     /*Calculate old average and reset counters and sums for each histogram bin*/
     real bin_ave[histBins];
@@ -264,11 +265,11 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
 
     for (unsigned int indx1 = 0; indx1 < histBins; ++indx1)
     {
-        new_count = (real) (histData[indx1].rawCount - histData[indx1].outliersRemoved);
-        bin_ave[indx1] = histData[indx1].sum / new_count;
-        temp_sum[indx1] = 0.0;
-        temp_sqr[indx1] = 0.0;
-        temp_removed[indx1] = 0.0;
+        new_count = mw_sub(histData[indx1].rawCount, histData[indx1].outliersRemoved);
+        bin_ave[indx1] = mw_div(histData[indx1].sum, new_count);
+        temp_sum[indx1] = ZERO_REAL;
+        temp_sqr[indx1] = ZERO_REAL;
+        temp_removed[indx1] = ZERO_REAL;
         //mw_printf("Cleared Bin %d\n",indx1);
     }
     /*------------------------------------------------------------------------*/
@@ -288,16 +289,16 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * us
                 this_var = var[counter];
                 
                 /* Use old standard deviation calculated before */
-                bin_sigma = histData[Histindex].variable;
+                bin_sigma = showRealValue(histData[Histindex].variable);
                 
-                if(mw_fabs(bin_ave[Histindex] - this_var) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
+                if(mw_fabs_0(bin_ave[Histindex] - showRealValue(this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
                 {
-                    temp_sum[Histindex] += this_var;
-                    temp_sqr[Histindex] += this_var*this_var;
+                    temp_sum[Histindex] = mw_add(temp_sum[Histindex], this_var);
+                    temp_sqr[Histindex] = mw_add(temp_sqr[Histindex], sqr(this_var);
                 }
                 else
                 {
-                    temp_removed[Histindex]+=1.0;//keep track of how many are being removed
+                    temp_removed[Histindex] = mw_add(temp_removed[Histindex], mw_real_const(1.0));//keep track of how many are being removed
                 }
 
                 
@@ -320,7 +321,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
-    real n = (real) histogram->totalSimulated;
+    real_0 n = (real_0) histogram->totalSimulated;
     real nSim_uncut = (real) histogram->totalNum;   /* Total simulated before dropping bins */
     real nData = (real) data->totalNum;
     real histMass = histogram->massPerParticle;
@@ -334,13 +335,13 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
         return NAN;
     }
 
-    if (nSim == 0 || nData == 0)
+    if (showRealValue(nSim) == 0 || showRealValue(nData) == 0)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
         return INFINITY;
     }
 
-    if (histMass <= 0.0 || dataMass <= 0.0)
+    if (showRealValue(histMass) <= 0.0 || showRealValue(dataMass) <= 0.0)
     {
         /*In order to calculate likelihood the masses are necessary*/
         return NAN;
@@ -355,8 +356,8 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     {
         if(!data->data[i].useBin)
         {
-            rawCount = mw_round(histogram->data[i].variable * nSim_uncut);
-            nSim -= rawCount;
+            rawCount = mw_round(mw_mul(histogram->data[i].variable, nSim_uncut));
+            nSim = mw_sub(nSim, rawCount);
         }
 
     }
@@ -365,7 +366,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
      */
-    p = ( nSim / n) ;
+    p = mw_div(nSim, n);
 
     /*Print statements for debugging likelihood*/
 //    mw_printf("dataMass = %.15f\n",dataMass);
@@ -375,12 +376,12 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 //    mw_printf("p        = %.15f\n",p);
 //    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
 
-    real num = - sqr(dataMass * nData - histMass * nSim);
-    real denom = 2.0 * (sqr(dataMass) * nData + sqr(histMass) * nSim * p * (1.0 - p));
-    real CostComponent = num / denom; //this is the log of the cost component
+    real num = sqr(mw_sub(mw_mul(dataMass, nData), mw_mul(histMass, nSim)));
+    real denom = mw_mul_s(mw_add(mw_mul(sqr(dataMass), nData), mw_mul(sqr(histMass), mw_mul(nSim, mw_sub(p, sqr(p))))), 2.0);
+    real CostComponent = mw_div(num, denom); //this is the log of the cost component
 
     /* the cost component is negative. Returning a postive value */
-    return -CostComponent;
+    return CostComponent;
     
 }
 
@@ -391,7 +392,7 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
-    real Nsigma_sq = 0.0;
+    real Nsigma_sq = ZERO_REAL;
     real Data;
     real Hist;
     real err_data, err_hist;
@@ -410,17 +411,17 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
 
                 if(err_hist > 0)
                 {
-                    Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
+                    Nsigma_sq = mw_add(Nsigma_sq, mw_div(sqr(mw_sub(Data, Hist)), mw_add(sqr(err_data), sqr(err_hist))));
                 }
                 else
                 {
-                    Nsigma_sq += 25;    /*Adding 5 sigma*/
+                    Nsigma_sq = mw_add(Nsigma_sq, mw_real_const(25));    /*Adding 5 sigma*/
                 }
             }
         }
 
     }
-        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
+        probability = mw_mul_s(Nsigma_sq, 0.5); //should be negative, but we return the negative of it anyway
     
     return probability;
 }

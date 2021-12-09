@@ -38,7 +38,7 @@
 static int luaLbrToCartesian(lua_State* luaSt)
 {
     mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
-    real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
+    real_0 sunGCDist = DEFAULT_SUN_GC_DISTANCE;
     const NBodyCtx* ctx = NULL;
     mwvector v;
 
@@ -58,7 +58,7 @@ static int luaLbrToCartesian(lua_State* luaSt)
     useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
 
     if (!useGalacticCoordinates)
-        v = useRadians ? lbrToCartesian_rad(v, sunGCDist) : lbrToCartesian(v, sunGCDist);
+        v = useRadians ? lbrToCartesian_rad(v, mw_real_const(sunGCDist)) : lbrToCartesian(v, mw_real_const(sunGCDist));
 
     pushVector(luaSt, v);
 
@@ -66,12 +66,12 @@ static int luaLbrToCartesian(lua_State* luaSt)
 }
 
 
-static const real solarMassesPerMassUnit = 222288.47;
+static const real_0 solarMassesPerMassUnit = 222288.47;
 
 static int luaSolarMassToMassUnit(lua_State* luaSt)
 {
-    real mSolar;
-    real m;
+    real_0 mSolar;
+    real_0 m;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -87,8 +87,8 @@ static int luaSolarMassToMassUnit(lua_State* luaSt)
 
 static int luaMassUnitToSolarMass(lua_State* luaSt)
 {
-    real mSolar;
-    real m;
+    real_0 mSolar;
+    real_0 m;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -104,8 +104,8 @@ static int luaMassUnitToSolarMass(lua_State* luaSt)
 
 static int luaLightyearToKiloparsec(lua_State* luaSt)
 {
-    real kpc;
-    real ly;
+    real_0 kpc;
+    real_0 ly;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -122,8 +122,8 @@ static int luaLightyearToKiloparsec(lua_State* luaSt)
 
 static int luaKiloparsecToLightyear(lua_State* luaSt)
 {
-    real kpc;
-    real ly;
+    real_0 kpc;
+    real_0 ly;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -140,7 +140,7 @@ static int luaKiloparsecToLightyear(lua_State* luaSt)
 
 static int luaCorrectTimestep(lua_State* luaSt)
 {
-    real t, dt;
+    real_0 t, dt;
 
     if (lua_gettop(luaSt) != 2)
     {

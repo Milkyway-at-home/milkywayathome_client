@@ -25,7 +25,7 @@
 #ifndef _MILKYWAY_VECTORS_H_
 #define _MILKYWAY_VECTORS_H_
 
-typedef struct MW_ALIGN_TYPE_V(4 * sizeof(real))
+typedef struct
 {
     real x, y, z, w;
 } mwvector;
@@ -44,7 +44,7 @@ typedef struct MW_ALIGN_TYPE_V(4 * sizeof(real))
 #define CT(v) ((v).y)
 #define CZ(v) ((v).z)
 
-#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); W(v) = ZERO_REAL; }
 
 #define mw_vec(x, y, z) { x, y, z, ZERO_REAL }
 

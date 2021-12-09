@@ -25,26 +25,28 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "nbody_nfw.h"
 
-static real nfwMassInsideRadius(real radius, real rho_0, real R_S)
+//FIXME: THIS CODE DOES NOT PROPAGATE DERIVAIVE INFORMATION! MUST BE REWORKED BEFORE RUNNING WITH AUTODIFF!
+
+static real_0 nfwMassInsideRadius(real_0 radius, real_0 rho_0, real_0 R_S)
 {
     //Returns that mass inside a certain radius
 
     //Leading Constant
-    real mass = 4.0 * M_PI * rho_0 * cube(radius);
+    real_0 mass = 4.0 * M_PI * rho_0 * cube(radius);
     //Integration terms
     mass *= ( mw_log((R_S + radius) / R_S) - radius / (R_S + radius));
     return mass;
 
 }
 
-static real nfwNextRadius(real start_radius, real goal_mass, real rho_0, real R_S)
+static real_0 nfwNextRadius(real_0 start_radius, real_0 goal_mass, real_0 rho_0, real_0 R_S)
 {
     // This is a scary function which returns the next radius limit
     // Do not use this code on client computers. It is slow inneficient
     // and well just dirty.
-    real test_radius;
+    real_0 test_radius;
 
-    for (test_radius = start_radius;; test_radius += (real)0.0001)
+    for (test_radius = start_radius;; test_radius += (real_0)0.0001)
     {
         if (nfwMassInsideRadius(test_radius, rho_0, R_S) >= goal_mass)
         {
@@ -54,9 +56,9 @@ static real nfwNextRadius(real start_radius, real goal_mass, real rho_0, real R_
 }
 
 /* nfwPickShell: pick a random point on a sphere of specified radius. */
-static mwvector nfwPickShell(dsfmt_t* dsfmtState, real rad)
+static mwvector nfwPickShell(dsfmt_t* dsfmtState, real_0 rad)
 {
-    real rsq, rsc;
+    real_0 rsq, rsc;
     mwvector vec;
 
     do                      /* pick point in NDIM-space */
@@ -72,20 +74,20 @@ static mwvector nfwPickShell(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-static real nfwRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
+static real_0 nfwRandomR(dsfmt_t* dsfmtState, real_0 startradius, real_0 endradius)
 {
-    real rnd;
+    real_0 rnd;
 
     /* returns [0, 1) */
-    rnd = (real) dsfmt_genrand_close_open(dsfmtState);
+    rnd = (real_0) dsfmt_genrand_close_open(dsfmtState);
 
     /* pick r in struct units */
     return (endradius - startradius) * rnd + startradius;
 }
 
-static real nfwSelectFromG(dsfmt_t* dsfmtState)
+static real_0 nfwSelectFromG(dsfmt_t* dsfmtState)
 {
-    real x, y;
+    real_0 x, y;
 
     do                      /* select from fn g(x) */
     {
@@ -97,16 +99,16 @@ static real nfwSelectFromG(dsfmt_t* dsfmtState)
     return x;
 }
 
-static real nfwCalculateV(real r, real rho_0, real R_S)
+static real_0 nfwCalculateV(real_0 r, real_0 rho_0, real_0 R_S)
 {
-    real v;
-    real mass = nfwMassInsideRadius(r, rho_0, R_S);
+    real_0 v;
+    real_0 mass = nfwMassInsideRadius(r, rho_0, R_S);
     v = mw_sqrt( /*G!!!*/ mass / r);
 
     return v;
 }
 
-static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
+static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real_0 rsc, real_0 r)
 {
     mwvector pos;
 
@@ -116,10 +118,10 @@ static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, 
     return pos;
 }
 
-static mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real rho_0, real R_S)
+static mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real_0 r, real_0 rho_0, real_0 R_S)
 {
     mwvector vel;
-    real v;
+    real_0 v;
 
     v = nfwCalculateV(r, rho_0, R_S);
     vel = nfwPickShell(dsfmtState, v);   /* pick scaled velocity */
@@ -136,28 +138,28 @@ static int nbGenerateNFWCore(lua_State* luaSt,
 
                              dsfmt_t* prng,
                              unsigned int nbody,
-                             real mass,
+                             real_0 mass,
 
                              mwbool ignore,
 
                              mwvector rShift,
                              mwvector vShift,
-                             real rho_0,
-                             real R_S)
+                             real_0 rho_0,
+                             real_0 R_S)
 {
     unsigned int i;
     int table;
     Body b;
-    real r;
-    real totalMass = 0.0;
-    real radius = 0.0;
-    real massEpsilon = mass / nbody;    /* The amount of mass we increase for
+    real_0 r;
+    real_0 totalMass = 0.0;
+    real_0 radius = 0.0;
+    real_0 massEpsilon = mass / nbody;    /* The amount of mass we increase for
                                           each particle */
 
     memset(&b, 0, sizeof(b));
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
-    b.bodynode.mass = mass / nbody;    /* Mass per particle */
+    b.bodynode.mass = mw_real_const(mass / nbody);    /* Mass per particle */
 
 
     lua_createtable(luaSt, nbody, 0);
@@ -169,7 +171,7 @@ static int nbGenerateNFWCore(lua_State* luaSt,
 
     for (i = 0; i < nbody; ++i)
     {
-        real endradius = nfwNextRadius(radius, totalMass + massEpsilon, rho_0, R_S);
+        real_0 endradius = nfwNextRadius(radius, totalMass + massEpsilon, rho_0, R_S);
 
         do
         {
@@ -197,7 +199,7 @@ int nbGenerateNFW(lua_State* luaSt)
     static const mwvector* position = NULL;
     static const mwvector* velocity = NULL;
     static mwbool ignore;
-    static real mass = 0.0, nbodyf = 0.0, rho_0 = 0.0, R_S = 0.0;
+    static real_0 mass = 0.0, nbodyf = 0.0, rho_0 = 0.0, R_S = 0.0;
 
     static const MWNamedArg argTable[] =
         {
