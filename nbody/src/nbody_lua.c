@@ -386,7 +386,8 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
 
     int top;
     mwvector a;
-    static const mwvector badVector = mw_vec(mw_real_const(REAL_MAX), mw_real_const(REAL_MAX), mw_real_const(REAL_MAX));
+    mwvector badVector;
+    SET_VECTOR(badVector, mw_real_const(REAL_MAX), mw_real_const(REAL_MAX), mw_real_const(REAL_MAX));
 
     mw_printf("Printing potEvalStates...\n");
     if (st->potEvalStates==NULL)

@@ -517,7 +517,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     // outputs these numbers from one of the histograms
     // at this point, these numbers should be the same for all histograms anyway
     mw_boinc_print(f, "<histogram>\n");
-    fprintf(f, "n = %u\n", all->histograms[0]->totalNum);
+    fprintf(f, "n = %u\n", (int) showRealValue(all->histograms[0]->totalNum));
     fprintf(f, "massPerParticle = %12.15f\n", all->histograms[0]->massPerParticle);
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
@@ -669,7 +669,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     unsigned int lambdaIndex;
     unsigned int betaIndex;
     unsigned int Histindex;
-    unsigned int totalNum = 0;
+    real totalNum = ZERO_REAL;
     HistData* histData;
     Body* p;
     NBHistTrig histTrig;
@@ -994,7 +994,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
         for (unsigned int i = 0; i < nBin; ++i)
         {
-            real ddenom = mw_sub(all->histograms[5]->data[i].rawCount - all->histograms[5]->data[i].outliersRemoved);
+            real ddenom = mw_sub(all->histograms[5]->data[i].rawCount, all->histograms[5]->data[i].outliersRemoved);
             if(showRealValue(ddenom) > 10)
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
@@ -1322,7 +1322,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         {
             all->histograms[i]->lambdaBins = lambdaBins;
             all->histograms[i]->betaBins = betaBins;
-            all->histograms[i]->totalNum = mw_real_const(nGen);
+            all->histograms[i]->totalNum = mw_real_const((real_0) nGen);
             all->histograms[i]->totalSimulated = totalSim;
             all->histograms[i]->massPerParticle = mw_real_const(mass);
         }

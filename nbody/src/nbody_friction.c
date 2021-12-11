@@ -131,9 +131,12 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
         X = mw_div(objectVel, mw_sqrt(mw_mul_s(sigma2, 2)));
     }
 
+    real factor = mw_mul_s(mw_mul(mass_LMC, mw_mul(ln_lambda, mw_div(density, sqr(objectVel)))), -4.0 * M_PI);
+    real erfStuff = mw_sub(mw_erf(X), mw_mul_s(mw_mul(X, exp(mw_neg(sqr(X)))), 2.0/mw_sqrt_0(M_PI)));
+
     //Acceleration from DF
-    real acc = mw_mul_s(mw_mul(mass_LMC, mw_mul(ln_lambda, mw_mul(mw_div(density, sqr(objectVel)), mw_sub(erf(X), mw_mul_s(mw_mul(X, mw_exp(mw_mul_s(sqr(X),-1.0))), 2/mw_sqrt_0(M_PI))))), -4*M_PI);
+    real acc = factor * erfStuff;
     
-    result = mw_mulvs(vel, mw_div(acc, objectVel))
+    result = mw_mulvs(vel, mw_div(acc, objectVel));
     return result;
 }

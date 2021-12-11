@@ -33,7 +33,7 @@
 
 #if AUTODIFF /*Define types outside of main()*/
 
-    #define NumberOfModelParameters 2     /*Change this number to add more space for parameters to differentiate over*/
+    #define NumberOfModelParameters 21     /*Change this number to add more space for parameters to differentiate over*/
 
     typedef struct MW_ALIGN_TYPE
     {

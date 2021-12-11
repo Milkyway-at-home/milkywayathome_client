@@ -660,13 +660,13 @@ static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real *
         cm_vz = mw_add(cm_vz, mw_mul(mass[i], vz[i]));
     }
      
-    cm_x = mw_div(cm_x / (comp_mass));
-    cm_y = mw_div(cm_y / (comp_mass));
-    cm_z = mw_div(cm_z / (comp_mass));
+    cm_x = mw_div(cm_x, (comp_mass));
+    cm_y = mw_div(cm_y, (comp_mass));
+    cm_z = mw_div(cm_z, (comp_mass));
     
-    cm_vx = mw_div(cm_vx / (comp_mass));
-    cm_vy = mw_div(cm_vy / (comp_mass));
-    cm_vz = mw_div(cm_vz / (comp_mass));
+    cm_vx = mw_div(cm_vx, (comp_mass));
+    cm_vy = mw_div(cm_vy, (comp_mass));
+    cm_vz = mw_div(cm_vz, (comp_mass));
 
     for(i = compStart; i < compEnd; i++)
     {
@@ -674,9 +674,9 @@ static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real *
         y[i] = mw_add(mw_sub(y[i], cm_y), rShift.y);
         z[i] = mw_add(mw_sub(z[i], cm_z), rShift.z);
         
-        vx[i] = mw_add(mw_sub(vx[i], cm_vx), rShift.vx);
-        vy[i] = mw_add(mw_sub(vy[i], cm_vy), rShift.vy);
-        vz[i] = mw_add(mw_sub(vz[i], cm_vz), rShift.vz);
+        vx[i] = mw_add(mw_sub(vx[i], cm_vx), vShift.x);
+        vy[i] = mw_add(mw_sub(vy[i], cm_vy), vShift.y);
+        vz[i] = mw_add(mw_sub(vz[i], cm_vz), vShift.z);
     }
     return 1;
 }

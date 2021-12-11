@@ -183,7 +183,7 @@ static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector po
 static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
     const real M = mw_real_var(sph->scale, 11);
-    const real a = mw_real_var(sph->scale, 12)
+    const real a = mw_real_var(sph->scale, 12);
     const real tmp = mw_hypot(a,r);
 
     const real factor = mw_neg(mw_div(M, cube(tmp)));
@@ -220,11 +220,11 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
 /*WARNING: This potential is currently not in use as it is non-physical and difficult to test.*/
 static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)     /*From Freeman 1970*/
 {
-//    mwvector acc;
+    mwvector acc;
     /*Reset acc vector*/
-//    X(acc) = ZERO_REAL;
-//    Y(acc) = ZERO_REAL;
-//    Z(acc) = ZERO_REAL;
+    X(acc) = ZERO_REAL;
+    Y(acc) = ZERO_REAL;
+    Z(acc) = ZERO_REAL;
 
 //    const mwvector r_hat = mw_mulvs(pos, inv(r));
 //    const real r_proj = mw_hypot(X(pos), Y(pos));
@@ -337,8 +337,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         j1_zero = besselJ1_zero(n)/M_PI;
         psi_in_0 = h * j0_zero;
         psi_in_1 = h * j1_zero;
-        psi_0 = psi_in_0 * mw_tanh_0(M_PI / 2.0 * mw_sinh_0(psi_in_0));
-        psi_1 = psi_in_1 * mw_tanh_0(M_PI / 2.0 * mw_sinh_0(psi_in_1));
+        psi_0 = psi_in_0 * mw_sinh_0(M_PI / 2.0 * mw_sinh_0(psi_in_0)) / mw_cosh_0(M_PI / 2.0 * mw_sinh_0(psi_in_0));
+        psi_1 = psi_in_1 * mw_sinh_0(M_PI / 2.0 * mw_sinh_0(psi_in_1)) / mw_cosh_0(M_PI / 2.0 * mw_sinh_0(psi_in_1));
         psi_prime_0 = (mw_sinh_0(M_PI * mw_sinh_0(psi_in_0)) + M_PI * psi_in_0 * mw_cosh_0(psi_in_0)) / (mw_cosh_0(M_PI * mw_sinh(psi_in_0)) + 1.0);
         psi_prime_1 = (mw_sinh_0(M_PI * mw_sinh_0(psi_in_1)) + M_PI * psi_in_1 * mw_cosh_0(psi_in_1)) / (mw_cosh_0(M_PI * mw_sinh(psi_in_1)) + 1.0);
         j0_x = M_PI / h * psi_0;
@@ -357,7 +357,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         real R_pieceAdd = mw_mul_s(mw_mul(mw_mul(mw_div(a, sqr(R)), fun_1), j1_w), 4.0 * M_PI);
         
         z_piece = mw_add(z_piece, z_pieceAdd);
-        R_piece = mw_add(r_piece, R_pieceAdd);
+        R_piece = mw_add(R_piece, R_pieceAdd);
     }
 
     mwvector R_comp = mw_mulvs(R_hat, mw_mul_s(mw_mul(mw_mul(mw_mul(M, sqr(a)), b), R_piece), -1.0 / 4.0 / M_PI));
@@ -419,8 +419,8 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
         integralZ  = mw_add(integralZ, Zpiece);
     }
 
-    mwvector R_comp = mw_mulvs(R_hat, mw_mul_s(mw_mul(M*integralR), -1.0));
-    mwvector Z_comp = mw_mulvs(Z_hat, mw_mul_s(mw_mul(M*integralZ), -1.0));
+    mwvector R_comp = mw_mulvs(R_hat, mw_mul_s(mw_mul(M,integralR), -1.0));
+    mwvector Z_comp = mw_mulvs(Z_hat, mw_mul_s(mw_mul(M,integralZ), -1.0));
 
     X(acc) = mw_add(X(R_comp), X(Z_comp));
     Y(acc) = mw_add(Y(R_comp), Y(Z_comp));
@@ -550,7 +550,7 @@ static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)  /
     mwvector acc;
 
     /* TODO: More things here can be cached */
-    const real qzs      = sqr(mw_real_var(halo->flattenZ, 18));
+    const real qzs      = sqr(mw_real_var(h->flattenZ, 18));
     const real rhalosqr = sqr(mw_real_var(h->scaleLength, 17));
     const real mvsqr    = mw_mul_s(sqr(mw_real_var(h->vhalo, 16)), -1.0);
 
@@ -578,15 +578,20 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
     const real a = mw_real_var(h->scaleLength, 17);
     const real scaleR = mw_div(r, a);
     const real scaleL = mw_mul_s(inv(a), lam);
+    real factor;
     real c;
 
     if (r<lam)
     {
-        c = mw_neg(mw_mul(mw_div(M, mw_mul(a, r)), mw_div(mw_pow(scaleR,mw_real_const(gam-1.0)), mw_add(mw_real_const(1.0), mw_pow(scaleR,mw_real_const(gam-1.0))))));
+        factor = mw_neg(mw_div(M, mw_mul(a, r)));
+        c = mw_mul(factor, mw_div(mw_pow(scaleR, mw_real_const(gam-1.0)), mw_add(mw_real_const(1.0), mw_pow(scaleR, mw_real_const(gam-1.0)))));
+        //c = -(M/(a*r))*mw_pow(scaleR,gam-1.0)/(1.0+mw_pow(scaleR,gam-1.0));
     }
     else
-    
-         c = mw_neg(mw_mul(mw_div(M, sqr(r)), mw_div(mw_pow(scaleL,mw_real_const(gam)), mw_add(mw_real_const(1.0), mw_pow(scaleL,mw_real_const(gam-1.0))))));
+    {
+        factor = mw_neg(mw_div(M, sqr(r)));
+        c = mw_mul(factor, mw_div(mw_pow(scaleL, mw_real_const(gam)), mw_add(mw_real_const(1.0), mw_pow(scaleL, mw_real_const(gam-1.0)))));
+        //c = -(M/sqr(r))*mw_pow(scaleL,gam)/(1.0+mw_pow(scaleL,gam-1.0));
     }
 
     return mw_mulvs(pos, mw_div(c, r));

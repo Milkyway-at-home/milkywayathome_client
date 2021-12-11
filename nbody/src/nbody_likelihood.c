@@ -110,7 +110,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 return NAN;
             }
             LOS_velocity_component = nbLikelihood(dat->histograms[4], match->histograms[4]);
-            likelihood = mw_add(likelihood, LOS_velovity_component);
+            likelihood = mw_add(likelihood, LOS_velocity_component);
         }
         if(use_dist)
         {

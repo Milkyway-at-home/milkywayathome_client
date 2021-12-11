@@ -646,13 +646,13 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
     real_0 phi, theta;
     
     /*defining some angles*/
-    theta = mw_acos_0(( mwXrandom(dsfmtState, -1.0, 1.0) );
+    theta = mw_acos_0( mwXrandom(dsfmtState, -1.0, 1.0) );
     phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
 
     /*this is standard formula for x,y,z components in spherical*/
-    X(vec) = mw_mul_s(rad, mw_sin_0(( theta ) * mw_cos_0(( phi ));        /*x component*/
-    Y(vec) = mw_mul_s(rad, mw_sin_0(( theta ) * mw_sin_0(( phi ));        /*y component*/
-    Z(vec) = mw_mul_s(rad, mw_cos_0(( theta ));                           /*z component*/
+    X(vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_cos_0( phi ));        /*x component*/
+    Y(vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_sin_0( phi ));        /*y component*/
+    Z(vec) = mw_mul_s(rad, mw_cos_0( theta ));                          /*z component*/
 
     return vec;
 }
@@ -672,7 +672,7 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
     real cm_vy = ZERO_REAL;
     real cm_vz = ZERO_REAL;
     unsigned int i;
-    for(i = compStart; i < compEnd; i++)
+    for(i = 0; i < nbody; i++)
     {
         cm_x = mw_add(cm_x, mw_mul(mass[i], x[i]));
         cm_y = mw_add(cm_y, mw_mul(mass[i], y[i]));
@@ -683,23 +683,23 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
         cm_vz = mw_add(cm_vz, mw_mul(mass[i], vz[i]));
     }
      
-    cm_x = mw_div(cm_x / (comp_mass));
-    cm_y = mw_div(cm_y / (comp_mass));
-    cm_z = mw_div(cm_z / (comp_mass));
+    cm_x = mw_div(cm_x, (dwarf_mass));
+    cm_y = mw_div(cm_y, (dwarf_mass));
+    cm_z = mw_div(cm_z, (dwarf_mass));
     
-    cm_vx = mw_div(cm_vx / (comp_mass));
-    cm_vy = mw_div(cm_vy / (comp_mass));
-    cm_vz = mw_div(cm_vz / (comp_mass));
+    cm_vx = mw_div(cm_vx, (dwarf_mass));
+    cm_vy = mw_div(cm_vy, (dwarf_mass));
+    cm_vz = mw_div(cm_vz, (dwarf_mass));
 
-    for(i = compStart; i < compEnd; i++)
+    for(i = 0; i < nbody; i++)
     {
         x[i] = mw_add(mw_sub(x[i], cm_x), rShift.x);
         y[i] = mw_add(mw_sub(y[i], cm_y), rShift.y);
         z[i] = mw_add(mw_sub(z[i], cm_z), rShift.z);
         
-        vx[i] = mw_add(mw_sub(vx[i], cm_vx), rShift.vx);
-        vy[i] = mw_add(mw_sub(vy[i], cm_vy), rShift.vy);
-        vz[i] = mw_add(mw_sub(vz[i], cm_vz), rShift.vz);
+        vx[i] = mw_add(mw_sub(vx[i], cm_vx), vShift.x);
+        vy[i] = mw_add(mw_sub(vy[i], cm_vy), vShift.y);
+        vz[i] = mw_add(mw_sub(vz[i], cm_vz), vShift.z);
     }
     return 1;
 }

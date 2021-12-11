@@ -22,6 +22,7 @@
 
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_vector.h"
+#include "milkyway_lua_math.h"
 #include "milkyway_util.h"
 
 

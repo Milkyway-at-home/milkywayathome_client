@@ -150,12 +150,12 @@ static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real_0 tim
     real bigA = mw_add(mw_mul(b,sqr(y)), mw_mul(mw_add(b, mw_mul_s(zc,3.0)), bzc2));
     real bigC = mw_add(sqr(y), bzc2);
 
-    real 3AC = mw_mul_s(mw_mul(bigA,bigC), 3.0);
-    real 2AbC = mw_add(mw_mul_s(bigA,2.0), mw_mul(b,bigC));
+    real AC3 = mw_mul_s(mw_mul(bigA,bigC), 3.0);
+    real A2bC = mw_add(mw_mul_s(bigA,2.0), mw_mul(b,bigC));
 
     real factor = mw_mul_s(mw_div(mw_div(mw_div(sqr(c),a),sqr(bigC)),cube(zc)),inv_0(24*M_PI));
-    real part1 = mw_div(mw_mul(mw_add(x,a), mw_add(3AC, mw_mul(2AbC, sqr(mw_add(x,a))))),threehalves(mw_add(bigC,sqr(mw_add(x,a)))));
-    real part2 = mw_div(mw_mul(mw_sub(x,a), mw_add(3AC, mw_mul(2AbC, sqr(mw_sub(x,a))))),threehalves(mw_add(bigC,sqr(mw_sub(x,a)))));
+    real part1 = mw_div(mw_mul(mw_add(x,a), mw_add(AC3, mw_mul(A2bC, sqr(mw_add(x,a))))),threehalves(mw_add(bigC,sqr(mw_add(x,a)))));
+    real part2 = mw_div(mw_mul(mw_sub(x,a), mw_add(AC3, mw_mul(A2bC, sqr(mw_sub(x,a))))),threehalves(mw_add(bigC,sqr(mw_sub(x,a)))));
 
     real unscaledDens = mw_mul(factor, mw_sub(part1, part2));
 
@@ -197,7 +197,13 @@ static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
     const real q  = mw_real_var(h->flattenZ, 18);
 
     const real D   = mw_add(mw_add(mw_add(mw_add(sqr(a), mw_mul_s(sqr(X(pos)), (h->c1))), mw_mul_s(sqr(Y(pos)), (h->c2))), mw_mul_s(mw_mul(X(pos),Y(pos)), (h->c3))), sqr(mw_div(Z(pos),q)));
-    const real num = mw_sub(mw_sub(mw_sub(mw_add(mw_mul_s(D, 2.0*((h->c1)+(h->c2))), mw_mul_s(mw_div(D,sqr(q)),2.0)), sqr(mw_add(mw_mul_s(X(pos), 2.0*(h->c1)), mw_mul_s(Y(pos), (h->c3))))), sqr(mw_add(mw_mul_s(Y(pos), 2.0*(h->c2)), mw_mul_s(X(pos), (h->c3))))), sqr(mw_mul_s(mw_div(Z(pos),sqr(q)))));
+
+    const real num1 = mw_add(mw_mul_s(D, (2.0*(h->c1) + 2.0*(h->c2))), mw_mul_s(mw_div(D, sqr(q)), 2.0));
+    const real num2 = sqr(mw_add(mw_mul_s(X(pos), 2.0*(h->c1)), mw_mul_s(Y(pos), (h->c3))));
+    const real num3 = sqr(mw_add(mw_mul_s(Y(pos), 2.0*(h->c2)), mw_mul_s(X(pos), (h->c3))));
+    const real num4 = sqr(mw_mul_s(mw_div(Z(pos), sqr(q)), 2.0));
+
+    const real num = mw_sub(num1, mw_add(mw_add(num2, num3), num4));
 
     return mw_mul_s(mw_div(mw_mul(sqr(v),num),sqr(D)), inv_0(4.0*M_PI));
 }
@@ -264,11 +270,12 @@ static inline real wilkinsonEvansHaloDensity(const Halo* h, real r)
     const real a = mw_real_var(h->scaleLength, 17);
 
     real r_a = mw_div(r,a);
+    real tmp = mw_hypot(r,a);
 
     if(showRealValue(r)==0.0) return ZERO_REAL;
 
-    return mw_mul_s(mw_div(mw_div(M,(sqr(r_a)),mw_cube(mw_hypot(r,a))), inv_0(4*M_PI));
-
+    //(1/(4*pi)) * M/(sqr(r_a)*cube(tmp))
+    return mw_mul_s(mw_div(M, mw_mul(sqr(r_a), cube(tmp))), inv_0(4*M_PI));
 }
 
 static inline real ninkovicHaloDensity(const Halo* h, real r)

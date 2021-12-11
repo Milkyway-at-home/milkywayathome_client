@@ -77,8 +77,8 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
                     /* form Q * dr */
                     Qdr.x = mw_add(mw_mul(Quad(q).xx, dr.x), mw_add(mw_mul(Quad(q).xy, dr.y), mw_mul(Quad(q).xz, dr.z)));
-                    Qdr.y = mw_add(mw_mul(Quad(q).yx, dr.x), mw_add(mw_mul(Quad(q).yy, dr.y), mw_mul(Quad(q).yz, dr.z)));
-                    Qdr.z = mw_add(mw_mul(Quad(q).zx, dr.x), mw_add(mw_mul(Quad(q).zy, dr.y), mw_mul(Quad(q).zz, dr.z)));
+                    Qdr.y = mw_add(mw_mul(Quad(q).xy, dr.x), mw_add(mw_mul(Quad(q).yy, dr.y), mw_mul(Quad(q).yz, dr.z)));
+                    Qdr.z = mw_add(mw_mul(Quad(q).xz, dr.x), mw_add(mw_mul(Quad(q).yz, dr.y), mw_mul(Quad(q).zz, dr.z)));
 
 
                     /* form dr * Q * dr */
@@ -250,6 +250,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
         SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
         lmcmass = mw_real_var(0.0, 19);
         lmcscale = mw_real_var(1.0, 20);
+    }
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))

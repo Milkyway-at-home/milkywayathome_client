@@ -138,7 +138,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
         for (t = 0; t <= (ftime-tstop); t += dt)
         {   
-    	    (int) exSteps = t/dt;
+    	    exSteps = (int) mw_round_0(t/dt);
     	    if ((exSteps % 10 == 0)&&(t!=0)) { 
     	        forArray[k] = mw_acc;
                 k++;
@@ -380,7 +380,7 @@ void nbPrintReverseOrbit_LMC(mwvector* finalPos,
                          real LMCmass,
                          real LMCscale)
 {
-    mwvector acc, mw_acc, LMC_acc, DF_acc;
+    mwvector acc, mw_acc, LMC_acc, DF_acc, tmp;
     mwvector v, x, LMCv, LMCx;
     mwvector v_for, x_for, LMCv_for, LMCx_for;
     mwvector mw_x = mw_vec(ZERO_REAL, ZERO_REAL, ZERO_REAL);

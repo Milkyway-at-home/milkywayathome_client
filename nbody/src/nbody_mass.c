@@ -294,7 +294,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
                 if(mw_fabs_0(bin_ave[Histindex] - showRealValue(this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
                 {
                     temp_sum[Histindex] = mw_add(temp_sum[Histindex], this_var);
-                    temp_sqr[Histindex] = mw_add(temp_sqr[Histindex], sqr(this_var);
+                    temp_sqr[Histindex] = mw_add(temp_sqr[Histindex], sqr(this_var));
                 }
                 else
                 {

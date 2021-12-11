@@ -192,7 +192,7 @@ static real emdDistL1(const real* x, const real* y, void* user_param)
     {
         real t = mw_sub(x[i], y[i]);
 
-        s = mw_add(a, mw_fabs(t));
+        s = mw_add(s, mw_fabs(t));
     }
 
     return s;
