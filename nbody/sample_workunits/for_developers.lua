@@ -50,6 +50,7 @@ LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
 ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
+SunGCDist         = 8.0       -- -- Distance between Sun and GC-- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -203,6 +204,7 @@ function makeContext()
       vx          = orbit_parameter_vx,
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
+      sunGCDist   = SunGCDist,
       criterion   = criterion,
       OutputLB    = Output_LB_coord,
       useQuad     = true,
@@ -261,7 +263,8 @@ function makeBodies(ctx, potential)
                     LMCDynaFric = LMC_DynamicalFriction,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
-	            dt          = ctx.timestep / 10.0
+	            dt          = ctx.timestep / 10.0,
+                    sunGCDist   = SunGCDist
 	            }              
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
@@ -269,7 +272,8 @@ function makeBodies(ctx, potential)
 	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0
+	            dt        = ctx.timestep / 10.0,
+                    sunGCDist = SunGCDist
 	            }
          end
     end
