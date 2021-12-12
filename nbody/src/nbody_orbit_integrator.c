@@ -112,8 +112,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real LMCscale,
                     real_0 sun_dist)
 {	
-    unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
-    unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
+    unsigned int steps = mw_ceil_0((tstop)/(dt)) + 1;
+    unsigned int exSteps = mw_abs_0(mw_ceil_0((ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
     mwvector v_var, x_var, x_lbr;
     mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp;

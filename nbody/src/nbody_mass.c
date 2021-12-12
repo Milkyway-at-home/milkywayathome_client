@@ -211,7 +211,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_fac
             Histindex = i * betaBins + j;
             count = mw_sub(histData[Histindex].rawCount, histData[Histindex].outliersRemoved);
             
-            if(count > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
+            if(showRealValue(count) > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
                 n_new = mw_sub(count, mw_real_const(1.0)); //because the mean is calculated from the same populations set
                 n_ratio = mw_div(count, n_new); 
@@ -291,7 +291,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
                 /* Use old standard deviation calculated before */
                 bin_sigma = showRealValue(histData[Histindex].variable);
                 
-                if(mw_fabs_0(bin_ave[Histindex] - showRealValue(this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
+                if(mw_fabs_0(showRealValue(bin_ave[Histindex]) - showRealValue(this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
                 {
                     temp_sum[Histindex] = mw_add(temp_sum[Histindex], this_var);
                     temp_sqr[Histindex] = mw_add(temp_sqr[Histindex], sqr(this_var));
@@ -332,19 +332,19 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
-        return NAN;
+        return mw_real_const(NAN);
     }
 
     if (showRealValue(nSim) == 0 || showRealValue(nData) == 0)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
-        return INFINITY;
+        return mw_real_const(INFINITY);
     }
 
     if (showRealValue(histMass) <= 0.0 || showRealValue(dataMass) <= 0.0)
     {
         /*In order to calculate likelihood the masses are necessary*/
-        return NAN;
+        return mw_real_const(NAN);
     }
     
     
@@ -366,7 +366,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
      */
-    p = mw_div(nSim, n);
+    p = mw_mul_s(nSim, inv_0(n));
 
     /*Print statements for debugging likelihood*/
 //    mw_printf("dataMass = %.15f\n",dataMass);
@@ -404,12 +404,12 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
             err_data = data->data[i].err;
             err_hist = histogram->data[i].err;
 
-            if(err_data > 0)
+            if(showRealValue(err_data) > 0)
             {
                 Data = data->data[i].variable;
                 Hist = histogram->data[i].variable;
 
-                if(err_hist > 0)
+                if(showRealValue(err_hist) > 0)
                 {
                     Nsigma_sq = mw_add(Nsigma_sq, mw_div(sqr(mw_sub(Data, Hist)), mw_add(sqr(err_data), sqr(err_hist))));
                 }

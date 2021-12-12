@@ -208,8 +208,8 @@ static inline real mw_vecangle(mwvector a, mwvector b)
 /* v1 -= s * v2 */
 #define mw_incsubv_s(v1, v2, s) { mw_incsubv((v1),mw_mulvs((v2),(s))); }
 
-#define mw_incdivs(v, s) { (v).x = mw_div((v).x,(s)); (v).y = mw_div((v).y,(s)); (v).z = mw_div((v).z,(s)); }
-#define mw_incmulvs(v, s) { (v).x = mw_mul((v).x,(s)); (v).y = mw_mul((v).y,(s)); (v).z = mw_mul((v).z,(s)); }
+#define mw_incdivs(v, s) { (v).x = mw_div((v).x, s); (v).y = mw_div((v).y, s); (v).z = mw_div((v).z, s); }
+#define mw_incmulvs(v, s) { (v).x = mw_mul((v).x, s); (v).y = mw_mul((v).y, s); (v).z = mw_mul((v).z, s); }
 
 #define mw_normalize(v) { real len = mw_length(v); mw_incdivs(v, len); }
 

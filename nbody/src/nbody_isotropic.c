@@ -102,7 +102,7 @@ static inline real_0 first_derivative(real_0 (*func)(real_0, real_0 *, dsfmt_t*)
     p2 = - 8.0 * (*func)( (x - h)      , funcargs, dsfmtState);
     p3 = - 1.0 * (*func)( (x + 2.0 * h), funcargs, dsfmtState);
     p4 =   8.0 * (*func)( (x + h)      , funcargs, dsfmtState);
-    denom = inv( 12.0 * h);
+    denom = inv_0( 12.0 * h);
     deriv = (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
@@ -119,7 +119,7 @@ static inline real_0 second_derivative(real_0 (*func)(real_0, real_0 *, dsfmt_t*
     p3 = -30.0 * (*func)( (x)           , funcargs, dsfmtState);
     p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
     p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
-    denom = inv( 12.0 * h * h);
+    denom = inv_0( 12.0 * h * h);
     deriv = (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
@@ -438,7 +438,7 @@ real_0 fun(real_0 ri, real_0 * args, dsfmt_t* dsfmtState)
         first_deriv_psi = 1.0e-6;//this should be small enough
     }
     
-    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr_0(first_deriv_psi));
+    dsqden_dpsisq = second_deriv_density * inv_0(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv_0(sqr_0(first_deriv_psi));
     diff = mw_fabs_0(energy - potential(ri, args, dsfmtState));
     
     
@@ -504,7 +504,7 @@ static inline real_0 dist_fun(real_0 v, real_0 * args, dsfmt_t* dsfmtState)
     
     
     real_0 distribution_function = 0.0;
-//     real_0 c = inv( (mw_sqrt_0(8.0) * sqr_0(M_PI)) );
+//     real_0 c = inv_0( (mw_sqrt_0(8.0) * sqr_0(M_PI)) );
     real_0 c = 0.03582244801567226;
     real_0 energy = 0.0;
     real_0 upperlimit_r = 0.0;
@@ -588,7 +588,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, real_0 * args, real_0 rho_max, rea
     return mw_real_const(r);
 }
 
-static inline real vel_mag(dsfmt_t* dsfmtState, real r, real_0 * args)
+static inline real vel_mag(dsfmt_t* dsfmtState, real_0 r, real_0 * args)
 {
     
     /*
@@ -658,7 +658,7 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 }
 
 
-static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real dwarf_mass, int nbody)
+static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real_0 dwarf_mass, int nbody)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
@@ -683,13 +683,13 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
         cm_vz = mw_add(cm_vz, mw_mul(mass[i], vz[i]));
     }
      
-    cm_x = mw_div(cm_x, (dwarf_mass));
-    cm_y = mw_div(cm_y, (dwarf_mass));
-    cm_z = mw_div(cm_z, (dwarf_mass));
+    cm_x = mw_mul_s(cm_x, inv_0(dwarf_mass));
+    cm_y = mw_mul_s(cm_y, inv_0(dwarf_mass));
+    cm_z = mw_mul_s(cm_z, inv_0(dwarf_mass));
     
-    cm_vx = mw_div(cm_vx, (dwarf_mass));
-    cm_vy = mw_div(cm_vy, (dwarf_mass));
-    cm_vz = mw_div(cm_vz, (dwarf_mass));
+    cm_vx = mw_mul_s(cm_vx, inv_0(dwarf_mass));
+    cm_vy = mw_mul_s(cm_vy, inv_0(dwarf_mass));
+    cm_vz = mw_mul_s(cm_vz, inv_0(dwarf_mass));
 
     for(i = 0; i < nbody; i++)
     {
@@ -785,7 +785,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
+                if(isinf(showRealValue(r)) == FALSE && showRealValue(r) != 0.0 && isnan(showRealValue(r)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -804,8 +804,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             counter = 0;
             do
             {
-                v = vel_mag(prng, r, args);
-                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+                v = vel_mag(prng, showRealValue(r), args);
+                if(isinf(showRealValue(v)) == FALSE && showRealValue(v) != 0.0 && isnan(showRealValue(v)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {

@@ -46,7 +46,7 @@ real emdCalc(const real* RESTRICT signature_arr1,
 
 real nbMatchEMD(const MainStruct* data, const MainStruct* histogram);
 
-real nbWorstCaseEMD(const NBodyHistogram* hist  );
+real_0 nbWorstCaseEMD(const NBodyHistogram* hist  );
 
 #ifdef __cplusplus
 }

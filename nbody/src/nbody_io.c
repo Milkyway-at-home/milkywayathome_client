@@ -126,7 +126,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
 
     mwbool isLight = FALSE;
     Body* outputTab = st->bestLikelihoodBodyTab;
-    if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
+    if(!ctx->useBestLike || showRealValue(st->bestLikelihood) == DEFAULT_WORST_CASE){
         outputTab = st->bodytab;
     }
     const Body* endp = outputTab + st->nbody;

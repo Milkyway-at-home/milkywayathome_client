@@ -140,7 +140,7 @@ real_0 nbEstimateNumberFlops(const NBodyCtx* ctx, int nbody)
     const real_0 d = 13;
 
     /* Based on BH86 opening criterion. */
-    real_0 f = 28.0 * M_PI / (3.0 * cube(ctx->theta));
+    real_0 f = 28.0 * M_PI / (3.0 * cube_0(ctx->theta));
 
     /* FIXME: Don't be lazy and try rederiving for these. It should be
      * some number larger than for BH86. Somewhere I remember

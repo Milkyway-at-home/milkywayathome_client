@@ -32,9 +32,9 @@ static real_0 nfwMassInsideRadius(real_0 radius, real_0 rho_0, real_0 R_S)
     //Returns that mass inside a certain radius
 
     //Leading Constant
-    real_0 mass = 4.0 * M_PI * rho_0 * cube(radius);
+    real_0 mass = 4.0 * M_PI * rho_0 * cube_0(radius);
     //Integration terms
-    mass *= ( mw_log((R_S + radius) / R_S) - radius / (R_S + radius));
+    mass *= ( mw_log_0((R_S + radius) / R_S) - radius / (R_S + radius));
     return mass;
 
 }
@@ -64,12 +64,12 @@ static mwvector nfwPickShell(dsfmt_t* dsfmtState, real_0 rad)
     do                      /* pick point in NDIM-space */
     {
         vec = mwRandomUnitPoint(dsfmtState);
-        rsq = mw_sqrv(vec);         /* compute radius squared */
+        rsq = showRealValue(mw_sqrv(vec));         /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */
 
-    rsc = rad / mw_sqrt(rsq);       /* compute scaling factor */
-    mw_incmulvs(vec, rsc);          /* rescale to radius given */
+    rsc = rad / mw_sqrt_0(rsq);       /* compute scaling factor */
+    mw_incmulvs(vec, mw_real_const(rsc));          /* rescale to radius given */
 
     return vec;
 }
@@ -94,7 +94,7 @@ static real_0 nfwSelectFromG(dsfmt_t* dsfmtState)
         x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
         y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
     }   /* using von Neumann tech */
-    while (y > sqr(x) * mw_pow(1.0 - sqr(x), 3.5));
+    while (y > sqr_0(x) * mw_pow_0(1.0 - sqr_0(x), 3.5));
 
     return x;
 }
@@ -103,7 +103,7 @@ static real_0 nfwCalculateV(real_0 r, real_0 rho_0, real_0 R_S)
 {
     real_0 v;
     real_0 mass = nfwMassInsideRadius(r, rho_0, R_S);
-    v = mw_sqrt( /*G!!!*/ mass / r);
+    v = mw_sqrt_0( /*G!!!*/ mass / r);
 
     return v;
 }

@@ -53,9 +53,9 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real_
     int nDivs = 10;
     real width = mw_mul_s(mw_sub(mw_real_const(upperlimit), dist), inv_0(nDivs*1.0));
     real rho0 = nbExtDensity(pot, pos, time);
-    if ((showRealValue(width) <= 0)||(rho0 == 0.0)) /** To avoid divide by zero later **/
+    if ((showRealValue(width) <= 0)||(showRealValue(rho0) == 0.0)) /** To avoid divide by zero later **/
     {
-        return -1;       /** Want to ignore any contribution more than 50 scale radii from galactic center. Chose this value because dispersion is never negative. **/
+        return mw_real_const(-1);       /** Want to ignore any contribution more than 50 scale radii from galactic center. Chose this value because dispersion is never negative. **/
     }
     integral = ZERO_REAL;
     for (i = 0; i < nDivs; i++) {
@@ -83,7 +83,7 @@ static inline real CoulombLogPlummer(real scale_plummer, real scale_mwhalo){
 
 static inline real getHaloScaleLength(const Halo* halo){
     real scale = mw_real_var(halo->scaleLength, 17); /*Halo Scale Radius is set to position 17 in gradient*/
-    if (scale == 0.0)
+    if (showRealValue(scale) == 0.0)
     {
         scale = mw_real_var(1.0,17);    /** This is the case when there is no halo **/
     }
@@ -102,11 +102,11 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     Halo *mw_halo;
 
     const real_0 G_CONST = 1; //(Time: Gyrs, Distance: kpc, Mass: SMU = 222288.47 solar masses)
-    const real_0 thresh = mw_pow(2,-8);
+    const real_0 thresh_val = mw_pow_0(2,-8);
 
     //object velocity where center of gravity is initially at rest
     real objectVel = mw_absv(vel);
-    objectVel = mw_add(mw_mul_s(objectVel, (objectVel >= thresh)), mw_real_const((objectVel < thresh)*thresh)); // To avoid divide-by-zero error.
+    objectVel = mw_add(objectVel, mw_real_const((showRealValue(objectVel) <= thresh_val)*thresh_val)); // To avoid divide-by-zero error.
 
     //Coloumb Logarithm
     mw_halo = &(pot->halo);
@@ -132,10 +132,10 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     }
 
     real factor = mw_mul_s(mw_mul(mass_LMC, mw_mul(ln_lambda, mw_div(density, sqr(objectVel)))), -4.0 * M_PI);
-    real erfStuff = mw_sub(mw_erf(X), mw_mul_s(mw_mul(X, exp(mw_neg(sqr(X)))), 2.0/mw_sqrt_0(M_PI)));
+    real erfStuff = mw_sub(mw_erf(X), mw_mul_s(mw_mul(X, mw_exp(mw_neg(sqr(X)))), 2.0/mw_sqrt_0(M_PI)));
 
     //Acceleration from DF
-    real acc = factor * erfStuff;
+    real acc = mw_mul(factor, erfStuff);
     
     result = mw_mulvs(vel, mw_div(acc, objectVel));
     return result;

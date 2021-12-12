@@ -154,7 +154,7 @@ mwbool checkHaloConstants(Halo* h)
             {
                 return invalidHaloWarning(h->type);
             }
-            if (h->flattenZ < mw_pow(2.0,-0.5))
+            if (h->flattenZ < mw_pow_0(2.0,-0.5))
             {
                 mw_printf("Flatten Z is too small! Will generate negative densities!\n");
                 return invalidHaloWarning(h->type);

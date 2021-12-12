@@ -322,7 +322,7 @@ static inline real_0 findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real_0 t
         case TreeCode:
             /* use size plus offset */
             rc = psize / ctx->theta + showRealValue(mw_distv(cmpos, Pos(p)));
-            return sqr(rc);
+            return sqr_0(rc);
 
         case SW93:                           /* use S&W's criterion? */
             /* compute max distance^2 */

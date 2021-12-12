@@ -37,12 +37,12 @@
 
     typedef struct MW_ALIGN_TYPE
     {
-        real_0 value;
-        real_0 gradient[NumberOfModelParameters];
-        real_0 hessian[NumberOfModelParameters][NumberOfModelParameters];
+        real_0   value;
+        real_0*  gradient;
+        real_0** hessian;
     } real;
 
-    #define ZERO_REAL (real) { 0.0 , {0.0} , {{0.0}} }
+    #define ZERO_REAL (real){ 0.0 , NULL , NULL } //NULL doesn't work here for some reason...
 
 #else
 
@@ -70,16 +70,28 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_real_const(real_0 a)
     {
-        real result = ZERO_REAL;
+        int i,j;
+        real result;
 	result.value = a;
+        for (i=0;i<NumberOfModelParameters;i++)
+        {
+            result.gradient[i] = 0.0;
+        }
+        for (i=0;i<NumberOfModelParameters;i++)
+        {
+            for (j=i;j<NumberOfModelParameters;j++)
+            {
+                result.hessian[i][j] = 0.0;
+                result.hessian[j][i] = 0.0;
+            }
+        }
         return result;
     }
 
     CONST_F ALWAYS_INLINE
     static inline real mw_real_var(real_0 a, int n)
     {
-        real result = ZERO_REAL;
-	result.value = a;
+        real result = mw_real_const(a);
         result.gradient[n] = 1.0;
         return result;
     }
@@ -160,16 +172,60 @@ extern "C" {
     static inline real mw_AUTODIFF(real x, real y, real_0 z, real_0 dz_dx, real_0 dz_dy, real_0 d2z_dx2, real_0 d2z_dy2, real_0 d2z_dxdy)
     {
         int i,j;
+        real_0 x_grad_i, y_grad_i, x_grad_j, y_grad_j, x_hess, y_hess;
+
         real result = mw_real_const(z);
+
         for (i=0;i<NumberOfModelParameters;i++)
         {
-            result.gradient[i] = dz_dx*x.gradient[i] + dz_dy*y.gradient[i];
+            if(!x.gradient)  //For case when gradient is NULL (as is for ZERO_REAL)
+            {
+                x_grad_i = 0.0;
+            }
+            else
+            {
+                x_grad_i = x.gradient[i];
+            }
+            if(!y.gradient)
+            {
+                y_grad_i = 0.0;
+            }
+            else
+            {
+                y_grad_i = y.gradient[i];
+            }
+            result.gradient[i] = dz_dx*x_grad_i + dz_dy*y_grad_i;
         }
+
         for (i=0;i<NumberOfModelParameters;i++)
         {
             for (j=i;j<NumberOfModelParameters;j++)
             {
-                result.hessian[i][j] = dz_dx*x.hessian[i][j] + dz_dy*y.hessian[i][j] + d2z_dx2*x.gradient[i]*x.gradient[j] + d2z_dy2*y.gradient[i]*y.gradient[j] + d2z_dxdy*(x.gradient[i]*y.gradient[j] + y.gradient[i]*x.gradient[j]);
+                if(!x.gradient)  //For case when gradient is NULL (as is for ZERO_REAL)
+                {
+                    x_grad_i = 0.0;
+                    x_grad_j = 0.0;
+                    x_hess   = 0.0;
+                }
+                else
+                {
+                    x_grad_i = x.gradient[i];
+                    x_grad_j = x.gradient[j];
+                    x_hess   = x.hessian[i][j];
+                }
+                if(!y.gradient)
+                {
+                    y_grad_i = 0.0;
+                    y_grad_j = 0.0;
+                    y_hess   = 0.0;
+                }
+                else
+                {
+                    y_grad_i = y.gradient[i];
+                    y_grad_j = y.gradient[j];
+                    y_hess   = y.hessian[i][j];
+                }
+                result.hessian[i][j] = dz_dx*x_hess + dz_dy*y_hess + d2z_dx2*x_grad_i*x_grad_j + d2z_dy2*y_grad_i*y_grad_j + d2z_dxdy*(x_grad_i*y_grad_j + y_grad_i*x_grad_j);
                 result.hessian[j][i] = result.hessian[i][j];
             }
         }
@@ -1051,9 +1107,9 @@ extern "C" {
     }
 
     CONST_F ALWAYS_INLINE
-    static inline real mw_d2r(real a)
+    static inline real d2r(real a)
     {
-        real_0 z        = mw_d2r_0(a.value);
+        real_0 z        = d2r_0(a.value);
         real_0 dz_da    = M_PI / 180.0;
         real_0 dz_db    = 0.0;
         real_0 d2z_da2  = 0.0;
@@ -1064,9 +1120,9 @@ extern "C" {
     }
 
     CONST_F ALWAYS_INLINE
-    static inline real mw_r2d(real a)
+    static inline real r2d(real a)
     {
-        real_0 z        = mw_r2d_0(a.value);
+        real_0 z        = r2d_0(a.value);
         real_0 dz_da    = 180.0 / M_PI;
         real_0 dz_db    = 0.0;
         real_0 d2z_da2  = 0.0;

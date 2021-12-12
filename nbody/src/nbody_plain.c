@@ -301,7 +301,7 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 
 static inline void advanceVelocities_LMC(NBodyState* st, const real_0 dt, const mwvector acc, const mwvector acc_i)
 {
-    real dtHalf = 0.5 * dt;
+    real_0 dtHalf = 0.5 * dt;
     mwvector dv;
 
     mwvector acc_total = mw_addv(acc, acc_i);
@@ -322,7 +322,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, 19), mw_real_var(ctx->LMCscale, 20), ctx->LMCDynaFric, barTime));
         advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     }
     //printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", X(st->LMCpos), Y(st->LMCpos), 
@@ -332,7 +332,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, ctx->LMCmass, ctx->LMCscale, ctx->LMCDynaFric, barTime));
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, 19), mw_real_var(ctx->LMCscale, 20), ctx->LMCDynaFric, barTime));
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 

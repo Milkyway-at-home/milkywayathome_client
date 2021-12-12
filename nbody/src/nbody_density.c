@@ -71,7 +71,7 @@ static inline real plummerSphericalDensity(const Spherical* sph, real r)
     const real M = mw_real_var(sph->mass, 11);
     if(showRealValue(a) == 0)
     {
-        return 0;
+        return ZERO_REAL;
     }
     real r_a = mw_div(r,a);
 
@@ -94,7 +94,7 @@ static inline real miyamotoNagaiDiskDensity(const Disk* disk, mwvector pos)
     real numer = mw_mul(M, mw_mul(sqr(b),mw_add(mw_mul(a,sqr(R)), mw_mul(mw_add(a, mw_mul_s(zp,3.0)),sqr(azp)))));
     real denom = mw_mul_s(mw_mul(fifth(mw_hypot(R, azp)),cube(zp)), 4.0*M_PI);
 
-    if(denom == 0) return ZERO_REAL;
+    if(showRealValue(denom) == 0) return ZERO_REAL;
 
     return mw_div(numer, denom);
 }
@@ -119,7 +119,7 @@ static inline real sech2ExponentialDiskDensity(const Disk* disk, mwvector pos)
     const real d_z = mw_real_var(disk->scaleHeight, 15);
     const real R   = mw_hypot(X(pos), Y(pos));
 
-    real den = mw_mul_s(mw_div(mw_div(mw_div(M, mw_mul(d_z, sqr(d_r))), mw_exp(R/d_r)), sqr(mw_cosh(mw_div(Z(pos), d_z)))), inv_0(4.0*M_PI));
+    real den = mw_mul_s(mw_div(mw_div(mw_div(M, mw_mul(d_z, sqr(d_r))), mw_exp(mw_div(R, d_r))), sqr(mw_cosh(mw_div(Z(pos), d_z)))), inv_0(4.0*M_PI));
 
     return den;
 
@@ -141,8 +141,8 @@ static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real_0 tim
     real Phi = mw_atan2(Y(pos), X(pos));
     Phi = mw_sub(Phi, curAngle);
 
-    real x = mw_mul(Radi, cos(Phi));
-    real y = mw_mul(Radi, sin(Phi)); 
+    real x = mw_mul(Radi, mw_cos(Phi));
+    real y = mw_mul(Radi, mw_sin(Phi)); 
     real z = Z(pos);
 
     real zc = mw_hypot(z,c);
@@ -241,7 +241,7 @@ static inline real NFWMHaloDensity(const Halo* h,  real r)
 
     if(showRealValue(r) == 0) return ZERO_REAL;
     
-    return mw_mul_s(mw_div(mw_div(M, r), sqr(a+r)), inv_0(4.0*M_PI));
+    return mw_mul_s(mw_div(mw_div(M, r), sqr(mw_add(a,r))), inv_0(4.0*M_PI));
 
 }
 
@@ -296,13 +296,13 @@ static inline real ninkovicHaloDensity(const Halo* h, real r)
 
 static inline real KVHalo(const Halo* h, real r) /*What is this one?*/
 {
-    const real a = h->scaleLength;
-    const real M = h->mass;
-    if(r == 0) return 0;
+    const real M = mw_real_var(h->mass, 16);
+    const real a = mw_real_var(h->scaleLength, 17);
+    if(showRealValue(r) == 0) return ZERO_REAL;
 
     real ra = mw_add(r,a);
 
-    return mw_mul_s(mw_mul(M, mw_sub(inv(r*sqr(ra)), mw_mul_s(inv(cube(ra)), 2.0))), inv_0(4*M_PI));
+    return mw_mul_s(mw_mul(M, mw_sub(inv(mw_mul(r, sqr(ra))), mw_mul_s(inv(cube(ra)), 2.0))), inv_0(4*M_PI));
 }
 
 real nbExtDensity(const Potential* pot, mwvector pos, real_0 time)

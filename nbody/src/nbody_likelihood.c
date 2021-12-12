@@ -97,7 +97,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
             if(!dat->usage[4] || !match->usage[4])
             {
                 mw_printf("One of these files does not contain any info for average beta\n");
-                return NAN;
+                return mw_real_const(NAN);
             }
             beta_component = nbLikelihood(dat->histograms[3], match->histograms[3]);
             likelihood = mw_add(likelihood, beta_component);
@@ -107,7 +107,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
             if(!dat->usage[3] || !match->usage[3])
             {
                 mw_printf("One of these files does not contain any info for average vlos\n");
-                return NAN;
+                return mw_real_const(NAN);
             }
             LOS_velocity_component = nbLikelihood(dat->histograms[4], match->histograms[4]);
             likelihood = mw_add(likelihood, LOS_velocity_component);
@@ -117,7 +117,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
             if(!dat->usage[5] || !match->usage[5])
             {
                 mw_printf("One of these files does not contain any info for average distance\n");
-                return NAN;
+                return mw_real_const(NAN);
             }
             distance_component = nbLikelihood(dat->histograms[5], match->histograms[5]);
             likelihood = mw_add(likelihood, distance_component);
@@ -185,7 +185,7 @@ real * nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody)
+        if (showRealValue(histogram->histograms[0]->totalNum) < 0.0001 * (real_0) st->nbody)
         {
             static real worstEMD_Array[8];
             real_0 worstEMD;

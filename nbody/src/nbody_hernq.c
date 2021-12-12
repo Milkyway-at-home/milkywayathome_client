@@ -94,7 +94,7 @@ static real_0 hernqSelectFromG(dsfmt_t* dsfmtState)
         x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
         y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
     }   /* using von Neumann tech */
-    while (y > sqr(x) * mw_pow(1.0 - sqr(x), 3.5));
+    while (y > sqr_0(x) * mw_pow_0(1.0 - sqr_0(x), 3.5));
 
     return x;
 }
@@ -103,7 +103,7 @@ static real_0 hernqCalculateV(real_0 r, real_0 radius, real_0 a, real_0 mass)
 {
     real_0 v;
     mass = hernqMassInsideRadius(r, radius, a, mass);
-    v = mw_sqrt( /*G!!!*/ mass / r);
+    v = mw_sqrt_0( /*G!!!*/ mass / r);
 
     return v;
 }

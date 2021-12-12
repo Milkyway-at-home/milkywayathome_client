@@ -41,21 +41,21 @@ static real_0 nbHistogramCenter(real_0 start, real_0 end)
 /* From the range of a histogram, find the bin size in Lambda */
 static real_0 nbHistogramLambdaBinSize(const HistogramParams* hp)
 {
-    real binSize = (hp->lambdaEnd - hp->lambdaStart) / (real_0) hp->lambdaBins;
+    real_0 binSize = (hp->lambdaEnd - hp->lambdaStart) / (real_0) hp->lambdaBins;
     return binSize;   /* Size of bins */
 }
 
 /* From the range of a histogram, find the bin size in Beta */
 static real_0 nbHistogramBetaBinSize(const HistogramParams* hp)
 {
-    real binSize = (hp->betaEnd - hp->betaStart) / (real_0) hp->betaBins;
+    real_0 binSize = (hp->betaEnd - hp->betaStart) / (real_0) hp->betaBins;
     return binSize;
 }
 
 real nbNormalizedHistogramError(real n, real total)
 {
     real norm_n = mw_div(n, total);
-    return (n == 0) ? inv(total) : mw_div(mw_sqrt( mw_add(mw_mul(mw_sub(mw_real_const(1.0), mw_mul_s(norm_n,2)), n), mw_mul(sqr(norm_n), total) )), total);
+    return (showRealValue(n) == 0) ? inv(total) : mw_div(mw_sqrt( mw_add(mw_mul(mw_sub(mw_real_const(1.0), mw_mul_s(norm_n,2)), n), mw_mul(sqr(norm_n), total) )), total);
 }
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
@@ -82,7 +82,7 @@ real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBo
    subtracted from the bins corresponding to ignored bins in the data
    histogram
  */
-unsigned int nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generated histogram */
+real nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generated histogram */
                                                     const NBodyHistogram* data)      /* Data histogram */
 {
     unsigned int i;
@@ -148,7 +148,7 @@ static void nbPrintHistogramHeader(FILE* f,
     }else if(ctx->calibrationRuns == 0){//no calibration but bar on
         barTimeError = bestLikelihood_time - ctx->timeEvolve;
     }
-    real barAngleError = barTimeError * ctx->pot.disk2.patternSpeed;
+    real_0 barAngleError = barTimeError * ctx->pot.disk2.patternSpeed;
     fprintf(f,
             "# Nbody = %d\n"
             "# Evolve backward time = %f\n"
@@ -680,8 +680,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
      * fixed bin size which spans the entire range, and is symmetric
      * around 0 */
 
-    real lambdaStart = hp->lambdaStart;
-    real betaStart = hp->betaStart;
+    real_0 lambdaStart = hp->lambdaStart;
+    real_0 betaStart = hp->betaStart;
     unsigned int lambdaBins = hp->lambdaBins;
     unsigned int betaBins = hp->betaBins;
     unsigned int IterMax = ctx->IterMax;
@@ -794,9 +794,9 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         free(hist5);
     }
 
-    real * use_velbody   = mwCalloc(body_count, sizeof(real));
-    real * use_betabody  = mwCalloc(body_count, sizeof(real));
-    real * use_distbody  = mwCalloc(body_count, sizeof(real));
+    real_0 * use_velbody   = mwCalloc(body_count, sizeof(real_0));
+    real_0 * use_betabody  = mwCalloc(body_count, sizeof(real_0));
+    real_0 * use_distbody  = mwCalloc(body_count, sizeof(real_0));
 
     real * vlos      = mwCalloc(body_count, sizeof(real));       
     real * betas     = mwCalloc(body_count, sizeof(real));
@@ -837,9 +837,9 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             use_distbody[ub_counter] = DEFAULT_NOT_USE;
             
-            vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
-            betas[ub_counter]    = DEFAULT_NOT_USE;
-            distances[ub_counter] = DEFAULT_NOT_USE;
+            vlos[ub_counter]      = mw_real_const(DEFAULT_NOT_USE);//default vlos
+            betas[ub_counter]     = mw_real_const(DEFAULT_NOT_USE);
+            distances[ub_counter] = mw_real_const(DEFAULT_NOT_USE);
 
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor_0((showRealValue(lambda) - lambdaStart) / lambdaSize);
@@ -951,7 +951,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
-                all->histograms[3]->data[i].err = mw_div(all->histograms[3]->data[i].variable, sqrt(vdenom));
+                all->histograms[3]->data[i].err = mw_div(all->histograms[3]->data[i].variable, mw_sqrt(vdenom));
                 all->histograms[3]->data[i].variable = mw_div(all->histograms[3]->data[i].sum, vdenom);
             }
             else
@@ -975,7 +975,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
-                all->histograms[4]->data[i].err = mw_div(all->histograms[4]->data[i].variable, sqrt(bdenom));
+                all->histograms[4]->data[i].err = mw_div(all->histograms[4]->data[i].variable, mw_sqrt(bdenom));
                 all->histograms[4]->data[i].variable = mw_div(all->histograms[4]->data[i].sum, bdenom);
             }
             else
@@ -999,7 +999,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average distance (as it should be)
-                all->histograms[5]->data[i].err = mw_div(all->histograms[5]->data[i].variable, sqrt(ddenom));
+                all->histograms[5]->data[i].err = mw_div(all->histograms[5]->data[i].variable, mw_sqrt(ddenom));
                 all->histograms[5]->data[i].variable  = mw_div(all->histograms[5]->data[i].sum, ddenom);
             }
             else

@@ -248,10 +248,11 @@ static void gfield_close(double rho, double z, int n, double *rfield, double *zf
     }  
 }
  
-mwvector causticHaloAccel(const Halo* h, mwvector pos, double r)
+mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
 {
 
     mwvector accel;
+    double r = showRealValue(r_var);
 
 /* 20070507 bwillett used hypot from math.h */
 
@@ -271,20 +272,20 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, double r)
     {
 
         /* tricusp */
-        R=(3.0-mw_sqrt(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
-        l=(3.0+mw_sqrt(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
-        tr=2.0*p_n[n]*mw_sqrt(cube(R)*(1.0-R));
-        tl=2.0*p_n[n]*mw_sqrt(cube(l)*(1.0-l));
+        R=(3.0-mw_sqrt_0(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
+        l=(3.0+mw_sqrt_0(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
+        tr=2.0*p_n[n]*mw_sqrt_0(cube_0(R)*(1.0-R));
+        tl=2.0*p_n[n]*mw_sqrt_0(cube_0(l)*(1.0-l));
 
 
-        if( (Z(pos)<=tr && Z(pos)>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (Z(pos)>=tl && Z(pos)<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (Z(pos)>=-tr && Z(pos)<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (Z(pos)<=-tl && Z(pos)>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
+        if( (showRealValue(Z(pos))<=tr && showRealValue(Z(pos))>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(Z(pos))>=tl && showRealValue(Z(pos))<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (showRealValue(Z(pos))>=-tr && showRealValue(Z(pos))<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(Z(pos))<=-tl && showRealValue(Z(pos))>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
         {
-            gfield_close(rho,Z(pos),n,&rfield,&zfield);
+            gfield_close(rho,showRealValue(Z(pos)),n,&rfield,&zfield);
         }
 
         else /* far */
         {
-            gfield_far(rho,Z(pos),n,&rfield,&zfield);        
+            gfield_far(rho,showRealValue(Z(pos)),n,&rfield,&zfield);        
         }
 
     }

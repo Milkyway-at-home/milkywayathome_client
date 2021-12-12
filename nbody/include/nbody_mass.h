@@ -42,7 +42,7 @@ real calc_distance(const mwvector p, real_0 sunGCdist);
 
 void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_factor);
 
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real_0 sigma_cutoff, int histBins);
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins);
 
 real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram);
 

@@ -67,7 +67,7 @@ static inline real_0 leg_pol_zeros(int l)
 {
     if (l % 2 == 0)
     {
-        return mw_pow_0(-1,l/2)*mw_exp_0(lnfact(l)-2*lnfact(l/2) - l*mw_log(2));
+        return mw_pow_0(-1,l/2)*mw_exp_0(lnfact(l)-2*lnfact(l/2) - l*mw_log_0(2));
     }
     else
     {
@@ -78,9 +78,9 @@ static inline real_0 leg_pol_zeros(int l)
 static inline real leg_pol_derv(real x, int l)
 {
     real sum = ZERO_REAL;
-    for (int m = 0; m < mw_floor((l-1)/2)+1; m++)
+    for (int m = 0; m < mw_floor_0((l-1)/2)+1; m++)
     {
-        sum = mw_add(sum, mw_mul_s(mw_pow(x, l - 2*m - 1), mw_pow_0(-1, m)/mw_pow_0(2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m)));
+        sum = mw_add(sum, mw_mul_s(mw_pow(x, mw_real_const(l - 2*m - 1)), mw_pow_0(-1, m)/mw_pow_0(2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m)));
     }
     /*mw_printf("P'(%.15f, %u) = %.15f \n",x,l,sum);*/
     return sum;
@@ -91,10 +91,10 @@ static inline real lower_gamma(int n, real x)
     real sum = ZERO_REAL;
     for (int k = 0; k < n; k++)
     {
-       sum = mw_add(sum, mw_mul_s(mw_pow(x,k), inv_0(mw_exp_0(lnfact(k)))));
+       sum = mw_add(sum, mw_mul_s(mw_pow(x,mw_real_const(k)), inv_0(mw_exp_0(lnfact(k)))));
     }
     /*mw_printf("g(%u, %.15f) = %.15f \n",n,x,mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum));*/
-    return mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum);
+    return mw_mul_s(mw_sub(mw_real_const(1.0), mw_mul(mw_exp(mw_neg(x)), sum)), mw_exp_0(lnfact(n-1)));
 }
 
 static inline real G_cont_frac(real x, int n, int k)
@@ -339,8 +339,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         psi_in_1 = h * j1_zero;
         psi_0 = psi_in_0 * mw_sinh_0(M_PI / 2.0 * mw_sinh_0(psi_in_0)) / mw_cosh_0(M_PI / 2.0 * mw_sinh_0(psi_in_0));
         psi_1 = psi_in_1 * mw_sinh_0(M_PI / 2.0 * mw_sinh_0(psi_in_1)) / mw_cosh_0(M_PI / 2.0 * mw_sinh_0(psi_in_1));
-        psi_prime_0 = (mw_sinh_0(M_PI * mw_sinh_0(psi_in_0)) + M_PI * psi_in_0 * mw_cosh_0(psi_in_0)) / (mw_cosh_0(M_PI * mw_sinh(psi_in_0)) + 1.0);
-        psi_prime_1 = (mw_sinh_0(M_PI * mw_sinh_0(psi_in_1)) + M_PI * psi_in_1 * mw_cosh_0(psi_in_1)) / (mw_cosh_0(M_PI * mw_sinh(psi_in_1)) + 1.0);
+        psi_prime_0 = (mw_sinh_0(M_PI * mw_sinh_0(psi_in_0)) + M_PI * psi_in_0 * mw_cosh_0(psi_in_0)) / (mw_cosh_0(M_PI * mw_sinh_0(psi_in_0)) + 1.0);
+        psi_prime_1 = (mw_sinh_0(M_PI * mw_sinh_0(psi_in_1)) + M_PI * psi_in_1 * mw_cosh_0(psi_in_1)) / (mw_cosh_0(M_PI * mw_sinh_0(psi_in_1)) + 1.0);
         j0_x = M_PI / h * psi_0;
         j1_x = M_PI / h * psi_1;
 
@@ -351,7 +351,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
         real j1_x_R = mw_mul_s(inv(R), j1_x);
 
         fun_0 = mw_mul(mw_mul(inv(cube(mw_hypot(a,j0_x_R))), mw_div(mw_sub(inv(mw_exp(mw_mul(j0_x_R, mw_abs(z)))), inv(mw_exp(mw_mul(b, mw_abs(z))))), mw_sub(sqr(b), sqr(j0_x_R)))), j0_x_R);
-        fun_1 = mw_mul_s(mw_mul(inv(cube(mw_hypot(a,j1_x_R))), mw_div(mw_sub(mw_mul(b, inv(mw_exp(j1_x_R * mw_abs(z)))), mw_mul(j1_x_R, inv(mw_exp(b * mw_abs(z))))), mw_sub(sqr(b), sqr(j1_x_R)))), j1_x);
+        fun_1 = mw_mul_s(mw_mul(inv(cube(mw_hypot(a,j1_x_R))), mw_div(mw_sub(mw_mul(b, inv(mw_exp(mw_mul(j1_x_R, mw_abs(z))))), mw_mul(j1_x_R, inv(mw_exp(mw_mul(b, mw_abs(z)))))), mw_sub(sqr(b), sqr(j1_x_R)))), j1_x);
 
         real z_pieceAdd = mw_mul_s(mw_mul(mw_mul(mw_div(mw_mul(a, b), R), fun_0), j0_w), 4.0 * M_PI);
         real R_pieceAdd = mw_mul_s(mw_mul(mw_mul(mw_div(a, sqr(R)), fun_1), j1_w), 4.0 * M_PI);
@@ -558,7 +558,7 @@ static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)  /
     const real ysqr = sqr(Y(pos));
     const real zsqr = sqr(Z(pos));
 
-    const real arst  = rhalosqr + mw_mul_s(xsqr, h->c1) + mw_mul_s(mw_mul(X(pos), Y(pos)), h->c3) + mw_mul_s(ysqr, h->c2);
+    const real arst  = mw_add(rhalosqr, mw_add(mw_mul_s(xsqr, h->c1), mw_add(mw_mul_s(mw_mul(X(pos), Y(pos)), h->c3), mw_mul_s(ysqr, h->c2))));
     const real arst2 = mw_add(mw_div(zsqr, qzs), arst);
 
     X(acc) = mw_mul(mvsqr, mw_div(mw_add(mw_mul_s(X(pos), (2.0 * h->c1)), mw_mul_s(Y(pos), h->c3)), arst2));
@@ -581,7 +581,7 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
     real factor;
     real c;
 
-    if (r<lam)
+    if (showRealValue(r) < lam)
     {
         factor = mw_neg(mw_div(M, mw_mul(a, r)));
         c = mw_mul(factor, mw_div(mw_pow(scaleR, mw_real_const(gam-1.0)), mw_add(mw_real_const(1.0), mw_pow(scaleR, mw_real_const(gam-1.0)))));
@@ -655,7 +655,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 
     real mass_enc;
 
-    if (r > lambda)
+    if (showRealValue(r) > lambda)
     {
         mass_enc = mw_mul(f, mw_sub(mw_log1p(cube(zl)), mw_div(cube(zl), mw_add(mw_real_const(1.0), cube(zl)))));
     }
@@ -672,14 +672,14 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real_0 time)
 {
     mwvector acc, acctmp;
-    real_0 limit_val = mw_pow(2.0,-8.0);
+    real_0 limit_val = mw_pow_0(2.0,-8.0);
 
     /* Change r if less than limit. Done this way to pipeline this step*/
     real r = mw_absv(pos);
     real limit = r;
     setRealValue(&limit, limit_val);
 
-    r = mw_add(mw_mul_s(limit, (showRealValue(r) <= limit_val)), mw_mul(r, (showRealValue(r) > limit)));
+    r = mw_add(mw_mul_s(limit, (showRealValue(r) <= limit_val)), mw_mul_s(r, (showRealValue(r) > limit_val)));
 
     /*Calculate the Disk Accelerations*/
     switch (pot->disk.type)
