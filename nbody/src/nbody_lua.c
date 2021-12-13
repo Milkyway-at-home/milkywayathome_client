@@ -401,9 +401,9 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
     getLuaClosure(luaSt, &st->potEvalClosures[tid]);
 
     /* Push position arguments */
-    lua_pushnumber(luaSt, X(pos));
-    lua_pushnumber(luaSt, Y(pos));
-    lua_pushnumber(luaSt, Z(pos));
+    pushReal(luaSt, X(pos));
+    pushReal(luaSt, Y(pos));
+    pushReal(luaSt, Z(pos));
 
     /* Call closure */
     if (lua_pcall(luaSt, 3, 3, 0))
@@ -451,9 +451,9 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
         return;
     }
 
-    Z(a) = lua_tonumber(luaSt, top);
-    Y(a) = lua_tonumber(luaSt, top - 1);
-    X(a) = lua_tonumber(luaSt, top - 2);
+    Z(a) = *toReal(luaSt, top);
+    Y(a) = *toReal(luaSt, top - 1);
+    X(a) = *toReal(luaSt, top - 2);
 
     *aOut = a;
     lua_pop(luaSt, 3);

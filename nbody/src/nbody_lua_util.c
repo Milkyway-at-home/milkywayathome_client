@@ -58,7 +58,7 @@ static int luaLbrToCartesian(lua_State* luaSt)
     useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
 
     if (!useGalacticCoordinates)
-        v = useRadians ? lbrToCartesian_rad(v, mw_real_const(sunGCDist)) : lbrToCartesian(v, mw_real_const(sunGCDist));
+        v = useRadians ? lbrToCartesian_rad(v, sunGCDist) : lbrToCartesian(v, sunGCDist);
 
     pushVector(luaSt, v);
 

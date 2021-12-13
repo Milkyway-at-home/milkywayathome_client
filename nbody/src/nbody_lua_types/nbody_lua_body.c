@@ -85,7 +85,7 @@ static int createBody(lua_State* luaSt)
 
         case 3:
         case 4:
-            b.bodynode.mass = luaL_checknumber(luaSt, 1);
+            b.bodynode.mass = *checkReal(luaSt, 1);
             x = checkVector(luaSt, 2);
             v = checkVector(luaSt, 3);
             ignore = mw_lua_optboolean(luaSt, 4, FALSE);

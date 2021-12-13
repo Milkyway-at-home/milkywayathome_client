@@ -222,7 +222,7 @@ static real emdDistC(const real* x, const real* y, void* user_param)
 
     for (i = 0; i < dims; i++)
     {
-        real t = fabs(mw_sub(x[i], y[i]));
+        real t = mw_fabs(mw_sub(x[i], y[i]));
 
         if (showRealValue(s) < showRealValue(t))
         {

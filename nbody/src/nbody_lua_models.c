@@ -50,10 +50,10 @@ static real_0 plummerTimestepIntegral(real_0 smalla, real_0 biga, real_0 Md, rea
     encMass = 0.0;
     for (r = 0.0; r <= smalla; r += step)
     {
-        val = sqr(r) / mw_pow(sqr(r) + sqr(biga), 2.5);
+        val = sqr_0(r) / mw_pow_0(sqr_0(r) + sqr_0(biga), 2.5);
         encMass += val * step;
     }
-    encMass *= 3.0 * Md * sqr(biga);
+    encMass *= 3.0 * Md * sqr_0(biga);
 
     return encMass;
 }
@@ -138,7 +138,7 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
 
 static real_0 nbCalculateTimestep(real_0 mass, real_0 r0)
 {
-    return sqr(1.0/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
+    return sqr_0(1.0/10.0) * mw_sqrt_0((PI_4_3 * cube_0(r0)) / mass);
 }
 
 static int luaCalculateTimestep(lua_State* luaSt)

@@ -148,7 +148,7 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real_0 sunGCDist)
     real_0 rot32 = -sinth * cosphi;
     real_0 rot33 = costh;
 
-    X(xyz) = mw_add(X(xyz), sunGCDist);
+    X(xyz) = mw_add(X(xyz), mw_real_const(sunGCDist));
 
     /* Calculate X,Y,Z,distance in the Sgr system */
     tempX = mw_add(mw_add(mw_mul_s(X(xyz), rot11), mw_mul_s(Y(xyz), rot12)), mw_mul_s(Z(xyz), rot13));

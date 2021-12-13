@@ -22,9 +22,9 @@
 
 #include <lua.h>
 
-real checkReal(lua_State* luaSt, int idx);
-real toReal(lua_State* luaSt, int idx);
-real expectReal(lua_State* luaSt, int idx);
+real* checkReal(lua_State* luaSt, int idx);
+real* toReal(lua_State* luaSt, int idx);
+real* expectReal(lua_State* luaSt, int idx);
 int pushReal(lua_State* luaSt, real realIn);
 int getReal(lua_State* luaSt, void* r);
 int setReal(lua_State* luaSt, void* r);

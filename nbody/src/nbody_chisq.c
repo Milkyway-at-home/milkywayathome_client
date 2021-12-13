@@ -68,7 +68,11 @@ static real nbSahaTerm(real m, real s)
     }
     else
     {
-        return mw_sub(mw_sub(mw_mul(mw_add(mw_add(m, s), mw_real_const(0.5)), mw_log(mw_add(m, s))), 0.5*mw_log(M_2PI)), mw_add(mw_mul(mw_add(m, mw_real_const(0.5)), mw_log(m)), mw_mul(mw_add(s, mw_real_const(0.5)), mw_log(s))));
+        real part1 = mw_real_const(-0.5 * mw_log_0(M_2PI));
+        real part2 = mw_mul(mw_add(mw_add(m, s), mw_real_const(0.5)), mw_log(mw_add(m, s)));
+        real part3 = mw_mul(mw_add(m, mw_real_const(0.5)), mw_log(m));
+        real part4 = mw_mul(mw_add(s, mw_real_const(0.5)), mw_log(s));
+        return mw_sub(mw_add(part1, part2), mw_add(part3, part4));
     }
 }
 
@@ -80,13 +84,13 @@ static real nbPoissonTerm(real f, real y)
       2 sum(f_i - y_i) - sum(i != 1, y_i != 0) y_i * ln(f_i / y_i))
      */
 
-    if (mw_fabs_0(showRealValue(f)) < 1.0e-10 || mw_fabs_0(mw_real_const(y)) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(f)) < 1.0e-10 || mw_fabs_0(showRealValue(y)) < 1.0e-10)
     {
         return mw_mul_s(f,2.0);
     }
     else
     {
-        return mw_mul_s(mw_sub(f, y) - mw_mul(y, mw_log(mw_div(f, y))),2.0);
+        return mw_mul_s(mw_sub(mw_sub(f, y), mw_mul(y, mw_log(mw_div(f, y)))) , 2.0);
     }
 }
 
@@ -157,14 +161,14 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
         /* We need to have the total number to scale to the correct
          * numbers for Saha likelihood */
         scale = (real) data->totalNum;
-        if (data->totalNum == 0 || histogram->totalNum == 0)
+        if (showRealValue(data->totalNum) == 0 || showRealValue(histogram->totalNum) == 0)
         {
             mw_printf("Histogram scales required for Saha likelihood but missing\n");
             return mw_real_const(NAN);
         }
     }
 
-    if (histogram->totalNum == 0)
+    if (showRealValue(histogram->totalNum) == 0)
     {
         return mw_real_const(INFINITY);
     }

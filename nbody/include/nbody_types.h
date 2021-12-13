@@ -191,7 +191,7 @@ typedef struct MW_ALIGN_TYPE
     int structureError;
 } NBodyTree;
 
-#define EMPTY_TREE { NULL, ZERO_REAL, 0, 0, FALSE }
+#define EMPTY_TREE { NULL, 0, 0, 0, FALSE }
 
 
 #if NBODY_OPENCL

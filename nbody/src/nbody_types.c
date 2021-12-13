@@ -223,12 +223,12 @@ void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState)
 
     st->shiftByLMC = (mwvector*)mwCallocA(nShift, sizeof(mwvector));
     for(j = 0; j < nShift; j++) {
-        st->shiftByLMC[j] = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.0,1.0));
+        st->shiftByLMC[j] = mwRandomVector(dsfmtState, mw_real_const(mwXrandom(dsfmtState,0.0,1.0)));
         //SET_VECTOR(st->shiftByLMC[j],0.0,0.0,0.0);
     }
 
-    st->LMCpos = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
-    st->LMCvel = mwRandomVector(dsfmtState, mwXrandom(dsfmtState,0.01,200.0));
+    st->LMCpos = mwRandomVector(dsfmtState, mw_real_const(mwXrandom(dsfmtState,0.01,200.0)));
+    st->LMCvel = mwRandomVector(dsfmtState, mw_real_const(mwXrandom(dsfmtState,0.01,200.0)));
     //SET_VECTOR(*(st->LMCpos),0.0,0.0,0.0);
     //SET_VECTOR(*(st->LMCvel),0.0,0.0,0.0);
     st->nShiftLMC = nShift;

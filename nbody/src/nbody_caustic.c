@@ -266,7 +266,7 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
 
 
 
-    rho = mw_sqrt(sqr(X(pos))+sqr(Y(pos)));
+    rho = showRealValue(mw_hypot(X(pos), Y(pos)));
 
     for (n = 1; n <= 20; n++)
     {
@@ -299,8 +299,8 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
     }
     else
     {
-        X(accel) = mw_real_const((rfield*X(pos))/rho);
-        Y(accel) = mw_real_const((rfield*Y(pos))/rho);
+        X(accel) = mw_mul_s(X(pos), rfield/rho);
+        Y(accel) = mw_mul_s(Y(pos), rfield/rho);
     }
 
     Z(accel) = mw_real_const(zfield);

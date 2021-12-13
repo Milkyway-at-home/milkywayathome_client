@@ -403,7 +403,7 @@ mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState)
     X(vec) = mw_real_const(mwUnitRandom(dsfmtState));
     Y(vec) = mw_real_const(mwUnitRandom(dsfmtState));
     Z(vec) = mw_real_const(mwUnitRandom(dsfmtState));
-    W(vec) = 0.0;
+    W(vec) = ZERO_REAL;
 
     return vec;
 }

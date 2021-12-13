@@ -21,6 +21,7 @@
 #include <lauxlib.h>
 
 #include "milkyway_lua_marshal.h"
+#include "milkyway_lua_math.h"
 #include "milkyway_util.h"
 
 /*
@@ -503,7 +504,7 @@ static void setNumberFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
         /* Real Structure with Derivative Information*/
         if(strcmp(REAL_TYPE, userDataTypeName) == 0)
         {
-            *(real*) v = (real) toReal(luaSt, idx);
+            *(real*) v = *toReal(luaSt, idx);
             return;
         }
 

@@ -122,7 +122,7 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx, NBodyState* st)
 {
     mwvector acc;
-    mwvector pos = mw_vec(1.0, 1.0, 0.0);
+    mwvector pos = mw_vec(mw_real_const(1.0), mw_real_const(1.0), ZERO_REAL);
 
     if (ctx->potentialType != EXTERNAL_POTENTIAL_CUSTOM_LUA)
     {

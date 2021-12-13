@@ -71,14 +71,14 @@ static int absVector(lua_State* luaSt)
     mwvector* v;
 
     v = checkVector(luaSt, 1);
-    lua_pushnumber(luaSt, (lua_Number) mw_absv(*v));
+    pushReal(luaSt, mw_absv(*v));
 
     return 1;
 }
 
 static int lengthVector(lua_State* luaSt)
 {
-    lua_pushnumber(luaSt, (lua_Number) mw_length(*checkVector(luaSt, 1)));
+    pushReal(luaSt, mw_length(*checkVector(luaSt, 1)));
     return 1;
 }
 
@@ -136,14 +136,14 @@ static int checkScalarVectorArgs(lua_State* luaSt, real* s, mwvector* v)
 {
     if (lua_isnumber(luaSt, 1))
     {
-        *s = toReal(luaSt, 1);
+        *s = *toReal(luaSt, 1);
         *v = *checkVector(luaSt, 2);
         return 1;
     }
     else if (lua_isnumber(luaSt, 2))
     {
         *v = *checkVector(luaSt, 1);
-        *s = toReal(luaSt, 2);
+        *s = *toReal(luaSt, 2);
         return -1;
     }
     else
@@ -190,7 +190,7 @@ static int distVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    lua_pushnumber(luaSt, mw_distv(v1, v2));
+    pushReal(luaSt, mw_distv(v1, v2));
     return 1;
 }
 
@@ -203,7 +203,7 @@ static int divVector(lua_State* luaSt)
     if (lua_isnumber(luaSt, 2))
     {
         v1 = *checkVector(luaSt, 1);
-        s = toReal(luaSt, 2);
+        s = *toReal(luaSt, 2);
         pushVector(luaSt, mw_divvs(v1, s));
     }
     else
@@ -226,7 +226,7 @@ static int multVector(lua_State* luaSt)
     {
         /* Vector * Vector */
         check2Vector(luaSt, &v1, &v2);
-        lua_pushnumber(luaSt, mw_dotv(v1, v2));
+        pushReal(luaSt, mw_dotv(v1, v2));
     }
     else
     {

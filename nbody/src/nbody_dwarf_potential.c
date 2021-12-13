@@ -41,14 +41,14 @@
 {                                                                                                                        //
     const real_0 mass = model->mass;                                                                                     //
     const real_0 rscale = model->scaleLength;                                                                            //
-    return  (3.0 / (4.0 * M_PI)) * (mass / cube(rscale)) * minusfivehalves( (1.0 + sqr(r / rscale)) ) ;                  //
+    return  (3.0 / (4.0 * M_PI)) * (mass / cube_0(rscale)) * minusfivehalves_0( (1.0 + sqr_0(r / rscale)) ) ;            //
 }                                                                                                                        //
                                                                                                                          //
  static real_0 plummer_pot(const Dwarf* model, real_0 r)                                                                 //
 {                                                                                                                        //
     const real_0 mass = model->mass;                                                                                     //
     const real_0 rscale = model->scaleLength;                                                                            //
-    return mass / mw_sqrt(sqr(r) + sqr(rscale));                                                                         //
+    return mass / mw_sqrt_0(sqr_0(r) + sqr_0(rscale));                                                                   //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                            NFW                                                                                        */
@@ -57,18 +57,18 @@
 {                                                                                                                        //                                                                                       //
     const real_0 rscale = model->scaleLength;                                                                            //
     const real_0 p0 = model->p0;                                                                                         //
-    real R = r / rscale;                                                                                                 //
+    real_0 R = r / rscale;                                                                                               //
     /* at r = 0 the density goes to inf. however, the sampling is guarded against r = 0 anyway.*/                        //
-    return p0 * inv(R) * inv(sqr(1.0 + R));                                                                              //
+    return p0 * inv_0(R) * inv_0(sqr_0(1.0 + R));                                                                        //
 }                                                                                                                        //
                                                                                                                          //
  static real_0 nfw_pot(const Dwarf* model, real_0 r)                                                                     //
 {                                                                                                                        //                                                                                      //
     const real_0 rscale = model->scaleLength;                                                                            //
     const real_0 p0 = model->p0;                                                                                         //
-    real R = r / rscale;                                                                                                 //
+    real_0 R = r / rscale;                                                                                                 //
     /* at r = 0 the pot goes to inf. however, the sampling is guarded against r = 0 anyway. */                           //
-    return  4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                    //
+    return  4.0 * M_PI * sqr_0(rscale) * p0 * inv_0(R) * mw_log_0(1.0 + R);                                              //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             GENERAL HERNQUIST                                                                         */
@@ -77,7 +77,7 @@ static real_0 gen_hern_den(const Dwarf* model, real_0 r)                        
 {                                                                                                                        //
     const real_0 mass = model->mass;                                                                                     //
     const real_0 rscale = model->scaleLength;                                                                            //
-    return inv(2.0 * M_PI) * mass * rscale / ( r * cube(r + rscale));                                                    //
+    return inv_0(2.0 * M_PI) * mass * rscale / ( r * cube_0(r + rscale));                                                //
 }                                                                                                                        //
                                                                                                                          //
 static real_0 gen_hern_pot(const Dwarf* model, real_0 r)                                                                 //
@@ -95,9 +95,9 @@ static real_0 einasto_den(const Dwarf* model, real_0 r)                         
     const real_0 h = model->scaleLength;                                                                                 //
     const real_0 n = model->n;                                                                                           //
                                                                                                                          //
-    real_0 coeff = 1.0 / ( 4.0 * M_PI * cube(h) * n * GammaFunc(3.0 * n));                                               //
-    real_0 thing = mw_pow(r, inv(n));                                                                                    //
-    return coeff * mw_exp(-thing);                                                                                       //
+    real_0 coeff = 1.0 / ( 4.0 * M_PI * cube_0(h) * n * GammaFunc(3.0 * n));                                             //
+    real_0 thing = mw_pow_0(r, inv_0(n));                                                                                //
+    return coeff * mw_exp_0(-thing);                                                                                     //
 }                                                                                                                        //
                                                                                                                          //
 static real_0 einasto_pot(const Dwarf* model, real_0 r)                                                                  //
@@ -107,7 +107,7 @@ static real_0 einasto_pot(const Dwarf* model, real_0 r)                         
     const real_0 n = model->n;                                                                                           //
                                                                                                                          //
     real_0 coeff = mass / (h * r);                                                                                       //
-    real_0 thing = mw_pow(r, 1.0 / n);                                                                                   //
+    real_0 thing = mw_pow_0(r, 1.0 / n);                                                                                   //
                                                                                                                          //
     real_0 term1 = IncompleteGammaFunc(3.0 * n, thing);                                                                  //
     real_0 term2 = r * IncompleteGammaFunc(2.0 * n, thing);                                                              //

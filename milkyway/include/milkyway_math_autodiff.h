@@ -25,6 +25,7 @@
 #ifndef _MILKYWAY_MATH_AUTODIFF_H_
 #define _MILKYWAY_MATH_AUTODIFF_H_
 
+#include <stdio.h>
 #include "milkyway_extra.h"
 
 #ifndef DOUBLEPREC
@@ -42,12 +43,12 @@
         real_0** hessian;
     } real;
 
-    #define ZERO_REAL (real){ 0.0 , NULL , NULL } //NULL doesn't work here for some reason...
+    #define ZERO_REAL (real){ 0.0 , NULL , NULL }
 
 #else
 
     typedef MW_ALIGN_TYPE_V(sizeof(real_0)) real_0 real;
-    #define ZERO_REAL 0.0
+    #define ZERO_REAL (real) (0.0)
 
 #endif       /*Define types outside of main()*/
 

@@ -23,6 +23,7 @@
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_dsfmt.h"
 #include "milkyway_lua_vector.h"
+#include "milkyway_lua_math.h"
 
 #include "milkyway_util.h"
 
@@ -128,7 +129,7 @@ static int dsfmtRandomVector(lua_State* luaSt)
     else if (nArgs == 2)
     {
         dsfmtState = checkDSFMT(luaSt, 1);
-        r = checkReal(luaSt, 2);
+        r = *checkReal(luaSt, 2);
         pushVector(luaSt, mwRandomVector(dsfmtState, r));
         return 1;
     }
