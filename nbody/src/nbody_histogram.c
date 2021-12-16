@@ -518,7 +518,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     // at this point, these numbers should be the same for all histograms anyway
     mw_boinc_print(f, "<histogram>\n");
     fprintf(f, "n = %u\n", (int) showRealValue(all->histograms[0]->totalNum));
-    fprintf(f, "massPerParticle = %12.15f\n", all->histograms[0]->massPerParticle);
+    fprintf(f, "massPerParticle = %12.15f\n", showRealValue(all->histograms[0]->massPerParticle));
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
     fprintf(f, "betaBins = %u\n", all->histograms[0]->betaBins);

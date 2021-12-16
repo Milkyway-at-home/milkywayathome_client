@@ -281,7 +281,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         }
         
         
-        likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
+        likelihoodArray    = nbSystemLikelihood(st, data, histogram, method);
         likelihood         = likelihoodArray[0];
         likelihood_EMD     = likelihoodArray[1];
         likelihood_Mass    = likelihoodArray[2];
@@ -351,7 +351,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         /* Reported negated distance since the search maximizes this */
       if (isnan(showRealValue(likelihood)))
         {
-            likelihood = mw_real_const(DEFAULT_WORST_CASE);
+            setRealValue(&likelihood, DEFAULT_WORST_CASE);
             mw_printf("Likelihood was NAN. Returning worst case. \n");
             mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(likelihood));
             return NBODY_SUCCESS;

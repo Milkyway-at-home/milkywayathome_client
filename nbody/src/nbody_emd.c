@@ -1282,6 +1282,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     NBodyHistogram* first_data = (data->histograms[0]);
     NBodyHistogram* first_hist = (histogram->histograms[0]);
 
+    //mw_printf("Performing EMD Calculation...\n");
     unsigned int lambdaBins = first_data->lambdaBins;
     unsigned int betaBins = first_data->betaBins;
     unsigned int bins = lambdaBins * betaBins;
@@ -1312,6 +1313,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         /* FIXME?: We could have mismatched histogram sizes, but I'm
         * not sure what to do with ignored bins and
         * renormalization */
+        mw_printf("Bin Sizes Not Equal!\n");
         return mw_real_const(NAN);
     }
 
@@ -1319,11 +1321,13 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
         return mw_real_const(INFINITY);
+        mw_printf("Empty Histogram!\n");
     }
 
     if (showRealValue(histMass) <= 0.0 || showRealValue(dataMass) <= 0.0)
     {
         /*In order to calculate likelihood the masses are necessary*/
+        mw_printf("No Mass Found!\n");
         return mw_real_const(NAN);
     }
     
