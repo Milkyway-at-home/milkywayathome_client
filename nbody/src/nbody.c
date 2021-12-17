@@ -32,6 +32,7 @@
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
 #include "nbody_types.h"
+#include "nbody_autodiff.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -338,6 +339,10 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             if(nbf->histoutFileName)
             {
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
+            }
+            if(nbf->autoDiffFileName)
+            {
+                nbWriteAutoDiff(nbf->autoDiffFileName, &likelihood);
             }
         }
         

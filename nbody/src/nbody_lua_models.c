@@ -40,6 +40,7 @@
 #include "nbody_defaults.h"
 #include "nbody_potential_types.h"
 #include "nbody_lua_dwarf.h"
+#include "nbody_autodiff.h"
 
 /* For using a combination of light and dark models to generate timestep */
 static real_0 plummerTimestepIntegral(real_0 smalla, real_0 biga, real_0 Md, real_0 step)
@@ -310,11 +311,14 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1 or 12 arguments");
     }
 
+    real LMCmass_var = mw_real_var(LMCmass, 19);
+    real LMCscale_var = mw_real_var(LMCscale, 20);
+
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, mw_real_var(LMCmass, 19), mw_real_var(LMCscale,20), sun_dist);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass_var, LMCscale_var, sun_dist);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);
@@ -434,7 +438,10 @@ static int luaPrintReverseOrbit_LMC(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbPrintReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, tstop, tstopf, dt, mw_real_var(LMCmass, 19), mw_real_var(LMCscale,20));
+    real LMCmass_var = mw_real_var(LMCmass, 19);
+    real LMCscale_var = mw_real_var(LMCscale, 20);
+
+    nbPrintReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, tstop, tstopf, dt, LMCmass_var, LMCscale_var);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

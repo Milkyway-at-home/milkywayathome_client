@@ -229,6 +229,12 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         },
 
         {
+            "autoDiff-file", 'y',
+            POPT_ARG_STRING, &nbf.autoDiffFileName,
+            0, "Derivative Info file", NULL
+        },
+
+        {
             "match-histogram", 's',
             POPT_ARG_STRING, &nbf.matchHistogram,
             0, "Only match this histogram against other histogram (requires histogram argument)", NULL

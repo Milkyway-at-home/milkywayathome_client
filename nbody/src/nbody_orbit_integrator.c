@@ -121,9 +121,11 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     mwvector* bacArray = NULL;
     mwvector* forArray = NULL;
 
+    unsigned int vectorSize = sizeof(mwvector);
+
     //Placeholder arrays for LMC acceleration corrections
-    bacArray = (mwvector*)mwCallocA(steps + 1, sizeof(mwvector));
-    forArray = (mwvector*)mwCallocA(exSteps + 1, sizeof(mwvector));
+    bacArray = (mwvector*)mwCallocA(steps + 1, vectorSize);
+    forArray = (mwvector*)mwCallocA(exSteps + 1, vectorSize);
 
     real_0 t;
     real_0 dt_half = dt / 2.0;
@@ -264,7 +266,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     
     //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
     unsigned int size = i + k + 2;
-    shiftByLMC = (mwvector*)mwCallocA(size, sizeof(mwvector)); 
+    shiftByLMC = (mwvector*)mwCallocA(size, vectorSize); 
 
     //Fill reverse orbit of shift array
     for(j = 0; j < i+1; j++) {

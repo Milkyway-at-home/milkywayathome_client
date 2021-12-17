@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include "milkyway_extra.h"
+#include "milkyway_alloc.h"
 
 #ifndef DOUBLEPREC
   #error DOUBLEPREC not defined
@@ -35,32 +36,33 @@
 #if AUTODIFF /*Define types outside of main()*/
 
     #define NumberOfModelParameters 21     /*Change this number to add more space for parameters to differentiate over*/
+    #define HessianLength (int) (NumberOfModelParameters * (NumberOfModelParameters + 1)/2)
 
     typedef struct MW_ALIGN_TYPE
     {
-        real_0   value;
-        real_0*  gradient;
-        real_0** hessian;
+        real_0 value;
+        real_0 gradient[NumberOfModelParameters];
+        real_0 hessian[HessianLength];
     } real;
 
-    #define ZERO_REAL (real){ 0.0 , NULL , NULL }
+    #define ZERO_REAL (real) { 0.0 , {0.0} , {0.0} }
 
 #else
 
     typedef MW_ALIGN_TYPE_V(sizeof(real_0)) real_0 real;
-    #define ZERO_REAL (real) (0.0)
+    #define ZERO_REAL (0.0)
+
+    #define realsize (int) mw_exp2_0(mw_ceil_0(mw_log2_0((real_0) sizeof(real)))) //Couldn't get this stuff to work in AUTODIFF, but N-Body doesn't use it, so I put it here...
+
+    #if DOUBLEPREC
+        typedef MW_ALIGN_TYPE_V(2*realsize) real double2[2];
+        typedef MW_ALIGN_TYPE_V(4*realsize) real double4[4];
+    #else
+        typedef MW_ALIGN_TYPE_V(2*realsize) real float2[2];
+        typedef MW_ALIGN_TYPE_V(4*realsize) real float4[4];
+    #endif
 
 #endif       /*Define types outside of main()*/
-
-#define realsize (int) mw_exp2_0(mw_ceil_0(mw_log2_0((real_0) sizeof(real))))
-
-#if DOUBLEPREC
-    typedef MW_ALIGN_TYPE_V(2*realsize) real double2[2];
-    typedef MW_ALIGN_TYPE_V(4*realsize) real double4[4];
-#else
-    typedef MW_ALIGN_TYPE_V(2*realsize) real float2[2];
-    typedef MW_ALIGN_TYPE_V(4*realsize) real float4[4];
-#endif
 
 
 #ifdef __cplusplus
@@ -71,21 +73,8 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_real_const(real_0 a)
     {
-        int i,j;
-        real result;
-	result.value = a;
-        for (i=0;i<NumberOfModelParameters;i++)
-        {
-            result.gradient[i] = 0.0;
-        }
-        for (i=0;i<NumberOfModelParameters;i++)
-        {
-            for (j=i;j<NumberOfModelParameters;j++)
-            {
-                result.hessian[i][j] = 0.0;
-                result.hessian[j][i] = 0.0;
-            }
-        }
+        real result = ZERO_REAL;
+        result.value = a;
         return result;
     }
 
@@ -96,8 +85,8 @@ extern "C" {
         result.gradient[n] = 1.0;
         return result;
     }
-    #define INIT_REAL_CONST(r,x) {(r).value = (x);}
-    #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x)); (r).gradient[n] = 1.0}
+//    #define INIT_REAL_CONST(r,x) {(r).value = (x);}
+//    #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x)); (r).gradient[n] = 1.0}
 
 
 
@@ -150,7 +139,7 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static int equalReal(const real* a, const real* b)
     {
-        int i,j;
+        int i,j,k;
         int equalValue = (a->value == b->value);
         int equalGradient = 1;
         int equalHessian = 1;
@@ -160,9 +149,10 @@ extern "C" {
         }
         for (i=0;i<NumberOfModelParameters;i++)
         {
-            for (j=i;j<NumberOfModelParameters;j++)
+            for (j=0;j<i+1;j++)
             {
-                equalHessian &= (a->hessian[i][j] == b->hessian[i][j]);
+                k = (int) (i*(i+1)/2 + j);
+                equalHessian &= (a->hessian[k] == b->hessian[k]);
             }
         }
         return (equalValue && equalGradient && equalHessian);
@@ -172,62 +162,32 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_AUTODIFF(real x, real y, real_0 z, real_0 dz_dx, real_0 dz_dy, real_0 d2z_dx2, real_0 d2z_dy2, real_0 d2z_dxdy)
     {
-        int i,j;
+        int i,j,k;
         real_0 x_grad_i, y_grad_i, x_grad_j, y_grad_j, x_hess, y_hess;
 
         real result = mw_real_const(z);
 
         for (i=0;i<NumberOfModelParameters;i++)
         {
-            if(!x.gradient)  //For case when gradient is NULL (as is for ZERO_REAL)
-            {
-                x_grad_i = 0.0;
-            }
-            else
-            {
-                x_grad_i = x.gradient[i];
-            }
-            if(!y.gradient)
-            {
-                y_grad_i = 0.0;
-            }
-            else
-            {
-                y_grad_i = y.gradient[i];
-            }
+            x_grad_i = x.gradient[i];
+            y_grad_i = y.gradient[i];
             result.gradient[i] = dz_dx*x_grad_i + dz_dy*y_grad_i;
         }
 
         for (i=0;i<NumberOfModelParameters;i++)
         {
-            for (j=i;j<NumberOfModelParameters;j++)
+            for (j=0;j<i+1;j++)
             {
-                if(!x.gradient)  //For case when gradient is NULL (as is for ZERO_REAL)
-                {
-                    x_grad_i = 0.0;
-                    x_grad_j = 0.0;
-                    x_hess   = 0.0;
-                }
-                else
-                {
-                    x_grad_i = x.gradient[i];
-                    x_grad_j = x.gradient[j];
-                    x_hess   = x.hessian[i][j];
-                }
-                if(!y.gradient)
-                {
-                    y_grad_i = 0.0;
-                    y_grad_j = 0.0;
-                    y_hess   = 0.0;
-                }
-                else
-                {
-                    y_grad_i = y.gradient[i];
-                    y_grad_j = y.gradient[j];
-                    y_hess   = y.hessian[i][j];
-                }
-                result.hessian[i][j] = dz_dx*x_hess + dz_dy*y_hess + d2z_dx2*x_grad_i*x_grad_j + d2z_dy2*y_grad_i*y_grad_j + d2z_dxdy*(x_grad_i*y_grad_j + y_grad_i*x_grad_j);
-                result.hessian[j][i] = result.hessian[i][j];
+                k = (int) (i*(i+1)/2 + j);
+                x_grad_i = x.gradient[i];
+                x_grad_j = x.gradient[j];
+                x_hess   = x.hessian[k];
+                
+                y_grad_i = y.gradient[i];
+                y_grad_j = y.gradient[j];
+                y_hess   = y.hessian[k];
+                
+                result.hessian[k] = dz_dx*x_hess + dz_dy*y_hess + d2z_dx2*x_grad_i*x_grad_j + d2z_dy2*y_grad_i*y_grad_j + d2z_dxdy*(x_grad_i*y_grad_j + y_grad_i*x_grad_j);
             }
         }
         return result;
@@ -283,7 +243,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -309,7 +269,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -324,7 +284,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -337,7 +297,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -350,7 +310,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -363,7 +323,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -376,7 +336,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -389,7 +349,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -411,7 +371,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     static inline real mw_asinpi(real a)
@@ -423,7 +383,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -436,7 +396,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -449,7 +409,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -462,7 +422,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -475,7 +435,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -516,7 +476,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -529,7 +489,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -542,7 +502,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -555,7 +515,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -568,7 +528,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -581,7 +541,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -594,7 +554,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -607,7 +567,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -620,7 +580,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -635,7 +595,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -648,7 +608,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -661,7 +621,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -676,7 +636,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -689,7 +649,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -702,7 +662,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -743,7 +703,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -756,7 +716,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -769,7 +729,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -782,7 +742,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -795,7 +755,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -808,7 +768,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -821,7 +781,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -834,7 +794,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -847,7 +807,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -860,7 +820,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -873,7 +833,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -886,7 +846,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -899,7 +859,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -912,7 +872,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -927,7 +887,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -940,7 +900,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -955,7 +915,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -968,7 +928,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -981,7 +941,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -994,7 +954,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1091,7 +1051,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1117,7 +1077,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1130,7 +1090,7 @@ extern "C" {
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, ZERO_REAL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        return mw_AUTODIFF(a, mw_real_const(0.0), z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -1147,8 +1107,8 @@ extern "C" {
         return a;
     }
 
-    #define INIT_REAL_CONST(r,x) {(r) = (x);}
-    #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x));}
+//    #define INIT_REAL_CONST(r,x) {(r) = (x);}
+//    #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x));}
 
     CONST_F ALWAYS_INLINE
     static inline real_0 showRealValue(real a)

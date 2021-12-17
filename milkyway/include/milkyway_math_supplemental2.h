@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-typedef struct MW_ALIGN_TYPE_V(2*realsize)
+typedef struct MW_ALIGN_TYPE
 {
     real sum;
     real correction;

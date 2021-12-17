@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 #define _nbValidPositionItem(x) (!isinf(x) && !isnan(x))
-#define nbPositionValid(r) (_nbValidPositionItem(r.x) && _nbValidPositionItem(r.y) && _nbValidPositionItem(r.z))
+#define nbPositionValid(r) (_nbValidPositionItem(showRealValue(r.x)) && _nbValidPositionItem(showRealValue(r.y)) && _nbValidPositionItem(showRealValue(r.z)))
 
 real_0 nbCorrectTimestep(real_0 timeEvolve, real_0 dt);
 mwvector nbCenterOfMass(const NBodyState* st);
