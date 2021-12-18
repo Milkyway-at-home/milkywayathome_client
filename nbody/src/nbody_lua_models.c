@@ -311,8 +311,8 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1 or 12 arguments");
     }
 
-    real LMCmass_var = mw_real_var(LMCmass, 19);
-    real LMCscale_var = mw_real_var(LMCscale, 20);
+    real LMCmass_var = mw_real_var(LMCmass, LMC_MASS_POS);
+    real LMCscale_var = mw_real_var(LMCscale, LMC_RADIUS_POS);
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
@@ -438,8 +438,8 @@ static int luaPrintReverseOrbit_LMC(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    real LMCmass_var = mw_real_var(LMCmass, 19);
-    real LMCscale_var = mw_real_var(LMCscale, 20);
+    real LMCmass_var = mw_real_var(LMCmass, LMC_MASS_POS);
+    real LMCscale_var = mw_real_var(LMCscale, LMC_RADIUS_POS);
 
     nbPrintReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, tstop, tstopf, dt, LMCmass_var, LMCscale_var);
     pushVector(luaSt, finalPos);

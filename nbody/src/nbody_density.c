@@ -54,8 +54,8 @@
 /*Spherical Buldge Densities*/
 static inline real hernquistSphericalDensity(const Spherical* sph, real r)
 {
-    const real a = mw_real_var(sph->scale, 12);
-    const real M = mw_real_var(sph->mass, 11);
+    const real a = mw_real_var(sph->scale, BULGE_RADIUS_POS);
+    const real M = mw_real_var(sph->mass, BULGE_MASS_POS);
 
     /*return 0 rather than get a divide by 0 error*/
     if(showRealValue(r) == 0) {
@@ -67,8 +67,8 @@ static inline real hernquistSphericalDensity(const Spherical* sph, real r)
 
 static inline real plummerSphericalDensity(const Spherical* sph, real r)
 {
-    const real a = mw_real_var(sph->scale, 12);
-    const real M = mw_real_var(sph->mass, 11);
+    const real a = mw_real_var(sph->scale, BULGE_RADIUS_POS);
+    const real M = mw_real_var(sph->mass, BULGE_MASS_POS);
     if(showRealValue(a) == 0)
     {
         return ZERO_REAL;
@@ -83,9 +83,9 @@ static inline real plummerSphericalDensity(const Spherical* sph, real r)
 /*Disk Densities*/
 static inline real miyamotoNagaiDiskDensity(const Disk* disk, mwvector pos)
 {
-    const real M   = mw_real_var(disk->mass, 13);
-    const real a   = mw_real_var(disk->scaleLength, 14);
-    const real b   = mw_real_var(disk->scaleHeight, 15);
+    const real M   = mw_real_var(disk->mass, DISK_MASS_POS);
+    const real a   = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    const real b   = mw_real_var(disk->scaleHeight, DISK_HEIGHT_POS);
 
     const real R   = mw_hypot(X(pos), Y(pos));
     const real zp  = mw_hypot(Z(pos), b);
@@ -101,9 +101,9 @@ static inline real miyamotoNagaiDiskDensity(const Disk* disk, mwvector pos)
 
 static inline real doubleExponentialDiskDensity(const Disk* disk, mwvector pos)
 {
-    const real M   = mw_real_var(disk->mass, 13);
-    const real d_r = mw_real_var(disk->scaleLength, 14);
-    const real d_z = mw_real_var(disk->scaleHeight, 15);
+    const real M   = mw_real_var(disk->mass, DISK_MASS_POS);
+    const real d_r = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    const real d_z = mw_real_var(disk->scaleHeight, DISK_HEIGHT_POS);
     const real R   = mw_hypot(X(pos), Y(pos));
 
     real den = mw_mul_s(mw_div(mw_div(M, mw_mul(d_z,sqr(d_r))), mw_exp(mw_add(mw_div(R,d_r), mw_div(mw_abs(Z(pos)),d_z)))), inv_0(4.0*M_PI));
@@ -114,9 +114,9 @@ static inline real doubleExponentialDiskDensity(const Disk* disk, mwvector pos)
 
 static inline real sech2ExponentialDiskDensity(const Disk* disk, mwvector pos)
 {
-    const real M   = mw_real_var(disk->mass, 13);
-    const real d_r = mw_real_var(disk->scaleLength, 14);
-    const real d_z = mw_real_var(disk->scaleHeight, 15);
+    const real M   = mw_real_var(disk->mass, DISK_MASS_POS);
+    const real d_r = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    const real d_z = mw_real_var(disk->scaleHeight, DISK_HEIGHT_POS);
     const real R   = mw_hypot(X(pos), Y(pos));
 
     real den = mw_mul_s(mw_div(mw_div(mw_div(M, mw_mul(d_z, sqr(d_r))), mw_exp(mw_div(R, d_r))), sqr(mw_cosh(mw_div(Z(pos), d_z)))), inv_0(4.0*M_PI));
@@ -127,13 +127,13 @@ static inline real sech2ExponentialDiskDensity(const Disk* disk, mwvector pos)
 
 static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real_0 time)
 {
-    real M = mw_real_var(disk->mass, 13);
-    real a = mw_real_var(disk->scaleLength, 14);  // Bar half-length
-    real b = mw_real_const(1.4);                  //Triaxial softening length
-    real c = mw_real_const(1.0);                  //Prolate softening length
+    real M = mw_real_var(disk->mass, DISK_MASS_POS);
+    real a = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);  //Bar half-length
+    real b = mw_real_const(1.4);                               //Triaxial softening length
+    real c = mw_real_const(1.0);                               //Prolate softening length
 
-    real pSpeed = mw_real_var(disk->patternSpeed, 1); //Several of these parameters are not assigned in AUTODIFF, so we use 1 as a placeholder//
-    real sAngle = mw_real_var(disk->startAngle, 1);
+    real pSpeed = mw_real_var(disk->patternSpeed, 0); //Several of these parameters are not assigned in AUTODIFF, so we use 0 as a placeholder//
+    real sAngle = mw_real_var(disk->startAngle, 0);
 
     real curAngle =  mw_sub(sAngle, mw_mul_s(pSpeed, time));
     //first rotate pos curAngle * -1 radians to emulate the current angle of the bar
@@ -165,9 +165,9 @@ static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real_0 tim
 /*Halo Densities*/
 static inline real logarithmicHaloDensity(const Halo* h, mwvector pos) /** flattenZ should be greater than 1/sqrt(2) to keep positive definite **/
 {
-    const real v  = mw_real_var(h->vhalo, 16);
-    const real a  = mw_real_var(h->scaleLength, 17);
-    const real q  = mw_real_var(h->flattenZ, 18);
+    const real v  = mw_real_var(h->vhalo, HALO_MASS_POS);
+    const real a  = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
+    const real q  = mw_real_var(h->flattenZ, HALO_ZFLATTEN_POS);
 
     const real R2 = mw_add(sqr(X(pos)), sqr(Y(pos)));
 
@@ -179,8 +179,8 @@ static inline real logarithmicHaloDensity(const Halo* h, mwvector pos) /** flatt
 
 static inline real NFWHaloDensity(const Halo* h,  real r)
 {
-    const real v  = mw_real_var(h->vhalo, 16);
-    const real a  = mw_real_var(h->scaleLength, 17);
+    const real v  = mw_real_var(h->vhalo, HALO_MASS_POS);
+    const real a  = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
 
     real rho = mw_mul_s(sqr(mw_div(v,a)), inv_0(4.0*M_PI*0.2162165954));
 
@@ -192,9 +192,9 @@ static inline real NFWHaloDensity(const Halo* h,  real r)
 
 static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
 {
-    const real v  = mw_real_var(h->vhalo, 16);
-    const real a  = mw_real_var(h->scaleLength, 17);
-    const real q  = mw_real_var(h->flattenZ, 18);
+    const real v  = mw_real_var(h->vhalo, HALO_MASS_POS);
+    const real a  = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
+    const real q  = mw_real_var(h->flattenZ, HALO_ZFLATTEN_POS);
 
     const real D   = mw_add(mw_add(mw_add(mw_add(sqr(a), mw_mul_s(sqr(X(pos)), (h->c1))), mw_mul_s(sqr(Y(pos)), (h->c2))), mw_mul_s(mw_mul(X(pos),Y(pos)), (h->c3))), sqr(mw_div(Z(pos),q)));
 
@@ -210,8 +210,8 @@ static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
 
 static inline real hernquistHaloDensity(const Halo* h,  real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
 
     if(showRealValue(r) == 0 || showRealValue(a) == 0) return ZERO_REAL;
 
@@ -220,8 +220,8 @@ static inline real hernquistHaloDensity(const Halo* h,  real r)
 
 static inline real plummerHaloDensity(const Halo* h, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
 
     if(showRealValue(a) == 0)
     {
@@ -236,8 +236,8 @@ static inline real plummerHaloDensity(const Halo* h, real r)
 
 static inline real NFWMHaloDensity(const Halo* h,  real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
 
     if(showRealValue(r) == 0) return ZERO_REAL;
     
@@ -247,8 +247,8 @@ static inline real NFWMHaloDensity(const Halo* h,  real r)
 
 static inline real allenSantillanHaloDensity(const Halo* h, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real_0 lam = h->lambda;
     const real gam = mw_real_const(h->gamma);
 
@@ -266,8 +266,8 @@ static inline real allenSantillanHaloDensity(const Halo* h, real r)
 
 static inline real wilkinsonEvansHaloDensity(const Halo* h, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
 
     real r_a = mw_div(r,a);
     real tmp = mw_hypot(r,a);
@@ -280,8 +280,8 @@ static inline real wilkinsonEvansHaloDensity(const Halo* h, real r)
 
 static inline real ninkovicHaloDensity(const Halo* h, real r)
 {
-    const real rho = mw_real_var(h->rho0, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real rho = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real lam = mw_real_const(h->lambda);
 
     real r_a = mw_div(r,a);
@@ -296,8 +296,8 @@ static inline real ninkovicHaloDensity(const Halo* h, real r)
 
 static inline real KVHalo(const Halo* h, real r) /*What is this one?*/
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     if(showRealValue(r) == 0) return ZERO_REAL;
 
     real ra = mw_add(r,a);

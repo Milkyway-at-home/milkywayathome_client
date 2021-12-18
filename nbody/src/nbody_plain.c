@@ -322,7 +322,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, 19), mw_real_var(ctx->LMCscale, 20), ctx->LMCDynaFric, barTime));
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, LMC_MASS_POS), mw_real_var(ctx->LMCscale, LMC_RADIUS_POS), ctx->LMCDynaFric, barTime));
         advancePosVel_LMC(st, dt, acc_LMC, acc_i);
     }
     //printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", X(st->LMCpos), Y(st->LMCpos), 
@@ -332,7 +332,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, 19), mw_real_var(ctx->LMCscale, 20), ctx->LMCDynaFric, barTime));
+	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, LMC_MASS_POS), mw_real_var(ctx->LMCscale, LMC_RADIUS_POS), ctx->LMCDynaFric, barTime));
         advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
     }
 
@@ -370,7 +370,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     }
 
     NBodyStatus rc = NBODY_SUCCESS;
+    mw_printf("Calculating Initial Accelerations...\n");
     rc |= nbGravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
+    mw_printf("Found Initial Accelerations!\n");
     if (nbStatusIsFatal(rc))
         return rc;
 
@@ -392,6 +394,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     
     st->bestLikelihood = mw_real_const(DEFAULT_WORST_CASE); //initializing it.
 
+    mw_printf("Beginning N-Body Simulation...\n");
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
@@ -410,6 +413,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             }
                 
         #endif
+
+        //mw_printf("    BEFORE STEP SYSTEM\n");
         if(!ctx->LMC) {
             mwvector zero;
             SET_VECTOR(zero,ZERO_REAL,ZERO_REAL,ZERO_REAL);
@@ -417,6 +422,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         } else {
             rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
         }
+        //mw_printf("    AFTER STEP SYSTEM\n");
 
         curStep = st->step;
         

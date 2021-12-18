@@ -50,6 +50,7 @@ void nbReverseOrbit(mwvector* finalPos,
                     real_0 dt,
                     real_0 sun_dist)
 {
+    mw_printf("Performing Reverse Orbit Calculation...\n");
     mwvector v_var, x_var, x_lbr;
     mwvector acc, v, x;
     real_0 t;
@@ -58,13 +59,13 @@ void nbReverseOrbit(mwvector* finalPos,
 
     // Set derivative information for AUTODIFF
     x_lbr = cartesianToLbr(pos, sun_dist);
-    B(x_lbr) = mw_real_var(showRealValue(B(x_lbr)), 6);
-    R(x_lbr) = mw_real_var(showRealValue(R(x_lbr)), 7);
+    B(x_lbr) = mw_real_var(showRealValue(B(x_lbr)), B_COORD_POS);
+    R(x_lbr) = mw_real_var(showRealValue(R(x_lbr)), R_COORD_POS);
     x_var = lbrToCartesian(x_lbr, sun_dist);
 
-    X(v_var) = mw_real_var(showRealValue(X(vel)), 8);
-    Y(v_var) = mw_real_var(showRealValue(Y(vel)), 9);
-    Z(v_var) = mw_real_var(showRealValue(Z(vel)), 10);
+    X(v_var) = mw_real_var(showRealValue(X(vel)), VX_COORD_POS);
+    Y(v_var) = mw_real_var(showRealValue(Y(vel)), VY_COORD_POS);
+    Z(v_var) = mw_real_var(showRealValue(Z(vel)), VZ_COORD_POS);
 
     // Set the initial conditions
     x = x_var;
@@ -111,7 +112,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real LMCmass,
                     real LMCscale,
                     real_0 sun_dist)
-{	
+{
+    mw_printf("Performing Reverse Orbit Calculation with LMC...\n");	
     unsigned int steps = mw_ceil_0((tstop)/(dt)) + 1;
     unsigned int exSteps = mw_abs_0(mw_ceil_0((ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
@@ -132,18 +134,19 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
     // Set derivative information for AUTODIFF
     x_lbr = cartesianToLbr(pos, sun_dist);
-    B(x_lbr) = mw_real_var(showRealValue(B(x_lbr)), 6);
-    R(x_lbr) = mw_real_var(showRealValue(R(x_lbr)), 7);
+    B(x_lbr) = mw_real_var(showRealValue(B(x_lbr)), B_COORD_POS);
+    R(x_lbr) = mw_real_var(showRealValue(R(x_lbr)), R_COORD_POS);
     x_var = lbrToCartesian(x_lbr, sun_dist);
 
-    X(v_var) = mw_real_var(showRealValue(X(vel)), 8);
-    Y(v_var) = mw_real_var(showRealValue(Y(vel)), 9);
-    Z(v_var) = mw_real_var(showRealValue(Z(vel)), 10);
+    X(v_var) = mw_real_var(showRealValue(X(vel)), VX_COORD_POS);
+    Y(v_var) = mw_real_var(showRealValue(Y(vel)), VY_COORD_POS);
+    Z(v_var) = mw_real_var(showRealValue(Z(vel)), VZ_COORD_POS);
 
     // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
     if (ftime > tstop) {
 
         // Set the initial conditions for forward orbit
+        mw_printf("    Calculating forward orbit...\n");
         x = x_var;
         v = v_var;
         LMCv = LMCvelocity;
@@ -195,6 +198,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     }
 
     // Set the initial conditions for reverse orbit
+    mw_printf("    Calculating backward orbit...\n");
     x = x_var;
     v = v_var;
     LMCv = LMCvelocity;
@@ -304,6 +308,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     //Store LMC position and velocity
     LMCpos = LMCx;
     LMCvel = LMCv;
+    mw_printf("Reverse Orbit Calculated!\n");
 }
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr) {

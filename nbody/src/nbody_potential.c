@@ -171,8 +171,8 @@ mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, 
 
 static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
-    const real M = mw_real_var(sph->scale, 11);
-    const real a = mw_real_var(sph->scale, 12);
+    const real M = mw_real_var(sph->scale, BULGE_MASS_POS);
+    const real a = mw_real_var(sph->scale, BULGE_RADIUS_POS);
     const real tmp = mw_add(a, r);
 
     const real factor = mw_neg(mw_div(M, mw_mul(r, sqr(tmp))));
@@ -182,8 +182,8 @@ static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector po
 
 static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
-    const real M = mw_real_var(sph->scale, 11);
-    const real a = mw_real_var(sph->scale, 12);
+    const real M = mw_real_var(sph->scale, BULGE_MASS_POS);
+    const real a = mw_real_var(sph->scale, BULGE_RADIUS_POS);
     const real tmp = mw_hypot(a,r);
 
     const real factor = mw_neg(mw_div(M, cube(tmp)));
@@ -196,9 +196,9 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos,
 static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r)
 {
     mwvector acc;
-    const real M   = mw_real_var(disk->mass, 13);
-    const real a   = mw_real_var(disk->scaleLength, 14);
-    const real b   = mw_real_var(disk->scaleHeight, 15);
+    const real M   = mw_real_var(disk->mass, DISK_MASS_POS);
+    const real a   = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    const real b   = mw_real_var(disk->scaleHeight, DISK_HEIGHT_POS);
     const real zp  = mw_hypot(Z(pos), b);
     const real azp = mw_add(a, zp);
 
@@ -303,9 +303,9 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     Y(Z_hat) = ZERO_REAL;
     Z(Z_hat) = mw_div(Z(pos), mw_abs(Z(pos)));
 
-    const real M    = mw_real_var(disk->mass, 13);
-    const real Rd   = mw_real_var(disk->scaleLength, 14);
-    const real zd   = mw_real_var(disk->scaleHeight, 15);
+    const real M    = mw_real_var(disk->mass, DISK_MASS_POS);
+    const real Rd   = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    const real zd   = mw_real_var(disk->scaleHeight, DISK_HEIGHT_POS);
     const real z    = Z(pos);
     const real_0 h  = 0.001;
 
@@ -390,9 +390,9 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
     Y(Z_hat) = ZERO_REAL;
     Z(Z_hat) = mw_real_const(1.0);
 
-    const real M    = mw_real_var(disk->mass, 13);
-    const real Rd   = mw_real_var(disk->scaleLength, 14);
-    const real zd   = mw_real_var(disk->scaleHeight, 15);
+    const real M    = mw_real_var(disk->mass, DISK_MASS_POS);
+    const real Rd   = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    const real zd   = mw_real_var(disk->scaleHeight, DISK_HEIGHT_POS);
     const real z = Z(pos);
 
     const int n = 15;
@@ -436,8 +436,8 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
 //Softened needle bar potential
 static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real_0 time)
 {
-    real amp = mw_real_var(disk->mass, 13);
-    real a = mw_real_var(disk->scaleLength, 14);
+    real amp = mw_real_var(disk->mass, DISK_MASS_POS);
+    real a = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
     real b = mw_real_const(1.4);                 //Triaxial softening length
     real c = mw_real_const(1.0);                 //Prolate softening length
     
@@ -518,9 +518,9 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 {
     mwvector acc;
 
-    const real v0 = mw_real_var(halo->vhalo, 16);
-    const real d  = mw_real_var(halo->scaleLength, 17);
-    const real q  = mw_real_var(halo->flattenZ, 18);
+    const real v0 = mw_real_var(halo->vhalo, HALO_MASS_POS);
+    const real d  = mw_real_var(halo->scaleLength, HALO_RADIUS_POS);
+    const real q  = mw_real_var(halo->flattenZ, HALO_ZFLATTEN_POS);
 
     const real denom = mw_add(mw_add(mw_add(sqr(d), sqr(X(pos))), sqr(Y(pos))), sqr(mw_div(Z(pos), q)));
     const real k = mw_mul_s(mw_div(sqr(v0), denom), -2.0);
@@ -534,8 +534,8 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 
 static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real v0 = mw_real_var(h->vhalo, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real v0 = mw_real_var(h->vhalo, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real M = mw_mul_s(mw_mul(sqr(v0), a), inv_0(0.2162165954)); /*Maximum of [ln(1+x)/x - 1/(1+x)]*/
     const real ar = mw_add(a, r);
 
@@ -550,9 +550,9 @@ static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)  /
     mwvector acc;
 
     /* TODO: More things here can be cached */
-    const real qzs      = sqr(mw_real_var(h->flattenZ, 18));
-    const real rhalosqr = sqr(mw_real_var(h->scaleLength, 17));
-    const real mvsqr    = mw_mul_s(sqr(mw_real_var(h->vhalo, 16)), -1.0);
+    const real qzs      = sqr(mw_real_var(h->flattenZ, HALO_ZFLATTEN_POS));
+    const real rhalosqr = sqr(mw_real_var(h->scaleLength, HALO_RADIUS_POS));
+    const real mvsqr    = mw_mul_s(sqr(mw_real_var(h->vhalo, HALO_MASS_POS)), -1.0);
 
     const real xsqr = sqr(X(pos));
     const real ysqr = sqr(Y(pos));
@@ -574,8 +574,8 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
 {
     const real_0 gam = h->gamma;
     const real_0 lam = h->lambda;
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real scaleR = mw_div(r, a);
     const real scaleL = mw_mul_s(inv(a), lam);
     real factor;
@@ -599,8 +599,8 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector pos, real r)
 
 static inline mwvector WEHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real sum2 = mw_add(sqr(a), sqr(r));
 
     const real c = mw_mul(mw_div(mw_neg(M), r), mw_div(mw_add(a, mw_sqrt(sum2)), mw_add(sum2, mw_mul(a, mw_sqrt(sum2)))));
@@ -611,8 +611,8 @@ static inline mwvector WEHaloAccel(const Halo* h, mwvector pos, real r)
 
 static inline mwvector NFWMHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real ar = mw_add(a, r);
 
     const real c = mw_mul(mw_div(mw_mul_s(M,-1.0), sqr(r)), mw_sub(mw_div(mw_log(mw_div(ar, a)), r), inv(ar)));
@@ -623,8 +623,8 @@ static inline mwvector NFWMHaloAccel(const Halo* h, mwvector pos, real r)
 
 static inline mwvector plummerHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real tmp = mw_hypot(a,r);
 
     const real factor = mw_neg(mw_div(M, cube(tmp)));
@@ -634,8 +634,8 @@ static inline mwvector plummerHaloAccel(const Halo* h, mwvector pos, real r)
 
 static inline mwvector hernquistHaloAccel(const Halo* h, mwvector pos, real r)
 {
-    const real M = mw_real_var(h->mass, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real M = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real tmp = mw_add(a, r);
 
     const real factor = mw_neg(mw_div(M, mw_mul(r, sqr(tmp))));
@@ -645,8 +645,8 @@ static inline mwvector hernquistHaloAccel(const Halo* h, mwvector pos, real r)
 
 static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)      /*Special case of Ninkovic Halo (l1=0,l2=3,l3=2) (Ninkovic 2017)*/
 {
-    const real rho0 = mw_real_var(h->rho0, 16);
-    const real a = mw_real_var(h->scaleLength, 17);
+    const real rho0 = mw_real_var(h->mass, HALO_MASS_POS);
+    const real a = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
     const real_0 lambda = h->lambda;
 
     const real z  = mw_div(r, a);

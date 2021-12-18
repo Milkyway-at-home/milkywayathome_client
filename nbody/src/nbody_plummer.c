@@ -183,8 +183,8 @@ int nbGeneratePlummer(lua_State* luaSt)
 
     handleNamedArgumentTable(luaSt, argTable, 1);
 
-    return nbGeneratePlummerCore(luaSt, prng, (unsigned int) nbodyf, mw_real_var(mass, 4), ignore,
-                                 *position, *velocity, mw_real_var(radiusScale, 2));
+    return nbGeneratePlummerCore(luaSt, prng, (unsigned int) nbodyf, mw_real_var(mass, BARYON_MASS_POS), ignore,
+                                 *position, *velocity, mw_real_var(radiusScale, BARYON_RADIUS_POS));
 }
 
 void registerGeneratePlummer(lua_State* luaSt)

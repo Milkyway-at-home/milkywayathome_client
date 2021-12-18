@@ -35,7 +35,7 @@
 
 #if AUTODIFF /*Define types outside of main()*/
 
-    #define NumberOfModelParameters 21     /*Change this number to add more space for parameters to differentiate over*/
+    #define NumberOfModelParameters 2     /*Change this number to add more space for parameters to differentiate over*/
     #define HessianLength (int) (NumberOfModelParameters * (NumberOfModelParameters + 1)/2)
 
     typedef struct MW_ALIGN_TYPE
@@ -64,6 +64,33 @@
 
 #endif       /*Define types outside of main()*/
 
+    /*When initializing a real parameter that we want to differentiate over,
+      we must specify which rows and columns of the gradient and hessian attributes
+      carry the derivatives with respect to that parameter. These are the parameters
+      we currently differentiate over and their assigned column number n.*/
+
+    #define BACKWARDS_TIME_POS 0
+    #define TIME_RATIO_POS 0
+    #define BARYON_RADIUS_POS 0
+    #define RADIUS_RATIO_POS 0
+    #define BARYON_MASS_POS 0
+    #define MASS_RATIO_POS 0
+    #define B_COORD_POS 0
+    #define R_COORD_POS 0
+    #define VX_COORD_POS 0
+    #define VY_COORD_POS 0
+    #define VZ_COORD_POS 0
+    #define BULGE_MASS_POS 0
+    #define BULGE_RADIUS_POS 0
+    #define DISK_MASS_POS 0
+    #define DISK_LENGTH_POS 0
+    #define DISK_HEIGHT_POS 0
+    #define HALO_MASS_POS 0
+    #define HALO_RADIUS_POS 0
+    #define HALO_ZFLATTEN_POS 0
+    #define LMC_MASS_POS 0
+    #define LMC_RADIUS_POS 0
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,47 +109,14 @@ extern "C" {
     static inline real mw_real_var(real_0 a, int n)
     {
         real result = mw_real_const(a);
-        result.gradient[n] = 1.0;
+        if (n < NumberOfModelParameters)
+        {
+            result.gradient[n] = 1.0;
+        }
         return result;
     }
 //    #define INIT_REAL_CONST(r,x) {(r).value = (x);}
 //    #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x)); (r).gradient[n] = 1.0}
-
-
-
-    /*When initializing a real parameter that we want to differentiate over,
-      we must specify which rows and columns of the gradient and hessian attributes
-      carry the derivatives with respect to that parameter. These are the parameters
-      we currently differentiate over and their assigned column number n.
-
-      +----PARAMETER---------------------------n----------+
-           Backwards Evolution Time            0
-           Time Ratio                          1
-           Baryonic Plummer Radius             2
-           Radius Ratio                        3
-           Baryonic Mass                       4
-           Mass Ratio                          5
-           Orbital b coord                     6
-           Orbital r coord                     7
-           Orbital vx coord                    8
-           Orbital vy coord                    9
-           Orbital vz coord                   10
-           MW Bulge Mass                      11
-           MW Bulge Radius                    12
-           MW Disk Mass                       13
-           MW Disk Scale Length               14
-           MW Disk Scale Height               15
-           MW Halo Mass (or Scale Velocity)   16
-           MW Halo Scale Radius               17
-           MW Halo Flattening Parameter (Z)   18
-           LMC Mass                           19
-           LMC Scale Radius                   20
-
-      FIXME: Most of our Halo models use more parameters that we are not listed here.
-      As such, only a Logarithmic Halo and a single Miyamoto-Nagai disk can be used
-      with AUTODIFF. To use other models, you will need to either reassign some numbers
-      or add more parameters to the list. */
-
 
     CONST_F ALWAYS_INLINE
     static inline real_0 showRealValue(real a)

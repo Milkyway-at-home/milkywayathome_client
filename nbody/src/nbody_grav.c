@@ -142,13 +142,13 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 
     if (ctx->LMC) {
         LMCx = st->LMCpos;
-        lmcmass = mw_real_var(ctx->LMCmass, 19);      //Sets LMC mass and radius at positions 19 and 20 in the gradient
-        lmcscale = mw_real_var(ctx->LMCscale, 20);
+        lmcmass = mw_real_var(ctx->LMCmass, LMC_MASS_POS);      //Sets LMC mass and radius at positions 19 and 20 in the gradient
+        lmcscale = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
     }
     else {
         SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
-        lmcmass = mw_real_var(0.0, 19);
-        lmcscale = mw_real_var(1.0, 20);
+        lmcmass = mw_real_var(0.0, LMC_MASS_POS);
+        lmcscale = mw_real_var(1.0, LMC_RADIUS_POS);
     }
 
   #ifdef _OPENMP
@@ -243,13 +243,13 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 
     if (ctx->LMC) {
         LMCx = st->LMCpos;
-        lmcmass = mw_real_var(ctx->LMCmass, 19);      //Sets LMC mass and radius at positions 19 and 20 in the gradient
-        lmcscale = mw_real_var(ctx->LMCscale, 20);
+        lmcmass = mw_real_var(ctx->LMCmass, LMC_MASS_POS);      //Sets LMC mass and radius at positions 19 and 20 in the gradient
+        lmcscale = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
     }
     else {
         SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
-        lmcmass = mw_real_var(0.0, 19);
-        lmcscale = mw_real_var(1.0, 20);
+        lmcmass = mw_real_var(0.0, LMC_MASS_POS);
+        lmcscale = mw_real_var(1.0, LMC_RADIUS_POS);
     }
 
   #ifdef _OPENMP

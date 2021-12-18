@@ -718,6 +718,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
     * etc).    See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
     * 183.
     */
+        mw_printf("Generating Mixed Dwarf...\n");
         unsigned int i;
         int table;
         Body b;
@@ -774,8 +775,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real_0 dwarf_mass = mass_l + mass_d;
 
-        real mass_light = mw_real_var(mass_l, 4);            /*Setting dwarf light mass to position 4 of gradient*/
-        real mass_xi    = mw_real_var(mass_l/dwarf_mass, 5); /*Setting dwarf mass ratio to position 5 of gradient*/
+        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass to position 4 of gradient*/
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS); /*Setting dwarf mass ratio to position 5 of gradient*/
         real mass_dark  = mw_mul(mass_light, mw_sub(inv(mass_xi), mw_real_const(1.0)));
 
 
@@ -937,6 +938,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         free(vy);
         free(vz);
         free(masses);
+
+        mw_printf("Mixed Dwarf Generated!\n");
         
         return 1;             
         
@@ -1007,8 +1010,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real_0 dwarf_mass = mass_l + mass_d;
 
-        real mass_light = mw_real_var(mass_l, 4);            /*Setting dwarf light mass to position 4 of gradient*/
-        real mass_xi    = mw_real_var(mass_l/dwarf_mass, 5); /*Setting dwarf mass ratio to position 5 of gradient*/
+        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass to position 4 of gradient*/
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS); /*Setting dwarf mass ratio to position 5 of gradient*/
         real mass_dark  = mw_mul(mass_light, mw_sub(inv(mass_xi), mw_real_const(1.0)));
 
 

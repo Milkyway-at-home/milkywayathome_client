@@ -82,10 +82,10 @@ static inline real CoulombLogPlummer(real scale_plummer, real scale_mwhalo){
 }
 
 static inline real getHaloScaleLength(const Halo* halo){
-    real scale = mw_real_var(halo->scaleLength, 17); /*Halo Scale Radius is set to position 17 in gradient*/
+    real scale = mw_real_var(halo->scaleLength, HALO_RADIUS_POS);
     if (showRealValue(scale) == 0.0)
     {
-        scale = mw_real_var(1.0,17);    /** This is the case when there is no halo **/
+        scale = mw_real_var(1.0,HALO_RADIUS_POS);    /** This is the case when there is no halo **/
     }
     return scale;
 }
