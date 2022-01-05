@@ -123,9 +123,9 @@ NBodyStatus blenderPrintBodies(const NBodyState* st, const NBodyCtx* ctx)
     for (int i = 0; i < nbody; i++)
     {
         b = &st->bodytab[i];
-        float x = (float) showRealValue(X(Pos(b)));
-        float y = (float) showRealValue(Y(Pos(b)));
-        float z = (float) showRealValue(Z(Pos(b)));
+        float x = (float) showRealValue(&X(&Pos(b)));
+        float y = (float) showRealValue(&Y(&Pos(b)));
+        float z = (float) showRealValue(&Z(&Pos(b)));
         fprintf(f, "%0.4f %0.4f %0.4f\n",x,y,z);
     }
     fclose(f);
@@ -135,7 +135,7 @@ NBodyStatus blenderPrintBodies(const NBodyState* st, const NBodyCtx* ctx)
 /* Center of mass position info */
 NBodyStatus blenderPrintCOM(const NBodyState* st)
 {
-    mwvector cmPos;
+    mwvector* cmPos;
     scene_t* scene = st->scene;
 
     if (!scene)
@@ -143,7 +143,7 @@ NBodyStatus blenderPrintCOM(const NBodyState* st)
         return NBODY_SUCCESS;
     }
 
-    if (nbFindCenterOfMass(&cmPos, st)) 
+    if (nbFindCenterOfMass(cmPos, st)) 
     {
         return NBODY_ERROR;
     }
@@ -152,16 +152,16 @@ NBodyStatus blenderPrintCOM(const NBodyState* st)
     {
         return NBODY_ERROR;
     }
-    float x = (float) showRealValue(X(cmPos));
-    float y = (float) showRealValue(Y(cmPos));
-    float z = (float) showRealValue(Z(cmPos));
+    float x = (float) showRealValue(&X(cmPos));
+    float y = (float) showRealValue(&Y(cmPos));
+    float z = (float) showRealValue(&Z(cmPos));
     fprintf(f, "%0.4f %0.4f %0.4f\n", x,y,z);
     fclose(f);
     return NBODY_SUCCESS;
 }
 
 /* Dark vs light matter, total time, and vectors on tidal plane (for camera to look head-on at the plane) */
-NBodyStatus blenderPrintMisc(const NBodyState* st, const NBodyCtx* ctx, mwvector cmPos1, mwvector cmPos2)
+NBodyStatus blenderPrintMisc(const NBodyState* st, const NBodyCtx* ctx, mwvector* cmPos1, mwvector* cmPos2)
 {
     /* This is the orbit sim (one particle), so the particle sim will have the misc data covered. */
     if (st->nbody == 1) 
@@ -179,8 +179,8 @@ NBodyStatus blenderPrintMisc(const NBodyState* st, const NBodyCtx* ctx, mwvector
     fprintf(f,"%d\n%d\n%f\n", st->nbody, st->step, ctx->timeEvolve);
 
     /* To find a plane normal to the orbit for the camera to point at */
-    fprintf(f,"%f\n%f\n%f\n", showRealValue(X(cmPos1)), showRealValue(Y(cmPos1)), showRealValue(Z(cmPos1)));
-    fprintf(f,"%f\n%f\n%f\n", showRealValue(X(cmPos2)), showRealValue(Y(cmPos2)), showRealValue(Z(cmPos2)));
+    fprintf(f,"%f\n%f\n%f\n", showRealValue(&X(cmPos1)), showRealValue(&Y(cmPos1)), showRealValue(&Z(cmPos1)));
+    fprintf(f,"%f\n%f\n%f\n", showRealValue(&X(cmPos2)), showRealValue(&Y(cmPos2)), showRealValue(&Z(cmPos2)));
 
     /* Light or dark particles */
     const Body* b;
@@ -201,13 +201,18 @@ NBodyStatus blenderPrintMisc(const NBodyState* st, const NBodyCtx* ctx, mwvector
 NBodyStatus blenderPossiblyChangePerpendicularCmPos(mwvector* next, mwvector* perp, mwvector* start)
 {
 
+    real oldNormer_real = mw_length(perp);
+    real newNormer_real = mw_length(next);
+    real dotpstart = mw_dotv(perp, start);
+    real dotnstart = mw_dotv(next, start);
+
     /* First get a normalizer for the potential third points (no need to normalize "start", since the division would fall out at the if statement) */
-    float oldNormer = showRealValue(mw_hypot(mw_hypot(perp->x, perp->y), perp->z));
-    float newNormer = showRealValue(mw_hypot(mw_hypot(next->x, next->y), next->z));
+    float oldNormer = showRealValue(&oldNormer_real);
+    float newNormer = showRealValue(&newNormer_real);
 
     /* Dot product goes to zero as vectors become more perpendicular. Do not favor third points that happen to be closer to zero with "normer". */
-    float oldDotAbs = mw_fabs_0(showRealValue(mw_dotv(*perp, *start)))/oldNormer;
-    float newDotAbs = mw_fabs_0(showRealValue(mw_dotv(*next, *start)))/oldNormer;
+    float oldDotAbs = mw_fabs_0(showRealValue(&dotpstart))/oldNormer;
+    float newDotAbs = mw_fabs_0(showRealValue(&dotnstart))/newNormer;
 
     /* If the new dot product is closer to zero than the old one, drop our old third point and keep this better one for now. */
     if (newDotAbs < oldDotAbs)

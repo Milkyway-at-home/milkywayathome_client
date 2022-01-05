@@ -52,10 +52,19 @@ static real_0 nbHistogramBetaBinSize(const HistogramParams* hp)
     return binSize;
 }
 
-real nbNormalizedHistogramError(real n, real total)
+real nbNormalizedHistogramError(real* n, real* total)
 {
-    real norm_n = mw_div(n, total);
-    return (showRealValue(n) == 0) ? inv(total) : mw_div(mw_sqrt( mw_add(mw_mul(mw_sub(mw_real_const(1.0), mw_mul_s(norm_n,2)), n), mw_mul(sqr(norm_n), total) )), total);
+    real tmp1, tmp2;
+    real norm_n = mw_div(&n, &total);
+    tmp1 = mw_mul_s(&norm_n,2.0);
+    tmp1 = mw_neg(&tmp1);
+    tmp1 = mw_add_s(&tmp1, -1.0);
+    tmp1 = mw_mul(&tmp1, n);
+    tmp2 = sqr(&norm_n);
+    tmp2 = mw_mul(&tmp2, &total);
+    tmp1 = mw_add(&tmp1, &tmp2);
+    tmp1 = mw_sqrt(&tmp1);
+    return (showRealValue(&n) == 0) ? inv(&total) : mw_div(&tmp1, &total);
 }
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
@@ -68,7 +77,7 @@ real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBo
     {
         if (data->data[i].useBin)
         {
-            total = mw_add(total, histogram->data[i].variable);
+            total = mw_add(&total, &histogram->data[i].variable);
         }
     }
 
@@ -97,7 +106,7 @@ real nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generat
     {
         if (!data->data[i].useBin)
         {
-            totalNum = mw_sub(totalNum, histogram->data[i].rawCount);
+            totalNum = mw_sub(&totalNum, &histogram->data[i].rawCount);
         }
     }
 
@@ -166,7 +175,7 @@ static void nbPrintHistogramHeader(FILE* f,
             nbody,
             ctx->timeBack,
             bestLikelihood_time,
-            showRealValue(bestLikelihood),
+            showRealValue(&bestLikelihood),
             ctx->timestep,
             ctx->sunGCDist,
             showCriterionT(ctx->criterion),
@@ -517,8 +526,8 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     // outputs these numbers from one of the histograms
     // at this point, these numbers should be the same for all histograms anyway
     mw_boinc_print(f, "<histogram>\n");
-    fprintf(f, "n = %u\n", (int) showRealValue(all->histograms[0]->totalNum));
-    fprintf(f, "massPerParticle = %12.15f\n", showRealValue(all->histograms[0]->massPerParticle));
+    fprintf(f, "n = %u\n", (int) showRealValue(&all->histograms[0]->totalNum));
+    fprintf(f, "massPerParticle = %12.15f\n", showRealValue(&all->histograms[0]->massPerParticle));
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
     fprintf(f, "betaBins = %u\n", all->histograms[0]->betaBins);
@@ -534,8 +543,8 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
         {
             if(all->usage[j])
             {
-                output[k]   = showRealValue(all->histograms[j]->data[i].variable);
-                output[k+1] = showRealValue(all->histograms[j]->data[i].err);
+                output[k]   = showRealValue(&all->histograms[j]->data[i].variable);
+                output[k+1] = showRealValue(&all->histograms[j]->data[i].err);
             }
             k+=2;
         }
@@ -545,8 +554,8 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
             fprintf(f,
                     "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                     storedData.useBin,
-                    showRealValue(storedData.lambda),
-                    showRealValue(storedData.beta),
+                    showRealValue(&storedData.lambda),
+                    showRealValue(&storedData.beta),
                     output[0],      // normalized counts
                     output[1],      // normalized counts error
                     output[2],      // beta disp
@@ -565,8 +574,8 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
             fprintf(f,
                     "%d %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f %12.15f\n",
                     storedData.useBin,
-                    showRealValue(storedData.lambda),
-                    showRealValue(storedData.beta),
+                    showRealValue(&storedData.lambda),
+                    showRealValue(&storedData.beta),
                     output[0],      // normalized counts
                     output[1],      // normalized counts error
                     output[2],      // beta disp
@@ -642,8 +651,8 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
             /* Report center of the bins */
             histData[Histindex].lambda = mw_real_const(((real_0) i + 0.5) * lambdaSize + lambdaStart);
             histData[Histindex].beta   = mw_real_const(((real_0) j + 0.5) * betaSize + betaStart);
-            histData[Histindex].variable  = mw_div(count, totalNum);
-            histData[Histindex].err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex].variable  = mw_div(&count, &totalNum);
+            histData[Histindex].err    = nbNormalizedHistogramError(&histData[i].rawCount, &totalNum);
         }
     }
 }
@@ -661,6 +670,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                                   const NBodyState* st,       /* Final state of the simulation */
                                   const HistogramParams* hp)  /* Range of histogram to create */
 {
+    real tmp;
     real location;
     real lambda;
     real beta;
@@ -829,9 +839,9 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         {
 
             /* Get the position in lbr coorinates */
-            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
-            lambda = L(lambdaBetaR);
-            beta = B(lambdaBetaR);
+            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, &Pos(p), ctx->sunGCDist);
+            lambda = L(&lambdaBetaR);
+            beta = B(&lambdaBetaR);
             
             use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
@@ -842,8 +852,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             distances[ub_counter] = mw_real_const(DEFAULT_NOT_USE);
 
             /* Find the indices */
-            lambdaIndex = (unsigned int) mw_floor_0((showRealValue(lambda) - lambdaStart) / lambdaSize);
-            betaIndex = (unsigned int) mw_floor_0((showRealValue(beta) - betaStart) / betaSize);
+            lambdaIndex = (unsigned int) mw_floor_0((showRealValue(&lambda) - lambdaStart) / lambdaSize);
+            betaIndex = (unsigned int) mw_floor_0((showRealValue(&beta) - betaStart) / betaSize);
 
             /* Check if the position is within the bounds of the histogram */
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
@@ -855,13 +865,13 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
 
                 /*FIXME: We still need to propagate derivatives here ----------------------------------------------------------------------------------------*/
                 for(int i = 0; i < 6; i++)
-                    if(all->usage[i]) all->histograms[i]->data[Histindex].rawCount = mw_add(all->histograms[i]->data[Histindex].rawCount, mw_real_const(1.0));
+                    if(all->usage[i]) all->histograms[i]->data[Histindex].rawCount = mw_add_s(&all->histograms[i]->data[Histindex].rawCount, 1.0);
 
-                totalNum = mw_add(totalNum, mw_real_const(1.0));
+                totalNum = mw_add_s(&totalNum, 1.0);
                 /*-------------------------------------------------------------------------------------------------------------------------------------------*/
                 
-                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
-                location = calc_distance(Pos(p), ctx->sunGCDist);
+                v_line_of_sight = calc_vLOS(&Vel(p), &Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+                location = calc_distance(&Pos(p), ctx->sunGCDist);
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
                 betas[ub_counter] = beta;
@@ -870,32 +880,37 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 if(all->usage[1])
                 {
                     /* each of these are components of the beta disp */
-                    all->histograms[1]->data[Histindex].sum = mw_add(all->histograms[1]->data[Histindex].sum, beta);
-                    all->histograms[1]->data[Histindex].sq_sum = mw_add(all->histograms[1]->data[Histindex].sq_sum, sqr(beta));
+                    all->histograms[1]->data[Histindex].sum = mw_add(&all->histograms[1]->data[Histindex].sum, &beta);
+                    tmp = sqr(&beta);
+                    all->histograms[1]->data[Histindex].sq_sum = mw_add(&all->histograms[1]->data[Histindex].sq_sum, &tmp);
                 }
                 if(all->usage[2])
                 {
                     /* each of these are components of the vel disp */
-                    all->histograms[2]->data[Histindex].sum = mw_add(all->histograms[2]->data[Histindex].sum, v_line_of_sight);
-                    all->histograms[2]->data[Histindex].sq_sum = mw_add(all->histograms[2]->data[Histindex].sq_sum, sqr(v_line_of_sight));
+                    all->histograms[2]->data[Histindex].sum = mw_add(&all->histograms[2]->data[Histindex].sum, &v_line_of_sight);
+                    tmp = sqr(&v_line_of_sight);
+                    all->histograms[2]->data[Histindex].sq_sum = mw_add(&all->histograms[2]->data[Histindex].sq_sum, &tmp);
                 }
                 if(all->usage[3])
                 {
                     /* each of these are components of the vel disp, which is used for vel avg */
-                    all->histograms[3]->data[Histindex].sum = mw_add(all->histograms[3]->data[Histindex].sum, v_line_of_sight);
-                    all->histograms[3]->data[Histindex].sq_sum = mw_add(all->histograms[3]->data[Histindex].sq_sum, sqr(v_line_of_sight));
+                    all->histograms[3]->data[Histindex].sum = mw_add(&all->histograms[3]->data[Histindex].sum, &v_line_of_sight);
+                    tmp = sqr(&v_line_of_sight);
+                    all->histograms[3]->data[Histindex].sq_sum = mw_add(&all->histograms[3]->data[Histindex].sq_sum, &tmp);
                 }
                 if(all->usage[4])
                 {
                     /* each of these are components of the beta disp, which is used for beta avg */
-                    all->histograms[4]->data[Histindex].sum = mw_add(all->histograms[4]->data[Histindex].sum, beta);
-                    all->histograms[4]->data[Histindex].sq_sum = mw_add(all->histograms[4]->data[Histindex].sq_sum, sqr(beta));
+                    all->histograms[4]->data[Histindex].sum = mw_add(&all->histograms[4]->data[Histindex].sum, &beta);
+                    tmp = sqr(&beta);
+                    all->histograms[4]->data[Histindex].sq_sum = mw_add(&all->histograms[4]->data[Histindex].sq_sum, &tmp);
                 }
                 if(all->usage[5])
                 {
                     /* average distance */
-                    all->histograms[5]->data[Histindex].sum = mw_add(all->histograms[5]->data[Histindex].sum, location);
-                    all->histograms[5]->data[Histindex].sq_sum = mw_add(all->histograms[5]->data[Histindex].sq_sum, sqr(location));
+                    all->histograms[5]->data[Histindex].sum = mw_add(&all->histograms[5]->data[Histindex].sum, &location);
+                    tmp = sqr(&location);
+                    all->histograms[5]->data[Histindex].sq_sum = mw_add(&all->histograms[5]->data[Histindex].sq_sum, &tmp);
                 }
             
             }
@@ -946,13 +961,14 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
         for (unsigned int i = 0; i < nBin; ++i)
         {
-            real vdenom = mw_sub(all->histograms[3]->data[i].rawCount, all->histograms[3]->data[i].outliersRemoved);
-            if(showRealValue(vdenom) > 10) // no data for the bin
+            real vdenom = mw_sub(&all->histograms[3]->data[i].rawCount, &all->histograms[3]->data[i].outliersRemoved);
+            if(showRealValue(&vdenom) > 10) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average vlos (as it should be)
-                all->histograms[3]->data[i].err = mw_div(all->histograms[3]->data[i].variable, mw_sqrt(vdenom));
-                all->histograms[3]->data[i].variable = mw_div(all->histograms[3]->data[i].sum, vdenom);
+                tmp = mw_sqrt(&vdenom);
+                all->histograms[3]->data[i].err = mw_div(&all->histograms[3]->data[i].variable, &tmp);
+                all->histograms[3]->data[i].variable = mw_div(&all->histograms[3]->data[i].sum, &vdenom);
             }
             else
             {
@@ -970,13 +986,14 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
         for (unsigned int i = 0; i < nBin; ++i)
         {
-            real bdenom = mw_sub(all->histograms[4]->data[i].rawCount, all->histograms[4]->data[i].outliersRemoved);
-            if(showRealValue(bdenom) > 10) // no data for the bin
+            real bdenom = mw_sub(&all->histograms[4]->data[i].rawCount, &all->histograms[4]->data[i].outliersRemoved);
+            if(showRealValue(&bdenom) > 10) // no data for the bin
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average beta (as it should be)
-                all->histograms[4]->data[i].err = mw_div(all->histograms[4]->data[i].variable, mw_sqrt(bdenom));
-                all->histograms[4]->data[i].variable = mw_div(all->histograms[4]->data[i].sum, bdenom);
+                tmp = mw_sqrt(&bdenom);
+                all->histograms[4]->data[i].err = mw_div(&all->histograms[4]->data[i].variable, &tmp);
+                all->histograms[4]->data[i].variable = mw_div(&all->histograms[4]->data[i].sum, &bdenom);
             }
             else
             {
@@ -994,13 +1011,14 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
         for (unsigned int i = 0; i < nBin; ++i)
         {
-            real ddenom = mw_sub(all->histograms[5]->data[i].rawCount, all->histograms[5]->data[i].outliersRemoved);
-            if(showRealValue(ddenom) > 10)
+            real ddenom = mw_sub(&all->histograms[5]->data[i].rawCount, &all->histograms[5]->data[i].outliersRemoved);
+            if(showRealValue(&ddenom) > 10)
             {
                 // calculates error first because the dispersion is stored as the variable at the moment
                 // dispersion is used for error calc, then variable is overwritten as the average distance (as it should be)
-                all->histograms[5]->data[i].err = mw_div(all->histograms[5]->data[i].variable, mw_sqrt(ddenom));
-                all->histograms[5]->data[i].variable  = mw_div(all->histograms[5]->data[i].sum, ddenom);
+                tmp = mw_sqrt(&ddenom);
+                all->histograms[5]->data[i].err = mw_div(&all->histograms[5]->data[i].variable, &tmp);
+                all->histograms[5]->data[i].variable = mw_div(&all->histograms[5]->data[i].sum, &ddenom);
             }
             else
             {

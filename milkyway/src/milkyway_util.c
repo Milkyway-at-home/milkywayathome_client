@@ -400,18 +400,18 @@ mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState)
 {
     mwvector vec;
 
-    X(vec) = mw_real_const(mwUnitRandom(dsfmtState));
-    Y(vec) = mw_real_const(mwUnitRandom(dsfmtState));
-    Z(vec) = mw_real_const(mwUnitRandom(dsfmtState));
-    W(vec) = ZERO_REAL;
+    X(&vec) = mw_real_const(mwUnitRandom(dsfmtState));
+    Y(&vec) = mw_real_const(mwUnitRandom(dsfmtState));
+    Z(&vec) = mw_real_const(mwUnitRandom(dsfmtState));
+    W(&vec) = ZERO_REAL;
 
     return vec;
 }
 
-mwvector mwRandomPoint(dsfmt_t* dsfmtState, real s)
+mwvector mwRandomPoint(dsfmt_t* dsfmtState, real* s)
 {
     mwvector v = mwRandomUnitPoint(dsfmtState);
-    mw_incmulvs(v, s);
+    mw_incmulvs(&v, s);
     return v;
 }
 
@@ -419,23 +419,24 @@ mwvector mwRandomPoint(dsfmt_t* dsfmtState, real s)
 mwvector mwRandomUnitVector(dsfmt_t* dsfmtState)
 {
     mwvector v = mwRandomUnitPoint(dsfmtState);
-    mw_normalize(v);
+    mw_normalize(&v);
     return v;
 }
 
-mwvector mwRandomVector(dsfmt_t* dsfmtState, real r)
+mwvector mwRandomVector(dsfmt_t* dsfmtState, real* r)
 {
     mwvector v = mwRandomUnitVector(dsfmtState);
-    mw_incmulvs(v, r);
+    mw_incmulvs(&v, r);
     return v;
 }
 
 //constrain angle to [0, 2pi)
-real constrainAngle(real a){
-    a = mw_fmod(a, mw_real_const(2*M_PI));
+real constrainAngle(real* a){
+    real twopi = mw_real_const(2*M_PI);
+    *a = mw_fmod(a, &twopi);
     if(showRealValue(a) < 0)
-        a = mw_add(a, mw_real_const(2*M_PI));
-    return a;
+        *a = mw_add(a, &twopi);
+    return *a;
 }
 
 /* Check for a timesteps etc. which will actually finish. */

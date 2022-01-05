@@ -34,18 +34,18 @@
 extern "C" {
 #endif
 
-real besselJ0(const real x);
-real besselJ1(const real x);
-real besselJ2(const real x);
-real besselI0(const real x);
-real besselI1(const real x);
-real besselK0(const real x);
-real besselK1(const real x);
-real besselK2(const real x);
+real besselJ0(const real* x);
+real besselJ1(const real* x);
+real besselJ2(const real* x);
+real besselI0(const real* x);
+real besselI1(const real* x);
+real besselK0(const real* x);
+real besselK1(const real* x);
+real besselK2(const real* x);
 real_0 besselJ0_zero(const int n);
 real_0 besselJ1_zero(const int n);
-real aExp(const real k, const real R, const real Rd);
-real bExp(const real k, const real R, const real Rd);
+real aExp(const real* k, const real* R, const real* Rd);
+real bExp(const real* k, const real* R, const real* Rd);
 
 #ifdef __cplusplus
 }

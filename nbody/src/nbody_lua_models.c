@@ -246,7 +246,7 @@ static int luaReverseOrbit(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt, sun_dist);
+    nbReverseOrbit(&finalPos, &finalVel, pot, pos, vel, tstop, dt, sun_dist);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
@@ -318,7 +318,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass_var, LMCscale_var, sun_dist);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, pos, vel, LMCpos, LMCvel, LMCDynaFric, ftime, tstop, dt, &LMCmass_var, &LMCscale_var, sun_dist);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);
@@ -372,7 +372,7 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbPrintReverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, tstopf, dt);
+    nbPrintReverseOrbit(&finalPos, &finalVel, pot, pos, vel, tstop, tstopf, dt);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
 
@@ -441,7 +441,7 @@ static int luaPrintReverseOrbit_LMC(lua_State* luaSt)
     real LMCmass_var = mw_real_var(LMCmass, LMC_MASS_POS);
     real LMCscale_var = mw_real_var(LMCscale, LMC_RADIUS_POS);
 
-    nbPrintReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, tstop, tstopf, dt, LMCmass_var, LMCscale_var);
+    nbPrintReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, pos, vel, LMCpos, LMCvel, LMCDynaFric, tstop, tstopf, dt, &LMCmass_var, &LMCscale_var);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

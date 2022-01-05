@@ -20,17 +20,17 @@
 #include "milkyway_show.h"
 #include "milkyway_util.h"
 
-char* showVector(mwvector v)
+char* showVector(mwvector* v)
 {
     char* buf;
 
-    if (asprintf(&buf, "{ %g, %g, %g }", showRealValue(X(v)), showRealValue(Y(v)), showRealValue(Z(v))) < 0)
+    if (asprintf(&buf, "{ %g, %g, %g }", showRealValue(&X(v)), showRealValue(&Y(v)), showRealValue(&Z(v))) < 0)
         mw_fail("asprintf() failed\n");
 
     return buf;
 }
 
-void printVector(mwvector v)
+void printVector(mwvector* v)
 {
     char* buf = showVector(v);
     puts(buf);
@@ -47,9 +47,9 @@ char* showMatrix(mwmatrix m)
                      "  { %g, %g, %g }\n"
                      "  { %g, %g, %g }\n"
                      "}\n",
-                     showRealValue(X(m[0])), showRealValue(Y(m[0])), showRealValue(Z(m[0])),
-                     showRealValue(X(m[1])), showRealValue(Y(m[1])), showRealValue(Z(m[1])),
-                     showRealValue(X(m[2])), showRealValue(Y(m[2])), showRealValue(Z(m[2]))))
+                     showRealValue(&X(&m[0])), showRealValue(&Y(&m[0])), showRealValue(&Z(&m[0])),
+                     showRealValue(&X(&m[1])), showRealValue(&Y(&m[1])), showRealValue(&Z(&m[1])),
+                     showRealValue(&X(&m[2])), showRealValue(&Y(&m[2])), showRealValue(&Z(&m[2]))))
     {
         mw_fail("asprintf() failed\n");
     }

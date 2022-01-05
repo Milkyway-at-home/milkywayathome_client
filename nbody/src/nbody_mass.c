@@ -168,22 +168,27 @@ real_0 IncompleteGammaFunc(real_0 a, real_0 x)
 
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 
-real calc_vLOS(const mwvector v, const mwvector p, real_0 sunGCdist)
+real calc_vLOS(const mwvector* v, const mwvector* p, real_0 sunGCdist)
 {
-    real xsol = mw_add(X(p), mw_real_const(sunGCdist));
-    real mag = mw_hypot(mw_hypot(xsol, Y(p)), Z(p));
-    real vl = mw_add(mw_add(mw_mul(xsol, X(v)), mw_mul(Y(p), Y(v))), mw_mul(Z(p), Z(v)));
-    vl = mw_div(vl, mag);
-    
-    return vl;
+    real tmp1, tmp2;
+    real xsol = mw_add_s(&X(p), sunGCdist);
+
+    tmp1 = mw_hypot(&xsol, &Y(p));
+    real mag = mw_hypot(&tmp1, &Z(p));
+
+    tmp1 = mw_mul(&xsol, &X(v));
+    tmp2 = mw_mul(&Y(p), &Y(v));
+    tmp1 = mw_add(&tmp1, &tmp2);
+    tmp2 = mw_mul(&Z(p), &Z(v));
+    real vl = mw_add(&tmp1, &tmp2);
+    return mw_div(&vl, &mag);
 }
 
-real calc_distance(const mwvector p, real_0 sunGCdist)  /**Calculating the distance to each body **/
+real calc_distance(const mwvector* p, real_0 sunGCdist)  /**Calculating the distance to each body **/
 {
-    real xsol = mw_add(X(p), mw_real_const(sunGCdist));
-    real distance = mw_hypot(mw_hypot(xsol, Y(p)), Z(p));
-
-    return distance;
+    real xsol = mw_add_s(&X(p), sunGCdist);
+    real tmp = mw_hypot(&xsol, &Y(p));
+    return mw_hypot(&tmp, &Z(p));
 }
 
 /* Get the dispersion in each bin*/
@@ -202,6 +207,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_fac
     real n_ratio;
     real n_new;
     real sum, sq_sum, dispsq;
+    real tmp1, tmp2;
     
     
     for (i = 0; i < lambdaBins; ++i)
@@ -209,17 +215,21 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_fac
         for(j = 0; j < betaBins; ++j)
         {
             Histindex = i * betaBins + j;
-            count = mw_sub(histData[Histindex].rawCount, histData[Histindex].outliersRemoved);
+            count = mw_sub(&histData[Histindex].rawCount, &histData[Histindex].outliersRemoved);
             
-            if(showRealValue(count) > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
+            if(showRealValue(&count) > 10.0)//need enough counts so that bins with minimal bodies do not throw the vel disp off
             {
-                n_new = mw_sub(count, mw_real_const(1.0)); //because the mean is calculated from the same populations set
-                n_ratio = mw_div(count, n_new); 
+                n_new = mw_add_s(&count, -1.0); //because the mean is calculated from the same populations set
+                n_ratio = mw_div(&count, &n_new); 
                 
                 sq_sum = histData[Histindex].sq_sum;
                 sum = histData[Histindex].sum;
-                
-                 dispsq = mw_sub(mw_div(sq_sum, n_new), mw_mul(n_ratio, sqr(mw_div(sum, count))));
+
+                tmp1 = mw_div(&sq_sum, &n_new);
+                tmp2 = mw_div(&sum, &count);
+                tmp2 = sqr(&tmp2);
+                tmp2 = mw_mul(&n_ratio, &tmp2);
+                dispsq = mw_sub(&tmp1, &tmp2);
                 
                 /* The following requires explanation. For the first calculation of dispersions, the bool initial 
                  * needs to be set to true. After that false.
@@ -230,11 +240,15 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_fac
                 
                 if(!initial)
                 {
-                    dispsq = mw_mul_s(dispsq, correction_factor);
+                    dispsq = mw_mul_s(&dispsq, correction_factor);
                 }//correcting for truncating the distribution when removing outliers.
 
-                histData[Histindex].variable = mw_sqrt(dispsq);
-                histData[Histindex].err =  mw_mul(mw_sqrt(mw_div(mw_add(count, mw_real_const(1.0)), mw_mul(count, n_new))), histData[Histindex].variable) ;
+                histData[Histindex].variable = mw_sqrt(&dispsq);
+                tmp1 = mw_add_s(&count, 1.0);
+                tmp2 = mw_mul(&count, &n_new);
+                tmp1 = mw_div(&tmp1, &tmp2);
+                tmp1 = mw_sqrt(&tmp1);
+                histData[Histindex].err =  mw_mul(&tmp1, &histData[Histindex].variable) ;
                 
             }
         }
@@ -249,6 +263,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
     Body* p;
     HistData* histData;
     const Body* endp = st->bodytab + st->nbody;
+    real tmp;
 
     unsigned int counter = 0;
     
@@ -265,8 +280,8 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
 
     for (unsigned int indx1 = 0; indx1 < histBins; ++indx1)
     {
-        new_count = mw_sub(histData[indx1].rawCount, histData[indx1].outliersRemoved);
-        bin_ave[indx1] = mw_div(histData[indx1].sum, new_count);
+        new_count = mw_sub(&histData[indx1].rawCount, &histData[indx1].outliersRemoved);
+        bin_ave[indx1] = mw_div(&histData[indx1].sum, &new_count);
         temp_sum[indx1] = ZERO_REAL;
         temp_sqr[indx1] = ZERO_REAL;
         temp_removed[indx1] = ZERO_REAL;
@@ -289,16 +304,17 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
                 this_var = var[counter];
                 
                 /* Use old standard deviation calculated before */
-                bin_sigma = showRealValue(histData[Histindex].variable);
+                bin_sigma = showRealValue(&histData[Histindex].variable);
                 
-                if(mw_fabs_0(showRealValue(bin_ave[Histindex]) - showRealValue(this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
+                if(mw_fabs_0(showRealValue(&bin_ave[Histindex]) - showRealValue(&this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
                 {
-                    temp_sum[Histindex] = mw_add(temp_sum[Histindex], this_var);
-                    temp_sqr[Histindex] = mw_add(temp_sqr[Histindex], sqr(this_var));
+                    temp_sum[Histindex] = mw_add(&temp_sum[Histindex], &this_var);
+                    tmp = sqr(&this_var);
+                    temp_sqr[Histindex] = mw_add(&temp_sqr[Histindex], &tmp);
                 }
                 else
                 {
-                    temp_removed[Histindex] = mw_add(temp_removed[Histindex], mw_real_const(1.0));//keep track of how many are being removed
+                    temp_removed[Histindex] = mw_add_s(&temp_removed[Histindex], 1.0);//keep track of how many are being removed
                 }
 
                 
@@ -329,19 +345,20 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     real p; /* probability of observing an event */
     real rawCount;
     real nSim = nSim_uncut;
+    real tmp1, tmp2, tmp3;
     
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         return mw_real_const(NAN);
     }
 
-    if (showRealValue(nSim) == 0 || showRealValue(nData) == 0)
+    if (showRealValue(&nSim) == 0 || showRealValue(&nData) == 0)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
         return mw_real_const(INFINITY);
     }
 
-    if (showRealValue(histMass) <= 0.0 || showRealValue(dataMass) <= 0.0)
+    if (showRealValue(&histMass) <= 0.0 || showRealValue(&dataMass) <= 0.0)
     {
         /*In order to calculate likelihood the masses are necessary*/
         return mw_real_const(NAN);
@@ -356,8 +373,9 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     {
         if(!data->data[i].useBin)
         {
-            rawCount = mw_round(mw_mul(histogram->data[i].variable, nSim_uncut));
-            nSim = mw_sub(nSim, rawCount);
+            tmp1 = mw_mul(&histogram->data[i].variable, &nSim_uncut);
+            rawCount = mw_round(&tmp1);
+            nSim = mw_sub(&nSim, &rawCount);
         }
 
     }
@@ -366,7 +384,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * it uses a combination of the binomial error for sim 
      * and the poisson error for the data
      */
-    p = mw_mul_s(nSim, inv_0(n));
+    p = mw_mul_s(&nSim, inv_0(n));
 
     /*Print statements for debugging likelihood*/
 //    mw_printf("dataMass = %.15f\n",dataMass);
@@ -376,9 +394,21 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 //    mw_printf("p        = %.15f\n",p);
 //    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
 
-    real num = sqr(mw_sub(mw_mul(dataMass, nData), mw_mul(histMass, nSim)));
-    real denom = mw_mul_s(mw_add(mw_mul(sqr(dataMass), nData), mw_mul(sqr(histMass), mw_mul(nSim, mw_sub(p, sqr(p))))), 2.0);
-    real CostComponent = mw_div(num, denom); //this is the log of the cost component
+    tmp1 = mw_mul(&dataMass, &nData);
+    tmp2 = mw_mul(&histMass, &nSim);
+    tmp1 = mw_sub(&tmp1, &tmp2);
+    real num = sqr(&tmp1);
+
+    tmp1 = sqr(&dataMass);
+    tmp1 = mw_mul(&tmp1, &nData);
+    tmp2 = sqr(&histMass);
+    tmp3 = sqr(&p);
+    tmp3 = mw_sub(&p, &tmp3);
+    tmp3 = mw_mul(&nSim, &tmp3);
+    tmp2 = mw_mul(&tmp2, &tmp3);
+    tmp1 = mw_add(&tmp1, &tmp2);
+    real denom = mw_mul_s(&tmp1, 2.0);
+    real CostComponent = mw_div(&num, &denom); //this is the log of the cost component
 
     /* the cost component is negative. Returning a postive value */
     return CostComponent;
@@ -397,6 +427,7 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
     real Hist;
     real err_data, err_hist;
     real probability;
+    real tmp1, tmp2, tmp3;
     for (unsigned int i = 0; i < nbins; ++i)
     {
         if (data->data[i].useBin)
@@ -404,24 +435,30 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
             err_data = data->data[i].err;
             err_hist = histogram->data[i].err;
 
-            if(showRealValue(err_data) > 0)
+            if(showRealValue(&err_data) > 0)
             {
                 Data = data->data[i].variable;
                 Hist = histogram->data[i].variable;
 
-                if(showRealValue(err_hist) > 0)
+                if(showRealValue(&err_hist) > 0)
                 {
-                    Nsigma_sq = mw_add(Nsigma_sq, mw_div(sqr(mw_sub(Data, Hist)), mw_add(sqr(err_data), sqr(err_hist))));
+                    tmp1 = mw_sub(&Data, &Hist);
+                    tmp1 = sqr(&tmp1);
+                    tmp2 = sqr(&err_data);
+                    tmp3 = sqr(&err_hist);
+                    tmp2 = mw_add(&tmp2, &tmp3);
+                    tmp1 = mw_div(&tmp1, &tmp2);
+                    Nsigma_sq = mw_add(&Nsigma_sq, &tmp1);
                 }
                 else
                 {
-                    Nsigma_sq = mw_add(Nsigma_sq, mw_real_const(25));    /*Adding 5 sigma*/
+                    Nsigma_sq = mw_add_s(&Nsigma_sq, 25.0);    /*Adding 5 sigma*/
                 }
             }
         }
 
     }
-        probability = mw_mul_s(Nsigma_sq, 0.5); //should be negative, but we return the negative of it anyway
+        probability = mw_mul_s(&Nsigma_sq, 0.5); //should be negative, but we return the negative of it anyway
     
     return probability;
 }

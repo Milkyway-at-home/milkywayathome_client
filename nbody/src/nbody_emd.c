@@ -187,12 +187,13 @@ static real emdDistL1(const real* x, const real* y, void* user_param)
     int i;
     int dims = (int)(size_t)user_param;
     real s = ZERO_REAL;
+    real tmp;
 
     for (i = 0; i < dims; i++)
     {
-        real t = mw_sub(x[i], y[i]);
-
-        s = mw_add(s, mw_fabs(t));
+        real t = mw_sub(&x[i], &y[i]);
+        tmp = mw_fabs(&t);
+        s = mw_add(&s, &tmp);
     }
 
     return s;
@@ -203,15 +204,16 @@ static real emdDistL2(const real* x, const real* y, void* user_param)
     int i;
     int dims = (int)(size_t)user_param;
     real s = ZERO_REAL;
+    real tmp;
 
     for (i = 0; i < dims; i++)
     {
-        real t = mw_sub(x[i], y[i]);
-
-        s = mw_add(s, sqr(t));
+        real t = mw_sub(&x[i], &y[i]);
+        tmp = sqr(&t);
+        s = mw_add(&s, &tmp);
     }
 
-    return mw_sqrt(s);
+    return mw_sqrt(&s);
 }
 
 static real emdDistC(const real* x, const real* y, void* user_param)
@@ -222,11 +224,12 @@ static real emdDistC(const real* x, const real* y, void* user_param)
 
     for (i = 0; i < dims; i++)
     {
-        real t = mw_fabs(mw_sub(x[i], y[i]));
+        real tmp = mw_sub(&x[i], &y[i]);
+        tmp = mw_fabs(&tmp);
 
-        if (showRealValue(s) < showRealValue(t))
+        if (showRealValue(&s) < showRealValue(&tmp))
         {
-            s = t;
+            s = tmp;
         }
     }
 
@@ -295,7 +298,7 @@ static int emdFindBasicVariables(real** cost, char** is_x,
                     if (is_x[i][j])
                     {
                         /* compute u[i] */
-                        cur_u->val = mw_sub(cost[i][j], cur_v_val);
+                        cur_u->val = mw_sub(&cost[i][j], &cur_v_val);
                         /* ...and add it to the marked list */
                         prev_u->next = cur_u->next;
                         cur_u->next = u1_head.next;
@@ -338,7 +341,7 @@ static int emdFindBasicVariables(real** cost, char** is_x,
                     if (_is_x[j])
                     {
                         /* compute v[j] */
-                        cur_v->val = mw_sub(_cost[j], cur_u_val);
+                        cur_v->val = mw_sub(&_cost[j], &cur_u_val);
                         /* ...and add it to the marked list */
                         prev_v->next = cur_v->next;
                         cur_v->next = v1_head.next;
@@ -373,18 +376,18 @@ static void emdAddBasicVariable(EMDState* state,
     real temp;
     EMDNode2D* end_x = state->end_x;
 
-    if (showRealValue(state->s[min_i]) < showRealValue(state->d[min_j]) + showRealValue(state->weight) * EMD_EPS)
+    if (showRealValue(&state->s[min_i]) < showRealValue(&state->d[min_j]) + showRealValue(&state->weight) * EMD_EPS)
     {
         /* supply exhausted */
         temp = state->s[min_i];
         state->s[min_i] = ZERO_REAL;
-        state->d[min_j] = mw_sub(state->d[min_j], temp);
+        state->d[min_j] = mw_sub(&state->d[min_j], &temp);
     }
     else                        /* demand exhausted */
     {
         temp = state->d[min_j];
         state->d[min_j] = ZERO_REAL;
-        state->s[min_i] = mw_sub(state->s[min_i], temp);
+        state->s[min_i] = mw_sub(&state->s[min_i], &temp);
     }
 
     /* x(min_i,min_j) is a basic variable */
@@ -400,7 +403,7 @@ static void emdAddBasicVariable(EMDState* state,
     state->end_x = end_x + 1;
 
     /* delete supply row only if the empty, and if not last row */
-    if (showRealValue(state->s[min_i]) == 0.0 && u_head->next->next != NULL)
+    if (showRealValue(&state->s[min_i]) == 0.0 && u_head->next->next != NULL)
     {
         prev_u_min_i->next = prev_u_min_i->next->next;    /* remove row from list */
     }
@@ -432,7 +435,7 @@ static void emdRussel(EMDState* state)
 
     int ssize = state->ssize;
     int dsize = state->dsize;
-    real_0 eps = EMD_EPS * showRealValue(state->max_cost);
+    real_0 eps = EMD_EPS * showRealValue(&state->max_cost);
     real** cost = state->cost;
     real** delta = state->delta;
 
@@ -466,12 +469,12 @@ static void emdRussel(EMDState* state)
         {
             real temp = cost_row[j];
 
-            if (showRealValue(u_val) < showRealValue(temp))
+            if (showRealValue(&u_val) < showRealValue(&temp))
             {
                 u_val = temp;
             }
 
-            if (showRealValue(v[j].val) < showRealValue(temp))
+            if (showRealValue(&v[j].val) < showRealValue(&temp))
             {
                 v[j].val = temp;
             }
@@ -486,10 +489,12 @@ static void emdRussel(EMDState* state)
         real u_val = u[i].val;
         real* delta_row = delta[i];
         real* cost_row = cost[i];
+        real tmp;
 
         for (j = 0; j < dsize; j++)
         {
-            delta_row[j] = mw_sub(cost_row[j], mw_add(u_val, v[j].val));
+            real tmp = mw_add(&u_val, &v[j].val);
+            delta_row[j] = mw_sub(&cost_row[j], &tmp);
         }
     }
 
@@ -514,7 +519,7 @@ static void emdRussel(EMDState* state)
             {
                 j = (int)(cur_v - v);
 
-                if (showRealValue(min_delta) > showRealValue(delta_row[j]))
+                if (showRealValue(&min_delta) > showRealValue(&delta_row[j]))
                 {
                     min_delta = delta_row[j];
                     min_i = i;
@@ -545,7 +550,7 @@ static void emdRussel(EMDState* state)
             {
                 j = (int)(cur_v - v);
 
-                if (showRealValue(cur_v->val) == showRealValue(cost[min_i][j]))      /* column j needs updating */
+                if (showRealValue(&cur_v->val) == showRealValue(&cost[min_i][j]))      /* column j needs updating */
                 {
                     real max_val = mw_real_const(-EMD_INF);
 
@@ -554,21 +559,21 @@ static void emdRussel(EMDState* state)
                     {
                         real temp = cost[cur_u - u][j];
 
-                        if (showRealValue(max_val) < showRealValue(temp))
+                        if (showRealValue(&max_val) < showRealValue(&temp))
                         {
                             max_val = temp;
                         }
                     }
 
                     /* if needed, adjust the relevant delta[*][j] */
-                    diff = mw_sub(max_val, cur_v->val);
+                    diff = mw_sub(&max_val, &cur_v->val);
                     cur_v->val = max_val;
 
-                    if (mw_fabs_0(showRealValue(diff)) < eps)
+                    if (mw_fabs_0(showRealValue(&diff)) < eps)
                     {
                         for (cur_u = u_head.next; cur_u != NULL; cur_u = cur_u->next)
                         {
-                            delta[cur_u - u][j] = mw_add(delta[cur_u - u][j], diff);
+                            delta[cur_u - u][j] = mw_add(&delta[cur_u - u][j], &diff);
                         }
                     }
                 }
@@ -580,7 +585,7 @@ static void emdRussel(EMDState* state)
             {
                 i = (int)(cur_u - u);
 
-                if (showRealValue(cur_u->val) == showRealValue(cost[i][min_j]))      /* row i needs updating */
+                if (showRealValue(&cur_u->val) == showRealValue(&cost[i][min_j]))      /* row i needs updating */
                 {
                     real max_val = mw_real_const(-EMD_INF);
 
@@ -589,21 +594,21 @@ static void emdRussel(EMDState* state)
                     {
                         real temp = cost[i][cur_v - v];
 
-                        if (showRealValue(max_val) < showRealValue(temp))
+                        if (showRealValue(&max_val) < showRealValue(&temp))
                         {
                             max_val = temp;
                         }
                     }
 
                     /* if needed, adjust the relevant delta[i][*] */
-                    diff = mw_sub(max_val, cur_u->val);
+                    diff = mw_sub(&max_val, &cur_u->val);
                     cur_u->val = max_val;
 
-                    if (mw_fabs_0(showRealValue(diff)) < eps)
+                    if (mw_fabs_0(showRealValue(&diff)) < eps)
                     {
                         for (cur_v = v_head.next; cur_v != NULL; cur_v = cur_v->next)
                         {
-                            delta[i][cur_v - v] = mw_add(delta[i][cur_v - v], diff);
+                            delta[i][cur_v - v] = mw_add(&delta[i][cur_v - v], &diff);
                         }
                     }
                 }
@@ -622,7 +627,7 @@ static int emdInitEMD(const real* signature1, int size1,
                       const real* cost, int cost_step,
                       EMDState* state, real* lower_bound)
 {
-    real s_sum = ZERO_REAL, d_sum = ZERO_REAL, diff;
+    real s_sum = ZERO_REAL, d_sum = ZERO_REAL, diff, tmp;
     int i, j;
     int ssize = 0;
     int dsize = 0;
@@ -657,14 +662,14 @@ static int emdInitEMD(const real* signature1, int size1,
     {
         real weight = signature1[i * (dims + 1)];
 
-        if (showRealValue(weight) > 0.0)
+        if (showRealValue(&weight) > 0.0)
         {
-            s_sum = mw_add(s_sum, weight);
+            s_sum = mw_add(&s_sum, &weight);
             state->s[ssize] = weight;
             state->idx1[ssize++] = i;
 
         }
-        else if (showRealValue(weight) < 0.0)
+        else if (showRealValue(&weight) < 0.0)
         {
             mw_printf("Weight out of range\n");
             return -1;
@@ -675,13 +680,13 @@ static int emdInitEMD(const real* signature1, int size1,
     {
         real weight = signature2[i * (dims + 1)];
 
-        if (showRealValue(weight) > 0.0)
+        if (showRealValue(&weight) > 0.0)
         {
-            d_sum = mw_add(d_sum, weight);
+            d_sum = mw_add(&d_sum, &weight);
             state->d[dsize] = weight;
             state->idx2[dsize++] = i;
         }
-        else if (showRealValue(weight) < 0.0)
+        else if (showRealValue(&weight) < 0.0)
         {
             mw_printf("Weight out of range\n");
             return -1;
@@ -695,15 +700,15 @@ static int emdInitEMD(const real* signature1, int size1,
     }
 
     /* if supply different than the demand, add a zero-cost dummy cluster */
-    diff = mw_sub(s_sum, d_sum);
+    diff = mw_sub(&s_sum, &d_sum);
 
-    if (mw_fabs_0(showRealValue(diff)) >= EMD_EPS * showRealValue(s_sum))
+    if (mw_fabs_0(showRealValue(&diff)) >= EMD_EPS * showRealValue(&s_sum))
     {
         equal_sums = 0;
 
-        if (showRealValue(diff) < 0)
+        if (showRealValue(&diff) < 0)
         {
-            state->s[ssize] = mw_mul_s(diff,-1.0);
+            state->s[ssize] = mw_mul_s(&diff,-1.0);
             state->idx1[ssize++] = -1;
         }
         else
@@ -715,7 +720,7 @@ static int emdInitEMD(const real* signature1, int size1,
 
     state->ssize = ssize;
     state->dsize = dsize;
-    state->weight = showRealValue(s_sum) > showRealValue(d_sum) ? s_sum : d_sum;
+    state->weight = showRealValue(&s_sum) > showRealValue(&d_sum) ? s_sum : d_sum;
 
     if (lower_bound && equal_sums)     /* check lower bound */
     {
@@ -735,7 +740,8 @@ static int emdInitEMD(const real* signature1, int size1,
 
             for (i = 0; i < dims; i++)
             {
-                xs[i] = mw_add(xs[i], mw_mul(signature1[j + i + 1], weight));
+                tmp = mw_mul(&signature1[j + i + 1], &weight);
+                xs[i] = mw_add(&xs[i], &tmp);
             }
         }
 
@@ -745,12 +751,14 @@ static int emdInitEMD(const real* signature1, int size1,
 
             for (i = 0; i < dims; i++)
             {
-                xd[i] = mw_add(xd[i], mw_mul(signature2[j + i + 1], weight));
+                tmp = mw_mul(&signature2[j + i + 1], &weight);
+                xd[i] = mw_add(&xd[i], &tmp);
             }
         }
 
-        lb = mw_div(dist_func(xs, xd, user_param), state->weight);
-        i = showRealValue(*lower_bound) <= showRealValue(lb);
+        tmp = dist_func(xs, xd, user_param);
+        lb = mw_div(&tmp, &state->weight);
+        i = showRealValue(lower_bound) <= showRealValue(&lb);
         *lower_bound = lb;
 
         if (i)
@@ -817,7 +825,7 @@ static int emdInitEMD(const real* signature1, int size1,
 
                     state->cost[i][j] = val;
 
-                    if (showRealValue(max_cost) < showRealValue(val))
+                    if (showRealValue(&max_cost) < showRealValue(&val))
                     {
                         max_cost = val;
                     }
@@ -878,7 +886,7 @@ static real_0 emdIsOptimal(real** cost, char** is_x,
     /* find the minimal cij-ui-vj over all i,j */
     for (i = 0; i < ssize; i++)
     {
-        real_0 u_val = showRealValue(u[i].val);
+        real_0 u_val = showRealValue(&u[i].val);
         real* _cost = cost[i];
         char* _is_x = is_x[i];
 
@@ -886,7 +894,7 @@ static real_0 emdIsOptimal(real** cost, char** is_x,
         {
             if (!_is_x[j])
             {
-                delta = showRealValue(_cost[j]) - u_val - showRealValue(v[j].val);
+                delta = showRealValue(&_cost[j]) - u_val - showRealValue(&v[j].val);
 
                 if (min_delta > delta)
                 {
@@ -1020,7 +1028,7 @@ static mwbool emdNewSolution(EMDState* state)
     {
         real temp = loop[i]->val;
 
-        if (showRealValue(min_val) > showRealValue(temp))
+        if (showRealValue(&min_val) > showRealValue(&temp))
         {
             leave_x = loop[i];
             min_val = temp;
@@ -1035,8 +1043,8 @@ static mwbool emdNewSolution(EMDState* state)
     /* update the loop */
     for (i = 0; i < steps; i += 2)
     {
-        real temp0 = mw_add(loop[i]->val, min_val);
-        real temp1 = mw_sub(loop[i + 1]->val, min_val);
+        real temp0 = mw_add(&loop[i]->val, &min_val);
+        real temp1 = mw_sub(&loop[i + 1]->val, &min_val);
 
         loop[i]->val = temp0;
         loop[i + 1]->val = temp1;
@@ -1081,7 +1089,7 @@ static int emdIterateSolution(EMDState* state)
 {
     int result;
     real_0 min_delta;
-    real_0 eps = EMD_EPS * showRealValue(state->max_cost);
+    real_0 eps = EMD_EPS * showRealValue(&state->max_cost);
 
     /* if ssize = 1 or dsize = 1 then we are done, else ... */
     if (state->ssize > 1 && state->dsize > 1)
@@ -1142,7 +1150,7 @@ static void emdPrintFlowMatrix(const real* flow, int size1, int size2)
     {
         for (j = 0; j < size2; ++j)
         {
-            mw_printf("Flow[ % d][ % d] = % f\n", i, j, showRealValue(flow[flowStep * j + i]));
+            mw_printf("Flow[ % d][ % d] = % f\n", i, j, showRealValue(&flow[flowStep * j + i]));
         }
     }
 }
@@ -1174,6 +1182,7 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
     EMDNode2D* xp = NULL;
     real totalCost = ZERO_REAL;
     const int flowStep = 1;
+    real tmp;
 
     for (xp = state->_x; xp < state->end_x; xp++)
     {
@@ -1192,7 +1201,8 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
 
         if (ci >= 0 && cj >= 0)
         {
-            totalCost = mw_add(totalCost, mw_mul(val, state->cost[i][j]));
+            tmp = mw_mul(&val, &state->cost[i][j]);
+            totalCost = mw_add(&totalCost, &tmp);
 
             if (flow)
             {
@@ -1253,7 +1263,7 @@ real emdCalc(const real* RESTRICT signature_arr1,
         totalCost = emdComputeTotalFlow(&state, flow);
         //mw_printf("totalCost = %.15f\n", totalCost);
         //mw_printf("weight = %.15f\n", state.weight);
-        emd = mw_div(totalCost, state.weight);
+        emd = mw_div(&totalCost, &state.weight);
         //mw_printf("emd = %.15f\n", emd);
     }
 
@@ -1297,14 +1307,16 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     WeightPos* dat;
     real emd;
     real likelihood;
+    real tmp;
 
     /* Remove all simulated bodies in unused bins for renormalization after skipping bins */
     for (i = 0; i < bins; ++i)
     {
         if(!first_data->data[i].useBin)
         {
-            rawCount = mw_round(mw_mul(first_hist->data[i].variable, nSim_uncut));
-            nSim = mw_sub(nSim, rawCount);
+            tmp = mw_mul(&first_hist->data[i].variable, &nSim_uncut);
+            rawCount = mw_round(&tmp);
+            nSim = mw_sub(&nSim, &rawCount);
         }
     }
 
@@ -1317,14 +1329,14 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         return mw_real_const(NAN);
     }
 
-    if ((int) showRealValue(nSim) == 0 || showRealValue(nData) == 0)
+    if ((int) showRealValue(&nSim) == 0 || showRealValue(&nData) == 0)
     {
         /* If the histogram is totally empty, it is worse than the worst case */
         return mw_real_const(INFINITY);
         mw_printf("Empty Histogram!\n");
     }
 
-    if (showRealValue(histMass) <= 0.0 || showRealValue(dataMass) <= 0.0)
+    if (showRealValue(&histMass) <= 0.0 || showRealValue(&dataMass) <= 0.0)
     {
         /*In order to calculate likelihood the masses are necessary*/
         mw_printf("No Mass Found!\n");
@@ -1342,7 +1354,8 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
             {
                 // counts is stored in "variable" of the 0 histogram in MainStruct
                 dat[i].weight = (real) first_data->data[i].variable;
-                hist[i].weight = mw_mul(first_hist->data[i].variable, mw_div(nSim_uncut, nSim));
+                tmp = mw_div(&nSim_uncut, &nSim);
+                hist[i].weight = mw_mul(&first_hist->data[i].variable, &tmp);
             }
 
             hist[i].lambda = (real) first_hist->data[i].lambda;
@@ -1355,11 +1368,11 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
 
     emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
 
-    emd = mw_mul_s(emd, 1.0e9);
-    emd = mw_round(emd);
-    emd = mw_mul_s(emd, 1.0e-9);
+    emd = mw_mul_s(&emd, 1.0e9);
+    emd = mw_round(&emd);
+    emd = mw_mul_s(&emd, 1.0e-9);
     
-    if (showRealValue(emd) > 50.0)
+    if (showRealValue(&emd) > 50.0)
     {
         free(hist);
         free(dat);
@@ -1371,17 +1384,19 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     /* This calculates the likelihood as the combination of the
     * probability distribution and (1.0 - emd / max_dist) */
 
-    real EMDComponent = mw_sub(mw_real_const(1.0), mw_mul_s(emd, inv_0(50.0)));
+    tmp = mw_mul_s(&emd, inv_0(50.0));
+    real EMDComponent = mw_add_s(&tmp, -1.0);
     
     
     /* the 300 is there to add weight to the EMD component */
-    likelihood = mw_mul_s(mw_log(EMDComponent), 300.0);
+    tmp = mw_log(&EMDComponent);
+    likelihood = mw_mul_s(&tmp, 300.0);
 
     free(hist);
     free(dat);
 //     mw_printf("l = %.15f\n", likelihood);
     
     /* the emd is a negative. returning a positive value */
-    return mw_mul_s(likelihood,-1.0);
+    return mw_neg(&likelihood);
 }
 

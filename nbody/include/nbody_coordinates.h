@@ -41,14 +41,14 @@ extern "C" {
 #endif
 
 /* Coordinate conversion */
-mwvector cartesianToLbr(mwvector r, real_0 sunGCDist);
-mwvector cartesianToLbr_rad(mwvector r, real_0 sunGCDist);
-mwvector lbrToCartesian(mwvector lbr, real_0 sunGCDist);
-mwvector lbrToCartesian_rad(mwvector lbr, real_0 sunGCDist);
+mwvector cartesianToLbr(mwvector* r, real_0 sunGCDist);
+mwvector cartesianToLbr_rad(mwvector* r, real_0 sunGCDist);
+mwvector lbrToCartesian(mwvector* lbr, real_0 sunGCDist);
+mwvector lbrToCartesian_rad(mwvector* lbr, real_0 sunGCDist);
 
 void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp);
-real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real_0 runGCDist);
-mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real_0 runGCDist);
+real nbXYZToLambda(const NBHistTrig* ht, mwvector* xyz, real_0 runGCDist);
+mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector* xyz, real_0 runGCDist);
 #ifdef __cplusplus
 }
 #endif

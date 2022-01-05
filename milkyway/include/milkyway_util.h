@@ -210,12 +210,12 @@ void mwLocalTimeFull(char* buf, size_t bufSize);
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
 
 mwvector mwRandomUnitVector(dsfmt_t* dsfmtState);
-mwvector mwRandomVector(dsfmt_t* dsfmtState, real r);
+mwvector mwRandomVector(dsfmt_t* dsfmtState, real* r);
 
 mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState);
-mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
+mwvector mwRandomPoint(dsfmt_t* dsfmtState, real* r);
 
-real constrainAngle(real a);
+real constrainAngle(real* a);
 
 
 #define mwEven(x) ((x) % 2 == 0)

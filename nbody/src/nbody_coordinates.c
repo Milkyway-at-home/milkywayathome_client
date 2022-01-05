@@ -21,53 +21,65 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_config.h"
 #include "nbody_coordinates.h"
 
-mwvector cartesianToLbr_rad(mwvector r, real_0 sunGCDist)
+mwvector cartesianToLbr_rad(mwvector* r, real_0 sunGCDist)
 {
     mwvector lbR;
 
-    const real xp = mw_add(X(r), mw_real_const(sunGCDist));
+    const real xp = mw_add_s(&X(r), sunGCDist);
+    const real rho = mw_hypot(&xp, &Y(r));
 
-    L(lbR) = mw_atan2(Y(r), xp);
-    B(lbR) = mw_atan2( Z(r), mw_hypot(xp, Y(r)) );
-    R(lbR) = mw_hypot(mw_hypot(xp, Y(r)), Z(r));
-    W(lbR) = ZERO_REAL;
+    lbR.x = mw_atan2(&Y(r), &xp);
+    lbR.y = mw_atan2(&Z(r), &rho );
+    lbR.z = mw_hypot(&rho, &Z(r));
+    lbR.w = ZERO_REAL;
 
-    if (showRealValue(L(lbR)) < 0.0)
-        L(lbR) = mw_add(L(lbR), mw_real_const(M_2PI));
+    if (showRealValue(&lbR.x) < 0.0)
+        lbR.x = mw_add_s(&(lbR.x), M_2PI);
 
     return lbR;
 }
 
-mwvector cartesianToLbr(mwvector r, real_0 sunGCDist)
+mwvector cartesianToLbr(mwvector* r, real_0 sunGCDist)
 {
     mwvector lbR;
     lbR = cartesianToLbr_rad(r, sunGCDist);
-    L(lbR) = r2d(L(lbR));
-    B(lbR) = r2d(B(lbR));
+    lbR.x = r2d(&(lbR.x));
+    lbR.y = r2d(&(lbR.y));
 
     return lbR;
 }
 
-static inline mwvector _lbrToCartesian(const real l, const real b, const real r, const real_0 sun)
+static inline mwvector _lbrToCartesian(const real* l, const real* b, const real* r, const real_0 sun)
 {
     mwvector cart;
+    real tmp;
+    real cosl = mw_cos(l);
+    real cosb = mw_cos(b);
+    real sinl = mw_sin(l);
+    real sinb = mw_sin(b);
 
-    X(cart) = mw_sub(mw_mul(r, mw_mul(mw_cos(l), mw_cos(b))), mw_real_const(sun));
-    Y(cart) = mw_mul(r, mw_mul(mw_sin(l), mw_cos(b)));
-    Z(cart) = mw_mul(r, mw_sin(b));
-    W(cart) = ZERO_REAL;
+    tmp = mw_mul(&cosl, &cosb);
+    tmp = mw_mul(&r, &tmp);
+    cart.x = mw_add_s(&tmp, -sun);
+
+    tmp = mw_mul(&sinl, &cosb);
+    cart.y = mw_mul(&r, &tmp);
+    cart.z = mw_mul(&r, &sinb);
+    cart.w = ZERO_REAL;
 
     return cart;
 }
 
-mwvector lbrToCartesian_rad(mwvector lbr, real_0 sunGCDist)
+mwvector lbrToCartesian_rad(mwvector* lbr, real_0 sunGCDist)
 {
-    return _lbrToCartesian(L(lbr), B(lbr), R(lbr), sunGCDist);
+    return _lbrToCartesian(&L(lbr), &B(lbr), &R(lbr), sunGCDist);
 }
 
-mwvector lbrToCartesian(mwvector lbr, real_0 sunGCDist)
+mwvector lbrToCartesian(mwvector* lbr, real_0 sunGCDist)
 {
-    return _lbrToCartesian(d2r(L(lbr)), d2r(B(lbr)), R(lbr), sunGCDist);
+    real Lrad = d2r(&L(lbr));
+    real Brad = d2r(&B(lbr));
+    return _lbrToCartesian(&Lrad, &Brad, &R(lbr), sunGCDist);
 }
 
 void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp)
@@ -84,11 +96,12 @@ void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp)
     ht->sinth  = mw_sin_0(rth);
 }
 
-real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real_0 sunGCDist)
+real nbXYZToLambda(const NBHistTrig* ht, mwvector* xyz, real_0 sunGCDist)
 {
-    real bcos, bsin, lsin, lcos;
+    real bcos, bsin, lsin, lcos, tmp;
     real lambda;
     mwvector lbr;
+    real part1, part2, part3;
 
     real_0 cosphi = ht->cosphi;
     real_0 sinphi = ht->sinphi;
@@ -103,19 +116,29 @@ real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real_0 sunGCDist)
 
     /* Convert to (lambda, beta) (involves a rotation using the
        Newberg et al (2009) rotation matrices) which gets it from http://www.astro.virginia.edu/~srm4n/Sgr/SgrCoord.h**/
-    bcos = mw_cos(B(lbr));
-    bsin = mw_sin(B(lbr));
-    lsin = mw_sin(L(lbr));
-    lcos = mw_cos(L(lbr));
+    bcos = mw_cos(&B(&lbr));
+    bsin = mw_sin(&B(&lbr));
+    lsin = mw_sin(&L(&lbr));
+    lcos = mw_cos(&L(&lbr));
 
-    lambda = r2d(mw_atan2(
-         mw_add(mw_add(mw_mul_s(mw_mul(bcos, lcos), - (sinpsi * cosphi + costh * sinphi * cospsi)),
-                       mw_mul_s(mw_mul(bcos, lsin), (-sinpsi * sinphi + costh * cosphi * cospsi))),
-                       mw_mul_s(bsin, cospsi * sinth)),
+    part1 = mw_mul(&bcos, &lcos);
+    part1 = mw_mul_s(&part1, - (sinpsi * cosphi + costh * sinphi * cospsi));
+    part2 = mw_mul(&bcos, &lsin);
+    part2 = mw_mul_s(&part2, (-sinpsi * sinphi + costh * cosphi * cospsi));
+    part3 = mw_mul_s(&bsin, cospsi * sinth);
+    real y_like = mw_add(&part1, &part2);
+    y_like = mw_add(&y_like, &part3);
 
-         mw_add(mw_add(mw_mul_s(mw_mul(bcos, lcos), cospsi * cosphi - costh * sinphi * sinpsi),
-                       mw_mul_s(mw_mul(bcos, lsin), cospsi * sinphi + costh * cosphi * sinpsi)),
-                       mw_mul_s(bsin, sinpsi * sinth)) ));
+    part1 = mw_mul(&bcos, &lcos);
+    part1 = mw_mul_s(&part1, cospsi * cosphi - costh * sinphi * sinpsi);
+    part2 = mw_mul(&bcos, &lsin);
+    part2 = mw_mul_s(&part2, cospsi * sinphi + costh * cosphi * sinpsi);
+    part3 = mw_mul_s(&bsin, sinpsi * sinth);
+    real x_like = mw_add(&part1, &part2);
+    x_like = mw_add(&y_like, &part3);
+
+    tmp = mw_atan2(&y_like, &x_like);
+    lambda = r2d(&tmp);
 
     return lambda;
 }
@@ -126,10 +149,11 @@ real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real_0 sunGCDist)
 / Output is in kpc and degrees, of the form X_Sgr Y_Sgr Z_Sgr r lambda beta 
 Adapted from http://www.astro.virginia.edu/~srm4n/Sgr/SgrCoord.h*/
 /* Still Needs to be tested!!! */
-mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real_0 sunGCDist)  
+mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector* xyz, real_0 sunGCDist)  
 {
     mwvector lambdabetar;
-    real tempX, tempY, tempZ;
+    real tempX, tempY, tempZ, tmp;
+    real tempX1, tempX2, tempX3, tempY1, tempY2, tempY3, tempZ1,  tempZ2,  tempZ3; 
     real_0 cosphi = ht->cosphi;
     real_0 sinphi = ht->sinphi;
     real_0 sinpsi = ht->sinpsi;
@@ -148,17 +172,36 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real_0 sunGCDist)
     real_0 rot32 = -sinth * cosphi;
     real_0 rot33 = costh;
 
-    X(xyz) = mw_add(X(xyz), mw_real_const(sunGCDist));
+    X(xyz) = mw_add_s(&X(xyz), sunGCDist);
 
     /* Calculate X,Y,Z,distance in the Sgr system */
-    tempX = mw_add(mw_add(mw_mul_s(X(xyz), rot11), mw_mul_s(Y(xyz), rot12)), mw_mul_s(Z(xyz), rot13));
-    tempY = mw_add(mw_add(mw_mul_s(X(xyz), rot21), mw_mul_s(Y(xyz), rot22)), mw_mul_s(Z(xyz), rot23));
-    tempZ = mw_add(mw_add(mw_mul_s(X(xyz), rot31), mw_mul_s(Y(xyz), rot32)), mw_mul_s(Z(xyz), rot33));
-    R(lambdabetar) = mw_hypot(mw_hypot(tempX, tempY), tempZ);
+    tempX1 = mw_mul_s(&X(xyz), rot11);
+    tempX2 = mw_mul_s(&Y(xyz), rot12);
+    tempX3 = mw_mul_s(&Z(xyz), rot13);
+    tempX  = mw_add(&tempX1, &tempX2);
+    tempX  = mw_add(&tempX, &tempX3);
 
-    tempZ = mw_neg(tempZ);
+    tempY1 = mw_mul_s(&X(xyz), rot21);
+    tempY2 = mw_mul_s(&Y(xyz), rot22);
+    tempY3 = mw_mul_s(&Z(xyz), rot23);
+    tempY  = mw_add(&tempY1, &tempY2);
+    tempY  = mw_add(&tempY, &tempY3);
+
+    tempZ1 = mw_mul_s(&X(xyz), rot31);
+    tempZ2 = mw_mul_s(&Y(xyz), rot32);
+    tempZ3 = mw_mul_s(&Z(xyz), rot33);
+    tempZ = mw_add(&tempZ1, &tempZ2);
+    tempZ = mw_add(&tempZ, &tempZ3);
+
+    R(&lambdabetar) = mw_hypot(&tempX, &tempY);
+    R(&lambdabetar) = mw_hypot(&R(&lambdabetar), &tempZ);
+
+    tempZ = mw_neg(&tempZ);
     /* Calculate the angular coordinates lambda,beta */
-    L(lambdabetar) = r2d(mw_atan2(tempY,tempX));
-    B(lambdabetar) = r2d(mw_asin(mw_div(tempZ, R(lambdabetar))));
+    tmp = mw_atan2(&tempY, &tempX);
+    L(&lambdabetar) = r2d(&tmp);
+    tmp = mw_div(&tempZ, &R(&lambdabetar));
+    tmp = mw_asin(&tmp);
+    B(&lambdabetar) = r2d(&tmp);
     return lambdabetar;
 }

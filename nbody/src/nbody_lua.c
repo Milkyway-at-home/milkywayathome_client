@@ -376,7 +376,7 @@ int nbOpenPotentialEvalStatePerThread(NBodyState* st, const NBodyFlags* nbf)
  * The closure used must of type number, number, number -> number,
  * number, number. (i.e. takes 3 numbers (x, y, z) and returns 3 numbers (a_x, a_y, a_z))
  */
-void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
+void nbEvalPotentialClosure(NBodyState* st, mwvector* pos, mwvector* aOut)
 {
   #ifdef _OPENMP
     const int tid = omp_get_thread_num();
@@ -387,7 +387,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
     int top;
     mwvector a;
     mwvector badVector;
-    SET_VECTOR(badVector, mw_real_const(REAL_MAX), mw_real_const(REAL_MAX), mw_real_const(REAL_MAX));
+    SET_VECTOR(&badVector, mw_real_const(REAL_MAX), mw_real_const(REAL_MAX), mw_real_const(REAL_MAX));
 
     mw_printf("Printing potEvalStates...\n");
     if (st->potEvalStates==NULL)
@@ -451,9 +451,9 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
         return;
     }
 
-    Z(a) = *toReal(luaSt, top);
-    Y(a) = *toReal(luaSt, top - 1);
-    X(a) = *toReal(luaSt, top - 2);
+    Z(&a) = *toReal(luaSt, top);
+    Y(&a) = *toReal(luaSt, top - 1);
+    X(&a) = *toReal(luaSt, top - 2);
 
     *aOut = a;
     lua_pop(luaSt, 3);

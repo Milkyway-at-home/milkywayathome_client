@@ -44,7 +44,7 @@ void nbWriteHistogram(const char* histoutFileName,
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data);
 
-real nbNormalizedHistogramError(real n, real total);
+real nbNormalizedHistogramError(real* n, real* total);
 
 real nbCorrectTotalNumberInHistogram(const NBodyHistogram* histogram, /* Generated histogram */
 					     const NBodyHistogram* data);      /* Data histogram */

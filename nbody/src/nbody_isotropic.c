@@ -639,7 +639,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real_0 r, real_0 * args)
     return mw_real_const(v); //km/s
 }
 
-static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
+static inline mwvector get_components(dsfmt_t* dsfmtState, real* rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
     mwvector vec;
@@ -650,15 +650,15 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
     phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
 
     /*this is standard formula for x,y,z components in spherical*/
-    X(vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_cos_0( phi ));        /*x component*/
-    Y(vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_sin_0( phi ));        /*y component*/
-    Z(vec) = mw_mul_s(rad, mw_cos_0( theta ));                          /*z component*/
+    X(&vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_cos_0( phi ));        /*x component*/
+    Y(&vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_sin_0( phi ));        /*y component*/
+    Z(&vec) = mw_mul_s(rad, mw_cos_0( theta ));                          /*z component*/
 
     return vec;
 }
 
 
-static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real_0 dwarf_mass, int nbody)
+static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector* rShift, mwvector* vShift, real_0 dwarf_mass, int nbody)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
@@ -671,41 +671,48 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
     real cm_vx = ZERO_REAL;
     real cm_vy = ZERO_REAL;
     real cm_vz = ZERO_REAL;
+    real tmp;
     unsigned int i;
     for(i = 0; i < nbody; i++)
     {
-        cm_x = mw_add(cm_x, mw_mul(mass[i], x[i]));
-        cm_y = mw_add(cm_y, mw_mul(mass[i], y[i]));
-        cm_z = mw_add(cm_z, mw_mul(mass[i], z[i]));
+        cm_x = mw_mad(&mass[i], &x[i], &cm_x);
+        cm_y = mw_mad(&mass[i], &y[i], &cm_y);
+        cm_z = mw_mad(&mass[i], &z[i], &cm_z);
         
-        cm_vx = mw_add(cm_vx, mw_mul(mass[i], vx[i]));
-        cm_vy = mw_add(cm_vy, mw_mul(mass[i], vy[i]));
-        cm_vz = mw_add(cm_vz, mw_mul(mass[i], vz[i]));
+        cm_vx = mw_mad(&mass[i], &vx[i], &cm_vx);
+        cm_vy = mw_mad(&mass[i], &vy[i], &cm_vy);
+        cm_vz = mw_mad(&mass[i], &vz[i], &cm_vz);
     }
      
-    cm_x = mw_mul_s(cm_x, inv_0(dwarf_mass));
-    cm_y = mw_mul_s(cm_y, inv_0(dwarf_mass));
-    cm_z = mw_mul_s(cm_z, inv_0(dwarf_mass));
+    cm_x = mw_mul_s(&cm_x, inv_0(dwarf_mass));
+    cm_y = mw_mul_s(&cm_y, inv_0(dwarf_mass));
+    cm_z = mw_mul_s(&cm_z, inv_0(dwarf_mass));
     
-    cm_vx = mw_mul_s(cm_vx, inv_0(dwarf_mass));
-    cm_vy = mw_mul_s(cm_vy, inv_0(dwarf_mass));
-    cm_vz = mw_mul_s(cm_vz, inv_0(dwarf_mass));
+    cm_vx = mw_mul_s(&cm_vx, inv_0(dwarf_mass));
+    cm_vy = mw_mul_s(&cm_vy, inv_0(dwarf_mass));
+    cm_vz = mw_mul_s(&cm_vz, inv_0(dwarf_mass));
 
     for(i = 0; i < nbody; i++)
     {
-        x[i] = mw_add(mw_sub(x[i], cm_x), rShift.x);
-        y[i] = mw_add(mw_sub(y[i], cm_y), rShift.y);
-        z[i] = mw_add(mw_sub(z[i], cm_z), rShift.z);
+        tmp = mw_sub(&x[i], &cm_x);
+        x[i] = mw_add(&tmp, &rShift->x);
+        tmp = mw_sub(&y[i], &cm_y);
+        y[i] = mw_add(&tmp, &rShift->y);
+        tmp = mw_sub(&z[i], &cm_z);
+        z[i] = mw_add(&tmp, &rShift->z);
         
-        vx[i] = mw_add(mw_sub(vx[i], cm_vx), vShift.x);
-        vy[i] = mw_add(mw_sub(vy[i], cm_vy), vShift.y);
-        vz[i] = mw_add(mw_sub(vz[i], cm_vz), vShift.z);
+        tmp = mw_sub(&vx[i], &cm_vx);
+        vx[i] = mw_add(&tmp, &vShift->x);
+        tmp = mw_sub(&vy[i], &cm_vy);
+        vy[i] = mw_add(&tmp, &vShift->y);
+        tmp = mw_sub(&vz[i], &cm_vz);
+        vz[i] = mw_add(&tmp, &vShift->z);
     }
     return 1;
 }
 
 /*      DWARF GENERATION        */
-static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real_0 mass1, real_0 mass2, mwbool ignore, mwvector rShift, mwvector vShift, real_0 radiusScale1, real_0 radiusScale2)
+static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real_0 mass1, real_0 mass2, mwbool ignore, mwvector* rShift, mwvector* vShift, real_0 radiusScale1, real_0 radiusScale2)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
@@ -785,7 +792,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(showRealValue(r)) == FALSE && showRealValue(r) != 0.0 && isnan(showRealValue(r)) == FALSE){break;}
+                if(isinf(showRealValue(&r)) == FALSE && showRealValue(&r) != 0.0 && isnan(showRealValue(&r)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -804,8 +811,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             counter = 0;
             do
             {
-                v = vel_mag(prng, showRealValue(r), args);
-                if(isinf(showRealValue(v)) == FALSE && showRealValue(v) != 0.0 && isnan(showRealValue(v)) == FALSE){break;}
+                v = vel_mag(prng, showRealValue(&r), args);
+                if(isinf(showRealValue(&v)) == FALSE && showRealValue(&v) != 0.0 && isnan(showRealValue(&v)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -818,12 +825,12 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
             }while (1);
 
-            vec = get_components(prng, v);   
+            vec = get_components(prng, &v);   
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
             
-            vec = get_components(prng, r);  
+            vec = get_components(prng, &r);  
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
@@ -858,7 +865,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             b.vel.y = vy[i];
             b.vel.z = vz[i];
             
-            assert(nbPositionValid(b.bodynode.pos));
+            assert(nbPositionValid(&b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
@@ -907,7 +914,7 @@ int nbGenerateIsotropic(lua_State* luaSt)
         
         
         return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, mass1, mass2, ignore,
-                                                                 *position, *velocity, radiusScale1, radiusScale2);
+                                                                 position, velocity, radiusScale1, radiusScale2);
 }
 
 void registerGenerateIsotropic(lua_State* luaSt)

@@ -130,7 +130,7 @@ static int dsfmtRandomVector(lua_State* luaSt)
     {
         dsfmtState = checkDSFMT(luaSt, 1);
         r = *checkReal(luaSt, 2);
-        pushVector(luaSt, mwRandomVector(dsfmtState, r));
+        pushVector(luaSt, mwRandomVector(dsfmtState, &r));
         return 1;
     }
     else

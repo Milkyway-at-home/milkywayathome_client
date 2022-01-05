@@ -58,18 +58,21 @@ static real_0 nfwNextRadius(real_0 start_radius, real_0 goal_mass, real_0 rho_0,
 /* nfwPickShell: pick a random point on a sphere of specified radius. */
 static mwvector nfwPickShell(dsfmt_t* dsfmtState, real_0 rad)
 {
-    real_0 rsq, rsc;
+    real_0 rsq;
+    real rsc;
     mwvector vec;
+    real tmp;
 
     do                      /* pick point in NDIM-space */
     {
         vec = mwRandomUnitPoint(dsfmtState);
-        rsq = showRealValue(mw_sqrv(vec));         /* compute radius squared */
+        tmp = mw_sqrv(&vec);
+        rsq = showRealValue(&tmp);         /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */
 
-    rsc = rad / mw_sqrt_0(rsq);       /* compute scaling factor */
-    mw_incmulvs(vec, mw_real_const(rsc));          /* rescale to radius given */
+    rsc = mw_real_const(rad / mw_sqrt_0(rsq));       /* compute scaling factor */
+    mw_incmulvs(&vec, &rsc);          /* rescale to radius given */
 
     return vec;
 }
@@ -108,24 +111,24 @@ static real_0 nfwCalculateV(real_0 r, real_0 rho_0, real_0 R_S)
     return v;
 }
 
-static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real_0 rsc, real_0 r)
+static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift, real_0 rsc, real_0 r)
 {
     mwvector pos;
 
     pos = nfwPickShell(dsfmtState, rsc * r);  /* pick scaled position */
-    mw_incaddv(pos, rshift);               /* move the position */
+    mw_incaddv(&pos, rshift);               /* move the position */
 
     return pos;
 }
 
-static mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real_0 r, real_0 rho_0, real_0 R_S)
+static mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift, real_0 r, real_0 rho_0, real_0 R_S)
 {
     mwvector vel;
     real_0 v;
 
     v = nfwCalculateV(r, rho_0, R_S);
     vel = nfwPickShell(dsfmtState, v);   /* pick scaled velocity */
-    mw_incaddv(vel, vshift);             /* move the velocity */
+    mw_incaddv(&vel, vshift);             /* move the velocity */
 
     return vel;
 }
@@ -142,8 +145,8 @@ static int nbGenerateNFWCore(lua_State* luaSt,
 
                              mwbool ignore,
 
-                             mwvector rShift,
-                             mwvector vShift,
+                             mwvector* rShift,
+                             mwvector* vShift,
                              real_0 rho_0,
                              real_0 R_S)
 {
@@ -184,7 +187,7 @@ static int nbGenerateNFWCore(lua_State* luaSt,
 
         b.bodynode.pos = nfwBodyPosition(prng, rShift, 1, r);
         b.vel = nfwBodyVelocity(prng, vShift, r, rho_0, R_S);
-        assert(nbPositionValid(b.bodynode.pos));
+        assert(nbPositionValid(&b.bodynode.pos));
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
@@ -220,7 +223,7 @@ int nbGenerateNFW(lua_State* luaSt)
     handleNamedArgumentTable(luaSt, argTable, 1);
 
     return nbGenerateNFWCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
-                                 *position, *velocity, rho_0, R_S);
+                                 position, velocity, rho_0, R_S);
 }
 
 void registerGenerateNFW(lua_State* luaSt)

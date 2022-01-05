@@ -45,26 +45,29 @@ typedef struct MW_ALIGN_TYPE
 
 #define ZERO_KAHAN { ZERO_REAL, ZERO_REAL }
 
-#define CLEAR_KAHAN(k) { (k).sum = ZERO_REAL; (k).correction = ZERO_REAL; }
+#define CLEAR_KAHAN(k) { (k)->sum = ZERO_REAL; (k)->correction = ZERO_REAL; }
 
 
-#define KAHAN_ADD(k, item)                                  \
-    {                                                       \
-        real _y = mw_sub((item), (k).correction);           \
-        real _t = mw_add((k).sum, _y);                      \
-        (k).correction = mw_sub(mw_sub(_t, (k).sum), _y);   \
-        (k).sum = _t;                                       \
+#define KAHAN_ADD(k, item)                              \
+    {                                                   \
+        real _y = mw_sub((item), &((k)->correction));  \
+        real _t = mw_add(&((k)->sum), &_y);             \
+        real _d = mw_sub(&_t, &((k)->sum));             \
+        (k)->correction = mw_sub(&_d, &_y);             \
+        (k)->sum = _t;                                  \
     }
 
 /* inOut += in with 2 Kahan sums correctly combining their error terms */
 #define KAHAN_REDUCTION(inOut, in)                                                         \
     {                                                                                      \
         real correctedNextTerm, newSum;                                                    \
+        real addCorr = mw_add(&((in)->correction), &((inOut)->correction))                 \
                                                                                            \
-        correctedNextTerm = mw_add((in).sum, mw_add((in).correction, (inOut).correction)); \
-        newSum = mw_add((inOut).sum, correctedNextTerm);                                   \
-        (inOut).correction = mw_sub(correctedNextTerm, mw_sub(newSum, (inOut).sum));     \
-        (inOut).sum = newSum;                                                              \
+        correctedNextTerm = mw_add(&((in)->sum), &addCorr);                                \
+        newSum = mw_add(&((inOut)->sum), &correctedNextTerm);                              \
+        real diffSum = mw_sub(&newSum, &((inOut)->sum));                                   \
+        (inOut)->correction = mw_sub(&correctedNextTerm, &diffSum);                        \
+        (inOut)->sum = newSum;                                                             \
     }
 
 

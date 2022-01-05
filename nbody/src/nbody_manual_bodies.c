@@ -145,7 +145,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
         b.vel.z = mw_real_const(vz[i]);
         
 //         mw_printf("%f %f %f %f %f %f %f\n", b.bodynode.pos.x, b.bodynode.pos.y, b.bodynode.pos.z, b.vel.x, b.vel.y, b.vel.z, b.bodynode.mass);
-        assert(nbPositionValid(b.bodynode.pos));
+        assert(nbPositionValid(&b.bodynode.pos));
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
     }

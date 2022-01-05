@@ -136,7 +136,7 @@ static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx,
         return TRUE;
     }
 
-    nbEvalPotentialClosure(st, pos, &acc);
+    nbEvalPotentialClosure(st, &pos, &acc);
     return st->potentialEvalError;
 }
 
@@ -191,12 +191,12 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
     if(!ctx->LMC)
     {
         mwvector zero;
-        SET_VECTOR(zero,ZERO_REAL,ZERO_REAL,ZERO_REAL);
-        return nbStepSystemPlain(ctx, st, zero, zero); 
+        SET_VECTOR(&zero,ZERO_REAL,ZERO_REAL,ZERO_REAL);
+        return nbStepSystemPlain(ctx, st, &zero, &zero); 
     }
     else
     {
-        return nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
+        return nbStepSystemPlain(ctx, st, &st->shiftByLMC[st->step], &st->shiftByLMC[st->step+1]);
     }
 }
 
@@ -303,12 +303,12 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         * It previous returned the worse case when the likelihood == 0. 
         * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
         */
-        if (showRealValue(likelihood) > DEFAULT_WORST_CASE || showRealValue(likelihood) < (-1 * DEFAULT_WORST_CASE) )
+        if (showRealValue(&likelihood) > DEFAULT_WORST_CASE || showRealValue(&likelihood) < (-1 * DEFAULT_WORST_CASE) )
         {
             mw_printf("Poor likelihood.  Returning worst case.\n");
             setRealValue(&likelihood, DEFAULT_WORST_CASE);
         }
-        else if(showRealValue(likelihood) == 0.0)
+        else if(showRealValue(&likelihood) == 0.0)
         {
             setRealValue(&likelihood, DEFAULT_BEST_CASE);
         }
@@ -318,7 +318,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
          * replace it with the best likelihood 
          */
         /* only do the comparison if we are using the best likelihood code */
-        if(mw_fabs_0(showRealValue(likelihood)) > mw_fabs_0(showRealValue(st->bestLikelihood)) && ctx->useBestLike)
+        if(mw_fabs_0(showRealValue(&likelihood)) > mw_fabs_0(showRealValue(&st->bestLikelihood)) && ctx->useBestLike)
         {
             likelihood         = st->bestLikelihood;
             likelihood_EMD     = st->bestLikelihood_EMD;
@@ -354,35 +354,35 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
   if (calculateLikelihood)
     {
         /* Reported negated distance since the search maximizes this */
-      if (isnan(showRealValue(likelihood)))
+      if (isnan(showRealValue(&likelihood)))
         {
             setRealValue(&likelihood, DEFAULT_WORST_CASE);
             mw_printf("Likelihood was NAN. Returning worst case. \n");
-            mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(likelihood));
+            mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
             return NBODY_SUCCESS;
         }
-        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(likelihood));
-        mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -showRealValue(likelihood_EMD));
-        mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -showRealValue(likelihood_Mass));
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
+        mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -showRealValue(&likelihood_EMD));
+        mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -showRealValue(&likelihood_Mass));
 	if (st->useBetaDisp)
         {
-            mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -showRealValue(likelihood_Beta));
+            mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -showRealValue(&likelihood_Beta));
         }
 	if (st->useVelDisp)
         {
-            mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -showRealValue(likelihood_Vel));
+            mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -showRealValue(&likelihood_Vel));
         }
        if (st->useBetaComp)
        {
-           mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -showRealValue(likelihood_BetaAvg));
+           mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -showRealValue(&likelihood_BetaAvg));
        }
        if (st->useVlos)
        {
-           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -showRealValue(likelihood_VelAvg));
+           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -showRealValue(&likelihood_VelAvg));
        }
        if (st->useDist)
        {
-           mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -showRealValue(likelihood_Dist));
+           mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -showRealValue(&likelihood_Dist));
        }
     }
 

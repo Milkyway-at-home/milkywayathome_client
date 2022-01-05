@@ -67,36 +67,24 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
     mw_boinc_print(f, "</hessian>\n");
 }
 
-void printReal(real a) //For debugging purposes
+void printReal(real* a) //For debugging purposes
 {
     int i;
-    mw_printf("Value = %.15f\n",a.value);
-    if(!a.gradient)
+    mw_printf("Value = %.15f\n",a->value);
+
+    mw_printf("Gradient = [");
+    for(i=0;i<NumberOfModelParameters;i++)
     {
-        mw_printf("NULL Gradient Found!\n");
+        mw_printf(" %.15f", a->gradient[i]);
     }
-    else
+    mw_printf(" ]\n");
+
+    mw_printf("Hessian = [");
+    for(i=0;i<HessianLength;i++)
     {
-        mw_printf("Gradient = [");
-        for(i=0;i<NumberOfModelParameters;i++)
-        {
-            mw_printf(" %.15f", a.gradient[i]);
-        }
-        mw_printf(" ]\n");
+        mw_printf(" %.15f", a->hessian[i]);
     }
-    if(!a.hessian)
-    {
-        mw_printf("NULL Hessian Found!\n");
-    }
-    else
-    {
-        mw_printf("Hessian = [");
-        for(i=0;i<HessianLength;i++)
-        {
-            mw_printf(" %.15f", a.hessian[i]);
-        }
-        mw_printf(" ]\n");
-    }
+    mw_printf(" ]\n");
 }
 
 #else
@@ -112,9 +100,9 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
     mw_boinc_print(f, "</hessian>\n");
 }
 
-void printReal(real a) //For debugging purposes
+void printReal(real* a) //For debugging purposes
 {
-    mw_printf("Value = %.15f\n",a);
+    mw_printf("Value = %.15f\n",*a);
 }
 
 #endif /*AUTODIFF*/

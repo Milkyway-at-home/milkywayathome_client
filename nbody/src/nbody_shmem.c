@@ -514,9 +514,9 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     info->currentTime = (float) (st->step * ctx->timestep);
     info->timeEvolve = (float) ctx->timeEvolve;
 
-    info->rootCenterOfMass[0] = (float) showRealValue(cmPos->x);
-    info->rootCenterOfMass[1] = (float) showRealValue(cmPos->y);
-    info->rootCenterOfMass[2] = (float) showRealValue(cmPos->z);
+    info->rootCenterOfMass[0] = (float) showRealValue(&cmPos->x);
+    info->rootCenterOfMass[1] = (float) showRealValue(&cmPos->y);
+    info->rootCenterOfMass[2] = (float) showRealValue(&cmPos->z);
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b) schedule(guided, 4096 / sizeof(Body))
@@ -524,9 +524,9 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     for (i = 0; i < nbody; ++i)
     {
         b = &st->bodytab[i];
-        r[i].x = (float) showRealValue(X(Pos(b)));
-        r[i].y = (float) showRealValue(Y(Pos(b)));
-        r[i].z = (float) showRealValue(Z(Pos(b)));
+        r[i].x = (float) showRealValue(&X(&Pos(b)));
+        r[i].y = (float) showRealValue(&Y(&Pos(b)));
+        r[i].z = (float) showRealValue(&Z(&Pos(b)));
         r[i].ignore = ignoreBody(b);
     }
 }
@@ -538,9 +538,9 @@ static inline void nbUpdateDisplayedOrbitTrace(FloatPos* sceneTrace, const mwvec
 
     for (i = 0; i < n; ++i)
     {
-        sceneTrace[i].x = (float) showRealValue(trace[i].x);
-        sceneTrace[i].y = (float) showRealValue(trace[i].y);
-        sceneTrace[i].z = (float) showRealValue(trace[i].z);
+        sceneTrace[i].x = (float) showRealValue(&trace[i].x);
+        sceneTrace[i].y = (float) showRealValue(&trace[i].y);
+        sceneTrace[i].z = (float) showRealValue(&trace[i].z);
     }
 }
 

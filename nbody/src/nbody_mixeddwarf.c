@@ -605,25 +605,26 @@ static inline real vel_mag(real_0 r, const Dwarf* comp1, const Dwarf* comp2, dsf
     return mw_real_const(v); //km/s
 }
 
-static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
+static inline mwvector get_components(dsfmt_t* dsfmtState, real* rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
     /* have to sample in this way because sampling angles and then converting
      * to xyz leads to strong dependence on the rad, which could lead to bunching 
      * at the poles.
      */
-    real r_sq, r_scaling;
+    real r_sq, r_scaling, tmp;
     mwvector vec;
 
     do                                       
     {
         vec = mwRandomUnitPoint(dsfmtState); /* pick point in NDIM-space */
-        r_sq = mw_sqrv(vec);                 /* compute radius squared */
+        r_sq = mw_sqrv(&vec);                 /* compute radius squared */
     }
-    while (showRealValue(r_sq) > 1.0);                      /* reject if outside unit sphere */
+    while (showRealValue(&r_sq) > 1.0);                      /* reject if outside unit sphere */
 
-    r_scaling = mw_div(rad, mw_sqrt(r_sq));         /* compute scaling factor */
-    mw_incmulvs(vec, r_scaling);             /* rescale to radius given */
+    tmp = mw_sqrt(&r_sq);
+    r_scaling = mw_div(rad, &tmp);         /* compute scaling factor */
+    mw_incmulvs(&vec, &r_scaling);             /* rescale to radius given */
     
     /* this is r * (u_vec / |u|). 
      * the r gives the magnitude, rad.
@@ -635,7 +636,7 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 }
 
 static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, 
-								mwvector rShift, mwvector vShift, real_0 comp_mass, unsigned int compStart, unsigned int compEnd)
+								mwvector* rShift, mwvector* vShift, real_0 comp_mass, unsigned int compStart, unsigned int compEnd)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
@@ -648,35 +649,42 @@ static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real *
     real cm_vx = ZERO_REAL;
     real cm_vy = ZERO_REAL;
     real cm_vz = ZERO_REAL;
+    real tmp;
     unsigned int i;
     for(i = compStart; i < compEnd; i++)
     {
-        cm_x = mw_add(cm_x, mw_mul(mass[i], x[i]));
-        cm_y = mw_add(cm_y, mw_mul(mass[i], y[i]));
-        cm_z = mw_add(cm_z, mw_mul(mass[i], z[i]));
+        cm_x = mw_mad(&mass[i], &x[i], &cm_x);
+        cm_y = mw_mad(&mass[i], &y[i], &cm_y);
+        cm_z = mw_mad(&mass[i], &z[i], &cm_z);
         
-        cm_vx = mw_add(cm_vx, mw_mul(mass[i], vx[i]));
-        cm_vy = mw_add(cm_vy, mw_mul(mass[i], vy[i]));
-        cm_vz = mw_add(cm_vz, mw_mul(mass[i], vz[i]));
+        cm_vx = mw_mad(&mass[i], &vx[i], &cm_vx);
+        cm_vy = mw_mad(&mass[i], &vy[i], &cm_vy);
+        cm_vz = mw_mad(&mass[i], &vz[i], &cm_vz);
     }
      
-    cm_x = mw_mul_s(cm_x, inv_0(comp_mass));
-    cm_y = mw_mul_s(cm_y, inv_0(comp_mass));
-    cm_z = mw_mul_s(cm_z, inv_0(comp_mass));
+    cm_x = mw_mul_s(&cm_x, inv_0(comp_mass));
+    cm_y = mw_mul_s(&cm_y, inv_0(comp_mass));
+    cm_z = mw_mul_s(&cm_z, inv_0(comp_mass));
     
-    cm_vx = mw_mul_s(cm_vx, inv_0(comp_mass));
-    cm_vy = mw_mul_s(cm_vy, inv_0(comp_mass));
-    cm_vz = mw_mul_s(cm_vz, inv_0(comp_mass));
+    cm_vx = mw_mul_s(&cm_vx, inv_0(comp_mass));
+    cm_vy = mw_mul_s(&cm_vy, inv_0(comp_mass));
+    cm_vz = mw_mul_s(&cm_vz, inv_0(comp_mass));
 
     for(i = compStart; i < compEnd; i++)
     {
-        x[i] = mw_add(mw_sub(x[i], cm_x), rShift.x);
-        y[i] = mw_add(mw_sub(y[i], cm_y), rShift.y);
-        z[i] = mw_add(mw_sub(z[i], cm_z), rShift.z);
+        tmp = mw_sub(&x[i], &cm_x);
+        x[i] = mw_add(&tmp, &rShift->x);
+        tmp = mw_sub(&y[i], &cm_y);
+        y[i] = mw_add(&tmp, &rShift->y);
+        tmp = mw_sub(&z[i], &cm_z);
+        z[i] = mw_add(&tmp, &rShift->z);
         
-        vx[i] = mw_add(mw_sub(vx[i], cm_vx), vShift.x);
-        vy[i] = mw_add(mw_sub(vy[i], cm_vy), vShift.y);
-        vz[i] = mw_add(mw_sub(vz[i], cm_vz), vShift.z);
+        tmp = mw_sub(&vx[i], &cm_vx);
+        vx[i] = mw_add(&tmp, &vShift->x);
+        tmp = mw_sub(&vy[i], &cm_vy);
+        vy[i] = mw_add(&tmp, &vShift->y);
+        tmp = mw_sub(&vz[i], &cm_vz);
+        vz[i] = mw_add(&tmp, &vShift->z);
     }
     return 1;
 }
@@ -711,7 +719,7 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real_0 bound)
 /*      DWARF GENERATION        */
 static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, 
                                      Dwarf* comp1,  Dwarf* comp2, 
-                                    mwbool ignore, mwvector rShift, mwvector vShift)
+                                    mwbool ignore, mwvector* rShift, mwvector* vShift)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
@@ -722,7 +730,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         unsigned int i;
         int table;
         Body b;
-        real r, v;
+        real r, v, tmp;
  
         real * x  = mwCalloc(nbody, sizeof(real));
         real * y  = mwCalloc(nbody, sizeof(real));
@@ -776,14 +784,16 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         real_0 dwarf_mass = mass_l + mass_d;
 
         real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass to position 4 of gradient*/
-        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS); /*Setting dwarf mass ratio to position 5 of gradient*/
-        real mass_dark  = mw_mul(mass_light, mw_sub(inv(mass_xi), mw_real_const(1.0)));
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS);  /*Setting dwarf mass ratio to position 5 of gradient*/
+        tmp = inv(&mass_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real mass_dark  = mw_mul(&mass_light, &tmp);
 
 
     //---------------------------------------------------------------------------------------------------        
         unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mw_mul_s(mass_light, inv_0((real_0) half_bodies));//half the particles are light matter
-        real mass_dark_particle  = mw_mul_s(mass_dark , inv_0((real_0) half_bodies));
+        real mass_light_particle = mw_mul_s(&mass_light, inv_0((real_0) half_bodies));//half the particles are light matter
+        real mass_dark_particle  = mw_mul_s(&mass_dark , inv_0((real_0) half_bodies));
     //----------------------------------------------------------------------------------------------------
 
 	
@@ -853,7 +863,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(showRealValue(r)) == FALSE && showRealValue(r) != 0.0 && isnan(showRealValue(r)) == FALSE){break;}
+                if(isinf(showRealValue(&r)) == FALSE && showRealValue(&r) != 0.0 && isnan(showRealValue(&r)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -870,8 +880,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             counter = 0;
             do
             {
-                v = vel_mag(showRealValue(r), comp1, comp2, prng);
-                if(isinf(showRealValue(v)) == FALSE && showRealValue(v) != 0.0 && isnan(showRealValue(v)) == FALSE){break;}
+                v = vel_mag(showRealValue(&r), comp1, comp2, prng);
+                if(isinf(showRealValue(&v)) == FALSE && showRealValue(&v) != 0.0 && isnan(showRealValue(&v)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -883,14 +893,18 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
-            vec = get_components(prng, v);   
+            //mw_printf("BODY VEL = %.15f\n", showRealValue(&v));
+            vec = get_components(prng, &v); 
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
-            vec = get_components(prng, r);  
+            //mw_printf("BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&vec.x), showRealValue(&vec.y), showRealValue(&vec.z));
+
+            vec = get_components(prng, &r);  
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
+            //mw_printf("BODY POS = [%.15f, %.15f, %.15f]\n", showRealValue(&vec.x), showRealValue(&vec.y), showRealValue(&vec.z));
         }
 
 
@@ -920,12 +934,16 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             b.bodynode.pos.x = x[i];
             b.bodynode.pos.y = y[i];
             b.bodynode.pos.z = z[i];
+
+            //mw_printf("BODY POS = [%.15f, %.15f, %.15f]\n", showRealValue(&b.bodynode.pos.x), showRealValue(&b.bodynode.pos.y), showRealValue(&b.bodynode.pos.z));
             
             b.vel.x = vx[i];
             b.vel.y = vy[i];
             b.vel.z = vz[i];
+
+            //mw_printf("BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&b.vel.x), showRealValue(&b.vel.y), showRealValue(&b.vel.z));
             
-            assert(nbPositionValid(b.bodynode.pos));
+            assert(nbPositionValid(&b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
@@ -947,7 +965,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
 int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
-                                     Dwarf* comp1,  Dwarf* comp2, mwvector rShift, mwvector vShift)
+                                     Dwarf* comp1,  Dwarf* comp2, mwvector* rShift, mwvector* vShift)
 {
     /* NOTE: unction is designed to mimic the above function, but bypass the need for the
 	* for the lua state. It is used in the test unit for constructing multi-component
@@ -957,7 +975,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         unsigned int i;
         int table;
         Body b;
-        real r, v;
+        real r, v, tmp;
  
         real * x  = mwCalloc(nbody, sizeof(real));
         real * y  = mwCalloc(nbody, sizeof(real));
@@ -1012,13 +1030,15 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
 
         real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass to position 4 of gradient*/
         real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS); /*Setting dwarf mass ratio to position 5 of gradient*/
-        real mass_dark  = mw_mul(mass_light, mw_sub(inv(mass_xi), mw_real_const(1.0)));
+        tmp = inv(&mass_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real mass_dark  = mw_mul(&mass_light, &tmp);
 
 
     //---------------------------------------------------------------------------------------------------        
         unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mw_mul_s(mass_light, inv_0((real_0) half_bodies));//half the particles are light matter
-        real mass_dark_particle  = mw_mul_s(mass_dark , inv_0((real_0) half_bodies));
+        real mass_light_particle = mw_mul_s(&mass_light, inv_0((real_0) half_bodies));//half the particles are light matter
+        real mass_dark_particle  = mw_mul_s(&mass_dark , inv_0((real_0) half_bodies));
     //----------------------------------------------------------------------------------------------------
 
 	
@@ -1088,7 +1108,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(showRealValue(r)) == FALSE && showRealValue(r) != 0.0 && isnan(showRealValue(r)) == FALSE){break;}
+                if(isinf(showRealValue(&r)) == FALSE && showRealValue(&r) != 0.0 && isnan(showRealValue(&r)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -1105,8 +1125,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             counter = 0;
             do
             {
-                v = vel_mag(showRealValue(r), comp1, comp2, prng);
-                if(isinf(showRealValue(v)) == FALSE && showRealValue(v) != 0.0 && isnan(showRealValue(v)) == FALSE){break;}
+                v = vel_mag(showRealValue(&r), comp1, comp2, prng);
+                if(isinf(showRealValue(&v)) == FALSE && showRealValue(&v) != 0.0 && isnan(showRealValue(&v)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -1119,11 +1139,11 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                 
             }while (1);
 			
-            vec   = get_components(prng, v);   
+            vec   = get_components(prng, &v);   
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
-            vec   = get_components(prng, r);  
+            vec   = get_components(prng, &r);  
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
@@ -1193,7 +1213,7 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         handleNamedArgumentTable(luaSt, argTable, 1);
         
         return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, comp1, comp2, ignore,
-                                                                 *position, *velocity);
+                                                                 position, velocity);
 }
 
 

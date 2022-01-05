@@ -149,17 +149,17 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         * It previous returned the worse case when the likelihood == 0. 
         * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
         */
-        if (showRealValue(likelihood) > DEFAULT_WORST_CASE || showRealValue(likelihood) < (-1 * DEFAULT_WORST_CASE) || isnan(showRealValue(likelihood)))
+        if (showRealValue(&likelihood) > DEFAULT_WORST_CASE || showRealValue(&likelihood) < (-1 * DEFAULT_WORST_CASE) || isnan(showRealValue(&likelihood)))
         {
             likelihood = mw_real_const(DEFAULT_WORST_CASE);
         }
-        else if(showRealValue(likelihood) == 0.0)
+        else if(showRealValue(&likelihood) == 0.0)
         {
             likelihood = mw_real_const(DEFAULT_BEST_CASE);
         }
 
         /* this checks to see if the likelihood is an improvement */
-        if(mw_fabs_0(showRealValue(likelihood)) < mw_fabs_0(showRealValue(st->bestLikelihood)))
+        if(mw_fabs_0(showRealValue(&likelihood)) < mw_fabs_0(showRealValue(&st->bestLikelihood)))
         {
             st->bestLikelihood = likelihood;
 
@@ -233,12 +233,15 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 }
 
 /* Advance velocity by half a timestep */
-static inline void bodyAdvanceVel(Body* p, const mwvector a, const real_0 dtHalf)
+static inline void bodyAdvanceVel(Body* p, const mwvector* a, const real_0 dtHalf)
 {
     mwvector dv;
 
-    dv = mw_mulvs(a, mw_real_const(dtHalf));   /* get velocity increment */
-    mw_incaddv(Vel(p), dv);     /* advance v by 1/2 step */
+    dv.x = mw_mul_s(&a->x, dtHalf);   /* get velocity increment */
+    dv.y = mw_mul_s(&a->y, dtHalf);
+    dv.z = mw_mul_s(&a->z, dtHalf);
+
+    mw_incaddv(&Vel(p), &dv);     /* advance v by 1/2 step */
 }
 
 /* Advance body position by 1 timestep */
@@ -246,94 +249,116 @@ static inline void bodyAdvancePos(Body* p, const real_0 dt)
 {
     mwvector dr;
     
-    dr = mw_mulvs(Vel(p), mw_real_const(dt));  /* get position increment */
-    mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
+    dr.x = mw_mul_s(&X(&Vel(p)), dt);  /* get position increment */
+    dr.y = mw_mul_s(&Y(&Vel(p)), dt);
+    dr.z = mw_mul_s(&Z(&Vel(p)), dt);
+
+    mw_incaddv(&Pos(p), &dr);     /* advance r by 1 step */
 }
 
-static inline void advancePosVel(NBodyState* st, const int nbody, const real_0 dt, const mwvector acc_i)
+static inline void advancePosVel(NBodyState* st, const int nbody, const real_0 dt, const mwvector* acc_i)
 {
     int i;
     real_0 dtHalf = 0.5 * dt;
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
+    mwvector tmp;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) shared(bodies, accs) schedule(dynamic, 4096 / sizeof(accs[0]))
   #endif
     for (i = 0; i < nbody; ++i)
     {
-        bodyAdvanceVel(&bodies[i], mw_addv(accs[i], acc_i), dtHalf);
+        tmp = mw_addv(&accs[i], acc_i);
+        bodyAdvanceVel(&bodies[i], &tmp, dtHalf);
         bodyAdvancePos(&bodies[i], dt);
     }
 
 }
 
-static inline void advancePosVel_LMC(NBodyState* st, const real_0 dt, const mwvector acc, const mwvector acc_i)
+static inline void advancePosVel_LMC(NBodyState* st, const real_0 dt, const mwvector* acc, const mwvector* acc_i)
 {
     real_0 dtHalf = 0.5 * dt;
     mwvector dr;
     mwvector dv;
 
-    dr = mw_mulvs(st->LMCvel,mw_real_const(dt));
-    mw_incaddv(st->LMCpos,dr);
+    dr.x = mw_mul_s(&X(&st->LMCvel), dt);
+    dr.y = mw_mul_s(&Y(&st->LMCvel), dt);
+    dr.z = mw_mul_s(&Z(&st->LMCvel), dt);
+    mw_incaddv(&st->LMCpos, &dr);
 
     mwvector acc_total = mw_addv(acc, acc_i);
-    dv = mw_mulvs(acc_total, mw_real_const(dtHalf));
-    mw_incaddv(st->LMCvel,dv);
+
+    dv.x = mw_mul_s(&acc_total.x, dtHalf);
+    dv.y = mw_mul_s(&acc_total.y, dtHalf);
+    dv.z = mw_mul_s(&acc_total.z, dtHalf);
+    mw_incaddv(&st->LMCvel, &dv);
     
 }
 
-static inline void advanceVelocities(NBodyState* st, const int nbody, const real_0 dt, const mwvector acc_i1)
+static inline void advanceVelocities(NBodyState* st, const int nbody, const real_0 dt, const mwvector* acc_i1)
 {
     int i;
     real_0 dtHalf = 0.5 * dt;
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
+    mwvector tmp;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(dynamic, 4096 / sizeof(accs[0]))
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
     {
-        bodyAdvanceVel(&bodies[i], mw_addv(accs[i], acc_i1), dtHalf);
+        tmp = mw_addv(&accs[i], acc_i1);
+        bodyAdvanceVel(&bodies[i], &tmp, dtHalf);
     }
 }
 
-static inline void advanceVelocities_LMC(NBodyState* st, const real_0 dt, const mwvector acc, const mwvector acc_i)
+static inline void advanceVelocities_LMC(NBodyState* st, const real_0 dt, const mwvector* acc, const mwvector* acc_i)
 {
     real_0 dtHalf = 0.5 * dt;
     mwvector dv;
 
     mwvector acc_total = mw_addv(acc, acc_i);
-    dv = mw_mulvs(acc_total, mw_real_const(dtHalf));
-    mw_incaddv(st->LMCvel,dv);
+    dv.x = mw_mul_s(&acc_total.x, dtHalf);
+    dv.y = mw_mul_s(&acc_total.y, dtHalf);
+    dv.z = mw_mul_s(&acc_total.z, dtHalf);
+    mw_incaddv(&st->LMCvel, &dv);
 }
 
 
 /* stepSystem: advance N-body system one time-step. */
-NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
+NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvector* acc_i, const mwvector* acc_i1)
 {
     NBodyStatus rc;
-    mwvector acc_LMC;
+    mwvector acc_LMC, acc_DF;
+    real massLMC, scaleLMC;
+    //mw_printf("ACC_I  = [%.15f, %.15f, %.15f]\n", showRealValue(&X(acc_i)), showRealValue(&Y(acc_i)), showRealValue(&Z(acc_i)) );
+    //mw_printf("ACC_I1 = [%.15f, %.15f, %.15f]\n", showRealValue(&X(acc_i1)), showRealValue(&Y(acc_i1)), showRealValue(&Z(acc_i1)) );
     
     const real_0 dt = ctx->timestep;
     
     real_0 barTime = st->step * dt - st->previousForwardTime;
 
+    //mw_printf("   LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", showRealValue(&X(&st->LMCpos)), showRealValue(&Y(&st->LMCpos)), showRealValue(&Z(&st->LMCpos)), ctx->LMCmass, ctx->LMCscale);
+    //mw_printf("   LMC velocity: %f %f %f, LMC mass: %f, LMC scale: %f \n", showRealValue(&X(&st->LMCvel)), showRealValue(&Y(&st->LMCvel)), showRealValue(&Z(&st->LMCvel)), ctx->LMCmass, ctx->LMCscale);
+
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, LMC_MASS_POS), mw_real_var(ctx->LMCscale, LMC_RADIUS_POS), ctx->LMCDynaFric, barTime));
-        advancePosVel_LMC(st, dt, acc_LMC, acc_i);
+        massLMC = mw_real_var(ctx->LMCmass, LMC_MASS_POS);
+        scaleLMC = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
+        acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime);
+        acc_LMC = nbExtAcceleration(&ctx->pot, &st->LMCpos, barTime);
+	acc_LMC = mw_addv(&acc_LMC, &acc_DF);
+        advancePosVel_LMC(st, dt, &acc_LMC, acc_i);
     }
-    //printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", X(st->LMCpos), Y(st->LMCpos), 
-    //       Z(st->LMCpos), ctx->LMCmass, ctx->LMCscale);
-    //mw_printf("LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", X(st->LMCpos), Y(st->LMCpos), 
-    //       Z(st->LMCpos), ctx->LMCmass, ctx->LMCscale);
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-	acc_LMC = mw_addv(nbExtAcceleration(&ctx->pot, st->LMCpos, barTime), dynamicalFriction_LMC(&ctx->pot, st->LMCpos, st->LMCvel, mw_real_var(ctx->LMCmass, LMC_MASS_POS), mw_real_var(ctx->LMCscale, LMC_RADIUS_POS), ctx->LMCDynaFric, barTime));
-        advanceVelocities_LMC(st, dt, acc_LMC, acc_i1);
+        acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime);
+        acc_LMC = nbExtAcceleration(&ctx->pot, &st->LMCpos, barTime);
+	acc_LMC = mw_addv(&acc_LMC, &acc_DF);
+        advanceVelocities_LMC(st, dt, &acc_LMC, acc_i1);
     }
 
 //    mw_printf("(%.15f) LMC position: [%.15f,%.15f,%.15f] | ",(int)(st->step)*(ctx->timestep),X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
@@ -417,10 +442,11 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         //mw_printf("    BEFORE STEP SYSTEM\n");
         if(!ctx->LMC) {
             mwvector zero;
-            SET_VECTOR(zero,ZERO_REAL,ZERO_REAL,ZERO_REAL);
-            rc |= nbStepSystemPlain(ctx, st, zero, zero); 
+            SET_VECTOR(&zero,ZERO_REAL,ZERO_REAL,ZERO_REAL);
+            //mw_printf("    ZERO VECTOR = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&zero)), showRealValue(&Y(&zero)), showRealValue(&Z(&zero)) );
+            rc |= nbStepSystemPlain(ctx, st, &zero, &zero); 
         } else {
-            rc |= nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
+            rc |= nbStepSystemPlain(ctx, st, &st->shiftByLMC[st->step], &st->shiftByLMC[st->step+1]);
         }
         //mw_printf("    AFTER STEP SYSTEM\n");
 
@@ -444,7 +470,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     }
     
     #ifdef NBODY_BLENDER_OUTPUT
-        blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
+        blenderPrintMisc(st, ctx, &startCmPos, &perpendicularCmPos);
     #endif
 
 

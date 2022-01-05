@@ -71,14 +71,14 @@ static int absVector(lua_State* luaSt)
     mwvector* v;
 
     v = checkVector(luaSt, 1);
-    pushReal(luaSt, mw_absv(*v));
+    pushReal(luaSt, mw_absv(v));
 
     return 1;
 }
 
 static int lengthVector(lua_State* luaSt)
 {
-    pushReal(luaSt, mw_length(*checkVector(luaSt, 1)));
+    pushReal(luaSt, mw_length(checkVector(luaSt, 1)));
     return 1;
 }
 
@@ -118,7 +118,7 @@ static int toStringVector(lua_State* luaSt)
     char* str;
 
     v = checkVector(luaSt, 1);
-    str = showVector(*v);
+    str = showVector(v);
     lua_pushstring(luaSt, str);
     free(str);
 
@@ -163,7 +163,7 @@ static int addVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushVector(luaSt, mw_addv(v1, v2));
+    pushVector(luaSt, mw_addv(&v1, &v2));
     return 1;
 }
 
@@ -172,7 +172,7 @@ static int crossVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushVector(luaSt, mw_crossv(v1, v2));
+    pushVector(luaSt, mw_crossv(&v1, &v2));
     return 1;
 }
 
@@ -181,7 +181,7 @@ static int subVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushVector(luaSt, mw_subv(v1, v2));
+    pushVector(luaSt, mw_subv(&v1, &v2));
     return 1;
 }
 
@@ -190,7 +190,7 @@ static int distVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushReal(luaSt, mw_distv(v1, v2));
+    pushReal(luaSt, mw_distv(&v1, &v2));
     return 1;
 }
 
@@ -204,12 +204,12 @@ static int divVector(lua_State* luaSt)
     {
         v1 = *checkVector(luaSt, 1);
         s = *toReal(luaSt, 2);
-        pushVector(luaSt, mw_divvs(v1, s));
+        pushVector(luaSt, mw_divvs(&v1, &s));
     }
     else
     {
         check2Vector(luaSt, &v1, &v2);
-        pushVector(luaSt, mw_divv(v1, v2));
+        pushVector(luaSt, mw_divv(&v1, &v2));
     }
 
     return 1;
@@ -226,12 +226,12 @@ static int multVector(lua_State* luaSt)
     {
         /* Vector * Vector */
         check2Vector(luaSt, &v1, &v2);
-        pushReal(luaSt, mw_dotv(v1, v2));
+        pushReal(luaSt, mw_dotv(&v1, &v2));
     }
     else
     {
         /* Vector * Scalar */
-        pushVector(luaSt, mw_mulvs(v1, s));
+        pushVector(luaSt, mw_mulvs(&v1, &s));
     }
 
     return 1;
@@ -242,7 +242,7 @@ static int negVector(lua_State* luaSt)
     mwvector v;
 
     v = *checkVector(luaSt, 1);
-    pushVector(luaSt, mw_negv(v));
+    pushVector(luaSt, mw_negv(&v));
 
     return 1;
 }

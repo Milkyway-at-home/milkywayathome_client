@@ -41,34 +41,98 @@
  */
 static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
-    mwbool skipSelf = FALSE;
+    mwbool showProblem = FALSE;
+    NBodyNode* q;
 
+    //7.062559445160672, 0.611498297095750, -4.392935809813397
+
+    //real_0 badX =  7.062559445160672;
+
+    //mw_printf("P POINTER %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
+
+    //if (mw_abs_0(showRealValue(&X(&Pos(p))) - badX) < 0.00001)
+    //{
+    //    mw_printf("P POINTER %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
+    //    showProblem = TRUE;
+    //}
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
+    real tmp1, tmp2;
+    real drab, phii, mor3;
 
-    const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
+    /*Code here is for debugging tree-incest errors*/
+    mwbool checkIncest = TRUE;
+    mwbool skipSelf = FALSE;
+    if (checkIncest)
+    {
+        q = (NBodyNode*) st->tree.root; 
+        while (q != NULL)               /* while not at end of scan */
+        {
+            mwvector dr = mw_subv(&Pos(q), &pos0);   /* Then compute distance */
+            real drSq = mw_sqrv(&dr);               /* and distance squared */
+
+            if (isBody(q) || (showRealValue(&drSq) >= Rcrit2(q)))      /* If is a body */
+            {
+                if (mw_likely((Body*) q != p))   /* self-interaction? */
+                {
+                    if ((showProblem)&&(!isBody(q)))
+                    {
+                        //mw_printf("%u / %.15f >= %.15f / MASS = %.15f\n", isBody(q), showRealValue(&drSq), Rcrit2(q), showRealValue(&Mass(q)));
+                        mw_printf("");
+                    }
+                }
+                else
+                {
+                    skipSelf = TRUE;   /* Encountered self */
+                }
+                q = Next(q);  /* Follow next link */
+            }
+            else
+            {
+                 q = More(q); /* Follow to the next level if need to go deeper */
+            }
+        }
+
+        if (!skipSelf)
+        {
+            /* If a body does not encounter itself in its traversal of the
+             * tree, it is "tree incest" */
+            //mw_printf("Incest found in first part of nbody_grav.c at %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
+            mw_printf("");
+        }
+    }
+    
+    /*----------------------------------------------*/
+
+    skipSelf = FALSE;
+    showProblem = FALSE;
+    q = (NBodyNode*) st->tree.root; /* Start at the root */
 
     while (q != NULL)               /* while not at end of scan */
     {
-        mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
-        real drSq = mw_sqrv(dr);               /* and distance squared */
+        mwvector dr = mw_subv(&Pos(q), &pos0);   /* Then compute distance */
+        real drSq = mw_sqrv(&dr);               /* and distance squared */
+//        if (showProblem)
+//        {
+//            mw_printf("    Q POINTER %p = [%.15f, %.15f, %.15f]\n", q, showRealValue(&X(&Pos(q))), showRealValue(&Y(&Pos(q))), showRealValue(&Z(&Pos(q))) );
+//            mw_printf("    DR = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(&dr))), showRealValue(&Y(&Pos(&dr))), showRealValue(&Z(&Pos(&dr))) );
+//            mw_printf("    DRSQ = %.15f\n", showRealValue(&drSq) );
+//        }
 
-        if (isBody(q) || (showRealValue(drSq) >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
+        if (isBody(q) || (showRealValue(&drSq) >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
         {
-            if (mw_likely((const Body*) q != p))   /* self-interaction? */
+            if (mw_likely((Body*) q != p))   /* self-interaction? */
             {
-                real drab, phii, mor3;
-
                 /* Compute gravity */
 
-                drSq = mw_add(drSq, mw_real_const(ctx->eps2));   /* use standard softening */
-                drab = mw_sqrt(drSq);
-                phii = mw_div(Mass(q), drab);
-                mor3 = mw_div(phii, drSq);
+                drSq = mw_add_s(&drSq, ctx->eps2);   /* use standard softening */
+                drab = mw_sqrt(&drSq);
+                phii = mw_div(&Mass(q), &drab);
+                mor3 = mw_div(&phii, &drSq);
 
-                acc0.x = mw_add(acc0.x, mw_mul(mor3, dr.x));
-                acc0.y = mw_add(acc0.y, mw_mul(mor3, dr.y));
-                acc0.z = mw_add(acc0.z, mw_mul(mor3, dr.z));
+                acc0.x = mw_mad(&mor3, &dr.x, &acc0.x);
+                acc0.y = mw_mad(&mor3, &dr.y, &acc0.y);
+                acc0.z = mw_mad(&mor3, &dr.z, &acc0.z);
 
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
@@ -76,32 +140,60 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                     mwvector Qdr;
 
                     /* form Q * dr */
-                    Qdr.x = mw_add(mw_mul(Quad(q).xx, dr.x), mw_add(mw_mul(Quad(q).xy, dr.y), mw_mul(Quad(q).xz, dr.z)));
-                    Qdr.y = mw_add(mw_mul(Quad(q).xy, dr.x), mw_add(mw_mul(Quad(q).yy, dr.y), mw_mul(Quad(q).yz, dr.z)));
-                    Qdr.z = mw_add(mw_mul(Quad(q).xz, dr.x), mw_add(mw_mul(Quad(q).yz, dr.y), mw_mul(Quad(q).zz, dr.z)));
+                    tmp1 = mw_mul(&Quad(q).xy, &dr.y);
+                    tmp2 = mw_mul(&Quad(q).xz, &dr.z);
+                    tmp2 = mw_add(&tmp1, &tmp2);
+                    tmp1 = mw_mul(&Quad(q).xx, &dr.x);
+                    Qdr.x = mw_add(&tmp1, &tmp2);
+
+                    tmp1 = mw_mul(&Quad(q).yy, &dr.y);
+                    tmp2 = mw_mul(&Quad(q).yz, &dr.z);
+                    tmp2 = mw_add(&tmp1, &tmp2);
+                    tmp1 = mw_mul(&Quad(q).xy, &dr.x);
+                    Qdr.y = mw_add(&tmp1, &tmp2);
+
+                    tmp1 = mw_mul(&Quad(q).yz, &dr.y);
+                    tmp2 = mw_mul(&Quad(q).zz, &dr.z);
+                    tmp2 = mw_add(&tmp1, &tmp2);
+                    tmp1 = mw_mul(&Quad(q).xz, &dr.x);
+                    Qdr.z = mw_add(&tmp1, &tmp2);
 
 
                     /* form dr * Q * dr */
-                    drQdr = mw_add(mw_mul(Qdr.x, dr.x), mw_add(mw_mul(Qdr.y, dr.y), mw_mul(Qdr.z, dr.z)));
+                    tmp1 = mw_mul(&Qdr.y, &dr.y);
+                    tmp2 = mw_mul(&Qdr.z, &dr.z);
+                    tmp2 = mw_add(&tmp1, &tmp2);
+                    tmp1 = mw_mul(&Qdr.x, &dr.x);
+                    drQdr = mw_add(&tmp1, &tmp2);
 
-                    dr5inv = inv(mw_mul(sqr(drSq), drab));  /* form dr^-5 */
+                    tmp1 = sqr(&drSq);
+                    tmp1 = mw_mul(&tmp1, &drab);
+                    dr5inv = inv(&tmp1);  /* form dr^-5 */
 
                     /* get quad. part of phi */
-                    phiQ = mw_mul_s(mw_div(mw_mul(dr5inv, drQdr), drSq),2.5);
+                    tmp1 = mw_mul(&dr5inv, &drQdr);
+                    tmp1 = mw_div(&tmp1, &drSq);
+                    phiQ = mw_mul_s(&tmp1,2.5);
 
-                    acc0.x = mw_add(acc0.x, mw_mul(phiQ, dr.x));
-                    acc0.y = mw_add(acc0.y, mw_mul(phiQ, dr.y));
-                    acc0.z = mw_add(acc0.z, mw_mul(phiQ, dr.z));
+                    acc0.x = mw_mad(&phiQ, &dr.x, &acc0.x);
+                    acc0.y = mw_mad(&phiQ, &dr.y, &acc0.y);
+                    acc0.z = mw_mad(&phiQ, &dr.z, &acc0.z);
 
                     /* acceleration */
-                    acc0.x = mw_sub(acc0.x, mw_mul(dr5inv, Qdr.x));
-                    acc0.y = mw_sub(acc0.y, mw_mul(dr5inv, Qdr.y));
-                    acc0.z = mw_sub(acc0.z, mw_mul(dr5inv, Qdr.z));
+                    tmp1 = mw_mul(&dr5inv, &Qdr.x);
+                    acc0.x = mw_sub(&acc0.x, &tmp1);
+
+                    tmp1 = mw_mul(&dr5inv, &Qdr.y);
+                    acc0.y = mw_sub(&acc0.y, &tmp1);
+
+                    tmp1 = mw_mul(&dr5inv, &Qdr.z);
+                    acc0.z = mw_sub(&acc0.z, &tmp1);
                 }
             }
             else
             {
                 skipSelf = TRUE;   /* Encountered self */
+                //mw_printf("Encountered Self! ");
             }
 
             q = Next(q);  /* Follow next link */
@@ -118,6 +210,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
          * tree, it is "tree incest" */
 
         nbReportTreeIncest(ctx, st);
+        //mw_printf("Incest found in second part of nbody_grav.c at %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
     }
 
     return acc0;
@@ -128,7 +221,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
     mwvector LMCx;
-    mwvector a, externAcc;
+    mwvector a, externAcc, mwAcc, LMCAcc;
     const Body* b;
     real lmcmass, lmcscale;
 
@@ -146,7 +239,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         lmcscale = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
     }
     else {
-        SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
+        SET_VECTOR(&LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
         lmcmass = mw_real_var(0.0, LMC_MASS_POS);
         lmcscale = mw_real_var(1.0, LMC_RADIUS_POS);
     }
@@ -165,12 +258,14 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                mwAcc = nbExtAcceleration(&ctx->pot, &Pos(b), barTime);
+                LMCAcc = plummerAccel(&Pos(b), &LMCx, &lmcmass, &lmcscale);
+                externAcc = mw_addv(&mwAcc, &LMCAcc);
                 /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
                     sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
                     take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
                     moving potential. **/
-                mw_incaddv(a, externAcc);
+                mw_incaddv(&a, &externAcc);
                 //real test = X(plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
     	        //if(test > 400) {
       		//   mw_printf("Plummer Additive Acceleration (X): %f\n", test);
@@ -189,9 +284,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
-                nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
-                mw_incaddv(a, externAcc);
+                nbEvalPotentialClosure(st, &Pos(&bodies[i]), &externAcc);
+                LMCAcc = plummerAccel(&Pos(&bodies[i]), &LMCx, &lmcmass, &lmcscale);
+                mw_incaddv(&externAcc, &LMCAcc);
+                mw_incaddv(&a, &externAcc);
 
                 accels[i] = a;
                 break;
@@ -207,20 +303,24 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     int i;
     const int nbody = st->nbody;
     mwvector a = ZERO_VECTOR;
-    const real eps2 = mw_real_const(ctx->eps2);
+    const real_0 eps2 = ctx->eps2;
+    real tmp;
+    mwvector tmp_vec;
 
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
 
-        mwvector dr = mw_subv(Pos(b), Pos(p));
-        real drSq = mw_add(mw_sqrv(dr), eps2);
+        mwvector dr = mw_subv(&Pos(b), &Pos(p));
+        tmp = mw_sqrv(&dr);
+        real drSq = mw_add_s(&tmp, eps2);
 
-        real drab = mw_sqrt(drSq);
-        real phii = mw_div(Mass(b), drab);
-        real mor3 = mw_div(phii, drSq);
+        real drab = mw_sqrt(&drSq);
+        real phii = mw_div(&Mass(b), &drab);
+        real mor3 = mw_div(&phii, &drSq);
 
-        mw_incaddv(a, mw_mulvs(dr, mor3));
+        tmp_vec = mw_mulvs(&dr, &mor3);
+        mw_incaddv(&a, &tmp);
     }
 
     return a;
@@ -231,7 +331,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
     mwvector LMCx;
-    mwvector a, externAcc;
+    mwvector a, externAcc, mwAcc, LMCAcc;
     const Body* b;
     real lmcmass, lmcscale;
 
@@ -247,7 +347,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
         lmcscale = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
     }
     else {
-        SET_VECTOR(LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
+        SET_VECTOR(&LMCx, ZERO_REAL, ZERO_REAL, ZERO_REAL);
         lmcmass = mw_real_var(0.0, LMC_MASS_POS);
         lmcscale = mw_real_var(1.0, LMC_RADIUS_POS);
     }
@@ -265,8 +365,10 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
-                mw_incaddv(a, externAcc);
+                mwAcc = nbExtAcceleration(&ctx->pot, &Pos(b), barTime);
+                LMCAcc = plummerAccel(&Pos(b), &LMCx, &lmcmass, &lmcscale);
+                externAcc = mw_addv(&mwAcc, &LMCAcc);
+                mw_incaddv(&a, &externAcc);
                 
                 accels[i] = a;
                 break;
@@ -279,9 +381,10 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 //mw_printf("CUSTOM POTENTIAL - EXACT\n");
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
-                nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
-                mw_incaddv(a, externAcc);
+                nbEvalPotentialClosure(st, &Pos(&bodies[i]), &externAcc);
+                LMCAcc = plummerAccel(&Pos(&bodies[i]), &LMCx, &lmcmass, &lmcscale);
+                mw_incaddv(&externAcc, &LMCAcc);
+                mw_incaddv(&a, &externAcc);
 
                 accels[i] = a;
                 break;

@@ -36,9 +36,9 @@ real_0 IncompleteGammaFunc(real_0 a, real_0 x);
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
-real calc_vLOS(const mwvector v, const mwvector p, real_0 sunGCdist);
+real calc_vLOS(const mwvector* v, const mwvector* p, real_0 sunGCdist);
 
-real calc_distance(const mwvector p, real_0 sunGCdist);	
+real calc_distance(const mwvector* p, real_0 sunGCdist);	
 
 void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_factor);
 

@@ -26,20 +26,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_plummer.h"
 
 /* pickshell: pick a random point on a sphere of specified radius. */
-static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
+static inline mwvector pickShell(dsfmt_t* dsfmtState, real* rad)
 {
-    real rsq, rsc;
+    real rsq, rsc, tmp;
     mwvector vec;
 
     do                      /* pick point in NDIM-space */
     {
         vec = mwRandomUnitPoint(dsfmtState);
-        rsq = mw_sqrv(vec);         /* compute radius squared */
+        rsq = mw_sqrv(&vec);         /* compute radius squared */
     }
-    while (showRealValue(rsq) > 1.0);              /* reject if outside sphere */
+    while (showRealValue(&rsq) > 1.0);              /* reject if outside sphere */
 
-    rsc = mw_div(rad, mw_sqrt(rsq));       /* compute scaling factor */
-    mw_incmulvs(vec, rsc);          /* rescale to radius given */
+    tmp = mw_sqrt(&rsq);
+    rsc = mw_div(rad, &tmp);       /* compute scaling factor */
+    mw_incmulvs(&vec, &rsc);          /* rescale to radius given */
 
     return vec;
 }
@@ -79,24 +80,26 @@ static inline real_0 plummerRandomV(dsfmt_t* dsfmtState, real_0 r)
     return v;
 }
 
-static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real_0 r)
+static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift, real* rsc, real_0 r)
 {
     mwvector pos;
+    real tmp = mw_mul_s(&rsc, r);
 
-    pos = pickShell(dsfmtState, mw_mul_s(rsc, r));  /* pick scaled position */
-    mw_incaddv(pos, rshift);               /* move the position */
+    pos = pickShell(dsfmtState, &tmp);  /* pick scaled position */
+    mw_incaddv(&pos, rshift);               /* move the position */
 
     return pos;
 }
 
-static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real vsc, real_0 r)
+static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift, real* vsc, real_0 r)
 {
     mwvector vel;
     real_0 v;
 
     v = plummerRandomV(dsfmtState, r);
-    vel = pickShell(dsfmtState, mw_mul_s(vsc, v));   /* pick scaled velocity */
-    mw_incaddv(vel, vshift);                /* move the velocity */
+    real tmp = mw_mul_s(&vsc, v);
+    vel = pickShell(dsfmtState, &tmp);   /* pick scaled velocity */
+    mw_incaddv(&vel, vshift);                /* move the velocity */
     
     return vel;
 }
@@ -110,26 +113,27 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
 
                                  dsfmt_t* prng,
                                  unsigned int nbody,
-                                 real mass,
+                                 real* mass,
 
                                  mwbool ignore,
 
-                                 mwvector rShift,
-                                 mwvector vShift,
-                                 real radiusScale)
+                                 mwvector* rShift,
+                                 mwvector* vShift,
+                                 real* radiusScale)
 {
     unsigned int i;
     int table;
     Body b;
     real_0 r;
-    real velScale;
+    real velScale, tmp;
 
     memset(&b, 0, sizeof(b));
 
-    velScale = mw_sqrt(mw_div(mass, radiusScale));     /* and recip. speed scale */
+    tmp = mw_div(&mass, &radiusScale);
+    velScale = mw_sqrt(&tmp);     /* and recip. speed scale */
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
-    b.bodynode.mass = mw_mul_s(mass, inv_0((real_0) nbody));    /* Mass per particle */
+    b.bodynode.mass = mw_mul_s(&mass, inv_0((real_0) nbody));    /* Mass per particle */
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
@@ -147,9 +151,9 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
         
         b.bodynode.id = i + 1;
         b.bodynode.pos = plummerBodyPosition(prng, rShift, radiusScale, r);
-        b.vel = plummerBodyVelocity(prng, vShift, velScale, r);
+        b.vel = plummerBodyVelocity(prng, vShift, &velScale, r);
 
-        assert(nbPositionValid(b.bodynode.pos));
+        assert(nbPositionValid(&b.bodynode.pos));
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
@@ -183,8 +187,11 @@ int nbGeneratePlummer(lua_State* luaSt)
 
     handleNamedArgumentTable(luaSt, argTable, 1);
 
-    return nbGeneratePlummerCore(luaSt, prng, (unsigned int) nbodyf, mw_real_var(mass, BARYON_MASS_POS), ignore,
-                                 *position, *velocity, mw_real_var(radiusScale, BARYON_RADIUS_POS));
+    real real_mass = mw_real_var(mass, BARYON_MASS_POS);
+    real real_rad = mw_real_var(radiusScale, BARYON_RADIUS_POS);
+
+    return nbGeneratePlummerCore(luaSt, prng, (unsigned int) nbodyf, &real_mass, ignore,
+                                 position, velocity, &real_rad);
 }
 
 void registerGeneratePlummer(lua_State* luaSt)

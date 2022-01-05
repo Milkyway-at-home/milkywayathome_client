@@ -58,18 +58,19 @@ static real_0 hernqNextRadius(real_0 startRadius, real_0 goalMass, real_0 radius
 /* hernqPickShell: pick a random point on a sphere of specified radius. */
 static mwvector hernqPickShell(dsfmt_t* dsfmtState, real_0 rad)
 {
-    real rsq, rsc;
+    real rsq, rsc, tmp;
     mwvector vec;
 
     do                      /* pick point in NDIM-space */
     {
         vec = mwRandomUnitPoint(dsfmtState);
-        rsq = mw_sqrv(vec);         /* compute radius squared */
+        rsq = mw_sqrv(&vec);         /* compute radius squared */
     }
-    while (showRealValue(rsq) > 1.0);              /* reject if outside sphere */
+    while (showRealValue(&rsq) > 1.0);              /* reject if outside sphere */
 
-    rsc = mw_mul_s(minushalf(rsq), rad);       /* compute scaling factor */
-    mw_incmulvs(vec, rsc);          /* rescale to radius given */
+    tmp = minushalf(&rsq);
+    rsc = mw_mul_s(&tmp, rad);       /* compute scaling factor */
+    mw_incmulvs(&vec, &rsc);          /* rescale to radius given */
 
     return vec;
 }
@@ -108,24 +109,24 @@ static real_0 hernqCalculateV(real_0 r, real_0 radius, real_0 a, real_0 mass)
     return v;
 }
 
-static mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real_0 rsc, real_0 r)
+static mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift, real_0 rsc, real_0 r)
 {
     mwvector pos;
 
     pos = hernqPickShell(dsfmtState, rsc * r);  /* pick scaled position */
-    mw_incaddv(pos, rshift);               /* move the position */
+    mw_incaddv(&pos, rshift);               /* move the position */
 
     return pos;
 }
 
-static mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real_0 r, real_0 radius, real_0 a, real_0 mass)
+static mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift, real_0 r, real_0 radius, real_0 a, real_0 mass)
 {
     mwvector vel;
     real_0 v;
 
     v = hernqCalculateV(r, radius, a, mass);
     vel = hernqPickShell(dsfmtState, v);   /* pick scaled velocity */
-    mw_incaddv(vel, vshift);              /* move the velocity */
+    mw_incaddv(&vel, vshift);              /* move the velocity */
 
     return vel;
 }
@@ -142,8 +143,8 @@ static int nbGenerateHernqCore(lua_State* luaSt,
 
                                  mwbool ignore,
 
-                                 mwvector rShift,
-                                 mwvector vShift,
+                                 mwvector* rShift,
+                                 mwvector* vShift,
                                  real_0 radius_scale,
                                  real_0 a)
 {
@@ -181,7 +182,7 @@ static int nbGenerateHernqCore(lua_State* luaSt,
 
         b.bodynode.pos = hernqBodyPosition(prng, rShift, 1, r);
         b.vel = hernqBodyVelocity(prng, vShift, r, radius_scale, a, mass);
-        assert(nbPositionValid(b.bodynode.pos));
+        assert(nbPositionValid(&b.bodynode.pos));
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
@@ -217,7 +218,7 @@ int nbGenerateHernq(lua_State* luaSt)
     handleNamedArgumentTable(luaSt, argTable, 1);
 
     return nbGenerateHernqCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
-                                 *position, *velocity, radius, a);
+                                 position, velocity, radius, a);
 }
 
 void registerGenerateHernq(lua_State* luaSt)

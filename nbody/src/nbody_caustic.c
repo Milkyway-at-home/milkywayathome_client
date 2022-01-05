@@ -248,7 +248,7 @@ static void gfield_close(double rho, double z, int n, double *rfield, double *zf
     }  
 }
  
-mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
+mwvector causticHaloAccel(const Halo* h, mwvector* pos, real* r_var)
 {
 
     mwvector accel;
@@ -263,10 +263,11 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
 
     rfield = 0.0;
     zfield = 0.0;
+    real tmp;
 
 
-
-    rho = showRealValue(mw_hypot(X(pos), Y(pos)));
+    tmp = mw_hypot(&X(pos), &Y(pos));
+    rho = showRealValue(&tmp);
 
     for (n = 1; n <= 20; n++)
     {
@@ -278,14 +279,14 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
         tl=2.0*p_n[n]*mw_sqrt_0(cube_0(l)*(1.0-l));
 
 
-        if( (showRealValue(Z(pos))<=tr && showRealValue(Z(pos))>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(Z(pos))>=tl && showRealValue(Z(pos))<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (showRealValue(Z(pos))>=-tr && showRealValue(Z(pos))<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(Z(pos))<=-tl && showRealValue(Z(pos))>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
+        if( (showRealValue(&Z(pos))<=tr && showRealValue(&Z(pos))>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(&Z(pos))>=tl && showRealValue(&Z(pos))<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (showRealValue(&Z(pos))>=-tr && showRealValue(&Z(pos))<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(&Z(pos))<=-tl && showRealValue(&Z(pos))>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
         {
-            gfield_close(rho,showRealValue(Z(pos)),n,&rfield,&zfield);
+            gfield_close(rho,showRealValue(&Z(pos)),n,&rfield,&zfield);
         }
 
         else /* far */
         {
-            gfield_far(rho,showRealValue(Z(pos)),n,&rfield,&zfield);        
+            gfield_far(rho,showRealValue(&Z(pos)),n,&rfield,&zfield);        
         }
 
     }
@@ -294,16 +295,16 @@ mwvector causticHaloAccel(const Halo* h, mwvector pos, real r_var)
 
     if(rho<0.000001)
     {
-        X(accel) = ZERO_REAL;
-        Y(accel) = ZERO_REAL;
+        X(&accel) = ZERO_REAL;
+        Y(&accel) = ZERO_REAL;
     }
     else
     {
-        X(accel) = mw_mul_s(X(pos), rfield/rho);
-        Y(accel) = mw_mul_s(Y(pos), rfield/rho);
+        X(&accel) = mw_mul_s(&X(pos), rfield/rho);
+        Y(&accel) = mw_mul_s(&Y(pos), rfield/rho);
     }
 
-    Z(accel) = mw_real_const(zfield);
+    Z(&accel) = mw_real_const(zfield);
 
     //printf("%f, %f, %f, %f, %f, %f\n", X(pos), Y(pos), Z(pos), X(accel), Y(accel), Z(accel));
     

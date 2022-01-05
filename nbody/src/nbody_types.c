@@ -220,15 +220,18 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
 void setRandomLMCNBodyState(NBodyState* st, int nShift, dsfmt_t* dsfmtState)
 {
     int j;
+    real tmp;
 
     st->shiftByLMC = (mwvector*)mwCallocA(nShift, sizeof(mwvector));
     for(j = 0; j < nShift; j++) {
-        st->shiftByLMC[j] = mwRandomVector(dsfmtState, mw_real_const(mwXrandom(dsfmtState,0.0,1.0)));
+        tmp = mw_real_const(mwXrandom(dsfmtState,0.0,1.0));
+        st->shiftByLMC[j] = mwRandomVector(dsfmtState, &tmp);
         //SET_VECTOR(st->shiftByLMC[j],0.0,0.0,0.0);
     }
 
-    st->LMCpos = mwRandomVector(dsfmtState, mw_real_const(mwXrandom(dsfmtState,0.01,200.0)));
-    st->LMCvel = mwRandomVector(dsfmtState, mw_real_const(mwXrandom(dsfmtState,0.01,200.0)));
+    tmp = mw_real_const(mwXrandom(dsfmtState,0.01,200.0));
+    st->LMCpos = mwRandomVector(dsfmtState, &tmp);
+    st->LMCvel = mwRandomVector(dsfmtState, &tmp);
     //SET_VECTOR(*(st->LMCpos),0.0,0.0,0.0);
     //SET_VECTOR(*(st->LMCvel),0.0,0.0,0.0);
     st->nShiftLMC = nShift;
@@ -623,7 +626,7 @@ void clonePartialNBodyState(NBodyState* st, const NBodyState* oldSt)
     assert(st->bodytab == NULL && st->acctab == NULL);
 }
 
-static inline int compareComponents(real a, real b)
+static inline int compareComponents(real* a, real* b)
 {
     if (showRealValue(a) > showRealValue(b))
         return 1;
@@ -633,7 +636,7 @@ static inline int compareComponents(real a, real b)
     return 0;
 }
 
-static int compareVectors(mwvector a, mwvector b)
+static int compareVectors(mwvector* a, mwvector* b)
 {
     int rc;
     real ar, br;
@@ -641,20 +644,20 @@ static int compareVectors(mwvector a, mwvector b)
     ar = mw_absv(a);
     br = mw_absv(b);
 
-    if (showRealValue(ar) > showRealValue(br))
+    if (showRealValue(&ar) > showRealValue(&br))
         return 1;
-    else if (showRealValue(ar) < showRealValue(br))
+    else if (showRealValue(&ar) < showRealValue(&br))
         return -1;
     else
     {
         /* Resort to comparing by each component */
-        if ((rc = compareComponents(X(a), X(b))))
+        if ((rc = compareComponents(&X(a), &X(b))))
             return rc;
 
-        if ((rc = compareComponents(Y(a), Y(b))))
+        if ((rc = compareComponents(&Y(a), &Y(b))))
             return rc;
 
-        if ((rc = compareComponents(Z(a), Z(b))))
+        if ((rc = compareComponents(&Z(a), &Z(b))))
             return rc;
     }
 
@@ -670,11 +673,11 @@ static int compareBodies(const void* _a, const void* _b)
     char* bufA;
     char* bufB;
 
-    if ((rc = compareComponents(Mass(a), Mass(b))))
+    if ((rc = compareComponents(&Mass(a), &Mass(b))))
         return rc;
 
     /* Masses equal, compare positions */
-    rc = compareVectors(Pos(a), Pos(b));
+    rc = compareVectors(&Pos(a), &Pos(b));
     if (rc == 0)
     {
         bufA = showBody(a);
