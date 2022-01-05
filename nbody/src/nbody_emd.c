@@ -1367,6 +1367,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     }
 
     emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
+    mw_printf("emd = %.15f\n", showRealValue(&emd));
 
     emd = mw_mul_s(&emd, 1.0e9);
     emd = mw_round(&emd);

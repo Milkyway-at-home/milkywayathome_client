@@ -358,8 +358,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             setRealValue(&likelihood, DEFAULT_WORST_CASE);
             mw_printf("Likelihood was NAN. Returning worst case. \n");
-            mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
-            return NBODY_SUCCESS;
+            //mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
+            //return NBODY_SUCCESS;
         }
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
         mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -showRealValue(&likelihood_EMD));

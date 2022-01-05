@@ -55,16 +55,15 @@ static real_0 nbHistogramBetaBinSize(const HistogramParams* hp)
 real nbNormalizedHistogramError(real* n, real* total)
 {
     real tmp1, tmp2;
-    real norm_n = mw_div(&n, &total);
-    tmp1 = mw_mul_s(&norm_n,2.0);
-    tmp1 = mw_neg(&tmp1);
-    tmp1 = mw_add_s(&tmp1, -1.0);
+    real norm_n = mw_div(n, total);
+    tmp1 = mw_mul_s(&norm_n,-2.0);
+    tmp1 = mw_add_s(&tmp1, 1.0);
     tmp1 = mw_mul(&tmp1, n);
     tmp2 = sqr(&norm_n);
-    tmp2 = mw_mul(&tmp2, &total);
+    tmp2 = mw_mul(&tmp2, total);
     tmp1 = mw_add(&tmp1, &tmp2);
     tmp1 = mw_sqrt(&tmp1);
-    return (showRealValue(&n) == 0) ? inv(&total) : mw_div(&tmp1, &total);
+    return (showRealValue(n) == 0) ? inv(total) : mw_div(&tmp1, total);
 }
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
