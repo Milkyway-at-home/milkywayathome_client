@@ -246,6 +246,7 @@ static int luaReverseOrbit(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
+    //mw_printf("POS = [%.15f, %.15f, %.15f]\n", showRealValue(&pos->x), showRealValue(&pos->y), showRealValue(&pos->z));
     nbReverseOrbit(&finalPos, &finalVel, pot, pos, vel, tstop, dt, sun_dist);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);

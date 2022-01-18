@@ -1385,8 +1385,8 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     /* This calculates the likelihood as the combination of the
     * probability distribution and (1.0 - emd / max_dist) */
 
-    tmp = mw_mul_s(&emd, inv_0(50.0));
-    real EMDComponent = mw_add_s(&tmp, -1.0);
+    tmp = mw_mul_s(&emd, inv_0(-50.0));
+    real EMDComponent = mw_add_s(&tmp, 1.0);
     
     
     /* the 300 is there to add weight to the EMD component */

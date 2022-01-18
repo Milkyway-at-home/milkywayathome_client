@@ -59,7 +59,7 @@ static real_0 nfwNextRadius(real_0 start_radius, real_0 goal_mass, real_0 rho_0,
 static mwvector nfwPickShell(dsfmt_t* dsfmtState, real_0 rad)
 {
     real_0 rsq;
-    real rsc;
+    real_0 rsc;
     mwvector vec;
     real tmp;
 
@@ -71,8 +71,11 @@ static mwvector nfwPickShell(dsfmt_t* dsfmtState, real_0 rad)
     }
     while (rsq > 1.0);              /* reject if outside sphere */
 
-    rsc = mw_real_const(rad / mw_sqrt_0(rsq));       /* compute scaling factor */
-    mw_incmulvs(&vec, &rsc);          /* rescale to radius given */
+    rsc = rad / mw_sqrt_0(rsq);       /* compute scaling factor */
+
+    vec.x = mw_mul_s(&vec.x, rsc);
+    vec.y = mw_mul_s(&vec.y, rsc);
+    vec.z = mw_mul_s(&vec.z, rsc);    /* rescale to radius given */
 
     return vec;
 }
@@ -116,7 +119,7 @@ static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift, real_0 rs
     mwvector pos;
 
     pos = nfwPickShell(dsfmtState, rsc * r);  /* pick scaled position */
-    mw_incaddv(&pos, rshift);               /* move the position */
+    pos = mw_addv(&pos, rshift);               /* move the position */
 
     return pos;
 }
@@ -128,7 +131,7 @@ static mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift, real_0 r,
 
     v = nfwCalculateV(r, rho_0, R_S);
     vel = nfwPickShell(dsfmtState, v);   /* pick scaled velocity */
-    mw_incaddv(&vel, vshift);             /* move the velocity */
+    vel = mw_addv(&vel, vshift);             /* move the velocity */
 
     return vel;
 }

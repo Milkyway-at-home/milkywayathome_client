@@ -285,7 +285,7 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_neg(real* a)
     {
-        real_0 z        = -(a->value);
+        real_0 z        = -1.0 * (a->value);
         real_0 dz_da    = -1.0;
         real_0 dz_db    = 0.0;
         real_0 d2z_da2  = 0.0;

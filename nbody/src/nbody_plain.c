@@ -33,6 +33,7 @@
 #include "nbody_orbit_integrator.h"
 #include "nbody_potential.h"
 #include "nbody_friction.h"
+#include "nbody_autodiff.h"
 
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
@@ -233,19 +234,26 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 }
 
 /* Advance velocity by half a timestep */
-static inline void bodyAdvanceVel(Body* p, const mwvector* a, const real_0 dtHalf)
+static inline void bodyAdvanceVel(Body* p, const mwvector* a_old, const mwvector* acc_i, const real_0 dtHalf, int i)
 {
+    mwvector a = mw_addv(a_old, acc_i);
     mwvector dv;
+    //mw_printf("a = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&a)), showRealValue(&Y(&a)), showRealValue(&Z(&a)));
 
-    dv.x = mw_mul_s(&a->x, dtHalf);   /* get velocity increment */
-    dv.y = mw_mul_s(&a->y, dtHalf);
-    dv.z = mw_mul_s(&a->z, dtHalf);
+    dv.x = mw_mul_s(&a.x, dtHalf);   /* get velocity increment */
+    dv.y = mw_mul_s(&a.y, dtHalf);
+    dv.z = mw_mul_s(&a.z, dtHalf);
 
-    mw_incaddv(&Vel(p), &dv);     /* advance v by 1/2 step */
+    //mw_printf("DV = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&dv)), showRealValue(&Y(&dv)), showRealValue(&Z(&dv)));
+    //if (i==0) mw_printf("OLD VEL = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&Vel(p))), showRealValue(&Y(&Vel(p))), showRealValue(&Z(&Vel(p))));
+    Vel(p).x = mw_add(&Vel(p).x, &dv.x);     /* advance v by 1/2 step */
+    Vel(p).y = mw_add(&Vel(p).y, &dv.y);
+    Vel(p).z = mw_add(&Vel(p).z, &dv.z);
+    //if (i==0) mw_printf("NEW VEL = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&Vel(p))), showRealValue(&Y(&Vel(p))), showRealValue(&Z(&Vel(p))));
 }
 
 /* Advance body position by 1 timestep */
-static inline void bodyAdvancePos(Body* p, const real_0 dt)
+static inline void bodyAdvancePos(Body* p, const real_0 dt, int i)
 {
     mwvector dr;
     
@@ -253,7 +261,12 @@ static inline void bodyAdvancePos(Body* p, const real_0 dt)
     dr.y = mw_mul_s(&Y(&Vel(p)), dt);
     dr.z = mw_mul_s(&Z(&Vel(p)), dt);
 
-    mw_incaddv(&Pos(p), &dr);     /* advance r by 1 step */
+    //mw_printf("DR = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&dr)), showRealValue(&Y(&dr)), showRealValue(&Z(&dr)));
+    //if (i==0) mw_printf("OLD POS = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))));
+    Pos(p).x = mw_add(&Pos(p).x, &dr.x);     /* advance r by 1 step */
+    Pos(p).y = mw_add(&Pos(p).y, &dr.y);
+    Pos(p).z = mw_add(&Pos(p).z, &dr.z);
+    //if (i==0) mw_printf("NEW POS = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))));
 }
 
 static inline void advancePosVel(NBodyState* st, const int nbody, const real_0 dt, const mwvector* acc_i)
@@ -262,16 +275,14 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real_0 d
     real_0 dtHalf = 0.5 * dt;
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
-    mwvector tmp;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) shared(bodies, accs) schedule(dynamic, 4096 / sizeof(accs[0]))
   #endif
     for (i = 0; i < nbody; ++i)
     {
-        tmp = mw_addv(&accs[i], acc_i);
-        bodyAdvanceVel(&bodies[i], &tmp, dtHalf);
-        bodyAdvancePos(&bodies[i], dt);
+        bodyAdvanceVel(&bodies[i], &(accs[i]), acc_i, dtHalf, i);
+        bodyAdvancePos(&bodies[i], dt, i);
     }
 
 }
@@ -282,18 +293,17 @@ static inline void advancePosVel_LMC(NBodyState* st, const real_0 dt, const mwve
     mwvector dr;
     mwvector dv;
 
-    dr.x = mw_mul_s(&X(&st->LMCvel), dt);
-    dr.y = mw_mul_s(&Y(&st->LMCvel), dt);
-    dr.z = mw_mul_s(&Z(&st->LMCvel), dt);
-    mw_incaddv(&st->LMCpos, &dr);
-
     mwvector acc_total = mw_addv(acc, acc_i);
 
     dv.x = mw_mul_s(&acc_total.x, dtHalf);
     dv.y = mw_mul_s(&acc_total.y, dtHalf);
     dv.z = mw_mul_s(&acc_total.z, dtHalf);
-    mw_incaddv(&st->LMCvel, &dv);
-    
+    st->LMCvel = mw_addv(&st->LMCvel, &dv);
+
+    dr.x = mw_mul_s(&X(&st->LMCvel), dt);
+    dr.y = mw_mul_s(&Y(&st->LMCvel), dt);
+    dr.z = mw_mul_s(&Z(&st->LMCvel), dt);
+    st->LMCpos = mw_addv(&st->LMCpos, &dr);
 }
 
 static inline void advanceVelocities(NBodyState* st, const int nbody, const real_0 dt, const mwvector* acc_i1)
@@ -302,15 +312,13 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     real_0 dtHalf = 0.5 * dt;
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
-    mwvector tmp;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(dynamic, 4096 / sizeof(accs[0]))
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
     {
-        tmp = mw_addv(&accs[i], acc_i1);
-        bodyAdvanceVel(&bodies[i], &tmp, dtHalf);
+        bodyAdvanceVel(&bodies[i], &(accs[i]), acc_i1, dtHalf, i);
     }
 }
 
@@ -323,7 +331,7 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real_0 dt, const 
     dv.x = mw_mul_s(&acc_total.x, dtHalf);
     dv.y = mw_mul_s(&acc_total.y, dtHalf);
     dv.z = mw_mul_s(&acc_total.z, dtHalf);
-    mw_incaddv(&st->LMCvel, &dv);
+    st->LMCvel = mw_addv(&st->LMCvel, &dv);
 }
 
 
@@ -378,6 +386,13 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     NBodyLikelihoodMethod method;
     HistogramParams hp;
     nbGetLikelihoodInfo(nbf, &hp, &method);
+
+    //real_0 input0 = 2.0;
+    //real input1 = mw_real_var(3.0, 0);
+    //real input2 = mw_real_var(4.0, 1);
+    //real input3 = mw_real_var(5.0, 2);
+    //real output4 = mw_mad(&input1, &input2, &input3);
+    //printReal(&output4);
    
     if (ctx->LMC){
         //These values are set in nbody_orbit_integrator.c. In the event of a checkpoint, these values are already stored, so running this code would reset them to NULL pointers.

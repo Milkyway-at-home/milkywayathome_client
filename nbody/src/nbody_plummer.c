@@ -40,7 +40,10 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real* rad)
 
     tmp = mw_sqrt(&rsq);
     rsc = mw_div(rad, &tmp);       /* compute scaling factor */
-    mw_incmulvs(&vec, &rsc);          /* rescale to radius given */
+
+    vec.x = mw_mul(&vec.x, &rsc);          /* rescale to radius given */
+    vec.y = mw_mul(&vec.y, &rsc);
+    vec.z = mw_mul(&vec.z, &rsc);
 
     return vec;
 }
@@ -86,7 +89,7 @@ static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift
     real tmp = mw_mul_s(&rsc, r);
 
     pos = pickShell(dsfmtState, &tmp);  /* pick scaled position */
-    mw_incaddv(&pos, rshift);               /* move the position */
+    pos = mw_addv(&pos, rshift);               /* move the position */
 
     return pos;
 }
@@ -99,7 +102,7 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift
     v = plummerRandomV(dsfmtState, r);
     real tmp = mw_mul_s(&vsc, v);
     vel = pickShell(dsfmtState, &tmp);   /* pick scaled velocity */
-    mw_incaddv(&vel, vshift);                /* move the velocity */
+    vel = mw_addv(&vel, vshift);                /* move the velocity */
     
     return vel;
 }

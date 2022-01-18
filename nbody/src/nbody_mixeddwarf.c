@@ -624,7 +624,9 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real* rad)
 
     tmp = mw_sqrt(&r_sq);
     r_scaling = mw_div(rad, &tmp);         /* compute scaling factor */
-    mw_incmulvs(&vec, &r_scaling);             /* rescale to radius given */
+    vec.x = mw_mul(&vec.x, &r_scaling);    /* rescale to radius given */
+    vec.y = mw_mul(&vec.y, &r_scaling);
+    vec.z = mw_mul(&vec.z, &r_scaling);
     
     /* this is r * (u_vec / |u|). 
      * the r gives the magnitude, rad.
@@ -935,13 +937,13 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             b.bodynode.pos.y = y[i];
             b.bodynode.pos.z = z[i];
 
-            //mw_printf("BODY POS = [%.15f, %.15f, %.15f]\n", showRealValue(&b.bodynode.pos.x), showRealValue(&b.bodynode.pos.y), showRealValue(&b.bodynode.pos.z));
+            //mw_printf("BODY POS  = [%.15f, %.15f, %.15f]\n", showRealValue(&b.bodynode.pos.x), showRealValue(&b.bodynode.pos.y), showRealValue(&b.bodynode.pos.z));
             
             b.vel.x = vx[i];
             b.vel.y = vy[i];
             b.vel.z = vz[i];
 
-            //mw_printf("BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&b.vel.x), showRealValue(&b.vel.y), showRealValue(&b.vel.z));
+            //mw_printf(" BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&b.vel.x), showRealValue(&b.vel.y), showRealValue(&b.vel.z));
             
             assert(nbPositionValid(&b.bodynode.pos));
             pushBody(luaSt, &b);

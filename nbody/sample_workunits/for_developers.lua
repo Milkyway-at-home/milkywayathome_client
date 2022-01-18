@@ -35,8 +35,9 @@ print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                  
 
 LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
-LMC_Mass              = 449865.888
-LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
+--LMC_Mass              = 449865.888
+LMC_Mass              = 0.0
+LMC_DynamicalFriction = false    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -372,7 +373,7 @@ end
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
-argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+--argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 -- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --

@@ -407,6 +407,8 @@ static inline void nbCheckTreeStructure(NBodyTree* tree, const mwvector* pPos, c
 {
     real_0 halfPsize = 0.5 * psize;
 
+    //mw_printf("P POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(pPos)), showRealValue(&Y(pPos)), showRealValue(&Z(pPos)) );
+    //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(cmPos)), showRealValue(&Y(cmPos)), showRealValue(&Z(cmPos)) );
     nbCheckTreeDim(tree, showRealValue(&X(pPos)), showRealValue(&X(cmPos)), halfPsize);
     nbCheckTreeDim(tree, showRealValue(&Y(pPos)), showRealValue(&Y(cmPos)), halfPsize);
     nbCheckTreeDim(tree, showRealValue(&Z(pPos)), showRealValue(&Z(cmPos)), halfPsize);
@@ -421,6 +423,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real_0 
     int i;
     NBodyNode* q;
     mwvector cmpos = ZERO_VECTOR;                /* init center of mass */
+    mwvector tmp;
 
     assert(psize >= REAL_EPSILON);
 
@@ -436,13 +439,17 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real_0 
 
             Mass(p) = mw_add(&Mass(p), &Mass(q));                       /* sum total mass */
                                                       /* weight pos by mass */
-            mw_incaddv_s(&cmpos, &Pos(q), &Mass(q));     /* sum c-of-m position */
+            tmp = mw_mulvs(&Pos(q), &Mass(q));
+            mw_incaddv(&cmpos, &tmp);     /* sum c-of-m position */
+            //mw_printf("Mass(q) = %.15f\n", showRealValue(&Mass(q)));
+            //mw_printf("Q POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(q))), showRealValue(&Y(&Pos(q))), showRealValue(&Z(&Pos(q))) );
+            //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&cmpos)), showRealValue(&Y(&cmpos)), showRealValue(&Z(&cmpos)) );
         }
     }
 
     if (showRealValue(&Mass(p)) > 0.0)                          /* usually, cell has mass   */
     {
-        mw_incdivs(&cmpos, &Mass(p));            /* so find c-of-m position  */
+        cmpos = mw_divvs(&cmpos, &Mass(p));            /* so find c-of-m position  */
     }
     else                                        /* but if no mass inside    */
     {
@@ -450,6 +457,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real_0 
         cmpos = Pos(p);                /* use geo. center for now  */
     }
 
+    //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&cmpos)), showRealValue(&Y(&cmpos)), showRealValue(&Z(&cmpos)) );
     nbCheckTreeStructure(tree, &Pos(p), &cmpos, psize);
 
     Rcrit2(p) = findRCrit(ctx, p, tree->rsize, &cmpos, psize);            /* set critical radius */

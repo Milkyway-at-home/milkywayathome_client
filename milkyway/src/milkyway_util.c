@@ -411,7 +411,9 @@ mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState)
 mwvector mwRandomPoint(dsfmt_t* dsfmtState, real* s)
 {
     mwvector v = mwRandomUnitPoint(dsfmtState);
-    mw_incmulvs(&v, s);
+    v.x = mw_mul(&v.x, s);
+    v.y = mw_mul(&v.y, s);
+    v.z = mw_mul(&v.z, s);
     return v;
 }
 
@@ -423,10 +425,12 @@ mwvector mwRandomUnitVector(dsfmt_t* dsfmtState)
     return v;
 }
 
-mwvector mwRandomVector(dsfmt_t* dsfmtState, real* r)
+mwvector mwRandomVector(dsfmt_t* dsfmtState, real* s)
 {
     mwvector v = mwRandomUnitVector(dsfmtState);
-    mw_incmulvs(&v, r);
+    v.x = mw_mul(&v.x, s);
+    v.y = mw_mul(&v.y, s);
+    v.z = mw_mul(&v.z, s);
     return v;
 }
 

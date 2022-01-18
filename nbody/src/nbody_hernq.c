@@ -70,7 +70,10 @@ static mwvector hernqPickShell(dsfmt_t* dsfmtState, real_0 rad)
 
     tmp = minushalf(&rsq);
     rsc = mw_mul_s(&tmp, rad);       /* compute scaling factor */
-    mw_incmulvs(&vec, &rsc);          /* rescale to radius given */
+
+    vec.x = mw_mul(&vec.x, &rsc);          /* rescale to radius given */
+    vec.y = mw_mul(&vec.y, &rsc);
+    vec.z = mw_mul(&vec.z, &rsc);
 
     return vec;
 }
@@ -114,7 +117,7 @@ static mwvector hernqBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift, real_0 
     mwvector pos;
 
     pos = hernqPickShell(dsfmtState, rsc * r);  /* pick scaled position */
-    mw_incaddv(&pos, rshift);               /* move the position */
+    pos = mw_addv(&pos, rshift);               /* move the position */
 
     return pos;
 }
@@ -126,7 +129,7 @@ static mwvector hernqBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift, real_0 
 
     v = hernqCalculateV(r, radius, a, mass);
     vel = hernqPickShell(dsfmtState, v);   /* pick scaled velocity */
-    mw_incaddv(&vel, vshift);              /* move the velocity */
+    vel = mw_addv(&vel, vshift);              /* move the velocity */
 
     return vel;
 }

@@ -48,6 +48,8 @@ static int luaLbrToCartesian(lua_State* luaSt)
     ctx = checkNBodyCtx(luaSt, 1);
     v = *checkVector(luaSt, 2);
 
+    //mw_printf("LBR = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
+
     /* ctx = toNBodyCtx(luaSt, 2);
        sunGCDist = ctx != NULL ? ctx->sunGCDist : luaL_optnumber(luaSt, 2, DEFAULT_SUN_GC_DISTANCE);
     */
@@ -60,6 +62,7 @@ static int luaLbrToCartesian(lua_State* luaSt)
     if (!useGalacticCoordinates)
         v = useRadians ? lbrToCartesian_rad(&v, sunGCDist) : lbrToCartesian(&v, sunGCDist);
 
+    //mw_printf("XYZ = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
     pushVector(luaSt, v);
 
     return 1;

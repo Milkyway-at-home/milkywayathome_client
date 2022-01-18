@@ -59,12 +59,12 @@ static inline mwvector _lbrToCartesian(const real* l, const real* b, const real*
     real sinb = mw_sin(b);
 
     tmp = mw_mul(&cosl, &cosb);
-    tmp = mw_mul(&r, &tmp);
+    tmp = mw_mul(r, &tmp);
     cart.x = mw_add_s(&tmp, -sun);
 
     tmp = mw_mul(&sinl, &cosb);
-    cart.y = mw_mul(&r, &tmp);
-    cart.z = mw_mul(&r, &sinb);
+    cart.y = mw_mul(r, &tmp);
+    cart.z = mw_mul(r, &sinb);
     cart.w = ZERO_REAL;
 
     return cart;

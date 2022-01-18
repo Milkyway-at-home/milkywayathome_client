@@ -27,7 +27,10 @@
 
 typedef struct
 {
-    real x, y, z, w;
+    real x;
+    real y;
+    real z;
+    real w;
 } mwvector;
 
 #define L(v) ((v)->x)
@@ -65,6 +68,7 @@ static inline mwvector mw_addv(mwvector* a, mwvector* b)
     v.x = mw_add(&a->x, &b->x);
     v.y = mw_add(&a->y, &b->y);
     v.z = mw_add(&a->z, &b->z);
+
     return v;
 }
 
@@ -153,9 +157,13 @@ CONST_F
 static inline mwvector mw_mulvs(mwvector* a, real* s)
 {
     mwvector v;
-    v.x =  mw_mul(s, &a->x);
-    v.y =  mw_mul(s, &a->y);
-    v.z =  mw_mul(s, &a->z);
+    real x_val = X(a);
+    real y_val = Y(a);
+    real z_val = Z(a);
+
+    v.x =  mw_mul(&x_val, s);
+    v.y =  mw_mul(&y_val, s);
+    v.z =  mw_mul(&z_val, s);
     return v;
 }
 
@@ -163,9 +171,13 @@ CONST_F
 static inline mwvector mw_divvs(mwvector* a, real* s)
 {
     mwvector v;
-    v.x = mw_div(&a->x, s);
-    v.y = mw_div(&a->y, s);
-    v.z = mw_div(&a->z, s);
+    real x_val = X(a);
+    real y_val = Y(a);
+    real z_val = Z(a);
+
+    v.x =  mw_div(&x_val, s);
+    v.y =  mw_div(&y_val, s);
+    v.z =  mw_div(&z_val, s);
     return v;
 }
 
@@ -197,8 +209,9 @@ CONST_F
 static inline real mw_distv(mwvector* a, mwvector* b)
 {
     mwvector diff = mw_subv(a,b);
+    real dist = mw_length(&diff);
 
-    return mw_length(&diff);
+    return dist;
 }
 
 /* Angle between two vectors, in the range [0,pi] */
@@ -217,24 +230,76 @@ static inline real mw_vecangle(mwvector* a, mwvector* b)
     return mw_acos(&costheta);
 }
 
+CONST_F
+static inline void mw_incsubv(mwvector* v1, mwvector* v2)
+{
+    *v1 = mw_subv(v1, v2);
+}
 
-#define mw_incsubv(v1, v2) { *v1 = mw_subv(v1, v2); }
-#define mw_incaddv(v1, v2) { *v1 = mw_addv(v1, v2); }
-#define mw_incdivv(v1, v2) { *v1 = mw_divv(v1, v2); }
-#define mw_incmulv(v1, v2) { *v1 = mw_mulv(v1, v2); }
-#define mw_incnegv(v1) { *v1 = mw_negv(v1); }
+CONST_F
+static inline void mw_incaddv(mwvector* v1, mwvector* v2)
+{
+    *v1 = mw_addv(v1, v2);
+}
+
+CONST_F
+static inline void mw_incmulv(mwvector* v1, mwvector* v2)
+{
+    *v1 = mw_mulv(v1, v2);
+}
+
+CONST_F
+static inline void mw_incdivv(mwvector* v1, mwvector* v2)
+{
+    *v1 = mw_divv(v1, v2);
+}
+
+CONST_F
+static inline void mw_incnegv(mwvector* v1)
+{
+    *v1 = mw_negv(v1);
+}
+
 #define mw_zerov(v) { (v)->x = ZERO_REAL; (v)->y = ZERO_REAL; (v)->z = ZERO_REAL; }
 
 /* v1 += s * v2 */
-#define mw_incaddv_s(v1, v2, s) { mwvector tempor = mw_mulvs((v2),(s)); mw_incaddv((v1), &tempor); }
+CONST_F
+static inline void mw_incaddv_s(mwvector* v1, mwvector* v2, real* s)
+{
+    mwvector tempor = mw_mulvs(v2, s);
+    mw_incaddv(v1, &tempor);
+}
 
 /* v1 -= s * v2 */
-#define mw_incsubv_s(v1, v2, s) { mwvector tempor = mw_mulvs((v2),(s)); mw_incsubv((v1), &tempor); }
+CONST_F
+static inline void mw_incsubv_s(mwvector* v1, mwvector* v2, real* s)
+{
+    mwvector tempor = mw_mulvs(v2, s);
+    mw_incsubv(v1, &tempor);
+}
 
-#define mw_incdivs(v, s) { (v)->x = mw_div(&((v)->x), s); (v)->y = mw_div(&((v)->y), s); (v)->z = mw_div(&((v)->z), s); }
-#define mw_incmulvs(v, s) { (v)->x = mw_mul(&((v)->x), s); (v)->y = mw_mul(&((v)->y), s); (v)->z = mw_mul(&((v)->z), s); }
+CONST_F
+static inline void mw_incdivs(mwvector* v, real* s)
+{
+    v->x = mw_div(&v->x, s);
+    v->y = mw_div(&v->y, s);
+    v->z = mw_div(&v->z, s);
+}
 
-#define mw_normalize(v) { real len = mw_length(v); mw_incdivs(v, &len); }
+CONST_F
+static inline void mw_incmulvs(mwvector* v, real* s)
+{
+    v->x = mw_mul(&v->x, s);
+    v->y = mw_mul(&v->y, s);
+    v->z = mw_mul(&v->z, s);
+}
+
+CONST_F
+static inline void mw_normalize(mwvector* v)
+{
+    real len = mw_length(v);
+    mw_incdivs(v, &len);
+}
 
 /* Outer product */
 

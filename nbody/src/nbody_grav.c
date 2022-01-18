@@ -44,17 +44,6 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
     mwbool showProblem = FALSE;
     NBodyNode* q;
 
-    //7.062559445160672, 0.611498297095750, -4.392935809813397
-
-    //real_0 badX =  7.062559445160672;
-
-    //mw_printf("P POINTER %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
-
-    //if (mw_abs_0(showRealValue(&X(&Pos(p))) - badX) < 0.00001)
-    //{
-    //    mw_printf("P POINTER %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
-    //    showProblem = TRUE;
-    //}
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
     real tmp1, tmp2;
@@ -221,7 +210,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
     mwvector LMCx;
-    mwvector a, externAcc, mwAcc, LMCAcc;
+    mwvector a, a_tmp;
     const Body* b;
     real lmcmass, lmcscale;
 
@@ -245,7 +234,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     }
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
+    #pragma omp parallel for private(i, b, a, a_tmp) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
   #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
@@ -258,21 +247,15 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
-                mwAcc = nbExtAcceleration(&ctx->pot, &Pos(b), barTime);
-                LMCAcc = plummerAccel(&Pos(b), &LMCx, &lmcmass, &lmcscale);
-                externAcc = mw_addv(&mwAcc, &LMCAcc);
-                /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
-                    sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
-                    take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
-                    moving potential. **/
-                mw_incaddv(&a, &externAcc);
-                //real test = X(plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
-    	        //if(test > 400) {
-      		//   mw_printf("Plummer Additive Acceleration (X): %f\n", test);
-      		//   printf("Plummer Additive Acceleration (X): %f\n", test);
-    		//}
-    
+                //mw_printf("nbGravity = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&a)), showRealValue(&Y(&a)), showRealValue(&Z(&a)) );
+                a_tmp = nbExtAcceleration(&ctx->pot, &Pos(b), barTime);
+                a = mw_addv(&a, &a_tmp); //Adding External Acceleration
+                //mw_printf("nbExtAcc = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&a_tmp)), showRealValue(&Y(&a_tmp)), showRealValue(&Z(&a_tmp)) );
+                a_tmp = plummerAccel(&Pos(b), &LMCx, &lmcmass, &lmcscale);
+                a = mw_addv(&a, &a_tmp); //Adding LMC Acceleration
+                //mw_printf("plummerAcc = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&a_tmp)), showRealValue(&Y(&a_tmp)), showRealValue(&Z(&a_tmp)) );
 
+                //mw_printf("ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&a)), showRealValue(&Y(&a)), showRealValue(&Z(&a)) );
                 accels[i] = a;
                 break;
 
@@ -284,10 +267,10 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
-                nbEvalPotentialClosure(st, &Pos(&bodies[i]), &externAcc);
-                LMCAcc = plummerAccel(&Pos(&bodies[i]), &LMCx, &lmcmass, &lmcscale);
-                mw_incaddv(&externAcc, &LMCAcc);
-                mw_incaddv(&a, &externAcc);
+                nbEvalPotentialClosure(st, &Pos(&bodies[i]), &a_tmp);
+                a = mw_addv(&a, &a_tmp); //Adding External Acceleration
+                a_tmp = plummerAccel(&Pos(&bodies[i]), &LMCx, &lmcmass, &lmcscale);
+                a = mw_addv(&a, &a_tmp); //Adding LMC Acceleration
 
                 accels[i] = a;
                 break;
@@ -307,22 +290,29 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     real tmp;
     mwvector tmp_vec;
 
+    //mw_printf("P POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
+        //mw_printf(" B POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(b))), showRealValue(&Y(&Pos(b))), showRealValue(&Z(&Pos(b))) );
 
         mwvector dr = mw_subv(&Pos(b), &Pos(p));
+        //mw_printf(" DR = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&dr)), showRealValue(&Y(&dr)), showRealValue(&Z(&dr)) );
         tmp = mw_sqrv(&dr);
+        //mw_printf(" tmp = %.15f\n", showRealValue(&tmp));
         real drSq = mw_add_s(&tmp, eps2);
+        //mw_printf(" drSq = %.15f\n", showRealValue(&drSq));
 
         real drab = mw_sqrt(&drSq);
         real phii = mw_div(&Mass(b), &drab);
         real mor3 = mw_div(&phii, &drSq);
 
         tmp_vec = mw_mulvs(&dr, &mor3);
-        mw_incaddv(&a, &tmp);
+        //mw_printf("tmp_vec = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&tmp_vec)), showRealValue(&Y(&tmp_vec)), showRealValue(&Z(&tmp_vec)) );
+        a = mw_addv(&a, &tmp_vec);
+        //mw_printf("ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&a)), showRealValue(&Y(&a)), showRealValue(&Z(&a)) );
     }
-
+    //mw_printf("ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&a)), showRealValue(&Y(&a)), showRealValue(&Z(&a)) );
     return a;
 }
 
@@ -331,7 +321,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
     mwvector LMCx;
-    mwvector a, externAcc, mwAcc, LMCAcc;
+    mwvector a, a_tmp;
     const Body* b;
     real lmcmass, lmcscale;
 
@@ -353,7 +343,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     }
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b, a, externAcc) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
+    #pragma omp parallel for private(i, b, a, a_tmp) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
   #endif
 
     for (i = 0; i < nbody; ++i)      /* get force on each body */
@@ -364,11 +354,10 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - EXACT\n");
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
-                //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
-                mwAcc = nbExtAcceleration(&ctx->pot, &Pos(b), barTime);
-                LMCAcc = plummerAccel(&Pos(b), &LMCx, &lmcmass, &lmcscale);
-                externAcc = mw_addv(&mwAcc, &LMCAcc);
-                mw_incaddv(&a, &externAcc);
+                a_tmp = nbExtAcceleration(&ctx->pot, &Pos(b), barTime);
+                a = mw_addv(&a, &a_tmp); //Adding External Acceleration
+                a_tmp = plummerAccel(&Pos(b), &LMCx, &lmcmass, &lmcscale);
+                a = mw_addv(&a, &a_tmp); //Adding LMC Acceleration
                 
                 accels[i] = a;
                 break;
@@ -381,10 +370,10 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
                 //mw_printf("CUSTOM POTENTIAL - EXACT\n");
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
-                nbEvalPotentialClosure(st, &Pos(&bodies[i]), &externAcc);
-                LMCAcc = plummerAccel(&Pos(&bodies[i]), &LMCx, &lmcmass, &lmcscale);
-                mw_incaddv(&externAcc, &LMCAcc);
-                mw_incaddv(&a, &externAcc);
+                nbEvalPotentialClosure(st, &Pos(&bodies[i]), &a_tmp);
+                a = mw_addv(&a, &a_tmp); //Adding External Acceleration
+                a_tmp = plummerAccel(&Pos(&bodies[i]), &LMCx, &lmcmass, &lmcscale);
+                a = mw_addv(&a, &a_tmp); //Adding LMC Acceleration
 
                 accels[i] = a;
                 break;

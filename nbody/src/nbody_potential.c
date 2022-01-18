@@ -217,21 +217,25 @@ static inline real ZSechIntegrand (real* k, real* R, real* Rd, real* z, real* zd
 mwvector pointAccel(const mwvector* pos, const mwvector* pos1, const real* mass)
 {
     mwvector v = mw_subv(pos1, pos);
-    real dist = mw_distv(pos, pos1);
+    real dist = mw_length(&v);
     real tmp = cube(&dist);
     tmp = mw_div(mass, &tmp);
-    mw_incmulvs(&v, &tmp);
+    v = mw_mulvs(&v, &tmp);
     return v;
 }
 
 mwvector plummerAccel(const mwvector* pos, const mwvector* pos1, const real* mass, const real* scale)
 {
+    //mw_printf("POS1 = [%.15f,%.15f,%.15f]\n", showRealValue(&X(pos1)), showRealValue(&Y(pos1)), showRealValue(&Z(pos1)));
+    //mw_printf("POS  = [%.15f,%.15f,%.15f]\n", showRealValue(&X(pos)), showRealValue(&Y(pos)), showRealValue(&Z(pos)));
     mwvector v = mw_subv(pos1, pos);
-    real dist = mw_distv(pos, pos1);
+    //mw_printf("V    = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&v)), showRealValue(&Y(&v)), showRealValue(&Z(&v)));
+    real dist = mw_length(&v);
+    //mw_printf("dist = %.15f\n", showRealValue(&dist));
     real tmp = mw_hypot(scale, &dist);
     tmp = cube(&tmp);
     tmp = mw_div(mass, &tmp);
-    mw_incmulvs(&v, &tmp);
+    v = mw_mulvs(&v, &tmp);
     return v;
 }
 
@@ -996,6 +1000,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector* pos, real* r) 
 
 mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
 {
+    //mw_printf("POS = [%.15f,%.15f,%.15f]\n", showRealValue(&X(pos)), showRealValue(&Y(pos)), showRealValue(&Z(pos)));
     mwvector acc, acctmp;
     real_0 limit_val = mw_pow_0(2.0,-8.0);
 
@@ -1060,7 +1065,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         default:
             mw_fail("Invalid secondary disk type in external acceleration\n");
     }
-    mw_incaddv(&acc, &acctmp);
+    acc = mw_addv(&acc, &acctmp);
 
     /*Calculate the Halo Accelerations*/
     switch (pot->halo.type)
@@ -1104,7 +1109,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         default:
             mw_fail("Invalid halo type in external acceleration\n");
     }
-    mw_incaddv(&acc, &acctmp);
+    acc = mw_addv(&acc, &acctmp);
 
     /*Calculate the Bulge Accelerations*/
     switch (pot->sphere[0].type)
@@ -1124,7 +1129,8 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         default:
             mw_fail("Invalid bulge type in external acceleration\n");
     }
-    mw_incaddv(&acc, &acctmp);
+    acc = mw_addv(&acc, &acctmp);
+    //mw_printf("ACC = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)), showRealValue(&Y(&acc)), showRealValue(&Z(&acc)));
 
     /*For debugging acceleration values*/
 //    if (!isfinite(mw_absv(acc)))
