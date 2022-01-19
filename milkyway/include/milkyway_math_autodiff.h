@@ -693,12 +693,32 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_pow(real* a, real* b)
     {
+        real_0 dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb;
         real_0 z        = mw_pow_0(a->value, b->value);
-        real_0 dz_da    = (b->value) * mw_pow_0(a->value, (b->value) - 1.0);
-        real_0 dz_db    = mw_pow_0(a->value, b->value) * mw_log_0(a->value);
-        real_0 d2z_da2  = (b->value) * ((b->value) - 1.0) * mw_pow_0(a->value, (b->value) - 2.0);
-        real_0 d2z_db2  = mw_pow_0(a->value, b->value) * sqr_0(mw_log_0(a->value));
-        real_0 d2z_dadb = mw_pow_0(a->value, (b->value) - 1.0) * (1.0 + (b->value)*mw_log_0(a->value));
+        if ((a->value) > 0)
+        {
+            dz_da    = (b->value) * mw_pow_0(a->value, (b->value) - 1.0);
+            d2z_da2  = (b->value) * ((b->value) - 1.0) * mw_pow_0(a->value, (b->value) - 2.0);
+            dz_db    = mw_pow_0(a->value, b->value) * mw_log_0(a->value);
+            d2z_db2  = mw_pow_0(a->value, b->value) * sqr_0(mw_log_0(a->value));
+            d2z_dadb = mw_pow_0(a->value, (b->value) - 1.0) * (1.0 + (b->value)*mw_log_0(a->value));
+        }
+        else
+        {
+            if ((a->value) != 0.0)
+            {
+                dz_da    = (b->value) * mw_pow_0(a->value, (b->value) - 1.0);
+                d2z_da2  = (b->value) * ((b->value) - 1.0) * mw_pow_0(a->value, (b->value) - 2.0);
+            }
+            else
+            {
+                dz_da    = 0.0;
+                d2z_da2  = 0.0;
+            }
+            dz_db    = 0.0;
+            d2z_db2  = 0.0;
+            d2z_dadb = 0.0;
+        }
 
         return mw_AUTODIFF(a, b, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
@@ -706,12 +726,32 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_powr(real* a, real* b)
     {
-        real_0 z        = mw_powr_0(a->value, b->value);
-        real_0 dz_da    = (b->value) * mw_pow_0(a->value, (b->value) - 1.0);
-        real_0 dz_db    = mw_pow_0(a->value, b->value) * mw_log_0(a->value);
-        real_0 d2z_da2  = (b->value) * ((b->value) - 1.0) * mw_pow_0(a->value, (b->value) - 2.0);
-        real_0 d2z_db2  = mw_pow_0(a->value, b->value) * sqr_0(mw_log_0(a->value));
-        real_0 d2z_dadb = mw_pow_0(a->value, (b->value) - 1.0) * (1.0 + (b->value)*mw_log_0(a->value));
+        real_0 dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb;
+        real_0 z        = mw_pow_0(a->value, b->value);
+        if ((a->value) > 0)
+        {
+            dz_da    = (b->value) * mw_pow_0(a->value, (b->value) - 1.0);
+            d2z_da2  = (b->value) * ((b->value) - 1.0) * mw_pow_0(a->value, (b->value) - 2.0);
+            dz_db    = mw_pow_0(a->value, b->value) * mw_log_0(a->value);
+            d2z_db2  = mw_pow_0(a->value, b->value) * sqr_0(mw_log_0(a->value));
+            d2z_dadb = mw_pow_0(a->value, (b->value) - 1.0) * (1.0 + (b->value)*mw_log_0(a->value));
+        }
+        else
+        {
+            if ((a->value) != 0.0)
+            {
+                dz_da    = (b->value) * mw_pow_0(a->value, (b->value) - 1.0);
+                d2z_da2  = (b->value) * ((b->value) - 1.0) * mw_pow_0(a->value, (b->value) - 2.0);
+            }
+            else
+            {
+                dz_da    = 0.0;
+                d2z_da2  = 0.0;
+            }
+            dz_db    = 0.0;
+            d2z_db2  = 0.0;
+            d2z_dadb = 0.0;
+        }
 
         return mw_AUTODIFF(a, b, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
@@ -797,12 +837,21 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_cbrt(real* a)
     {
+        real_0 dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb;
         real_0 z        = mw_cbrt_0(a->value);
-        real_0 dz_da    = 1.0 / 3.0 / mw_cbrt_0(sqr_0(a->value));
-        real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = -2.0 / 9.0 / mw_cbrt_0(fifth_0(a->value));
-        real_0 d2z_db2  = 0.0;
-        real_0 d2z_dadb = 0.0;
+        if (z != 0)
+        {
+            dz_da    = 1.0 / 3.0 / mw_cbrt_0(sqr_0(a->value));
+            d2z_da2  = -2.0 / 9.0 / mw_cbrt_0(fifth_0(a->value));
+        }
+        else
+        {
+            dz_da    = 0.0;
+            d2z_da2  = 0.0;
+        }
+        dz_db    = 0.0;
+        d2z_db2  = 0.0;
+        d2z_dadb = 0.0;
 
         return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
@@ -810,12 +859,21 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_sqrt(real* a)
     {
+        real_0 dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb;
         real_0 z        = mw_sqrt_0(a->value);
-        real_0 dz_da    = 1.0 / 2.0 / mw_sqrt_0(a->value);
-        real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = -1.0 / 4.0 / cube_0(mw_sqrt_0(a->value));
-        real_0 d2z_db2  = 0.0;
-        real_0 d2z_dadb = 0.0;
+        if (z > 0)
+        {
+            dz_da    = 1.0 / 2.0 / mw_sqrt_0(a->value);
+            d2z_da2  = -1.0 / 4.0 / cube_0(mw_sqrt_0(a->value));
+        }
+        else
+        {
+            dz_da    = 0.0;
+            d2z_da2  = 0.0;
+        }
+        dz_db    = 0.0;
+        d2z_db2  = 0.0;
+        d2z_dadb = 0.0;
 
         return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
@@ -1081,12 +1139,24 @@ extern "C" {
     CONST_F ALWAYS_INLINE
     static inline real mw_hypot(real* a, real* b)
     {
-        real_0 z        = mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
-        real_0 dz_da    = (a->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
-        real_0 dz_db    = (b->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
-        real_0 d2z_da2  = sqr_0(b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
-        real_0 d2z_db2  = sqr_0(a->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
-        real_0 d2z_dadb = -(a->value) * (b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
+        real_0 dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb;
+        real_0 z = mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
+        if (z == 0.0)
+        {
+            dz_da    = 0.0;
+            dz_db    = 0.0;
+            d2z_da2  = 0.0;
+            d2z_db2  = 0.0;
+            d2z_dadb = 0.0;
+        }
+        else
+        {
+            dz_da    = (a->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
+            dz_db    = (b->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
+            d2z_da2  = sqr_0(b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
+            d2z_db2  = sqr_0(a->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
+            d2z_dadb = -(a->value) * (b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
+        }
 
         return mw_AUTODIFF(a, b, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
