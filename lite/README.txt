@@ -27,6 +27,19 @@ working as of the time you read this)
 
  - Extract the downloaded archive
 
+
+
+There have been instances where users run into issues with their machines
+missing libraries that are required for Nbody Lite to run. When this happens,
+the error will usually look something like:
+
+>>> ./milkyway_nbody: error while loading shared libraries: <library name>: 
+cannot open shared object file: No such file or directory
+
+When this happens, you will have to install the required library via apt or apt-get. 
+So far it is documented that this problem can happen for libraries including
+libncurses.so.5 and libgomp1. 
+
 ======================================================
 Usage
 ======================================================
