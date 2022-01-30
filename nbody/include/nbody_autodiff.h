@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-void printReal(real* a);
+void printReal(real* a, char var_name[]);
 void nbWriteAutoDiff(const char* autoDiffFileName, real* likelihood);
 
 #ifdef __cplusplus

@@ -218,6 +218,7 @@ static int divVector(lua_State* luaSt)
 static int multVector(lua_State* luaSt)
 {
     mwvector v1, v2;
+    mwvector result;
     real s;
     int rc;
 
@@ -231,7 +232,10 @@ static int multVector(lua_State* luaSt)
     else
     {
         /* Vector * Scalar */
-        pushVector(luaSt, mw_mulvs(&v1, &s));
+        result.x = mw_mul(&v1.x, &s);
+        result.y = mw_mul(&v1.y, &s);
+        result.z = mw_mul(&v1.z, &s);
+        pushVector(luaSt, result);
     }
 
     return 1;

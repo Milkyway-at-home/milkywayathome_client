@@ -142,7 +142,7 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* ve
     if (!dynaFric) {
         result.x = ZERO_REAL;
         result.y = ZERO_REAL;
-        result.x = ZERO_REAL;
+        result.z = ZERO_REAL;
         return result;
     }
 
@@ -203,7 +203,9 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* ve
     real acc = mw_mul(&factor, &erfStuff);
 
     tmp1 = mw_div(&acc, &objectVel);
-    result = mw_mulvs(vel, &tmp1);
+    result.x = mw_mul(&vel->x, &tmp1);
+    result.y = mw_mul(&vel->y, &tmp1);
+    result.z = mw_mul(&vel->z, &tmp1);
 
     //mw_printf("ACC_DF = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&result)), showRealValue(&Y(&result)), showRealValue(&Z(&result)) );
 

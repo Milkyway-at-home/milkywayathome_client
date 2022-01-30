@@ -440,7 +440,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real_0 
             Mass(p) = mw_add(&Mass(p), &Mass(q));                       /* sum total mass */
                                                       /* weight pos by mass */
             tmp = mw_mulvs(&Pos(q), &Mass(q));
-            mw_incaddv(&cmpos, &tmp);     /* sum c-of-m position */
+            cmpos = mw_addv(&cmpos, &tmp);     /* sum c-of-m position */
             //mw_printf("Mass(q) = %.15f\n", showRealValue(&Mass(q)));
             //mw_printf("Q POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(q))), showRealValue(&Y(&Pos(q))), showRealValue(&Z(&Pos(q))) );
             //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&cmpos)), showRealValue(&Y(&cmpos)), showRealValue(&Z(&cmpos)) );

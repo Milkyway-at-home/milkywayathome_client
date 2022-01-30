@@ -185,6 +185,7 @@ real * nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
+        //mw_printf("totalNum = %.15f\n", showRealValue(&histogram->histograms[0]->totalNum));
         if (showRealValue(&histogram->histograms[0]->totalNum) < 0.0001 * (real_0) st->nbody)
         {
             static real worstEMD_Array[8];
@@ -192,8 +193,8 @@ real * nbSystemLikelihood(const NBodyState* st,
 
             mw_printf("Number of particles in bins is very small compared to total. "
                       "(%u << %u). Skipping distance calculation\n",
-                      histogram->histograms[0]->totalNum,
-                      st->nbody
+                      (int) mw_round_0(showRealValue(&histogram->histograms[0]->totalNum)),
+                      (int) mw_round_0(st->nbody)
                 );
             worstEMD = nbWorstCaseEMD(histogram->histograms[0]);
 
@@ -209,7 +210,9 @@ real * nbSystemLikelihood(const NBodyState* st,
             return worstEMD_Array; //Changed.  See above comment.
         }
         // this function has been changed to accept MainStruct
+        //mw_printf("BEFORE EMD\n");
         geometry_component = nbMatchEMD(data, histogram);
+        //mw_printf("AFTER EMD\n");
         //mw_printf("EMD Calculated!\n");
     }
     else
@@ -219,8 +222,9 @@ real * nbSystemLikelihood(const NBodyState* st,
     //mw_printf("Geometry = %.15f\n",showRealValue(geometry_component));
     
     /* likelihood due to the amount of mass in the histograms */
-    
+    //mw_printf("BEFORE COST\n");
     cost_component = nbCostComponent(data->histograms[0], histogram->histograms[0]);
+    //mw_printf("AFTER COST\n");
     //mw_printf("Cost = %.15f\n",showRealValue(cost_component));
 
     likelihood = mw_add(&geometry_component, &cost_component);
@@ -228,7 +232,9 @@ real * nbSystemLikelihood(const NBodyState* st,
     /* likelihood due to the vel dispersion per bin of the two hist */
     if(st->useBetaDisp)
     {
+        //mw_printf("BEFORE B_DISP\n");
         beta_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1]);
+        //mw_printf("AFTER B_DISP\n");
         likelihood = mw_add(&likelihood, &beta_dispersion_component);
         //mw_printf("BDisp = %.15f\n",showRealValue(beta_dispersion_component));
     }

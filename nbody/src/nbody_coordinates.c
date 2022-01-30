@@ -172,22 +172,22 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector* xyz, real_0 sunGCDist
     real_0 rot32 = -sinth * cosphi;
     real_0 rot33 = costh;
 
-    X(xyz) = mw_add_s(&X(xyz), sunGCDist);
+    real shiftX = mw_add_s(&X(xyz), sunGCDist);
 
     /* Calculate X,Y,Z,distance in the Sgr system */
-    tempX1 = mw_mul_s(&X(xyz), rot11);
+    tempX1 = mw_mul_s(&shiftX, rot11);
     tempX2 = mw_mul_s(&Y(xyz), rot12);
     tempX3 = mw_mul_s(&Z(xyz), rot13);
     tempX  = mw_add(&tempX1, &tempX2);
     tempX  = mw_add(&tempX, &tempX3);
 
-    tempY1 = mw_mul_s(&X(xyz), rot21);
+    tempY1 = mw_mul_s(&shiftX, rot21);
     tempY2 = mw_mul_s(&Y(xyz), rot22);
     tempY3 = mw_mul_s(&Z(xyz), rot23);
     tempY  = mw_add(&tempY1, &tempY2);
     tempY  = mw_add(&tempY, &tempY3);
 
-    tempZ1 = mw_mul_s(&X(xyz), rot31);
+    tempZ1 = mw_mul_s(&shiftX, rot31);
     tempZ2 = mw_mul_s(&Y(xyz), rot32);
     tempZ3 = mw_mul_s(&Z(xyz), rot33);
     tempZ = mw_add(&tempZ1, &tempZ2);

@@ -35,6 +35,8 @@
 #include "nbody_friction.h"
 #include "nbody_autodiff.h"
 
+#include <time.h>
+
 #ifdef NBODY_BLENDER_OUTPUT
   #include "blender_visualizer.h"
 #endif
@@ -107,8 +109,9 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     
     if (calculateLikelihood)
     {
-        
+        //mw_printf("BEFORE CREATE HISTOGRAM\n");
         histogram = nbCreateHistogram(ctx, st, &hp);
+        //mw_printf("AFTER CREATE HISTOGRAM\n");
  
         if (!histogram)
         {
@@ -118,8 +121,9 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
              */
             return 0;
         }
-        
+        //mw_printf("BEFORE READ HISTOGRAM\n");
         data = nbReadHistogram(nbf->histogramFileName);
+        //mw_printf("AFTER READ HISTOGRAM\n");
         
         if (!data)
         {
@@ -130,7 +134,9 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
              */
             return 0;
         }
+        //mw_printf("BEFORE SYSTEM LIKELIHOOD\n");
         likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
+        //mw_printf("AFTER SYSTEM LIKELIHOOD\n");
         likelihood         = likelihoodArray[0];
         likelihood_EMD     = likelihoodArray[1];
         likelihood_Mass    = likelihoodArray[2];
@@ -277,7 +283,7 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real_0 d
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i) shared(bodies, accs) schedule(dynamic, 4096 / sizeof(accs[0]))
+    #pragma omp parallel for private(i) shared(bodies, accs) schedule(dynamic, (int) MAX(4096 / sizeof(accs[0]), 1))
   #endif
     for (i = 0; i < nbody; ++i)
     {
@@ -298,12 +304,18 @@ static inline void advancePosVel_LMC(NBodyState* st, const real_0 dt, const mwve
     dv.x = mw_mul_s(&acc_total.x, dtHalf);
     dv.y = mw_mul_s(&acc_total.y, dtHalf);
     dv.z = mw_mul_s(&acc_total.z, dtHalf);
-    st->LMCvel = mw_addv(&st->LMCvel, &dv);
+
+    st->LMCvel.x = mw_add(&st->LMCvel.x, &dv.x);
+    st->LMCvel.y = mw_add(&st->LMCvel.y, &dv.y);
+    st->LMCvel.z = mw_add(&st->LMCvel.z, &dv.z);
 
     dr.x = mw_mul_s(&X(&st->LMCvel), dt);
     dr.y = mw_mul_s(&Y(&st->LMCvel), dt);
     dr.z = mw_mul_s(&Z(&st->LMCvel), dt);
-    st->LMCpos = mw_addv(&st->LMCpos, &dr);
+
+    st->LMCpos.x = mw_add(&st->LMCpos.x, &dr.x);
+    st->LMCpos.y = mw_add(&st->LMCpos.y, &dr.y);
+    st->LMCpos.z = mw_add(&st->LMCpos.z, &dr.z);
 }
 
 static inline void advanceVelocities(NBodyState* st, const int nbody, const real_0 dt, const mwvector* acc_i1)
@@ -314,7 +326,7 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
     const mwvector* accs = mw_assume_aligned(st->acctab, 16);
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i) schedule(dynamic, 4096 / sizeof(accs[0]))
+    #pragma omp parallel for private(i) schedule(dynamic, (int) MAX(4096 / sizeof(accs[0]), 1))
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
     {
@@ -331,7 +343,10 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real_0 dt, const 
     dv.x = mw_mul_s(&acc_total.x, dtHalf);
     dv.y = mw_mul_s(&acc_total.y, dtHalf);
     dv.z = mw_mul_s(&acc_total.z, dtHalf);
-    st->LMCvel = mw_addv(&st->LMCvel, &dv);
+
+    st->LMCvel.x = mw_add(&st->LMCvel.x, &dv.x);
+    st->LMCvel.y = mw_add(&st->LMCvel.y, &dv.y);
+    st->LMCvel.z = mw_add(&st->LMCvel.z, &dv.z);
 }
 
 
@@ -348,8 +363,8 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     
     real_0 barTime = st->step * dt - st->previousForwardTime;
 
-    //mw_printf("   LMC position: %f %f %f, LMC mass: %f, LMC scale: %f \n", showRealValue(&X(&st->LMCpos)), showRealValue(&Y(&st->LMCpos)), showRealValue(&Z(&st->LMCpos)), ctx->LMCmass, ctx->LMCscale);
-    //mw_printf("   LMC velocity: %f %f %f, LMC mass: %f, LMC scale: %f \n", showRealValue(&X(&st->LMCvel)), showRealValue(&Y(&st->LMCvel)), showRealValue(&Z(&st->LMCvel)), ctx->LMCmass, ctx->LMCscale);
+    //mw_printf("   LMC_POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&st->LMCpos)), showRealValue(&Y(&st->LMCpos)), showRealValue(&Z(&st->LMCpos)));
+    //mw_printf("   LMC_VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&st->LMCvel)), showRealValue(&Y(&st->LMCvel)), showRealValue(&Z(&st->LMCvel)));
 
     advancePosVel(st, st->nbody, dt, acc_i);   /* acc_i and acc_i1 are accelerations due to the shifting Milky Way */
     if(ctx->LMC){
@@ -357,7 +372,10 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
         scaleLMC = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
         acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime);
         acc_LMC = nbExtAcceleration(&ctx->pot, &st->LMCpos, barTime);
+        //mw_printf("  DF_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_DF)), showRealValue(&Y(&acc_DF)), showRealValue(&Z(&acc_DF)));
+        //mw_printf(" LMC_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_LMC)), showRealValue(&Y(&acc_LMC)), showRealValue(&Z(&acc_LMC)));
 	acc_LMC = mw_addv(&acc_LMC, &acc_DF);
+        //mw_printf(" LMC_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_LMC)), showRealValue(&Y(&acc_LMC)), showRealValue(&Z(&acc_LMC)));
         advancePosVel_LMC(st, dt, &acc_LMC, acc_i);
     }
     rc = nbGravMap(ctx, st);
@@ -365,12 +383,12 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     if(ctx->LMC){
         acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime);
         acc_LMC = nbExtAcceleration(&ctx->pot, &st->LMCpos, barTime);
+        //mw_printf("  DF_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_DF)), showRealValue(&Y(&acc_DF)), showRealValue(&Z(&acc_DF)));
+        //mw_printf(" LMC_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_LMC)), showRealValue(&Y(&acc_LMC)), showRealValue(&Z(&acc_LMC)));
 	acc_LMC = mw_addv(&acc_LMC, &acc_DF);
+        //mw_printf(" LMC_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_LMC)), showRealValue(&Y(&acc_LMC)), showRealValue(&Z(&acc_LMC)));
         advanceVelocities_LMC(st, dt, &acc_LMC, acc_i1);
     }
-
-//    mw_printf("(%.15f) LMC position: [%.15f,%.15f,%.15f] | ",(int)(st->step)*(ctx->timestep),X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
-//    mw_printf("LMC velocity: [%.15f,%.15f,%.15f]\n",X(st->LMCvel[0]),Y(st->LMCvel[0]),Z(st->LMCvel[0]));
 
     st->step++;
     #ifdef NBODY_BLENDER_OUTPUT
@@ -386,6 +404,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     NBodyLikelihoodMethod method;
     HistogramParams hp;
     nbGetLikelihoodInfo(nbf, &hp, &method);
+    clock_t time_stamp;
+    real_0 time_taken;
 
     //real_0 input0 = 2.0;
     //real input1 = mw_real_var(3.0, 0);
@@ -454,6 +474,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
                 
         #endif
 
+        //time_stamp = clock();
         //mw_printf("    BEFORE STEP SYSTEM\n");
         if(!ctx->LMC) {
             mwvector zero;
@@ -464,12 +485,17 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             rc |= nbStepSystemPlain(ctx, st, &st->shiftByLMC[st->step], &st->shiftByLMC[st->step+1]);
         }
         //mw_printf("    AFTER STEP SYSTEM\n");
+        //time_stamp = clock() - time_stamp;
+        //time_taken = ((real_0) time_stamp) / CLOCKS_PER_SEC;
+        //mw_printf("%.15f\n", time_taken);
 
         curStep = st->step;
         
         if(curStep / Nstep >= ctx->BestLikeStart && ctx->useBestLike)
         {
+            //mw_printf(" TIME = %.15f\n", ctx->timestep*curStep);
             get_likelihood(ctx, st, nbf);
+            //mw_printf("    AFTER LIKELIHOOD\n");
         }
     
         if (nbStatusIsFatal(rc))   /* advance N-body system */

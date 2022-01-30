@@ -636,7 +636,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     real_0 lambdaStart = hp->lambdaStart;
     real_0 betaStart = hp->betaStart;
 
-    real totalNum = (real) histogram->totalNum;
+    real totalNum = histogram->totalNum;
     HistData* histData = histogram->data;
 
 
@@ -830,7 +830,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
     }
 
-
+    unsigned int totalCheck = 0;
     for (p = st->bodytab; p < endp; ++p)
     {
         /* Only include bodies in models we aren't ignoring (like dark matter) */
@@ -838,9 +838,10 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         {
 
             /* Get the position in lbr coorinates */
+            //mw_printf("P POS = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))));
             lambdaBetaR = nbXYZToLambdaBeta(&histTrig, &Pos(p), ctx->sunGCDist);
-            lambda = L(&lambdaBetaR);
-            beta = B(&lambdaBetaR);
+            lambda = lambdaBetaR.x;
+            beta = lambdaBetaR.y;
             
             use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
@@ -853,10 +854,13 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor_0((showRealValue(&lambda) - lambdaStart) / lambdaSize);
             betaIndex = (unsigned int) mw_floor_0((showRealValue(&beta) - betaStart) / betaSize);
+            //mw_printf("    (L, B) = (%.15f,%.15f)\n",showRealValue(&lambda), showRealValue(&beta));
+            //mw_printf("    (L_ind, B_ind) = (%u,%u)\n",lambdaIndex, betaIndex);
 
             /* Check if the position is within the bounds of the histogram */
             if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
-            {   
+            {
+                totalCheck++;
                 Histindex = lambdaIndex * betaBins + betaIndex;
                 use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
                 use_velbody[ub_counter] = Histindex;
@@ -916,7 +920,9 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             ub_counter++;
         }
     }
-   
+    //mw_printf("totalCheck = %u\n", totalCheck);
+    //mw_printf("ub_counter = %u\n", ub_counter);
+    //mw_printf("Created totalNum = %.15f\n", showRealValue(&totalNum));
     for(int i = 0; i < 6; i++)
         if(all->usage[i]) all->histograms[i]->totalNum = totalNum; /* Total particles in range */
 

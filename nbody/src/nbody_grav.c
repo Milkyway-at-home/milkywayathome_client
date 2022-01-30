@@ -233,8 +233,9 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         lmcscale = mw_real_var(1.0, LMC_RADIUS_POS);
     }
 
+  //mw_printf("Size of Accels = %u\n", sizeof(accels[0]));
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b, a, a_tmp) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
+    #pragma omp parallel for private(i, b, a, a_tmp) shared(bodies, accels) schedule(dynamic, (int) MAX(4096 / sizeof(accels[0]), 1))
   #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
@@ -343,7 +344,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     }
 
   #ifdef _OPENMP
-    #pragma omp parallel for private(i, b, a, a_tmp) shared(bodies, accels) schedule(dynamic, 4096 / sizeof(accels[0]))
+    #pragma omp parallel for private(i, b, a, a_tmp) shared(bodies, accels) schedule(dynamic, (int) MAX(4096 / sizeof(accels[0]), 1))
   #endif
 
     for (i = 0; i < nbody; ++i)      /* get force on each body */

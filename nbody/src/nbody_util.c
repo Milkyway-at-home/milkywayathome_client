@@ -48,7 +48,46 @@ mwvector nbCenterOfMass(const NBodyState* st)
     {
         b = &st->bodytab[i];
 
-        tmp = mw_mulvs(&Pos(b), &Mass(b));
+        tmp.x = mw_mul(&Pos(b).x, &Mass(b));
+        tmp.y = mw_mul(&Pos(b).y, &Mass(b));
+        tmp.z = mw_mul(&Pos(b).z, &Mass(b));
+
+        KAHAN_ADD(&pos[0], &tmp.x);
+        KAHAN_ADD(&pos[1], &tmp.y);
+        KAHAN_ADD(&pos[2], &tmp.z);
+        KAHAN_ADD(&mass, &Mass(b));
+    }
+
+    X(&cm) = mw_div(&pos[0].sum, &mass.sum);
+    Y(&cm) = mw_div(&pos[1].sum, &mass.sum);
+    Z(&cm) = mw_div(&pos[2].sum, &mass.sum);
+    W(&cm) = mass.sum;
+
+    return cm;
+}
+
+mwvector nbCenterOfMass_Best(const NBodyState* st)
+{
+    int i;
+    const Body* b;
+    int nbody = st->nbody;
+    mwvector cm = ZERO_VECTOR;
+    mwvector tmp;
+    Kahan mass;
+    Kahan pos[3];
+
+    CLEAR_KAHAN(&mass);
+    CLEAR_KAHAN(&pos[0]);
+    CLEAR_KAHAN(&pos[1]);
+    CLEAR_KAHAN(&pos[2]);
+
+    for (i = 0; i < nbody; ++i)
+    {
+        b = &st->bestLikelihoodBodyTab[i];
+
+        tmp.x = mw_mul(&Pos(b).x, &Mass(b));
+        tmp.y = mw_mul(&Pos(b).y, &Mass(b));
+        tmp.z = mw_mul(&Pos(b).z, &Mass(b));
 
         KAHAN_ADD(&pos[0], &tmp.x);
         KAHAN_ADD(&pos[1], &tmp.y);
@@ -82,7 +121,45 @@ mwvector nbCenterOfMom(const NBodyState* st)
     for (i = 0; i < nbody; ++i)
     {
         b = &st->bodytab[i];
-        tmp = mw_mulvs(&Vel(b), &Mass(b));
+        tmp.x = mw_mul(&Vel(b).x, &Mass(b));
+        tmp.y = mw_mul(&Vel(b).y, &Mass(b));
+        tmp.z = mw_mul(&Vel(b).z, &Mass(b));
+
+        KAHAN_ADD(&pos[0], &tmp.x);
+        KAHAN_ADD(&pos[1], &tmp.y);
+        KAHAN_ADD(&pos[2], &tmp.z);
+        KAHAN_ADD(&mass, &Mass(b));
+    }
+
+    X(&cm) = mw_div(&pos[0].sum, &mass.sum);
+    Y(&cm) = mw_div(&pos[1].sum, &mass.sum);
+    Z(&cm) = mw_div(&pos[2].sum, &mass.sum);
+    W(&cm) = mass.sum;
+
+    return cm;
+}
+
+mwvector nbCenterOfMom_Best(const NBodyState* st)
+{
+    int i;
+    const Body* b;
+    int nbody = st->nbody;
+    mwvector cm = ZERO_VECTOR;
+    mwvector tmp;
+    Kahan mass;
+    Kahan pos[3];
+
+    CLEAR_KAHAN(&mass);
+    CLEAR_KAHAN(&pos[0]);
+    CLEAR_KAHAN(&pos[1]);
+    CLEAR_KAHAN(&pos[2]);
+
+    for (i = 0; i < nbody; ++i)
+    {
+        b = &st->bestLikelihoodBodyTab[i];
+        tmp.x = mw_mul(&Vel(b).x, &Mass(b));
+        tmp.y = mw_mul(&Vel(b).y, &Mass(b));
+        tmp.z = mw_mul(&Vel(b).z, &Mass(b));
 
         KAHAN_ADD(&pos[0], &tmp.x);
         KAHAN_ADD(&pos[1], &tmp.y);

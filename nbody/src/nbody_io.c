@@ -35,14 +35,14 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
 {
     mwvector cmPos;
     mwvector cmVel;
-    cmVel = nbCenterOfMom(st);
-    if (st->tree.root)
-    {
-        cmPos = Pos(st->tree.root);
+    if(!ctx->useBestLike || showRealValue(&st->bestLikelihood) == DEFAULT_WORST_CASE){
+        cmVel = nbCenterOfMom(st);
+        cmPos = nbCenterOfMass(st);
     }
     else
     {
-        cmPos = nbCenterOfMass(st);
+        cmVel = nbCenterOfMom_Best(st);
+        cmPos = nbCenterOfMass_Best(st);
     }
 
     fprintf(f,

@@ -25,7 +25,7 @@
 #ifndef _MILKYWAY_VECTORS_H_
 #define _MILKYWAY_VECTORS_H_
 
-typedef struct
+typedef struct MW_ALIGN_TYPE_V(4*sizeof(real))
 {
     real x;
     real y;
@@ -157,13 +157,10 @@ CONST_F
 static inline mwvector mw_mulvs(mwvector* a, real* s)
 {
     mwvector v;
-    real x_val = X(a);
-    real y_val = Y(a);
-    real z_val = Z(a);
+    v.x =  mw_mul(&X(a), s);
+    v.y =  mw_mul(&Y(a), s);
+    v.z =  mw_mul(&Z(a), s);
 
-    v.x =  mw_mul(&x_val, s);
-    v.y =  mw_mul(&y_val, s);
-    v.z =  mw_mul(&z_val, s);
     return v;
 }
 
@@ -171,13 +168,10 @@ CONST_F
 static inline mwvector mw_divvs(mwvector* a, real* s)
 {
     mwvector v;
-    real x_val = X(a);
-    real y_val = Y(a);
-    real z_val = Z(a);
+    v.x =  mw_div(&X(a), s);
+    v.y =  mw_div(&Y(a), s);
+    v.z =  mw_div(&Z(a), s);
 
-    v.x =  mw_div(&x_val, s);
-    v.y =  mw_div(&y_val, s);
-    v.z =  mw_div(&z_val, s);
     return v;
 }
 
@@ -188,6 +182,7 @@ static inline mwvector mw_negv(mwvector* a)
     v.x = mw_neg(&a->x);
     v.y = mw_neg(&a->y);
     v.z = mw_neg(&a->z);
+
     return v;
 }
 

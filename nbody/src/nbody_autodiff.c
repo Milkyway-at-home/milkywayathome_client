@@ -26,7 +26,7 @@
 
 static void nbPrintLikelihood(FILE* f, real* likelihood)
 {
-    int i,j,k;
+    int i,j,eff_i, eff_j,k;
 
     mw_boinc_print(f, "<gradient>\n");
     fprintf(f, "[");
@@ -50,11 +50,15 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
         {
             if(i<j)
             {
-                k=j;
-                j=i;
-                i=k;
+                eff_i = j;
+                eff_j = i;
             }
-            k = (int) (i*(i+1)/2 + j);
+            else
+            {
+                eff_i = i;
+                eff_j = j;
+            }
+            k = (int) (eff_i*(eff_i+1)/2 + eff_j);
             fprintf(f, " %.15f",likelihood->hessian[k]);
         }
         fprintf(f, " ]");
@@ -67,10 +71,10 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
     mw_boinc_print(f, "</hessian>\n");
 }
 
-void printReal(real* a) //For debugging purposes
+void printReal(real* a, char var_name[]) //For debugging purposes
 {
     int i;
-    mw_printf("Value = %.15f\n",a->value);
+    mw_printf("%s = %.15f\n", var_name, a->value);
 
     mw_printf("Gradient = [");
     for(i=0;i<NumberOfModelParameters;i++)
@@ -92,17 +96,17 @@ void printReal(real* a) //For debugging purposes
 static void nbPrintLikelihood(FILE* f, real* likelihood)
 {
     mw_boinc_print(f, "<gradient>\n");
-    fprintf(f, "[ NAN ]\n");
+    fprintf(f, "[ No Derivative Information Calculated ]\n");
     mw_boinc_print(f, "</gradient>\n");
 
     mw_boinc_print(f, "<hessian>\n");
-    fprintf(f, "[ NAN ]\n");
+    fprintf(f, "[ No Derivative Information Calculated ]\n");
     mw_boinc_print(f, "</hessian>\n");
 }
 
-void printReal(real* a) //For debugging purposes
+void printReal(real* a, char var_name[]) //For debugging purposes
 {
-    mw_printf("Value = %.15f\n",*a);
+    mw_printf("%s = %.15f\n", var_name, *a);
 }
 
 #endif /*AUTODIFF*/

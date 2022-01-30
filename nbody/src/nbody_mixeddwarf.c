@@ -902,6 +902,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             vz[i] = vec.z;
             //mw_printf("BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&vec.x), showRealValue(&vec.y), showRealValue(&vec.z));
 
+            //mw_printf("BODY POS = %.15f\n", showRealValue(&r));
             vec = get_components(prng, &r);  
             x[i] = vec.x;
             y[i] = vec.y;

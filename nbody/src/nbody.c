@@ -340,12 +340,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             {
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
             }
-            if(nbf->autoDiffFileName)
-            {
-                nbWriteAutoDiff(nbf->autoDiffFileName, &likelihood);
-            }
-        }
-        
+        }        
     }
     
     free(histogram);
@@ -383,6 +378,12 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
        if (st->useDist)
        {
            mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -showRealValue(&likelihood_Dist));
+       }
+
+       /* Write out the derivative information from AUTODIFF if file available */
+       if(nbf->autoDiffFileName)
+       {
+           nbWriteAutoDiff(nbf->autoDiffFileName, &likelihood);
        }
     }
 

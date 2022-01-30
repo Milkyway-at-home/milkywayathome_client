@@ -158,6 +158,28 @@ static int createNBodyCtx(lua_State* luaSt)
         ctx.useQuad = FALSE;
     }
 
+    {
+        int major = 0, minor = 0;
+
+        /* Automatically correct the timestep size so an integer
+         * number of timesteps covers the evolution time.
+         *
+         * Only do this if we require a minimum version of 0.90 to
+         * avoid not validating against currently existing workunits
+         */
+
+        if (  !nbReadMinVersion(luaSt, &major, &minor)    /* If we fail to read version */
+            || (major > 0 || (major == 0 && minor >= 90)) /* Version required >= 0.90 */
+            || (major == 0 && minor == 0))                /* Min version not set */
+        {
+            ctx.timestep = nbCorrectTimestep(ctx.timeBack, ctx.timestep);
+        }
+        else
+        {
+            mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
+        }
+    }
+
     nStepf = mw_ceil_0(ctx.timeEvolve / ctx.timestep);
     if (nStepf >= (real_0) UINT_MAX)
     {
@@ -176,28 +198,6 @@ static int createNBodyCtx(lua_State* luaSt)
             ctx.nStep = (int) ctx.Ntsteps;
         }
     #endif
-    
-    {
-        int major = 0, minor = 0;
-
-        /* Automatically correct the timestep size so an integer
-         * number of timesteps covers the evolution time.
-         *
-         * Only do this if we require a minimum version of 0.90 to
-         * avoid not validating against currently existing workunits
-         */
-
-        if (  !nbReadMinVersion(luaSt, &major, &minor)    /* If we fail to read version */
-            || (major > 0 || (major == 0 && minor >= 90)) /* Version required >= 0.90 */
-            || (major == 0 && minor == 0))                /* Min version not set */
-        {
-            ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
-        }
-        else
-        {
-            mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
-        }
-    }
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;

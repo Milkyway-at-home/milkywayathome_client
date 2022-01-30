@@ -35,31 +35,32 @@
 
 #if AUTODIFF /*Define types outside of main()*/
 
-    #define NumberOfModelParameters 1     /*Change this number to add more space for parameters to differentiate over*/
+    #define NumberOfModelParameters 21     /*Change this number to add more space for parameters to differentiate over*/
     #define HessianLength (int) (NumberOfModelParameters * (NumberOfModelParameters + 1)/2)
+    #define origRealSize (int) ((NumberOfModelParameters/2.0 + 1) * (NumberOfModelParameters + 1))
+    #define adjustedRealSize ((((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))|((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))>>8))|(((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))|((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))>>8))>>16)) + 1)
 
-    typedef struct MW_ALIGN_TYPE
+    typedef struct MW_ALIGN_TYPE_V(adjustedRealSize*sizeof(real_0))
     {
         real_0 value;
         real_0 gradient[NumberOfModelParameters];
         real_0 hessian[HessianLength];
+        real_0 buffer[adjustedRealSize - HessianLength - NumberOfModelParameters - 1];
     } real;
 
-    #define ZERO_REAL (real) { 0.0 , {0.0} , {0.0} }
+    #define ZERO_REAL (real) { 0.0 , {0.0} , {0.0} , {0.0} }
 
 #else
 
     typedef MW_ALIGN_TYPE_V(sizeof(real_0)) real_0 real;
     #define ZERO_REAL (0.0)
 
-    #define realsize (int) mw_exp2_0(mw_ceil_0(mw_log2_0((real_0) sizeof(real)))) //Couldn't get this stuff to work in AUTODIFF, but N-Body doesn't use it, so I put it here...
-
     #if DOUBLEPREC
-        typedef MW_ALIGN_TYPE_V(2*realsize) real double2[2];
-        typedef MW_ALIGN_TYPE_V(4*realsize) real double4[4];
+        typedef MW_ALIGN_TYPE_V(2*sizeof(real_0)) real double2[2];
+        typedef MW_ALIGN_TYPE_V(4*sizeof(real_0)) real double4[4];
     #else
-        typedef MW_ALIGN_TYPE_V(2*realsize) real float2[2];
-        typedef MW_ALIGN_TYPE_V(4*realsize) real float4[4];
+        typedef MW_ALIGN_TYPE_V(2*sizeof(real_0)) real float2[2];
+        typedef MW_ALIGN_TYPE_V(4*sizeof(real_0)) real float4[4];
     #endif
 
 #endif       /*Define types outside of main()*/
@@ -70,26 +71,26 @@
       we currently differentiate over and their assigned column number n.*/
 
     #define BACKWARDS_TIME_POS 0
-    #define TIME_RATIO_POS 0
-    #define BARYON_RADIUS_POS 0
-    #define RADIUS_RATIO_POS 0
-    #define BARYON_MASS_POS 0
-    #define MASS_RATIO_POS 0
-    #define B_COORD_POS 0
-    #define R_COORD_POS 0
-    #define VX_COORD_POS 0
-    #define VY_COORD_POS 0
-    #define VZ_COORD_POS 0
-    #define BULGE_MASS_POS 0
-    #define BULGE_RADIUS_POS 0
-    #define DISK_MASS_POS 0
-    #define DISK_LENGTH_POS 0
-    #define DISK_HEIGHT_POS 0
-    #define HALO_MASS_POS 0
-    #define HALO_RADIUS_POS 0
-    #define HALO_ZFLATTEN_POS 0
-    #define LMC_MASS_POS 0
-    #define LMC_RADIUS_POS 0
+    #define TIME_RATIO_POS 1
+    #define BARYON_RADIUS_POS 2
+    #define RADIUS_RATIO_POS 3
+    #define BARYON_MASS_POS 4
+    #define MASS_RATIO_POS 5
+    #define B_COORD_POS 6
+    #define R_COORD_POS 7
+    #define VX_COORD_POS 8
+    #define VY_COORD_POS 9
+    #define VZ_COORD_POS 10
+    #define BULGE_MASS_POS 11
+    #define BULGE_RADIUS_POS 12
+    #define DISK_MASS_POS 13
+    #define DISK_LENGTH_POS 14
+    #define DISK_HEIGHT_POS 15
+    #define HALO_MASS_POS 16
+    #define HALO_RADIUS_POS 17
+    #define HALO_ZFLATTEN_POS 18
+    #define LMC_MASS_POS 19
+    #define LMC_RADIUS_POS 20
 
 
 #ifdef __cplusplus

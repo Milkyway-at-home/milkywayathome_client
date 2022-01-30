@@ -51,9 +51,15 @@ void nbReverseOrbit(mwvector* finalPos,
                     real_0 sun_dist)
 {
     mw_printf("Performing Reverse Orbit Calculation...\n");
-    mwvector v_var, x_var, x_lbr, tmp;
-    mwvector acc, v, x;
-    real_0 t;
+    mwvector v_var = ZERO_VECTOR;
+    mwvector x_var = ZERO_VECTOR;
+    mwvector x_lbr = ZERO_VECTOR;
+    mwvector dv2 = ZERO_VECTOR;
+    mwvector dx = ZERO_VECTOR;
+    mwvector acc = ZERO_VECTOR;
+    mwvector v = ZERO_VECTOR;
+    mwvector x = ZERO_VECTOR;
+    real_0 t = 0.0;
     real_0 dt_half = dt / 2.0;
     int initialLArrayIndex = tstop/dt;
 
@@ -77,30 +83,35 @@ void nbReverseOrbit(mwvector* finalPos,
 
     // Get the initial acceleration
     acc = nbExtAcceleration(pot, &x, 0);
+
     //do this loop backward in order to get an accurate time for time-dependent potentials
     for (t = 0; t >= tstop*(-1); t -= dt)
     {
+        //mw_printf("ACC  = [%.15f, %.15f, %.15f]\n", showRealValue(&acc.x), showRealValue(&acc.y), showRealValue(&acc.z));
         //mw_printf("POS  = [%.15f, %.15f, %.15f]\n", showRealValue(&x.x), showRealValue(&x.y), showRealValue(&x.z));
         //mw_printf("VEL  = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
         // Update the velocities and positions
-        tmp.x = mw_mul_s(&X(&acc), dt_half);
-        tmp.y = mw_mul_s(&Y(&acc), dt_half);
-        tmp.z = mw_mul_s(&Z(&acc), dt_half);
-        v = mw_addv(&v, &tmp);
+        dv2.x = mw_mul_s(&acc.x, dt_half);
+        dv2.y = mw_mul_s(&acc.y, dt_half);
+        dv2.z = mw_mul_s(&acc.z, dt_half);
+        //mw_printf("DV/2 = [%.15f, %.15f, %.15f]\n", showRealValue(&dv2.x), showRealValue(&dv2.y), showRealValue(&dv2.z));
+        v = mw_addv(&v, &dv2);
 
-        tmp.x = mw_mul_s(&X(&v), dt);
-        tmp.y = mw_mul_s(&Y(&v), dt);
-        tmp.z = mw_mul_s(&Z(&v), dt);
-        x = mw_addv(&x, &tmp); 
+        dx.x = mw_mul_s(&v.x, dt);
+        dx.y = mw_mul_s(&v.y, dt);
+        dx.z = mw_mul_s(&v.z, dt);
+        //mw_printf("DX   = [%.15f, %.15f, %.15f]\n", showRealValue(&dx.x), showRealValue(&dx.y), showRealValue(&dx.z));
+        x = mw_addv(&x, &dx); 
 
         
         // Compute the new acceleration
         acc = nbExtAcceleration(pot, &x, t);
         
-        tmp.x = mw_mul_s(&X(&acc), dt_half);
-        tmp.y = mw_mul_s(&Y(&acc), dt_half);
-        tmp.z = mw_mul_s(&Z(&acc), dt_half);
-        v = mw_addv(&v, &tmp);
+        dv2.x = mw_mul_s(&acc.x, dt_half);
+        dv2.y = mw_mul_s(&acc.y, dt_half);
+        dv2.z = mw_mul_s(&acc.z, dt_half);
+        //mw_printf("DV/2 = [%.15f, %.15f, %.15f]\n", showRealValue(&dv2.x), showRealValue(&dv2.y), showRealValue(&dv2.z));
+        v = mw_addv(&v, &dv2);
     }
     
     /* Report the final values (don't forget to reverse the velocities) */
@@ -116,6 +127,15 @@ void nbReverseOrbit(mwvector* finalPos,
     mw_printf("Initial Dwarf Velocity = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
 }
 
+/*WARNING: This function is very tempermental in AUTODIFF.
+  If you make any changes here, be sure to check that the
+  outputs of the AUTODIFF version match that of the one
+  without AUTODIFF. It could be an alignment problem, but
+  I'm not entirely sure what causes the differences. The
+  code so far does match, so only make changes here if you
+  absolutely need to. I found that using declaring multiple
+  vectors to hold intermediate values seems to fix it.
+  (See <<< code below)*/
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
                     mwvector* LMCfinalPos,
@@ -134,21 +154,22 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real_0 sun_dist)
 {
     mw_printf("Performing Reverse Orbit Calculation with LMC...\n");	
-    unsigned int steps = mw_ceil_0((tstop)/(dt)) + 1;
-    unsigned int exSteps = mw_abs_0(mw_ceil_0((ftime-tstop)/(dt)) + 1);
+    unsigned int steps = mw_ceil_0((tstop)/(10*dt)) + 1;
+    unsigned int exSteps = mw_abs_0(mw_ceil_0((ftime-tstop)/(10*dt)) + 1);
+    unsigned int maxSteps = MAX(steps + 1, exSteps + 3);
     unsigned int i = 0, j = 0, k = 0;
     real_0 dt_half = dt / 2.0;
     mwvector v_var, x_var, x_lbr;
-    mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp, dv2, dx, dLMCv2, dLMCx;
+    mwvector acc, v, x, v_for, x_for, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, LMCv_for, LMCx_for, tmp, dv2, dx, dLMCv2, dLMCx, dv2_for, dx_for, dLMCv2_for, dLMCx_for; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     mwvector mw_x = ZERO_VECTOR;
-    mwvector* bacArray = NULL;
-    mwvector* forArray = NULL;
+    mwvector* ArrayPlaceholder = NULL;
 
     unsigned int vectorSize = sizeof(mwvector);
 
     //Placeholder arrays for LMC acceleration corrections
-    bacArray = (mwvector*)mwCallocA(steps + 1, vectorSize);
-    forArray = (mwvector*)mwCallocA(exSteps + 1, vectorSize);
+    ArrayPlaceholder = (mwvector*)mwCallocA(maxSteps, vectorSize);
+    //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
+    shiftByLMC = (mwvector*)mwCallocA(steps + exSteps + 4, vectorSize); 
 
     real_0 t;
 
@@ -161,85 +182,6 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     v_var.x = mw_real_var(showRealValue(&X(vel)), VX_COORD_POS);
     v_var.y = mw_real_var(showRealValue(&Y(vel)), VY_COORD_POS);
     v_var.z = mw_real_var(showRealValue(&Z(vel)), VZ_COORD_POS);
-
-    // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
-    if (ftime > tstop) {
-
-        // Set the initial conditions for forward orbit
-        mw_printf("    Calculating forward orbit...\n");
-        x = x_var;
-        v = v_var;
-        LMCv = *LMCvelocity;
-        LMCx = *LMCposition;
-
-        // Get the initial acceleration
-        mw_acc = plummerAccel(&mw_x, &LMCx, LMCmass, LMCscale);
-        DF_acc = dynamicalFriction_LMC(pot, &LMCx, &LMCv, LMCmass, LMCscale, LMCDynaFric, 0.0);
-        LMC_acc = nbExtAcceleration(pot, &LMCx, 0.0);
-        LMC_acc = mw_addv(&LMC_acc, &DF_acc);
-        acc = nbExtAcceleration(pot, &x, 0.0);
-        tmp = plummerAccel(&x, &LMCx, LMCmass, LMCscale);
-        acc = mw_addv(&acc, &tmp);
-
-        // Shift the body
-        LMC_acc = mw_subv(&LMC_acc, &mw_acc);
-        acc = mw_subv(&acc, &mw_acc);
-
-        for (t = 0; t <= (ftime-tstop); t += dt)
-        {   
-    	    exSteps = (int) mw_round_0(t/dt);
-    	    if ((exSteps % 10 == 0)&&(t!=0)) { 
-    	        forArray[k] = mw_negv(&mw_acc);
-                k++;
-    	    }
-
-            // Update the velocities and positions
-            dv2.x = mw_mul_s(&acc.x, dt_half);
-            dv2.y = mw_mul_s(&acc.y, dt_half);
-            dv2.z = mw_mul_s(&acc.z, dt_half);
-            v = mw_addv(&v, &dv2);
-
-            dx.x = mw_mul_s(&v.x, dt);
-            dx.y = mw_mul_s(&v.y, dt);
-            dx.z = mw_mul_s(&v.z, dt);
-            x = mw_addv(&x, &dx);
-
-            dLMCv2.x = mw_mul_s(&LMC_acc.x, dt_half);
-            dLMCv2.y = mw_mul_s(&LMC_acc.y, dt_half);
-            dLMCv2.z = mw_mul_s(&LMC_acc.z, dt_half);
-            LMCv = mw_addv(&LMCv, &dLMCv2);
-
-            dLMCx.x = mw_mul_s(&LMCv.x, dt);
-            dLMCx.y = mw_mul_s(&LMCv.y, dt);
-            dLMCx.z = mw_mul_s(&LMCv.z, dt);
-            LMCx = mw_addv(&LMCx, &dLMCx);
-        
-            // Compute the new acceleration
-            mw_acc = plummerAccel(&mw_x, &LMCx, LMCmass, LMCscale);
-            DF_acc = dynamicalFriction_LMC(pot, &LMCx, &LMCv, LMCmass, LMCscale, LMCDynaFric, t);
-            LMC_acc = nbExtAcceleration(pot, &LMCx, t);
-            LMC_acc = mw_addv(&LMC_acc, &DF_acc);
-            acc = nbExtAcceleration(pot, &x, t);
-            tmp = plummerAccel(&x, &LMCx, LMCmass, LMCscale);
-    	    acc = mw_addv(&acc, &tmp);
-
-    	    // Shift the body
-            LMC_acc = mw_subv(&LMC_acc, &mw_acc);
-            acc = mw_subv(&acc, &mw_acc);
-        
-            dv2.x = mw_mul_s(&acc.x, dt_half);
-            dv2.y = mw_mul_s(&acc.y, dt_half);
-            dv2.z = mw_mul_s(&acc.z, dt_half);
-            v = mw_addv(&v, &dv2);
-
-            dLMCv2.x = mw_mul_s(&LMC_acc.x, dt_half);
-            dLMCv2.y = mw_mul_s(&LMC_acc.y, dt_half);
-            dLMCv2.z = mw_mul_s(&LMC_acc.z, dt_half);
-            LMCv = mw_addv(&LMCv, &dLMCv2);
-
-        }
-        forArray[k] = mw_negv(&mw_acc); //set the last index after the loop ends
-    }
 
     // Set the initial conditions for reverse orbit
     mw_printf("    Calculating backward orbit...\n");
@@ -268,12 +210,16 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     for (t = 0; t <= tstop; t += dt)
     {   
         //negate this time for use in time-dependent potentials
-        negT = t*-1;
-    	steps = t/dt;
+        negT = t*(-1);
+    	steps = (int) mw_round_0(t/dt);
     	if( steps % 10 == 0){ 
-    		bacArray[i] = mw_negv(&mw_acc);
+    		ArrayPlaceholder[i] = mw_negv(&mw_acc);
         	i++;
     	}
+
+        //mw_printf("ACC  = [%.15f, %.15f, %.15f]\n", showRealValue(&acc.x), showRealValue(&acc.y), showRealValue(&acc.z));
+        //mw_printf("POS  = [%.15f, %.15f, %.15f]\n", showRealValue(&x.x), showRealValue(&x.y), showRealValue(&x.z));
+        //mw_printf("VEL  = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
 
         // Update the velocities and positions
         dv2.x = mw_mul_s(&acc.x, dt_half);
@@ -322,30 +268,106 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         LMCv = mw_addv(&LMCv, &dLMCv2);
 
     }
-    bacArray[i] = mw_negv(&mw_acc); //set the last index after the loop ends
-    
-    //Allocate memory for the shift array equal to (x,y,z) i times with extra wiggle room dependent on evolve time
-    unsigned int size = i + k + 2;
-    shiftByLMC = (mwvector*)mwCallocA(size, vectorSize); 
+    ArrayPlaceholder[i] = mw_negv(&mw_acc); //set the last index after the loop ends
 
     //Fill reverse orbit of shift array
     for(j = 0; j < i+1; j++) {
-        tmp = bacArray[i-j];
+        tmp = ArrayPlaceholder[i-j];
         shiftByLMC[j] = tmp;
     }
 
-    //Fill forward orbit of shift array
-    if (ftime > tstop) {
+    // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
+    if (ftime >= tstop)
+    {
+        // Set the initial conditions for forward orbit
+        mw_printf("    Calculating forward orbit...\n");
+        x_for = x_var;
+        v_for = v_var;
+        LMCv_for = *LMCvelocity;
+        LMCx_for = *LMCposition;
+
+        // Get the initial acceleration
+        DF_acc = dynamicalFriction_LMC(pot, &LMCx_for, &LMCv_for, LMCmass, LMCscale, LMCDynaFric, 0.0);
+        LMC_acc = nbExtAcceleration(pot, &LMCx_for, 0.0);
+        LMC_acc = mw_addv(&LMC_acc, &DF_acc);
+        acc = nbExtAcceleration(pot, &x_for, 0.0);
+        tmp = plummerAccel(&x_for, &LMCx_for, LMCmass, LMCscale);
+        acc = mw_addv(&acc, &tmp);
+
+        // Shift the body
+        mw_acc = plummerAccel(&mw_x, &LMCx_for, LMCmass, LMCscale);
+        LMC_acc = mw_subv(&LMC_acc, &mw_acc);
+        acc = mw_subv(&acc, &mw_acc);
+
+        for (t = 0; t < (ftime-tstop+(21*dt)); t += dt)
+        {   
+    	    exSteps = (int) mw_round_0(t/dt);
+    	    if ((exSteps % 10 == 0)&&(t!=0)) { 
+    	        ArrayPlaceholder[k] = mw_negv(&mw_acc);
+                k++;
+    	    }
+
+            // Update the velocities and positions
+            dv2_for.x = mw_mul_s(&acc.x, dt_half);
+            dv2_for.y = mw_mul_s(&acc.y, dt_half);
+            dv2_for.z = mw_mul_s(&acc.z, dt_half);
+            v_for = mw_addv(&v_for, &dv2_for);
+
+            dx_for.x = mw_mul_s(&v_for.x, dt);
+            dx_for.y = mw_mul_s(&v_for.y, dt);
+            dx_for.z = mw_mul_s(&v_for.z, dt);
+            x_for = mw_addv(&x_for, &dx);
+
+            dLMCv2_for.x = mw_mul_s(&LMC_acc.x, dt_half);
+            dLMCv2_for.y = mw_mul_s(&LMC_acc.y, dt_half);
+            dLMCv2_for.z = mw_mul_s(&LMC_acc.z, dt_half);
+            LMCv_for = mw_addv(&LMCv_for, &dLMCv2_for);
+
+            dLMCx_for.x = mw_mul_s(&LMCv_for.x, dt);
+            dLMCx_for.y = mw_mul_s(&LMCv_for.y, dt);
+            dLMCx_for.z = mw_mul_s(&LMCv_for.z, dt);
+            LMCx_for = mw_addv(&LMCx_for, &dLMCx_for);
+        
+            // Compute the new acceleration
+            DF_acc = dynamicalFriction_LMC(pot, &LMCx_for, &LMCv_for, LMCmass, LMCscale, LMCDynaFric, t);
+            LMC_acc = nbExtAcceleration(pot, &LMCx_for, t);
+            LMC_acc = mw_addv(&LMC_acc, &DF_acc);
+            acc = nbExtAcceleration(pot, &x_for, t);
+            tmp = plummerAccel(&x_for, &LMCx_for, LMCmass, LMCscale);
+    	    acc = mw_addv(&acc, &tmp);
+
+    	    // Shift the body
+            mw_acc = plummerAccel(&mw_x, &LMCx_for, LMCmass, LMCscale);
+            LMC_acc = mw_subv(&LMC_acc, &mw_acc);
+            acc = mw_subv(&acc, &mw_acc);
+        
+            dv2_for.x = mw_mul_s(&acc.x, dt_half);
+            dv2_for.y = mw_mul_s(&acc.y, dt_half);
+            dv2_for.z = mw_mul_s(&acc.z, dt_half);
+            v_for = mw_addv(&v_for, &dv2_for);
+
+            dLMCv2_for.x = mw_mul_s(&LMC_acc.x, dt_half);
+            dLMCv2_for.y = mw_mul_s(&LMC_acc.y, dt_half);
+            dLMCv2_for.z = mw_mul_s(&LMC_acc.z, dt_half);
+            LMCv_for = mw_addv(&LMCv_for, &dLMCv2_for);
+
+        }
+        ArrayPlaceholder[k] = mw_negv(&mw_acc); //set the last index after the loop ends
+
+        //Fill forward orbit of shift array
         for(j = 0; j < k+1; j++) {
-            tmp = forArray[j];
+            tmp = ArrayPlaceholder[j];
             shiftByLMC[i+1+j] = tmp;
         }
     }
 
-    //Free placeholder arrays
-    mwFreeA(bacArray);
-    mwFreeA(forArray);
+    unsigned int size = i + k + 2;
+//    for(int l = 0; l < size; l++) {
+//        mw_printf("shiftByLMC[%u] = [%.15f, %.15f, %.15f]\n", l, showRealValue(&shiftByLMC[l].x), showRealValue(&shiftByLMC[l].y), showRealValue(&shiftByLMC[l].z));
+//    }
 
+    //Free placeholder arrays
+    mwFreeA(ArrayPlaceholder);
     nShiftLMC = size;
 
     /* Report the final values (don't forget to reverse the velocities) */
