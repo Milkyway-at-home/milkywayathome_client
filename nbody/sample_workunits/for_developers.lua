@@ -37,6 +37,7 @@ LMC_body              = true    -- -- PRESENCE OF LMC                           
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
+CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -229,6 +230,7 @@ function makeContext()
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
       LMCDynaFric   = LMC_DynamicalFriction,
+      coulomb_log   = CoulombLogarithm,
       calibrationRuns = numCalibrationRuns
    }
 end
@@ -259,6 +261,7 @@ function makeBodies(ctx, potential)
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
                     LMCDynaFric = LMC_DynamicalFriction,
+                    coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0

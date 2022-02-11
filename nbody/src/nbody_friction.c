@@ -72,19 +72,6 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
     return integral/rho0; /** Reutrns a velocity squared **/
 }
 
-/** Coulomb Logarithm for plummer spheres derived from Esquivel and Fuchs (2018) **/
-static inline real CoulombLogPlummer(real scale_plummer, real scale_mwhalo){
-    real u, c_log;
-    if (scale_mwhalo==0) {
-        return 0.0;
-    }
-
-    u = scale_plummer * (pi/scale_mwhalo); /** LMC scale radius times smallest wavenumber (k_min) **/
-    c_log = u*u*(besselK0(u)*besselK2(u) - mw_pow(besselK1(u),2.0))/2.0;
-
-    return c_log; /** Normally, the Coulomb Log is between 3 and 30. But this value seems closer to 0.0003. **/
-}
-
 static inline real getHaloScaleLength(const Halo* halo){
     real scale = halo->scaleLength;
     if (scale == 0.0)
@@ -95,7 +82,7 @@ static inline real getHaloScaleLength(const Halo* halo){
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric, real time){
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric, real time, real coulomb_log){
     mwvector result = mw_vec(0.0,0.0,0.0);        //Vector with acceleration due to DF
     if (!dynaFric) {
         return result;
@@ -114,7 +101,7 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     mw_halo = &(pot->halo);
     real scaleLength_halo = getHaloScaleLength(mw_halo);
     //mw_printf("a = %.15f\n", scaleLength_halo);
-    real ln_lambda = CoulombLogPlummer(scaleLength_LMC, scaleLength_halo);
+    real ln_lambda = coulomb_log;
     //mw_printf("ln(L) = %.15f\n", ln_lambda);
 
     //Calculate densities from each individual component
@@ -139,5 +126,7 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     result.x = (acc * vel.x / objectVel);
     result.y = (acc * vel.y / objectVel);
     result.z = (acc * vel.z / objectVel);
+
+    //mw_printf("friction = [%.15f, %.15f, %.15f]\n",result.x, result.y, result.z);
     return result;
 }

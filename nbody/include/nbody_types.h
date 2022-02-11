@@ -488,6 +488,7 @@ typedef struct MW_ALIGN_TYPE
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
+    real coulomb_log;          /* Coulomb Logarithm used in dynamical friction */
 
     unsigned int calibrationRuns; //for calibrating time-dependent potentials
 
@@ -509,7 +510,7 @@ typedef struct MW_ALIGN_TYPE
                          0, 0,                                                                          \
                          0, 0, 0, 0, 0, 0, 0,                                                           \
                          FALSE,                                                                         \
-                         0, 0, FALSE,                                                                   \
+                         0, 0, FALSE, 0,                                                                \
                          0,                                                                             \
                          0, 0, 0,                                                                       \
                          EMPTY_POTENTIAL}
