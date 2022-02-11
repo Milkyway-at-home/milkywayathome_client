@@ -38,11 +38,19 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 real calc_vLOS(const mwvector* v, const mwvector* p, real_0 sunGCdist);
 
-real calc_distance(const mwvector* p, real_0 sunGCdist);	
+real calc_distance(const mwvector* p, real_0 sunGCdist);
+
+mwvector LBtoY(real* lambda, real* beta);
+
+real ln_FB5_dist(mwvector* x, mwvector* gamma1, mwvector* gamma2, mwvector* gamma3, real* kappa, real* beta);
+
+real add_logspace(real* r1, real* r2);
+
+real getBodyBinFrac(const NBodyCtx* ctx, const HistogramParams* hp, const Body* p, int HistIndex);
 
 void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_factor);
 
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins);
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins, mwbool contBins, real * bodyFraction);
 
 real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram);
 

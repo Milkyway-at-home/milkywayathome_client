@@ -35,9 +35,11 @@
 
 #if AUTODIFF /*Define types outside of main()*/
 
-    #define NumberOfModelParameters 21     /*Change this number to add more space for parameters to differentiate over*/
+    #define NumberOfModelParameters 20     /*Change this number to add more space for parameters to differentiate over*/
     #define HessianLength (int) (NumberOfModelParameters * (NumberOfModelParameters + 1)/2)
     #define origRealSize (int) ((NumberOfModelParameters/2.0 + 1) * (NumberOfModelParameters + 1))
+
+    /* This code sets the size of the real struct to the next highest power of 2 using bitwise operators */
     #define adjustedRealSize ((((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))|((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))>>8))|(((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))|((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))>>8))>>16)) + 1)
 
     typedef struct MW_ALIGN_TYPE_V(adjustedRealSize*sizeof(real_0))
@@ -71,26 +73,25 @@
       we currently differentiate over and their assigned column number n.*/
 
     #define BACKWARDS_TIME_POS 0
-    #define TIME_RATIO_POS 1
-    #define BARYON_RADIUS_POS 2
-    #define RADIUS_RATIO_POS 3
-    #define BARYON_MASS_POS 4
-    #define MASS_RATIO_POS 5
-    #define B_COORD_POS 6
-    #define R_COORD_POS 7
-    #define VX_COORD_POS 8
-    #define VY_COORD_POS 9
-    #define VZ_COORD_POS 10
-    #define BULGE_MASS_POS 11
-    #define BULGE_RADIUS_POS 12
-    #define DISK_MASS_POS 13
-    #define DISK_LENGTH_POS 14
-    #define DISK_HEIGHT_POS 15
-    #define HALO_MASS_POS 16
-    #define HALO_RADIUS_POS 17
-    #define HALO_ZFLATTEN_POS 18
-    #define LMC_MASS_POS 19
-    #define LMC_RADIUS_POS 20
+    #define BARYON_RADIUS_POS 1
+    #define RADIUS_RATIO_POS 2
+    #define BARYON_MASS_POS 3
+    #define MASS_RATIO_POS 4
+    #define B_COORD_POS 5
+    #define R_COORD_POS 6
+    #define VX_COORD_POS 7
+    #define VY_COORD_POS 8
+    #define VZ_COORD_POS 9
+    #define BULGE_MASS_POS 10
+    #define BULGE_RADIUS_POS 11
+    #define DISK_MASS_POS 12
+    #define DISK_LENGTH_POS 13
+    #define DISK_HEIGHT_POS 14
+    #define HALO_MASS_POS 15
+    #define HALO_RADIUS_POS 16
+    #define HALO_ZFLATTEN_POS 17
+    #define LMC_MASS_POS 18
+    #define LMC_RADIUS_POS 19
 
 
 #ifdef __cplusplus
@@ -116,8 +117,6 @@ extern "C" {
         }
         return result;
     }
-//    #define INIT_REAL_CONST(r,x) {(r).value = (x);}
-//    #define INIT_REAL_VAR(r,x,n) {INIT_REAL_CONST((r),(x)); (r).gradient[n] = 1.0}
 
     CONST_F ALWAYS_INLINE
     static inline real_0 showRealValue(real* a)
@@ -129,6 +128,30 @@ extern "C" {
     static inline void setRealValue(real* a, real_0 b)
     {
         (*a).value = b;
+    }
+
+    CONST_F ALWAYS_INLINE
+    static inline void setRealGradient(real* a, real_0 b, int i)
+    {
+        (*a).gradient[i] = b;
+    }
+
+    CONST_F ALWAYS_INLINE
+    static inline void setRealHessian(real* a, real_0 b, int i, int j)
+    {
+        int eff_i, eff_j, k;
+        if(i<j)
+        {
+            eff_i = j;
+            eff_j = i;
+        }
+        else
+        {
+            eff_i = i;
+            eff_j = j;
+        }
+        k = (int) (eff_i*(eff_i+1)/2 + eff_j);
+        (*a).hessian[k] = b;
     }
 
     CONST_F ALWAYS_INLINE
@@ -1213,6 +1236,18 @@ extern "C" {
 
     CONST_F ALWAYS_INLINE
     static inline void setRealValue(real* a, real b)
+    {
+        (*a) = b;
+    }
+
+    CONST_F ALWAYS_INLINE
+    static inline void setRealGradient(real* a, real b, int i)
+    {
+        (*a) = b;
+    }
+
+    CONST_F ALWAYS_INLINE
+    static inline void setRealHessian(real* a, real b, int i, int j)
     {
         (*a) = b;
     }

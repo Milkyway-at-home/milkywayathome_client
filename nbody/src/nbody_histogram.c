@@ -521,11 +521,19 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
 
     unsigned int nBin;
     nBin = all->histograms[0]->lambdaBins * all->histograms[0]->betaBins;
+    real_0 missingFrac = mw_abs_0(showRealValue(&all->histograms[0]->totalNum) - mw_round_0(showRealValue(&all->histograms[0]->totalNum)));
 
     // outputs these numbers from one of the histograms
     // at this point, these numbers should be the same for all histograms anyway
     mw_boinc_print(f, "<histogram>\n");
-    fprintf(f, "n = %u\n", (int) showRealValue(&all->histograms[0]->totalNum));
+    if(missingFrac < REAL_EPSILON)
+    {
+        fprintf(f, "n = %u\n", (int) showRealValue(&all->histograms[0]->totalNum));
+    }
+    else
+    {
+        fprintf(f, "n = %12.15f\n", showRealValue(&all->histograms[0]->totalNum));
+    }
     fprintf(f, "massPerParticle = %12.15f\n", showRealValue(&all->histograms[0]->massPerParticle));
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
@@ -674,6 +682,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     real lambda;
     real beta;
     real v_line_of_sight;
+    real bodyBinFrac;
     mwvector lambdaBetaR;
     unsigned int lambdaIndex;
     unsigned int betaIndex;
@@ -697,7 +706,6 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     /*unsigned int IterMax = 6;*/   /*Default value for IterMax*/
     unsigned int nBin = lambdaBins * betaBins;
     unsigned int body_count = 0;
-    unsigned int ub_counter = 0;
     
     MainStruct* all = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char)); 
 
@@ -809,7 +817,10 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
 
     real * vlos      = mwCalloc(body_count, sizeof(real));       
     real * betas     = mwCalloc(body_count, sizeof(real));
-    real * distances = mwCalloc(body_count, sizeof(real));   
+    real * distances = mwCalloc(body_count, sizeof(real));
+
+    real * bodyFrac  = mwCalloc(body_count*nBin, sizeof(real));
+    for(int i = 0; i < body_count*nBin; i++) bodyFrac[i] = ZERO_REAL;
        
     
     /* It does not make sense to ignore bins in a generated histogram */
@@ -831,6 +842,9 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     }
 
     unsigned int totalCheck = 0;
+  #ifdef _OPENMP
+    #pragma omp parallel for private(p, lambdaBetaR, lambda, beta, lambdaIndex, betaIndex, v_line_of_sight, location, bodyBinFrac, tmp, Histindex) shared(totalNum) schedule(dynamic, (int) MAX(4096 / sizeof(mwvector), 1))
+  #endif
     for (p = st->bodytab; p < endp; ++p)
     {
         /* Only include bodies in models we aren't ignoring (like dark matter) */
@@ -843,42 +857,132 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             lambda = lambdaBetaR.x;
             beta = lambdaBetaR.y;
             
-            use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
-            use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
-            use_distbody[ub_counter] = DEFAULT_NOT_USE;
+            use_betabody[p - st->bodytab] = DEFAULT_NOT_USE;//defaulted to not use body
+            use_velbody[p - st->bodytab] = DEFAULT_NOT_USE;//defaulted to not use body
+            use_distbody[p - st->bodytab] = DEFAULT_NOT_USE;
             
-            vlos[ub_counter]      = mw_real_const(DEFAULT_NOT_USE);//default vlos
-            betas[ub_counter]     = mw_real_const(DEFAULT_NOT_USE);
-            distances[ub_counter] = mw_real_const(DEFAULT_NOT_USE);
+            vlos[p - st->bodytab]      = mw_real_const(DEFAULT_NOT_USE);//default vlos
+            betas[p - st->bodytab]     = mw_real_const(DEFAULT_NOT_USE);
+            distances[p - st->bodytab] = mw_real_const(DEFAULT_NOT_USE);
 
             /* Find the indices */
             lambdaIndex = (unsigned int) mw_floor_0((showRealValue(&lambda) - lambdaStart) / lambdaSize);
             betaIndex = (unsigned int) mw_floor_0((showRealValue(&beta) - betaStart) / betaSize);
-            //mw_printf("    (L, B) = (%.15f,%.15f)\n",showRealValue(&lambda), showRealValue(&beta));
-            //mw_printf("    (L_ind, B_ind) = (%u,%u)\n",lambdaIndex, betaIndex);
+
+            /* This code takes a single body and extrapolates it into a probability distribution.
+               This code is only really needed for when we are running with AUTODIFF since the
+               normal code does not propagate derivative information. If useContBins is FALSE,
+               the original code runs instead. */
+            if (ctx->useContBins)
+            {
+                /* Calculate vlos and distance */
+                v_line_of_sight = calc_vLOS(&Vel(p), &Pos(p), ctx->sunGCDist);
+                location = calc_distance(&Pos(p), ctx->sunGCDist);
+
+                /* Log the Disp quantities */
+                vlos[p - st->bodytab] = v_line_of_sight;  
+                betas[p - st->bodytab] = beta;
+                distances[p - st->bodytab] = location;
+
+                /* For each bin, calculate a FB5 distribution for the body and determine what fraction goes in each bin */
+                real fullBodyFrac = ZERO_REAL;
+                //mw_printf("fullBodyFrac = %.15f\n", showRealValue(&fullBodyFrac));
+                for(int i = 0; i < nBin; i++)
+                {
+                    unsigned int fracIndex = (p - st->bodytab)*nBin + i;
+                    int test_beta_index = i % betaBins;
+                    int test_lambda_index = (i - test_beta_index)/betaBins;
+                    /* Only perform the body fraction calculation for nearby bins to save time */
+                    if((mw_abs_0((real_0) test_lambda_index - (real_0) lambdaIndex) <= ctx->bleedInRange) && (mw_abs_0((real_0) test_beta_index - (real_0) betaIndex) <= ctx->bleedInRange))
+                    {
+                        bodyBinFrac = getBodyBinFrac(ctx, hp, p, i);  //Returns log of body fraction
+                        bodyBinFrac = mw_exp(&bodyBinFrac);
+                        //mw_printf("bodyBinFrac = %.15f\n", showRealValue(&bodyBinFrac));
+                    }
+                    else
+                    {
+                        bodyBinFrac = ZERO_REAL;
+                    }
+                    bodyFrac[fracIndex] = bodyBinFrac;
+                    for(int j = 0; j < 6; j++)
+                        if(all->usage[j]) all->histograms[j]->data[i].rawCount = mw_add(&all->histograms[j]->data[i].rawCount, &bodyBinFrac);
+                    fullBodyFrac = mw_add(&fullBodyFrac, &bodyBinFrac);
+
+                    /* Sums and Square Sums for chi^2 calcs must be weighted by the body fraction in the bin */
+                    if(all->usage[1])
+                    {
+                        /* each of these are components of the beta disp */
+                        tmp = mw_mul(&bodyBinFrac, &beta);
+                        all->histograms[1]->data[i].sum = mw_add(&all->histograms[1]->data[i].sum, &tmp);
+                        tmp = sqr(&beta);
+                        tmp = mw_mul(&bodyBinFrac, &tmp);
+                        all->histograms[1]->data[i].sq_sum = mw_add(&all->histograms[1]->data[i].sq_sum, &tmp);
+                    }
+
+                    if(all->usage[2])
+                    {
+                        /* each of these are components of the vel disp */
+                        tmp = mw_mul(&bodyBinFrac, &v_line_of_sight);
+                        all->histograms[2]->data[i].sum = mw_add(&all->histograms[2]->data[i].sum, &tmp);
+                        tmp = sqr(&v_line_of_sight);
+                        tmp = mw_mul(&bodyBinFrac, &tmp);
+                        all->histograms[2]->data[i].sq_sum = mw_add(&all->histograms[2]->data[i].sq_sum, &tmp);
+                    }
+
+                    if(all->usage[3])
+                    {
+                        /* each of these are components of the vel disp, which is used for vel avg */
+                        tmp = mw_mul(&bodyBinFrac, &v_line_of_sight);
+                        all->histograms[3]->data[i].sum = mw_add(&all->histograms[3]->data[i].sum, &tmp);
+                        tmp = sqr(&v_line_of_sight);
+                        tmp = mw_mul(&bodyBinFrac, &tmp);
+                        all->histograms[3]->data[i].sq_sum = mw_add(&all->histograms[3]->data[i].sq_sum, &tmp);
+                    }
+
+                    if(all->usage[4])
+                    {
+                        /* each of these are components of the beta disp, which is used for beta avg */
+                        tmp = mw_mul(&bodyBinFrac, &beta);
+                        all->histograms[4]->data[i].sum = mw_add(&all->histograms[4]->data[i].sum, &tmp);
+                        tmp = sqr(&beta);
+                        tmp = mw_mul(&bodyBinFrac, &tmp);
+                        all->histograms[4]->data[i].sq_sum = mw_add(&all->histograms[4]->data[i].sq_sum, &tmp);
+                    }
+
+                    if(all->usage[5])
+                    {
+                        /* average distance */
+                        tmp = mw_mul(&bodyBinFrac, &location);
+                        all->histograms[5]->data[i].sum = mw_add(&all->histograms[5]->data[i].sum, &tmp);
+                        tmp = sqr(&location);
+                        tmp = mw_mul(&bodyBinFrac, &tmp);
+                        all->histograms[5]->data[i].sq_sum = mw_add(&all->histograms[5]->data[i].sq_sum, &tmp);
+                    }
+                }
+                //mw_printf("fullBodyFrac = %.15f\n", showRealValue(&fullBodyFrac));
+                totalNum = mw_add(&totalNum, &fullBodyFrac);
+            }
 
             /* Check if the position is within the bounds of the histogram */
-            if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
+            else if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
             {
                 totalCheck++;
                 Histindex = lambdaIndex * betaBins + betaIndex;
-                use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin
-                use_velbody[ub_counter] = Histindex;
-                use_distbody[ub_counter] = Histindex;
+                use_betabody[p - st->bodytab] = Histindex;//if body is in hist, mark which hist bin
+                use_velbody[p - st->bodytab] = Histindex;
+                use_distbody[p - st->bodytab] = Histindex;
 
-                /*FIXME: We still need to propagate derivatives here ----------------------------------------------------------------------------------------*/
                 for(int i = 0; i < 6; i++)
                     if(all->usage[i]) all->histograms[i]->data[Histindex].rawCount = mw_add_s(&all->histograms[i]->data[Histindex].rawCount, 1.0);
 
                 totalNum = mw_add_s(&totalNum, 1.0);
-                /*-------------------------------------------------------------------------------------------------------------------------------------------*/
                 
                 v_line_of_sight = calc_vLOS(&Vel(p), &Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 location = calc_distance(&Pos(p), ctx->sunGCDist);
 
-                vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
-                betas[ub_counter] = beta;
-                distances[ub_counter] = location;
+                vlos[p - st->bodytab] = v_line_of_sight;//store the vlos's so as to not have to recalc  
+                betas[p - st->bodytab] = beta;
+                distances[p - st->bodytab] = location;
 
                 if(all->usage[1])
                 {
@@ -915,14 +1019,10 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                     tmp = sqr(&location);
                     all->histograms[5]->data[Histindex].sq_sum = mw_add(&all->histograms[5]->data[Histindex].sq_sum, &tmp);
                 }
-            
             }
-            ub_counter++;
         }
     }
-    //mw_printf("totalCheck = %u\n", totalCheck);
-    //mw_printf("ub_counter = %u\n", ub_counter);
-    //mw_printf("Created totalNum = %.15f\n", showRealValue(&totalNum));
+
     for(int i = 0; i < 6; i++)
         if(all->usage[i]) all->histograms[i]->totalNum = totalNum; /* Total particles in range */
 
@@ -942,7 +1042,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[1], use_betabody, betas, ctx->BetaSigma, nBin);
+            nbRemoveOutliers(st, all->histograms[1], use_betabody, betas, ctx->BetaSigma, nBin, ctx->useContBins, bodyFrac);
             nbCalcDisp(all->histograms[1], FALSE, ctx->BetaCorrect);
         }
     }
@@ -950,7 +1050,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[2], use_velbody, vlos, ctx->VelSigma, nBin);
+            nbRemoveOutliers(st, all->histograms[2], use_velbody, vlos, ctx->VelSigma, nBin, ctx->useContBins, bodyFrac);
             nbCalcDisp(all->histograms[2], FALSE, ctx->VelCorrect);
         }
     }
@@ -961,7 +1061,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[3], use_velbody, vlos, ctx->VelSigma, nBin);
+            nbRemoveOutliers(st, all->histograms[3], use_velbody, vlos, ctx->VelSigma, nBin, ctx->useContBins, bodyFrac);
             nbCalcDisp(all->histograms[3], FALSE, ctx->VelCorrect);
         }
         for (unsigned int i = 0; i < nBin; ++i)
@@ -986,7 +1086,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; i++)
         {
-            nbRemoveOutliers(st, all->histograms[4], use_betabody, betas, ctx->BetaSigma, nBin);
+            nbRemoveOutliers(st, all->histograms[4], use_betabody, betas, ctx->BetaSigma, nBin, ctx->useContBins, bodyFrac);
             nbCalcDisp(all->histograms[4], FALSE, ctx->BetaCorrect);
         }
         for (unsigned int i = 0; i < nBin; ++i)
@@ -1011,7 +1111,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     {
         for(unsigned int i = 0; i < IterMax; ++i)
         {
-            nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->DistSigma, nBin);
+            nbRemoveOutliers(st, all->histograms[5], use_distbody, distances, ctx->DistSigma, nBin, ctx->useContBins, bodyFrac);
             nbCalcDisp(all->histograms[5], FALSE, ctx->DistCorrect);
         }
         for (unsigned int i = 0; i < nBin; ++i)
@@ -1042,6 +1142,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     free(vlos);
     free(betas);
     free(distances);
+    free(bodyFrac);
     
     return all;
 }
@@ -1067,7 +1168,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
     mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
     mwbool buildHist = FALSE; /* only want to build the histogrma once */
-    unsigned int nGen = 0;    /* Number of particles read from the histogram */
+    real_0 nGen = 0.0;    /* Number of particles read from the histogram */
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
@@ -1147,7 +1248,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
         if (!readNGen)
         {
-            rc = sscanf(lineBuf, " n = %u \n", &nGen);
+            rc = sscanf(lineBuf, " n = %lf \n", &nGen);
             if (rc == 1)
             {
                 readNGen = TRUE;
@@ -1345,7 +1446,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         {
             all->histograms[i]->lambdaBins = lambdaBins;
             all->histograms[i]->betaBins = betaBins;
-            all->histograms[i]->totalNum = mw_real_const((real_0) nGen);
+            all->histograms[i]->totalNum = mw_real_const(nGen);
             all->histograms[i]->totalSimulated = totalSim;
             all->histograms[i]->massPerParticle = mw_real_const(mass);
         }

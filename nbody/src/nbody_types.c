@@ -790,6 +790,8 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->BetaCorrect, ctx2->BetaCorrect)
         && feqWithNan(ctx1->VelCorrect, ctx2->VelCorrect)
         && feqWithNan(ctx1->DistCorrect, ctx2->DistCorrect)
+        && feqWithNan(ctx1->useContBins, ctx2->useContBins)
+        && feqWithNan(ctx1->bleedInRange, ctx2->bleedInRange)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)

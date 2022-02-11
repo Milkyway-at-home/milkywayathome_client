@@ -22,6 +22,8 @@
 #include "nbody_defaults.h"
 #include "milkyway_math.h"
 #include "nbody_types.h"
+#include "nbody_coordinates.h"
+#include "milkyway_util.h"
 
 
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
@@ -191,6 +193,247 @@ real calc_distance(const mwvector* p, real_0 sunGCdist)  /**Calculating the dist
     return mw_hypot(&tmp, &Z(p));
 }
 
+mwvector LBtoY(real* lambda, real* beta)
+{
+    mwvector result;
+    real tmp1, tmp2;
+
+    tmp1 = d2r(beta);
+    tmp1 = mw_cos(&tmp1);
+    tmp2 = d2r(lambda);
+    tmp2 = mw_cos(&tmp2);
+    result.x = mw_mul(&tmp1, &tmp2);
+
+    tmp1 = d2r(beta);
+    tmp1 = mw_cos(&tmp1);
+    tmp2 = d2r(lambda);
+    tmp2 = mw_sin(&tmp2);
+    result.y = mw_mul(&tmp1, &tmp2);
+
+    tmp1 = d2r(beta);
+    result.z = mw_sin(&tmp1);
+
+    return result;
+}
+
+real ln_FB5_dist(mwvector* x, mwvector* gamma1, mwvector* gamma2, mwvector* gamma3, real* kappa, real* beta) //Returns natural log of FB5 since these quantities are really small
+{
+    if(2*mw_abs_0(showRealValue(beta)) > showRealValue(kappa))
+    {
+        mw_printf("WARNING!: INVALID KAPPA AND BETA DETECTED!\n");
+        return ZERO_REAL;
+    }
+    real tmp1, tmp2, tmp3;
+
+    tmp1 = sqr(kappa);
+    tmp2 = sqr(beta);
+    tmp2 = mw_mul_s(&tmp2, 4.0);
+    tmp1 = mw_sub(&tmp1, &tmp2);
+    tmp1 = mw_log(&tmp1);
+    tmp1 = mw_mul_s(&tmp1, -0.5);
+    tmp1 = mw_add_s(&tmp1, mw_log_0(2*M_PI));
+    real ln_c = mw_add(kappa, &tmp1);
+
+    tmp1 = mw_dotv(gamma1, x);
+    tmp1 = mw_mul(kappa, &tmp1);
+    tmp2 = mw_dotv(gamma2, x);
+    tmp3 = mw_dotv(gamma3, x);
+    tmp3 = sqr(&tmp3);
+    tmp2 = sqr(&tmp2);
+    tmp2 = mw_sub(&tmp2, &tmp3);
+    tmp2 = mw_mul(beta, &tmp2);
+    real expon = mw_add(&tmp1, &tmp2);
+
+    real result = mw_sub(&expon, &ln_c);
+    //mw_printf("FB5 = %.15f\n", showRealValue(&result));
+
+   return result;
+}
+
+real add_logspace(real* r1, real* r2)
+{
+    real big, small, tmp, result;
+    if (showRealValue(r1) < showRealValue(r2))
+    {
+        big = *r2;
+        small = *r1;
+    }
+    else
+    {
+        big = *r1;
+        small = *r2;
+    }
+
+    tmp = mw_sub(&small, &big);
+    tmp = mw_exp(&tmp);
+    tmp = mw_log1p(&tmp);
+    result = mw_add(&big, &tmp);
+    return result;
+}
+
+real getBodyBinFrac(const NBodyCtx* ctx, const HistogramParams* hp, const Body* p, int HistIndex)
+{
+    real tmp1, tmp2;
+    mwvector tmp;
+    NBHistTrig histTrig;
+    nbGetHistTrig(&histTrig, hp);
+
+    //mw_printf("Body POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))));
+
+    /* Calculate vlos and distance */
+    real vlos = calc_vLOS(&Vel(p), &Pos(p), ctx->sunGCDist);
+    real dist = calc_distance(&Pos(p), ctx->sunGCDist);
+
+    /* Calculate gamma1 (direction from Sun to body) */
+    mwvector bodyLBR = nbXYZToLambdaBeta(&histTrig, &Pos(p), ctx->sunGCDist);
+    //mw_printf("Body L,B = %.15f, %.15f\n", showRealValue(&bodyLBR.x), showRealValue(&bodyLBR.y));
+    mwvector gamma1 = LBtoY(&bodyLBR.x, &bodyLBR.y);
+
+    mwvector y; //Cartesian coords of transformed LB
+    y.x = mw_mul(&gamma1.x, &bodyLBR.z);
+    y.y = mw_mul(&gamma1.y, &bodyLBR.z);
+    y.z = mw_mul(&gamma1.z, &bodyLBR.z);
+    //mw_printf("Transformed Body POS = [%.15f, %.15f, %.15f]\n", showRealValue(&y.x), showRealValue(&y.y), showRealValue(&y.z));
+
+    /* Rotate body velocity into Lambda-Beta system by rotating two positions */
+    mwvector shiftedPos = mw_addv(&Pos(p), &Vel(p));
+    mwvector shiftedLBR = nbXYZToLambdaBeta(&histTrig, &shiftedPos, ctx->sunGCDist);
+
+    tmp = LBtoY(&shiftedLBR.x, &shiftedLBR.y);
+    tmp.x = mw_mul(&tmp.x, &shiftedLBR.z);
+    tmp.y = mw_mul(&tmp.y, &shiftedLBR.z);
+    tmp.z = mw_mul(&tmp.z, &shiftedLBR.z);
+
+    mwvector rotVel = mw_subv(&tmp, &y);
+
+    /* Calculate proper motion to get gamma2 */
+    mwvector gamma2;
+    mwvector vlos_vec;
+    vlos_vec.x = mw_mul(&gamma1.x, &vlos);
+    vlos_vec.y = mw_mul(&gamma1.y, &vlos);
+    vlos_vec.z = mw_mul(&gamma1.z, &vlos);
+
+    mwvector properMotion_vec = mw_subv(&rotVel, &vlos_vec);
+    real properMotion = mw_length(&properMotion_vec);
+
+    gamma2.x = mw_div(&properMotion_vec.x, &properMotion);
+    gamma2.y = mw_div(&properMotion_vec.y, &properMotion);
+    gamma2.z = mw_div(&properMotion_vec.z, &properMotion);
+
+    properMotion = mw_div(&properMotion, &dist); //radians per Gyr
+    //mw_printf("properMotion = %.15f\n", showRealValue(&properMotion));
+
+    /* Calculate gamma3 by taking the cross product of gamma1 and gamma2 (parity doesn't matter) */
+    mwvector gamma3 = mw_crossv(&gamma1, &gamma2);
+
+    //mw_printf("gamma1 = [%.15f, %.15f, %.15f]\n", showRealValue(&gamma1.x), showRealValue(&gamma1.y), showRealValue(&gamma1.z));
+    //mw_printf("gamma2 = [%.15f, %.15f, %.15f]\n", showRealValue(&gamma2.x), showRealValue(&gamma2.y), showRealValue(&gamma2.z));
+    //mw_printf("gamma3 = [%.15f, %.15f, %.15f]\n", showRealValue(&gamma3.x), showRealValue(&gamma3.y), showRealValue(&gamma3.z));
+
+    /* Calculate smei-major and semi-minor axes (a and b respectively) */
+    real b = inv(&dist);
+    b = mw_mul_s(&b, mw_sqrt_0(ctx->eps2));
+
+    real a = mw_mul_s(&properMotion, ctx->timestep);
+    a = mw_hypot(&a, &b);
+
+    //mw_printf("a, b = %.15f, %.15f\n", showRealValue(&a), showRealValue(&b));
+
+    /* Get kappa and beta estimators for FB5 from a and b */
+    tmp1 = mw_tan(&a);
+    tmp2 = mw_tan(&b);
+    tmp1 = mw_div(&tmp1, &tmp2);
+    tmp1 = mw_add_s(&tmp1, -1.0);
+    tmp2 = mw_sin(&b);
+    tmp2 = sqr(&tmp2);
+    tmp1 = mw_mul(&tmp2, &tmp1);
+    tmp1 = mw_mul_s(&tmp1, -0.5);
+    tmp1 = mw_add_s(&tmp1, 1.0);
+    tmp2 = mw_cos(&b);
+    tmp1 = mw_mul(&tmp1, &tmp2);
+    tmp1 = mw_neg(&tmp1);
+    tmp1 = mw_add_s(&tmp1, 1.0);
+    real solidAngle = mw_mul_s(&tmp1, 2.0*M_PI);
+
+    tmp1 = mw_sin(&a);
+    tmp2 = mw_sin(&b);
+    tmp1 = mw_mul(&tmp1, &tmp2);
+    tmp1 = mw_div(&tmp1, &solidAngle);
+    real r1 = mw_mul_s(&tmp1, M_PI);
+
+    tmp1 = mw_sin(&a);
+    tmp1 = sqr(&tmp1);
+    tmp2 = mw_sin(&b);
+    tmp2 = sqr(&tmp2);
+    tmp1 = mw_sub(&tmp1, &tmp2);
+    tmp1 = mw_mul(&r1, &tmp1);
+    real r2 = mw_mul_s(&tmp1, 0.25);
+
+    tmp1 = mw_mul_s(&r1, -2.0);
+    tmp1 = mw_add_s(&tmp1, 2.0);
+    tmp1 = mw_sub(&tmp1, &r2);
+    real part1 = inv(&tmp1);
+
+    tmp1 = mw_mul_s(&r1, -2.0);
+    tmp1 = mw_add_s(&tmp1, 2.0);
+    tmp1 = mw_add(&tmp1, &r2);
+    real part2 = inv(&tmp1);
+
+    real kappa = mw_add(&part1, &part2);
+    real beta = mw_sub(&part1, &part2);
+    beta = mw_mul_s(&beta, 0.5);
+
+    //mw_printf("kappa = %.15f\n", showRealValue(&kappa));
+    //mw_printf("beta  = %.15f\n", showRealValue(&beta));
+
+    /* Get the bounds of integration (Lambda & Beta bin edges) */
+    unsigned int BetaIndex = HistIndex % (hp->betaBins);
+    unsigned int LambdaIndex = (HistIndex - BetaIndex)/(hp->betaBins);
+    real_0 lambdaSize = (hp->lambdaEnd - hp->lambdaStart) / (real_0) hp->lambdaBins;
+    real_0 betaSize = (hp->betaEnd - hp->betaStart) / (real_0) hp->betaBins;
+
+    real_0 LambdaStart = hp->lambdaStart + lambdaSize*(LambdaIndex);
+    real_0 LambdaEnd   = hp->lambdaStart + lambdaSize*(LambdaIndex+1);
+    real_0 BetaStart   = hp->betaStart + betaSize*(BetaIndex);
+    real_0 BetaEnd     = hp->betaStart + betaSize*(BetaIndex+1);
+
+    /* Integrate distribution over full bin */
+    unsigned int intLambdaBins = mw_ceil_0(3.0 * d2r_0(lambdaSize) / (1.0*showRealValue(&b)));
+    unsigned int intBetaBins = mw_ceil_0(3.0 * d2r_0(betaSize) / (1.0*showRealValue(&b)));
+    //mw_printf("L_bins, B_bins = %u, %u\n",intLambdaBins, intBetaBins);
+    real B_val, L_val, B_val_rad, val;
+    mwvector x;
+    real integral;
+    /* Since the quantities of this integral are so small, we are required
+       to perform this integral calculation in log space */
+    for(int i = 0; i < intBetaBins; i++) //Integrate over Beta
+    {
+        B_val = mw_real_const(BetaStart + (i + 0.5)*betaSize/(1.0*intBetaBins));
+        tmp1 = d2r(&B_val);
+        tmp1 = mw_cos(&tmp1);
+        tmp1 = mw_log(&tmp1);
+        for(int j = 0; j < intLambdaBins; j++) //Integrate over Lambda
+        {
+            L_val = mw_real_const(LambdaStart + (j + 0.5)*lambdaSize/(1.0*intLambdaBins));
+            x = LBtoY(&L_val, &B_val);
+            val = ln_FB5_dist(&x, &gamma1, &gamma2, &gamma3, &kappa, &beta);
+            val = mw_add(&val, &tmp1);
+            val = mw_add_s(&val, mw_log_0(d2r_0(betaSize)*d2r_0(lambdaSize)/(1.0*intBetaBins*intLambdaBins)));
+            //mw_printf("val = %.15f\n", showRealValue(&val));
+            if(i==0)
+            {
+                integral = val;
+            }
+            else
+            {
+                integral = add_logspace(&integral, &val);
+            }
+        }
+    }
+    //mw_printf("integral = %.15f\n", showRealValue(&integral));
+    return integral;
+}
+
 /* Get the dispersion in each bin*/
 void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_factor)
 {
@@ -256,8 +499,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_fac
     
 }
 
-//FIXME:Need to determine how derivatives here propagate
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins)
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins, mwbool contBins, real * bodyFraction)
 {
     unsigned int Histindex;
     Body* p;
@@ -270,7 +512,7 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
     histData = histogram->data;
 
     real_0 bin_sigma;
-    real new_count, this_var;
+    real new_count, this_var, weight;
 
     /*Calculate old average and reset counters and sums for each histogram bin*/
     real bin_ave[histBins];
@@ -294,9 +536,31 @@ void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * 
         /* Only include bodies in models we aren't ignoring */
         if (!ignoreBody(p))
         {
-            
+            if(contBins)
+            {
+                this_var = var[counter];
+                for(int i = 0; i <histBins; i++)
+                {
+                    weight = bodyFraction[counter*histBins + i];
+                    /* Use old standard deviation calculated before */
+                    bin_sigma = showRealValue(&histData[i].variable);
+                
+                    if(mw_fabs_0(showRealValue(&bin_ave[i]) - showRealValue(&this_var)) < sigma_cutoff * bin_sigma)//if it is inside of the sigma limit
+                    {
+                        tmp = mw_mul(&this_var, &weight);
+                        temp_sum[i] = mw_add(&temp_sum[i], &tmp);
+                        tmp = sqr(&this_var);
+                        tmp = mw_mul(&tmp, &weight);
+                        temp_sqr[i] = mw_add(&temp_sqr[i], &tmp);
+                    }
+                    else
+                    {
+                        temp_removed[i] = mw_add(&temp_removed[i], &weight);//keep track of how many are being removed
+                    }
+                }
+            }
             /* Check if the position is within the bounds of the histogram */
-            if (use_body[counter] >= 0)//if it's not -1 then it was in the hist and set to the Histindex   
+            else if (use_body[counter] >= 0)//if it's not -1 then it was in the hist and set to the Histindex   
             {   
                 Histindex = (int) use_body[counter];
                 //mw_printf("Histogram Index = %d\n",Histindex);
@@ -349,6 +613,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
+        mw_printf("DIFFERENT NUMBER OF BINS DETECTED!\n");
         return mw_real_const(NAN);
     }
 
@@ -361,6 +626,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     if (showRealValue(&histMass) <= 0.0 || showRealValue(&dataMass) <= 0.0)
     {
         /*In order to calculate likelihood the masses are necessary*/
+        mw_printf("NEGATIVE MASS DETECTED!\n");
         return mw_real_const(NAN);
     }
     
@@ -387,12 +653,12 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     p = mw_mul_s(&nSim, inv_0(n));
 
     /*Print statements for debugging likelihood*/
-//    mw_printf("dataMass = %.15f\n",dataMass);
-//    mw_printf("nData    = %.15f\n",nData);
-//    mw_printf("histMass = %.15f\n",histMass);
-//    mw_printf("nSim     = %.15f\n",nSim);
-//    mw_printf("p        = %.15f\n",p);
-//    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
+    //mw_printf("dataMass = %.15f\n", showRealValue(&dataMass));
+    //mw_printf("nData    = %.15f\n", showRealValue(&nData));
+    //mw_printf("histMass = %.15f\n", showRealValue(&histMass));
+    //mw_printf("nSim     = %.15f\n", showRealValue(&nSim));
+    //mw_printf("p        = %.15f\n", showRealValue(&p));
+    //mw_printf("Sim_Mass = %.15f\n", showRealValue(&histMass)*showRealValue(&nSim));
 
     tmp1 = mw_mul(&dataMass, &nData);
     tmp2 = mw_mul(&histMass, &nSim);
@@ -408,6 +674,8 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     tmp2 = mw_mul(&tmp2, &tmp3);
     tmp1 = mw_add(&tmp1, &tmp2);
     real denom = mw_mul_s(&tmp1, 2.0);
+    //mw_printf("num = %.15f\n", showRealValue(&num));
+    //mw_printf("denom = %.15f\n", showRealValue(&denom));
     real CostComponent = mw_div(&num, &denom); //this is the log of the cost component
 
     /* the cost component is negative. Returning a postive value */

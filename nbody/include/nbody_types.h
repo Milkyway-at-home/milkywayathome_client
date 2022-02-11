@@ -483,6 +483,9 @@ typedef struct MW_ALIGN_TYPE
     real_0 VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     real_0 DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
 
+    mwbool useContBins;
+    real_0 bleedInRange;
+
     mwbool LMC;
 
     real_0 LMCmass;              /* Mass of LMC */
@@ -508,6 +511,7 @@ typedef struct MW_ALIGN_TYPE
                          FALSE, FALSE, FALSE, FALSE,                                                    \
                          0, 0,                                                                          \
                          0, 0, 0, 0, 0, 0, 0,                                                           \
+                         FALSE, 0,                                                                      \
                          FALSE,                                                                         \
                          0, 0, FALSE,                                                                   \
                          0,                                                                             \
