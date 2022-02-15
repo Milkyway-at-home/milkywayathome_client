@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody.h"
 #include "nbody_friction.h"
+#include "nbody_autodiff.h"
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
@@ -42,38 +43,17 @@ mwvector LMCpos = ZERO_VECTOR; //Ptr to LMC position (default is NULL)
 mwvector LMCvel = ZERO_VECTOR; //Ptr to LMC velocity (default is NULL)
 
 #if AUTODIFF
-  static inline void getTimeDerivativeInfo(const Potential* pot, mwvector* dwarfPos, mwvector* dwarfVel, mwvector* LMCPos, mwvector* LMCVel, real* LMCMass, real* LMCScale, mwbool dynaFric, real_0 time)
+  static inline void getTimeDerivativeInfo(const Potential* pot, mwvector* dwarfPos, mwvector* dwarfVel, mwvector* vel_m1, mwvector* vel_m2, mwvector* vel_m3, mwvector* LMCPos, mwvector* LMCVel, mwvector* LMCvel_m1, mwvector* LMCvel_m2, mwvector* LMCvel_m3, real* LMCMass, real* LMCScale, mwbool dynaFric, real_0 time, real_0 timestep)
   {
       mwvector mw_origin = ZERO_VECTOR;
 
+      /* Calculate dwarf acceleration by MW */
       mwvector accel_dwarf_by_MW = nbExtAcceleration(pot, dwarfPos, time);
 
-      /* Calculate jerk of dwarf by MW potential */
-      mwvector shift_dwarf_x = *dwarfPos;
-      mwvector shift_dwarf_y = *dwarfPos;
-      mwvector shift_dwarf_z = *dwarfPos;
-      shift_dwarf_x.x = mw_mul(&shift_dwarf_x.x, 1.01);
-      shift_dwarf_y.y = mw_mul(&shift_dwarf_y.y, 1.01);
-      shift_dwarf_z.z = mw_mul(&shift_dwarf_z.z, 1.01);
-      mwvector accel_dwarf_by_MW_x = nbExtAcceleration(pot, &shift_dwarf_x, time);
-      mwvector accel_dwarf_by_MW_y = nbExtAcceleration(pot, &shift_dwarf_y, time);
-      mwvector accel_dwarf_by_MW_z = nbExtAcceleration(pot, &shift_dwarf_z, time);
-
-      real_0 dax_dx = (accel_dwarf_by_MW_x.x.value - accel_dwarf_by_MW.x.value)/0.01/showRealValue(&dwarfPos->x);
-      real_0 day_dx = (accel_dwarf_by_MW_x.y.value - accel_dwarf_by_MW.y.value)/0.01/showRealValue(&dwarfPos->x);
-      real_0 daz_dx = (accel_dwarf_by_MW_x.z.value - accel_dwarf_by_MW.z.value)/0.01/showRealValue(&dwarfPos->x);
-
-      real_0 dax_dy = (accel_dwarf_by_MW_y.x.value - accel_dwarf_by_MW.x.value)/0.01/showRealValue(&dwarfPos->y);
-      real_0 day_dy = (accel_dwarf_by_MW_y.y.value - accel_dwarf_by_MW.y.value)/0.01/showRealValue(&dwarfPos->y);
-      real_0 daz_dy = (accel_dwarf_by_MW_y.z.value - accel_dwarf_by_MW.z.value)/0.01/showRealValue(&dwarfPos->y);
-
-      real_0 dax_dz = (accel_dwarf_by_MW_z.x.value - accel_dwarf_by_MW.x.value)/0.01/showRealValue(&dwarfPos->z);
-      real_0 day_dz = (accel_dwarf_by_MW_z.y.value - accel_dwarf_by_MW.y.value)/0.01/showRealValue(&dwarfPos->z);
-      real_0 daz_dz = (accel_dwarf_by_MW_z.z.value - accel_dwarf_by_MW.z.value)/0.01/showRealValue(&dwarfPos->z);
-
-      real_0 jerk_dwarf_x = dax_dx * (dwarfVel->x.value) + dax_dy * (dwarfVel->y.value) + dax_dz * (dwarfVel->z.value);
-      real_0 jerk_dwarf_y = day_dx * (dwarfVel->x.value) + day_dy * (dwarfVel->y.value) + day_dz * (dwarfVel->z.value);
-      real_0 jerk_dwarf_z = daz_dx * (dwarfVel->x.value) + daz_dy * (dwarfVel->y.value) + daz_dz * (dwarfVel->z.value);
+      /* Calculate jerk of dwarf */
+      real_0 jerk_dwarf_x = (2*(dwarfVel->x.value) - 5*(vel_m1->x.value) + 4*(vel_m2->x.value) - (vel_m3->x.value))/timestep/timestep;
+      real_0 jerk_dwarf_y = (2*(dwarfVel->y.value) - 5*(vel_m1->y.value) + 4*(vel_m2->y.value) - (vel_m3->y.value))/timestep/timestep;
+      real_0 jerk_dwarf_z = (2*(dwarfVel->z.value) - 5*(vel_m1->z.value) + 4*(vel_m2->z.value) - (vel_m3->z.value))/timestep/timestep;
 
       /* Modify first order time derivative for dwarf position */
       setRealGradient(&dwarfPos->x, -(dwarfVel->x.value), BACKWARDS_TIME_POS);
@@ -82,139 +62,27 @@ mwvector LMCvel = ZERO_VECTOR; //Ptr to LMC velocity (default is NULL)
 
       if(LMCPos)
       {
-          /* Modify dwarf jerk with jerk from LMC */
-          mwvector accel_dwarf_by_LMC = plummerAccel(dwarfPos, LMCPos, LMCmass, LMCscale);
-          mwvector accel_dwarf_by_LMC_x = plummerAccel(&shift_dwarf_x, LMCPos, LMCmass, LMCscale);
-          mwvector accel_dwarf_by_LMC_y = plummerAccel(&shift_dwarf_y, LMCPos, LMCmass, LMCscale);
-          mwvector accel_dwarf_by_LMC_z = plummerAccel(&shift_dwarf_z, LMCPos, LMCmass, LMCscale);
+          /* Calculate dwarf acceleration by LMC */
+          mwvector accel_dwarf_by_LMC = plummerAccel(dwarfPos, LMCPos, LMCMass, LMCScale);
 
-          dax_dx = (accel_dwarf_by_LMC_x.x.value - accel_dwarf_by_LMC.x.value)/0.01/showRealValue(&dwarfPos->x);
-          day_dx = (accel_dwarf_by_LMC_x.y.value - accel_dwarf_by_LMC.y.value)/0.01/showRealValue(&dwarfPos->x);
-          daz_dx = (accel_dwarf_by_LMC_x.z.value - accel_dwarf_by_LMC.z.value)/0.01/showRealValue(&dwarfPos->x);
+          /* Calcualte dwarf acceleration from MW shift */
+          mwvector accel_MW_by_LMC = plummerAccel(&mw_origin, LMCPos, LMCMass, LMCScale);
 
-          dax_dy = (accel_dwarf_by_LMC_y.x.value - accel_dwarf_by_LMC.x.value)/0.01/showRealValue(&dwarfPos->y);
-          day_dy = (accel_dwarf_by_LMC_y.y.value - accel_dwarf_by_LMC.y.value)/0.01/showRealValue(&dwarfPos->y);
-          daz_dy = (accel_dwarf_by_LMC_y.z.value - accel_dwarf_by_LMC.z.value)/0.01/showRealValue(&dwarfPos->y);
-
-          dax_dz = (accel_dwarf_by_LMC_z.x.value - accel_dwarf_by_LMC.x.value)/0.01/showRealValue(&dwarfPos->z);
-          day_dz = (accel_dwarf_by_LMC_z.y.value - accel_dwarf_by_LMC.y.value)/0.01/showRealValue(&dwarfPos->z);
-          daz_dz = (accel_dwarf_by_LMC_z.z.value - accel_dwarf_by_LMC.z.value)/0.01/showRealValue(&dwarfPos->z);
-
-          jerk_dwarf_x += dax_dx * (dwarfVel->x.value - LMCVel->x.value) + dax_dy * (dwarfVel->y.value - LMCVel->y.value) + dax_dz * (dwarfVel->z.value - LMCVel->z.value);
-          jerk_dwarf_y += day_dx * (dwarfVel->x.value - LMCVel->x.value) + day_dy * (dwarfVel->y.value - LMCVel->y.value) + day_dz * (dwarfVel->z.value - LMCVel->z.value);
-          jerk_dwarf_z += daz_dx * (dwarfVel->x.value - LMCVel->x.value) + daz_dy * (dwarfVel->y.value - LMCVel->y.value) + daz_dz * (dwarfVel->z.value - LMCVel->z.value);
-
-          /* Modify dwarf jerk with jerk from MW shift */
-          mwvector accel_MW_by_LMC = plummerAccel(&mw_origin, LMCPos, LMCmass, LMCscale);
-          mwvector shift_LMC_x = *LMCPos;
-          mwvector shift_LMC_y = *LMCPos;
-          mwvector shift_LMC_z = *LMCPos;
-          shift_LMC_x.x = mw_mul(&shift_LMC_x.x, 1.01);
-          shift_LMC_y.y = mw_mul(&shift_LMC_y.y, 1.01);
-          shift_LMC_z.z = mw_mul(&shift_LMC_z.z, 1.01);
-          mwvector accel_MW_by_LMC_x = plummerAccel(&mw_origin, &shift_LMC_x, LMCmass, LMCscale);
-          mwvector accel_MW_by_LMC_y = plummerAccel(&mw_origin, &shift_LMC_y, LMCmass, LMCscale);
-          mwvector accel_MW_by_LMC_z = plummerAccel(&mw_origin, &shift_LMC_z, LMCmass, LMCscale);
-
-          dax_dx = (accel_MW_by_LMC_x.x.value - accel_MW_by_LMC.x.value)/0.01/showRealValue(&LMCPos->x);
-          day_dx = (accel_MW_by_LMC_x.y.value - accel_MW_by_LMC.y.value)/0.01/showRealValue(&LMCPos->x);
-          daz_dx = (accel_MW_by_LMC_x.z.value - accel_MW_by_LMC.z.value)/0.01/showRealValue(&LMCPos->x);
-
-          dax_dy = (accel_MW_by_LMC_y.x.value - accel_MW_by_LMC.x.value)/0.01/showRealValue(&LMCPos->y);
-          day_dy = (accel_MW_by_LMC_y.y.value - accel_MW_by_LMC.y.value)/0.01/showRealValue(&LMCPos->y);
-          daz_dy = (accel_MW_by_LMC_y.z.value - accel_MW_by_LMC.z.value)/0.01/showRealValue(&LMCPos->y);
-
-          dax_dz = (accel_MW_by_LMC_z.x.value - accel_MW_by_LMC.x.value)/0.01/showRealValue(&LMCPos->z);
-          day_dz = (accel_MW_by_LMC_z.y.value - accel_MW_by_LMC.y.value)/0.01/showRealValue(&LMCPos->z);
-          daz_dz = (accel_MW_by_LMC_z.z.value - accel_MW_by_LMC.z.value)/0.01/showRealValue(&LMCPos->z);
-
-          jerk_dwarf_x -= dax_dx * (LMCVel->x.value) + dax_dy * (LMCVel->y.value) + dax_dz * (LMCVel->z.value);
-          jerk_dwarf_y -= day_dx * (LMCVel->x.value) + day_dy * (LMCVel->y.value) + day_dz * (LMCVel->z.value);
-          jerk_dwarf_z -= daz_dx * (LMCVel->x.value) + daz_dy * (LMCVel->y.value) + daz_dz * (LMCVel->z.value);
-
-          /* This term is also needed for LMC jerk */
-          real_0 jerk_LMC_x = -(dax_dx * (LMCVel->x.value) + dax_dy * (LMCVel->y.value) + dax_dz * (LMCVel->z.value));
-          real_0 jerk_LMC_y = -(day_dx * (LMCVel->x.value) + day_dy * (LMCVel->y.value) + day_dz * (LMCVel->z.value));
-          real_0 jerk_LMC_z = -(daz_dx * (LMCVel->x.value) + daz_dy * (LMCVel->y.value) + daz_dz * (LMCVel->z.value));
-
+          /* Calcualte total dwarf acceleration */
           mwvector total_accel_dwarf = mw_addv(&accel_dwarf_by_MW, &accel_dwarf_by_LMC);
           total_accel_dwarf = mw_subv(&total_accel_dwarf, &accel_MW_by_LMC);
 
           /* Calculate total LMC acceleration */
           mwvector accel_LMC_by_MW = nbExtAcceleration(pot, LMCPos, time);
           mwvector DF_acc = dynamicalFriction_LMC(pot, LMCPos, LMCVel, LMCMass, LMCScale, dynaFric, time);
-          accel_LMC_by_MW = mw_subv(&accel_LMC_by_MW, &DF_acc); /* Inverting drag force because of time reversal */
+          accel_LMC_by_MW = mw_subv(&accel_LMC_by_MW, &DF_acc); /* Inverting drag force because we need time-reversed acceleration */
           mwvector total_accel_LMC = mw_subv(&accel_LMC_by_MW, &accel_MW_by_LMC);
 
-          /* Calculate jerk of LMC by MW */
-          mwvector accel_LMC_by_MW_x = nbExtAcceleration(pot, &shift_LMC_x, time);
-          mwvector accel_LMC_by_MW_y = nbExtAcceleration(pot, &shift_LMC_y, time);
-          mwvector accel_LMC_by_MW_z = nbExtAcceleration(pot, &shift_LMC_z, time);
+          /* Calculate jerk of LMC */
 
-          dax_dx = (accel_LMC_by_MW_x.x.value - accel_LMC_by_MW.x.value)/0.01/showRealValue(&LMCPos->x);
-          day_dx = (accel_LMC_by_MW_x.y.value - accel_LMC_by_MW.y.value)/0.01/showRealValue(&LMCPos->x);
-          daz_dx = (accel_LMC_by_MW_x.z.value - accel_LMC_by_MW.z.value)/0.01/showRealValue(&LMCPos->x);
-
-          dax_dy = (accel_LMC_by_MW_y.x.value - accel_LMC_by_MW.x.value)/0.01/showRealValue(&LMCPos->y);
-          day_dy = (accel_LMC_by_MW_y.y.value - accel_LMC_by_MW.y.value)/0.01/showRealValue(&LMCPos->y);
-          daz_dy = (accel_LMC_by_MW_y.z.value - accel_LMC_by_MW.z.value)/0.01/showRealValue(&LMCPos->y);
-
-          dax_dz = (accel_LMC_by_MW_z.x.value - accel_LMC_by_MW.x.value)/0.01/showRealValue(&LMCPos->z);
-          day_dz = (accel_LMC_by_MW_z.y.value - accel_LMC_by_MW.y.value)/0.01/showRealValue(&LMCPos->z);
-          daz_dz = (accel_LMC_by_MW_z.z.value - accel_LMC_by_MW.z.value)/0.01/showRealValue(&LMCPos->z);
-
-          jerk_LMC_x += dax_dx * (LMCVel->x.value) + dax_dy * (LMCVel->y.value) + dax_dz * (LMCVel->z.value);
-          jerk_LMC_y += day_dx * (LMCVel->x.value) + day_dy * (LMCVel->y.value) + day_dz * (LMCVel->z.value);
-          jerk_LMC_z += daz_dx * (LMCVel->x.value) + daz_dy * (LMCVel->y.value) + daz_dz * (LMCVel->z.value);
-
-          /* Calculate jerk of LMC by Dynamical Friction (position term) */
-          mwvector DF_acc_x = dynamicalFriction_LMC(pot, &shift_LMC_x, LMCVel, LMCMass, LMCScale, dynaFric, time);
-          mwvector DF_acc_y = dynamicalFriction_LMC(pot, &shift_LMC_y, LMCVel, LMCMass, LMCScale, dynaFric, time);
-          mwvector DF_acc_z = dynamicalFriction_LMC(pot, &shift_LMC_z, LMCVel, LMCMass, LMCScale, dynaFric, time);
-
-          dax_dx = (DF_acc_x.x.value - DF_acc.x.value)/0.01/showRealValue(&LMCPos->x);
-          day_dx = (DF_acc_x.y.value - DF_acc.y.value)/0.01/showRealValue(&LMCPos->x);
-          daz_dx = (DF_acc_x.z.value - DF_acc.z.value)/0.01/showRealValue(&LMCPos->x);
-
-          dax_dy = (DF_acc_y.x.value - DF_acc.x.value)/0.01/showRealValue(&LMCPos->y);
-          day_dy = (DF_acc_y.y.value - DF_acc.y.value)/0.01/showRealValue(&LMCPos->y);
-          daz_dy = (DF_acc_y.z.value - DF_acc.z.value)/0.01/showRealValue(&LMCPos->y);
-
-          dax_dz = (DF_acc_z.x.value - DF_acc.x.value)/0.01/showRealValue(&LMCPos->z);
-          day_dz = (DF_acc_z.y.value - DF_acc.y.value)/0.01/showRealValue(&LMCPos->z);
-          daz_dz = (DF_acc_z.z.value - DF_acc.z.value)/0.01/showRealValue(&LMCPos->z);
-
-          jerk_LMC_x -= dax_dx * (LMCVel->x.value) + dax_dy * (LMCVel->y.value) + dax_dz * (LMCVel->z.value);
-          jerk_LMC_y -= day_dx * (LMCVel->x.value) + day_dy * (LMCVel->y.value) + day_dz * (LMCVel->z.value);
-          jerk_LMC_z -= daz_dx * (LMCVel->x.value) + daz_dy * (LMCVel->y.value) + daz_dz * (LMCVel->z.value);
-
-          /* Calculate jerk of LMC by Dynamical Friction (velocity term) */
-          mwvector shift_LMC_vx = *LMCVel;
-          mwvector shift_LMC_vy = *LMCVel;
-          mwvector shift_LMC_vz = *LMCVel;
-          shift_LMC_vx.x = mw_mul(&shift_LMC_vx.x, 1.01);
-          shift_LMC_vy.y = mw_mul(&shift_LMC_vy.y, 1.01);
-          shift_LMC_vz.z = mw_mul(&shift_LMC_vz.z, 1.01);
-
-          DF_acc_x = dynamicalFriction_LMC(pot, LMCPos, &shift_LMC_x, LMCMass, LMCScale, dynaFric, time);
-          DF_acc_y = dynamicalFriction_LMC(pot, LMCPos, &shift_LMC_y, LMCMass, LMCScale, dynaFric, time);
-          DF_acc_z = dynamicalFriction_LMC(pot, LMCPos, &shift_LMC_z, LMCMass, LMCScale, dynaFric, time);
-
-          dax_dx = (DF_acc_x.x.value - DF_acc.x.value)/0.01/showRealValue(&LMCVel->x);
-          day_dx = (DF_acc_x.y.value - DF_acc.y.value)/0.01/showRealValue(&LMCVel->x);
-          daz_dx = (DF_acc_x.z.value - DF_acc.z.value)/0.01/showRealValue(&LMCVel->x);
-
-          dax_dy = (DF_acc_y.x.value - DF_acc.x.value)/0.01/showRealValue(&LMCVel->y);
-          day_dy = (DF_acc_y.y.value - DF_acc.y.value)/0.01/showRealValue(&LMCVel->y);
-          daz_dy = (DF_acc_y.z.value - DF_acc.z.value)/0.01/showRealValue(&LMCVel->y);
-
-          dax_dz = (DF_acc_z.x.value - DF_acc.x.value)/0.01/showRealValue(&LMCVel->z);
-          day_dz = (DF_acc_z.y.value - DF_acc.y.value)/0.01/showRealValue(&LMCVel->z);
-          daz_dz = (DF_acc_z.z.value - DF_acc.z.value)/0.01/showRealValue(&LMCVel->z);
-
-          jerk_LMC_x -= dax_dx * (total_accel_LMC.x.value) + dax_dy * (total_accel_LMC.y.value) + dax_dz * (total_accel_LMC.z.value);
-          jerk_LMC_y -= day_dx * (total_accel_LMC.x.value) + day_dy * (total_accel_LMC.y.value) + day_dz * (total_accel_LMC.z.value);
-          jerk_LMC_z -= daz_dx * (total_accel_LMC.x.value) + daz_dy * (total_accel_LMC.y.value) + daz_dz * (total_accel_LMC.z.value);
+          real_0 jerk_LMC_x = (2*(LMCVel->x.value) - 5*(LMCvel_m1->x.value) + 4*(LMCvel_m2->x.value) - (LMCvel_m3->x.value))/timestep/timestep;
+          real_0 jerk_LMC_y = (2*(LMCVel->y.value) - 5*(LMCvel_m1->y.value) + 4*(LMCvel_m2->y.value) - (LMCvel_m3->y.value))/timestep/timestep;
+          real_0 jerk_LMC_z = (2*(LMCVel->z.value) - 5*(LMCvel_m1->z.value) + 4*(LMCvel_m2->z.value) - (LMCvel_m3->z.value))/timestep/timestep;
 
           /* Modify first order time derivative for dwarf velocity */
           setRealGradient(&dwarfVel->x, -(total_accel_dwarf.x.value), BACKWARDS_TIME_POS);
@@ -227,9 +95,9 @@ mwvector LMCvel = ZERO_VECTOR; //Ptr to LMC velocity (default is NULL)
           setRealGradient(&LMCPos->z, -(LMCVel->z.value), BACKWARDS_TIME_POS);
 
           /* Modify first order time derivative for LMC velocity */
-          setRealGradient(&LMCPos->x, -(total_accel_LMC.x.value), BACKWARDS_TIME_POS);
-          setRealGradient(&LMCPos->y, -(total_accel_LMC.y.value), BACKWARDS_TIME_POS);
-          setRealGradient(&LMCPos->z, -(total_accel_LMC.z.value), BACKWARDS_TIME_POS);
+          setRealGradient(&LMCVel->x, -(total_accel_LMC.x.value), BACKWARDS_TIME_POS);
+          setRealGradient(&LMCVel->y, -(total_accel_LMC.y.value), BACKWARDS_TIME_POS);
+          setRealGradient(&LMCVel->z, -(total_accel_LMC.z.value), BACKWARDS_TIME_POS);
 
           /* Set all other second order time derivatives */
           for(int i = 0; i < NumberOfModelParameters; i++)
@@ -305,6 +173,7 @@ mwvector LMCvel = ZERO_VECTOR; //Ptr to LMC velocity (default is NULL)
           }
       }
   }
+
 #endif //AUTODIFF
 
 void nbReverseOrbit(mwvector* finalPos,
@@ -325,6 +194,9 @@ void nbReverseOrbit(mwvector* finalPos,
     mwvector acc = ZERO_VECTOR;
     mwvector v = ZERO_VECTOR;
     mwvector x = ZERO_VECTOR;
+    mwvector v_m1 = ZERO_VECTOR;
+    mwvector v_m2 = ZERO_VECTOR;
+    mwvector v_m3 = ZERO_VECTOR;
     real_0 t = 0.0;
     real_0 dt_half = dt / 2.0;
     int initialLArrayIndex = tstop/dt;
@@ -353,6 +225,11 @@ void nbReverseOrbit(mwvector* finalPos,
     //do this loop backward in order to get an accurate time for time-dependent potentials
     for (t = 0; t >= tstop*(-1); t -= dt)
     {
+        //Store the last three velocities (not time reversed). We will need these for the jerk calculation in getTimeDerivativeInfo().
+        v_m3 = v_m2;
+        v_m2 = v_m1;
+        v_m1 = mw_negv(&v);
+
         //mw_printf("ACC  = [%.15f, %.15f, %.15f]\n", showRealValue(&acc.x), showRealValue(&acc.y), showRealValue(&acc.z));
         //mw_printf("POS  = [%.15f, %.15f, %.15f]\n", showRealValue(&x.x), showRealValue(&x.y), showRealValue(&x.z));
         //mw_printf("VEL  = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
@@ -387,8 +264,17 @@ void nbReverseOrbit(mwvector* finalPos,
 
   #if AUTODIFF
     /* Insert reverse time derivative information into positions and velocities */
-    getTimeDerivativeInfo(pot, &x, &v, NULL, NULL, NULL, NULL, FALSE, t);
+    getTimeDerivativeInfo(pot, &x, &v, &v_m1, &v_m2, &v_m3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, FALSE, t, dt);
   #endif
+
+    //printReal(&x.x, "x");
+    //printReal(&x.y, "y");
+    //printReal(&x.z, "z");
+
+    //printReal(&v.x, "vx");
+    //printReal(&v.y, "vy");
+    //printReal(&v.z, "vz");
+
     *finalPos = x;
     *finalVel = v;
 
@@ -430,6 +316,13 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     real_0 dt_half = dt / 2.0;
     mwvector v_var, x_var, x_lbr;
     mwvector acc, v, x, v_for, x_for, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, LMCv_for, LMCx_for, tmp, dv2, dx, dLMCv2, dLMCx, dv2_for, dx_for, dLMCv2_for, dLMCx_for; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    mwvector v_m1 = ZERO_VECTOR;
+    mwvector v_m2 = ZERO_VECTOR;
+    mwvector v_m3 = ZERO_VECTOR;
+    mwvector LMCv_m1 = ZERO_VECTOR;
+    mwvector LMCv_m2 = ZERO_VECTOR;
+    mwvector LMCv_m3 = ZERO_VECTOR;
+
     mwvector mw_x = ZERO_VECTOR;
     mwvector* ArrayPlaceholder = NULL;
 
@@ -477,7 +370,16 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
     real_0 negT = 0;
     for (t = 0; t <= tstop; t += dt)
-    {   
+    {
+        //Store the last three velocities (not time reversed). We will need these for the jerk calculation in getTimeDerivativeInfo().
+        v_m3 = v_m2;
+        v_m2 = v_m1;
+        v_m1 = mw_negv(&v);
+
+        LMCv_m3 = LMCv_m2;
+        LMCv_m2 = LMCv_m1;
+        LMCv_m1 = mw_negv(&LMCv);
+
         //negate this time for use in time-dependent potentials
         negT = t*(-1);
     	steps = (int) mw_round_0(t/dt);
@@ -645,8 +547,24 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
   #if AUTODIFF
     /* Insert reverse time derivative information into positions and velocities */
-    getTimeDerivativeInfo(pot, &x, &v, &LMCx, &LMCv, LMCmass, LMCscale, LMCDynaFric, negT);
+    getTimeDerivativeInfo(pot, &x, &v, &v_m1, &v_m2, &v_m3, &LMCx, &LMCv, &LMCv_m1, &LMCv_m2, &LMCv_m3, LMCmass, LMCscale, LMCDynaFric, negT, dt);
   #endif
+
+    //printReal(&x.x, "x");
+    //printReal(&x.y, "y");
+    //printReal(&x.z, "z");
+
+    //printReal(&v.x, "vx");
+    //printReal(&v.y, "vy");
+    //printReal(&v.z, "vz");
+
+    //printReal(&LMCx.x, "LMCx");
+    //printReal(&LMCx.y, "LMCy");
+    //printReal(&LMCx.z, "LMCz");
+
+    //printReal(&LMCv.x, "LMCvx");
+    //printReal(&LMCv.y, "LMCvy");
+    //printReal(&LMCv.z, "LMCvz");
 
     *finalPos = x;
     *finalVel = v;

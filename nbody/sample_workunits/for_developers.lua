@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES (MIN 4)                          -- --
+totalBodies           = 500   -- -- NUMBER OF BODIES (MIN 4)                          -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.80"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -33,7 +33,7 @@ use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                   
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = false    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
@@ -102,8 +102,8 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 10         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control      = false       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
