@@ -18,12 +18,14 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.80"   -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.80"      -- -- MINIMUM APP VERSION
 
-run_null_potential    = false    -- -- NULL POTENTIAL SWITCH
-use_tree_code         = true     -- -- USE TREE CODE (NOT EXACT)
-print_reverse_orbit   = false    -- -- PRINT REVERSE ORBIT SWITCH 
-print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS
+run_null_potential    = false       -- -- NULL POTENTIAL SWITCH
+use_tree_code         = true        -- -- USE TREE CODE (NOT EXACT)
+print_reverse_orbit   = false       -- -- PRINT REVERSE ORBIT SWITCH 
+print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS
+
+CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRICTION
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
@@ -156,6 +158,8 @@ end
 -- -- -- -- -- Left this in the file in order to not mess up the  -- -- -- --
 -- -- -- -- -- initial nbody context, but it's not meant for use  -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
+
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
 lda_upper_range = 150     -- upepr range for lamdba
@@ -241,17 +245,17 @@ end
 
 function makeContext()
    return NBodyCtx.create{
-      timeEvolve  = evolveTime,
-      timeBack    = revOrbTime,
-      timestep    = get_timestep(),
-      eps2        = get_soft_par(),
-      b           = orbit_parameter_b,
-      r           = orbit_parameter_r,
-      vx          = orbit_parameter_vx,
-      vy          = orbit_parameter_vy,
-      vz          = orbit_parameter_vz,
-      criterion   = criterion,
-      useQuad     = true,
+      timeEvolve    = evolveTime,
+      timeBack      = revOrbTime,
+      timestep      = get_timestep(),
+      eps2          = get_soft_par(),
+      b             = orbit_parameter_b,
+      r             = orbit_parameter_r,
+      vx            = orbit_parameter_vx,
+      vy            = orbit_parameter_vy,
+      vz            = orbit_parameter_vz,
+      criterion     = criterion,
+      useQuad       = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
       useVelDisp    = use_vel_disps,
@@ -275,6 +279,7 @@ function makeContext()
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
       LMCDynaFric   = LMC_DynamicalFriction,
+      coulomb_log   = CoulombLogarithm,
       calibrationRuns = 0
    }
 end
@@ -305,6 +310,7 @@ function makeBodies(ctx, potential)
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
                     LMCDynaFric = LMC_DynamicalFriction,
+                    coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0
