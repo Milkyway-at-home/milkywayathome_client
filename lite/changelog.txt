@@ -1,3 +1,6 @@
+v1.80.2:
+ - added variable Coulomb logarithm
+
 v1.80.1:
  - Added /gui folder for GUI development
  - Added /gui/gui.py
