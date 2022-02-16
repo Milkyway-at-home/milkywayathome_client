@@ -72,7 +72,6 @@ hPadLabel = tk.Label(text=fillText)
 
 hPadLabel.grid(row=0, column =1)
 
-
 #BreakPoint makes a (sub)title. Called breakpoint because both
 #in settings.lua and in this GUI they are breaks from settings.
 def BreakPoint(name, position):
