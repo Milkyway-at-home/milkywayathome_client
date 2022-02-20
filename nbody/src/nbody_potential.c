@@ -731,31 +731,31 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real_0 
 the above function and uncomment the one below*/
 
 /*
-static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, real time)
+static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real* r, real_0 time)
 {
     //mw_printf("Calculating Acceleration\n");
-    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-    //mw_printf("r = %.15f\n", r);
+    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",showRealValue(&X(pos)),showRealValue(&Y(pos)),showRealValue(&Z(pos)));
+    //mw_printf("r = %.15f\n", showRealValue(&r));
 
     mwvector pointPos;
-    pointPos.z = 0;
-    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
+    pointPos.z = ZERO_REAL;
+    real_0 curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
     curAngle = curAngle - M_PI;//this is because the sun is negative in our coordinate system
-    pointPos.x = cos (curAngle) * disk->scaleLength; //this is assuming top-down
-    pointPos.y = sin (curAngle) * disk->scaleLength;
+    real diskLength = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
+    real diskMass = mw_real_var(disk->mass, DISK_MASS_POS);
+    pointPos.x = mw_mul_s(&diskLength, mw_cos_0(curAngle)); //this is assuming top-down
+    pointPos.y = mw_mul_s(&diskLength, mw_sin_0(curAngle));
 
-    real dist = mw_distv(pos, pointPos);
+    real dist = mw_distv(pos, &pointPos);
 
-    mwvector acc = mw_divvs(mw_subv(pos, pointPos), dist);//get direction from pos to pointPos
-    real totalAcc = disk->mass/(dist*dist);//a = Gm/r^2
-    acc = mw_mulvs(acc, totalAcc);
+    mwvector acc = mw_subv(pos, &pointPos);  //get direction from pos to pointPos
+    real tmp = cube(&dist);
+    real totalAcc = mw_div(&diskMass, &tmp);
+    acc = mw_mulvs(acc, totalAcc);           //a = Gm/r^2
 
     //mw_printf("curAngle: %.15f\n", curAngle);
-    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", X(pointPos), Y(pointPos), Z(pointPos));
-    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", X(acc), Y(acc), Z(acc));
-    //mw_printf("point x acc: %.15f\n", X(acc));
-    //mw_printf("point y acc: %.15f\n", Y(acc));
-    //mw_printf("point z acc: %.15f\n", Z(acc));
+    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", showRealValue(&X(&pointPos)),showRealValue(&Y(&pointPos)),showRealValue(&Z(&pointPos)));
+    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)),showRealValue(&Y(&acc)),showRealValue(&Z(&acc)));
     return acc;
 }
 */

@@ -24,7 +24,7 @@
 
 #if AUTODIFF
 
-static void nbPrintLikelihood(FILE* f, real* likelihood)
+static void nbPrintLikelihood(FILE* f, real* likelihood) //NOTE: THIS IS THE NEGATIVE LIKELIHOOD! MUST FLIP SIGNS HERE!
 {
     int i,j,eff_i, eff_j,k;
 
@@ -32,7 +32,8 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
     fprintf(f, "[");
     for (i = 0; i < NumberOfModelParameters; i++)
     {
-        fprintf(f, " %.15f",likelihood->gradient[i]);
+        fprintf(f, " %.15e",-likelihood->gradient[i]);
+        if(i!=NumberOfModelParameters-1) fprintf(f, ",");
     }
     fprintf(f, " ]\n");
     mw_boinc_print(f, "</gradient>\n");
@@ -59,10 +60,11 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
                 eff_j = j;
             }
             k = (int) (eff_i*(eff_i+1)/2 + eff_j);
-            fprintf(f, " %.15f",likelihood->hessian[k]);
+            fprintf(f, " %.15e",-likelihood->hessian[k]);
+            if(j!=NumberOfModelParameters-1) fprintf(f, ",");
         }
         fprintf(f, " ]");
-        if (i != NumberOfModelParameters)
+        if (i != NumberOfModelParameters-1)
         {
             fprintf(f, "\n");
         }

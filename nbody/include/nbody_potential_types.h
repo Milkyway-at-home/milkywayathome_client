@@ -156,6 +156,7 @@ typedef struct MW_ALIGN_TYPE
     real_0 scaleLength;   
     real_0 n; //used by einasto
     real_0 p0; //used by nfw
+    real_0 originmass; //need to know original mass for derivatives
     real_0 r200; // virial radius
 } Dwarf;
 
@@ -178,7 +179,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
