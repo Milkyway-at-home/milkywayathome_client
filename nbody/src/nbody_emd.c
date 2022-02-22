@@ -210,9 +210,7 @@ static real emdDistL2(const real* x, const real* y, void* user_param)
         s = mw_hypot(&s, &tmp);
     }
 
-    real ans = mw_sqrt(&s);
-
-    return ans;
+    return s;
 }
 
 static real emdDistC(const real* x, const real* y, void* user_param)
@@ -1240,6 +1238,8 @@ static real emdComputeTotalFlow(EMDState* state, real* flow)
 
         if (ci >= 0 && cj >= 0)
         {
+            //mw_printf("val = %.15f\n", showRealValue(&val));
+            //mw_printf("cost[%u][%u] = %.15f\n", i, j, state->cost[i][j]);
             tmp = mw_mul_s(&val, state->cost[i][j]);
             totalCost = mw_add(&totalCost, &tmp);
 
