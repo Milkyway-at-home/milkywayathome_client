@@ -36,7 +36,6 @@
 static const real h = mw_pow_0(2.0,-12.0);
 static const real thresh = 0.1;
 static const real mass_thresh = 1.0/222288.47; /*1 Solar Mass*/
-static const real pi = 3.1415926535;
 
 static const int nPotentials = 10;
 static const int nPositions = 40;
@@ -138,12 +137,12 @@ static inline mwbool checkPoisson(const Potential* pot, mwvector* pos)//const po
     }
     else
     {
-        diff = mw_abs_0(1.0 + 4.0*pi*M_enc/flux);
+        diff = mw_abs_0(1.0 + 4.0*M_PI*M_enc/flux);
     }
     //mw_printf("%.15f,", diff);
     if (diff > thresh)
     {
-        mw_printf("|1 + 4*pi*M_enc/flux| = |1 + %.15f/%.15f| = %.15f\n", 4.0*pi*M_enc, flux, diff);
+        mw_printf("|1 + 4*pi*M_enc/flux| = |1 + %.15f/%.15f| = %.15f\n", 4.0*M_PI*M_enc, flux, diff);
         mw_printf("  Potential = %s\n", showPotential(pot));
         return 1;
     }

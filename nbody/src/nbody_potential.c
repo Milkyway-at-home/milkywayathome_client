@@ -761,24 +761,28 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector* pos)
     real tmp1, tmp2;
 
     const real v0 = mw_real_var(halo->vhalo, HALO_MASS_POS);
-    const real d  = mw_real_var(halo->scaleLength, HALO_RADIUS_POS);
     const real q  = mw_real_var(halo->flattenZ, HALO_ZFLATTEN_POS);
+    const real d  = mw_real_var(halo->scaleLength, HALO_RADIUS_POS);
 
-    tmp1 = mw_hypot(&d, &X(pos));
-    tmp1 = mw_hypot(&tmp1, &Y(pos));
-    tmp2 = mw_div(&Z(pos), &q);
-    const real denom = mw_hypot(&tmp1, &tmp2);
+    tmp1 = mw_div(&Z(pos), &q);
+    tmp1 = sqr(&tmp1);
+    tmp2 = sqr(&Y(pos));
+    tmp1 = mw_add(&tmp2, &tmp1);
+    tmp2 = sqr(&X(pos));
+    tmp1 = mw_add(&tmp2, &tmp1);
+    tmp2 = sqr(&d);
+    const real denom = mw_add(&tmp2, &tmp1);
 
     tmp1 = sqr(&v0);
     tmp1 = mw_div(&tmp1, &denom);
     const real k = mw_mul_s(&tmp1, -2.0);
 
-    X(&acc) = mw_mul(&k, &X(pos));
-    Y(&acc) = mw_mul(&k, &Y(pos));
+    acc.x = mw_mul(&k, &X(pos));
+    acc.y = mw_mul(&k, &Y(pos));
 
     tmp1 = sqr(&q);
     tmp1 = mw_div(&Z(pos), &tmp1);
-    Z(&acc) = mw_mul(&k, &tmp1);
+    acc.z = mw_mul(&k, &tmp1);
 
     return acc;
 }

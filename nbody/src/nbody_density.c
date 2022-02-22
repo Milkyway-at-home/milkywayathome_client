@@ -17,40 +17,6 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-    /*When initializing a real parameter that we want to differentiate over,
-      we must specify which rows and columns of the gradient and hessian attributes
-      carry the derivatives with respect to that parameter. These are the parameters
-      we currently differentiate over and their assigned column number n.
-
-      +----PARAMETER---------------------------n----------+
-           Backwards Evolution Time            0
-           Time Ratio                          1
-           Baryonic Plummer Radius             2
-           Radius Ratio                        3
-           Baryonic Mass                       4
-           Mass Ratio                          5
-           Orbital b coord                     6
-           Orbital r coord                     7
-           Orbital vx coord                    8
-           Orbital vy coord                    9
-           Orbital vz coord                   10
-           MW Bulge Mass                      11
-           MW Bulge Radius                    12
-           MW Disk Mass                       13
-           MW Disk Scale Length               14
-           MW Disk Scale Height               15
-           MW Halo Mass (or Scale Velocity)   16
-           MW Halo Scale Radius               17
-           MW Halo Flattening Parameter (Z)   18
-           LMC Mass                           19
-           LMC Scale Radius                   20
-
-      FIXME: Most of our Halo models use more parameters that we are not listed here.
-      As such, only a Logarithmic Halo and a single Miyamoto-Nagai disk can be used
-      with AUTODIFF. To use other models, you will need to either reassign some numbers
-      or add more parameters to the list. The number of model parameters to differentiate
-      over can be found in milkyway_math_autodiff.h*/
-
 /*Spherical Buldge Densities*/
 static inline real hernquistSphericalDensity(const Spherical* sph, real* r)
 {
@@ -263,42 +229,42 @@ static inline real orbitingBarDensity(const Disk* disk, mwvector* pos, real_0 ti
 static inline real logarithmicHaloDensity(const Halo* h, mwvector* pos) /** flattenZ should be greater than 1/sqrt(2) to keep positive definite **/
 {
     real tmp1, tmp2, tmp3;
-    const real v  = mw_real_var(h->vhalo, HALO_MASS_POS);
-    const real a  = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
-    const real q  = mw_real_var(h->flattenZ, HALO_ZFLATTEN_POS);
 
-    tmp1 = sqr(&X(pos));
-    tmp2 = sqr(&Y(pos));
-    const real R2 = mw_add(&tmp1, &tmp2);
+    const real v  = mw_real_var(h->vhalo, HALO_MASS_POS);
+    const real q  = mw_real_var(h->flattenZ, HALO_ZFLATTEN_POS);
+    const real a  = mw_real_var(h->scaleLength, HALO_RADIUS_POS);
+    const real R = mw_hypot(&X(pos), &Y(pos));
 
     tmp1 = sqr(&q);
     tmp1 = mw_mul_s(&tmp1, 2.0);
     tmp1 = mw_add_s(&tmp1, 1.0);
     tmp2 = sqr(&a);
     tmp1 = mw_mul(&tmp1, &tmp2);
-    tmp1 = mw_add(&tmp1, &R2);
-    tmp2 = sqr(&Z(pos));
-    tmp3 = sqr(&q);
-    tmp3 = inv(&tmp3);
-    tmp3 = mw_neg(&tmp3);
-    tmp3 = mw_add_s(&tmp3, 2.0);
-    tmp2 = mw_mul(&tmp2, &tmp3);
+    tmp2 = sqr(&R);
+    tmp1 = mw_add(&tmp1, &tmp2);
+    tmp2 = sqr(&q);
+    tmp2 = inv(&tmp2);
+    tmp2 = mw_neg(&tmp2);
+    tmp2 = mw_add_s(&tmp2, 2.0);
+    tmp3 = sqr(&Z(pos));
+    tmp2 = mw_mul(&tmp3, &tmp2);
     real numer = mw_add(&tmp1, &tmp2);
 
-    tmp1 = sqr(&q);
+    tmp1 = mw_div(&Z(pos), &q);
+    tmp1 = sqr(&tmp1);
     tmp2 = sqr(&a);
-    tmp2 = mw_add(&R2, &tmp2);
-    tmp3 = mw_div(&Z(pos), &q);
-    tmp3 = sqr(&tmp3);
-    tmp2 = mw_add(&tmp2, &tmp3);
-    tmp2 = sqr(&tmp2);
-    real denom = mw_mul(&tmp1, &tmp2);
+    tmp1 = mw_add(&tmp2, &tmp1);
+    tmp2 = sqr(&R);
+    tmp1 = mw_add(&tmp2, &tmp1);
+    tmp2 = sqr(&q);
+    tmp1 = sqr(&tmp1);
+    real denom = mw_mul(&tmp2, &tmp1);
 
-    tmp1 = sqr(&v);
-    tmp1 = mw_mul(&tmp1,&numer);
-    tmp1 = mw_div(&tmp1,&denom);
-
-    return mw_mul_s(&tmp1, inv_0(2.0*M_PI));
+    real density = sqr(&v);
+    density = mw_mul(&density, &numer);
+    density = mw_div(&density, &denom);
+    density = mw_mul_s(&density, 0.5/M_PI);
+    return density;
 }
 
 static inline real NFWHaloDensity(const Halo* h,  real* r)
