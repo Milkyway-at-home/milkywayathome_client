@@ -63,12 +63,13 @@ static const Body _emptyBody = EMPTY_BODY;
 static int createBody(lua_State* luaSt)
 {
     static Body b = EMPTY_BODY;
+    static real_0 bodyMass = 0.0;
     static mwvector* x = NULL;
     static mwvector* v = NULL;
     static mwbool ignore = FALSE;
     static const MWNamedArg argTable[] =
         {
-            { "mass",     LUA_TNUMBER,   REAL_TYPE,     TRUE,  &b.bodynode.mass },
+            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &bodyMass        },
             { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x               },
             { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v               },
             { "ignore",   LUA_TBOOLEAN,  NULL,          FALSE, &ignore          },
@@ -85,7 +86,7 @@ static int createBody(lua_State* luaSt)
 
         case 3:
         case 4:
-            b.bodynode.mass = *checkReal(luaSt, 1);
+            bodyMass = luaL_checknumber(luaSt, 1);
             x = checkVector(luaSt, 2);
             v = checkVector(luaSt, 3);
             ignore = mw_lua_optboolean(luaSt, 4, FALSE);
@@ -95,6 +96,7 @@ static int createBody(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
     }
 
+    b.bodynode.mass = mw_real_const(bodyMass);
     b.bodynode.pos = *x;
     b.vel = *v;
     b.bodynode.type = BODY(ignore);

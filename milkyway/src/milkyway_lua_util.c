@@ -214,10 +214,10 @@ static int doWithArgs(lua_State* luaSt, const char** args, unsigned int nArgs)
     //mw_printf("Checking pcall...\n");
     if (lua_pcall(luaSt, nArgs, 0, 0))
     {
-        mw_printf("FAILED...\n");
+        //mw_printf("FAILED...\n");
         return 1;
     }
-    mw_printf("SUCCESS!\n");
+    //mw_printf("SUCCESS!\n");
 
     return 0;
 }
@@ -236,11 +236,11 @@ int dofileWithArgs(lua_State* luaSt,
                    const char** args,
                    unsigned int nArgs)
 {
-    mw_printf("BEFORE CHECK 1\n");
+    //mw_printf("BEFORE CHECK 1\n");
     int check1 = luaL_loadfile(luaSt, filename);
-    mw_printf("BEFORE CHECK 2\n");
+    //mw_printf("BEFORE CHECK 2\n");
     int check2 = doWithArgs(luaSt, args, nArgs);
-    mw_printf("AFTER CHECKS\n");
+    //mw_printf("AFTER CHECKS\n");
     return check1 || check2;
 }
 
