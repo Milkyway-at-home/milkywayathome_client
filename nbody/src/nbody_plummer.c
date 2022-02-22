@@ -86,7 +86,7 @@ static inline real_0 plummerRandomV(dsfmt_t* dsfmtState, real_0 r)
 static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector* rshift, real* rsc, real_0 r)
 {
     mwvector pos;
-    real tmp = mw_mul_s(&rsc, r);
+    real tmp = mw_mul_s(rsc, r);
 
     pos = pickShell(dsfmtState, &tmp);  /* pick scaled position */
     pos = mw_addv(&pos, rshift);               /* move the position */
@@ -100,7 +100,7 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector* vshift
     real_0 v;
 
     v = plummerRandomV(dsfmtState, r);
-    real tmp = mw_mul_s(&vsc, v);
+    real tmp = mw_mul_s(vsc, v);
     vel = pickShell(dsfmtState, &tmp);   /* pick scaled velocity */
     vel = mw_addv(&vel, vshift);                /* move the velocity */
     
@@ -154,7 +154,9 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
         
         b.bodynode.id = i + 1;
         b.bodynode.pos = plummerBodyPosition(prng, rShift, radiusScale, r);
+        //mw_printf("POS = [ %.15f, %.15f, %.15f ]\n", showRealValue(&b.bodynode.pos.x), showRealValue(&b.bodynode.pos.y), showRealValue(&b.bodynode.pos.z));
         b.vel = plummerBodyVelocity(prng, vShift, &velScale, r);
+        //mw_printf("VEL = [ %.15f, %.15f, %.15f ]\n", showRealValue(&b.vel.x), showRealValue(&b.vel.y), showRealValue(&b.vel.z));
 
         assert(nbPositionValid(&b.bodynode.pos));
 

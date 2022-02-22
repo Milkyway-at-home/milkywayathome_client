@@ -35,6 +35,7 @@ function getTestNBodyState(t)
    ctx = NBodyCtx.create{
       timestep    = dt,
       timeEvolve  = 42.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
+      timeBack    = 42.0,
       theta       = t.theta,
       eps2        = eps2,
       b           = 53.5,

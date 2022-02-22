@@ -40,89 +40,43 @@ int main()
     const int nTests = 100000;
     const real_0 ZERO_THRESHOLD = 1.0e-7;
 
-    real x, xp, xm;
-    real wronskian;
-    real i0_derv;
-    real i1_derv;
-    real k0_derv;
-    real k1_derv;
-    real comp_wron;
-
+    real_0 x;
+    real_0 wronskian;
+    real_0 i0_derv;
+    real_0 i1_derv;
+    real_0 k0_derv;
+    real_0 k1_derv;
+    real_0 comp_wron;
     real_0 comp_i0;
     real_0 comp_i1;
     real_0 comp_k0;
     real_0 comp_k1;
 
-    real_0 bI0;
-    real_0 bK0;
-    real_0 bI1;
-    real_0 bK1;
-
-    real tmp1, tmp2, tmp3;
-
     for (int j=0; j<nTests; j++) {
         int fails = 0;
-        x = mw_real_const(((real_0)rand()/(real_0)RAND_MAX)*(max_val - min_val) + min_val);
-        xp = mw_add_s(&x, step);
-        xm = mw_add_s(&x, -step);
-        
+        x = ((real_0)rand()/(real_0)RAND_MAX)*(max_val - min_val) + min_val;
         //mw_printf("X = %.15f\n",x);
         //mw_printf("I0(X) = %.15f\n", besselI0(x));
         //mw_printf("I1(X) = %.15f\n", besselI1(x));
         //mw_printf("K0(X) = %.15f\n", besselK0(x));
         //mw_printf("K1(X) = %.15f\n", besselK1(x));
 
-        tmp1 = besselI0(&x);
-        tmp2 = besselK1(&x);
-        tmp1 = mw_mul(&tmp1, &tmp2);
-        tmp2 = besselI1(&x);
-        tmp3 = besselK0(&x);
-        tmp2 = mw_mul(&tmp2, &tmp3);
-        wronskian = mw_add(&tmp1, &tmp2);
+        wronskian = besselI0(x)*besselK1(x) + besselI1(x)*besselK0(x);
+        i0_derv = (besselI0(x+step)-besselI0(x-step))/2.0/step;
+        k0_derv = (besselK0(x+step)-besselK0(x-step))/2.0/step;
+        i1_derv = (besselI1(x+step)-besselI1(x-step))/2.0/step;
+        k1_derv = (besselK1(x+step)-besselK1(x-step))/2.0/step;
 
-        tmp1 = besselI0(&xp);
-        tmp2 = besselI0(&xm);
-        tmp1 = mw_sub(&tmp1, &tmp2);
-        i0_derv = mw_mul_s(&tmp1, 0.5/step);
+        comp_wron = mw_abs_0(wronskian - 1.0/x)*x;
+        comp_i0 = mw_abs_0(i0_derv - besselI1(x))/besselI1(x);
+        comp_k0 = mw_abs_0(k0_derv + besselK1(x))/besselK1(x);
+        comp_i1 = mw_abs_0(i1_derv - besselI0(x) + besselI1(x)/x)/i1_derv;
+        comp_k1 = -mw_abs_0(k1_derv + besselK0(x) + besselK1(x)/x)/k1_derv;
 
-        tmp1 = besselK0(&xp);
-        tmp2 = besselK0(&xm);
-        tmp1 = mw_sub(&tmp1, &tmp2);
-        k0_derv = mw_mul_s(&tmp1, 0.5/step);
-
-        tmp1 = besselI1(&xp);
-        tmp2 = besselI1(&xm);
-        tmp1 = mw_sub(&tmp1, &tmp2);
-        i1_derv = mw_mul_s(&tmp1, 0.5/step);
-
-        tmp1 = besselK1(&xp);
-        tmp2 = besselK1(&xm);
-        tmp1 = mw_sub(&tmp1, &tmp2);
-        k1_derv = mw_mul_s(&tmp1, 0.5/step);
-
-        tmp1 = inv(&x);
-        tmp1 = mw_sub(&wronskian, &tmp1);
-        tmp1 = mw_abs(&tmp1);
-        comp_wron = mw_mul(&tmp1, &x);
-
-        tmp1 = besselI0(&x);
-        bI0 = showRealValue(&tmp1);
-        tmp1 = besselK0(&x);
-        bK0 = showRealValue(&tmp1);
-        tmp1 = besselI1(&x);
-        bI1 = showRealValue(&tmp1);
-        tmp1 = besselK1(&x);
-        bK1 = showRealValue(&tmp1);
-
-        comp_i0 = mw_abs_0(showRealValue(&i0_derv) - bI1)/bI1;
-        comp_k0 = mw_abs_0(showRealValue(&k0_derv) + bK1)/bK1;
-        comp_i1 = mw_abs_0(showRealValue(&i1_derv) - bI0 + bI1/showRealValue(&x))/showRealValue(&i1_derv);
-        comp_k1 = -mw_abs_0(showRealValue(&k1_derv) + bK0 + bK1/showRealValue(&x))/showRealValue(&k1_derv);
-
-        if(showRealValue(&comp_wron) > ZERO_THRESHOLD) {
+        if(comp_wron > ZERO_THRESHOLD) {
             fails += 1;
             wronsk_fails += 1;
-            //mw_printf("Wronskian Error = %.15f\n",showRealValue(&comp_wron));
+            //mw_printf("Wronskian Error = %.15f\n",comp_wron);
         }
 
         if(comp_i0 > ZERO_THRESHOLD) {

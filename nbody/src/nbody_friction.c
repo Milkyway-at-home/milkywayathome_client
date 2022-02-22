@@ -114,10 +114,10 @@ static inline real CoulombLogPlummer(real* scale_plummer, real* scale_mwhalo){
     u = mw_mul(scale_plummer, &tmp1); /** LMC scale radius times smallest wavenumber (k_min) **/
 
     tmp1 = sqr(&u);
-    tmp2 = besselK0(&u);
-    tmp3 = besselK2(&u);
+    tmp2 = mw_besselK0(&u);
+    tmp3 = mw_besselK2(&u);
     tmp2 = mw_mul(&tmp2, &tmp3);
-    tmp3 = besselK1(&u);
+    tmp3 = mw_besselK1(&u);
     tmp3 = sqr(&tmp3);
     tmp2 = mw_sub(&tmp2, &tmp3);
     tmp1 = mw_mul(&tmp1, &tmp2);

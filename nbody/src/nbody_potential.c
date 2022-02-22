@@ -164,11 +164,11 @@ static inline real RSechIntegrand (real* k, real* R, real* Rd, real* z, real* zd
 
     tmp1 = aExp(k,R,Rd);
     tmp2 = mw_mul(k,R);
-    tmp2 = besselK1(&tmp2);
+    tmp2 = mw_besselK1(&tmp2);
     tmp1 = mw_mul(&tmp1,&tmp2);
     tmp2 = bExp(k,R,Rd);
     tmp3 = mw_mul(k,R);
-    tmp3 = besselI1(&tmp3);
+    tmp3 = mw_besselI1(&tmp3);
     tmp2 = mw_mul(&tmp2,&tmp3);
     real ExpStuff = mw_sub(&tmp1, &tmp2);
 
@@ -192,11 +192,11 @@ static inline real ZSechIntegrand (real* k, real* R, real* Rd, real* z, real* zd
 
     tmp1 = aExp(k,R,Rd);
     tmp2 = mw_mul(k,R);
-    tmp2 = besselK0(&tmp2);
+    tmp2 = mw_besselK0(&tmp2);
     tmp1 = mw_mul(&tmp1,&tmp2);
     tmp2 = bExp(k,R,Rd);
     tmp3 = mw_mul(k,R);
-    tmp3 = besselI0(&tmp3);
+    tmp3 = mw_besselI0(&tmp3);
     tmp2 = mw_mul(&tmp2,&tmp3);
     real ExpStuff = mw_sub(&tmp1, &tmp2);
 
@@ -404,14 +404,15 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
 
     const real R = mw_hypot(&X(pos), &Y(pos));
     mwvector R_hat;
-    X(&R_hat) = mw_div(&X(pos), &R);
-    Y(&R_hat) = mw_div(&Y(pos), &R);
-    Z(&R_hat) = ZERO_REAL;
+    R_hat.x = mw_div(&X(pos), &R);
+    R_hat.y = mw_div(&Y(pos), &R);
+    R_hat.z = ZERO_REAL;
 
     mwvector Z_hat;
-    X(&Z_hat) = ZERO_REAL;
-    Y(&Z_hat) = ZERO_REAL;
-    Z(&Z_hat) = mw_real_const(1.0);
+    Z_hat.x = ZERO_REAL;
+    Z_hat.y = ZERO_REAL;
+    Z_hat.z = mw_real_const(1.0);
+    //mw_printf("Z_hat = [ %.15f, %.15f, %.15f ]\n", showRealValue(&Z_hat.x), showRealValue(&Z_hat.y), showRealValue(&Z_hat.z));
 
     const real M    = mw_real_var(disk->mass, DISK_MASS_POS);
     const real Rd   = mw_real_var(disk->scaleLength, DISK_LENGTH_POS);
@@ -430,7 +431,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
     real_0 psi_0;
     real_0 psi_prime_0;
     real_0 j0_x;
-    real j0_w;
+    real_0 j0_w;
     real fun_0;
 
     real_0 j1_zero;
@@ -438,7 +439,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
     real_0 psi_1;
     real_0 psi_prime_1;
     real_0 j1_x;
-    real j1_w;
+    real_0 j1_w;
     real fun_1;
 
     real tmp1, tmp2, tmp3, tmp4;
@@ -456,21 +457,8 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
         j0_x = M_PI / h * psi_0;
         j1_x = M_PI / h * psi_1;
 
-        tmp1 = mw_real_const(j0_x);
-        tmp1 = besselJ0(&tmp1);
-        tmp2 = mw_real_const(M_PI * j0_zero);
-        tmp2 = besselJ1(&tmp2);
-        tmp2 = sqr(&tmp2);
-        tmp1 = mw_div(&tmp1, &tmp2);
-        j0_w = mw_mul_s(&tmp1, 2.0 / (M_PI * j0_zero) * psi_prime_0);
-
-        tmp1 = mw_real_const(j1_x);
-        tmp1 = besselJ1(&tmp1);
-        tmp2 = mw_real_const(M_PI * j1_zero);
-        tmp2 = besselJ2(&tmp2);
-        tmp2 = sqr(&tmp2);
-        tmp1 = mw_div(&tmp1, &tmp2);
-        j1_w = mw_mul_s(&tmp1, 2.0 / (M_PI * j1_zero) * psi_prime_1);
+        j0_w = 2.0 / (M_PI * j0_zero * sqr_0(besselJ1(M_PI * j0_zero))) * besselJ0(j0_x) * psi_prime_0;
+        j1_w = 2.0 / (M_PI * j1_zero * sqr_0(besselJ2(M_PI * j1_zero))) * besselJ1(j1_x) * psi_prime_1;
 
         tmp1 = inv(&R);
         real j0_x_R = mw_mul_s(&tmp1, j0_x);
@@ -519,13 +507,17 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
         tmp1 = mw_mul(&a, &b);
         tmp1 = mw_div(&tmp1, &R);
         tmp1 = mw_mul(&tmp1, &fun_0);
-        tmp1 = mw_mul(&tmp1, &j0_w);
+        tmp1 = mw_mul_s(&tmp1, j0_w);
+        //mw_printf("fun_0 = %.15f\n", showRealValue(&fun_0));
+        //mw_printf("j0_w  = %.15f\n", j0_w);
+        //mw_printf("tmp1  = %.15f\n", showRealValue(&tmp1));
         real z_pieceAdd = mw_mul_s(&tmp1, 4.0 * M_PI);
+
 
         tmp1 = sqr(&R);
         tmp1 = mw_div(&a, &tmp1);
         tmp1 = mw_mul(&tmp1, &fun_1);
-        tmp1 = mw_mul(&tmp1, &j1_w);
+        tmp1 = mw_mul_s(&tmp1, j1_w);
         real R_pieceAdd = mw_mul_s(&tmp1, 4.0 * M_PI);
         
         z_piece = mw_add(&z_piece, &z_pieceAdd);
@@ -540,24 +532,27 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
     mwvector R_comp;
     R_comp.x = mw_mul(&R_hat.x, &tmp1);
     R_comp.y = mw_mul(&R_hat.y, &tmp1);
-    R_comp.z = mw_mul(&R_hat.z, &tmp1);
+    R_comp.z = ZERO_REAL;
+    //mw_printf("R_comp = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&R_comp)), showRealValue(&Y(&R_comp)), showRealValue(&X(&R_comp)));
 
     tmp1 = sqr(&a);
     tmp1 = mw_mul(&M, &tmp1);
     tmp1 = mw_mul(&tmp1, &b);
     tmp1 = mw_mul(&tmp1, &z_piece);
     tmp1 = mw_mul_s(&tmp1, -1.0 / 4.0 / M_PI);
+    //mw_printf("tmp1  = %.15f\n", showRealValue(&tmp1));
     mwvector Z_comp;
-    Z_comp.x = mw_mul(&Z_hat.x, &tmp1);
-    Z_comp.y = mw_mul(&Z_hat.y, &tmp1);
+    Z_comp.x = ZERO_REAL;
+    Z_comp.y = ZERO_REAL;
     Z_comp.z = mw_mul(&Z_hat.z, &tmp1);
+    //mw_printf("Z_comp = [%.15f,%.15f,%.15f]\n", showRealValue(&Z_comp.x), showRealValue(&Z_comp.y), showRealValue(&Z_comp.z));
 
     X(&acc) = mw_add(&X(&R_comp), &X(&Z_comp));
     Y(&acc) = mw_add(&Y(&R_comp), &Y(&Z_comp));
     Z(&acc) = mw_add(&Z(&R_comp), &Z(&Z_comp));
 
     //real magnitude = mw_hypot(mw_hypot(X(acc), Y(acc)), Z(acc));
-    //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
+    //mw_printf("acc = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)), showRealValue(&Y(&acc)), showRealValue(&X(&acc)));
     return acc;
 }
 
@@ -1105,6 +1100,10 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         default:
             mw_fail("Invalid primary disk type in external acceleration\n");
     }
+    if( isnan(showRealValue(&X(&acc))) || isnan(showRealValue(&Y(&acc))) || isnan(showRealValue(&Y(&acc))) )
+    {
+        mw_printf("BAD DISK: %s\n", showDiskT(pot->disk.type));
+    }
     //mw_printf("Disk  Acceleration = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)), showRealValue(&Y(&acc)), showRealValue(&Z(&acc)));
 
     /*Calculate Second Disk Accelerations*/
@@ -1133,6 +1132,10 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         case InvalidDisk:
         default:
             mw_fail("Invalid secondary disk type in external acceleration\n");
+    }
+    if( isnan(showRealValue(&X(&acctmp))) || isnan(showRealValue(&Y(&acctmp))) || isnan(showRealValue(&Y(&acctmp))) )
+    {
+        mw_printf("BAD DISK2: %s\n", showDiskT(pot->disk2.type));
     }
     acc = mw_addv(&acc, &acctmp);
     //mw_printf("Disk2 Acceleration = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acctmp)), showRealValue(&Y(&acctmp)), showRealValue(&Z(&acctmp)));
@@ -1180,6 +1183,10 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         default:
             mw_fail("Invalid halo type in external acceleration\n");
     }
+    if( isnan(showRealValue(&X(&acctmp))) || isnan(showRealValue(&Y(&acctmp))) || isnan(showRealValue(&Y(&acctmp))) )
+    {
+        mw_printf("BAD HALO: %s\n", showHaloT(pot->halo.type));
+    }
     acc = mw_addv(&acc, &acctmp);
     //mw_printf("Halo  Acceleration = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acctmp)), showRealValue(&Y(&acctmp)), showRealValue(&Z(&acctmp)));
     //mw_printf("Total Acceleration = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)), showRealValue(&Y(&acc)), showRealValue(&Z(&acc)));
@@ -1201,6 +1208,10 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector* pos, real_0 time)
         case InvalidSpherical:
         default:
             mw_fail("Invalid bulge type in external acceleration\n");
+    }
+    if( isnan(showRealValue(&X(&acctmp))) || isnan(showRealValue(&Y(&acctmp))) || isnan(showRealValue(&Y(&acctmp))) )
+    {
+        mw_printf("BAD BULGE: %s\n", showSphericalT(pot->sphere[0].type));
     }
     acc = mw_addv(&acc, &acctmp);
     //mw_printf("Bulge Acceleration = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acctmp)), showRealValue(&Y(&acctmp)), showRealValue(&Z(&acctmp)));

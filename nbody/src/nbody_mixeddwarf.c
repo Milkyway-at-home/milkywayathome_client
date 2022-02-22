@@ -1726,6 +1726,59 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             z[i] = vec.z;
         }
 
+      #if AUTODIFF // Calculating the initial dwarf derivatives is time consuming, so we are multithreading this process alone
+          //mw_printf("    Calculating initial dwarf derivatives...\n");
+          real r_val, v_val;
+          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac;
+        #ifdef _OPENMP
+          real_0 t = omp_get_wtime();
+          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
+        #else
+          clock_t t;
+          t = clock();
+        #endif
+          for (i = 0; i < nbody; i++)
+          {      
+              // Get dwarf derivative information for radius     
+              r_val = mw_hypot(&x[i], &y[i]);
+              r_val = mw_hypot(&r_val, &z[i]);
+              x_frac = x[i].value / r_val.value;
+              y_frac = y[i].value / r_val.value;
+              z_frac = z[i].value / r_val.value;
+              if (i < half_bodies)
+              {
+                  getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, TRUE);
+              }
+              else if(i >= half_bodies)
+              {
+                  getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, FALSE);
+              }
+              x[i] = mw_mul_s(&r_val, x_frac);
+              y[i] = mw_mul_s(&r_val, y_frac);
+              z[i] = mw_mul_s(&r_val, z_frac);
+
+              // Get dwarf derivative information for velocity     
+              v_val = mw_hypot(&vx[i], &vy[i]);
+              v_val = mw_hypot(&v_val, &vz[i]);
+              vx_frac = vx[i].value / v_val.value;
+              vy_frac = vy[i].value / v_val.value;
+              vz_frac = vz[i].value / v_val.value;
+              getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2);
+              vx[i] = mw_mul_s(&v_val, vx_frac);
+              vy[i] = mw_mul_s(&v_val, vy_frac);
+              vz[i] = mw_mul_s(&v_val, vz_frac);
+              //mw_printf("      Particle %u logged\n", i+1);
+              //printReal(&r_val, "Radius");
+              //printReal(&v_val, "Velocity");
+          }
+        #ifdef _OPENMP
+          real_0 time_taken = omp_get_wtime() - t;
+        #else
+          t = clock() - t;
+          real_0 time_taken = ((real_0)t)/CLOCKS_PER_SEC; // in seconds
+        #endif
+          //mw_printf("    Derivative calculation took %.3f seconds\n", time_taken);
+      #endif
 
         /* getting the center of mass and momentum correction */
 		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component

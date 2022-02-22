@@ -119,6 +119,7 @@ static int dsfmtRandomListItem(lua_State* luaSt)
 static int dsfmtRandomVector(lua_State* luaSt)
 {
     dsfmt_t* dsfmtState;
+    real_0 r_val;
     real r;
     int nArgs;
 
@@ -129,7 +130,8 @@ static int dsfmtRandomVector(lua_State* luaSt)
     else if (nArgs == 2)
     {
         dsfmtState = checkDSFMT(luaSt, 1);
-        r = *checkReal(luaSt, 2);
+        r_val = luaL_checknumber(luaSt, 2);
+        r = mw_real_const(r_val);
         pushVector(luaSt, mwRandomVector(dsfmtState, &r));
         return 1;
     }

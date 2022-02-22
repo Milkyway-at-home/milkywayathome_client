@@ -65,7 +65,7 @@ else
   mkdir test_env
   cd test_env
 
-  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
+  cmake -DCMAKE_BUILD_TYPE=Debug -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
 
   make blind_test
   make sanity

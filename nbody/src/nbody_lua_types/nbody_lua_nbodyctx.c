@@ -89,7 +89,7 @@ static int createNBodyCtx(lua_State* luaSt)
         {
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
-            { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },
+            { "timeBack",      LUA_TNUMBER,  NULL, TRUE, &ctx.timeBack      },
             { "theta",         LUA_TNUMBER,  NULL, FALSE, &ctx.theta         },
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },

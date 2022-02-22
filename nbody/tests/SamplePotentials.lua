@@ -478,7 +478,7 @@ SamplePotentials.randomHalo = function(prng)
    elseif (typ == 9) then
       return Halo.ninkovic{
          rho0        = prng:random(5.0, 50.0),
-         scaleLength = prng:random(0.1, 30),
+         scaleLength = prng:random(0.1, 30.0),
          lambda      = prng:random(30.0, 150.0)
       }
    else

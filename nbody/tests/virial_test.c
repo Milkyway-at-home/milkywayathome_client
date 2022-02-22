@@ -56,7 +56,7 @@ int main()
         }
 
         rhs = nbCalculateVirial(a_b, a_d, M_b, M_d);
-        comp = mw_abs(lhs-rhs);
+        comp = mw_abs_0(lhs-rhs);
 
         if (comp > ZERO_THRESHOLD) {
             mw_printf("LHS = %.15f\n", lhs);

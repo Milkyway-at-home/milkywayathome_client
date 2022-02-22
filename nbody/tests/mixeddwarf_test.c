@@ -42,8 +42,8 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 		real vz = vel[i].z;
 		real m  = mass[i];
 		
-		real r = mw_sqrt(sqr(x) + sqr(y) + sqr(z));
-		real v = sqr(vx) + sqr(vy) + sqr(vz);
+		real r = mw_sqrt_0(sqr_0(x) + sqr_0(y) + sqr_0(z));
+		real v = sqr_0(vx) + sqr_0(vy) + sqr_0(vz);
 		
 		T += m * v;
 
@@ -51,7 +51,7 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 
 		for(unsigned int j = i + 1; j < numBodies; j++)
 		{
-			real rij = mw_sqrt(sqr(x - pos[j].x) + sqr(y - pos[j].y) + sqr(z - pos[j].z));
+			real rij = mw_sqrt_0(sqr_0(x - pos[j].x) + sqr_0(y - pos[j].y) + sqr_0(z - pos[j].z));
 			U2 += 2.0 * m * mass[j] / rij;
 		}
 	}
@@ -63,12 +63,12 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 	real ratio_1 = U1 / T / 2.0;
 	real ratio_2 = U2 / T / 2.0;
 
-	if (mw_fabs(1.0 - ratio_1) > TOL)
+	if (mw_fabs_0(1.0 - ratio_1) > TOL)
 	{
 		failed += 1;
 		printf("\t Virial test 1 failed, unstable structure- T: %1f U1: %1f ratio_1: %1f\n", T, U1, ratio_1);
 	}
-	if (mw_fabs(1.0 - ratio_2) > TOL)
+	if (mw_fabs_0(1.0 - ratio_2) > TOL)
 	{
 		failed += 1;
 		printf("\tVirial test 2 failed, gravitationally unstable- T: %1f U2: %1f ratio_2: %1f\n", T, U2, ratio_2);
@@ -135,8 +135,8 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 	cm_vy_comp1 /= totalMass_l;
 	cm_vz_comp1 /= totalMass_l;
 	
-	if(mw_fabs(cm_x_comp1) > TOL || mw_fabs(cm_y_comp1) > TOL || mw_fabs(cm_z_comp1) > TOL
-		|| mw_fabs(cm_vx_comp1) > TOL || mw_fabs(cm_vy_comp1) > TOL || mw_fabs(cm_vz_comp1) > TOL)
+	if(mw_fabs_0(cm_x_comp1) > TOL || mw_fabs_0(cm_y_comp1) > TOL || mw_fabs_0(cm_z_comp1) > TOL
+		|| mw_fabs_0(cm_vx_comp1) > TOL || mw_fabs_0(cm_vy_comp1) > TOL || mw_fabs_0(cm_vz_comp1) > TOL)
 	{
 		failed += 1;
 		printf("\tFailed: Component 1 is off center, cm_x: %1f cm_y: %1f cm_z: %1f cm_vx: %1f cm_vy: %1f cm_z: %1f\n",
@@ -151,8 +151,8 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 	cm_vy_comp2 /= totalMass_d;
 	cm_vz_comp2 /= totalMass_d;
 	
-	if(mw_fabs(cm_x_comp2) > TOL || mw_fabs(cm_y_comp2) > TOL || mw_fabs(cm_z_comp2) > TOL
-		|| mw_fabs(cm_vx_comp2) > TOL || mw_fabs(cm_vy_comp2) > TOL || mw_fabs(cm_vz_comp2) > TOL)
+	if(mw_fabs_0(cm_x_comp2) > TOL || mw_fabs_0(cm_y_comp2) > TOL || mw_fabs_0(cm_z_comp2) > TOL
+		|| mw_fabs_0(cm_vx_comp2) > TOL || mw_fabs_0(cm_vy_comp2) > TOL || mw_fabs_0(cm_vz_comp2) > TOL)
 	{
 		failed += 1;
 		printf("\tFailed: Component 2 is off center, cm_x: %1f cm_y: %1f cm_z: %1f cm_vx: %1f cm_vy: %1f cm_z: %1f\n",
@@ -167,8 +167,8 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 	real cm_vy_total = (cm_vy_comp1 + cm_vy_comp2) / totalMass;
 	real cm_vz_total = (cm_vz_comp1 + cm_vz_comp2) / totalMass;
 
-	if(mw_fabs(cm_x_total) > TOL || mw_fabs(cm_y_total) > TOL || mw_fabs(cm_z_total) > TOL
-		|| mw_fabs(cm_vx_total) > TOL || mw_fabs(cm_vy_total) > TOL || mw_fabs(cm_vz_total) > TOL)
+	if(mw_fabs_0(cm_x_total) > TOL || mw_fabs_0(cm_y_total) > TOL || mw_fabs_0(cm_z_total) > TOL
+		|| mw_fabs_0(cm_vx_total) > TOL || mw_fabs_0(cm_vy_total) > TOL || mw_fabs_0(cm_vz_total) > TOL)
 	{
 		failed += 1;
 		printf("\tFailed: Total Dwarf is off center, cm_x: %1f cm_y: %1f cm_z: %1f cm_vx: %1f cm_vy: %1f cm_z: %1f\n",
@@ -212,7 +212,7 @@ int testPlummerPlummer()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-plummer\n");
@@ -265,7 +265,7 @@ int testPlummerNFW()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-NFW\n");

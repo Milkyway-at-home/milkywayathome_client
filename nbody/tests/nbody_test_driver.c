@@ -42,8 +42,8 @@
 /* things in NBodyCtx which influence individual steps that aren't the potential. */
 typedef struct
 {
-    real theta;
-    real treeRSize;
+    real_0 theta;
+    real_0 treeRSize;
     criterion_t criterion;
 
     mwbool LMC;
@@ -86,7 +86,7 @@ static void showHash(char* buf, const MWHash* hash)
 static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
 {
     int rc = 1;
-    real n;
+    real_0 n;
     int b;
     const char* str;
 
@@ -196,9 +196,9 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
 {
     static NBodyTest test = EMPTY_NBODYTEST;
     static const char* criterionName = NULL;
-    static real seedf = 0.0;
-    static real nStepsf = 0.0;
-    static real nbodyf = 0.0;
+    static real_0 seedf = 0.0;
+    static real_0 nStepsf = 0.0;
+    static real_0 nbodyf = 0.0;
     static mwbool failed = FALSE;
     static const char* resultHash = NULL;
     static const char* resultName = NULL;
@@ -511,9 +511,9 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
      * for various reasons, such as avoiding depending on openssl and
      * to not include useless / and or less safe versions of
      * functions. */
-    //mw_printf("BEFORE REGISTER\n");
+    mw_printf("BEFORE REGISTER\n");
     registerNBodyState(luaSt);
-    //mw_printf("AFTER REGISTER\n");
+    mw_printf("AFTER REGISTER\n");
 
   #if USE_SSL_TESTS
     installHashFunctions(luaSt);
@@ -527,9 +527,9 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     lua_pushboolean(luaSt, TRUE);
     lua_setglobal(luaSt, "NBODY_TESTING");
 
-    //mw_printf("BEFORE DO FILE\n");
+    mw_printf("BEFORE DO FILE\n");
     rc = dofileWithArgs(luaSt, file, args, nArgs);
-    //mw_printf("AFTER DO FILE\n");
+    mw_printf("AFTER DO FILE\n");
     if (rc)
         mw_lua_perror(luaSt, "Error evaluating script '%s'\n", file);
 
@@ -551,9 +551,9 @@ int main(int argc, const char* argv[])
     }
 
     nbodyTestInit();
-    //mw_printf("BEFORE TEST\n");
+    mw_printf("BEFORE TEST\n");
     rc = runNBodyTest(testScript, &argv[2], argc - 2);
-    //mw_printf("AFTER TEST\n");
+    mw_printf("AFTER TEST\n");
 
     nbodyTestCleanup();
 

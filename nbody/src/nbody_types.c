@@ -407,7 +407,8 @@ static int equalVectorArray(const mwvector* a, const mwvector* b, size_t n)
     {
         if (!equalVector(&a[i], &b[i]))
         {
-            //mw_printf("   Difference = [%.15f,%.15f,%.15f]\n", X(a[i])-X(b[i]),Y(a[i])-Y(b[i]),Z(a[i])-Z(b[i]));
+            mw_printf("a = [ %.15f, %.15f, %.15f ]\n", showRealValue(&a[i].x), showRealValue(&a[i].y), showRealValue(&a[i].z));
+            mw_printf("b = [ %.15f, %.15f, %.15f ]\n", showRealValue(&b[i].x), showRealValue(&b[i].y), showRealValue(&b[i].z));
             return FALSE;
         }
     }
@@ -525,7 +526,10 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
     static const NBodyTree emptyTree = EMPTY_TREE;
     unsigned int nbody = oldSt->nbody;
     st->tree = emptyTree;
+    //st->tree.root = oldSt->tree.root;
     st->tree.rsize = oldSt->tree.rsize;
+    //st->tree.cellUsed = oldSt->tree.cellUsed;
+    //st->tree.maxDepth = oldSt->tree.maxDepth;
 
     st->freeCell = NULL;
 
