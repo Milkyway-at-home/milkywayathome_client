@@ -25,6 +25,7 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
+      timeBack   = 3.945,
       eps2       = calculateEps2(nbody, dwarfRadius),
       b           = 53.4,
       r           = 28.7,
@@ -54,7 +55,8 @@ function makeBodies(ctx, potential)
       position  = lbrToCartesian(ctx, Vector.create(218, 53.4, 28.7)),
       velocity  = Vector.create(-158, 76, 108),
       tstop     = 4.0,
-      dt        = ctx.timestep / 10.0
+      dt        = ctx.timestep / 10.0,
+      sunGCDist = 8.0
    }
 
    return predefinedModels.plummer{
