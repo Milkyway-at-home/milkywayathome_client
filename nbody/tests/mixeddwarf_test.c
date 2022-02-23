@@ -43,9 +43,9 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 		real m  = mass[i];
 		
 		real r = mw_sqrt_0(sqr_0(x) + sqr_0(y) + sqr_0(z));
-		real v = sqr_0(vx) + sqr_0(vy) + sqr_0(vz);
+		real v2 = sqr_0(vx) + sqr_0(vy) + sqr_0(vz);
 		
-		T += m * v;
+		T += m * v2;
 
 		U1 += m * doubleCompPotential(comp1, comp2, r);
 
@@ -197,16 +197,15 @@ int testPlummerPlummer()
 	vshift.y = 0;
 	vshift.z = 0;
 
-    Dwarf* comp1       = mwMalloc(sizeof(Dwarf));
+        Dwarf* comp1       = mwMalloc(sizeof(Dwarf));
 	comp1->type        = Plummer;
 	comp1->mass        = 12.0;
-	comp1->scaleLength = .2;
-	
-	//Make the two plummers identical, an arbtrary choice
+	comp1->scaleLength = 0.2;
+
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
 	comp2->type        = comp1->type;
-	comp2->mass        = comp1->mass;
-	comp2->scaleLength = comp1->scaleLength;
+	comp2->mass        = 24.0;
+	comp2->scaleLength = 0.4;
 
 	dsfmt_t prng;
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
@@ -250,10 +249,10 @@ int testPlummerNFW()
 	vshift.z = 0;
 
 	//The Plummer component
-    Dwarf* comp1       = mwMalloc(sizeof(Dwarf));
-	comp1->type        = Plummer;
-	comp1->mass        = 12.0;
-	comp1->scaleLength = .2;
+        Dwarf* comp1       = mwMalloc(sizeof(Dwarf));
+        comp1->type        = Plummer;
+        comp1->mass        = 12.0;
+        comp1->scaleLength = 0.2;
 	
 	//The NFW component
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
@@ -283,6 +282,59 @@ int testPlummerNFW()
 	return failed;
 }
 
+//make a NFW-NFW dwarf and check it
+int testNFWNFW()
+{
+	int failed = 0;
+	
+	unsigned int numBodies = 40000; //The more bodies, the better the virial ratio will be. This is test in particular requires a lot of bodies to fall within our virial threshold
+	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
+	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
+	real* masses           = mwCalloc(numBodies, sizeof(real));
+	
+	//we want the dwarf to be at the origin
+	mwvector rshift, vshift;
+	rshift.x = 0;
+	rshift.y = 0;
+	rshift.z = 0;
+	vshift.x = 0;
+	vshift.y = 0;
+	vshift.z = 0;
+
+	//The Plummer component
+        Dwarf* comp1       = mwMalloc(sizeof(Dwarf));
+        comp1->type        = NFW;
+        comp1->mass        = 12.0;
+        comp1->scaleLength = 0.2;
+	
+	//The NFW component
+	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
+	comp2->type        = NFW;
+	comp2->mass        = 48.0;
+	comp2->scaleLength = 0.8;
+
+	dsfmt_t prng;
+	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
+
+	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
+	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
+	
+	printf("Checking Virial stability of NFW-NFW\n");
+	failed += checkVirialRatio(comp1, comp2, positions, velocities, masses, numBodies);
+
+	printf("Checking center of mass and momentum of NFW-NFW\n");
+	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies);
+
+	free(positions);
+	free(velocities);
+	free(masses);
+	free(comp1);
+	free(comp2);
+
+	return failed;
+}
+
 
 int main()
 {
@@ -291,6 +343,7 @@ int main()
 
 	failed += testPlummerPlummer();
 	failed += testPlummerNFW();
+	failed += testNFWNFW();
 
 	if(failed == 0)
 	{

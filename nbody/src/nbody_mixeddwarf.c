@@ -609,6 +609,42 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real_0 bound)
     comp->mass = m;
 }
 
+static inline real get_real_nfw_mass(real* mass, real* scale) //This function propagates the needed derivative information of the previous two functions
+{
+    real tmp1, tmp2;
+
+    tmp1 = mw_mul_s(mass, 1.0/(vol_pcrit));
+    real r200 = mw_cbrt(&tmp1);
+
+    real c = mw_div(&r200, scale);
+
+    tmp1 = mw_add_s(&c, 1.0);
+    tmp1 = mw_div(&c, &tmp1);
+    tmp2 = mw_log1p(&c);
+    real term = mw_sub(&tmp2, &tmp1);
+
+    tmp1 = mw_mul_s(&term, 3.0);
+    tmp1 = inv(&tmp1);
+    tmp2 = cube(&c);
+    tmp1 = mw_mul(&tmp1, &tmp2);
+    real p0 = mw_mul_s(&tmp1, 200.0 * pcrit);
+
+    real r = mw_mul_s(&r200, 5.0);
+
+    tmp1 = mw_add(scale, &r);
+    tmp1 = mw_div(&tmp1, scale);
+    tmp1 = mw_log(&tmp1);
+    tmp2 = mw_add(scale, &r);
+    tmp2 = mw_div(&r, &tmp2);
+    tmp1 = mw_sub(&tmp1, &tmp2);
+    tmp2 = cube(scale);
+    tmp1 = mw_mul(&tmp2, &tmp1);
+    tmp1 = mw_mul(&p0, &tmp1);
+    real m = mw_mul_s(&tmp1, 4.0*M_PI);
+
+    return m;
+}
+
 /* AUTODIFF METHODS FOR CALCULATING INITIAL DERIVATIVES */
 #if AUTODIFF
   static inline Dwarf getShiftedDwarf(const Dwarf* comp, real_0 a_b, real_0 xi_R, real_0 M_b, real_0 xi_M, mwbool isLight)
@@ -1152,50 +1188,10 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real_0 bound)
 #endif //AUTODIFF
 
 /*      SAMPLING FUNCTIONS      */
-static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight)
+static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real_0 rho_max, real_0 bound)
 {
     int counter = 0;
-    real_0 r, u, val, bound1, bound2, rho_max;
-    /*finding the max of the individual components*/
-    real_0 rho_max_light = 0;
-    real_0 rho_max_dark  = 0;
-
-    switch(comp1->type)
-    {
-        case Plummer:
-            bound1 =  50.0 * (comp1->scaleLength + comp2->scaleLength);
-            rho_max_light = mw_sqrt_0(2.0 / 3.0) * comp1->scaleLength;
-            break;
-        case NFW:
-            bound1 = 5.0 * comp1->r200;
-            get_extra_nfw_mass(comp1, bound1);
-            rho_max_light = comp1->scaleLength;
-            break;
-        case General_Hernquist:
-            bound1 =  50.0 * (comp1->scaleLength + comp2->scaleLength);
-            rho_max_light = comp1->scaleLength / 2.0;
-            break;
-    }
-
-    switch(comp2->type)
-    {
-        case Plummer:
-            bound2 =  50.0 * (comp1->scaleLength + comp2->scaleLength);
-            rho_max_dark = mw_sqrt_0(2.0 / 3.0) * comp2->scaleLength;
-            break;
-        case NFW:
-            bound2 = 5.0 * comp2->r200;
-            get_extra_nfw_mass(comp2, bound2);
-            rho_max_dark = comp2->scaleLength;
-            break;
-        case General_Hernquist:
-            bound2 =  50.0 * (comp1->scaleLength + comp2->scaleLength);
-            rho_max_dark = comp2->scaleLength / 2.0;
-            break;
-    }
-
-    rho_max_light = 4 * M_PI * sqr_0(rho_max_light) * get_density(comp1, rho_max_light) / comp1->mass;
-    rho_max_dark  = 4 * M_PI * sqr_0(rho_max_dark)  * get_density(comp2, rho_max_dark) / comp2->mass;
+    real_0 r, u, val;
     
     /*this technically calls the massless density but that is fine because
     * the masses would cancel in the denom since 
@@ -1208,18 +1204,9 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp1, const Dwarf* c
      */
     while (1)
     {
-        if(isLight)
-        {
-            r = (real_0)mwXrandom(dsfmtState, 0.0, 1.0) * bound1;
-            rho_max = rho_max_light;
-        }
-        else
-        {
-            r = (real_0)mwXrandom(dsfmtState, 0.0, 1.0) * bound2;
-            rho_max = rho_max_dark;
-        }
+        r = (real_0)mwXrandom(dsfmtState, 0.0, 1.0) * bound;
         u = (real_0)mwXrandom(dsfmtState, 0.0, 1.0);
-        val = radial_dist(r, comp1, comp2, isLight);
+        val = r * r * get_density(comp, r);
 
         if(val / rho_max > u)
         {
@@ -1236,10 +1223,8 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp1, const Dwarf* c
             counter++;
         }
     }
-    real r_val = mw_real_const(r);
-
-    // Report radius
-    return r_val;
+    real r_real = mw_real_const(r);
+    return r_real;
 }
 
 static inline real vel_mag(real* r, const Dwarf* comp1, const Dwarf* comp2, dsfmt_t* dsfmtState)
@@ -1314,7 +1299,7 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real* rad)
 }
 
 static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, 
-								mwvector* rShift, mwvector* vShift, real_0 comp_mass, unsigned int compStart, unsigned int compEnd)
+								mwvector* rShift, mwvector* vShift, real* comp_mass, unsigned int compStart, unsigned int compEnd)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
@@ -1340,13 +1325,13 @@ static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real *
         cm_vz = mw_mad(&mass[i], &vz[i], &cm_vz);
     }
      
-    cm_x = mw_mul_s(&cm_x, inv_0(comp_mass));
-    cm_y = mw_mul_s(&cm_y, inv_0(comp_mass));
-    cm_z = mw_mul_s(&cm_z, inv_0(comp_mass));
+    cm_x = mw_div(&cm_x, comp_mass);
+    cm_y = mw_div(&cm_y, comp_mass);
+    cm_z = mw_div(&cm_z, comp_mass);
     
-    cm_vx = mw_mul_s(&cm_vx, inv_0(comp_mass));
-    cm_vy = mw_mul_s(&cm_vy, inv_0(comp_mass));
-    cm_vz = mw_mul_s(&cm_vz, inv_0(comp_mass));
+    cm_vx = mw_div(&cm_vx, comp_mass);
+    cm_vy = mw_div(&cm_vy, comp_mass);
+    cm_vz = mw_div(&cm_vz, comp_mass);
 
     for(i = compStart; i < compEnd; i++)
     {
@@ -1396,21 +1381,56 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         mwvector vec;
         real_0 rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real_0 rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        real_0 rscale_sum = rscale_l + rscale_d;
         set_p0(comp1);
         set_p0(comp2);
         real_0 bound1 ;
-        real_0 bound2 ;
-        
+        real_0 bound2 ;        
         
         real_0 mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
         real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real_0 dwarf_mass = mass_l + mass_d;
 
-        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass to position 4 of gradient*/
-        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS);  /*Setting dwarf mass ratio to position 5 of gradient*/
+        real scale_light = mw_real_var(rscale_l, BARYON_RADIUS_POS);            /*Setting dwarf light mass gradient position*/
+        real scale_xi    = mw_real_var(rscale_l/rscale_sum, RADIUS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
+        tmp = inv(&scale_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real scale_dark  = mw_mul(&scale_light, &tmp);
+
+        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass gradient position*/
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
         tmp = inv(&mass_xi);
         tmp = mw_add_s(&tmp, -1.0);
         real mass_dark  = mw_mul(&mass_light, &tmp);
+
+        switch(comp1->type)
+        {
+            case Plummer:
+                bound1 =  50.0 * (rscale_l + rscale_d);
+                break;
+            case NFW:
+                bound1 = 5.0 * comp1->r200;
+		get_extra_nfw_mass(comp1, bound1);
+                mass_light = get_real_nfw_mass(&mass_light, &scale_light);
+                break;
+            case General_Hernquist:
+                bound1 =  50.0 * (rscale_l + rscale_d);
+                break;
+        }
+        switch(comp2->type)
+        {
+            case Plummer:
+                bound2 =  50.0 * (rscale_l + rscale_d);
+                break;
+            case NFW:
+                bound2 = 5.0 * comp2->r200;
+		get_extra_nfw_mass(comp2, bound2);
+                mass_dark = get_real_nfw_mass(&mass_dark, &scale_dark);
+                break;
+            case General_Hernquist:
+                bound2 =  50.0 * (rscale_l + rscale_d);
+                break;
+        }
 
 
     //---------------------------------------------------------------------------------------------------        
@@ -1423,6 +1443,39 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
+
+        /*finding the max of the individual components*/
+        real_0 rho_max_light = 0;
+        real_0 rho_max_dark  = 0;
+
+        switch(comp1->type)
+        {
+            case Plummer:
+                rho_max_light = mw_sqrt_0(2.0 / 3.0) * comp1->scaleLength;
+                break;
+            case NFW:
+                rho_max_light = comp1->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_light = comp1->scaleLength / 2.0;
+                break;
+        }
+
+        switch(comp2->type)
+        {
+            case Plummer:
+                rho_max_dark = mw_sqrt_0(2.0 / 3.0) * comp2->scaleLength;
+                break;
+            case NFW:
+                rho_max_dark = comp2->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_dark = comp2->scaleLength / 2.0;
+                break;
+        }
+
+        rho_max_light = sqr_0(rho_max_light) * get_density(comp1, rho_max_light);
+        rho_max_dark  = sqr_0(rho_max_dark)  * get_density(comp2, rho_max_dark);
         
     	/*initializing particles:*/
         memset(&b, 0, sizeof(b));
@@ -1440,12 +1493,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 
                 if(i < half_bodies)
                 {
-                    r = r_mag(prng, comp1, comp2, TRUE);
+                    r = r_mag(prng, comp1, rho_max_light, bound1);
                     masses[i] = mass_light_particle;
                 }
                 else if(i >= half_bodies)
                 {
-                    r = r_mag(prng, comp1, comp2, FALSE);
+                    r = r_mag(prng, comp2, rho_max_dark, bound2);
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
@@ -1461,7 +1514,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
-            //printReal(&r,"Body Rad");
 
             counter = 0;
             do
@@ -1553,8 +1605,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, half_bodies, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_light, 0, half_bodies); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_dark, half_bodies, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
@@ -1611,7 +1663,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
                                      Dwarf* comp1,  Dwarf* comp2, mwvector* rShift, mwvector* vShift)
 {
-    /* NOTE: unction is designed to mimic the above function, but bypass the need for the
+        mw_printf("RUNNING TEST VERSION OF MIXED DWARF!\n");
+    /* NOTE: function is designed to mimic the above function, but bypass the need for the
 	* for the lua state. It is used in the test unit for constructing multi-component
 	* dwarf galaxies. Any changes to the above function not pertaining to pushing the bodies
 	* should be made here
@@ -1633,6 +1686,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         mwvector vec;
         real_0 rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real_0 rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        real_0 rscale_sum = rscale_l + rscale_d;
         set_p0(comp1);
         set_p0(comp2);
         real_0 bound1 ;
@@ -1642,11 +1696,55 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real_0 dwarf_mass = mass_l + mass_d;
 
-        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass to position 4 of gradient*/
-        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS); /*Setting dwarf mass ratio to position 5 of gradient*/
+        real scale_light = mw_real_var(rscale_l, BARYON_RADIUS_POS);            /*Setting dwarf light mass gradient position*/
+        real scale_xi    = mw_real_var(rscale_l/rscale_sum, RADIUS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
+        tmp = inv(&scale_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real scale_dark  = mw_mul(&scale_light, &tmp);
+
+        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass gradient position*/
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
         tmp = inv(&mass_xi);
         tmp = mw_add_s(&tmp, -1.0);
         real mass_dark  = mw_mul(&mass_light, &tmp);
+
+        switch(comp1->type)
+        {
+            case Plummer:
+                bound1 =  50.0 * (rscale_l + rscale_d);
+                break;
+            case NFW:
+                bound1 = 5.0 * comp1->r200;
+		get_extra_nfw_mass(comp1, bound1);
+                mass_light = get_real_nfw_mass(&mass_light, &scale_light);
+                if( mw_abs_0(showRealValue(&mass_light) - comp1->mass) > 0.00001 )
+                {
+                    mw_printf("Incorrect NFW Light Mass Detected! Expected = %.15f, Actual  = %.15f\n", comp1->mass, showRealValue(&mass_light));
+                }
+                break;
+            case General_Hernquist:
+                bound1 =  50.0 * (rscale_l + rscale_d);
+                break;
+        }
+
+        switch(comp2->type)
+        {
+            case Plummer:
+                bound2 =  50.0 * (rscale_l + rscale_d);
+                break;
+            case NFW:
+                bound2 = 5.0 * comp2->r200;
+		get_extra_nfw_mass(comp2, bound2);
+                mass_dark = get_real_nfw_mass(&mass_dark, &scale_dark);
+                if( mw_abs_0(showRealValue(&mass_dark) - comp2->mass) > 0.00001 )
+                {
+                    mw_printf("Incorrect NFW Dark Mass Detected! Expected = %.15f, Actual  = %.15f\n", comp2->mass, showRealValue(&mass_dark));
+                }
+                break;
+            case General_Hernquist:
+                bound2 =  50.0 * (rscale_l + rscale_d);
+                break;
+        }
 
 
     //---------------------------------------------------------------------------------------------------        
@@ -1659,6 +1757,39 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
+
+        /*finding the max of the individual components*/
+        real_0 rho_max_light = 0;
+        real_0 rho_max_dark  = 0;
+
+        switch(comp1->type)
+        {
+            case Plummer:
+                rho_max_light = mw_sqrt_0(2.0 / 3.0) * comp1->scaleLength;
+                break;
+            case NFW:
+                rho_max_light = comp1->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_light = comp1->scaleLength / 2.0;
+                break;
+        }
+
+        switch(comp2->type)
+        {
+            case Plummer:
+                rho_max_dark = mw_sqrt_0(2.0 / 3.0) * comp2->scaleLength;
+                break;
+            case NFW:
+                rho_max_dark = comp2->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_dark = comp2->scaleLength / 2.0;
+                break;
+        }
+
+        rho_max_light = sqr_0(rho_max_light) * get_density(comp1, rho_max_light);
+        rho_max_dark  = sqr_0(rho_max_dark)  * get_density(comp2, rho_max_dark);
         
     	/*initializing particles:*/
         //memset(&b, 0, sizeof(b));
@@ -1676,12 +1807,12 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                 
                 if(i < half_bodies)
                 {
-                    r = r_mag(prng, comp1, comp2, TRUE);
+                    r = r_mag(prng, comp1, rho_max_light, bound1);
                     masses[i] = mass_light_particle;
                 }
                 else if(i >= half_bodies)
                 {
-                    r = r_mag(prng, comp1, comp2, FALSE);
+                    r = r_mag(prng, comp2, rho_max_dark, bound2);
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
@@ -1781,8 +1912,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
       #endif
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, half_bodies, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_light, 0, half_bodies); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_dark, half_bodies, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
