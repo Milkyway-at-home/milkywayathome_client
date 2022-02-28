@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 /* probabilities will be rebuilt for each SSE level */
-#if MW_IS_X86
+#if MW_IS_X86 || defined(__e2k__)
   #if defined(__AVX__)
     #define INIT_PROBABILITIES initProbabilities_AVX
   #elif defined(__SSE4_1__)
@@ -51,7 +51,7 @@ extern "C" {
 #endif /* MW_IS_X86 */
 
 
-#if MW_IS_X86
+#if MW_IS_X86 || defined(__e2k__)
 ProbabilityFunc initProbabilities_AVX(const AstronomyParameters* ap);
 ProbabilityFunc initProbabilities_SSE41(const AstronomyParameters* ap);
 ProbabilityFunc initProbabilities_SSE3(const AstronomyParameters* ap);
