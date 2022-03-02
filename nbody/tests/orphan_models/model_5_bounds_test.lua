@@ -46,7 +46,7 @@ function makeBodies(ctx, potential)
       potential = potential,
       position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6)),
       velocity  = Vector.create(-156, 79, 107),
-      tstop     = 4.291337464901487,
+      tstop     = 4.132339410448132,
       dt        = ctx.timestep / 10.0,
       sunGCDist = 8.0
    }

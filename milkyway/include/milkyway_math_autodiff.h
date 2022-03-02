@@ -400,7 +400,7 @@ extern "C" {
     }
 
     CONST_F ALWAYS_INLINE
-    static inline real mw_sincos(real* a, real* sinval, real* cosval)
+    static inline void mw_sincos(real* a, real* sinval, real* cosval)
     {
         *sinval = mw_sin(a);
         *cosval = mw_cos(a);
@@ -540,12 +540,12 @@ extern "C" {
     }
 
     CONST_F ALWAYS_INLINE
-    static inline real mw_logb(real* a)         //FIXME: Should change 2.0 in here to FLT_RADIX later
+    static inline real mw_logb(real* a)
     {
         real_0 z        = mw_log10_0(a->value);
-        real_0 dz_da    = 1.0 / (a->value) / mw_log_0(2.0);
+        real_0 dz_da    = 0.0;
         real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = -1.0 / sqr_0(a->value) / mw_log_0(2.0);
+        real_0 d2z_da2  = 0.0;
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
