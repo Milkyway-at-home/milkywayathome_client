@@ -42,9 +42,10 @@ their copyright to their programs which execute similar algorithms.
   #include <omp.h>
 #endif
 
-/*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
+#define H_STEPSIZE_rad ((real_0) 0.000001) //To approximate initial derivatives in AUTODIFF
+#define H_STEPSIZE_vel ((real_0) 0.01)
 
-#define H_STEPSIZE ((real_0) 0.0001) //To approximate initial derivatives in AUTODIFF
+/*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
 /*      MODEL SPECIFIC FUNCTIONS       */
 static inline real_0 potential( real_0 r, const Dwarf* comp1, const Dwarf* comp2)
@@ -544,41 +545,8 @@ static inline real_0 radial_dist(real_0 r, const Dwarf* comp1, const Dwarf* comp
 
 static inline real_0 vel_dist(real_0 v, real_0 r, const Dwarf* comp1, const Dwarf* comp2) //Normalized velocity distribution
 {
-    //Calculate normalization for velocity distribution function
-    real_0 a = 0.0;
-    real_0 b = 0.99 * mw_sqrt_0( mw_fabs_0(2.0 * potential( r, comp1, comp2) ) ); //v_esc
-    real_0 numBins = 10.0;
-    real_0 width = (b-a)/numBins;
-    real_0 a_tmp;
-    real_0 b_tmp;
-    real_0 c1 = 0.55555555555; //5.0 / 9.0;
-    real_0 c2 = 0.88888888888; //8.0 / 9.0;
-    real_0 c3 = 0.55555555555; //5.0 / 9.0;
-    real_0 x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
-    real_0 x2 = 0.00000000000;
-    real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
-    real_0 v1, v2, v3, integrand1, integrand2, integrand3;
-
-    real_0 integral = 0;
-    for(int k = 0; k < numBins; k++)
-    {
-        a_tmp = k*width;
-        b_tmp = (k+1)*width;
-        v1 = (b_tmp-a_tmp)*x1/2.0 + (b_tmp+a_tmp)/2.0;
-        v2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
-        v3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
-
-        integrand1 = dist_fun(v1, r, comp1, comp2);
-        integrand2 = dist_fun(v2, r, comp1, comp2);
-        integrand3 = dist_fun(v3, r, comp1, comp2);
-
-        integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
-                  + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
-                  + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
-    }
-
     //Report normalized distribution value
-    return dist_fun(v, r, comp1, comp2) / integral;    
+    return 4 * M_PI * dist_fun(v, r, comp1, comp2) / density(r, comp1, comp2);    
 }
 
 /* These functions prep the Dwarf structs for rejection sampling */
@@ -674,7 +642,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
   /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR RADIUS---------------------------------------------------*/
   static inline real_0 gradIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, const Dwarf* shiftedDwarf1, const Dwarf* shiftedDwarf2)
   {
-      return (radial_dist(r, shiftedDwarf1, shiftedDwarf2, isLight) - radial_dist(r, comp1, comp2, isLight))/H_STEPSIZE;
+      return (radial_dist(r, shiftedDwarf1, shiftedDwarf2, isLight) - radial_dist(r, comp1, comp2, isLight))/H_STEPSIZE_rad;
   }
 
   static inline real_0 getGradIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
@@ -703,13 +671,13 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       switch(i)
       {
           case(BARYON_RADIUS_POS):
-              scale_b += H_STEPSIZE;
+              scale_b += H_STEPSIZE_rad;
           case(RADIUS_RATIO_POS):
-              xi_scale += H_STEPSIZE;
+              xi_scale += H_STEPSIZE_rad;
           case(BARYON_MASS_POS):
-              mass_b += H_STEPSIZE;
+              mass_b += H_STEPSIZE_rad;
           case(MASS_RATIO_POS):
-              xi_mass += H_STEPSIZE;
+              xi_mass += H_STEPSIZE_rad;
       }
 
       shiftedDwarf1 = getShiftedDwarf(comp1, scale_b, xi_scale, mass_b, xi_mass, TRUE);
@@ -761,7 +729,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 integrand = (  radial_dist(r, shiftedDwarf1_d, shiftedDwarf2_d, isLight)
                           - radial_dist(r, shiftedDwarf1_i, shiftedDwarf2_i, isLight)
                           - radial_dist(r, shiftedDwarf1_j, shiftedDwarf2_j, isLight)
-                          + radial_dist(r, comp1, comp2, isLight)                    )/H_STEPSIZE/H_STEPSIZE;
+                          + radial_dist(r, comp1, comp2, isLight)                    )/H_STEPSIZE_rad/H_STEPSIZE_rad;
 
       return integrand;
   }
@@ -774,7 +742,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
       Dwarf shiftedDwarf1_i, shiftedDwarf1_j, shiftedDwarf1_d, shiftedDwarf2_i, shiftedDwarf2_j, shiftedDwarf2_d;
       real_0 integral;
-      real_0 numBins = 10.0;
+      real_0 numBins = 100.0;
 
       real_0 a = 0.0;
       real_0 b = r->value;
@@ -808,33 +776,33 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       switch(i)
       {
           case(BARYON_RADIUS_POS):
-              scale_b_i += H_STEPSIZE;
-              scale_b_d += H_STEPSIZE;
+              scale_b_i += H_STEPSIZE_rad;
+              scale_b_d += H_STEPSIZE_rad;
           case(RADIUS_RATIO_POS):
-              xi_scale_i += H_STEPSIZE;
-              xi_scale_d += H_STEPSIZE;
+              xi_scale_i += H_STEPSIZE_rad;
+              xi_scale_d += H_STEPSIZE_rad;
           case(BARYON_MASS_POS):
-              mass_b_i += H_STEPSIZE;
-              mass_b_d += H_STEPSIZE;
+              mass_b_i += H_STEPSIZE_rad;
+              mass_b_d += H_STEPSIZE_rad;
           case(MASS_RATIO_POS):
-              xi_mass_i += H_STEPSIZE;
-              xi_mass_d += H_STEPSIZE;
+              xi_mass_i += H_STEPSIZE_rad;
+              xi_mass_d += H_STEPSIZE_rad;
       }
 
       switch(j)
       {
           case(BARYON_RADIUS_POS):
-              scale_b_j += H_STEPSIZE;
-              scale_b_d += H_STEPSIZE;
+              scale_b_j += H_STEPSIZE_rad;
+              scale_b_d += H_STEPSIZE_rad;
           case(RADIUS_RATIO_POS):
-              xi_scale_j += H_STEPSIZE;
-              xi_scale_d += H_STEPSIZE;
+              xi_scale_j += H_STEPSIZE_rad;
+              xi_scale_d += H_STEPSIZE_rad;
           case(BARYON_MASS_POS):
-              mass_b_j += H_STEPSIZE;
-              mass_b_d += H_STEPSIZE;
+              mass_b_j += H_STEPSIZE_rad;
+              mass_b_d += H_STEPSIZE_rad;
           case(MASS_RATIO_POS):
-              xi_mass_j += H_STEPSIZE;
-              xi_mass_d += H_STEPSIZE;
+              xi_mass_j += H_STEPSIZE_rad;
+              xi_mass_d += H_STEPSIZE_rad;
       }
 
       shiftedDwarf1_i = getShiftedDwarf(comp1, scale_b_i, xi_scale_i, mass_b_i, xi_mass_i, TRUE);
@@ -846,7 +814,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
 
       real_0 df_dx_i = gradIntegrand_rad(r->value, comp1, comp2, isLight, &shiftedDwarf1_i, &shiftedDwarf2_i);
       real_0 df_dx_j = gradIntegrand_rad(r->value, comp1, comp2, isLight, &shiftedDwarf1_j, &shiftedDwarf2_j);
-      real_0 df_de = (radial_dist(r->value + H_STEPSIZE, comp1, comp2, isLight) - radial_dist(r->value, comp1, comp2, isLight))/H_STEPSIZE;
+      real_0 df_de = (radial_dist(r->value + H_STEPSIZE_rad, comp1, comp2, isLight) - radial_dist(r->value, comp1, comp2, isLight))/H_STEPSIZE_rad;
 
       integral = 0.0;
       for(int k = 0; k < numBins; k++)
@@ -928,8 +896,9 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
   /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR VELOCITY---------------------------------------------------*/
   static inline real_0 gradIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, const Dwarf* shiftedDwarf1, const Dwarf* shiftedDwarf2, int i)
   {
-      real_0 shifted_r = r->value + r->gradient[i]*H_STEPSIZE; //r has derivative information, so we also apply a shift to r
-      return (vel_dist(v, shifted_r, shiftedDwarf1, shiftedDwarf2) - vel_dist(v, r->value, comp1, comp2))/H_STEPSIZE;
+      real_0 df_dx = (vel_dist(v, r->value, shiftedDwarf1, shiftedDwarf2) - vel_dist(v, r->value, comp1, comp2))/H_STEPSIZE_vel;
+      real_0 df_dr = (vel_dist(v, r->value + H_STEPSIZE_vel, comp1, comp2) - vel_dist(v, r->value, comp1, comp2))/H_STEPSIZE_vel;
+      return df_dx + df_dr*r->gradient[i];
   }
 
   static inline real_0 getGradIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
@@ -939,7 +908,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
       real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
       Dwarf shiftedDwarf1, shiftedDwarf2;
-      real_0 numBins = 10.0;
+      real_0 numBins = 1000.0;
       real_0 integral;
 
       real_0 a = 0.0;
@@ -958,13 +927,13 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       switch(i)
       {
           case(BARYON_RADIUS_POS):
-              scale_b += H_STEPSIZE;
+              scale_b += H_STEPSIZE_vel;
           case(RADIUS_RATIO_POS):
-              xi_scale += H_STEPSIZE;
+              xi_scale += H_STEPSIZE_vel;
           case(BARYON_MASS_POS):
-              mass_b += H_STEPSIZE;
+              mass_b += H_STEPSIZE_vel;
           case(MASS_RATIO_POS):
-              xi_mass += H_STEPSIZE;
+              xi_mass += H_STEPSIZE_vel;
       }
 
       shiftedDwarf1 = getShiftedDwarf(comp1, scale_b, xi_scale, mass_b, xi_mass, TRUE);
@@ -1014,16 +983,17 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
   static inline real_0 hessIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, const Dwarf* shiftedDwarf1_i, const Dwarf* shiftedDwarf1_j, const Dwarf* shiftedDwarf1_d, const Dwarf* shiftedDwarf2_i, const Dwarf* shiftedDwarf2_j, const Dwarf* shiftedDwarf2_d, int i, int j)
   {
       //r has derivative information, so we also apply shifts to r
-      real_0 shifted_r_i = r->value + r->gradient[i]*H_STEPSIZE;
-      real_0 shifted_r_j = r->value + r->gradient[j]*H_STEPSIZE;
-      real_0 shifted_r_d = r->value + r->gradient[i]*H_STEPSIZE + r->gradient[j]*H_STEPSIZE;
+      real_0 shifted_r_i = r->value + r->gradient[i]*H_STEPSIZE_vel;
+      real_0 shifted_r_j = r->value + r->gradient[j]*H_STEPSIZE_vel;
+      real_0 shifted_r_d = r->value + r->gradient[i]*H_STEPSIZE_vel + r->gradient[j]*H_STEPSIZE_vel;
 
-      real_0 integrand =  (  mw_log_0(vel_dist(v, shifted_r_d, shiftedDwarf1_d, shiftedDwarf2_d))
-                           - mw_log_0(vel_dist(v, shifted_r_i, shiftedDwarf1_i, shiftedDwarf2_i))
-                           - mw_log_0(vel_dist(v, shifted_r_j, shiftedDwarf1_j, shiftedDwarf2_j))
-                           + mw_log_0(vel_dist(v, r->value, comp1, comp2))                                    )/H_STEPSIZE/H_STEPSIZE;
+      real_0 integrand =  (  vel_dist(v, shifted_r_d, shiftedDwarf1_d, shiftedDwarf2_d)
+                           - vel_dist(v, shifted_r_i, shiftedDwarf1_i, shiftedDwarf2_i)
+                           - vel_dist(v, shifted_r_j, shiftedDwarf1_j, shiftedDwarf2_j)
+                           + vel_dist(v, r->value, comp1, comp2)                                   )/H_STEPSIZE_vel/H_STEPSIZE_vel;
 
       return integrand;
+      //return 0.0;
   }
 
   static inline real_0 getHessIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
@@ -1034,7 +1004,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
       Dwarf shiftedDwarf1_i, shiftedDwarf1_j, shiftedDwarf1_d, shiftedDwarf2_i, shiftedDwarf2_j, shiftedDwarf2_d;
       real_0 integral;
-      real_0 numBins = 10.0;
+      real_0 numBins = 100.0;
 
       real_0 a = 0.0;
       real_0 b = v->value;
@@ -1068,33 +1038,33 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       switch(i)
       {
           case(BARYON_RADIUS_POS):
-              scale_b_i += H_STEPSIZE;
-              scale_b_d += H_STEPSIZE;
+              scale_b_i += H_STEPSIZE_vel;
+              scale_b_d += H_STEPSIZE_vel;
           case(RADIUS_RATIO_POS):
-              xi_scale_i += H_STEPSIZE;
-              xi_scale_d += H_STEPSIZE;
+              xi_scale_i += H_STEPSIZE_vel;
+              xi_scale_d += H_STEPSIZE_vel;
           case(BARYON_MASS_POS):
-              mass_b_i += H_STEPSIZE;
-              mass_b_d += H_STEPSIZE;
+              mass_b_i += H_STEPSIZE_vel;
+              mass_b_d += H_STEPSIZE_vel;
           case(MASS_RATIO_POS):
-              xi_mass_i += H_STEPSIZE;
-              xi_mass_d += H_STEPSIZE;
+              xi_mass_i += H_STEPSIZE_vel;
+              xi_mass_d += H_STEPSIZE_vel;
       }
 
       switch(j)
       {
           case(BARYON_RADIUS_POS):
-              scale_b_j += H_STEPSIZE;
-              scale_b_d += H_STEPSIZE;
+              scale_b_j += H_STEPSIZE_vel;
+              scale_b_d += H_STEPSIZE_vel;
           case(RADIUS_RATIO_POS):
-              xi_scale_j += H_STEPSIZE;
-              xi_scale_d += H_STEPSIZE;
+              xi_scale_j += H_STEPSIZE_vel;
+              xi_scale_d += H_STEPSIZE_vel;
           case(BARYON_MASS_POS):
-              mass_b_j += H_STEPSIZE;
-              mass_b_d += H_STEPSIZE;
+              mass_b_j += H_STEPSIZE_vel;
+              mass_b_d += H_STEPSIZE_vel;
           case(MASS_RATIO_POS):
-              xi_mass_j += H_STEPSIZE;
-              xi_mass_d += H_STEPSIZE;
+              xi_mass_j += H_STEPSIZE_vel;
+              xi_mass_d += H_STEPSIZE_vel;
       }
 
       shiftedDwarf1_i = getShiftedDwarf(comp1, scale_b_i, xi_scale_i, mass_b_i, xi_mass_i, TRUE);
@@ -1106,7 +1076,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
 
       real_0 df_dx_i = gradIntegrand_vel(v->value, r, comp1, comp2, &shiftedDwarf1_i, &shiftedDwarf2_i, i);
       real_0 df_dx_j = gradIntegrand_vel(v->value, r, comp1, comp2, &shiftedDwarf1_j, &shiftedDwarf2_j, j);
-      real_0 df_de = (vel_dist(v->value + H_STEPSIZE, r->value, comp1, comp2) - vel_dist(v->value, r->value, comp1, comp2))/H_STEPSIZE;
+      real_0 df_de = (vel_dist(v->value + H_STEPSIZE_vel, r->value, comp1, comp2) - vel_dist(v->value, r->value, comp1, comp2))/H_STEPSIZE_vel;
 
       integral = 0.0;
       for(int k = 0; k < numBins; k++)
@@ -1661,7 +1631,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
 int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
-                                     Dwarf* comp1,  Dwarf* comp2, mwvector* rShift, mwvector* vShift)
+                                     Dwarf* comp1,  Dwarf* comp2, mwvector* rShift, mwvector* vShift, mwbool cmCalc)
 {
         mw_printf("RUNNING TEST VERSION OF MIXED DWARF!\n");
     /* NOTE: function is designed to mimic the above function, but bypass the need for the
@@ -1908,13 +1878,15 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
           t = clock() - t;
           real_0 time_taken = ((real_0)t)/CLOCKS_PER_SEC; // in seconds
         #endif
-          //mw_printf("    Derivative calculation took %.3f seconds\n", time_taken);
+          printf("    Derivative calculation took %.3f seconds\n", time_taken);
       #endif
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_light, 0, half_bodies); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_dark, half_bodies, nbody); //corrects dark component
-        //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
+        if(cmCalc) //For test version, we sometimes don't want this calculation
+        {
+            cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_light, 0, half_bodies); //corrects light component
+	    cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_dark, half_bodies, nbody); //corrects dark component
+        }
 
 
         /* pushing the bodies */

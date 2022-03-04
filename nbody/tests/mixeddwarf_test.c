@@ -317,7 +317,7 @@ int testNFWNFW()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift, TRUE);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of NFW-NFW\n");

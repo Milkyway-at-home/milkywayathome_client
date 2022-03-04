@@ -7,22 +7,9 @@
 
 #define autodiff_thresh (0.0001)
 
-static inline real_0 Qfunc(real_0 v_s, real_0 v_esc)
-{
-    real_0 ratio = v_s/v_esc;
-    return v_s * mw_pow_0(1.0 - sqr_0(ratio), -7/2) * (24 - 78*sqr_0(ratio) + 80*fourth_0(ratio) - 27*sixth_0(ratio));
-}
-
-static inline real_0 Pfunc(real_0 v_s, real_0 v_esc)
-{
-    real_0 ratio = v_s/v_esc;
-    real_0 part1 = (24 - 378*sqr_0(ratio) + 712*fourth_0(ratio) - 349*sixth_0(ratio)) * (24 - 78*sqr_0(ratio) + 80*fourth_0(ratio) - 27*sixth_0(ratio));
-    real_0 part2 = 24 * sqr_0(ratio) * mw_pow_0(1.0 - sqr_0(ratio), 7/2) * (324 - 710*sqr_0(ratio) + 402*fourth_0(ratio) - 27*sixth_0(ratio));
-    return v_s * mw_pow_0(1.0 - sqr_0(ratio), -8) * (part1 + part2);
-}
-
 static inline int checkRadDerv(mwvector* pos, real_0 a)
 {
+    printf("POS = [%.15f, %.15f, %.15f]\n", X(pos).value, Y(pos).value, Z(pos).value);
     int failed = 0;
     real radius = mw_hypot(&X(pos), &Y(pos));
     radius = mw_hypot(&radius, &Z(pos));
@@ -33,7 +20,7 @@ static inline int checkRadDerv(mwvector* pos, real_0 a)
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Radial Gradient test failed, |1 + %1f / %1f| = %1f\n", expect_derv, actual_derv, check);
+        printf("    Radial Gradient test failed, |1 - %.15f / %.15f| = %.15f\n", expect_derv, actual_derv, check);
     }
 
     real_0 expect_hess = 0.0;
@@ -43,7 +30,7 @@ static inline int checkRadDerv(mwvector* pos, real_0 a)
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Radial Hessian test failed, |%1f - %1f| = %1f\n", expect_hess, actual_hess, check);
+        printf("    Radial Hessian test failed, |%.15f - %.15f| = %.15f\n", expect_hess, actual_hess, check);
     }
 
     return failed;
@@ -51,63 +38,74 @@ static inline int checkRadDerv(mwvector* pos, real_0 a)
 
 static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
 {
+    printf("VEL = [%.15f, %.15f, %.15f]\n", X(vel).value, Y(vel).value, Z(vel).value);
     int failed = 0;
     real radius = mw_hypot(&X(pos), &Y(pos));
     radius = mw_hypot(&radius, &Z(pos));
     real_0 r_s = radius.value;
 
-    real velocity = mw_hypot(&X(pos), &Y(pos));
-    velocity = mw_hypot(&velocity, &Z(pos));
+    real velocity = mw_hypot(&X(vel), &Y(vel));
+    velocity = mw_hypot(&velocity, &Z(vel));
     real_0 v_s = velocity.value;
 
-    real_0 v_esc = mw_sqrt_0(2*M / mw_hypot_0(r_s, a));
-
-    real_0 expect_derv_a = -r_s / 24.0 / (r_s*r_s + a*a) * Qfunc(v_s, v_esc);
+    real_0 expect_derv_a = -v_s / 2.0 / a;
     real_0 actual_derv_a = velocity.gradient[BARYON_RADIUS_POS];
     real_0 check = mw_abs_0(1.0 - expect_derv_a/actual_derv_a);
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Velocity Gradient (a) test failed, |1 + %1f / %1f| = %1f\n", expect_derv_a, actual_derv_a, check);
+        printf("    Velocity Gradient (a) test failed, |1 - %.15f / %.15f| = %.15f\n", expect_derv_a, actual_derv_a, check);
     }
 
-    real_0 expect_derv_M = Qfunc(v_s, v_esc)/ 48.0 / M;
+    real_0 expect_derv_M = v_s / 2.0 / M;
     real_0 actual_derv_M = velocity.gradient[BARYON_MASS_POS];
     check = mw_abs_0(1.0 - expect_derv_M/actual_derv_M);
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Velocity Gradient (M) test failed, |1 + %1f / %1f| = %1f\n", expect_derv_M, actual_derv_M, check);
+        printf("    Velocity Gradient (M) test failed, |1 - %.15f / %.15f| = %.15f\n", expect_derv_M, actual_derv_M, check);
     }
 
-    real_0 expect_hess_a2 = r_s / 24.0 / (r_s*r_s + a*a) * (Qfunc(v_s, v_esc)/a + r_s / 24.0 / (r_s*r_s + a*a) * Pfunc(v_s, v_esc));
+    real_0 expect_hess_a2 = 0.75 * v_s / a / a;
     int hess_indx = BARYON_RADIUS_POS*(BARYON_RADIUS_POS+1)/2 + BARYON_RADIUS_POS;
     real_0 actual_hess_a2 = velocity.hessian[hess_indx];
     check = mw_abs_0(1.0 - expect_hess_a2/actual_hess_a2);
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Velocity Hessian (a2) test failed, |1 + %1f / %1f| = %1f\n", expect_hess_a2, actual_hess_a2, check);
+        printf("    Velocity Hessian (a2) test failed, |1 - %.15f / %.15f| = %.15f\n", expect_hess_a2, actual_hess_a2, check);
     }
 
-    real_0 expect_hess_aM = -r_s / 1152.0 / M /(r_s*r_s + a*a) * Pfunc(v_s, v_esc);
-    hess_indx = BARYON_RADIUS_POS*(BARYON_RADIUS_POS+1)/2 + BARYON_MASS_POS;
+    int eff_i;
+    int eff_j;
+    if(BARYON_RADIUS_POS<BARYON_MASS_POS)
+    {
+        eff_i = BARYON_MASS_POS;
+        eff_j = BARYON_RADIUS_POS;
+    }
+    else
+    {
+        eff_i = BARYON_RADIUS_POS;
+        eff_j = BARYON_MASS_POS;
+    }
+    real_0 expect_hess_aM = -0.25 * v_s / a / M;
+    hess_indx = eff_i*(eff_i+1)/2 + eff_j;
     real_0 actual_hess_aM = velocity.hessian[hess_indx];
     check = mw_abs_0(1.0 - expect_hess_aM/actual_hess_aM);
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Velocity Hessian (aM) test failed, |1 + %1f / %1f| = %1f\n", expect_hess_aM, actual_hess_aM, check);
+        printf("    Velocity Hessian (aM) test failed, |1 - %.15f / %.15f| = %.15f\n", expect_hess_aM, actual_hess_aM, check);
     }
 
-    real_0 expect_hess_M2 = (Pfunc(v_s, v_esc)/48.0 - Qfunc(v_s, v_esc)) / 48.0 / M / M;
+    real_0 expect_hess_M2 = -0.25 * v_s / M / M;
     hess_indx = BARYON_MASS_POS*(BARYON_MASS_POS+1)/2 + BARYON_MASS_POS;
     real_0 actual_hess_M2 = velocity.hessian[hess_indx];
     check = mw_abs_0(1.0 - expect_hess_M2/actual_hess_M2);
     if(check > autodiff_thresh)
     {
         failed += 1;
-        printf("\t Velocity Hessian (M2) test failed, |1 + %1f / %1f| = %1f\n", expect_hess_M2, actual_hess_M2, check);
+        printf("    Velocity Hessian (M2) test failed, |1 - %.15f / %.15f| = %.15f\n", expect_hess_M2, actual_hess_M2, check);
     }
 
     return failed;
@@ -118,7 +116,7 @@ int testDwarfDerivatives()
 {
 	int failed = 0;
 	
-	unsigned int numBodies = 500;
+	unsigned int numBodies = 4;
         unsigned int halfBodies = numBodies/2;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
@@ -140,14 +138,15 @@ int testDwarfDerivatives()
 
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
 	comp2->type        = comp1->type;
-	comp2->mass        = 0.0001;
-	comp2->scaleLength = 20.0;
+	comp2->mass        = REAL_EPSILON*10.0;
+	comp2->scaleLength = 100.0;
 
 	dsfmt_t prng;
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift, FALSE);
+        printf("Dwarf Generated!\n");
 	
         for(int i = 0; i < numBodies; i++)
         {
