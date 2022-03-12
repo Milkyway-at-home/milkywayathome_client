@@ -42,9 +42,6 @@ their copyright to their programs which execute similar algorithms.
   #include <omp.h>
 #endif
 
-#define H_STEPSIZE_rad ((real_0) 0.000001) //To approximate initial derivatives in AUTODIFF
-#define H_STEPSIZE_vel ((real_0) 0.01)
-
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
 /*      MODEL SPECIFIC FUNCTIONS       */
@@ -54,6 +51,15 @@ static inline real_0 potential( real_0 r, const Dwarf* comp1, const Dwarf* comp2
     real_0 potential_light  = get_potential(comp1, r);
     real_0 potential_dark   = get_potential(comp2, r);
     real_0 potential_result = (potential_light + potential_dark);
+
+    return (potential_result);
+}
+
+static inline real potential_real( real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real potential_light  = get_potential_real(comp1, comp2, r, TRUE);
+    real potential_dark   = get_potential_real(comp1, comp2, r, FALSE);
+    real potential_result = mw_add(&potential_light, &potential_dark);
 
     return (potential_result);
 }
@@ -69,44 +75,94 @@ static inline real_0 density( real_0 r, const Dwarf* comp1, const Dwarf* comp2)
     return density_result;
 }
 
-
-/*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real_0 first_derivative(real_0 (*func)(real_0, const Dwarf*, const Dwarf*), real_0 x, const Dwarf* comp1, const Dwarf* comp2)
+static inline real density_real( real* r, const Dwarf* comp1, const Dwarf* comp2)
 {
-    /*yes, this does in fact use a 5-point stencil*/
-    real_0 h = 0.001;
-    real_0 deriv;
-    real_0 p1, p2, p3, p4, denom;
+    /*this is the density distribution function. Returns the density at a given radius.*/
     
-    p1 =   1.0 * (*func)( (x - 2.0 * h), comp1, comp2);
-    p2 = - 8.0 * (*func)( (x - h)      , comp1, comp2);
-    p3 = - 1.0 * (*func)( (x + 2.0 * h), comp1, comp2);
-    p4 =   8.0 * (*func)( (x + h)      , comp1, comp2);
-    denom = inv_0( 12.0 * h);
-    deriv = (p1 + p2 + p3 + p4) * denom;
-    return deriv;
+    real density_light = get_density_real(comp1, comp2, r, TRUE);
+    real density_dark  = get_density_real(comp1, comp2, r, FALSE);
+    real density_result = mw_add(&density_light, &density_dark);
+
+    return density_result;
 }
 
-static inline real_0 second_derivative(real_0 (*func)(real_0, const Dwarf*, const Dwarf*), real_0 x, const Dwarf* comp1, const Dwarf* comp2)
-{
-    /*yes, this also uses a five point stencil*/
-    real_0 h = 0.001;
-    real_0 deriv;
-    real_0 p1, p2, p3, p4, p5, denom;
 
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , comp1, comp2);
-    p2 =  16.0 * (*func)( (x + h)       , comp1, comp2);
-    p3 = -30.0 * (*func)( (x)           , comp1, comp2);
-    p4 =  16.0 * (*func)( (x - h)       , comp1, comp2);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , comp1, comp2);
-    denom = inv_0( 12.0 * h * h);
-    deriv = (p1 + p2 + p3 + p4 + p5) * denom;
-    return deriv;
+/*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
+static inline real_0 first_derivative_potential(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real_0 d_dr_pot_light = get_first_derv_potential(comp1, r);
+    real_0 d_dr_pot_dark  = get_first_derv_potential(comp2, r);
+
+    real_0 d_dr_pot_result = d_dr_pot_light + d_dr_pot_dark;
+    return d_dr_pot_result;
+}
+
+static inline real first_derivative_potential_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d_dr_pot_light = get_first_derv_potential_real(comp1, comp2, r, TRUE);
+    real d_dr_pot_dark  = get_first_derv_potential_real(comp1, comp2, r, FALSE);
+
+    real d_dr_pot_result = mw_add(&d_dr_pot_light, &d_dr_pot_dark);
+    return d_dr_pot_result;
+}
+
+static inline real_0 first_derivative_density(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real_0 d_dr_den_light = get_first_derv_density(comp1, r);
+    real_0 d_dr_den_dark  = get_first_derv_density(comp2, r);
+
+    real_0 d_dr_den_result = d_dr_den_light + d_dr_den_dark;
+    return d_dr_den_result;
+}
+
+static inline real first_derivative_density_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d_dr_den_light = get_first_derv_density_real(comp1, comp2, r, TRUE);
+    real d_dr_den_dark  = get_first_derv_density_real(comp1, comp2, r, FALSE);
+
+    real d_dr_den_result = mw_add(&d_dr_den_light, &d_dr_den_dark);
+    return d_dr_den_result;
+}
+
+static inline real_0 second_derivative_potential(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real_0 d2_dr2_pot_light = get_second_derv_potential(comp1, r);
+    real_0 d2_dr2_pot_dark  = get_second_derv_potential(comp2, r);
+
+    real_0 d2_dr2_pot_result = d2_dr2_pot_light + d2_dr2_pot_dark;
+    return d2_dr2_pot_result;
+}
+
+static inline real second_derivative_potential_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d2_dr2_pot_light = get_second_derv_potential_real(comp1, comp2, r, TRUE);
+    real d2_dr2_pot_dark  = get_second_derv_potential_real(comp1, comp2, r, FALSE);
+
+    real d2_dr2_pot_result = mw_add(&d2_dr2_pot_light, &d2_dr2_pot_dark);
+    return d2_dr2_pot_result;
+}
+
+static inline real_0 second_derivative_density(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real_0 d2_dr2_den_light = get_second_derv_density(comp1, r);
+    real_0 d2_dr2_den_dark  = get_second_derv_density(comp2, r);
+
+    real_0 d2_dr2_den_result = d2_dr2_den_light + d2_dr2_den_dark;
+    return d2_dr2_den_result;
+}
+
+static inline real second_derivative_density_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d2_dr2_den_light = get_second_derv_density_real(comp1, comp2, r, TRUE);
+    real d2_dr2_den_dark  = get_second_derv_density_real(comp1, comp2, r, FALSE);
+
+    real d2_dr2_den_result = mw_add(&d2_dr2_den_light, &d2_dr2_den_dark);
+    return d2_dr2_den_result;
 }
 
 static real_0 gauss_quad(real_0 (*func)(real_0, const Dwarf*, const Dwarf*, real_0), real_0 lower, real_0 upper, const Dwarf* comp1, const Dwarf* comp2, real_0 energy)
 {
-    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
+    /*This is a gaussian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
      */
     real_0 Ng, hg, lowerg, upperg;
@@ -336,7 +392,7 @@ static inline real_0 root_finder(real_0 (*func)(real_0, const Dwarf*, const Dwar
             
             mid_point_funcval = 1;
             counter = 0;
-            while(mw_fabs_0(mid_point_funcval) > .0001)
+            while(mw_fabs_0(mid_point_funcval) > 1e-15)
             {
                 mid_point = (new_lower_bound + new_upper_bound) / 2.0;
                 mid_point_funcval = (*func)(mid_point, comp1, comp2) - function_value;
@@ -351,7 +407,7 @@ static inline real_0 root_finder(real_0 (*func)(real_0, const Dwarf*, const Dwar
                 }
                 counter++;
                 
-                if(counter > 10000)
+                if(counter > 100000)
                 {
                     break;
                 }
@@ -392,11 +448,11 @@ static real_0 fun(real_0 ri, const Dwarf* comp1, const Dwarf* comp2, real_0 ener
     real_0 diff;
     real_0 func;
 
-    first_deriv_psi      = first_derivative(potential, ri, comp1, comp2);
-    first_deriv_density  = first_derivative(density,   ri, comp1, comp2);
+    first_deriv_psi      = first_derivative_potential(ri, comp1, comp2);
+    first_deriv_density  = first_derivative_density(ri, comp1, comp2);
 
-    second_deriv_psi     = second_derivative(potential, ri, comp1, comp2);
-    second_deriv_density = second_derivative(density,   ri, comp1, comp2);
+    second_deriv_psi     = second_derivative_potential(ri, comp1, comp2);
+    second_deriv_density = second_derivative_density(ri, comp1, comp2);
     
     /*
     * Instead of calculating the second derivative of density with respect to -pot directly, 
@@ -531,24 +587,6 @@ static inline real_0 dist_fun(real_0 v, real_0 r, const Dwarf* comp1, const Dwar
     return distribution_function;
 }
 
-static inline real_0 radial_dist(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight) //Normalized radial distribution
-{
-    if(isLight)
-    {
-        return 4 * M_PI * r * r * get_density(comp1, r) / comp1->mass;
-    }
-    else
-    {
-        return 4 * M_PI * r * r * get_density(comp2, r) / comp2->mass;
-    }
-}
-
-static inline real_0 vel_dist(real_0 v, real_0 r, const Dwarf* comp1, const Dwarf* comp2) //Normalized velocity distribution
-{
-    //Report normalized distribution value
-    return 4 * M_PI * dist_fun(v, r, comp1, comp2) / density(r, comp1, comp2);    
-}
-
 /* These functions prep the Dwarf structs for rejection sampling */
 static inline void set_p0(Dwarf* comp)
 {
@@ -615,43 +653,481 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
 
 /* AUTODIFF METHODS FOR CALCULATING INITIAL DERIVATIVES */
 #if AUTODIFF
-  static inline Dwarf getShiftedDwarf(const Dwarf* comp, real_0 a_b, real_0 xi_R, real_0 M_b, real_0 xi_M, mwbool isLight)
+  static inline real radial_dist(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight) //Normalized radial distribution
   {
-      Dwarf shiftedDwarf = *comp;
-      real_0 a_d = (1.0/xi_R - 1.0)*a_b;
-      real_0 M_d = (1.0/xi_M - 1.0)*M_b;
-      if(isLight)
-      {
-          shiftedDwarf.scaleLength = a_b;
-          shiftedDwarf.mass = M_b;
-      }
-      else
-      {
-          shiftedDwarf.scaleLength = a_d;
-          shiftedDwarf.mass = M_d;
-      }
-      set_p0(&shiftedDwarf);
-      switch(shiftedDwarf.type)
-      {
-          case NFW:
-              get_extra_nfw_mass(&shiftedDwarf, 5.0 * shiftedDwarf.r200);
-      }
-      return shiftedDwarf;
-  }
+      real tmp;
 
-  /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR RADIUS---------------------------------------------------*/
-  static inline real_0 gradIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, const Dwarf* shiftedDwarf1, const Dwarf* shiftedDwarf2)
-  {
-      return (radial_dist(r, shiftedDwarf1, shiftedDwarf2, isLight) - radial_dist(r, comp1, comp2, isLight))/H_STEPSIZE_rad;
-  }
-
-  static inline real_0 getGradIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
-  {
       real_0 scale_b = comp1->scaleLength;
       real_0 mass_b = comp1->originmass;
       real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
       real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
-      Dwarf shiftedDwarf1, shiftedDwarf2;
+
+      real scale_light = mw_real_var(scale_b, BARYON_RADIUS_POS);
+      real mass_light = mw_real_var(mass_b, BARYON_MASS_POS);
+      real xi_R = mw_real_var(xi_scale, RADIUS_RATIO_POS);
+      real xi_M = mw_real_var(xi_mass, MASS_RATIO_POS);
+
+      tmp = inv(&xi_R);
+      tmp = mw_add_s(&tmp, -1.0);
+      real scale_dark = mw_mul(&tmp, &scale_light);
+
+      tmp = inv(&xi_M);
+      tmp = mw_add_s(&tmp, -1.0);
+      real mass_dark = mw_mul(&tmp, &mass_light);
+
+      real r_real = mw_real_var(r, BACKWARDS_TIME_POS); //This gradient position is unused in this part of the code, so we are borrowing it
+      tmp = sqr(&r_real);
+      tmp = mw_mul_s(&tmp, 4.0*M_PI);
+
+      real density = get_density_real(comp1, comp2, &r_real, isLight);
+      real mass;
+
+      if(isLight)
+      {
+          mass = mass_light;
+          switch(comp1->type)
+          {
+              case NFW:
+                  mass = get_real_nfw_mass(&mass_light, &scale_light);
+                  break;
+          }
+      }
+      else
+      {
+          mass = mass_dark;
+          switch(comp2->type)
+          {
+              case NFW:
+                  mass = get_real_nfw_mass(&mass_dark, &scale_dark);
+                  break;
+          }
+      }
+
+      tmp = mw_mul(&tmp, &density);
+      real result = mw_div(&tmp, &mass);
+      //printReal(&result, "RAD_DIST");
+      return result;
+  }
+
+static inline int hessianIndex(int i, int j)
+{
+    int eff_i, eff_j, k;
+    if(i<j)
+    {
+        eff_i = j;
+        eff_j = i;
+    }
+    else
+    {
+        eff_i = i;
+        eff_j = j;
+    }
+    k = (int) (eff_i*(eff_i+1)/2 + eff_j);
+    return k;
+}
+
+static inline real_0 find_root_hessian(real* func_val, int i, int j)
+{
+    real_0 df_de = func_val->gradient[R_COORD_POS];
+    real_0 root_grad_i = -func_val->gradient[i] / df_de;
+    real_0 root_grad_j = -func_val->gradient[j] / df_de;
+
+    real_0 d2f_de2 = func_val->hessian[hessianIndex(R_COORD_POS, R_COORD_POS)];
+    real_0 d2f_dedxi = func_val->hessian[hessianIndex(i, R_COORD_POS)];
+    real_0 d2f_dedxj = func_val->hessian[hessianIndex(j, R_COORD_POS)];
+    real_0 d2f_dxidxj = func_val->hessian[hessianIndex(i, j)];
+
+    real_0 numer = d2f_dedxi*root_grad_j + d2f_dedxj*root_grad_i + d2f_de2*root_grad_i*root_grad_j + d2f_dxidxj;
+    real_0 denom = -df_de;
+
+    real_0 hess = numer/denom;
+
+    //mw_printf("f           = %.15e\n", func_val->value);
+    //mw_printf("df_de       = %.15f\n", df_de);
+    //mw_printf("df_dxi      = %.15f\n", func_val->gradient[i]);
+    //mw_printf("df_dxj      = %.15f\n", func_val->gradient[j]);
+    //mw_printf("root_grad_i = %.15f\n", root_grad_i);
+    //mw_printf("root_grad_j = %.15f\n", root_grad_j);
+    //mw_printf("d2f_de2     = %.15f\n", d2f_de2);
+    //mw_printf("d2f_dedxi   = %.15f\n", d2f_dedxi);
+    //mw_printf("d2f_dedxj   = %.15f\n", d2f_dedxj);
+    //mw_printf("d2f_dxidxj  = %.15f\n", d2f_dxidxj);
+    //mw_printf("numer       = %.15f\n", numer);
+    //mw_printf("denom       = %.15f\n", denom);
+    //mw_printf("hessian     = %.15f\n\n", hess);
+
+    return hess;
+}
+
+static inline real find_upperlimit_r_real(const Dwarf* comp1, const Dwarf* comp2, real* energy, real_0 search_range, real* r, real_0 v)
+{
+    int counter = 0;
+    real_0 upperlimit_r_val = 0.0;
+    real upperlimit_r = ZERO_REAL;
+    real func_root_val;
+    //mw_printf("r = %.15f\n", r->value);
+    //mw_printf("v = %.15f\n", v);
+
+    mwbool use_default_r = FALSE;
+    do
+    {
+        upperlimit_r_val = root_finder(potential, comp1, comp2, energy->value, 0.0, search_range);
+
+        //Check upperlimit_r
+        if(isinf(upperlimit_r_val) == FALSE && upperlimit_r_val != 0.0 && isnan(upperlimit_r_val) == FALSE){break;}
+        
+        counter++;
+        
+        if(counter > 100)
+        {
+            use_default_r = TRUE;
+            break;
+        }
+        
+    }while(1);
+
+    if(use_default_r)
+    {
+        upperlimit_r = *r;
+    }
+    else
+    {
+        upperlimit_r.value = upperlimit_r_val;
+        //mw_printf("upperlimit = %.15f\n\n",upperlimit_r_val);
+        upperlimit_r.gradient[R_COORD_POS] = 1.0; //This gradient position is unused here
+        func_root_val = potential_real(&upperlimit_r, comp1, comp2);
+        func_root_val = mw_sub(&func_root_val, energy);
+
+        //Derivative of root-finding algorithm
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[BARYON_RADIUS_POS] / func_root_val.gradient[R_COORD_POS], BARYON_RADIUS_POS);
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[RADIUS_RATIO_POS]  / func_root_val.gradient[R_COORD_POS], RADIUS_RATIO_POS);
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[BARYON_MASS_POS]   / func_root_val.gradient[R_COORD_POS], BARYON_MASS_POS);
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[MASS_RATIO_POS]    / func_root_val.gradient[R_COORD_POS], MASS_RATIO_POS);
+
+        //Hessian of root-finding algorithm
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, BARYON_RADIUS_POS), BARYON_RADIUS_POS, BARYON_RADIUS_POS);
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, RADIUS_RATIO_POS ), BARYON_RADIUS_POS, RADIUS_RATIO_POS );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, BARYON_MASS_POS  ), BARYON_RADIUS_POS, BARYON_MASS_POS  );
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, MASS_RATIO_POS   ), BARYON_RADIUS_POS, MASS_RATIO_POS   );
+
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , RADIUS_RATIO_POS ), RADIUS_RATIO_POS , RADIUS_RATIO_POS );
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , BARYON_MASS_POS  ), RADIUS_RATIO_POS , BARYON_MASS_POS  );
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , MASS_RATIO_POS   ), RADIUS_RATIO_POS , MASS_RATIO_POS   );
+
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , BARYON_MASS_POS  ), BARYON_MASS_POS  , BARYON_MASS_POS  );
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , MASS_RATIO_POS   ), BARYON_MASS_POS  , MASS_RATIO_POS   );
+
+//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, MASS_RATIO_POS   , MASS_RATIO_POS   ), MASS_RATIO_POS   , MASS_RATIO_POS   );
+    }
+        
+    return mw_fabs(&upperlimit_r);
+}
+
+static real gauss_quad_real(real (*func)(real*, const Dwarf*, const Dwarf*, real*), real* lower, real* upper, const Dwarf* comp1, const Dwarf* comp2, real* energy)
+{
+    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
+     * If switching the order of the limits was needed to do this then the negative of the integral is returned.
+     */
+    real_0 Ng;
+    real hg, lowerg, upperg;
+    real intv = ZERO_REAL;//initial value of integral
+    real coef1, coef2;//parameters for gaussian quad
+    real_0 c1, c2, c3;
+    real_0 x1, x2, x3;
+    real x1n, x2n, x3n;
+    real a, b;
+    real benchmark;
+    real part1, part2, part3;
+    
+    if(lower->value > upper->value)
+    {
+        a = *upper;
+        b = *lower;
+    }
+    else
+    {
+        a = *lower; 
+        b = *upper;
+    }
+    
+    benchmark = mw_mul_s(&a, 1.5);
+    Ng = 3000.0;//integral resolution
+    hg = mw_sub(&benchmark, &a);
+    hg = mw_mul_s(&hg, inv_0(Ng));
+    lowerg = a;
+    upperg = mw_add(&lowerg, &hg);
+
+    coef2 = mw_add(&lowerg, &upperg);//initializes the first coeff to change the function limits
+    coef2 = mw_mul_s(&coef2, 0.5);
+    coef1 = mw_sub(&upperg, &lowerg);//initializes the second coeff to change the function limits
+    coef1 = mw_mul_s(&coef1, 0.5);
+    c1 = 0.55555555555; //5.0 / 9.0;
+    c2 = 0.88888888888; //8.0 / 9.0;
+    c3 = 0.55555555555; //5.0 / 9.0;
+    x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
+    x2 = 0.00000000000;
+    x3 = 0.77459666924; //sqrt(3.0 / 5.0);
+
+    x1n = mw_mul_s(&coef1, x1);
+    x1n = mw_add(&x1n, &coef2);
+
+    /*should be: x2n = (coef1 * x2 + coef2);*/
+    x2n = (coef2);
+
+    x3n = mw_mul_s(&coef1, x3);
+    x3n = mw_add(&x3n, &coef2);
+
+    int counter = 0;
+    while (1)
+    {
+        //gauss quad
+        part1 = (*func)(&x1n, comp1, comp2, energy);
+        part1 = mw_mul(&part1, &coef1);
+        part1 = mw_mul_s(&part1, c1);
+
+        part2 = (*func)(&x2n, comp1, comp2, energy);
+        part2 = mw_mul(&part2, &coef1);
+        part2 = mw_mul_s(&part2, c2);
+
+        part3 = (*func)(&x3n, comp1, comp2, energy);
+        part3 = mw_mul(&part3, &coef1);
+        part3 = mw_mul_s(&part3, c3);
+
+        intv = mw_add(&intv, &part1);
+        intv = mw_add(&intv, &part2);
+        intv = mw_add(&intv, &part3);
+
+        lowerg = upperg;
+        upperg = mw_add(&upperg, &hg);
+
+        coef2 = mw_add(&lowerg, &upperg);//initializes the first coeff to change the function limits
+        coef2 = mw_mul_s(&coef2, 0.5);
+        coef1 = mw_sub(&upperg, &lowerg);//initializes the second coeff to change the function limits
+        coef1 = mw_mul_s(&coef1, 0.5);
+
+        x1n = mw_mul_s(&coef1, x1);
+        x1n = mw_add(&x1n, &coef2);
+
+        /*should be: x2n = (coef1 * x2 + coef2);*/
+        x2n = (coef2);
+
+        x3n = mw_mul_s(&coef1, x3);
+        x3n = mw_add(&x3n, &coef2);
+
+        if(lowerg.value > benchmark.value)
+        {
+            Ng = 300.0;//integral resolution
+            hg = mw_sub(&b, &benchmark);
+            hg = mw_mul_s(&hg, inv_0(Ng));
+        }
+            
+        if(upper->value > lower->value)
+        {
+            if(lowerg.value >= upper->value)//loop termination clause
+            {
+                break;
+            }
+        }
+        else if(lower->value > upper->value)
+        {
+            if(lowerg.value >= lower->value)//loop termination clause
+            {
+                break;
+            }
+        }
+        
+        if(counter > 10000000)
+        {
+            break;
+        }
+        else
+        {
+            counter++;
+        }
+        
+        
+    }
+    
+    if(lower->value > upper->value)
+    {
+        intv = mw_mul_s(&intv, -1.0);
+    }
+    
+    return intv;
+}
+
+static real fun_real(real* ri, const Dwarf* comp1, const Dwarf* comp2, real* energy)
+{
+    
+    real first_deriv_psi;
+    real second_deriv_psi;
+    real first_deriv_density;
+    real second_deriv_density;
+    real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
+    real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
+    real diff;
+    real func;
+    real tmp1, tmp2;
+
+    first_deriv_psi      = first_derivative_potential_real(ri, comp1, comp2);
+    first_deriv_density  = first_derivative_density_real(ri, comp1, comp2);
+
+    second_deriv_psi     = second_derivative_potential_real(ri, comp1, comp2);
+    second_deriv_density = second_derivative_density_real(ri, comp1, comp2);
+
+    //mw_printf("first_deriv_psi = %.15f\n", first_deriv_psi.value);
+    //mw_printf("first_deriv_rho = %.15f\n", first_deriv_density.value);
+
+    //mw_printf("second_deriv_psi = %.15f\n", second_deriv_psi.value);
+    //mw_printf("second_deriv_rho = %.15f\n", second_deriv_density.value);
+    
+    
+    /*just in case*/
+    if(first_deriv_psi.value == 0.0)
+    {
+        first_deriv_psi = mw_real_const(1.0e-6);//this should be small enough
+    }
+
+    tmp1 = inv(&first_deriv_psi);
+    tmp1 = mw_mul(&second_deriv_density, &tmp1);
+    tmp2 = sqr(&first_deriv_psi);
+    tmp2 = inv(&tmp2);
+    tmp2 = mw_mul(&second_deriv_psi, &tmp2);
+    tmp2 = mw_mul(&first_deriv_density, &tmp2);
+    dsqden_dpsisq = mw_sub(&tmp1, &tmp2);
+
+    tmp1 = potential_real(ri, comp1, comp2);
+    tmp1 = mw_sub(energy, &tmp1);
+    diff = mw_fabs(&tmp1);
+    
+    /*we don't want to have a 0 in the demon*/
+    if(diff.value != 0.0)
+    {
+        denominator = minushalf( &diff );
+    }
+    else
+    {
+        /*if the r is exactly at the singularity then move it a small amount.*/
+        real ri_shift = mw_add_s(ri, 0.0001);
+        tmp1 = potential_real(&ri_shift, comp1, comp2);
+        tmp1 = mw_sub(energy, &tmp1);
+        tmp1 = mw_fabs(&tmp1);
+        denominator = minushalf(&tmp1);
+    }
+    
+    
+    /*
+     * the second derivative term should be divided by the first derivate of psi. 
+     * However, from changing from dpsi to dr we multiply by first derivative of psi. 
+     * Since these undo each other we left them out completely.
+     */
+    
+    func = mw_mul(&dsqden_dpsisq, &denominator);
+    //printf("radius: %1f, energy: %1f, numerator: %1f, denom: %1f, func: %1f\n", ri, energy, dsqden_dpsisq, 1.0 / denominator, func);
+    //mw_printf("func = %.15f\n", func.value);
+    return func;
+        
+}
+
+//"REAL" version of dist_fun for calculating derivatives
+static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    /*This returns the value of the distribution function*/
+    
+    //-------------------------------
+      real tmp;
+
+      real_0 scale_b = comp1->scaleLength;
+      real_0 mass_b = comp1->originmass;
+      real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
+      real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
+
+      real scale_light = mw_real_var(scale_b, BARYON_RADIUS_POS);
+      real mass_light = mw_real_var(mass_b, BARYON_MASS_POS);
+      real xi_R = mw_real_var(xi_scale, RADIUS_RATIO_POS);
+      real xi_M = mw_real_var(xi_mass, MASS_RATIO_POS);
+
+      tmp = inv(&xi_R);
+      tmp = mw_add_s(&tmp, -1.0);
+      real scale_dark = mw_mul(&tmp, &scale_light);
+
+      tmp = inv(&xi_M);
+      tmp = mw_add_s(&tmp, -1.0);
+      real mass_dark = mw_mul(&tmp, &mass_light);
+
+      real v_real = mw_real_var(v, BACKWARDS_TIME_POS);
+    //-------------------------------
+    
+    
+    real distribution_function = ZERO_REAL;
+//     real_0 cons = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+    real_0 cons = 0.03582244801567226;
+    real energy = ZERO_REAL;
+    real upperlimit_r = ZERO_REAL;
+    real lowerlimit_r = ZERO_REAL; 
+    int counter = 0;
+    real_0 search_range = 0.0;   
+    
+    /*energy as defined in binney*/
+    tmp = sqr(&v_real);
+    tmp = mw_mul_s(&tmp, 0.5);
+    real pot = potential_real(r, comp1, comp2);
+    energy = mw_sub(&pot, &tmp); 
+    
+    /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
+    search_range = 20.0 * mw_sqrt_0( mw_fabs_0( sqr_0(mass_dark.value / energy.value) - sqr_0(scale_dark.value) ));
+    
+    
+    while(potential(search_range, comp1, comp2) > energy.value)
+    {
+        search_range = 100.0 * search_range;
+        
+        if(counter > 100)
+        {
+            search_range = 100.0 * (scale_light.value + scale_dark.value);//default
+            break;
+        }
+        counter++;
+    }
+    upperlimit_r = find_upperlimit_r_real(comp1, comp2, &energy, search_range, r, v);
+
+    lowerlimit_r = mw_real_const(upperlimit_r.value * 10.0);
+
+    /*This calls guassian quad to integrate the function for a given energy*/
+    tmp = sqr(&v_real);
+    tmp = mw_mul_s(&tmp, cons);
+    //mw_printf("UPPER = %.15f\n", upperlimit_r.value);
+    //mw_printf("LOWER = %.15f\n", lowerlimit_r.value);
+    //mw_printf("energy = %.15f\n", energy.value);
+    real gauss_val = gauss_quad_real(fun_real, &lowerlimit_r, &upperlimit_r, comp1, comp2, &energy);
+    //mw_printf("GAUSS_QUAD = %.15f\n", gauss_val.value);
+    distribution_function = mw_mul(&tmp, &gauss_val);
+
+    return distribution_function;
+}
+
+  static inline real vel_dist(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2) //Normalized velocity distribution
+  {
+      //Report normalized distribution value
+      real dist_val = dist_fun_real(v, r, comp1, comp2);
+      //mw_printf("DIST_VAL  = %.15f\n", dist_val.value);
+      real den = density_real(r, comp1, comp2);
+      real tmp = mw_div(&dist_val, &den);
+      tmp = mw_mul_s(&tmp, 4*M_PI);
+      return tmp;
+  }
+
+  /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR RADIUS---------------------------------------------------*/
+  static inline real_0 gradIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
+  {
+      real dist_val = radial_dist(r, comp1, comp2, isLight);
+      //mw_printf("DIST_VAL  = %.15f\n", dist_val.value);
+      //mw_printf("DIST_GRAD = %.15f\n", dist_val.gradient[i]);
+      return dist_val.gradient[i];
+  }
+
+  static inline real_0 getGradIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
+  {
       real_0 numBins = 10.0;
       real_0 integral;
 
@@ -668,20 +1144,6 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
       real_0 r1, r2, r3, integrand1, integrand2, integrand3;
 
-      switch(i)
-      {
-          case(BARYON_RADIUS_POS):
-              scale_b += H_STEPSIZE_rad;
-          case(RADIUS_RATIO_POS):
-              xi_scale += H_STEPSIZE_rad;
-          case(BARYON_MASS_POS):
-              mass_b += H_STEPSIZE_rad;
-          case(MASS_RATIO_POS):
-              xi_mass += H_STEPSIZE_rad;
-      }
-
-      shiftedDwarf1 = getShiftedDwarf(comp1, scale_b, xi_scale, mass_b, xi_mass, TRUE);
-      shiftedDwarf2 = getShiftedDwarf(comp2, scale_b, xi_scale, mass_b, xi_mass, FALSE);
       integral = 0;
       for(int k = 0; k < numBins; k++)
       {
@@ -691,15 +1153,17 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
           r2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
           r3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
 
-          integrand1 = gradIntegrand_rad(r1, comp1, comp2, isLight, &shiftedDwarf1, &shiftedDwarf2);
-          integrand2 = gradIntegrand_rad(r2, comp1, comp2, isLight, &shiftedDwarf1, &shiftedDwarf2);
-          integrand3 = gradIntegrand_rad(r3, comp1, comp2, isLight, &shiftedDwarf1, &shiftedDwarf2);
+          integrand1 = gradIntegrand_rad(r1, comp1, comp2, isLight, i);
+          integrand2 = gradIntegrand_rad(r2, comp1, comp2, isLight, i);
+          integrand3 = gradIntegrand_rad(r3, comp1, comp2, isLight, i);
 
           integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
                     + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
                     + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
       }
-      integral = -integral / radial_dist(r->value, comp1, comp2, isLight);
+      real dist_val = radial_dist(r->value, comp1, comp2, isLight);
+      integral = -integral / dist_val.value;
+      //mw_printf("INTEGRAL = %.15f\n", integral);
       return integral;
   }
 
@@ -724,23 +1188,14 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       setRealGradient(r, integral, MASS_RATIO_POS);
   }
 
-  static inline real_0 hessIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, const Dwarf* shiftedDwarf1_i, const Dwarf* shiftedDwarf1_j, const Dwarf* shiftedDwarf1_d, const Dwarf* shiftedDwarf2_i, const Dwarf* shiftedDwarf2_j, const Dwarf* shiftedDwarf2_d, int i, int j)
+  static inline real_0 hessIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
   {
-      real_0 integrand = (  radial_dist(r, shiftedDwarf1_d, shiftedDwarf2_d, isLight)
-                          - radial_dist(r, shiftedDwarf1_i, shiftedDwarf2_i, isLight)
-                          - radial_dist(r, shiftedDwarf1_j, shiftedDwarf2_j, isLight)
-                          + radial_dist(r, comp1, comp2, isLight)                    )/H_STEPSIZE_rad/H_STEPSIZE_rad;
-
-      return integrand;
+      real dist_val = radial_dist(r, comp1, comp2, isLight);
+      return dist_val.hessian[hessianIndex(i, j)];
   }
 
   static inline real_0 getHessIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
   {
-      real_0 scale_b = comp1->scaleLength;
-      real_0 mass_b = comp1->originmass;
-      real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
-      real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
-      Dwarf shiftedDwarf1_i, shiftedDwarf1_j, shiftedDwarf1_d, shiftedDwarf2_i, shiftedDwarf2_j, shiftedDwarf2_d;
       real_0 integral;
       real_0 numBins = 100.0;
 
@@ -757,64 +1212,11 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
       real_0 r1, r2, r3, integrand1, integrand2, integrand3;
 
-      real_0 scale_b_i = scale_b;
-      real_0 scale_b_j = scale_b;
-      real_0 scale_b_d = scale_b;
+      real_0 df_dx_i = gradIntegrand_rad(r->value, comp1, comp2, isLight, i);
+      real_0 df_dx_j = gradIntegrand_rad(r->value, comp1, comp2, isLight, j);
 
-      real_0 mass_b_i = mass_b;
-      real_0 mass_b_j = mass_b;
-      real_0 mass_b_d = mass_b;
-
-      real_0 xi_scale_i = xi_scale;
-      real_0 xi_scale_j = xi_scale;
-      real_0 xi_scale_d = xi_scale;
-
-      real_0 xi_mass_i = xi_mass;
-      real_0 xi_mass_j = xi_mass;
-      real_0 xi_mass_d = xi_mass;
-
-      switch(i)
-      {
-          case(BARYON_RADIUS_POS):
-              scale_b_i += H_STEPSIZE_rad;
-              scale_b_d += H_STEPSIZE_rad;
-          case(RADIUS_RATIO_POS):
-              xi_scale_i += H_STEPSIZE_rad;
-              xi_scale_d += H_STEPSIZE_rad;
-          case(BARYON_MASS_POS):
-              mass_b_i += H_STEPSIZE_rad;
-              mass_b_d += H_STEPSIZE_rad;
-          case(MASS_RATIO_POS):
-              xi_mass_i += H_STEPSIZE_rad;
-              xi_mass_d += H_STEPSIZE_rad;
-      }
-
-      switch(j)
-      {
-          case(BARYON_RADIUS_POS):
-              scale_b_j += H_STEPSIZE_rad;
-              scale_b_d += H_STEPSIZE_rad;
-          case(RADIUS_RATIO_POS):
-              xi_scale_j += H_STEPSIZE_rad;
-              xi_scale_d += H_STEPSIZE_rad;
-          case(BARYON_MASS_POS):
-              mass_b_j += H_STEPSIZE_rad;
-              mass_b_d += H_STEPSIZE_rad;
-          case(MASS_RATIO_POS):
-              xi_mass_j += H_STEPSIZE_rad;
-              xi_mass_d += H_STEPSIZE_rad;
-      }
-
-      shiftedDwarf1_i = getShiftedDwarf(comp1, scale_b_i, xi_scale_i, mass_b_i, xi_mass_i, TRUE);
-      shiftedDwarf1_j = getShiftedDwarf(comp1, scale_b_j, xi_scale_j, mass_b_j, xi_mass_j, TRUE);
-      shiftedDwarf1_d = getShiftedDwarf(comp1, scale_b_d, xi_scale_d, mass_b_d, xi_mass_d, TRUE);
-      shiftedDwarf2_i = getShiftedDwarf(comp2, scale_b_i, xi_scale_i, mass_b_i, xi_mass_i, FALSE);
-      shiftedDwarf2_j = getShiftedDwarf(comp2, scale_b_j, xi_scale_j, mass_b_j, xi_mass_j, FALSE);
-      shiftedDwarf2_d = getShiftedDwarf(comp2, scale_b_d, xi_scale_d, mass_b_d, xi_mass_d, FALSE);
-
-      real_0 df_dx_i = gradIntegrand_rad(r->value, comp1, comp2, isLight, &shiftedDwarf1_i, &shiftedDwarf2_i);
-      real_0 df_dx_j = gradIntegrand_rad(r->value, comp1, comp2, isLight, &shiftedDwarf1_j, &shiftedDwarf2_j);
-      real_0 df_de = (radial_dist(r->value + H_STEPSIZE_rad, comp1, comp2, isLight) - radial_dist(r->value, comp1, comp2, isLight))/H_STEPSIZE_rad;
+      real dist_val = radial_dist(r->value, comp1, comp2, isLight);
+      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS];
 
       integral = 0.0;
       for(int k = 0; k < numBins; k++)
@@ -825,9 +1227,9 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
           r2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
           r3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
 
-          integrand1 = hessIntegrand_rad(r1, comp1, comp2, isLight, &shiftedDwarf1_i, &shiftedDwarf1_j, &shiftedDwarf1_d, &shiftedDwarf2_i, &shiftedDwarf2_j, &shiftedDwarf2_d, i, j);
-          integrand2 = hessIntegrand_rad(r2, comp1, comp2, isLight, &shiftedDwarf1_i, &shiftedDwarf1_j, &shiftedDwarf1_d, &shiftedDwarf2_i, &shiftedDwarf2_j, &shiftedDwarf2_d, i, j);
-          integrand3 = hessIntegrand_rad(r3, comp1, comp2, isLight, &shiftedDwarf1_i, &shiftedDwarf1_j, &shiftedDwarf1_d, &shiftedDwarf2_i, &shiftedDwarf2_j, &shiftedDwarf2_d, i, j);
+          integrand1 = hessIntegrand_rad(r1, comp1, comp2, isLight, i, j);
+          integrand2 = hessIntegrand_rad(r2, comp1, comp2, isLight, i, j);
+          integrand3 = hessIntegrand_rad(r3, comp1, comp2, isLight, i, j);
 
           integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
                     + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
@@ -835,7 +1237,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       }
 
       integral += df_dx_i * r->gradient[j] + df_dx_j * r->gradient[i] + df_de * r->gradient[i] * r->gradient[j]; // Other terms of the Hessian
-      integral = -integral / radial_dist(r->value, comp1, comp2, isLight);
+      integral = -integral / dist_val.value;
       return integral;
   }
 
@@ -894,21 +1296,15 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
   }
 
   /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR VELOCITY---------------------------------------------------*/
-  static inline real_0 gradIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, const Dwarf* shiftedDwarf1, const Dwarf* shiftedDwarf2, int i)
+  static inline real_0 gradIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
   {
-      real_0 df_dx = (vel_dist(v, r->value, shiftedDwarf1, shiftedDwarf2) - vel_dist(v, r->value, comp1, comp2))/H_STEPSIZE_vel;
-      real_0 df_dr = (vel_dist(v, r->value + H_STEPSIZE_vel, comp1, comp2) - vel_dist(v, r->value, comp1, comp2))/H_STEPSIZE_vel;
-      return df_dx + df_dr*r->gradient[i];
+      real dist_val = vel_dist(v, r, comp1, comp2);
+      return dist_val.gradient[i];
   }
 
   static inline real_0 getGradIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
   {
-      real_0 scale_b = comp1->scaleLength;
-      real_0 mass_b = comp1->originmass;
-      real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
-      real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
-      Dwarf shiftedDwarf1, shiftedDwarf2;
-      real_0 numBins = 1000.0;
+      real_0 numBins = 10.0;
       real_0 integral;
 
       real_0 a = 0.0;
@@ -924,21 +1320,7 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
       real_0 v1, v2, v3, integrand1, integrand2, integrand3;
 
-      switch(i)
-      {
-          case(BARYON_RADIUS_POS):
-              scale_b += H_STEPSIZE_vel;
-          case(RADIUS_RATIO_POS):
-              xi_scale += H_STEPSIZE_vel;
-          case(BARYON_MASS_POS):
-              mass_b += H_STEPSIZE_vel;
-          case(MASS_RATIO_POS):
-              xi_mass += H_STEPSIZE_vel;
-      }
-
-      shiftedDwarf1 = getShiftedDwarf(comp1, scale_b, xi_scale, mass_b, xi_mass, TRUE);
-      shiftedDwarf2 = getShiftedDwarf(comp2, scale_b, xi_scale, mass_b, xi_mass, FALSE);
-      integral = 0;
+      integral = 0.0;
       for(int k = 0; k < numBins; k++)
       {
           a_tmp = k*width;
@@ -947,15 +1329,17 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
           v2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
           v3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
 
-          integrand1 = gradIntegrand_vel(v1, r, comp1, comp2, &shiftedDwarf1, &shiftedDwarf2, i);
-          integrand2 = gradIntegrand_vel(v2, r, comp1, comp2, &shiftedDwarf1, &shiftedDwarf2, i);
-          integrand3 = gradIntegrand_vel(v3, r, comp1, comp2, &shiftedDwarf1, &shiftedDwarf2, i);
+          integrand1 = gradIntegrand_vel(v1, r, comp1, comp2, i);
+          integrand2 = gradIntegrand_vel(v2, r, comp1, comp2, i);
+          integrand3 = gradIntegrand_vel(v3, r, comp1, comp2, i);
 
           integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
                     + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
                     + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
       }
-      integral = -integral / vel_dist(v->value, r->value, comp1, comp2);
+
+      real dist_val = vel_dist(v->value, r, comp1, comp2);
+      integral = -integral / dist_val.value;
       return integral;
   }
 
@@ -980,37 +1364,27 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       setRealGradient(v, integral, MASS_RATIO_POS);
   }
 
-  static inline real_0 hessIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, const Dwarf* shiftedDwarf1_i, const Dwarf* shiftedDwarf1_j, const Dwarf* shiftedDwarf1_d, const Dwarf* shiftedDwarf2_i, const Dwarf* shiftedDwarf2_j, const Dwarf* shiftedDwarf2_d, int i, int j)
+  static inline real_0 hessIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
   {
-      //r has derivative information, so we also apply shifts to r
-      real_0 shifted_r_i = r->value + r->gradient[i]*H_STEPSIZE_vel;
-      real_0 shifted_r_j = r->value + r->gradient[j]*H_STEPSIZE_vel;
-      real_0 shifted_r_d = r->value + r->gradient[i]*H_STEPSIZE_vel + r->gradient[j]*H_STEPSIZE_vel;
-
-      real_0 integrand =  (  vel_dist(v, shifted_r_d, shiftedDwarf1_d, shiftedDwarf2_d)
-                           - vel_dist(v, shifted_r_i, shiftedDwarf1_i, shiftedDwarf2_i)
-                           - vel_dist(v, shifted_r_j, shiftedDwarf1_j, shiftedDwarf2_j)
-                           + vel_dist(v, r->value, comp1, comp2)                                   )/H_STEPSIZE_vel/H_STEPSIZE_vel;
-
-      return integrand;
-      //return 0.0;
+      real dist_val = vel_dist(v, r, comp1, comp2);
+      if((i==BARYON_MASS_POS)&&(j==BARYON_MASS_POS))
+      {
+          mw_printf("r = %.15f\n", r->value);
+          mw_printf("v = %.15f\n", v);
+          mw_printf("dist_val = %.15f\n", dist_val.value);
+          mw_printf("hessian  = %.15f\n\n", dist_val.hessian[hessianIndex(i, j)]);
+      }
+      return dist_val.hessian[hessianIndex(i, j)];
   }
 
   static inline real_0 getHessIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
   {
-      real_0 scale_b = comp1->scaleLength;
-      real_0 mass_b = comp1->originmass;
-      real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
-      real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
-      Dwarf shiftedDwarf1_i, shiftedDwarf1_j, shiftedDwarf1_d, shiftedDwarf2_i, shiftedDwarf2_j, shiftedDwarf2_d;
       real_0 integral;
-      real_0 numBins = 100.0;
+      real_0 numBins = 500.0;
 
       real_0 a = 0.0;
       real_0 b = v->value;
       real_0 width = (b-a)/numBins;
-      real_0 a_tmp;
-      real_0 b_tmp;
       real_0 c1 = 0.55555555555; //5.0 / 9.0;
       real_0 c2 = 0.88888888888; //8.0 / 9.0;
       real_0 c3 = 0.55555555555; //5.0 / 9.0;
@@ -1019,85 +1393,46 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
       real_0 v1, v2, v3, integrand1, integrand2, integrand3;
 
-      real_0 scale_b_i = scale_b;
-      real_0 scale_b_j = scale_b;
-      real_0 scale_b_d = scale_b;
+      real dist_val = vel_dist(v->value, r, comp1, comp2);
+      real_0 df_dx_i = dist_val.gradient[i];
+      real_0 df_dx_j = dist_val.gradient[j];
 
-      real_0 mass_b_i = mass_b;
-      real_0 mass_b_j = mass_b;
-      real_0 mass_b_d = mass_b;
-
-      real_0 xi_scale_i = xi_scale;
-      real_0 xi_scale_j = xi_scale;
-      real_0 xi_scale_d = xi_scale;
-
-      real_0 xi_mass_i = xi_mass;
-      real_0 xi_mass_j = xi_mass;
-      real_0 xi_mass_d = xi_mass;
-
-      switch(i)
-      {
-          case(BARYON_RADIUS_POS):
-              scale_b_i += H_STEPSIZE_vel;
-              scale_b_d += H_STEPSIZE_vel;
-          case(RADIUS_RATIO_POS):
-              xi_scale_i += H_STEPSIZE_vel;
-              xi_scale_d += H_STEPSIZE_vel;
-          case(BARYON_MASS_POS):
-              mass_b_i += H_STEPSIZE_vel;
-              mass_b_d += H_STEPSIZE_vel;
-          case(MASS_RATIO_POS):
-              xi_mass_i += H_STEPSIZE_vel;
-              xi_mass_d += H_STEPSIZE_vel;
-      }
-
-      switch(j)
-      {
-          case(BARYON_RADIUS_POS):
-              scale_b_j += H_STEPSIZE_vel;
-              scale_b_d += H_STEPSIZE_vel;
-          case(RADIUS_RATIO_POS):
-              xi_scale_j += H_STEPSIZE_vel;
-              xi_scale_d += H_STEPSIZE_vel;
-          case(BARYON_MASS_POS):
-              mass_b_j += H_STEPSIZE_vel;
-              mass_b_d += H_STEPSIZE_vel;
-          case(MASS_RATIO_POS):
-              xi_mass_j += H_STEPSIZE_vel;
-              xi_mass_d += H_STEPSIZE_vel;
-      }
-
-      shiftedDwarf1_i = getShiftedDwarf(comp1, scale_b_i, xi_scale_i, mass_b_i, xi_mass_i, TRUE);
-      shiftedDwarf1_j = getShiftedDwarf(comp1, scale_b_j, xi_scale_j, mass_b_j, xi_mass_j, TRUE);
-      shiftedDwarf1_d = getShiftedDwarf(comp1, scale_b_d, xi_scale_d, mass_b_d, xi_mass_d, TRUE);
-      shiftedDwarf2_i = getShiftedDwarf(comp2, scale_b_i, xi_scale_i, mass_b_i, xi_mass_i, FALSE);
-      shiftedDwarf2_j = getShiftedDwarf(comp2, scale_b_j, xi_scale_j, mass_b_j, xi_mass_j, FALSE);
-      shiftedDwarf2_d = getShiftedDwarf(comp2, scale_b_d, xi_scale_d, mass_b_d, xi_mass_d, FALSE);
-
-      real_0 df_dx_i = gradIntegrand_vel(v->value, r, comp1, comp2, &shiftedDwarf1_i, &shiftedDwarf2_i, i);
-      real_0 df_dx_j = gradIntegrand_vel(v->value, r, comp1, comp2, &shiftedDwarf1_j, &shiftedDwarf2_j, j);
-      real_0 df_de = (vel_dist(v->value + H_STEPSIZE_vel, r->value, comp1, comp2) - vel_dist(v->value, r->value, comp1, comp2))/H_STEPSIZE_vel;
+      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS];
 
       integral = 0.0;
+      real_0 a_tmp = a;
+      real_0 b_tmp = a + width;
       for(int k = 0; k < numBins; k++)
       {
-          a_tmp = k*width;
-          b_tmp = (k+1)*width;
           v1 = (b_tmp-a_tmp)*x1/2.0 + (b_tmp+a_tmp)/2.0;
           v2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
           v3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
 
-          integrand1 = hessIntegrand_vel(v1, r, comp1, comp2, &shiftedDwarf1_i, &shiftedDwarf1_j, &shiftedDwarf1_d, &shiftedDwarf2_i, &shiftedDwarf2_j, &shiftedDwarf2_d, i, j);
-          integrand2 = hessIntegrand_vel(v2, r, comp1, comp2, &shiftedDwarf1_i, &shiftedDwarf1_j, &shiftedDwarf1_d, &shiftedDwarf2_i, &shiftedDwarf2_j, &shiftedDwarf2_d, i, j);
-          integrand3 = hessIntegrand_vel(v3, r, comp1, comp2, &shiftedDwarf1_i, &shiftedDwarf1_j, &shiftedDwarf1_d, &shiftedDwarf2_i, &shiftedDwarf2_j, &shiftedDwarf2_d, i, j);
+          integrand1 = hessIntegrand_vel(v1, r, comp1, comp2, i, j);
+          integrand2 = hessIntegrand_vel(v2, r, comp1, comp2, i, j);
+          integrand3 = hessIntegrand_vel(v3, r, comp1, comp2, i, j);
 
           integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
                     + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
                     + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
+
+          a_tmp += width;
+          b_tmp += width;
       }
 
+      mw_printf("r = %.15f\n", r->value);
+      mw_printf("v = %.15f\n\n", v->value);
+
+      mw_printf("integral= %.15f\n", integral);
+      mw_printf("df_dx_i = %.15f\n", df_dx_i);
+      mw_printf("df_dx_j = %.15f\n", df_dx_j);
+      mw_printf("df_de   = %.15f\n", df_de);
+      mw_printf("dv_dx_i = %.15f\n", v->gradient[i]);
+      mw_printf("dv_dx_j = %.15f\n", v->gradient[j]);
+      mw_printf("f       = %.15f\n\n", dist_val.value);
+
       integral += df_dx_i * v->gradient[j] + df_dx_j * v->gradient[i] + df_de * v->gradient[i] * v->gradient[j]; // Other terms of the Hessian
-      integral = -integral / vel_dist(v->value, r->value, comp1, comp2);
+      integral = -integral / dist_val.value;
       return integral;
   }
 
@@ -1110,40 +1445,40 @@ static inline real get_real_nfw_mass(real* mass, real* scale) //This function pr
       setRealHessian(v, integral, BARYON_RADIUS_POS, BARYON_RADIUS_POS);
 
       //hessian (a_b, xi_R)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
-      setRealHessian(v, integral, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+//      setRealHessian(v, integral, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
 
       //hessian (a_b, M_b)
       integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, BARYON_MASS_POS);
       setRealHessian(v, integral, BARYON_RADIUS_POS, BARYON_MASS_POS);
 
       //hessian (a_b, xi_M)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, MASS_RATIO_POS);
-      setRealHessian(v, integral, BARYON_RADIUS_POS, MASS_RATIO_POS);
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, MASS_RATIO_POS);
+//      setRealHessian(v, integral, BARYON_RADIUS_POS, MASS_RATIO_POS);
 
       //hessian (xi_R, xi_R)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
-      setRealHessian(v, integral, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+//      setRealHessian(v, integral, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
 
       //hessian (xi_R, M_b)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, BARYON_MASS_POS);
-      setRealHessian(v, integral, RADIUS_RATIO_POS, BARYON_MASS_POS);
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, BARYON_MASS_POS);
+//      setRealHessian(v, integral, RADIUS_RATIO_POS, BARYON_MASS_POS);
 
       //hessian (xi_R, xi_M)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, MASS_RATIO_POS);
-      setRealHessian(v, integral, RADIUS_RATIO_POS, MASS_RATIO_POS);
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, MASS_RATIO_POS);
+//      setRealHessian(v, integral, RADIUS_RATIO_POS, MASS_RATIO_POS);
 
       //hessian (M_b, M_b)
       integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, BARYON_MASS_POS);
       setRealHessian(v, integral, BARYON_MASS_POS, BARYON_MASS_POS);
 
       //hessian (M_b, xi_M)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, MASS_RATIO_POS);
-      setRealHessian(v, integral, BARYON_MASS_POS, MASS_RATIO_POS);
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, MASS_RATIO_POS);
+//      setRealHessian(v, integral, BARYON_MASS_POS, MASS_RATIO_POS);
 
       //hessian (xi_M, xi_M)
-      integral = getHessIntegral_vel(v, r, comp1, comp2, MASS_RATIO_POS, MASS_RATIO_POS);
-      setRealHessian(v, integral, MASS_RATIO_POS, MASS_RATIO_POS);  
+//      integral = getHessIntegral_vel(v, r, comp1, comp2, MASS_RATIO_POS, MASS_RATIO_POS);
+//      setRealHessian(v, integral, MASS_RATIO_POS, MASS_RATIO_POS);  
   }
 
   static inline void getDwarfDerivativeInfo_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2)
@@ -1864,7 +2199,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
               vx_frac = vx[i].value / v_val.value;
               vy_frac = vy[i].value / v_val.value;
               vz_frac = vz[i].value / v_val.value;
-              getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2);
+              if (i < half_bodies)
+              {
+                  getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2);
+              }
               vx[i] = mw_mul_s(&v_val, vx_frac);
               vy[i] = mw_mul_s(&v_val, vy_frac);
               vz[i] = mw_mul_s(&v_val, vz_frac);

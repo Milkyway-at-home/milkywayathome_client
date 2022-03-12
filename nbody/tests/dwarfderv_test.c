@@ -5,7 +5,7 @@
 #include "dSFMT.h"
 #include <stdio.h>
 
-#define autodiff_thresh (0.0001)
+#define autodiff_thresh (0.0)
 
 static inline int checkRadDerv(mwvector* pos, real_0 a)
 {
@@ -47,6 +47,8 @@ static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
     real velocity = mw_hypot(&X(vel), &Y(vel));
     velocity = mw_hypot(&velocity, &Z(vel));
     real_0 v_s = velocity.value;
+
+    real_0 v_esc = mw_sqrt_0(2.0*M / mw_hypot_0(r_s, a));
 
     real_0 expect_derv_a = -v_s / 2.0 / a;
     real_0 actual_derv_a = velocity.gradient[BARYON_RADIUS_POS];
