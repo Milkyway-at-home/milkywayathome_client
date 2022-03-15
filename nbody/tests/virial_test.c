@@ -29,7 +29,7 @@ int main()
 
     int test_fails=0;
 
-    const int nTests = 1000;
+    const int nTests = 100;
     const real ZERO_THRESHOLD = 1.0e-5;
 
     real a_b, a_d, M_b, M_d, flip, lhs, rhs, comp;

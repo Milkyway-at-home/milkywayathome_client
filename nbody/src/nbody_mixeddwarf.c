@@ -582,7 +582,7 @@ static inline real_0 dist_fun(real_0 v, real_0 r, const Dwarf* comp1, const Dwar
      */
     lowerlimit_r = 10.0 * (upperlimit_r);
 
-    /*This calls guassian quad to integrate the function for a given energy*/
+    /*This calls gaussian quad to integrate the function for a given energy*/
     distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
     return distribution_function;
 }
@@ -742,31 +742,15 @@ static inline real_0 find_root_hessian(real* func_val, int i, int j)
 
     real_0 hess = numer/denom;
 
-    //mw_printf("f           = %.15e\n", func_val->value);
-    //mw_printf("df_de       = %.15f\n", df_de);
-    //mw_printf("df_dxi      = %.15f\n", func_val->gradient[i]);
-    //mw_printf("df_dxj      = %.15f\n", func_val->gradient[j]);
-    //mw_printf("root_grad_i = %.15f\n", root_grad_i);
-    //mw_printf("root_grad_j = %.15f\n", root_grad_j);
-    //mw_printf("d2f_de2     = %.15f\n", d2f_de2);
-    //mw_printf("d2f_dedxi   = %.15f\n", d2f_dedxi);
-    //mw_printf("d2f_dedxj   = %.15f\n", d2f_dedxj);
-    //mw_printf("d2f_dxidxj  = %.15f\n", d2f_dxidxj);
-    //mw_printf("numer       = %.15f\n", numer);
-    //mw_printf("denom       = %.15f\n", denom);
-    //mw_printf("hessian     = %.15f\n\n", hess);
-
     return hess;
 }
 
-static inline real find_upperlimit_r_real(const Dwarf* comp1, const Dwarf* comp2, real* energy, real_0 search_range, real* r, real_0 v)
+static inline real find_upperlimit_r_real(const Dwarf* comp1, const Dwarf* comp2, real* energy, real_0 search_range, real* r)
 {
     int counter = 0;
     real_0 upperlimit_r_val = 0.0;
     real upperlimit_r = ZERO_REAL;
     real func_root_val;
-    //mw_printf("r = %.15f\n", r->value);
-    //mw_printf("v = %.15f\n", v);
 
     mwbool use_default_r = FALSE;
     do
@@ -778,7 +762,7 @@ static inline real find_upperlimit_r_real(const Dwarf* comp1, const Dwarf* comp2
         
         counter++;
         
-        if(counter > 100)
+        if(counter > 10000)
         {
             use_default_r = TRUE;
             break;
@@ -806,20 +790,23 @@ static inline real find_upperlimit_r_real(const Dwarf* comp1, const Dwarf* comp2
 
         //Hessian of root-finding algorithm
         setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, BARYON_RADIUS_POS), BARYON_RADIUS_POS, BARYON_RADIUS_POS);
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, RADIUS_RATIO_POS ), BARYON_RADIUS_POS, RADIUS_RATIO_POS );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, RADIUS_RATIO_POS ), BARYON_RADIUS_POS, RADIUS_RATIO_POS );
         setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, BARYON_MASS_POS  ), BARYON_RADIUS_POS, BARYON_MASS_POS  );
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, MASS_RATIO_POS   ), BARYON_RADIUS_POS, MASS_RATIO_POS   );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, MASS_RATIO_POS   ), BARYON_RADIUS_POS, MASS_RATIO_POS   );
 
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , RADIUS_RATIO_POS ), RADIUS_RATIO_POS , RADIUS_RATIO_POS );
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , BARYON_MASS_POS  ), RADIUS_RATIO_POS , BARYON_MASS_POS  );
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , MASS_RATIO_POS   ), RADIUS_RATIO_POS , MASS_RATIO_POS   );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , RADIUS_RATIO_POS ), RADIUS_RATIO_POS , RADIUS_RATIO_POS );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , BARYON_MASS_POS  ), RADIUS_RATIO_POS , BARYON_MASS_POS  );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , MASS_RATIO_POS   ), RADIUS_RATIO_POS , MASS_RATIO_POS   );
 
         setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , BARYON_MASS_POS  ), BARYON_MASS_POS  , BARYON_MASS_POS  );
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , MASS_RATIO_POS   ), BARYON_MASS_POS  , MASS_RATIO_POS   );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , MASS_RATIO_POS   ), BARYON_MASS_POS  , MASS_RATIO_POS   );
 
-//        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, MASS_RATIO_POS   , MASS_RATIO_POS   ), MASS_RATIO_POS   , MASS_RATIO_POS   );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, MASS_RATIO_POS   , MASS_RATIO_POS   ), MASS_RATIO_POS   , MASS_RATIO_POS   );
     }
-        
+
+    //We need a derivative with respect to the velocity for the hessian calculation later. Hessians of velocities are surprisingly not needed
+    setRealGradient(&upperlimit_r, -func_root_val.gradient[BACKWARDS_TIME_POS]/ func_root_val.gradient[R_COORD_POS], BACKWARDS_TIME_POS);
+
     return mw_fabs(&upperlimit_r);
 }
 
@@ -851,7 +838,7 @@ static real gauss_quad_real(real (*func)(real*, const Dwarf*, const Dwarf*, real
     }
     
     benchmark = mw_mul_s(&a, 1.5);
-    Ng = 3000.0;//integral resolution
+    Ng = 100.0;//integral resolution
     hg = mw_sub(&benchmark, &a);
     hg = mw_mul_s(&hg, inv_0(Ng));
     lowerg = a;
@@ -916,7 +903,7 @@ static real gauss_quad_real(real (*func)(real*, const Dwarf*, const Dwarf*, real
 
         if(lowerg.value > benchmark.value)
         {
-            Ng = 300.0;//integral resolution
+            Ng = 10.0;//integral resolution
             hg = mw_sub(&b, &benchmark);
             hg = mw_mul_s(&hg, inv_0(Ng));
         }
@@ -936,7 +923,7 @@ static real gauss_quad_real(real (*func)(real*, const Dwarf*, const Dwarf*, real
             }
         }
         
-        if(counter > 10000000)
+        if(counter > 100000)
         {
             break;
         }
@@ -973,14 +960,7 @@ static real fun_real(real* ri, const Dwarf* comp1, const Dwarf* comp2, real* ene
     first_deriv_density  = first_derivative_density_real(ri, comp1, comp2);
 
     second_deriv_psi     = second_derivative_potential_real(ri, comp1, comp2);
-    second_deriv_density = second_derivative_density_real(ri, comp1, comp2);
-
-    //mw_printf("first_deriv_psi = %.15f\n", first_deriv_psi.value);
-    //mw_printf("first_deriv_rho = %.15f\n", first_deriv_density.value);
-
-    //mw_printf("second_deriv_psi = %.15f\n", second_deriv_psi.value);
-    //mw_printf("second_deriv_rho = %.15f\n", second_deriv_density.value);
-    
+    second_deriv_density = second_derivative_density_real(ri, comp1, comp2);    
     
     /*just in case*/
     if(first_deriv_psi.value == 0.0)
@@ -1015,16 +995,7 @@ static real fun_real(real* ri, const Dwarf* comp1, const Dwarf* comp2, real* ene
         denominator = minushalf(&tmp1);
     }
     
-    
-    /*
-     * the second derivative term should be divided by the first derivate of psi. 
-     * However, from changing from dpsi to dr we multiply by first derivative of psi. 
-     * Since these undo each other we left them out completely.
-     */
-    
     func = mw_mul(&dsqden_dpsisq, &denominator);
-    //printf("radius: %1f, energy: %1f, numerator: %1f, denom: %1f, func: %1f\n", ri, energy, dsqden_dpsisq, 1.0 / denominator, func);
-    //mw_printf("func = %.15f\n", func.value);
     return func;
         
 }
@@ -1089,18 +1060,14 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
         }
         counter++;
     }
-    upperlimit_r = find_upperlimit_r_real(comp1, comp2, &energy, search_range, r, v);
+    upperlimit_r = find_upperlimit_r_real(comp1, comp2, &energy, search_range, r);
 
     lowerlimit_r = mw_real_const(upperlimit_r.value * 10.0);
 
     /*This calls guassian quad to integrate the function for a given energy*/
     tmp = sqr(&v_real);
     tmp = mw_mul_s(&tmp, cons);
-    //mw_printf("UPPER = %.15f\n", upperlimit_r.value);
-    //mw_printf("LOWER = %.15f\n", lowerlimit_r.value);
-    //mw_printf("energy = %.15f\n", energy.value);
     real gauss_val = gauss_quad_real(fun_real, &lowerlimit_r, &upperlimit_r, comp1, comp2, &energy);
-    //mw_printf("GAUSS_QUAD = %.15f\n", gauss_val.value);
     distribution_function = mw_mul(&tmp, &gauss_val);
 
     return distribution_function;
@@ -1110,7 +1077,6 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   {
       //Report normalized distribution value
       real dist_val = dist_fun_real(v, r, comp1, comp2);
-      //mw_printf("DIST_VAL  = %.15f\n", dist_val.value);
       real den = density_real(r, comp1, comp2);
       real tmp = mw_div(&dist_val, &den);
       tmp = mw_mul_s(&tmp, 4*M_PI);
@@ -1121,14 +1087,12 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   static inline real_0 gradIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
   {
       real dist_val = radial_dist(r, comp1, comp2, isLight);
-      //mw_printf("DIST_VAL  = %.15f\n", dist_val.value);
-      //mw_printf("DIST_GRAD = %.15f\n", dist_val.gradient[i]);
       return dist_val.gradient[i];
   }
 
   static inline real_0 getGradIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
   {
-      real_0 numBins = 10.0;
+      real_0 numBins = 20.0;
       real_0 integral;
 
       real_0 a = 0.0;
@@ -1191,13 +1155,14 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   static inline real_0 hessIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
   {
       real dist_val = radial_dist(r, comp1, comp2, isLight);
+      //mw_printf("r = %.15f, hess_val = %.15f\n", r, dist_val.hessian[hessianIndex(i, j)]);
       return dist_val.hessian[hessianIndex(i, j)];
   }
 
   static inline real_0 getHessIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
   {
       real_0 integral;
-      real_0 numBins = 100.0;
+      real_0 numBins = 50.0;
 
       real_0 a = 0.0;
       real_0 b = r->value;
@@ -1367,20 +1332,13 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   static inline real_0 hessIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
   {
       real dist_val = vel_dist(v, r, comp1, comp2);
-      if((i==BARYON_MASS_POS)&&(j==BARYON_MASS_POS))
-      {
-          mw_printf("r = %.15f\n", r->value);
-          mw_printf("v = %.15f\n", v);
-          mw_printf("dist_val = %.15f\n", dist_val.value);
-          mw_printf("hessian  = %.15f\n\n", dist_val.hessian[hessianIndex(i, j)]);
-      }
       return dist_val.hessian[hessianIndex(i, j)];
   }
 
   static inline real_0 getHessIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
   {
       real_0 integral;
-      real_0 numBins = 500.0;
+      real_0 numBins = 10.0;
 
       real_0 a = 0.0;
       real_0 b = v->value;
@@ -1420,16 +1378,16 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
           b_tmp += width;
       }
 
-      mw_printf("r = %.15f\n", r->value);
-      mw_printf("v = %.15f\n\n", v->value);
+//      mw_printf("r = %.15f\n", r->value);
+//      mw_printf("v = %.15f\n\n", v->value);
 
-      mw_printf("integral= %.15f\n", integral);
-      mw_printf("df_dx_i = %.15f\n", df_dx_i);
-      mw_printf("df_dx_j = %.15f\n", df_dx_j);
-      mw_printf("df_de   = %.15f\n", df_de);
-      mw_printf("dv_dx_i = %.15f\n", v->gradient[i]);
-      mw_printf("dv_dx_j = %.15f\n", v->gradient[j]);
-      mw_printf("f       = %.15f\n\n", dist_val.value);
+//      mw_printf("integral= %.15f\n", integral);
+//      mw_printf("df_dx_i = %.15f\n", df_dx_i);
+//      mw_printf("df_dx_j = %.15f\n", df_dx_j);
+//      mw_printf("df_de   = %.15f\n", df_de);
+//      mw_printf("dv_dx_i = %.15f\n", v->gradient[i]);
+//      mw_printf("dv_dx_j = %.15f\n", v->gradient[j]);
+//      mw_printf("f       = %.15f\n\n", dist_val.value);
 
       integral += df_dx_i * v->gradient[j] + df_dx_j * v->gradient[i] + df_de * v->gradient[i] * v->gradient[j]; // Other terms of the Hessian
       integral = -integral / dist_val.value;
@@ -1445,40 +1403,40 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
       setRealHessian(v, integral, BARYON_RADIUS_POS, BARYON_RADIUS_POS);
 
       //hessian (a_b, xi_R)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
-//      setRealHessian(v, integral, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+      setRealHessian(v, integral, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
 
       //hessian (a_b, M_b)
       integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, BARYON_MASS_POS);
       setRealHessian(v, integral, BARYON_RADIUS_POS, BARYON_MASS_POS);
 
       //hessian (a_b, xi_M)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, MASS_RATIO_POS);
-//      setRealHessian(v, integral, BARYON_RADIUS_POS, MASS_RATIO_POS);
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, BARYON_RADIUS_POS, MASS_RATIO_POS);
 
       //hessian (xi_R, xi_R)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
-//      setRealHessian(v, integral, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+      setRealHessian(v, integral, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
 
       //hessian (xi_R, M_b)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, BARYON_MASS_POS);
-//      setRealHessian(v, integral, RADIUS_RATIO_POS, BARYON_MASS_POS);
+      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, BARYON_MASS_POS);
+      setRealHessian(v, integral, RADIUS_RATIO_POS, BARYON_MASS_POS);
 
       //hessian (xi_R, xi_M)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, MASS_RATIO_POS);
-//      setRealHessian(v, integral, RADIUS_RATIO_POS, MASS_RATIO_POS);
+      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, RADIUS_RATIO_POS, MASS_RATIO_POS);
 
       //hessian (M_b, M_b)
       integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, BARYON_MASS_POS);
       setRealHessian(v, integral, BARYON_MASS_POS, BARYON_MASS_POS);
 
       //hessian (M_b, xi_M)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, MASS_RATIO_POS);
-//      setRealHessian(v, integral, BARYON_MASS_POS, MASS_RATIO_POS);
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, BARYON_MASS_POS, MASS_RATIO_POS);
 
       //hessian (xi_M, xi_M)
-//      integral = getHessIntegral_vel(v, r, comp1, comp2, MASS_RATIO_POS, MASS_RATIO_POS);
-//      setRealHessian(v, integral, MASS_RATIO_POS, MASS_RATIO_POS);  
+      integral = getHessIntegral_vel(v, r, comp1, comp2, MASS_RATIO_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, MASS_RATIO_POS, MASS_RATIO_POS);  
   }
 
   static inline void getDwarfDerivativeInfo_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2)
@@ -2163,7 +2121,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         }
 
       #if AUTODIFF // Calculating the initial dwarf derivatives is time consuming, so we are multithreading this process alone
-          //mw_printf("    Calculating initial dwarf derivatives...\n");
+          mw_printf("    Calculating initial dwarf derivatives...\n");
           real r_val, v_val;
           real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac;
         #ifdef _OPENMP
@@ -2185,10 +2143,6 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
               {
                   getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, TRUE);
               }
-              else if(i >= half_bodies)
-              {
-                  getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, FALSE);
-              }
               x[i] = mw_mul_s(&r_val, x_frac);
               y[i] = mw_mul_s(&r_val, y_frac);
               z[i] = mw_mul_s(&r_val, z_frac);
@@ -2201,7 +2155,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
               vz_frac = vz[i].value / v_val.value;
               if (i < half_bodies)
               {
-                  getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2);
+                  getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2); //Only testing derivatives for light component
               }
               vx[i] = mw_mul_s(&v_val, vx_frac);
               vy[i] = mw_mul_s(&v_val, vy_frac);

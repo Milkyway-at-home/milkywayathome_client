@@ -26,13 +26,14 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 {
 	int failed = 0;
 	const real TOL = 0.05;
+        unsigned int i;
 
 	real T  = 0; //Kinetic energy
 	real U1 = 0; //Potential to be calculated using the dwarf's potential
 	real U2 = 0; //potential to be calculated using newtonian gravity
 
 	//now doing the math
-	for(unsigned int i = 0; i < numBodies; i++)
+	for(i = 0; i < numBodies; i++)
 	{
 		real x  = pos[i].x;
 		real y  = pos[i].y;
@@ -211,7 +212,7 @@ int testPlummerPlummer()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift, TRUE);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-plummer\n");
@@ -264,7 +265,7 @@ int testPlummerNFW()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, &rshift, &vshift, TRUE);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-NFW\n");
@@ -343,7 +344,7 @@ int main()
 
 	failed += testPlummerPlummer();
 	failed += testPlummerNFW();
-	failed += testNFWNFW();
+	failed += testNFWNFW();       //This test takes a long time to run due to the exorbitant number of bodies required for stability.
 
 	if(failed == 0)
 	{

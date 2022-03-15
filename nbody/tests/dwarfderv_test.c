@@ -5,11 +5,11 @@
 #include "dSFMT.h"
 #include <stdio.h>
 
-#define autodiff_thresh (0.0)
+#define autodiff_thresh (0.02)
 
 static inline int checkRadDerv(mwvector* pos, real_0 a)
 {
-    printf("POS = [%.15f, %.15f, %.15f]\n", X(pos).value, Y(pos).value, Z(pos).value);
+    //printf("POS = [%.15f, %.15f, %.15f]\n", X(pos).value, Y(pos).value, Z(pos).value);
     int failed = 0;
     real radius = mw_hypot(&X(pos), &Y(pos));
     radius = mw_hypot(&radius, &Z(pos));
@@ -38,7 +38,7 @@ static inline int checkRadDerv(mwvector* pos, real_0 a)
 
 static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
 {
-    printf("VEL = [%.15f, %.15f, %.15f]\n", X(vel).value, Y(vel).value, Z(vel).value);
+    //printf("VEL = [%.15f, %.15f, %.15f]\n", X(vel).value, Y(vel).value, Z(vel).value);
     int failed = 0;
     real radius = mw_hypot(&X(pos), &Y(pos));
     radius = mw_hypot(&radius, &Z(pos));
@@ -118,7 +118,7 @@ int testDwarfDerivatives()
 {
 	int failed = 0;
 	
-	unsigned int numBodies = 4;
+	unsigned int numBodies = 16;
         unsigned int halfBodies = numBodies/2;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
