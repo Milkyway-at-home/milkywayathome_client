@@ -76,6 +76,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .LMCmass         */  0.0,
     /* .LMCscale        */  0.0,
     /* .LMCDynaFric     */  FALSE,
+    /* .coulomb_log     */  0.0,
 
     /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,

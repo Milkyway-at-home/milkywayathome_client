@@ -104,28 +104,6 @@ static inline real velDispersion(const Potential* pot, const mwvector* pos, real
     return sig2; /** Returns a velocity squared **/
 }
 
-/** Coulomb Logarithm for plummer spheres derived from Esquivel and Fuchs (2018) **/
-static inline real CoulombLogPlummer(real* scale_plummer, real* scale_mwhalo){
-    real u, c_log;
-    real tmp1, tmp2, tmp3;
-
-    tmp1 = inv(scale_mwhalo);
-    tmp1 = mw_mul_s(&tmp1, M_PI);
-    u = mw_mul(scale_plummer, &tmp1); /** LMC scale radius times smallest wavenumber (k_min) **/
-
-    tmp1 = sqr(&u);
-    tmp2 = mw_besselK0(&u);
-    tmp3 = mw_besselK2(&u);
-    tmp2 = mw_mul(&tmp2, &tmp3);
-    tmp3 = mw_besselK1(&u);
-    tmp3 = sqr(&tmp3);
-    tmp2 = mw_sub(&tmp2, &tmp3);
-    tmp1 = mw_mul(&tmp1, &tmp2);
-    c_log = mw_mul_s(&tmp1, 0.5);
-
-    return c_log; /** Normally, the Coulomb Log is between 3 and 30. But this value seems closer to 0.0003. **/
-}
-
 static inline real getHaloScaleLength(const Halo* halo){
     real scale = mw_real_var(halo->scaleLength, HALO_RADIUS_POS);
     if (showRealValue(&scale) == 0.0)
@@ -136,7 +114,7 @@ static inline real getHaloScaleLength(const Halo* halo){
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* vel, real* mass_LMC, real* scaleLength_LMC, mwbool dynaFric, real_0 time)
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* vel, real* mass_LMC, real* scaleLength_LMC, mwbool dynaFric, real_0 time, real_0 coulomb_log)
 {
     mwvector result;        //Vector with acceleration due to DF
     if (!dynaFric) {
@@ -157,10 +135,9 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* ve
     objectVel = mw_add_s(&objectVel, small_amount); // To avoid divide-by-zero error.
     //mw_printf("objectVel = %.15f\n", showRealValue(&objectVel));
 
-    //Coloumb Logarithm
     real scaleLength_halo = getHaloScaleLength(&(pot->halo));
     //mw_printf("a = %.15f\n", showRealValue(&scaleLength_halo));
-    real ln_lambda = CoulombLogPlummer(scaleLength_LMC, &scaleLength_halo);
+    real_0 ln_lambda = coulomb_log;
     //mw_printf("ln_lambda = %.15f\n", showRealValue(&ln_lambda));
 
     //Calculate densities from each individual component
@@ -183,7 +160,7 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* ve
 
     tmp1 = sqr(&objectVel);
     tmp1 = mw_div(&density, &tmp1);
-    tmp1 = mw_mul(&ln_lambda, &tmp1);
+    tmp1 = mw_mul_s(&tmp1, ln_lambda);
     tmp1 = mw_mul(mass_LMC, &tmp1);
     real factor = mw_mul_s(&tmp1, -4.0 * M_PI);
     //mw_printf("mass_LMC  = %.15f\n", showRealValue(mass_LMC));
@@ -208,6 +185,5 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector* pos, mwvector* ve
     result.z = mw_mul(&vel->z, &tmp1);
 
     //mw_printf("ACC_DF = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&result)), showRealValue(&Y(&result)), showRealValue(&Z(&result)) );
-
     return result;
 }

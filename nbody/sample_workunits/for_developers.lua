@@ -36,7 +36,8 @@ print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                  
 LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
-LMC_DynamicalFriction = false    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
+LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
+CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -61,7 +62,7 @@ SunGCDist         = 8.0       -- -- Distance between Sun and GC-- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
+Output_LB_coord = true    -- include Lambda-Beta coordinates in output file
 
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
@@ -239,6 +240,7 @@ function makeContext()
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
       LMCDynaFric   = LMC_DynamicalFriction,
+      coulomb_log   = CoulombLogarithm,
       calibrationRuns = numCalibrationRuns
    }
 end
@@ -269,6 +271,7 @@ function makeBodies(ctx, potential)
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
                     LMCDynaFric = LMC_DynamicalFriction,
+                    coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
 	            dt          = ctx.timestep / 10.0,
@@ -300,7 +303,8 @@ function makeBodies(ctx, potential)
                 LMCDynaFric = LMC_DynamicalFriction,
                 tstop     = .14,
                 tstopf    = .20,
-                dt        = ctx.timestep / 10.0
+                dt        = ctx.timestep / 10.0,
+                coulomb_log = CoulombLogarithm
             }
         else
             local placeholderPos, placeholderVel = PrintReverseOrbit{

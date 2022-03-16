@@ -49,7 +49,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real_0 dt,
                     real* LMCmass,
                     real* LMCscale,
-                    real_0 sun_dist);
+                    real_0 sun_dist,
+                    real_0 coulomb_log);
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr);
 
@@ -78,7 +79,8 @@ void nbPrintReverseOrbit_LMC(mwvector* finalPos,
                          real_0 tstopforward,
                          real_0 dt,
                          real* LMCmass,
-                         real* LMCscale);
+                         real* LMCscale,
+                         real_0 coulomb_log);
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 

@@ -370,7 +370,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     if(ctx->LMC){
         massLMC = mw_real_var(ctx->LMCmass, LMC_MASS_POS);
         scaleLMC = mw_real_var(ctx->LMCscale, LMC_RADIUS_POS);
-        acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime);
+        acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime, ctx->coulomb_log);
         acc_LMC = nbExtAcceleration(&ctx->pot, &st->LMCpos, barTime);
         //mw_printf("  DF_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_DF)), showRealValue(&Y(&acc_DF)), showRealValue(&Z(&acc_DF)));
         //mw_printf(" LMC_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_LMC)), showRealValue(&Y(&acc_LMC)), showRealValue(&Z(&acc_LMC)));
@@ -381,7 +381,7 @@ NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvecto
     rc = nbGravMap(ctx, st);
     advanceVelocities(st, st->nbody, dt, acc_i1);
     if(ctx->LMC){
-        acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime);
+        acc_DF = dynamicalFriction_LMC(&ctx->pot, &st->LMCpos, &st->LMCvel, &massLMC, &scaleLMC, ctx->LMCDynaFric, barTime, ctx->coulomb_log);
         acc_LMC = nbExtAcceleration(&ctx->pot, &st->LMCpos, barTime);
         //mw_printf("  DF_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_DF)), showRealValue(&Y(&acc_DF)), showRealValue(&Z(&acc_DF)));
         //mw_printf(" LMC_ACC = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&acc_LMC)), showRealValue(&Y(&acc_LMC)), showRealValue(&Z(&acc_LMC)));
