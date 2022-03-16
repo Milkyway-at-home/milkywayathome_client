@@ -32,6 +32,8 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+/*NOTE: COMMENTS AT THE END OF METHODS SHOW THE ORIGINAL NON-AUTODIFF CODE FOR EASIER REFERENCE*/
+
 /*Methods to be called by potentials*/
 
 static inline real_0 lnfact(int n)
@@ -45,7 +47,6 @@ static inline real_0 lnfact(int n)
                result += mw_log_0((real_0) counter);
           }
      }
-     /*mw_printf("ln(%u!) = %.15f \n",n,result);*/
      return result;
 }
 
@@ -64,8 +65,10 @@ static inline real leg_pol(real* x, int l)
         tmp1 = mw_pow(&x, &tmp1);
         tmp1 = mw_mul_s(&tmp1, mw_pow_0(-1, m)/mw_pow_0(2,l)*binom(l,m)*binom(2*(l-m),l));
         sum = mw_add(&sum, &tmp1);
+
+        /*sum += mw_pow(-1, m)*mw_pow(x, l-2*m)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l);*/
     }
-    /*mw_printf("P(%.15f, %u) = %.15f \n",x,l,sum);*/
+
     return sum;
 }
 
@@ -91,8 +94,10 @@ static inline real leg_pol_derv(real* x, int l)
         tmp1 = mw_pow(&x, &tmp1);
         tmp1 = mw_mul_s(&tmp1, mw_pow_0(-1, m)/mw_pow_0(2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m));
         sum = mw_add(&sum, &tmp1);
+
+        /*sum += mw_pow(-1, m)*mw_pow(x, l - 2*m - 1)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l)*(l - 2*m);*/
     }
-    /*mw_printf("P'(%.15f, %u) = %.15f \n",x,l,sum);*/
+
     return sum;
 }
 
@@ -106,6 +111,7 @@ static inline real lower_gamma(int n, real* x)
        tmp1 = mw_pow(&x, &tmp1);
        tmp1 = mw_mul_s(&tmp1, inv_0(mw_exp_0(lnfact(k))));
        sum = mw_add(&sum, &tmp1);
+       /*sum += mw_pow(x,k)/mw_exp(lnfact(k));*/
     }
     /*mw_printf("g(%u, %.15f) = %.15f \n",n,x,mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum));*/
     tmp1 = mw_neg(&x);
@@ -114,6 +120,7 @@ static inline real lower_gamma(int n, real* x)
     tmp1 = mw_neg(&tmp1);
     tmp1 = mw_add_s(&tmp1, 1.0);
     return mw_mul_s(&tmp1, mw_exp_0(lnfact(n-1)));
+    /*return mw_exp(lnfact(n-1))*(1-mw_exp(-x)*sum);*/
 }
 
 static inline real G_cont_frac(real* x, int n, int k)
@@ -183,7 +190,8 @@ static inline real RSechIntegrand (real* k, real* R, real* Rd, real* z, real* zd
     tmp1 = mw_mul(&tmp1,zd);
     tmp1 = mw_mul(&tmp1,&TrigStuff);
     return mw_mul(&tmp1,&ExpStuff);
-    //mw_printf("RSech(%.15f,%.15f,%.15f,%.15f,%.15f) = %.15f\n",k,R,Rd,z,zd,val);
+
+    /*return sqr(k)*zd/mw_sinh(pi*k*zd/2.0)*mw_cos(k*z)*(aExp(k,R,Rd)*besselK1(k*R) - bExp(k,R,Rd)*besselI1(k*R));*/
 }
 
 static inline real ZSechIntegrand (real* k, real* R, real* Rd, real* z, real* zd)
@@ -211,7 +219,8 @@ static inline real ZSechIntegrand (real* k, real* R, real* Rd, real* z, real* zd
     tmp1 = mw_mul(&tmp1,zd);
     tmp1 = mw_mul(&tmp1,&TrigStuff);
     return mw_mul(&tmp1,&ExpStuff);
-    //mw_printf("ZSech = %.15f\n",val);
+
+    /*return sqr(k)*zd/mw_sinh(pi*k*zd/2.0)*mw_sin(k*z)*(aExp(k,R,Rd)*besselK0(k*R) + bExp(k,R,Rd)*besselI0(k*R));*/
 }
 
 /**********************************************************************************************************************************************************************************************/
@@ -229,6 +238,12 @@ mwvector pointAccel(const mwvector* pos, const mwvector* pos1, const real* mass)
     acc.z = mw_mul(&v.z, &tmp);
 
     return acc;
+
+  /*mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mass/mw_pow(dist,3.0);
+    mw_incmulvs(v, tmp);
+    return v;*/
 }
 
 mwvector plummerAccel(const mwvector* pos, const mwvector* pos1, const real* mass, const real* scale)
@@ -245,6 +260,12 @@ mwvector plummerAccel(const mwvector* pos, const mwvector* pos1, const real* mas
     acc.z = mw_mul(&v.z, &tmp);
 
     return acc;
+
+  /*mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mw_sqrt(mw_pow(scale,2.0) + mw_pow(dist,2.0));
+    mw_incmulvs(v, mass/mw_pow(tmp,3.0));
+    return v;*/
 }
 
 
@@ -261,14 +282,15 @@ static inline mwvector hernquistSphericalAccel(const Spherical* sph, mwvector* p
     tmp = sqr(&tmp);
     tmp = mw_mul(&neg_r, &tmp);
     tmp = mw_div(&M, &tmp);
-    //mw_printf("TMP = %.15f\n", showRealValue(&tmp));
 
     acc.x = mw_mul(&pos->x, &tmp);
     acc.y = mw_mul(&pos->y, &tmp);
     acc.z = mw_mul(&pos->z, &tmp);
-    //mw_printf("ACC = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)), showRealValue(&Y(&acc)), showRealValue(&Z(&acc)));
 
     return acc;
+
+  /*const real tmp = sph->scale + r;
+    return mw_mulvs(pos, -sph->mass / (r * sqr(tmp)));*/
 }
 
 static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector* pos, real* r)
@@ -287,6 +309,9 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector* pos
     acc.z = mw_mul(&pos->z, &tmp);
 
     return acc;
+
+  /*const real tmp = mw_sqrt(sqr(sph->scale) + sqr(r));
+    return mw_mulvs(pos, -sph->mass / mw_pow(tmp,3.0));*/
 }
 
 /* Disk Potentials */
@@ -319,12 +344,21 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector* pos)
     tmp1 = mw_mul(&M, &tmp1);
     Z(&acc) = mw_neg(&tmp1);
 
-    //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]\n",X(acc),Y(acc),Z(acc));
-    
-    /*mw_printf("disk x acc: %.15f\n", X(acc));
-    mw_printf("disk y acc: %.15f\n", Y(acc));
-    mw_printf("disk z acc: %.15f\n", Z(acc));*/
     return acc;
+
+  /*mwvector acc;
+    const real a   = disk->scaleLength;
+    const real b   = disk->scaleHeight;
+    const real zp  = mw_pow(mw_pow(Z(pos),2.0) + mw_pow(b,2.0), 0.5);
+    const real azp = a + zp;
+
+    const real rp  = mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + mw_pow(azp,2.0);
+    const real rth = mw_pow(rp,1.5);
+
+    X(acc) = -disk->mass * X(pos) / rth;
+    Y(acc) = -disk->mass * Y(pos) / rth;
+    Z(acc) = -disk->mass * Z(pos) * azp / (zp * rth);
+    return acc;*/
 }
 
 /*WARNING: This potential is currently not in use as it is non-physical and difficult to test.*/
@@ -482,6 +516,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
         tmp2 = mw_div(&tmp2, &tmp3);
         tmp1 = mw_mul(&tmp1, &tmp2);
         fun_0 = mw_mul(&tmp1, &j0_x_R);
+      /*fun_0 = mw_pow(mw_pow(a, 2.0) + mw_pow(j0_x / R, 2.0), -1.5) * j0_x / R * (mw_exp(-j0_x / R * mw_abs(z)) - mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j0_x / R, 2.0));*/
 
         tmp1 = mw_hypot(&a, &j1_x_R);
         tmp1 = cube(&tmp1);
@@ -503,15 +538,14 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
         tmp2 = mw_div(&tmp2, &tmp3);
         tmp1 = mw_mul(&tmp1, &tmp2);
         fun_1 = mw_mul_s(&tmp1, j1_x);
+      /*fun_1 = j1_x * mw_pow(mw_pow(a,2.0) + mw_pow(j1_x / R, 2.0), -1.5) * (b * mw_exp(-j1_x / R * mw_abs(z)) - j1_x / R * mw_exp(-b * mw_abs(z))) / (mw_pow(b, 2.0) - mw_pow(j1_x / R, 2.0));*/
 
         tmp1 = mw_mul(&a, &b);
         tmp1 = mw_div(&tmp1, &R);
         tmp1 = mw_mul(&tmp1, &fun_0);
         tmp1 = mw_mul_s(&tmp1, j0_w);
-        //mw_printf("fun_0 = %.15f\n", showRealValue(&fun_0));
-        //mw_printf("j0_w  = %.15f\n", j0_w);
-        //mw_printf("tmp1  = %.15f\n", showRealValue(&tmp1));
         real z_pieceAdd = mw_mul_s(&tmp1, 4.0 * M_PI);
+      /*real z_pieceAdd = (4.0 * pi * a * b / R) * fun_0 * j0_w;*/
 
 
         tmp1 = sqr(&R);
@@ -519,6 +553,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
         tmp1 = mw_mul(&tmp1, &fun_1);
         tmp1 = mw_mul_s(&tmp1, j1_w);
         real R_pieceAdd = mw_mul_s(&tmp1, 4.0 * M_PI);
+      /*real R_pieceAdd = (4.0 * pi * a / mw_pow(R, 2.0)) * fun_1 * j1_w;*/
         
         z_piece = mw_add(&z_piece, &z_pieceAdd);
         R_piece = mw_add(&R_piece, &R_pieceAdd);
@@ -533,34 +568,29 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector* po
     R_comp.x = mw_mul(&R_hat.x, &tmp1);
     R_comp.y = mw_mul(&R_hat.y, &tmp1);
     R_comp.z = ZERO_REAL;
-    //mw_printf("R_comp = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&R_comp)), showRealValue(&Y(&R_comp)), showRealValue(&X(&R_comp)));
+  /*mwvector R_comp = mw_mulvs(R_hat, -M * mw_pow(a,2) * b / 4 / pi * R_piece);*/
 
     tmp1 = sqr(&a);
     tmp1 = mw_mul(&M, &tmp1);
     tmp1 = mw_mul(&tmp1, &b);
     tmp1 = mw_mul(&tmp1, &z_piece);
     tmp1 = mw_mul_s(&tmp1, -1.0 / 4.0 / M_PI);
-    //mw_printf("tmp1  = %.15f\n", showRealValue(&tmp1));
     mwvector Z_comp;
     Z_comp.x = ZERO_REAL;
     Z_comp.y = ZERO_REAL;
     Z_comp.z = mw_mul(&Z_hat.z, &tmp1);
-    //mw_printf("Z_comp = [%.15f,%.15f,%.15f]\n", showRealValue(&Z_comp.x), showRealValue(&Z_comp.y), showRealValue(&Z_comp.z));
 
     X(&acc) = mw_add(&X(&R_comp), &X(&Z_comp));
     Y(&acc) = mw_add(&Y(&R_comp), &Y(&Z_comp));
     Z(&acc) = mw_add(&Z(&R_comp), &Z(&Z_comp));
+  /*mwvector Z_comp = mw_mulvs(Z_hat, -M * mw_pow(a, 2) * b / 4 / pi * z_piece);*/
 
-    //real magnitude = mw_hypot(mw_hypot(X(acc), Y(acc)), Z(acc));
-    //mw_printf("acc = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)), showRealValue(&Y(&acc)), showRealValue(&X(&acc)));
     return acc;
 }
 
 /*WARNING: This potential can take a while to integrate if any part of the orbit extends past 100 times the scaleLength*/
 static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector* pos)
 {
-    //mw_printf("Calculating Acceleration\n");
-    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
     mwvector acc;
 
     const real R = mw_hypot(&X(pos), &Y(pos));
@@ -670,6 +700,10 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real_0 
     tmp1 = mw_sub(&a,&x);
     real Tm = mw_hypot(&tmp1, &secondpart);
 
+  /*real secondpart = mw_pow(y,2.) + mw_pow(b+mw_sqrt(mw_pow(c,2) + mw_pow(z,2)),2);
+    real Tp = mw_sqrt(mw_pow(a + x,2) + secondpart);
+    real Tm = mw_sqrt(mw_pow(a - x,2) + secondpart);*/
+
     tmp1 = mw_add(&Tp, &Tm);
     tmp2 = sqr(&x);
     tmp2 = mw_div(&tmp2, &tmp1);
@@ -698,6 +732,11 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real_0 
     tmp1 = mw_mul(&tmp1, &tmp2);
     tmp2 = mw_hypot(&z,&c);
     force.z = mw_div(&tmp1, &tmp2);
+
+  /*mwvector force;
+    force.x = -2.*x/Tp/Tm/(Tp+Tm);
+    force.y = -y/2./Tp/Tm*(Tp+Tm-4.*mw_pow(x,2.)/(Tp+Tm))/(mw_pow(y,2.)+mw_pow(b+mw_sqrt(mw_pow(z,2.)+mw_pow(c,2)),2.));
+    force.z = force.y*z/y*(b+mw_sqrt(mw_pow(z,2)+mw_pow(c,2)))/mw_sqrt(mw_pow(z,2)+mw_pow(c,2));*/
     
     //undo the pos rotation and calculate acceleration from the force vector we got
     mwvector acc;
@@ -718,6 +757,17 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real_0 
     acc.y = mw_mul(&acc.y, &amp);
     acc.z = mw_mul(&acc.z, &amp);
 
+  /*mwvector acc;
+    real cp = cos (curAngle);
+    real sp = sin (curAngle);
+    acc.x=cp*force.x-sp*force.y;
+    acc.y=sp*force.x+cp*force.y;
+    acc.z=force.z;
+    
+    acc.x = acc.x*amp;
+    acc.y = acc.y*amp;
+    acc.z = acc.z*amp;*/
+
     return acc;
 }
 
@@ -728,10 +778,6 @@ the above function and uncomment the one below*/
 /*
 static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real* r, real_0 time)
 {
-    //mw_printf("Calculating Acceleration\n");
-    //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",showRealValue(&X(pos)),showRealValue(&Y(pos)),showRealValue(&Z(pos)));
-    //mw_printf("r = %.15f\n", showRealValue(&r));
-
     mwvector pointPos;
     pointPos.z = ZERO_REAL;
     real_0 curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
@@ -746,11 +792,11 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector* pos, real* r
     mwvector acc = mw_subv(pos, &pointPos);  //get direction from pos to pointPos
     real tmp = cube(&dist);
     real totalAcc = mw_div(&diskMass, &tmp);
-    acc = mw_mulvs(acc, totalAcc);           //a = Gm/r^2
 
-    //mw_printf("curAngle: %.15f\n", curAngle);
-    //mw_printf("pointPos: [%.15f,%.15f,%.15f]\n", showRealValue(&X(&pointPos)),showRealValue(&Y(&pointPos)),showRealValue(&Z(&pointPos)));
-    //mw_printf("Accel: [%.15f,%.15f,%.15f]\n", showRealValue(&X(&acc)),showRealValue(&Y(&acc)),showRealValue(&Z(&acc)));
+    acc.x = mw_mul(&acc.x, &totalAcc);           //a = Gm/r^2
+    acc.y = mw_mul(&acc.y, &totalAcc);
+    acc.z = mw_mul(&acc.z, &totalAcc);
+
     return acc;
 }
 */
@@ -784,6 +830,15 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector* pos)
     tmp1 = mw_div(&Z(pos), &tmp1);
     acc.z = mw_mul(&k, &tmp1);
 
+  /*const real v0 = halo->vhalo;
+    const real q  = halo->flattenZ;
+    const real d  = halo->scaleLength;
+    const real denom = mw_pow(d,2.0) + mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + mw_pow(Z(pos)/q,2.0);
+    const real k = -2.0*v0*v0/denom;
+    X(acc) = k * X(pos);
+    Y(acc) = k * Y(pos);
+    Z(acc) = k * Z(pos)/(q*q);*/
+
     return acc;
 }
 
@@ -814,6 +869,12 @@ static inline mwvector nfwHaloAccel(const Halo* h, mwvector* pos, real* r)
     acc.z = mw_mul(&pos->z, &c);
 
     return acc;
+
+  /*const real a = h->scaleLength;
+    const real M = sqr(h->vhalo)*a/0.2162165954; //Maximum of [ln(1+x)/x - 1/(1+x)]
+    const real ar = a + r;
+    const real c = (-M/sqr(r))*(mw_log(ar/a)/r - 1/ar);
+    return mw_mulvs(pos, c);*/
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
@@ -866,6 +927,19 @@ static inline mwvector triaxialHaloAccel(const Halo* h, mwvector* pos)  /** Tria
     tmp2 = mw_add(&tmp2, &zsqr);
     Z(&acc) = mw_div(&tmp1, &tmp2);
 
+  /*const real qzs      = sqr(h->flattenZ);
+    const real rhalosqr = sqr(h->scaleLength);
+    const real mvsqr    = -sqr(h->vhalo);
+    const real xsqr = sqr(X(pos));
+    const real ysqr = sqr(Y(pos));
+    const real zsqr = sqr(Z(pos));
+    const real arst  = rhalosqr + (h->c1 * xsqr) + (h->c3 * X(pos) * Y(pos)) + (h->c2 * ysqr);
+    const real arst2 = (zsqr / qzs) + arst;
+
+    X(acc) = mvsqr * (((2.0 * h->c1) * X(pos)) + (h->c3 * Y(pos)) ) / arst2;
+    Y(acc) = mvsqr * (((2.0 * h->c2) * Y(pos)) + (h->c3 * X(pos)) ) / arst2;
+    Z(acc) = (2.0 * mvsqr * Z(pos)) / ((qzs * arst) + zsqr);*/
+
     return acc;
 }
 
@@ -896,7 +970,7 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector* pos, real* r)
         tmp2 = mw_add_s(&tmp2, 1.0);
         tmp1 = mw_div(&tmp1, &tmp2);
         c = mw_mul(&factor, &tmp1);
-        //c = -(M/(a*r))*mw_pow(scaleR,gam-1.0)/(1.0+mw_pow(scaleR,gam-1.0));
+        /*c = -(M/(a*r))*mw_pow(scaleR,gam-1.0)/(1.0+mw_pow(scaleR,gam-1.0));*/
     }
     else
     {
@@ -911,7 +985,7 @@ static inline mwvector ASHaloAccel(const Halo* h, mwvector* pos, real* r)
         tmp2 = mw_add_s(&tmp2, 1.0);
         tmp1 = mw_div(&tmp1, &tmp2);
         c = mw_mul(&factor, &tmp1);
-        //c = -(M/sqr(r))*mw_pow(scaleL,gam)/(1.0+mw_pow(scaleL,gam-1.0));
+        /*c = -(M/sqr(r))*mw_pow(scaleL,gam)/(1.0+mw_pow(scaleL,gam-1.0));*/
     }
 
     tmp1 = mw_div(&c, r);
@@ -939,6 +1013,9 @@ static inline mwvector WEHaloAccel(const Halo* h, mwvector* pos, real* r)
     tmp3 = mw_add(&tmp3, &tmp4);
     tmp2 = mw_div(&tmp2, &tmp3);
     const real c = mw_mul(&tmp1, &tmp2);
+
+  /*const real sum2 = sqr(a) + sqr(r);
+    const real c = (-M/r)*(a + mw_sqrt(sum2))/(sum2 + a*mw_sqrt(sum2));*/
 
     tmp1 = mw_div(&c, r);
 
@@ -968,6 +1045,9 @@ static inline mwvector NFWMHaloAccel(const Halo* h, mwvector* pos, real* r)
     tmp2 = mw_sub(&tmp2, &tmp3);
     const real c = mw_mul(&tmp1, &tmp2);
 
+  /*const real ar = a + r;
+    const real c = (-M/sqr(r))*(mw_log(ar/a)/r - 1/ar);*/
+
     acc.x = mw_mul(&pos->x, &c);
     acc.y = mw_mul(&pos->y, &c);
     acc.z = mw_mul(&pos->z, &c);
@@ -991,6 +1071,9 @@ static inline mwvector plummerHaloAccel(const Halo* h, mwvector* pos, real* r)
     acc.y = mw_mul(&pos->y, &tmp);
     acc.z = mw_mul(&pos->z, &tmp);
 
+  /*const real tmp = mw_sqrt(sqr(h->scaleLength) + sqr(r));
+    return mw_mulvs(pos, -h->mass / cube(tmp));*/
+
     return acc;
 }
 
@@ -1009,6 +1092,9 @@ static inline mwvector hernquistHaloAccel(const Halo* h, mwvector* pos, real* r)
     acc.x = mw_mul(&pos->x, &tmp);
     acc.y = mw_mul(&pos->y, &tmp);
     acc.z = mw_mul(&pos->z, &tmp);
+
+  /*const real tmp = h->scaleLength + r;
+    return mw_mulvs(pos, -h->mass / (r * sqr(tmp)));*/
 
     return acc;
 }
@@ -1041,6 +1127,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector* pos, real* r) 
         tmp2 = mw_div(&tmp2, &tmp3);
         tmp1 = mw_sub(&tmp1, &tmp2);
         mass_enc = mw_mul(&f, &tmp1);
+      /*mass_enc = f*(mw_log(1.0+cube(zl)) - cube(zl)/(1+cube(zl)));*/
     }
     else
     {
@@ -1052,6 +1139,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector* pos, real* r) 
         tmp2 = mw_div(&tmp2, &tmp3);
         tmp1 = mw_sub(&tmp1, &tmp2);
         mass_enc = mw_mul(&f, &tmp1);
+      /*mass_enc = f*(mw_log(1.0+cube(z)) - cube(z)/(1+cube(zl)));*/
     }
 
     tmp1 = mw_neg(&mass_enc);
