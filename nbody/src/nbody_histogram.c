@@ -712,7 +712,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     real_0 Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
     
-    nbGetHistTrig(&histTrig, hp);
+    nbGetHistTrig(&histTrig, hp, ctx->leftHanded);
 
     NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
     NBodyHistogram* hist1 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));

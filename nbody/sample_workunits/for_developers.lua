@@ -75,13 +75,15 @@ SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT C
 SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
 Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
 
-NonDiscreteBinning   = true    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
+LeftHandedCoords     = false   -- -- work in left-handed galactocentric cartesian coordinates (Sgr) -- --
+
+NonDiscreteBinning   = false    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
 NonDiscreteRange     = 3        -- -- calculates body fraction in this many bins away from the main bin (rest are treated as having ZERO body fraction) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
-best_like_start      = 0.999    -- what percent of sim to start
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
@@ -227,6 +229,7 @@ function makeContext()
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
+      leftHanded    = LeftHandedCoords,
       useContBins   = NonDiscreteBinning,
       bleedInRange  = NonDiscreteRange,
       MultiOutput   = useMultiOutputs,

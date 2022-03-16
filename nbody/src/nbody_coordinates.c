@@ -82,7 +82,7 @@ mwvector lbrToCartesian(mwvector* lbr, real_0 sunGCDist)
     return _lbrToCartesian(&Lrad, &Brad, &R(lbr), sunGCDist);
 }
 
-void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp)
+void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp, mwbool leftHanded)
 {
     real_0 rphi = d2r_0(hp->phi);
     real_0 rpsi = d2r_0(hp->psi);
@@ -94,6 +94,8 @@ void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp)
     ht->cospsi = mw_cos_0(rpsi);
     ht->costh  = mw_cos_0(rth);
     ht->sinth  = mw_sin_0(rth);
+
+    ht->leftHanded = leftHanded;
 }
 
 real nbXYZToLambda(const NBHistTrig* ht, mwvector* xyz, real_0 sunGCDist)
@@ -161,6 +163,8 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector* xyz, real_0 sunGCDist
     real_0 costh = ht->costh;
     real_0 sinth = ht->sinth;
 
+    mwbool LH = ht->leftHanded;
+
     /* Define the rotation matrix from the Euler angles */
     real_0 rot11 = cospsi * cosphi - costh * sinphi * sinpsi;
     real_0 rot12 = cospsi * sinphi + costh * cosphi * sinpsi;
@@ -196,7 +200,7 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector* xyz, real_0 sunGCDist
     R(&lambdabetar) = mw_hypot(&tempX, &tempY);
     R(&lambdabetar) = mw_hypot(&R(&lambdabetar), &tempZ);
 
-    tempZ = mw_neg(&tempZ);
+    if(LH) tempZ = mw_neg(&tempZ); //Flips Beta value if in left-handed system
     /* Calculate the angular coordinates lambda,beta */
     tmp = mw_atan2(&tempY, &tempX);
     L(&lambdabetar) = r2d(&tmp);

@@ -34,6 +34,7 @@ typedef struct
     real_0 cospsi;
     real_0 costh;
     real_0 sinth;
+    mwbool leftHanded;
 } NBHistTrig;
 
 #ifdef __cplusplus
@@ -46,7 +47,7 @@ mwvector cartesianToLbr_rad(mwvector* r, real_0 sunGCDist);
 mwvector lbrToCartesian(mwvector* lbr, real_0 sunGCDist);
 mwvector lbrToCartesian_rad(mwvector* lbr, real_0 sunGCDist);
 
-void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp);
+void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp, mwbool leftHanded);
 real nbXYZToLambda(const NBHistTrig* ht, mwvector* xyz, real_0 runGCDist);
 mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector* xyz, real_0 runGCDist);
 #ifdef __cplusplus

@@ -67,6 +67,8 @@ const NBodyCtx defaultNBodyCtx =
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
 
+    /* .leftHanded      */  FALSE,
+
     /* .useContBins     */  FALSE,
     /* .bleedInRange    */  1,
 

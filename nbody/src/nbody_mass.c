@@ -276,7 +276,7 @@ real getBodyBinFrac(const NBodyCtx* ctx, const HistogramParams* hp, const Body* 
     real tmp1, tmp2;
     mwvector tmp;
     NBHistTrig histTrig;
-    nbGetHistTrig(&histTrig, hp);
+    nbGetHistTrig(&histTrig, hp, ctx->leftHanded);
 
     //mw_printf("Body POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))));
 

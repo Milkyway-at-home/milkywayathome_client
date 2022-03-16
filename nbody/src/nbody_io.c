@@ -121,7 +121,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         mw_printf("Failed to get Histogram Parameters. Not including Lambda-Beta in Output file.\n");
         LambdaBetaAvailable = FALSE;
     }
-    nbGetHistTrig(&histTrig, &hp);
+    nbGetHistTrig(&histTrig, &hp, ctx->leftHanded);
     /*----------------------------------------------------*/
 
     mwbool isLight = FALSE;
