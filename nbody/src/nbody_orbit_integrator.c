@@ -45,6 +45,7 @@ mwvector LMCvel = ZERO_VECTOR; //Ptr to LMC velocity (default is NULL)
 #if AUTODIFF
   static inline void getTimeDerivativeInfo(const Potential* pot, mwvector* dwarfPos, mwvector* dwarfVel, mwvector* vel_m1, mwvector* vel_m2, mwvector* vel_m3, mwvector* LMCPos, mwvector* LMCVel, mwvector* LMCvel_m1, mwvector* LMCvel_m2, mwvector* LMCvel_m3, real* LMCMass, real* LMCScale, mwbool dynaFric, real_0 time, real_0 timestep, real_0 coulomb_log)
   {
+      mw_printf("        Calculating time derivatives...\n");
       mwvector mw_origin = ZERO_VECTOR;
 
       /* Calculate dwarf acceleration by MW */
