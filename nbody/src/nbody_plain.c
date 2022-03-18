@@ -43,17 +43,18 @@
 
 static void nbReportProgress(const NBodyCtx* ctx, NBodyState* st)
 {
-    real_0 frac = (real_0) st->step / (real_0) ctx->nStep;
+    real_0 boinc_frac = (real_0) st->step / (real_0) ctx->nStep;
+    mw_fraction_done(boinc_frac);
 
-    mw_fraction_done(frac);
+    real_0 frac = (real_0) st->step / (real_0) ctx->nStepRev;
 
     if (st->reportProgress)
     {
         mw_mvprintw(0, 0,
                     "Running: %f / %f (%f%%)\n",
-                    frac * ctx->timeEvolve,
+                    frac * ctx->timeBack,
                     ctx->timeEvolve,
-                    100.0 * frac
+                    100.0 * boinc_frac
             );
 
         mw_refresh();
@@ -205,7 +206,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
             else st->bestLikelihood_Dist = ZERO_REAL;
             
             /* Calculating the time that the best likelihood occurred */
-            st->bestLikelihood_time = ((real_0) st->step / (real_0) ctx->nStep) * ctx->timeEvolve;
+            st->bestLikelihood_time = ((real_0) st->step / (real_0) ctx->nStepRev) * ctx->timeBack;
             
             /* checking how many times the likelihood was improved */
             st->bestLikelihood_count++;

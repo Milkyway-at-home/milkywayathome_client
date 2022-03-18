@@ -84,6 +84,7 @@ static int createNBodyCtx(lua_State* luaSt)
     static NBodyCtx ctx;
     static const char* criterionName = NULL;
     real_0 nStepf = 0.0;
+    real_0 nStepr = 0.0;
 
     static const MWNamedArg argTable[] =
         {
@@ -177,6 +178,7 @@ static int createNBodyCtx(lua_State* luaSt)
             || (major == 0 && minor == 0))                /* Min version not set */
         {
             ctx.timestep = nbCorrectTimestep(ctx.timeBack, ctx.timestep);
+            mw_printf("Timestep = %.15f\n", ctx.timestep);
         }
         else
         {
@@ -188,18 +190,28 @@ static int createNBodyCtx(lua_State* luaSt)
     if (nStepf >= (real_0) UINT_MAX)
     {
         luaL_error(luaSt,
-                   "Number of timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
+                   "Number of forward timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
                    nStepf,
                    ctx.timeEvolve, ctx.timestep);
     }
-    
     ctx.nStep = (unsigned int) nStepf;
+
+    nStepr = mw_ceil_0(ctx.timeBack / ctx.timestep);
+    if (nStepr >= (real_0) UINT_MAX)
+    {
+        luaL_error(luaSt,
+                   "Number of reverse timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
+                   nStepr,
+                   ctx.timeBack, ctx.timestep);
+    }
+    ctx.nStepRev = (unsigned int) nStepr;
     
     #ifdef NBODY_DEV_OPTIONS
         if(ctx.Nstep_control)
         {
             mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
             ctx.nStep = (int) ctx.Ntsteps;
+            ctx.nStepRev = (int) ctx.Ntsteps;
         }
     #endif
 

@@ -500,9 +500,9 @@ typedef struct MW_ALIGN_TYPE
     real_0 Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
+    unsigned int nStepRev;
 
     Potential pot;
-
 
 } NBodyCtx;
 
@@ -519,7 +519,7 @@ typedef struct MW_ALIGN_TYPE
                          FALSE,                                                                         \
                          0, 0, FALSE, 0,                                                                \
                          0,                                                                             \
-                         0, 0, 0,                                                                       \
+                         0, 0, 0, 0,                                                                    \
                          EMPTY_POTENTIAL}
 
 /* Negative codes can be nonfatal but useful return statuses.

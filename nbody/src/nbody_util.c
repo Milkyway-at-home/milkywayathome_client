@@ -23,10 +23,10 @@
 
 /* Correct timestep so an integer number of steps covers the exact
  * evolution time */
-real_0 nbCorrectTimestep(real_0 timeEvolve, real_0 dt)
+real_0 nbCorrectTimestep(real_0 time, real_0 dt)
 {
-    real_0 nStep = mw_ceil_0(timeEvolve / dt);
-    return timeEvolve / nStep;
+    real_0 nStep = mw_ceil_0(time / dt);
+    return time / nStep;
 }
 
 mwvector nbCenterOfMass(const NBodyState* st)

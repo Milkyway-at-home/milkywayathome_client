@@ -81,6 +81,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
+    /* .nStepRev        */  1,
 
     /* .calibrationRuns */   0,
 

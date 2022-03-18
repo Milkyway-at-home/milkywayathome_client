@@ -38,6 +38,8 @@ LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
+
+SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -51,7 +53,6 @@ CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DY
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
 ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
-SunGCDist         = 8.0       -- -- Distance between Sun and GC-- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -83,7 +84,7 @@ NonDiscreteRange     = 3        -- -- calculates body fraction in this many bins
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.999    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood

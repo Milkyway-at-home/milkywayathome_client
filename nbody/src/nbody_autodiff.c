@@ -73,7 +73,7 @@ static void nbPrintLikelihood(FILE* f, real* likelihood) //NOTE: THIS IS THE NEG
     mw_boinc_print(f, "</hessian>\n");
 }
 
-void printReal(real* a, char var_name[]) //For debugging purposes
+void printRealFull(real* a, char var_name[]) //For debugging purposes
 {
     int i;
     mw_printf("%s = %.15f\n", var_name, a->value);
@@ -93,6 +93,17 @@ void printReal(real* a, char var_name[]) //For debugging purposes
     mw_printf(" ]\n");
 }
 
+void printRealGradient(real* a, char var_name[]) //For debugging purposes
+{
+    int i;
+    mw_printf("NABLA %s = [", var_name);
+    for(i=0;i<NumberOfModelParameters;i++)
+    {
+        mw_printf(" %.15f", a->gradient[i]);
+    }
+    mw_printf(" ]\n");
+}
+
 #else
 
 static void nbPrintLikelihood(FILE* f, real* likelihood)
@@ -106,7 +117,12 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
     mw_boinc_print(f, "</hessian>\n");
 }
 
-void printReal(real* a, char var_name[]) //For debugging purposes
+void printRealFull(real* a, char var_name[]) //For debugging purposes
+{
+    mw_printf("%s = %.15f\n", var_name, *a);
+}
+
+void printRealGradient(real* a, char var_name[]) //For debugging purposes
 {
     mw_printf("%s = %.15f\n", var_name, *a);
 }

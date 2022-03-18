@@ -1049,8 +1049,6 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
     }
 
-    mw_printf("totalNum = %.15f\n", showRealValue(&totalNum));
-
     for(i = 0; i < 6; i++)
         if(all->usage[i]) all->histograms[i]->totalNum = totalNum; /* Total particles in range */
 
