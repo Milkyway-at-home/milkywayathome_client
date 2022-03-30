@@ -1815,10 +1815,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
       #if AUTODIFF // Calculating the initial dwarf derivatives is time consuming, so we are multithreading this process alone
           mw_printf("    Calculating initial dwarf derivatives...\n");
           real r_val, v_val;
-          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac;
+          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z;
         #ifdef _OPENMP
           real_0 t = omp_get_wtime();
-          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
+          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
         #else
           clock_t t;
           t = clock();
@@ -1828,6 +1828,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
               // Get dwarf derivative information for radius     
               r_val = mw_hypot(&x[i], &y[i]);
               r_val = mw_hypot(&r_val, &z[i]);
+              old_x = x[i].value;
+              old_y = y[i].value;
+              old_z = z[i].value;
+
               x_frac = x[i].value / r_val.value;
               y_frac = y[i].value / r_val.value;
               z_frac = z[i].value / r_val.value;
@@ -1843,9 +1847,17 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
               y[i] = mw_mul_s(&r_val, y_frac);
               z[i] = mw_mul_s(&r_val, z_frac);
 
+              x[i].value = old_x;
+              y[i].value = old_y;
+              z[i].value = old_z;
+
               // Get dwarf derivative information for velocity     
               v_val = mw_hypot(&vx[i], &vy[i]);
               v_val = mw_hypot(&v_val, &vz[i]);
+              old_x = vx[i].value;
+              old_y = vy[i].value;
+              old_z = vz[i].value;
+
               vx_frac = vx[i].value / v_val.value;
               vy_frac = vy[i].value / v_val.value;
               vz_frac = vz[i].value / v_val.value;
@@ -1853,9 +1865,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
               vx[i] = mw_mul_s(&v_val, vx_frac);
               vy[i] = mw_mul_s(&v_val, vy_frac);
               vz[i] = mw_mul_s(&v_val, vz_frac);
-              //mw_printf("      Particle %u logged\n", i+1);
-              //printReal(&r_val, "Radius");
-              //printReal(&v_val, "Velocity");
+
+              vx[i].value = old_x;
+              vy[i].value = old_y;
+              vz[i].value = old_z;
           }
         #ifdef _OPENMP
           real_0 time_taken = omp_get_wtime() - t;
@@ -2123,10 +2136,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
       #if AUTODIFF // Calculating the initial dwarf derivatives is time consuming, so we are multithreading this process alone
           mw_printf("    Calculating initial dwarf derivatives...\n");
           real r_val, v_val;
-          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac;
+          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z;
         #ifdef _OPENMP
           real_0 t = omp_get_wtime();
-          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
+          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
         #else
           clock_t t;
           t = clock();
@@ -2136,6 +2149,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
               // Get dwarf derivative information for radius     
               r_val = mw_hypot(&x[i], &y[i]);
               r_val = mw_hypot(&r_val, &z[i]);
+              old_x = x[i].value;
+              old_y = y[i].value;
+              old_z = z[i].value;
+
               x_frac = x[i].value / r_val.value;
               y_frac = y[i].value / r_val.value;
               z_frac = z[i].value / r_val.value;
@@ -2147,9 +2164,17 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
               y[i] = mw_mul_s(&r_val, y_frac);
               z[i] = mw_mul_s(&r_val, z_frac);
 
+              x[i].value = old_x;
+              y[i].value = old_y;
+              z[i].value = old_z;
+
               // Get dwarf derivative information for velocity     
               v_val = mw_hypot(&vx[i], &vy[i]);
               v_val = mw_hypot(&v_val, &vz[i]);
+              old_x = vx[i].value;
+              old_y = vy[i].value;
+              old_z = vz[i].value;
+
               vx_frac = vx[i].value / v_val.value;
               vy_frac = vy[i].value / v_val.value;
               vz_frac = vz[i].value / v_val.value;
@@ -2160,9 +2185,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
               vx[i] = mw_mul_s(&v_val, vx_frac);
               vy[i] = mw_mul_s(&v_val, vy_frac);
               vz[i] = mw_mul_s(&v_val, vz_frac);
-              //mw_printf("      Particle %u logged\n", i+1);
-              //printReal(&r_val, "Radius");
-              //printReal(&v_val, "Velocity");
+
+              vx[i].value = old_x;
+              vy[i].value = old_y;
+              vz[i].value = old_z;
           }
         #ifdef _OPENMP
           real_0 time_taken = omp_get_wtime() - t;
@@ -2184,16 +2210,15 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         /* pushing the bodies */
         for (i = 0; i < nbody; i++)
         {
+	    pos[i].x  = x[i];
+	    pos[i].y  = y[i];
+	    pos[i].z  = z[i];
 
-			pos[i].x  = x[i];
-			pos[i].y  = y[i];
-			pos[i].z  = z[i];
+            vel[i].x = vx[i];
+            vel[i].y = vy[i];
+            vel[i].z = vz[i];
 
-			vel[i].x = vx[i];
-			vel[i].y = vy[i];
-			vel[i].z = vz[i];
-
-			bodyMasses[i] = masses[i];
+            bodyMasses[i] = masses[i];
         }
         
         /* go now and be free!*/

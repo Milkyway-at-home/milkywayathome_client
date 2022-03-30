@@ -357,38 +357,38 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             //return NBODY_SUCCESS;
         }
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
-        printRealGradient(&likelihood, "likelihood");
+        //printRealGradient(&likelihood, "likelihood");
 
         mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -showRealValue(&likelihood_EMD));
-        printRealGradient(&likelihood_EMD, "likelihood_EMD");
+        //printRealGradient(&likelihood_EMD, "likelihood_EMD");
 
         mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -showRealValue(&likelihood_Mass));
-        printRealGradient(&likelihood_Mass, "likelihood_Mass");
+        //printRealGradient(&likelihood_Mass, "likelihood_Mass");
 
 	if (st->useBetaDisp)
         {
             mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -showRealValue(&likelihood_Beta));
-            printRealGradient(&likelihood_Beta, "likelihood_Beta");
+            //printRealGradient(&likelihood_Beta, "likelihood_Beta");
         }
 	if (st->useVelDisp)
         {
             mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -showRealValue(&likelihood_Vel));
-            printRealGradient(&likelihood_Vel, "likelihood_Vel");
+            //printRealGradient(&likelihood_Vel, "likelihood_Vel");
         }
        if (st->useBetaComp)
        {
            mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -showRealValue(&likelihood_BetaAvg));
-           printRealGradient(&likelihood_BetaAvg, "likelihood_BetaAvg");
+           //printRealGradient(&likelihood_BetaAvg, "likelihood_BetaAvg");
        }
        if (st->useVlos)
        {
            mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -showRealValue(&likelihood_VelAvg));
-           printRealGradient(&likelihood_VelAvg, "likelihood_VelAvg");
+           //printRealGradient(&likelihood_VelAvg, "likelihood_VelAvg");
        }
        if (st->useDist)
        {
            mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -showRealValue(&likelihood_Dist));
-           printRealGradient(&likelihood_Dist, "likelihood_Dist");
+           //printRealGradient(&likelihood_Dist, "likelihood_Dist");
        }
 
        /* Write out the derivative information from AUTODIFF if file available */

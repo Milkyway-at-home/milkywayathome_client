@@ -56,7 +56,6 @@ typedef MW_ALIGN_TYPE_V(4) float real_0;
 #define mw_log10_0 log10f
 #define mw_sinh_0  sinhf
 #define mw_cosh_0  coshf
-#define mw_tanh_0  tanhf
 #define mw_pow_0   powf
 
 #define mw_abs_0   fabsf

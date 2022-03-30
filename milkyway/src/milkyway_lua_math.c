@@ -128,8 +128,6 @@ DEFINE_LUA_MW_FUNC_1(mw_log10_0, log10)
 
 DEFINE_LUA_MW_FUNC_1(mw_sinh_0, sinh)
 DEFINE_LUA_MW_FUNC_1(mw_cosh_0, cosh)
-DEFINE_LUA_MW_FUNC_1(mw_tanh_0, tanh)
-
 
 DEFINE_LUA_MW_FUNC_1(mw_fabs_0, fabs)
 
@@ -173,7 +171,6 @@ DEFINE_LUA_MW_FUNC_1(mw_logb_0, logb)
 
 DEFINE_LUA_MW_FUNC_1(mw_acosh_0, acosh)
 DEFINE_LUA_MW_FUNC_1(mw_asinh_0, asinh)
-DEFINE_LUA_MW_FUNC_1(mw_atanh_0, atanh)
 
 DEFINE_LUA_MW_FUNC_1(mw_trunc_0, trunc)
 DEFINE_LUA_MW_FUNC_1(mw_log1p_0, log1p)
@@ -234,7 +231,6 @@ void registerMilkywayMath(lua_State* luaSt)
     register_lua_mw_log10_0(luaSt);
     register_lua_mw_sinh_0(luaSt);
     register_lua_mw_cosh_0(luaSt);
-    register_lua_mw_tanh_0(luaSt);
     register_lua_mw_fabs_0(luaSt);
     register_lua_mw_ceil_0(luaSt);
     register_lua_mw_exp2_0(luaSt);
@@ -266,7 +262,6 @@ void registerMilkywayMath(lua_State* luaSt)
     register_lua_mw_log2_0(luaSt);
     register_lua_mw_acosh_0(luaSt);
     register_lua_mw_asinh_0(luaSt);
-    register_lua_mw_atanh_0(luaSt);
     register_lua_mw_cbrt_0(luaSt);
     register_lua_mw_erfc_0(luaSt);
     register_lua_mw_erf_0(luaSt);

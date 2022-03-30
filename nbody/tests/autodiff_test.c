@@ -644,13 +644,6 @@ int main()
     }
     failed += test;
 
-    test = testSingleVar(mw_tanh, mw_tanh_0, -2.0, 2.0);
-    if(test != 0)
-    {
-        printf("    Test failed! (mw_tanh)\n");
-    }
-    failed += test;
-
     test = testSingleVar(mw_asinh, mw_asinh_0, -2.0, 2.0);
     if(test != 0)
     {
@@ -662,13 +655,6 @@ int main()
     if(test != 0)
     {
         printf("    Test failed! (mw_acosh)\n");
-    }
-    failed += test;
-
-    test = testSingleVar(mw_atanh, mw_atanh_0, -0.95, 0.95);
-    if(test != 0)
-    {
-        printf("    Test failed! (mw_atanh)\n");
     }
     failed += test;
 

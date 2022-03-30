@@ -658,20 +658,6 @@ extern "C" {
         return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
-    CONST_F ALWAYS_INLINE
-    static inline real mw_tanh(real* a)
-    {
-        real_0 z        = mw_tanh_0(a->value);
-        real_0 dz_da    = 1.0 / sqr_0(mw_cosh_0(a->value));
-        real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = -2.0 * mw_tanh_0(a->value) / sqr_0(mw_cosh_0(a->value));
-        real_0 d2z_db2  = 0.0;
-        real_0 d2z_dadb = 0.0;
-
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
-    }
-
-
     /*Inverse Hyperbolic Trigonometric Functions*/
     CONST_F ALWAYS_INLINE
     static inline real mw_asinh(real* a)
@@ -698,20 +684,6 @@ extern "C" {
 
         return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
-
-    CONST_F ALWAYS_INLINE
-    static inline real mw_atanh(real* a)
-    {
-        real_0 z        = mw_atanh_0(a->value);
-        real_0 dz_da    = 1.0 / (1.0 - sqr_0(a->value));
-        real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = 2.0 * (a->value) / sqr_0(1.0 - sqr_0(a->value));
-        real_0 d2z_db2  = 0.0;
-        real_0 d2z_dadb = 0.0;
-
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
-    }
-
 
     /*Polynomial and Power Functions*/
     CONST_F ALWAYS_INLINE
@@ -1014,9 +986,9 @@ extern "C" {
     static inline real mw_abs(real* a)
     {
         real_0 z        = mw_abs_0(a->value);
-        real_0 dz_da    = ((a->value) > 0) - (0 > (a->value));
+        real_0 dz_da    = ((a->value)/REAL_EPSILON) / mw_hypot_0(1.0, ((a->value)/REAL_EPSILON));
         real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = 0.0;
+        real_0 d2z_da2  = 1.0 / cube_0(mw_hypot_0(1.0, ((a->value)/REAL_EPSILON))) / REAL_EPSILON;
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
@@ -1027,9 +999,9 @@ extern "C" {
     static inline real mw_fabs(real* a)
     {
         real_0 z        = mw_fabs_0(a->value);
-        real_0 dz_da    = ((a->value) > 0) - (0 > (a->value));
+        real_0 dz_da    = ((a->value)/1.0e-9) / mw_hypot_0(1.0, ((a->value)/1.0e-9));
         real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = 0.0;
+        real_0 d2z_da2  = 1.0 / cube_0(mw_hypot_0(1.0, ((a->value)/1.0e-9))) / 1.0e-9;
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
@@ -1066,11 +1038,11 @@ extern "C" {
     static inline real mw_copysign(real* a, real* b)
     {
         real_0 z        = mw_copysign_0(a->value, b->value);
-        real_0 dz_da    = (((a->value) > 0) - (0 > (a->value))) * (((b->value) > 0) - (0 > (b->value)));
-        real_0 dz_db    = 0.0;
-        real_0 d2z_da2  = 0.0;
-        real_0 d2z_db2  = 0.0;
-        real_0 d2z_dadb = 0.0;
+        real_0 dz_da    = (2.0 / (1.0 + mw_exp_0(-(a->value)/REAL_EPSILON)) - 1.0) * (2.0 / (1.0 + mw_exp_0(-(b->value)/REAL_EPSILON)) - 1.0);
+        real_0 dz_db    = mw_abs_0(a->value) / (mw_cosh_0((b->value)/REAL_EPSILON) + 1.0) / REAL_EPSILON ;
+        real_0 d2z_da2  = (1.0 / (mw_cosh_0((a->value)/REAL_EPSILON) + 1.0) / REAL_EPSILON) * (2.0 / (1.0 + mw_exp_0(-(b->value)/REAL_EPSILON)) - 1.0);
+        real_0 d2z_db2  = -mw_abs_0(a->value) * mw_sinh_0((b->value)/REAL_EPSILON) / sqr_0(mw_cosh_0((b->value)/REAL_EPSILON) + 1.0) / REAL_EPSILON / REAL_EPSILON;
+        real_0 d2z_dadb = (2.0 / (1.0 + mw_exp_0(-(a->value)/REAL_EPSILON)) - 1.0) / (mw_cosh_0((b->value)/REAL_EPSILON) + 1.0) / REAL_EPSILON;
 
         return mw_AUTODIFF(a, b, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
@@ -1458,12 +1430,6 @@ extern "C" {
     }
 
     CONST_F ALWAYS_INLINE
-    static inline real mw_tanh(real* a)
-    {
-        return mw_tanh_0(*a);
-    }
-
-    CONST_F ALWAYS_INLINE
     static inline real mw_asinh(real* a)
     {
         return mw_asinh_0(*a);
@@ -1473,12 +1439,6 @@ extern "C" {
     static inline real mw_acosh(real* a)
     {
         return mw_acosh_0(*a);
-    }
-
-    CONST_F ALWAYS_INLINE
-    static inline real mw_atanh(real* a)
-    {
-        return mw_atanh_0(*a);
     }
 
     // Polynomial and Root Functions

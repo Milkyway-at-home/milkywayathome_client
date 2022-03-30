@@ -51,7 +51,6 @@ typedef MW_ALIGN_TYPE_V(8) double real_0;
   #define mw_log10_0 log10_rn
   #define mw_sinh_0  sinh_rn
   #define mw_cosh_0  cosh_rn
-  #define mw_tanh_0  tanh_rn
   #define mw_pow_0   pow_rn
 #else
   #define mw_sin_0   sin
@@ -67,7 +66,6 @@ typedef MW_ALIGN_TYPE_V(8) double real_0;
   #define mw_log10_0 log10
   #define mw_sinh_0  sinh
   #define mw_cosh_0  cosh
-  #define mw_tanh_0  tanh
   #define mw_pow_0   pow
 #endif /* ENABLE_CRLIBM && DOUBLEPREC */
 
