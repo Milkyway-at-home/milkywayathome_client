@@ -58,6 +58,7 @@ function makeBodies(ctx, potential)
       LMCmass     = LMCMASS,
       LMCscale    = LMCSCALE,
       LMCDynaFric = true,
+      coulomb_log = 0.470003629,
       ftime       = 3.945,
       tstop       = 3.945,
       dt          = ctx.timestep / 10.0,
