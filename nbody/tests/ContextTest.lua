@@ -22,7 +22,7 @@ require "NBodyTesting"
 SP = require "SamplePotentials"
 SM = require "SampleModels"
 
-local generatingResults = false -- This should be FALSE unless you need a new context_test_results file --
+local generatingResults = true
 
 -- returns (ctx, st)
 function getTestNBodyState(t)
@@ -34,8 +34,7 @@ function getTestNBodyState(t)
 
    ctx = NBodyCtx.create{
       timestep    = dt,
-      timeEvolve  = 1.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
-      timeBack    = 1.0,
+      timeEvolve  = 42.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
       theta       = t.theta,
       eps2        = eps2,
       b           = 53.5,
@@ -59,8 +58,7 @@ function getTestNBodyState(t)
       LMC         = t.LMC,
       LMCmass     = 449865.888,
       LMCscale    = 15.0,
-      LMCDynaFric = t.LMCDynaFric,
-      coulomb_log = 0.470003629
+      LMCDynaFric = t.LMCDynaFric
    }
    --Add potential to context
    ctx:addPotential(pot)
@@ -78,8 +76,8 @@ local resultTable = {
    potentials   = SP.samplePotentialNames,
    models       = SM.sampleModelNames,
    nbody        = { 100, 1024 },
-   nSteps       = { 1, 3 },
-   seeds        = { 1234567890, 609746760 },
+   nSteps       = { 1, 3, 8 },
+   seeds        = { 1234567890, 609746760, 1000198000 },
    thetas       = { 1.0, 0.9, 0.5, 0.3 },
    treeRSizes   = { 8.0, 4.0, 2.0, 1.0 },
    criterion    = { "SW93", "TreeCode", "BH86", "Exact" },

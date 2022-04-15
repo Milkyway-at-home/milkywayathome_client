@@ -32,7 +32,6 @@ function makeContext()
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
       timeBack    = 3.945,
-      timeBack    = 4.0,
       eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
@@ -56,8 +55,7 @@ function makeBodies(ctx, potential)
       position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.8)),
       velocity  = Vector.create(-170, 94, 108),
       tstop     = 4.0,
-      dt        = ctx.timestep / 10.0,
-      sunGCDist = 8.0
+      dt        = ctx.timestep / 10.0
    }
 
    return predefinedModels.plummer{

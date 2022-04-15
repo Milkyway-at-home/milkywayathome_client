@@ -124,10 +124,6 @@ mark_as_advanced(INSTALL_BOINC)
 option(DOUBLEPREC
        "Build with double precision" ON)
 
-option(AUTODIFF
-       "Build with automatic differentiation" OFF)
-mark_as_advanced(AUTODIFF)
-
 option(NVIDIA_OPENCL "Using Nvidia OpenCL" OFF)
 mark_as_advanced(NVIDIA_OPENCL)
 

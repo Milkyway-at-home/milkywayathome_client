@@ -63,13 +63,12 @@ static const Body _emptyBody = EMPTY_BODY;
 static int createBody(lua_State* luaSt)
 {
     static Body b = EMPTY_BODY;
-    static real_0 bodyMass = 0.0;
     static mwvector* x = NULL;
     static mwvector* v = NULL;
     static mwbool ignore = FALSE;
     static const MWNamedArg argTable[] =
         {
-            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &bodyMass        },
+            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &b.bodynode.mass },
             { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x               },
             { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v               },
             { "ignore",   LUA_TBOOLEAN,  NULL,          FALSE, &ignore          },
@@ -86,7 +85,7 @@ static int createBody(lua_State* luaSt)
 
         case 3:
         case 4:
-            bodyMass = luaL_checknumber(luaSt, 1);
+            b.bodynode.mass = luaL_checknumber(luaSt, 1);
             x = checkVector(luaSt, 2);
             v = checkVector(luaSt, 3);
             ignore = mw_lua_optboolean(luaSt, 4, FALSE);
@@ -96,7 +95,6 @@ static int createBody(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
     }
 
-    b.bodynode.mass = mw_real_const(bodyMass);
     b.bodynode.pos = *x;
     b.vel = *v;
     b.bodynode.type = BODY(ignore);
@@ -138,7 +136,7 @@ static const Xet_reg_pre gettersBody[] =
 {
     { "velocity", getVector,     offsetof(Body, vel)           },
     { "position", getVector,     offsetof(Body, bodynode.pos)  },
-    { "mass",     getReal,       offsetof(Body, bodynode.mass) },
+    { "mass",     getNumber,     offsetof(Body, bodynode.mass) },
     { "ignore",   getBodyIgnore, offsetof(Body, bodynode.type) },
     { NULL, NULL, 0 }
 };
@@ -147,7 +145,7 @@ static const Xet_reg_pre settersBody[] =
 {
     { "velocity", setVector,     offsetof(Body, vel)           },
     { "position", setVector,     offsetof(Body, bodynode.pos)  },
-    { "mass",     setReal,       offsetof(Body, bodynode.mass) },
+    { "mass",     setNumber,     offsetof(Body, bodynode.mass) },
     { "ignore",   setBodyIgnore, offsetof(Body, bodynode.type) },
     { NULL, NULL, 0 }
 };

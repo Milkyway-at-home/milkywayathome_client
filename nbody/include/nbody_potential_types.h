@@ -42,8 +42,8 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     spherical_t type;
-    real_0 mass;
-    real_0 scale;
+    real mass;
+    real scale;
 } Spherical;
 
 #define SPHERICAL_TYPE "Spherical"
@@ -73,11 +73,11 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     disk_t type;
-    real_0 mass;         /* disk mass */
-    real_0 scaleLength;  /* "a" for M-N, "b" for exp disk */
-    real_0 scaleHeight;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
-    real_0 patternSpeed; //for bars only
-    real_0 startAngle;   //for bars only
+    real mass;         /* disk mass */
+    real scaleLength;  /* "a" for M-N, "b" for exp disk */
+    real scaleHeight;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
+    real patternSpeed; //for bars only
+    real startAngle;   //for bars only
 } Disk;
 
 #define DISK_TYPE "Disk"
@@ -115,22 +115,22 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     halo_t type;
-    real_0 vhalo;         /* common to all 3 halos */
-    real_0 scaleLength;   /* common to all 3 halos */
-    real_0 flattenZ;      /* used by logarithmic and triaxial */
-    real_0 flattenY;      /* used by triaxial */
-    real_0 flattenX;      /* used by triaxial */
-    real_0 triaxAngle;    /* used by triaxial */
+    real vhalo;         /* common to all 3 halos */
+    real scaleLength;   /* common to all 3 halos */
+    real flattenZ;      /* used by logarithmic and triaxial */
+    real flattenY;      /* used by triaxial */
+    real flattenX;      /* used by triaxial */
+    real triaxAngle;    /* used by triaxial */
 
-    real_0 c1;            /* Constants calculated for triaxial from other params */
-    real_0 c2;            /* TODO: Lots more stuff could be cached, but should be done less stupidly */
-    real_0 c3;
+    real c1;            /* Constants calculated for triaxial from other params */
+    real c2;            /* TODO: Lots more stuff could be cached, but should be done less stupidly */
+    real c3;
 
-    real_0 mass;
-    real_0 gamma;
-    real_0 lambda;
+    real mass;
+    real gamma;
+    real lambda;
 
-    real_0 rho0;          /*used by Ninkovic Halo*/
+    real rho0;          /*used by Ninkovic Halo*/
 } Halo;
 
 #define HALO_TYPE "Halo"
@@ -152,12 +152,11 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     dwarf_t type;
-    real_0 mass;        
-    real_0 scaleLength;   
-    real_0 n; //used by einasto
-    real_0 p0; //used by nfw
-    real_0 originmass; //need to know original mass for derivatives
-    real_0 r200; // virial radius
+    real mass;        
+    real scaleLength;   
+    real n; //used by einasto
+    real p0; //used by nfw
+    real r200; // virial radius
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"
@@ -179,7 +178,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */

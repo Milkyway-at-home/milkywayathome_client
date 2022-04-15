@@ -21,7 +21,6 @@
 #include "nbody.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
-#include "milkyway_math.h"
 #include "nbody_grav.h"
 #include "nbody_show.h"
 #include "nbody_lua.h"
@@ -514,9 +513,9 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     info->currentTime = (float) (st->step * ctx->timestep);
     info->timeEvolve = (float) ctx->timeEvolve;
 
-    info->rootCenterOfMass[0] = (float) showRealValue(&cmPos->x);
-    info->rootCenterOfMass[1] = (float) showRealValue(&cmPos->y);
-    info->rootCenterOfMass[2] = (float) showRealValue(&cmPos->z);
+    info->rootCenterOfMass[0] = (float) cmPos->x;
+    info->rootCenterOfMass[1] = (float) cmPos->y;
+    info->rootCenterOfMass[2] = (float) cmPos->z;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i, b) schedule(guided, 4096 / sizeof(Body))
@@ -524,9 +523,9 @@ static void nbWriteSnapshot(NBodyCircularQueue* queue, int buffer, const NBodyCt
     for (i = 0; i < nbody; ++i)
     {
         b = &st->bodytab[i];
-        r[i].x = (float) showRealValue(&X(&Pos(b)));
-        r[i].y = (float) showRealValue(&Y(&Pos(b)));
-        r[i].z = (float) showRealValue(&Z(&Pos(b)));
+        r[i].x = (float) X(Pos(b));
+        r[i].y = (float) Y(Pos(b));
+        r[i].z = (float) Z(Pos(b));
         r[i].ignore = ignoreBody(b);
     }
 }
@@ -538,9 +537,9 @@ static inline void nbUpdateDisplayedOrbitTrace(FloatPos* sceneTrace, const mwvec
 
     for (i = 0; i < n; ++i)
     {
-        sceneTrace[i].x = (float) showRealValue(&trace[i].x);
-        sceneTrace[i].y = (float) showRealValue(&trace[i].y);
-        sceneTrace[i].z = (float) showRealValue(&trace[i].z);
+        sceneTrace[i].x = (float) trace[i].x;
+        sceneTrace[i].y = (float) trace[i].y;
+        sceneTrace[i].z = (float) trace[i].z;
     }
 }
 
@@ -634,8 +633,8 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
     if (OPA_load_int(&scene->blockSimulationOnGraphics))
     {
         int updated = FALSE;
-        real_0 dt = -1.0;
-        real_0 startTime = mwGetTime();
+        real dt = -1.0;
+        real startTime = mwGetTime();
 
         /* FIXME: This needs to change if we allow changing
          * whether the simulation should block

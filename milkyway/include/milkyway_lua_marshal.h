@@ -145,8 +145,8 @@ int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* ty
 
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table);
 
-int pushRealArray(lua_State* luaSt, const real_0* arr, int n);
-real_0* popRealArray(lua_State* luaSt, int* outN);
+int pushRealArray(lua_State* luaSt, const real* arr, int n);
+real* popRealArray(lua_State* luaSt, int* outN);
 
 int expectTable(lua_State* luaSt, int idx);
 

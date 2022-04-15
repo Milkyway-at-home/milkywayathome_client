@@ -38,7 +38,7 @@
 static int luaLbrToCartesian(lua_State* luaSt)
 {
     mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
-    real_0 sunGCDist = DEFAULT_SUN_GC_DISTANCE;
+    real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
     const NBodyCtx* ctx = NULL;
     mwvector v;
 
@@ -47,8 +47,6 @@ static int luaLbrToCartesian(lua_State* luaSt)
 
     ctx = checkNBodyCtx(luaSt, 1);
     v = *checkVector(luaSt, 2);
-
-    //mw_printf("LBR = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
 
     /* ctx = toNBodyCtx(luaSt, 2);
        sunGCDist = ctx != NULL ? ctx->sunGCDist : luaL_optnumber(luaSt, 2, DEFAULT_SUN_GC_DISTANCE);
@@ -60,21 +58,20 @@ static int luaLbrToCartesian(lua_State* luaSt)
     useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
 
     if (!useGalacticCoordinates)
-        v = useRadians ? lbrToCartesian_rad(&v, sunGCDist) : lbrToCartesian(&v, sunGCDist);
+        v = useRadians ? lbrToCartesian_rad(v, sunGCDist) : lbrToCartesian(v, sunGCDist);
 
-    //mw_printf("XYZ = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
     pushVector(luaSt, v);
 
     return 1;
 }
 
 
-static const real_0 solarMassesPerMassUnit = 222288.47;
+static const real solarMassesPerMassUnit = 222288.47;
 
 static int luaSolarMassToMassUnit(lua_State* luaSt)
 {
-    real_0 mSolar;
-    real_0 m;
+    real mSolar;
+    real m;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -90,8 +87,8 @@ static int luaSolarMassToMassUnit(lua_State* luaSt)
 
 static int luaMassUnitToSolarMass(lua_State* luaSt)
 {
-    real_0 mSolar;
-    real_0 m;
+    real mSolar;
+    real m;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -107,8 +104,8 @@ static int luaMassUnitToSolarMass(lua_State* luaSt)
 
 static int luaLightyearToKiloparsec(lua_State* luaSt)
 {
-    real_0 kpc;
-    real_0 ly;
+    real kpc;
+    real ly;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -125,8 +122,8 @@ static int luaLightyearToKiloparsec(lua_State* luaSt)
 
 static int luaKiloparsecToLightyear(lua_State* luaSt)
 {
-    real_0 kpc;
-    real_0 ly;
+    real kpc;
+    real ly;
 
     if (lua_gettop(luaSt) != 1)
     {
@@ -143,7 +140,7 @@ static int luaKiloparsecToLightyear(lua_State* luaSt)
 
 static int luaCorrectTimestep(lua_State* luaSt)
 {
-    real_0 t, dt;
+    real t, dt;
 
     if (lua_gettop(luaSt) != 2)
     {

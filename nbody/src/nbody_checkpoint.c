@@ -94,7 +94,7 @@ typedef struct
     uint32_t nOrbitTrace;
     uint32_t nShiftLMC;
     uint32_t treeIncest;
-    real_0 rsize;
+    real rsize;
     NBodyCtx ctx;
 } NBodyCheckpointHeader;
 
@@ -105,7 +105,7 @@ static const size_t hdrSize = sizeof(NBodyCheckpointHeader) + sizeof(tail);
 static void nbPrepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyCtx* ctx, const NBodyState* st)
 {
     strcpy(cp->header, hdr);
-    cp->realSize = sizeof(real_0);
+    cp->realSize = sizeof(real);
     cp->ptrSize = sizeof(void*);
     cp->nOrbitTrace = st->nOrbitTrace;
     cp->nShiftLMC = st->nShiftLMC;
@@ -151,11 +151,11 @@ static int nbVerifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
         return 1;
     }
 
-    if (cpHdr->realSize != sizeof(real_0))
+    if (cpHdr->realSize != sizeof(real))
     {
         mw_printf("Got checkpoint file for wrong type. "
                   "Expected sizeof(real) = "ZU", got "ZU"\n",
-                  sizeof(real_0), (size_t) cpHdr->realSize);
+                  sizeof(real), (size_t) cpHdr->realSize);
         return 1;
     }
 

@@ -24,9 +24,9 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES (MIN 4)                          -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.84"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.80"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
@@ -38,8 +38,6 @@ LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
-
-SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -63,7 +61,7 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-Output_LB_coord = true    -- include Lambda-Beta coordinates in output file
+Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
 
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
@@ -76,16 +74,11 @@ bta_upper_range = 15      -- upper range for beta
 SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
 SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
 Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
-
-LeftHandedCoords     = false   -- -- work in left-handed galactocentric cartesian coordinates (Sgr) -- --
-
-NonDiscreteBinning   = false    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
-NonDiscreteRange     = 3        -- -- calculates body fraction in this many bins away from the main bin (rest are treated as having ZERO body fraction) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
-best_like_start      = 0.99    -- what percent of sim to start
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
@@ -123,12 +116,12 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-preset_orbit_parameter_l  = 258
-preset_orbit_parameter_b  = 45.8
-preset_orbit_parameter_r  = 21.5
-preset_orbit_parameter_vx = -185.5
-preset_orbit_parameter_vy = 54.7
-preset_orbit_parameter_vz = 147.4
+orbit_parameter_l  = 258
+orbit_parameter_b  = 45.8
+orbit_parameter_r  = 21.5
+orbit_parameter_vx = -185.5
+orbit_parameter_vy = 54.7
+orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -211,7 +204,6 @@ function makeContext()
       vx          = orbit_parameter_vx,
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
-      sunGCDist   = SunGCDist,
       criterion   = criterion,
       OutputLB    = Output_LB_coord,
       useQuad     = true,
@@ -231,9 +223,6 @@ function makeContext()
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
-      leftHanded    = LeftHandedCoords,
-      useContBins   = NonDiscreteBinning,
-      bleedInRange  = NonDiscreteRange,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
@@ -275,48 +264,31 @@ function makeBodies(ctx, potential)
                     coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
-	            dt          = ctx.timestep / 10.0,
-                    sunGCDist   = SunGCDist
-	            }              
+	            dt          = ctx.timestep / 10.0
+	            }
+
+              
 	    else
 	        finalPosition, finalVelocity = reverseOrbit{
 	            potential = potential,
 	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0,
-                    sunGCDist = SunGCDist
+	            dt        = ctx.timestep / 10.0
 	            }
          end
     end
     
     if(print_reverse_orbit == true) then
+        local placeholderPos, placeholderVel = PrintReverseOrbit{
+            potential = potential,
+            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+            tstop     = .14,
+            tstopf    = .20,
+            dt        = ctx.timestep / 10.0
+        }
         print('Printing reverse orbit')
-        if (LMC_body) then
-            local placeholderPos, placeholderVel, LMCplaceholderPos, LMCplaceholderVel = PrintReverseOrbit_LMC{
-                potential = potential,
-                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	        LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	        LMCvelocity = Vector.create(-57, -226, 221), 
-                LMCmass     = LMC_Mass,
-                LMCscale    = LMC_scaleRadius,
-                LMCDynaFric = LMC_DynamicalFriction,
-                tstop     = .14,
-                tstopf    = .20,
-                dt        = ctx.timestep / 10.0,
-                coulomb_log = CoulombLogarithm
-            }
-        else
-            local placeholderPos, placeholderVel = PrintReverseOrbit{
-                potential = potential,
-                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-                tstop     = .14,
-                tstopf    = .20,
-                dt        = ctx.timestep / 10.0
-            }
-        end
     end
 
 
@@ -385,8 +357,7 @@ end
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
---argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
-argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
+argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 -- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
@@ -397,7 +368,7 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-revOrbTime       = round( tonumber(arg[1]), dec )    -- Backward Time (Gyrs)
+evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
 time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
 rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
@@ -412,17 +383,11 @@ if (#arg >= 12) then
   orbit_parameter_vz  = round( tonumber(arg[12]), dec )
   manual_body_file = arg[13]
 else
-  orbit_parameter_l   = preset_orbit_parameter_l
-  orbit_parameter_b   = preset_orbit_parameter_b
-  orbit_parameter_r   = preset_orbit_parameter_r
-  orbit_parameter_vx  = preset_orbit_parameter_vx
-  orbit_parameter_vy  = preset_orbit_parameter_vy
-  orbit_parameter_vz  = preset_orbit_parameter_vz
   manual_body_file = arg[7] -- File with Individual Particles (.out file)
 end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-evolveTime = revOrbTime * time_ratio
+revOrbTime = evolveTime / time_ratio
 if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)

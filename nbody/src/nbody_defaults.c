@@ -67,11 +67,6 @@ const NBodyCtx defaultNBodyCtx =
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
 
-    /* .leftHanded      */  FALSE,
-
-    /* .useContBins     */  FALSE,
-    /* .bleedInRange    */  1,
-
     /* .LMC             */  FALSE,
     /* .LMCmass         */  0.0,
     /* .LMCscale        */  0.0,
@@ -81,7 +76,6 @@ const NBodyCtx defaultNBodyCtx =
     /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
-    /* .nStepRev        */  1,
 
     /* .calibrationRuns */   0,
 
