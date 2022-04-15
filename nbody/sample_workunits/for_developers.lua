@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 500   -- -- NUMBER OF BODIES (MIN 4)                          -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES (MIN 4)                          -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.84"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -79,7 +79,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 
 LeftHandedCoords     = false   -- -- work in left-handed galactocentric cartesian coordinates (Sgr) -- --
 
-NonDiscreteBinning   = true    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
+NonDiscreteBinning   = false    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
 NonDiscreteRange     = 3        -- -- calculates body fraction in this many bins away from the main bin (rest are treated as having ZERO body fraction) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -123,12 +123,12 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-orbit_parameter_l  = 258
-orbit_parameter_b  = 45.8
-orbit_parameter_r  = 21.5
-orbit_parameter_vx = -185.5
-orbit_parameter_vy = 54.7
-orbit_parameter_vz = 147.4
+preset_orbit_parameter_l  = 258
+preset_orbit_parameter_b  = 45.8
+preset_orbit_parameter_r  = 21.5
+preset_orbit_parameter_vx = -185.5
+preset_orbit_parameter_vy = 54.7
+preset_orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -412,6 +412,12 @@ if (#arg >= 12) then
   orbit_parameter_vz  = round( tonumber(arg[12]), dec )
   manual_body_file = arg[13]
 else
+  orbit_parameter_l   = preset_orbit_parameter_l
+  orbit_parameter_b   = preset_orbit_parameter_b
+  orbit_parameter_r   = preset_orbit_parameter_r
+  orbit_parameter_vx  = preset_orbit_parameter_vx
+  orbit_parameter_vy  = preset_orbit_parameter_vy
+  orbit_parameter_vz  = preset_orbit_parameter_vz
   manual_body_file = arg[7] -- File with Individual Particles (.out file)
 end
 

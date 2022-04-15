@@ -178,7 +178,7 @@ static int createNBodyCtx(lua_State* luaSt)
             || (major == 0 && minor == 0))                /* Min version not set */
         {
             ctx.timestep = nbCorrectTimestep(ctx.timeBack, ctx.timestep);
-            //mw_printf("Timestep = %.15f Gyrs\n", ctx.timestep);
+            mw_printf("Timestep = %.15f Gyrs\n", ctx.timestep);
         }
         else
         {

@@ -165,7 +165,7 @@ static real_0 nbCalculateEps2(real_0 nbody, real_0 a_b, real_0 a_d, real_0 M_b, 
     if (eps2 <= REAL_EPSILON) {
         eps2 = REAL_EPSILON;
     }
-    //mw_printf("Optimal Softening Length = %.15f kpc\n", eps);
+    mw_printf("Optimal Softening Length = %.15f kpc\n", eps);
     return eps2;
 }
 
