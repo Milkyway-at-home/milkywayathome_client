@@ -34,8 +34,6 @@
 #include "nbody_potential.h"
 #include "nbody_density.h"
 
-static const real pi = 3.1415926535;
-
 static const MWEnumAssociation criterionOptions[] =
 {
     { "TreeCode",     TreeCode     },
@@ -85,13 +83,14 @@ static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
     static const char* criterionName = NULL;
-    real nStepf = 0.0;
+    real_0 nStepf = 0.0;
+    real_0 nStepr = 0.0;
 
     static const MWNamedArg argTable[] =
         {
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
-            { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },
+            { "timeBack",      LUA_TNUMBER,  NULL, TRUE, &ctx.timeBack      },
             { "theta",         LUA_TNUMBER,  NULL, FALSE, &ctx.theta         },
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
@@ -126,6 +125,9 @@ static int createNBodyCtx(lua_State* luaSt)
             { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect   },
             { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect    },
             { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect   },
+            { "leftHanded",    LUA_TBOOLEAN, NULL, FALSE, &ctx.leftHanded    },
+            { "useContBins",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useContBins   },
+            { "bleedInRange",  LUA_TNUMBER,  NULL, FALSE, &ctx.bleedInRange  },
             { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC           },
             { "LMCmass",       LUA_TNUMBER,  NULL, FALSE, &ctx.LMCmass       },
             { "LMCscale",      LUA_TNUMBER,  NULL, FALSE, &ctx.LMCscale      },
@@ -161,25 +163,6 @@ static int createNBodyCtx(lua_State* luaSt)
         ctx.useQuad = FALSE;
     }
 
-    nStepf = mw_ceil(ctx.timeEvolve / ctx.timestep);
-    if (nStepf >= (real) UINT_MAX)
-    {
-        luaL_error(luaSt,
-                   "Number of timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
-                   nStepf,
-                   ctx.timeEvolve, ctx.timestep);
-    }
-    
-    ctx.nStep = (unsigned int) nStepf;
-    
-    #ifdef NBODY_DEV_OPTIONS
-        if(ctx.Nstep_control)
-        {
-            mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
-            ctx.nStep = (int) ctx.Ntsteps;
-        }
-    #endif
-    
     {
         int major = 0, minor = 0;
 
@@ -194,13 +177,43 @@ static int createNBodyCtx(lua_State* luaSt)
             || (major > 0 || (major == 0 && minor >= 90)) /* Version required >= 0.90 */
             || (major == 0 && minor == 0))                /* Min version not set */
         {
-            ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
+            ctx.timestep = nbCorrectTimestep(ctx.timeBack, ctx.timestep);
+            mw_printf("Timestep = %.15f Gyrs\n", ctx.timestep);
         }
         else
         {
             mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
         }
     }
+
+    nStepf = mw_ceil_0(ctx.timeEvolve / ctx.timestep);
+    if (nStepf >= (real_0) UINT_MAX)
+    {
+        luaL_error(luaSt,
+                   "Number of forward timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
+                   nStepf,
+                   ctx.timeEvolve, ctx.timestep);
+    }
+    ctx.nStep = (unsigned int) nStepf;
+
+    nStepr = mw_ceil_0(ctx.timeBack / ctx.timestep);
+    if (nStepr >= (real_0) UINT_MAX)
+    {
+        luaL_error(luaSt,
+                   "Number of reverse timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
+                   nStepr,
+                   ctx.timeBack, ctx.timestep);
+    }
+    ctx.nStepRev = (unsigned int) nStepr;
+    
+    #ifdef NBODY_DEV_OPTIONS
+        if(ctx.Nstep_control)
+        {
+            mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
+            ctx.nStep = (int) ctx.Ntsteps;
+            ctx.nStepRev = (int) ctx.Ntsteps;
+        }
+    #endif
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;
@@ -276,6 +289,9 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "BetaCorrect",     getNumber,     offsetof(NBodyCtx, BetaCorrect)   },
     { "VelCorrect",      getNumber,     offsetof(NBodyCtx, VelCorrect)    },
     { "DistCorrect",     getNumber,     offsetof(NBodyCtx, DistCorrect)   },
+    { "leftHanded",      getBool,       offsetof(NBodyCtx, leftHanded)    },
+    { "useContBins",     getBool,       offsetof(NBodyCtx, useContBins)   },
+    { "bleedInRange",    getNumber,     offsetof(NBodyCtx, bleedInRange)  },
     { "LMC",             getBool,       offsetof(NBodyCtx, LMC)           },
     { "LMCmass",         getNumber,     offsetof(NBodyCtx, LMCmass)       },
     { "LMCscale",        getNumber,     offsetof(NBodyCtx, LMCscale)      },
@@ -317,6 +333,9 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "BetaCorrect",     setNumber,     offsetof(NBodyCtx, BetaCorrect)   },
     { "VelCorrect",      setNumber,     offsetof(NBodyCtx, VelCorrect)    },
     { "DistCorrect",     setNumber,     offsetof(NBodyCtx, DistCorrect)   },
+    { "leftHanded",      setBool,       offsetof(NBodyCtx, leftHanded)    },
+    { "useContBins",     setBool,       offsetof(NBodyCtx, useContBins)   },
+    { "bleedInRange",    setNumber,     offsetof(NBodyCtx, bleedInRange)  },
     { "LMC",             setBool,       offsetof(NBodyCtx, LMC)           },
     { "LMCmass",         setNumber,     offsetof(NBodyCtx, LMCmass)       },
     { "LMCscale",        setNumber,     offsetof(NBodyCtx, LMCscale)      },

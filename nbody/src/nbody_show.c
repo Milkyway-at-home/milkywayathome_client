@@ -379,7 +379,7 @@ char* showCell(const NBodyCell* c)
         return NULL;
 
 
-    posBuf = showVector(Pos(c));
+    posBuf = showVector(&Pos(c));
 
     if (0 > asprintf(&buf,
                      "NBodyCell = {\n"
@@ -406,15 +406,15 @@ char* showCell(const NBodyCell* c)
                      "}\n",
                      posBuf,
                      (void*) Next(c),
-                     Mass(c),
+                     showRealValue(&Mass(c)),
                      Type(c),
 
                      Rcrit2(c),
                      (void*) More(c),
 
-                     Quad(c).xx, Quad(c).xy, Quad(c).xz,
-                     Quad(c).yy, Quad(c).yz,
-                     Quad(c).zz,
+                     showRealValue(&Quad(c).xx), showRealValue(&Quad(c).xy), showRealValue(&Quad(c).xz),
+                     showRealValue(&Quad(c).yy), showRealValue(&Quad(c).yz),
+                     showRealValue(&Quad(c).zz),
 
                      (void*) Subp(c)[0], (void*) Subp(c)[1], (void*) Subp(c)[2], (void*) Subp(c)[3],
                      (void*) Subp(c)[5], (void*) Subp(c)[5], (void*) Subp(c)[6], (void*) Subp(c)[7]
@@ -444,8 +444,8 @@ char* showBody(const Body* p)
     if (!p)
         return NULL;
 
-    vel = showVector(Vel(p));
-    pos = showVector(Pos(p));
+    vel = showVector(&Vel(p));
+    pos = showVector(&Pos(p));
 
     if (0 > asprintf(&buf,
                      "body {\n"
@@ -454,7 +454,7 @@ char* showBody(const Body* p)
                      "      velocity = %s\n"
                      "      ignore   = %s\n"
                      "    };\n",
-                     Mass(p),
+                     showRealValue(&Mass(p)),
                      pos,
                      vel,
                      showBool(ignoreBody(p))))

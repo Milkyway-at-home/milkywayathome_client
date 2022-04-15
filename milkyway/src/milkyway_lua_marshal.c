@@ -21,6 +21,7 @@
 #include <lauxlib.h>
 
 #include "milkyway_lua_marshal.h"
+#include "milkyway_lua_math.h"
 #include "milkyway_util.h"
 
 /*
@@ -234,13 +235,13 @@ int setLong(lua_State* luaSt, void* v)
 
 int getNumber(lua_State* luaSt, void* v)
 {
-    lua_pushnumber(luaSt, (lua_Number) *(real*) v);
+    lua_pushnumber(luaSt, (lua_Number) *(real_0*) v);
     return 1;
 }
 
 int setNumber(lua_State* luaSt, void* v)
 {
-    *(real*) v = (real) luaL_checknumber(luaSt, 3);
+    *(real_0*) v = (real_0) luaL_checknumber(luaSt, 3);
     return 0;
 }
 
@@ -500,10 +501,10 @@ static void setNumberFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             return;
         }
 
-        /* Double or Float */
+        /* Real Structure with Derivative Information*/
         if(strcmp(REAL_TYPE, userDataTypeName) == 0)
         {
-            *(real*) v = (real) lua_tonumber(luaSt, idx);
+            *(real*) v = *toReal(luaSt, idx);
             return;
         }
 
@@ -511,8 +512,8 @@ static void setNumberFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
         
     }
     
-    /* If userDataTypeName is NULL, the default data type is real */
-    *(real*) v = (real) lua_tonumber(luaSt, idx);
+    /* If userDataTypeName is NULL, the default data type is real_0 (Double or Float)*/
+    *(real_0*) v = (real_0) lua_tonumber(luaSt, idx);
     return;
 }
     
@@ -770,7 +771,7 @@ int getLuaClosure(lua_State* luaSt, void* ref)
     return 1;
 }
 
-int pushRealArray(lua_State* luaSt, const real* arr, int n)
+int pushRealArray(lua_State* luaSt, const real_0* arr, int n)
 {
     int i, table;
 
@@ -786,16 +787,16 @@ int pushRealArray(lua_State* luaSt, const real* arr, int n)
     return 0;
 }
 
-real* popRealArray(lua_State* luaSt, int* outN)
+real_0* popRealArray(lua_State* luaSt, int* outN)
 {
-    real* arr;
+    real_0* arr;
     int i, n, table;
 
     table = lua_gettop(luaSt);
     luaL_checktype(luaSt, table, LUA_TTABLE);
     n = luaL_getn(luaSt, table);  /* get size of table */
 
-    arr = (real*) mwMalloc(sizeof(real) * n);
+    arr = (real_0*) mwMalloc(sizeof(real_0) * n);
     for (i = 0; i < n; ++i)
     {
         lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */

@@ -35,7 +35,8 @@ SampleModels.sampleModels = {
             position = Vector.create(-22.0415, -3.35444, 19.9539),
             velocity = Vector.create(118.444, 168.874, -67.6378),
             mass = mass,
-            scaleRadius = r0
+            scaleRadius = r0,
+            ignore = false
          }
 
          return mod, calculateEps2(nbody, r0), calculateTimestep(mass, r0)
@@ -57,7 +58,7 @@ SampleModels.sampleModels = {
             velocity = vel,
             mass = smallMass,
             scaleRadius = smallR0,
-            ignore = true
+            ignore = false
          }
 
          m2 = predefinedModels.plummer{
