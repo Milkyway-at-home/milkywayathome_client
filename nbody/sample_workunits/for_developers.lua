@@ -26,7 +26,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 500   -- -- NUMBER OF BODIES (MIN 4)                          -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.80"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.84"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --

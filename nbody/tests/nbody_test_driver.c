@@ -273,13 +273,27 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     unsigned int mdLen;
     const Body* b;
 
+    //Calculate current size of hashableBody
+    unsigned int originalSizeHashBody = 2*sizeof(mwvector) + sizeof(real) + sizeof(body_t);
+
+    //Increase size to next highest power of 2
+    real_0 sizeHashBody = originalSizeHashBody;
+    unsigned int newSizeHashBody = 1;
+    while(sizeHashBody > 1)
+    {
+        newSizeHashBody *= 2;
+        sizeHashBody /= 2;
+    }
+
     //mw_printf("CORE - Before struct definition\n");
     struct
     {
-        mwvector pos, vel;
+        mwvector pos;
+        mwvector vel;
         real mass;
         body_t type;
         /* Padding happens */
+        short buffer[(newSizeHashBody - originalSizeHashBody)/2];
     } hashableBody;
 
     if (nbody == 0)
@@ -299,8 +313,21 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
      * padded and won't be the same size as 2 * sizeof(mwvector) +
      * sizeof(real) so bad things happen when hashing sizeof(hashableBody) */
 
-    //mw_printf("CORE - Before memset\n");
-    memset(&hashableBody, 0, sizeof(hashableBody));
+    //memset does not work for structs containing real objects, so we must manually zero these out
+    hashableBody.pos.x  = ZERO_REAL;
+    hashableBody.pos.y  = ZERO_REAL;
+    hashableBody.pos.z  = ZERO_REAL;
+    hashableBody.pos.w  = ZERO_REAL;
+    hashableBody.vel.x  = ZERO_REAL;
+    hashableBody.vel.y  = ZERO_REAL;
+    hashableBody.vel.z  = ZERO_REAL;
+    hashableBody.vel.w  = ZERO_REAL;
+    hashableBody.mass   = ZERO_REAL;
+    hashableBody.type   = 0;
+    for (i = 0; i < (newSizeHashBody - originalSizeHashBody)/2; i++)
+    {
+        hashableBody.buffer[i] = 0;
+    }
 
     //mw_printf("CORE - Before body loop\n");
     for (i = 0; i < nbody; ++i)

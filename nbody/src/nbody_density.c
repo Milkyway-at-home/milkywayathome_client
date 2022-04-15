@@ -604,6 +604,7 @@ real nbExtDensity(const Potential* pot, mwvector* pos, real_0 time)
     switch (pot->disk.type)
     {
         case FreemanDisk: /*Density negligible since infinitely thin*/
+            disk_den = ZERO_REAL;
             break;
         case MiyamotoNagaiDisk:
             disk_den = miyamotoNagaiDiskDensity(&(pot->disk), pos);
@@ -630,6 +631,7 @@ real nbExtDensity(const Potential* pot, mwvector* pos, real_0 time)
     switch (pot->disk2.type)
     {
         case FreemanDisk: /*Density negligible since infinitely thin*/
+            disk2_den = ZERO_REAL;
             break;
         case MiyamotoNagaiDisk:
             disk2_den = miyamotoNagaiDiskDensity(&(pot->disk2), pos);
@@ -648,7 +650,7 @@ real nbExtDensity(const Potential* pot, mwvector* pos, real_0 time)
             break;
         case InvalidDisk:
         default:
-            mw_fail("Invalid primary disk type in density\n");
+            mw_fail("Invalid secondary disk type in density\n");
     }
     //mw_printf("Disk2 Density = %.15f\n", showRealValue(&disk2_den));
     density = mw_add(&density, &disk2_den);
@@ -697,7 +699,8 @@ real nbExtDensity(const Potential* pot, mwvector* pos, real_0 time)
 
     if (showRealValue(&density) < 0.0)
     {
-        mw_fail("Negative density calculated!\n    Faulty Potential = %s\n", showPotential(pot));
+        mw_fail("Negative density calculated!\n  r = %.15f!\n  Faulty Potential = %s\n  Total Density = %.15f\n   Bulge Density = %.15f\n  Disk Density = %.15f\n  Disk2 Density = %.15f\n  Halo Density = %.15f\n",
+                                                 showRealValue(&r), showPotential(pot), showRealValue(&density), showRealValue(&bulge_den), showRealValue(&disk_den), showRealValue(&disk2_den), showRealValue(&halo_den));
     }
 
     return density;

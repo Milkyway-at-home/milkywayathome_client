@@ -136,7 +136,7 @@ static int nbGeneratePlummerCore(lua_State* luaSt,
     velScale = mw_sqrt(&tmp);     /* and recip. speed scale */
 
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
-    b.bodynode.mass = mw_mul_s(&mass, inv_0((real_0) nbody));    /* Mass per particle */
+    b.bodynode.mass = mw_mul_s(mass, inv_0((real_0) nbody));    /* Mass per particle */
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
@@ -173,17 +173,19 @@ int nbGeneratePlummer(lua_State* luaSt)
     static const mwvector* position = NULL;
     static const mwvector* velocity = NULL;
     static mwbool ignore;
-    static real_0 mass = 0.0, nbodyf = 0.0, radiusScale = 0.0;
+    static real_0 mass = 0.0;
+    static real_0 nbodyf = 0.0;
+    static real_0 radiusScale = 1.0;
 
     static const MWNamedArg argTable[] =
         {
             { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
-            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
-            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale },
+            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng        },
             { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
             { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity    },
+            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
+            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale },
             { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore      },
-            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng        },
             END_MW_NAMED_ARG
         };
 

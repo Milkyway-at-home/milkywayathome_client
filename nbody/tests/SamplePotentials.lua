@@ -325,7 +325,7 @@ end
 
 --Following for-loop generates all possible potential combinations
 sphere_types = 3
-disk_types = 5
+disk_types = 1           --The other disks are not in working order yet. Only use Miyamoto-Nagai
 halo_types = 10
 all_combo = false        --Keep this set to false if you DON'T want to run over all possible potential combinations
 

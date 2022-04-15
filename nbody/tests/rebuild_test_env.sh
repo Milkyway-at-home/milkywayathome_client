@@ -3,7 +3,7 @@
 # After this, to run the whole testing suite, go to the newly created test_env folder and type 'make test' to run a specific test say 'ctest -R __test_name_here__' with the -VV option on if you want verbose output (otherwise you get no output)
 
 # Specify YOUR OWN path here, in the folder which contains the milkywayathome_client directory
-PathToMilkyWayAtHomeClientFolder='/home/dylansheils/Desktop/pushToLMCBranch/'
+PathToMilkyWayAtHomeClientFolder='INSERT CLIENT PATHWAY HERE'
 # Note, you need to specify if you plan to run the GPU testing suite. 'true' for true, 'false' for false 
 includeGPUtesting=false
 
@@ -20,35 +20,6 @@ if $includeGPUtesting; then
   cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_checkpoint.lua $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_checkpoint.lua
   cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_morebasicmodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_morebasicmodels.c 
   cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/gpu_test_moremodels.c $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
-  
-  cd $PathToMilkyWayAtHomeClientFolder/
-  rm -rf test_env
-  mkdir test_env
-  cd test_env
-  
-  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENCL=ON $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
-
-  make gpu_sanity 
-  make gpu_checkpoint
-  make gpu_basicModelsPart1
-  make gpu_basicModelsPart2
-  make gpu_advanceModels
-
-  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
-
-  make blind_test
-  make sanity
-  make test_primitives
-  make test_data
-  make test_barriers
-  make test_queue
-  make emd_test
-  make bessel_test
-  make poisson_test
-  make virial_test
-  make mixeddwarf_test
-  make nbody_test_driver
-  make all
 else
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
   cp $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/GPUTesting/makeCPUfile.txt $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/CMakeLists.txt
@@ -59,13 +30,24 @@ else
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_checkpoint.lua
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_morebasicmodels.c
   rm $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/tests/gpu_test_moremodels.c
-  
+fi
+
   cd $PathToMilkyWayAtHomeClientFolder/
   rm -rf test_env
   mkdir test_env
   cd test_env
 
-  cmake -DCMAKE_BUILD_TYPE=Debug -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
+if $includeGPUtesting; then 
+  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENCL=ON -DAUTODIFF=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
+
+  make gpu_sanity 
+  make gpu_checkpoint
+  make gpu_basicModelsPart1
+  make gpu_basicModelsPart2
+  make gpu_advanceModels
+fi
+
+  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
 
   make blind_test
   make sanity
@@ -80,4 +62,10 @@ else
   make mixeddwarf_test
   make nbody_test_driver
   make all
-fi
+
+  #AUTODIFF tests require different flags to compile
+  cmake -DNBODY_STATIC=OFF -DDOUBLEPREC=ON -DSEPARATION=OFF -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=ON $PathToMilkyWayAtHomeClientFolder/milkywayathome_client
+
+  make autodiff_test
+  make dwarfderv_test
+
