@@ -659,14 +659,14 @@ int main()
     failed += test;
 
     // Polynomial and Root Functions
-    test = testDoubleVar(mw_pow, mw_pow_0, 0.0, 10.0, 0.1, 2.0);
+    test = testDoubleVar(mw_pow, mw_pow_0, 0.01, 10.0, 0.1, 2.0);
     if(test != 0)
     {
         printf("    Test failed! (mw_pow)\n");
     }
     failed += test;
 
-    test = testDoubleVar(mw_powr, powr_func, 0.0, 10.0, 0.1, 2.0);
+    test = testDoubleVar(mw_powr, powr_func, 0.01, 10.0, 0.1, 2.0);
     if(test != 0)
     {
         printf("    Test failed! (mw_powr)\n");
