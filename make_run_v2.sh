@@ -2,8 +2,8 @@
 #/* Copyright (c) 2016 Siddhartha Shelton */
 
 rebuild=true
-run=false
-run_compare=true
+run=true
+run_compare=false
 compare_only=false
 get_flag_list=false
 
@@ -14,7 +14,7 @@ then
     rm -r build
     mkdir build
     cd build
-    cmake  -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=OFF -DBOINC_APPLICATION=ON -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=ON $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/
+    cmake  -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=OFF -DBOINC_APPLICATION=ON -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/
     make -j 
 fi
 

@@ -398,8 +398,11 @@ real getBodyBinFrac(const NBodyCtx* ctx, const HistogramParams* hp, const Body* 
     real_0 BetaEnd     = hp->betaStart + betaSize*(BetaIndex+1);
 
     /* Integrate distribution over full bin */
-    unsigned int intLambdaBins = mw_ceil_0(3.0 * d2r_0(lambdaSize) / (1.0*showRealValue(&b)));
-    unsigned int intBetaBins = mw_ceil_0(3.0 * d2r_0(betaSize) / (1.0*showRealValue(&b)));
+    unsigned int intLambdaBins = mw_ceil_0(3.0 * d2r_0(lambdaSize) / (1.0*showRealValue(&a)));
+    unsigned int intBetaBins = mw_ceil_0(3.0 * d2r_0(betaSize) / (1.0*showRealValue(&a)));
+    /* We ideally want to use "b" here, but it can get too small and for the double integration to take too long.
+       Using "a" doesn't seem to reduce accuracy all that much. */
+
     //mw_printf("L_bins, B_bins = %u, %u\n",intLambdaBins, intBetaBins);
     real B_val, L_val, B_val_rad, val;
     mwvector x;

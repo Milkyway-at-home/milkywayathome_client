@@ -162,42 +162,60 @@ static real_0 nbCalculateEps2(real_0 nbody, real_0 a_b, real_0 a_d, real_0 M_b, 
     real_0 r_v = nbCalculateVirial(a_b, a_d, M_b, M_d); /** Calculate virial radius using formula for Henon length unit **/
     real_0 eps = r_v * 0.98 * mw_pow_0(nbody, -0.26);     /** Optimal softening length pulled from Athanassoula et al. 1998 **/
     real_0 eps2 = sqr_0(eps)/beta;
-    if (eps2 <= REAL_EPSILON) {
-        eps2 = REAL_EPSILON;
+    if (eps2 <= 2.0 * REAL_EPSILON) {
+        eps2 = 2.0 * REAL_EPSILON;
     }
     mw_printf("Optimal Softening Length = %.15f kpc\n", eps);
     return eps2;
 }
 
+static real_0 nbOldCalculateEps2(real_0 nbody, real_0 a_b, real_0 a_d, real_0 M_b, real_0 M_d)
+{
+    real_0 r0 = (M_b*a_b + M_d*a_d)/(M_b + M_d);
+    real_0 eps2 = sqr_0(r0)/(100.0 * nbody);
+    if (eps2 <= REAL_EPSILON) {
+        eps2 = REAL_EPSILON;
+    }
+    mw_printf("Optimal Softening Length = %.15f kpc\n", mw_sqrt_0(eps2));
+    return eps2;
+}
+
 static int luaCalculateEps2(lua_State* luaSt)
 {
-    int nbody, arg_num;
-    real_0 r0, a_b, a_d, M_b, M_d;
+    int nbody, arg_num, useOldForm;
+    real_0 a_b, a_d, M_b, M_d;
 
     arg_num = lua_gettop(luaSt);
 
-    if (arg_num == 5)
+    if (arg_num == 6)
     {
         nbody = (int) luaL_checkinteger(luaSt, 1);
         a_b = luaL_checknumber(luaSt, 2);
         a_d = luaL_checknumber(luaSt, 3);
         M_b = luaL_checknumber(luaSt, 4);
         M_d = luaL_checknumber(luaSt, 5);
+        useOldForm = (int) luaL_checkinteger(luaSt, 6);
     }
-    else if (arg_num == 2) /** Single component only requires scale radius. **/
+    else if (arg_num == 3) /** Single component only requires scale radius. **/
     {
         nbody = (int) luaL_checkinteger(luaSt, 1);
         a_b = luaL_checknumber(luaSt, 2);
         a_d = 1.0; /** can be anything but zero **/
         M_b = 1.0; /** can be anything but zero **/
         M_d = 0.0; /** must be zero **/
+        useOldForm = (int) luaL_checkinteger(luaSt, 3);
     }
     else
     {
-        return luaL_argerror(luaSt, 0, "Expected 2 or 5 arguments");
+        return luaL_argerror(luaSt, 0, "Expected 3 or 6 arguments");
     }
 
-    lua_pushnumber(luaSt, nbCalculateEps2((real_0) nbody, a_b, a_d, M_b, M_d));
+    if(useOldForm) {
+        lua_pushnumber(luaSt, nbOldCalculateEps2((real_0) nbody, a_b, a_d, M_b, M_d));
+    }
+    else {
+        lua_pushnumber(luaSt, nbCalculateEps2((real_0) nbody, a_b, a_d, M_b, M_d));
+    }
 
     return 1;
 }

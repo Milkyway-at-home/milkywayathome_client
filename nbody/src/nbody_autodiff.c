@@ -19,6 +19,7 @@
  */
 
 #include "nbody_config.h"
+#include "nbody_autodiff.h"
 
 #include "milkyway_util.h"
 
@@ -76,19 +77,19 @@ static void nbPrintLikelihood(FILE* f, real* likelihood) //NOTE: THIS IS THE NEG
 void printRealFull(real* a, char var_name[]) //For debugging purposes
 {
     int i;
-    mw_printf("%s = %.15f\n", var_name, a->value);
+    mw_printf("%s = %.15e\n", var_name, a->value);
 
-    mw_printf("Gradient = [");
+    mw_printf("    Gradient = [");
     for(i=0;i<NumberOfModelParameters;i++)
     {
-        mw_printf(" %.15f", a->gradient[i]);
+        mw_printf(" %.15e", a->gradient[i]);
     }
     mw_printf(" ]\n");
 
-    mw_printf("Hessian = [");
+    mw_printf("    Hessian = [");
     for(i=0;i<HessianLength;i++)
     {
-        mw_printf(" %.15f", a->hessian[i]);
+        mw_printf(" %.15e", a->hessian[i]);
     }
     mw_printf(" ]\n");
 }
@@ -99,7 +100,7 @@ void printRealGradient(real* a, char var_name[]) //For debugging purposes
     mw_printf("NABLA %s = [", var_name);
     for(i=0;i<NumberOfModelParameters;i++)
     {
-        mw_printf(" %.15f", a->gradient[i]);
+        mw_printf(" %.15e", a->gradient[i]);
     }
     mw_printf(" ]\n");
 }
@@ -128,6 +129,16 @@ void printRealGradient(real* a, char var_name[]) //For debugging purposes
 }
 
 #endif /*AUTODIFF*/
+
+void printVectorFull(mwvector* v, char var_name[]) //For debugging purposes
+{
+    int i;
+    mw_printf("------------------------------------\n--%s\n", var_name);
+    printRealFull(&v->x, "  X");
+    printRealFull(&v->y, "  Y");
+    printRealFull(&v->z, "  Z");
+    mw_printf("------------------------------------\n");
+}
 
 
 /* Write AUTODIFF file to given file name */

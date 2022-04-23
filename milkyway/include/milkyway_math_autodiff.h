@@ -37,7 +37,7 @@
 
     #define NumberOfModelParameters 20     /*Change this number to add more space for parameters to differentiate over*/
     #define HessianLength (int) (NumberOfModelParameters * (NumberOfModelParameters + 1)/2)
-    #define origRealSize (int) ((NumberOfModelParameters/2.0 + 1) * (NumberOfModelParameters + 1))
+    #define origRealSize (int) ((NumberOfModelParameters/2.0 + 1) * (NumberOfModelParameters + 1) + 2)
 
     /* This code sets the size of the real struct to the next highest power of 2 using bitwise operators */
     #define adjustedRealSize ((((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))|((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))>>8))|(((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))|((((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))|(((origRealSize|(origRealSize>>1))|((origRealSize|(origRealSize>>1))>>2))>>4))>>8))>>16)) + 1)
@@ -47,10 +47,12 @@
         real_0 value;
         real_0 gradient[NumberOfModelParameters];
         real_0 hessian[HessianLength];
-        real_0 buffer[adjustedRealSize - HessianLength - NumberOfModelParameters - 1];
+        real_0 lnfactor_gradient;      //Stores the natural log of highest gradient value to work in log-space
+        real_0 lnfactor_hessian;       //Stores the natural log of highest hessian value to work in log-space
+        real_0 buffer[adjustedRealSize - HessianLength - NumberOfModelParameters - 3]; //Buffer to make 'real's memory a power of 2
     } real;
 
-    #define ZERO_REAL (real) { 0.0 , {0.0} , {0.0} , {0.0} }
+    #define ZERO_REAL (real) { 0.0 , {0.0} , {0.0} , 0.0 , 0.0 , {0.0} }
 
 #else
 
@@ -97,6 +99,24 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static inline add_logspace_0(real_0 a, real_0 b)
+{
+    L_g = (a<b)*b + (a>=b)*a;
+    L_l = (b<a)*b + (b>=a)*a;
+    return L_g + mw_log_0(1.0 + mw_exp(L_l - L_g));
+}
+
+static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller value from the larger. Must keep note of sign separately.
+{
+    L_g = (a<b)*b + (a>=b)*a;
+    L_l = (b<a)*b + (b>=a)*a;
+    if (L_g == L_l)
+    {
+        return -REAL_MAX;
+    }
+    return L_g + mw_log_0(1.0 - mw_exp(L_l - L_g));
+}
 
 #if AUTODIFF /*Math functions*/
     CONST_F ALWAYS_INLINE
@@ -182,20 +202,26 @@ extern "C" {
     {
         int i,j,k;
         real_0 x_grad_i, y_grad_i, x_grad_j, y_grad_j, x_hess, y_hess;
+        int sgn_grad[NumberOfModelParameters] = {0};
+        int sgn_hess[HessianLength] = {0};
 
         real result = mw_real_const(z);
 
         for (i=0;i<NumberOfModelParameters;i++)
         {
             x_grad_i = x->gradient[i];
+            x_lngrad_i = x->lnfactor_gradient[i];
             if (!y)
             {
                 y_grad_i = 0.0;
+                y_lngrad_i = 0.0;
             }
             else
             {
                 y_grad_i = y->gradient[i];
+                y_lngrad_i = y->lnfactor_gradient[i];
             }
+
             result.gradient[i] = dz_dx*x_grad_i + dz_dy*y_grad_i;
         }
 

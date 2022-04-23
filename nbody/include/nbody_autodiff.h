@@ -30,6 +30,7 @@ extern "C" {
 
 void printRealFull(real* a, char var_name[]);
 void printRealGradient(real* a, char var_name[]);
+void printVectorFull(mwvector* v, char var_name[]);
 void nbWriteAutoDiff(const char* autoDiffFileName, real* likelihood);
 
 #ifdef __cplusplus

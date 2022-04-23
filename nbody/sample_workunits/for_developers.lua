@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES (MIN 4)                          -- --
+totalBodies           = 500   -- -- NUMBER OF BODIES (MIN 4)                          -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.84"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -40,6 +40,8 @@ LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF 
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
+
+UseOldSofteningLength = 1         -- -- Uses old softening length formula from v1.76 and eariler -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -79,22 +81,22 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 
 LeftHandedCoords     = false   -- -- work in left-handed galactocentric cartesian coordinates (Sgr) -- --
 
-NonDiscreteBinning   = false    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
-NonDiscreteRange     = 3        -- -- calculates body fraction in this many bins away from the main bin (rest are treated as having ZERO body fraction) -- --
+NonDiscreteBinning   = true    -- -- treats each body as a distribution to be spread among all bins (COMPUTATIONALLY EXPENSIVE: AUTODIFF NEEDS THIS) -- --
+NonDiscreteRange     = 1        -- -- calculates body fraction in this many bins away from the main bin (rest are treated as having ZERO body fraction) -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
-best_like_start      = 0.99    -- what percent of sim to start
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+best_like_start      = 0.9995    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
 
 -- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = true  -- calculate average beta, use in likelihood
-use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
-use_avg_dist         = true  -- calculate average distance, use in likelihood
+use_beta_comp        = false  -- calculate average beta, use in likelihood
+use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
+use_avg_dist         = false  -- calculate average distance, use in likelihood
 
 -- number of additional forward evolutions to do to calibrate the rotation of the bar
 -- numCalibrationRuns + 1 additional forward evolutions will be done
@@ -189,7 +191,8 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d, UseOldSofteningLength)
+    --sp = 0.0003
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
