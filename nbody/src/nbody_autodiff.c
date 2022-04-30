@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2010-2018 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2022 Rensselaer Polytechnic Institute
  *  Copyright (c) 2018-2022 Eric Mendelsohn
  * 
  *  This file is part of Milkway@Home.
@@ -39,6 +39,8 @@ static void nbPrintLikelihood(FILE* f, real* likelihood) //NOTE: THIS IS THE NEG
     fprintf(f, " ]\n");
     mw_boinc_print(f, "</gradient>\n");
 
+    mw_boinc_print(f, "<lnfactor_gradient>%.15f</lnfactor_gradient>\n", likelihood->lnfactor_gradient);
+
     mw_boinc_print(f, "<hessian>\n");
     fprintf(f, "[");
     for (i = 0; i < NumberOfModelParameters; i++)
@@ -72,6 +74,8 @@ static void nbPrintLikelihood(FILE* f, real* likelihood) //NOTE: THIS IS THE NEG
     }
     fprintf(f, " ]\n");
     mw_boinc_print(f, "</hessian>\n");
+
+    mw_boinc_print(f, "<lnfactor_hessian>%.15f</lnfactor_hessian>\n", likelihood->lnfactor_hessian);
 }
 
 void printRealFull(real* a, char var_name[]) //For debugging purposes
@@ -85,6 +89,7 @@ void printRealFull(real* a, char var_name[]) //For debugging purposes
         mw_printf(" %.15e", a->gradient[i]);
     }
     mw_printf(" ]\n");
+    mw_printf("    lnGrad = %.15f\n", a->lnfactor_gradient);
 
     mw_printf("    Hessian = [");
     for(i=0;i<HessianLength;i++)
@@ -92,6 +97,7 @@ void printRealFull(real* a, char var_name[]) //For debugging purposes
         mw_printf(" %.15e", a->hessian[i]);
     }
     mw_printf(" ]\n");
+    mw_printf("    lnHess = %.15f\n", a->lnfactor_hessian);
 }
 
 void printRealGradient(real* a, char var_name[]) //For debugging purposes
@@ -100,7 +106,7 @@ void printRealGradient(real* a, char var_name[]) //For debugging purposes
     mw_printf("NABLA %s = [", var_name);
     for(i=0;i<NumberOfModelParameters;i++)
     {
-        mw_printf(" %.15e", a->gradient[i]);
+        mw_printf(" %.15e", a->gradient[i] * mw_exp_0(a->lnfactor_gradient));
     }
     mw_printf(" ]\n");
 }
@@ -113,9 +119,13 @@ static void nbPrintLikelihood(FILE* f, real* likelihood)
     fprintf(f, "[ No Derivative Information Calculated ]\n");
     mw_boinc_print(f, "</gradient>\n");
 
+    mw_boinc_print(f, "<lnfactor_gradient>0.0</lnfactor_gradient>");
+
     mw_boinc_print(f, "<hessian>\n");
     fprintf(f, "[ No Derivative Information Calculated ]\n");
     mw_boinc_print(f, "</hessian>\n");
+
+    mw_boinc_print(f, "<lnfactor_hessian>0.0</lnfactor_hessian>");
 }
 
 void printRealFull(real* a, char var_name[]) //For debugging purposes

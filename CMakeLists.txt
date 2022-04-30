@@ -128,6 +128,10 @@ option(AUTODIFF
        "Build with automatic differentiation" OFF)
 mark_as_advanced(AUTODIFF)
 
+option(AUTODIFF_LOG
+       "Calculate derivative information in logspace" OFF)
+mark_as_advanced(AUTODIFF_LOG)
+
 option(NVIDIA_OPENCL "Using Nvidia OpenCL" OFF)
 mark_as_advanced(NVIDIA_OPENCL)
 

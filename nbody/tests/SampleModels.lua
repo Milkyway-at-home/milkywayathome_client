@@ -39,7 +39,7 @@ SampleModels.sampleModels = {
             ignore = false
          }
 
-         return mod, calculateEps2(nbody, r0), calculateTimestep(mass, r0)
+         return mod, calculateEps2(nbody, r0, 0), calculateTimestep(mass, r0)
       end,
 
    modelB =
@@ -71,7 +71,7 @@ SampleModels.sampleModels = {
             ignore = true
          }
 
-         eps2 = calculateEps2(nbody, smallR0)
+         eps2 = calculateEps2(nbody, smallR0, 1)
          dt   = calculateTimestep(smallMass + bigMass, smallR0)
          return mergeTables(m1, m2), eps2, dt
       end

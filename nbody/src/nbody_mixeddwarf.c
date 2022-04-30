@@ -728,14 +728,14 @@ static inline int hessianIndex(int i, int j)
 
 static inline real_0 find_root_hessian(real* func_val, int i, int j)
 {
-    real_0 df_de = func_val->gradient[R_COORD_POS];
-    real_0 root_grad_i = -func_val->gradient[i] / df_de;
-    real_0 root_grad_j = -func_val->gradient[j] / df_de;
+    real_0 df_de = func_val->gradient[R_COORD_POS] * mw_exp_0(func_val->lnfactor_gradient);
+    real_0 root_grad_i = -func_val->gradient[i] * mw_exp_0(func_val->lnfactor_gradient) / df_de;
+    real_0 root_grad_j = -func_val->gradient[j] * mw_exp_0(func_val->lnfactor_gradient) / df_de;
 
-    real_0 d2f_de2 = func_val->hessian[hessianIndex(R_COORD_POS, R_COORD_POS)];
-    real_0 d2f_dedxi = func_val->hessian[hessianIndex(i, R_COORD_POS)];
-    real_0 d2f_dedxj = func_val->hessian[hessianIndex(j, R_COORD_POS)];
-    real_0 d2f_dxidxj = func_val->hessian[hessianIndex(i, j)];
+    real_0 d2f_de2 = func_val->hessian[hessianIndex(R_COORD_POS, R_COORD_POS)] * mw_exp_0(func_val->lnfactor_hessian);
+    real_0 d2f_dedxi = func_val->hessian[hessianIndex(i, R_COORD_POS)] * mw_exp_0(func_val->lnfactor_hessian);
+    real_0 d2f_dedxj = func_val->hessian[hessianIndex(j, R_COORD_POS)] * mw_exp_0(func_val->lnfactor_hessian);
+    real_0 d2f_dxidxj = func_val->hessian[hessianIndex(i, j)] * mw_exp_0(func_val->lnfactor_hessian);
 
     real_0 numer = d2f_dedxi*root_grad_j + d2f_dedxj*root_grad_i + d2f_de2*root_grad_i*root_grad_j + d2f_dxidxj;
     real_0 denom = -df_de;
@@ -1087,7 +1087,7 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   static inline real_0 gradIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
   {
       real dist_val = radial_dist(r, comp1, comp2, isLight);
-      return dist_val.gradient[i];
+      return dist_val.gradient[i] * mw_exp_0(dist_val.lnfactor_gradient);
   }
 
   static inline real_0 getGradIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
@@ -1156,7 +1156,7 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   {
       real dist_val = radial_dist(r, comp1, comp2, isLight);
       //mw_printf("r = %.15f, hess_val = %.15f\n", r, dist_val.hessian[hessianIndex(i, j)]);
-      return dist_val.hessian[hessianIndex(i, j)];
+      return dist_val.hessian[hessianIndex(i, j)] * mw_exp_0(dist_val.lnfactor_hessian);
   }
 
   static inline real_0 getHessIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
@@ -1181,7 +1181,7 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
       real_0 df_dx_j = gradIntegrand_rad(r->value, comp1, comp2, isLight, j);
 
       real dist_val = radial_dist(r->value, comp1, comp2, isLight);
-      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS];
+      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS] * mw_exp_0(dist_val.lnfactor_gradient);
 
       integral = 0.0;
       for(int k = 0; k < numBins; k++)
@@ -1201,7 +1201,9 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
                     + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
       }
 
-      integral += df_dx_i * r->gradient[j] + df_dx_j * r->gradient[i] + df_de * r->gradient[i] * r->gradient[j]; // Other terms of the Hessian
+      integral += df_dx_i * r->gradient[j] * mw_exp_0(r->lnfactor_gradient)
+                + df_dx_j * r->gradient[i] * mw_exp_0(r->lnfactor_gradient)
+                + df_de * r->gradient[i] * mw_exp_0(r->lnfactor_gradient) * r->gradient[j] * mw_exp_0(r->lnfactor_gradient); // Other terms of the Hessian
       integral = -integral / dist_val.value;
       return integral;
   }
@@ -1264,7 +1266,7 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   static inline real_0 gradIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
   {
       real dist_val = vel_dist(v, r, comp1, comp2);
-      return dist_val.gradient[i];
+      return dist_val.gradient[i] * mw_exp_0(dist_val.lnfactor_gradient);
   }
 
   static inline real_0 getGradIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
@@ -1332,7 +1334,7 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
   static inline real_0 hessIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
   {
       real dist_val = vel_dist(v, r, comp1, comp2);
-      return dist_val.hessian[hessianIndex(i, j)];
+      return dist_val.hessian[hessianIndex(i, j)] * mw_exp_0(dist_val.lnfactor_hessian);
   }
 
   static inline real_0 getHessIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
@@ -1352,10 +1354,10 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
       real_0 v1, v2, v3, integrand1, integrand2, integrand3;
 
       real dist_val = vel_dist(v->value, r, comp1, comp2);
-      real_0 df_dx_i = dist_val.gradient[i];
-      real_0 df_dx_j = dist_val.gradient[j];
+      real_0 df_dx_i = dist_val.gradient[i] * mw_exp_0(dist_val.lnfactor_gradient);
+      real_0 df_dx_j = dist_val.gradient[j] * mw_exp_0(dist_val.lnfactor_gradient);
 
-      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS];
+      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS] * mw_exp_0(dist_val.lnfactor_gradient);
 
       integral = 0.0;
       real_0 a_tmp = a;
@@ -1389,7 +1391,9 @@ static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dw
 //      mw_printf("dv_dx_j = %.15f\n", v->gradient[j]);
 //      mw_printf("f       = %.15f\n\n", dist_val.value);
 
-      integral += df_dx_i * v->gradient[j] + df_dx_j * v->gradient[i] + df_de * v->gradient[i] * v->gradient[j]; // Other terms of the Hessian
+      integral += df_dx_i * v->gradient[j] * mw_exp_0(v->lnfactor_gradient)
+               + df_dx_j * v->gradient[i] * mw_exp_0(v->lnfactor_gradient)
+               + df_de * v->gradient[i] * mw_exp_0(v->lnfactor_gradient) * v->gradient[j] * mw_exp_0(v->lnfactor_gradient); // Other terms of the Hessian
       integral = -integral / dist_val.value;
       return integral;
   }

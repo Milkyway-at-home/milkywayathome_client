@@ -270,7 +270,7 @@ static inline void bodyAdvancePos(Body* p, const real_0 dt, int i)
 
     //mw_printf("DR = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&dr)), showRealValue(&Y(&dr)), showRealValue(&Z(&dr)));
     //if (i==0) mw_printf("OLD POS = [%.15f,%.15f,%.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))));
-    if (i==0) printVectorFull(&Pos(p), "POS");
+    //if (i==0) printVectorFull(&Pos(p), "POS");
     Pos(p).x = mw_add(&Pos(p).x, &dr.x);     /* advance r by 1 step */
     Pos(p).y = mw_add(&Pos(p).y, &dr.y);
     Pos(p).z = mw_add(&Pos(p).z, &dr.z);

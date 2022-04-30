@@ -24,6 +24,7 @@
 #cmakedefine01 BOINC_APPLICATION
 #cmakedefine01 DOUBLEPREC
 #cmakedefine01 AUTODIFF
+#cmakedefine01 AUTODIFF_LOG
 #cmakedefine01 MW_ENABLE_DEBUG
 
 #cmakedefine01 HAVE_EXP10

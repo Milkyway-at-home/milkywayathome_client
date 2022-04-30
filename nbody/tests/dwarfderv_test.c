@@ -15,7 +15,7 @@ static inline int checkRadDerv(mwvector* pos, real_0 a)
     radius = mw_hypot(&radius, &Z(pos));
 
     real_0 expect_derv = radius.value / a;
-    real_0 actual_derv = radius.gradient[BARYON_RADIUS_POS];
+    real_0 actual_derv = radius.gradient[BARYON_RADIUS_POS] * mw_exp_0(radius.lnfactor_gradient);
     real_0 check = mw_abs_0(1.0 - expect_derv/actual_derv);
     if(check > autodiff_thresh)
     {
@@ -25,7 +25,7 @@ static inline int checkRadDerv(mwvector* pos, real_0 a)
 
     real_0 expect_hess = 0.0;
     int hess_indx = BARYON_RADIUS_POS*(BARYON_RADIUS_POS+1)/2 + BARYON_RADIUS_POS;
-    real_0 actual_hess = radius.hessian[hess_indx];
+    real_0 actual_hess = radius.hessian[hess_indx] * mw_exp_0(radius.lnfactor_hessian);
     check = mw_abs_0(actual_hess - expect_hess);
     if(check > autodiff_thresh)
     {
@@ -51,7 +51,7 @@ static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
     real_0 v_esc = mw_sqrt_0(2.0*M / mw_hypot_0(r_s, a));
 
     real_0 expect_derv_a = -v_s / 2.0 / a;
-    real_0 actual_derv_a = velocity.gradient[BARYON_RADIUS_POS];
+    real_0 actual_derv_a = velocity.gradient[BARYON_RADIUS_POS] * mw_exp_0(velocity.lnfactor_gradient);
     real_0 check = mw_abs_0(1.0 - expect_derv_a/actual_derv_a);
     if(check > autodiff_thresh)
     {
@@ -60,7 +60,7 @@ static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
     }
 
     real_0 expect_derv_M = v_s / 2.0 / M;
-    real_0 actual_derv_M = velocity.gradient[BARYON_MASS_POS];
+    real_0 actual_derv_M = velocity.gradient[BARYON_MASS_POS] * mw_exp_0(velocity.lnfactor_gradient);
     check = mw_abs_0(1.0 - expect_derv_M/actual_derv_M);
     if(check > autodiff_thresh)
     {
@@ -70,7 +70,7 @@ static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
 
     real_0 expect_hess_a2 = 0.75 * v_s / a / a;
     int hess_indx = BARYON_RADIUS_POS*(BARYON_RADIUS_POS+1)/2 + BARYON_RADIUS_POS;
-    real_0 actual_hess_a2 = velocity.hessian[hess_indx];
+    real_0 actual_hess_a2 = velocity.hessian[hess_indx] * mw_exp_0(velocity.lnfactor_hessian);
     check = mw_abs_0(1.0 - expect_hess_a2/actual_hess_a2);
     if(check > autodiff_thresh)
     {
@@ -92,7 +92,7 @@ static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
     }
     real_0 expect_hess_aM = -0.25 * v_s / a / M;
     hess_indx = eff_i*(eff_i+1)/2 + eff_j;
-    real_0 actual_hess_aM = velocity.hessian[hess_indx];
+    real_0 actual_hess_aM = velocity.hessian[hess_indx] * mw_exp_0(velocity.lnfactor_hessian);
     check = mw_abs_0(1.0 - expect_hess_aM/actual_hess_aM);
     if(check > autodiff_thresh)
     {
@@ -102,7 +102,7 @@ static inline int checkVelDerv(mwvector* vel, mwvector* pos, real_0 a, real_0 M)
 
     real_0 expect_hess_M2 = -0.25 * v_s / M / M;
     hess_indx = BARYON_MASS_POS*(BARYON_MASS_POS+1)/2 + BARYON_MASS_POS;
-    real_0 actual_hess_M2 = velocity.hessian[hess_indx];
+    real_0 actual_hess_M2 = velocity.hessian[hess_indx] * mw_exp_0(velocity.lnfactor_hessian);
     check = mw_abs_0(1.0 - expect_hess_M2/actual_hess_M2);
     if(check > autodiff_thresh)
     {
@@ -170,7 +170,6 @@ int testDwarfDerivatives()
 
 int main()
 {
-
     int failed = 0;
 
     failed += testDwarfDerivatives();

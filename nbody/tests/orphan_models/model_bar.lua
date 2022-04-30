@@ -33,7 +33,7 @@ function makeContext()
       timeEvolve = evolveTime,
       timeBack    = 3.945,
       timeBack    = 4.0,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = calculateEps2(nbody, dwarfRadius, 1),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,

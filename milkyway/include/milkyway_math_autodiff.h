@@ -100,24 +100,6 @@
 extern "C" {
 #endif
 
-static inline add_logspace_0(real_0 a, real_0 b)
-{
-    L_g = (a<b)*b + (a>=b)*a;
-    L_l = (b<a)*b + (b>=a)*a;
-    return L_g + mw_log_0(1.0 + mw_exp(L_l - L_g));
-}
-
-static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller value from the larger. Must keep note of sign separately.
-{
-    L_g = (a<b)*b + (a>=b)*a;
-    L_l = (b<a)*b + (b>=a)*a;
-    if (L_g == L_l)
-    {
-        return -REAL_MAX;
-    }
-    return L_g + mw_log_0(1.0 - mw_exp(L_l - L_g));
-}
-
 #if AUTODIFF /*Math functions*/
     CONST_F ALWAYS_INLINE
     static inline real mw_real_const(real_0 a)
@@ -147,13 +129,13 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
     CONST_F ALWAYS_INLINE
     static inline void setRealValue(real* a, real_0 b)
     {
-        (*a).value = b;
+        a->value = b;
     }
 
     CONST_F ALWAYS_INLINE
     static inline void setRealGradient(real* a, real_0 b, int i)
     {
-        (*a).gradient[i] = b;
+        a->gradient[i] = b * mw_exp_0(-a->lnfactor_gradient);
     }
 
     CONST_F ALWAYS_INLINE
@@ -171,7 +153,7 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
             eff_j = j;
         }
         k = (int) (eff_i*(eff_i+1)/2 + eff_j);
-        (*a).hessian[k] = b;
+        a->hessian[k] = b * mw_exp_0(-a->lnfactor_hessian);
     }
 
     CONST_F ALWAYS_INLINE
@@ -179,6 +161,8 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
     {
         int i,j,k;
         int equalValue = ((a->value) == (b->value));
+        int equalLnGrad = ((a->lnfactor_gradient) == (b->lnfactor_gradient));
+        int equalLnHess = ((a->lnfactor_hessian) == (b->lnfactor_hessian));
         int equalGradient = 1;
         int equalHessian = 1;
         for (i=0;i<NumberOfModelParameters;i++)
@@ -193,63 +177,109 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
                 equalHessian &= (a->hessian[k] == b->hessian[k]);
             }
         }
-        return (equalValue && equalGradient && equalHessian);
+        return (equalValue && equalGradient && equalHessian && equalLnGrad && equalLnHess);
     }
 
     /*Defined basic derivative chain rule propagation here.*/
-    CONST_F ALWAYS_INLINE
-    static inline real mw_AUTODIFF(real* x, real* y, real_0 z, real_0 dz_dx, real_0 dz_dy, real_0 d2z_dx2, real_0 d2z_dy2, real_0 d2z_dxdy)
+    static real mw_AUTODIFF(real* x, real* y, real_0 z, real_0 dz_dx, real_0 dz_dy, real_0 d2z_dx2, real_0 d2z_dy2, real_0 d2z_dxdy)
     {
-        int i,j,k;
-        real_0 x_grad_i, y_grad_i, x_grad_j, y_grad_j, x_hess, y_hess;
-        int sgn_grad[NumberOfModelParameters] = {0};
-        int sgn_hess[HessianLength] = {0};
+        int k, sgn, old_sgn;
+        real_0 x_grad_i, y_grad_i, x_grad_j, y_grad_j, x_hess, y_hess, x_lngrad, y_lngrad, x_lnhess, y_lnhess, abs_val;
 
+        /* Sets value of result to normal calculation "z" */
         real result = mw_real_const(z);
 
-        for (i=0;i<NumberOfModelParameters;i++)
+      #if AUTODIFF_LOG
+        /* Determines guess of lnfactor to be stored in real object for gradient and hessian */
+        real_0 lnGradMax = 0.0;
+        real_0 lnHessMax = 0.0;
+        real_0 highest_grad = 0.0;  //Holds log of largest gradient value
+        real_0 highest_hess = 0.0;  //Holds log of largest hessian value
+
+        x_lngrad = x->lnfactor_gradient;
+        lnGradMax = (lnGradMax >= x_lngrad)*lnGradMax + (lnGradMax < x_lngrad)*x_lngrad;
+        lnHessMax = (lnHessMax >= 2.0*x_lngrad)*lnHessMax + (lnHessMax < 2.0*x_lngrad)*2.0*x_lngrad;
+
+        y_lngrad = y->lnfactor_gradient;
+        lnGradMax = (lnGradMax >= y_lngrad)*lnGradMax + (lnGradMax < y_lngrad)*y_lngrad;
+        lnHessMax = (lnHessMax >= 2.0*y_lngrad)*lnHessMax + (lnHessMax < 2.0*y_lngrad)*2.0*y_lngrad;
+
+        x_lnhess = x->lnfactor_hessian;
+        lnHessMax = (lnHessMax >= x_lnhess)*lnHessMax + (lnHessMax < x_lnhess)*x_lnhess;
+
+        y_lnhess = y->lnfactor_hessian;
+        lnHessMax = (lnHessMax >= y_lnhess)*lnHessMax + (lnHessMax < y_lnhess)*y_lnhess;
+
+        result.lnfactor_gradient = lnGradMax;
+        result.lnfactor_hessian = lnHessMax;
+
+        real_0 grad_coef1 = mw_exp_0(x_lngrad - lnGradMax);
+        real_0 grad_coef2 = mw_exp_0(y_lngrad - lnGradMax);
+        real_0 hess_coef1 = mw_exp_0(x_lnhess - lnHessMax);
+        real_0 hess_coef2 = mw_exp_0(y_lnhess - lnHessMax);
+        real_0 hess_coef3 = mw_exp_0(2.0*x_lngrad - lnHessMax);
+        real_0 hess_coef4 = mw_exp_0(2.0*y_lngrad - lnHessMax);
+        real_0 hess_coef5 = mw_exp_0(x_lngrad + y_lngrad - lnHessMax);
+      #endif
+
+        /* Forward differentiation of gradient */
+        for (int i=0;i<NumberOfModelParameters;i++)
         {
             x_grad_i = x->gradient[i];
-            x_lngrad_i = x->lnfactor_gradient[i];
-            if (!y)
-            {
-                y_grad_i = 0.0;
-                y_lngrad_i = 0.0;
-            }
-            else
-            {
-                y_grad_i = y->gradient[i];
-                y_lngrad_i = y->lnfactor_gradient[i];
-            }
+            y_grad_i = y->gradient[i];
 
+          #if AUTODIFF_LOG
+            result.gradient[i] = dz_dx*x_grad_i*grad_coef1 + dz_dy*y_grad_i*grad_coef2;
+            highest_grad = mw_fmax_0(highest_grad, mw_abs_0(result.gradient[i]));
+          #else
             result.gradient[i] = dz_dx*x_grad_i + dz_dy*y_grad_i;
+          #endif
         }
 
-        for (i=0;i<NumberOfModelParameters;i++)
+      #if AUTODIFF_LOG
+        /* Set lnfactor_gradient and restore gradient in linear scale */
+        highest_grad = (highest_grad <= 0.0)*1.0 + (highest_grad > 0.0)*highest_grad; //Avoid dividing by zero
+        result.lnfactor_gradient += mw_log_0(highest_grad);
+        for (int i=0;i<NumberOfModelParameters;i++)
         {
-            for (j=0;j<i+1;j++)
+            result.gradient[i] /= highest_grad;
+        }
+      #endif
+
+        /* Forward differentiation of hessian */
+        for (int i=0;i<NumberOfModelParameters;i++)
+        {
+            for (int j=0;j<i+1;j++)
             {
                 k = (int) (i*(i+1)/2 + j);
                 x_grad_i = x->gradient[i];
                 x_grad_j = x->gradient[j];
                 x_hess   = x->hessian[k];
 
-                if (!y)
-                {
-                    y_grad_i = 0.0;
-                    y_grad_j = 0.0;
-                    y_hess   = 0.0;
-                }
-                else
-                {
-                    y_grad_i = y->gradient[i];
-                    y_grad_j = y->gradient[j];
-                    y_hess   = y->hessian[k];
-                }
-                
+                y_grad_i = y->gradient[i];
+                y_grad_j = y->gradient[j];
+                y_hess   = y->hessian[k];
+
+              #if AUTODIFF_LOG
+                result.hessian[k] = dz_dx*x_hess*hess_coef1 + dz_dy*y_hess*hess_coef2 + d2z_dx2*x_grad_i*x_grad_j*hess_coef3 + d2z_dy2*y_grad_i*y_grad_j*hess_coef4 + d2z_dxdy*(x_grad_i*y_grad_j + y_grad_i*x_grad_j)*hess_coef5;
+                highest_hess = mw_fmax_0(highest_hess, mw_abs_0(result.hessian[k]));
+              #else
                 result.hessian[k] = dz_dx*x_hess + dz_dy*y_hess + d2z_dx2*x_grad_i*x_grad_j + d2z_dy2*y_grad_i*y_grad_j + d2z_dxdy*(x_grad_i*y_grad_j + y_grad_i*x_grad_j);
+              #endif
             }
         }
+
+      #if AUTODIFF_LOG
+        /* Set lnfactor_hessian and restore hessian in linear scale */
+        highest_hess = (highest_hess <= 0.0)*1.0 + (highest_hess > 0.0)*highest_hess; //Avoid dividing by zero
+        result.lnfactor_hessian += mw_log_0(highest_hess);
+        for (int i=0;i<HessianLength;i++)
+        {
+            result.hessian[i] /= highest_hess;
+        }
+      #endif
+
+        /* Return the resulting "real" object */
         return result;
     }
 
@@ -277,7 +307,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -316,7 +348,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -342,7 +376,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -357,7 +393,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -370,7 +408,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -383,7 +423,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -396,7 +438,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -409,7 +453,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -422,7 +468,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -444,7 +492,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     static inline real mw_asinpi(real* a)
@@ -456,7 +506,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -469,7 +521,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -482,7 +536,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -495,7 +551,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -508,7 +566,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -549,7 +609,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -562,7 +624,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -575,7 +639,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -588,7 +654,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -601,7 +669,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -614,7 +684,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -627,7 +699,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -640,7 +714,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -653,7 +729,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -668,7 +746,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -681,7 +761,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     /*Inverse Hyperbolic Trigonometric Functions*/
@@ -695,7 +777,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -708,7 +792,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     /*Polynomial and Power Functions*/
@@ -788,7 +874,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -801,7 +889,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -814,7 +904,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -827,7 +919,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -840,7 +934,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -853,7 +949,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -875,7 +973,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         d2z_db2  = 0.0;
         d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -897,7 +997,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         d2z_db2  = 0.0;
         d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -910,7 +1012,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -923,7 +1027,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -936,7 +1042,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -949,7 +1057,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -962,7 +1072,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -975,7 +1087,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -990,7 +1104,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1003,7 +1119,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 
@@ -1018,7 +1136,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1031,7 +1151,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1044,7 +1166,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1057,7 +1181,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1155,30 +1281,20 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
     static inline real mw_hypot(real* a, real* b)
     {
-        real_0 dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb;
-        real_0 z = mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
-        if (z == 0.0)
-        {
-            dz_da    = 0.0;
-            dz_db    = 0.0;
-            d2z_da2  = 0.0;
-            d2z_db2  = 0.0;
-            d2z_dadb = 0.0;
-        }
-        else
-        {
-            dz_da    = (a->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
-            dz_db    = (b->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
-            d2z_da2  = sqr_0(b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
-            d2z_db2  = sqr_0(a->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
-            d2z_dadb = -(a->value) * (b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value)));
-        }
+        real_0 z        = mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value));
+        real_0 dz_da    = (a->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value) + (mw_abs_0(z) < REAL_EPSILON)*1.0);
+        real_0 dz_db    = (b->value) / mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value) + (mw_abs_0(z) < REAL_EPSILON)*1.0);
+        real_0 d2z_da2  = sqr_0(b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value) + (mw_abs_0(z) < REAL_EPSILON)*1.0));
+        real_0 d2z_db2  = sqr_0(a->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value) + (mw_abs_0(z) < REAL_EPSILON)*1.0));
+        real_0 d2z_dadb = -(a->value) * (b->value) / cube_0(mw_sqrt_0(sqr_0(a->value) + sqr_0(b->value) + (mw_abs_0(z) < REAL_EPSILON)*1.0));
 
         return mw_AUTODIFF(a, b, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
@@ -1193,7 +1309,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
     CONST_F ALWAYS_INLINE
@@ -1206,7 +1324,9 @@ static inline sub_logspace_0(real_0 a, real_0 b)  //Always subtracts the smaller
         real_0 d2z_db2  = 0.0;
         real_0 d2z_dadb = 0.0;
 
-        return mw_AUTODIFF(a, NULL, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
+        real c = ZERO_REAL;
+
+        return mw_AUTODIFF(a, &c, z, dz_da, dz_db, d2z_da2, d2z_db2, d2z_dadb);
     }
 
 

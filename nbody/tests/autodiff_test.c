@@ -2,12 +2,14 @@
 
 #include "milkyway_util.h"
 #include "nbody_bessel.h"
+#include "nbody_autodiff.h"
 #include <stdio.h> 
 #include <stdlib.h>
 #include <time.h>
 
 #define derv_thresh (0.05)
 #define small_derv (0.001)
+#define NumberOfTests (100000)
 
 static inline real_0 add_func(real_0 a, real_0 b)
 {
@@ -149,6 +151,23 @@ static inline real_0 r2d_func(real_0 a)
     return r2d_0(a);
 }
 
+static inline real_0 compound_func_0(real_0 a, real_0 b)
+{
+    return a*b*mw_log_0(a) + a/b*mw_exp_0(b);
+}
+
+static inline real compound_func(real* a, real* b)
+{
+    real tmp1, tmp2, tmp3;
+    tmp1 = mw_mul(a,b);
+    tmp2 = mw_log(a);
+    tmp1 = mw_mul(&tmp1, &tmp2);
+    tmp2 = mw_div(a,b);
+    tmp3 = mw_exp(b);
+    tmp2 = mw_mul(&tmp2, &tmp3);
+    return mw_add(&tmp1, &tmp2);
+}
+
 static inline int testSingleVar(real (*func)(real*), real_0 (*func0)(real_0), real_0 min_a, real_0 max_a)
 {
     int failed = 0;
@@ -160,7 +179,7 @@ static inline int testSingleVar(real (*func)(real*), real_0 (*func0)(real_0), re
 
     srand(time(0));
 
-    for (int i = 0; i < 100000; i++)
+    for (int i = 0; i < NumberOfTests; i++)
     {
         a_val = ((real_0)rand()/(real_0)RAND_MAX) * (max_a - min_a) + min_a;
         a = mw_real_var(a_val, 0);
@@ -173,18 +192,18 @@ static inline int testSingleVar(real (*func)(real*), real_0 (*func0)(real_0), re
         denom = inv_0( 12.0 * h);
         deriv = (p1 + p2 + p3 + p4) * denom;
 
-        if(mw_abs_0(result.gradient[0]) < small_derv)
+        if(mw_abs_0(result.gradient[0]*mw_exp_0(result.lnfactor_gradient)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.gradient[0] / deriv);
+            check = mw_abs_0(1.0 - result.gradient[0] * mw_exp_0(result.lnfactor_gradient) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD GRADIENT! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.gradient[0], deriv, check);
+            printf("\t BAD GRADIENT! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.gradient[0]*mw_exp_0(result.lnfactor_gradient), deriv, check);
         }
 
         p1 = - 1.0 * (*func0)( (a_val + 2.0 * h) );
@@ -195,18 +214,18 @@ static inline int testSingleVar(real (*func)(real*), real_0 (*func0)(real_0), re
         denom = inv_0( 12.0 * h * h);
         deriv = (p1 + p2 + p3 + p4 + p5) * denom;
 
-        if(mw_abs_0(result.hessian[0]) < small_derv)
+        if(mw_abs_0(result.hessian[0]*mw_exp_0(result.lnfactor_hessian)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.hessian[0] / deriv);
+            check = mw_abs_0(1.0 - result.hessian[0] * mw_exp_0(result.lnfactor_hessian) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD HESSIAN! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.hessian[0], deriv, check);
+            printf("\t BAD HESSIAN! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.hessian[0]*mw_exp_0(result.lnfactor_hessian), deriv, check);
         }
     }
     return failed;
@@ -223,7 +242,7 @@ static inline int testSingleVar_s(real (*func)(real*, real_0), real_0 (*func0)(r
 
     srand(time(0));
 
-    for (int i = 0; i < 100000; i++)
+    for (int i = 0; i < NumberOfTests; i++)
     {
         a_val = ((real_0)rand()/(real_0)RAND_MAX) * (max_a - min_a) + min_a;
         b_val = ((real_0)rand()/(real_0)RAND_MAX) * (max_b - min_b) + min_b;
@@ -237,18 +256,18 @@ static inline int testSingleVar_s(real (*func)(real*, real_0), real_0 (*func0)(r
         denom = inv_0( 12.0 * h);
         deriv = (p1 + p2 + p3 + p4) * denom;
 
-        if(mw_abs_0(result.gradient[0]) < small_derv)
+        if(mw_abs_0(result.gradient[0])*mw_exp_0(result.lnfactor_gradient) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.gradient[0] / deriv);
+            check = mw_abs_0(1.0 - result.gradient[0] * mw_exp_0(result.lnfactor_gradient) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD GRADIENT! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.gradient[0], deriv, check);
+            printf("\t BAD GRADIENT! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.gradient[0]*mw_exp_0(result.lnfactor_gradient), deriv, check);
         }
 
         p1 = - 1.0 * (*func0)( (a_val + 2.0 * h), b_val );
@@ -259,18 +278,18 @@ static inline int testSingleVar_s(real (*func)(real*, real_0), real_0 (*func0)(r
         denom = inv_0( 12.0 * h * h);
         deriv = (p1 + p2 + p3 + p4 + p5) * denom;
 
-        if(mw_abs_0(result.hessian[0]) < small_derv)
+        if(mw_abs_0(result.hessian[0]*mw_exp_0(result.lnfactor_hessian)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.hessian[0] / deriv);
+            check = mw_abs_0(1.0 - result.hessian[0] * mw_exp_0(result.lnfactor_hessian) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD HESSIAN! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.hessian[0], deriv, check);
+            printf("\t BAD HESSIAN! At (a=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, result.hessian[0]*mw_exp_0(result.lnfactor_hessian), deriv, check);
         }
     }
     return failed;
@@ -288,12 +307,13 @@ static inline int testDoubleVar(real (*func)(real*, real*), real_0 (*func0)(real
 
     srand(time(0));
 
-    for (int i = 0; i < 100000; i++)
+    for (int i = 0; i < NumberOfTests; i++)
     {
         a_val = ((real_0)rand()/(real_0)RAND_MAX) * (max_a - min_a) + min_a;
         b_val = ((real_0)rand()/(real_0)RAND_MAX) * (max_b - min_b) + min_b;
         a = mw_real_var(a_val, 0);
         b = mw_real_var(b_val, 1);
+
         result = (*func)(&a, &b);
 
         p1 =   1.0 * (*func0)( (a_val - 2.0 * h), b_val );
@@ -303,18 +323,18 @@ static inline int testDoubleVar(real (*func)(real*, real*), real_0 (*func0)(real
         denom = inv_0( 12.0 * h);
         deriv = (p1 + p2 + p3 + p4) * denom;
 
-        if(mw_abs_0(result.gradient[0]) < small_derv)
+        if(mw_abs_0(result.gradient[0]*mw_exp_0(result.lnfactor_gradient)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.gradient[0] / deriv);
+            check = mw_abs_0(1.0 - result.gradient[0] * mw_exp_0(result.lnfactor_gradient) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD GRADIENT(a)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.gradient[0], deriv, check);
+            printf("\t BAD GRADIENT(a)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.gradient[0]*mw_exp_0(result.lnfactor_gradient), deriv, check);
         }
 
         p1 =   1.0 * (*func0)( a_val, (b_val - 2.0 * h) );
@@ -324,18 +344,18 @@ static inline int testDoubleVar(real (*func)(real*, real*), real_0 (*func0)(real
         denom = inv_0( 12.0 * h);
         deriv = (p1 + p2 + p3 + p4) * denom;
 
-        if(mw_abs_0(result.gradient[1]) < small_derv)
+        if(mw_abs_0(result.gradient[1])*mw_exp_0(result.lnfactor_gradient) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.gradient[1] / deriv);
+            check = mw_abs_0(1.0 - result.gradient[1] * mw_exp_0(result.lnfactor_gradient) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD GRADIENT(b)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.gradient[1], deriv, check);
+            printf("\t BAD GRADIENT(b)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.gradient[1]*mw_exp_0(result.lnfactor_gradient), deriv, check);
         }
         p1 = - 1.0 * (*func0)( (a_val + 2.0 * h), b_val );
         p2 =  16.0 * (*func0)( (a_val + h), b_val );
@@ -345,18 +365,18 @@ static inline int testDoubleVar(real (*func)(real*, real*), real_0 (*func0)(real
         denom = inv_0( 12.0 * h * h);
         deriv = (p1 + p2 + p3 + p4 + p5) * denom;
 
-        if(mw_abs_0(result.hessian[0]) < small_derv)
+        if(mw_abs_0(result.hessian[0]*mw_exp_0(result.lnfactor_hessian)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.hessian[0] / deriv);
+            check = mw_abs_0(1.0 - result.hessian[0] * mw_exp_0(result.lnfactor_hessian) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD HESSIAN(a,a)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.hessian[0], deriv, check);
+            printf("\t BAD HESSIAN(a,a)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.hessian[0]*mw_exp_0(result.lnfactor_hessian), deriv, check);
         }
 
         p1 = - 1.0 * (*func0)( a_val, (b_val + 2.0 * h) );
@@ -367,18 +387,18 @@ static inline int testDoubleVar(real (*func)(real*, real*), real_0 (*func0)(real
         denom = inv_0( 12.0 * h * h);
         deriv = (p1 + p2 + p3 + p4 + p5) * denom;
 
-        if(mw_abs_0(result.hessian[2]) < small_derv)
+        if(mw_abs_0(result.hessian[2]*mw_exp_0(result.lnfactor_hessian)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.hessian[2] / deriv);
+            check = mw_abs_0(1.0 - result.hessian[2] * mw_exp_0(result.lnfactor_hessian)/ deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD HESSIAN(b,b)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.hessian[2], deriv, check);
+            printf("\t BAD HESSIAN(b,b)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.hessian[2]*mw_exp_0(result.lnfactor_hessian), deriv, check);
         }
 
         p11 =   1.0 * (*func0)( (a_val - 2.0 * h), (b_val - 2.0 * h) );
@@ -400,18 +420,18 @@ static inline int testDoubleVar(real (*func)(real*, real*), real_0 (*func0)(real
         denom = inv_0( 144.0 * h * h);
         deriv = (p11 + p12 + p13 + p14 + p21 + p22 + p23 + p24 + p31 + p32 + p33 + p34 + p41 + p42 + p43 + p44) * denom;
 
-        if(mw_abs_0(result.hessian[1]) < small_derv)
+        if(mw_abs_0(result.hessian[1]*mw_exp_0(result.lnfactor_hessian)) < small_derv)
         {
             check = mw_abs_0(deriv);
         }
         else
         {
-            check = mw_abs_0(1.0 - result.hessian[1] / deriv);
+            check = mw_abs_0(1.0 - result.hessian[1] * mw_exp_0(result.lnfactor_hessian) / deriv);
         }
         if(check > derv_thresh)
         {
             failed += 1;
-            printf("\t BAD HESSIAN(a,b)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.hessian[1], deriv, check);
+            printf("\t BAD HESSIAN(a,b)! At (a=%.15f, b=%.15f), Autodiff gave %.15f while Numerical gave %.15f (check=%.15f)\n", a_val, b_val, result.hessian[1]*mw_exp_0(result.lnfactor_hessian), deriv, check);
         }
     }
     return failed;
@@ -451,6 +471,7 @@ int main()
     }
     failed += test;
 
+    test = 0;
     test = testSingleVar_s(mw_mul_s, mul_func, -100.0, 100.0, -100.0, 100.0);
     if(test != 0)
     {
@@ -862,6 +883,14 @@ int main()
     if(test != 0)
     {
         printf("    Test failed! (r2d)\n");
+    }
+    failed += test;
+
+    //Test a compound function
+    test = testDoubleVar(compound_func, compound_func_0, 0.01, 20.0, 1.0, 3.0);
+    if(test != 0)
+    {
+        printf("    Compound Test failed!\n");
     }
     failed += test;
 

@@ -30,6 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody.h"
 #include "nbody_friction.h"
 #include "nbody_autodiff.h"
+#include "nbody_curses.h"
+#include <time.h>
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
@@ -187,6 +189,8 @@ void nbReverseOrbit(mwvector* finalPos,
                     real_0 sun_dist)
 {
     mw_printf("Performing Reverse Orbit Calculation...\n");
+    clock_t t_clock;
+    t_clock = clock();
     mwvector v_var = ZERO_VECTOR;
     mwvector x_var = ZERO_VECTOR;
     mwvector x_lbr = ZERO_VECTOR;
@@ -279,6 +283,10 @@ void nbReverseOrbit(mwvector* finalPos,
     *finalPos = x;
     *finalVel = v;
 
+    t_clock = clock() - t_clock;
+    real_0 time_taken = ((real_0)t_clock)/CLOCKS_PER_SEC; // in seconds
+    mw_printf("    Reverse Orbit calculated in %.3f seconds\n", time_taken);
+
     mw_printf("Initial Dwarf Position = [%.15f, %.15f, %.15f]\n", showRealValue(&x.x), showRealValue(&x.y), showRealValue(&x.z));
     mw_printf("Initial Dwarf Velocity = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
 }
@@ -312,6 +320,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     )
 {
     mw_printf("Performing Reverse Orbit Calculation with LMC...\n");	
+    clock_t t_clock;
+    t_clock = clock();
     unsigned int steps = mw_ceil_0((tstop)/(10*dt)) + 1;
     unsigned int exSteps = mw_abs_0(mw_ceil_0((ftime-tstop)/(10*dt)) + 1);
     unsigned int maxSteps = MAX(steps + 1, exSteps + 3);
@@ -386,11 +396,14 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         //negate this time for use in time-dependent potentials
         negT = t*(-1);
     	steps = (int) mw_round_0(t/dt);
-    	if( steps % 10 == 0){ 
+    	if( steps % 10 == 0){
+                //Show progress of reverse orbit
+                //mw_mvprintw(0, 0, "        Running: %f / %f (%f%%)\n", t, tstop, 100.0 * t / tstop);
     		ArrayPlaceholder[i] = mw_negv(&mw_acc);
         	i++;
     	}
 
+        //printVectorFull(&acc, "ACC");
         //mw_printf("ACC  = [%.15f, %.15f, %.15f]\n", showRealValue(&acc.x), showRealValue(&acc.y), showRealValue(&acc.z));
         //mw_printf("POS  = [%.15f, %.15f, %.15f]\n", showRealValue(&x.x), showRealValue(&x.y), showRealValue(&x.z));
         //mw_printf("VEL  = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
@@ -473,10 +486,12 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         LMC_acc = mw_subv(&LMC_acc, &mw_acc);
         acc = mw_subv(&acc, &mw_acc);
 
-        for (t = 0; t < (ftime-tstop+(21*dt)); t += dt)
-        {   
+        for (t = 0; t <= (ftime-tstop+(21*dt)); t += dt)
+        {
     	    exSteps = (int) mw_round_0(t/dt);
-    	    if ((exSteps % 10 == 0)&&(t!=0)) { 
+    	    if ((exSteps % 10 == 0)&&(t!=0)) {
+                //Show progress of reverse orbit
+                //mw_mvprintw(0, 0, "        Running: %f / %f (%f%%)\n", t, (ftime-tstop+(21*dt)), 100.0 * t / (ftime-tstop+(21*dt)));
     	        ArrayPlaceholder[k] = mw_negv(&mw_acc);
                 k++;
     	    }
@@ -574,6 +589,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     *LMCfinalPos = LMCx;
     *LMCfinalVel = LMCv;
 
+    t_clock = clock() - t_clock;
+    real_0 time_taken = ((real_0)t_clock)/CLOCKS_PER_SEC; // in seconds
+    mw_printf("    Reverse Orbit calculated in %.3f seconds\n", time_taken);
+
     mw_printf("Initial Dwarf Position = [%.15f, %.15f, %.15f]\n", showRealValue(&x.x), showRealValue(&x.y), showRealValue(&x.z));
     mw_printf("Initial Dwarf Velocity = [%.15f, %.15f, %.15f]\n", showRealValue(&v.x), showRealValue(&v.y), showRealValue(&v.z));
     mw_printf("Initial LMC Position = [%.15f, %.15f, %.15f]\n", showRealValue(&LMCx.x), showRealValue(&LMCx.y), showRealValue(&LMCx.z));
@@ -582,7 +601,6 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     //Store LMC position and velocity
     LMCpos = LMCx;
     LMCvel = LMCv;
-    mw_printf("Reverse Orbit Calculated!\n");
 }
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr) {

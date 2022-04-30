@@ -41,7 +41,7 @@ CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DY
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
 
-UseOldSofteningLength = 1         -- -- Uses old softening length formula from v1.76 and eariler -- --
+UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -87,7 +87,7 @@ NonDiscreteRange     = 1        -- -- calculates body fraction in this many bins
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
 use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
-best_like_start      = 0.9995    -- what percent of sim to start
+best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
@@ -192,7 +192,6 @@ function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
     sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d, UseOldSofteningLength)
-    --sp = 0.0003
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
