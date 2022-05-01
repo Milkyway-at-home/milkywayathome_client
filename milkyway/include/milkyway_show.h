@@ -26,8 +26,8 @@
 extern "C" {
 #endif
 
-char* showVector(mwvector v);
-void printVector(mwvector v);
+char* showVector(mwvector* v);
+void printVector(mwvector* v);
 
 char* showMatrix(mwmatrix m);
 void printMatrix(mwmatrix m);

@@ -109,7 +109,7 @@ typedef struct MW_ALIGN_TYPE _NBodyNode
     unsigned int id;          /* body id */
 } NBodyNode;
 
-#define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0, 0  }
+#define EMPTY_NODE { ZERO_VECTOR, NULL, ZERO_REAL, 0, 0  }
 
 #define Type(x) (((NBodyNode*) (x))->type)
 #define Mass(x) (((NBodyNode*) (x))->mass)
@@ -146,7 +146,7 @@ typedef struct MW_ALIGN_TYPE
 typedef struct MW_ALIGN_TYPE
 {
     NBodyNode cellnode;         /* data common to all nodes */
-    real rcrit2;                /* critical c-of-m radius^2 */
+    real_0 rcrit2;              /* critical c-of-m radius^2 */
     NBodyNode* more;            /* link to first descendent */
     union MW_ALIGN_V(16)        /* shared storage for... */
     {
@@ -184,14 +184,14 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     NBodyCell* root;         /* pointer to root cell */
-    real rsize;              /* side-length of root cell */
+    real_0 rsize;              /* side-length of root cell */
 
     unsigned int cellUsed;   /* count of cells in tree */
     unsigned int maxDepth;   /* count of levels in tree */
     int structureError;
 } NBodyTree;
 
-#define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
+#define EMPTY_TREE { NULL, 0, 0, 0, FALSE }
 
 
 #if NBODY_OPENCL
@@ -275,9 +275,9 @@ typedef struct
 {
     size_t factors[8];
     size_t threads[8];
-    real timings[8];        /* In a single iteration */
-    real chunkTimings[8];   /* Average time per chunk */
-    real kernelTimings[8];  /* Running totals */
+    real_0 timings[8];        /* In a single iteration */
+    real_0 chunkTimings[8];   /* Average time per chunk */
+    real_0 kernelTimings[8];  /* Running totals */
 
     size_t global[8];
     size_t local[8];
@@ -287,7 +287,7 @@ typedef struct
 typedef struct
 {
     int useBin;
-    unsigned int rawCount;
+    real rawCount;
     real lambda;
     real beta;
     real variable;  // can be customized to any of the different histograms
@@ -302,18 +302,18 @@ typedef struct
 typedef struct
 {
     /* Center Point */
-    real phi;
-    real theta;
-    real psi;
+    real_0 phi;
+    real_0 theta;
+    real_0 psi;
 
     /* Lambda */
-    real lambdaStart;
-    real lambdaEnd;
+    real_0 lambdaStart;
+    real_0 lambdaEnd;
     unsigned int lambdaBins;
 
     /* Beta */
-    real betaStart;
-    real betaEnd;
+    real_0 betaStart;
+    real_0 betaEnd;
     unsigned int betaBins;
 
 } HistogramParams;
@@ -325,7 +325,7 @@ typedef struct
 {
     unsigned int lambdaBins;
     unsigned int betaBins;
-    unsigned int totalNum;
+    real totalNum;
     unsigned int totalSimulated;
     int hasRawCounts;
     HistogramParams params;
@@ -390,7 +390,7 @@ typedef struct MW_ALIGN_TYPE
     real bestLikelihood_BetaAvg;   /* Beta avg component of likelihood */
     real bestLikelihood_VelAvg;    /* Velocity avg component of likelihood */
     real bestLikelihood_Dist;      /* Distance component of likelihood */
-    real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
+    real_0 bestLikelihood_time;    /* to store the evolve time at which the best likelihood occurred */
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
     mwbool useBetaDisp;            /* whether or not to use the beta disp comparison */
@@ -408,7 +408,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool reportProgress;
 
     
-    real previousForwardTime;   //used to calibrate bar time
+    real_0 previousForwardTime;   //used to calibrate bar time
     
   #if NBODY_OPENCL
     CLInfo* ci;
@@ -430,7 +430,7 @@ typedef struct MW_ALIGN_TYPE
                            0, 0, 0,                                                         \
                            0, 0, 0, 0, 0,                                                   \
                            0,                                                               \
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
+                           ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
                            FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
                            NULL, NULL, NULL, NULL}
 
@@ -441,19 +441,19 @@ typedef struct MW_ALIGN_TYPE
  */
 typedef struct MW_ALIGN_TYPE
 {
-    real eps2;                /* (potential softening parameter)^2 */
-    real theta;               /* accuracy parameter: 0.0 */
-    real timestep;
-    real timeEvolve;
-    real timeBack;
-    real treeRSize;
-    real sunGCDist;
+    real_0 eps2;                /* (potential softening parameter)^2 */
+    real_0 theta;               /* accuracy parameter: 0.0 */
+    real_0 timestep;
+    real_0 timeEvolve;
+    real_0 timeBack;
+    real_0 treeRSize;
+    real_0 sunGCDist;
 
-    real b;     /* orbital parameters */
-    real r;
-    real vx;
-    real vy;
-    real vz;
+    real_0 b;     /* orbital parameters */
+    real_0 r;
+    real_0 vx;
+    real_0 vy;
+    real_0 vz;
 
     criterion_t criterion;
     ExternalPotentialType potentialType;
@@ -472,32 +472,37 @@ typedef struct MW_ALIGN_TYPE
     mwbool allowIncest;
     mwbool quietErrors;
     
-    real BestLikeStart;       /* after what portion of the sim should the calc start */
-    real OutputFreq;          /* frequency of writing outputs */
+    real_0 BestLikeStart;       /* after what portion of the sim should the calc start */
+    real_0 OutputFreq;          /* frequency of writing outputs */
     
-    real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
-    real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
-    real DistSigma;           /* sigma cutoff for the outlier rejection for the bin dists dispersions */ 
-    real IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
-    real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
-    real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
-    real DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
+    real_0 BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
+    real_0 VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
+    real_0 DistSigma;           /* sigma cutoff for the outlier rejection for the bin dists dispersions */ 
+    real_0 IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
+    real_0 BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
+    real_0 VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
+    real_0 DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
+
+    mwbool leftHanded;          /* determines handed-ness of cartesian system */
+
+    mwbool useContBins;
+    real_0 bleedInRange;
 
     mwbool LMC;
 
-    real LMCmass;              /* Mass of LMC */
-    real LMCscale;             /* Scale radius of LMC */
+    real_0 LMCmass;              /* Mass of LMC */
+    real_0 LMCscale;             /* Scale radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
-    real coulomb_log;          /* Coulomb Logarithm used in dynamical friction */
+    real_0 coulomb_log;          /* Coulomb Logarithm used in dynamical friction */
 
     unsigned int calibrationRuns; //for calibrating time-dependent potentials
 
-    real Ntsteps;              /* number of time steps to run when manual control is on */
+    real_0 Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
+    unsigned int nStepRev;
 
     Potential pot;
-
 
 } NBodyCtx;
 
@@ -510,9 +515,11 @@ typedef struct MW_ALIGN_TYPE
                          0, 0,                                                                          \
                          0, 0, 0, 0, 0, 0, 0,                                                           \
                          FALSE,                                                                         \
+                         FALSE, 0,                                                                      \
+                         FALSE,                                                                         \
                          0, 0, FALSE, 0,                                                                \
                          0,                                                                             \
-                         0, 0, 0,                                                                       \
+                         0, 0, 0, 0,                                                                    \
                          EMPTY_POTENTIAL}
 
 /* Negative codes can be nonfatal but useful return statuses.

@@ -28,7 +28,7 @@
 #include "nbody_defaults.h"
 #include "nbody_histogram.h"
 
-static real nbSahaTerm(real m, real s)
+static real nbSahaTerm(real* m, real* s)
 {
     /*
       W = product_{i = 1 .. B }
@@ -62,17 +62,34 @@ static real nbSahaTerm(real m, real s)
        ln(0!0!) - ln(0!) - ln(0!) == 0
      */
 
-    if (mw_fabs(m) < 1.0e-10 || mw_fabs(s) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(m)) < 1.0e-10 || mw_fabs_0(showRealValue(s)) < 1.0e-10)
     {
-        return 0.0;
+        return ZERO_REAL;
     }
     else
     {
-        return -0.5 * mw_log(M_2PI) + (m + s + 0.5) * mw_log(m + s) - (m + 0.5) * mw_log(m) - (s + 0.5) * mw_log(s);
+        real part1 = mw_real_const(-0.5 * mw_log_0(M_2PI));
+
+        real add1 = mw_add(m, s);
+        real add2 = mw_add_s(&add1, 0.5);
+        real log1 = mw_log(&add1);
+        real part2 = mw_mul(&add2, &log1);
+
+        real add3 = mw_add_s(m, 0.5);
+        real log2 = mw_log(m);
+        real part3 = mw_mul(&add3, &log2);
+
+        real add4 = mw_add_s(s, 0.5);
+        real log3 = mw_log(s);
+        real part4 = mw_mul(&add4, &log3);
+
+        real part12 = mw_add(&part1, &part2);
+        real part34 = mw_add(&part3, &part4);
+        return mw_sub(&part12, &part34);
     }
 }
 
-static real nbPoissonTerm(real f, real y)
+static real nbPoissonTerm(real* f, real* y)
 {
     /*
       Fitting a data set y(y1, y2, .. yn)  to a model function f(f1, f2, .. fn)
@@ -80,29 +97,41 @@ static real nbPoissonTerm(real f, real y)
       2 sum(f_i - y_i) - sum(i != 1, y_i != 0) y_i * ln(f_i / y_i))
      */
 
-    if (mw_fabs(f) < 1.0e-10 || mw_fabs(y) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(f)) < 1.0e-10 || mw_fabs_0(showRealValue(y)) < 1.0e-10)
     {
-        return 2.0 * f;
+        return mw_mul_s(f,2.0);
     }
     else
     {
-        return 2.0 * ((f - y) - y * mw_log(f / y));
+        real fmy = mw_sub(f, y);
+        real fdy = mw_div(f, y);
+        real log1 = mw_log(&fdy);
+        real mul1 = mw_mul(y, &log1);
+        real sub1 = mw_sub(&fmy, &mul1);
+        return mw_mul_s(&sub1 , 2.0);
     }
 }
 
-static real nbKullbackLeiblerTerm(real h, real k)
+static real nbKullbackLeiblerTerm(real* h, real* k)
 {
     /* Symmetrized version. (Jeffrey divergence?) */
     real m;
 
-    if (mw_fabs(h) < 1.0e-10 || mw_fabs(k) < 1.0e-10)
+    if (mw_fabs_0(showRealValue(h)) < 1.0e-10 || mw_fabs_0(showRealValue(k)) < 1.0e-10)
     {
-        return 0.0;
+        return ZERO_REAL;
     }
     else
     {
-        m = (h + k) / 2.0;
-        return h * mw_log(h / m) + k * mw_log(k / m);
+        m = mw_add(h, k);
+        m = mw_mul_s(&m, 0.5);
+        real div1 = mw_div(h, &m);
+        div1 = mw_log(&div1);
+        div1 = mw_mul(h, &div1);
+        real div2 = mw_div(k, &m);
+        div2 = mw_log(&div2);
+        div2 = mw_mul(k, &div2);
+        return mw_add(&div1, &div2);
     }
 
 
@@ -122,9 +151,13 @@ static real nbKullbackLeiblerTerm(real h, real k)
 #endif
 }
 
-static real nbChisqAlt(real p, real q)
+static real nbChisqAlt(real* p, real* q)
 {
-    return 0.5 * sqr(p - q) / (p + q);
+    real ppq = mw_add(p, q);
+    real pmq = mw_sub(p, q);
+    real tmp = sqr(&pmq);
+    tmp = mw_div(&tmp, &ppq);
+    return mw_mul_s(&tmp,0.5);
 }
 
 /* Calculate chisq from read data histogram and the generated histogram */
@@ -135,11 +168,11 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     unsigned int i;
     real tmp;
     real effTotalNum;
-    real chiSq = 0.0;
+    real chiSq = ZERO_REAL;
     real n;
     real err;
     real simErr;
-    real scale = 1.0;
+    real scale = mw_real_const(1.0);
     unsigned int nBin = data->lambdaBins * histogram->lambdaBins;
 
     assert(data->lambdaBins == histogram->lambdaBins);
@@ -149,7 +182,7 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
     if (!histogram->hasRawCounts)
     {
         mw_printf("FIXME: other likelihoods need raw count on generated histogram\n");
-        return NAN;
+        return mw_real_const(NAN);
     }
 
     if (method == NBODY_SAHA)
@@ -157,16 +190,16 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
         /* We need to have the total number to scale to the correct
          * numbers for Saha likelihood */
         scale = (real) data->totalNum;
-        if (data->totalNum == 0 || histogram->totalNum == 0)
+        if (showRealValue(&data->totalNum) == 0 || showRealValue(&histogram->totalNum) == 0)
         {
             mw_printf("Histogram scales required for Saha likelihood but missing\n");
-            return NAN;
+            return mw_real_const(NAN);
         }
     }
 
-    if (histogram->totalNum == 0)
+    if (showRealValue(&histogram->totalNum) == 0)
     {
-        return INFINITY;
+        return mw_real_const(INFINITY);
     }
 
     effTotalNum = (real) nbCorrectTotalNumberInHistogram(histogram, data);
@@ -181,8 +214,11 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
             switch (method)
             {
                 case NBODY_ORIG_CHISQ:
-                    tmp = (data->data[i].variable - (n / effTotalNum)) / err;
-                    chiSq += sqr(tmp);
+                    tmp = mw_div(&n, &effTotalNum);
+                    tmp = mw_sub(&(data->data[i].variable), &tmp);
+                    tmp = mw_div(&tmp, &err);
+                    tmp = sqr(&tmp);
+                    chiSq = mw_add(&chiSq, &tmp);
                     break;
 
                 case NBODY_ORIG_ALT:
@@ -190,35 +226,49 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                      * we need to correct the errors in case there
                      * were any bins we are skipping for matching to
                      * the data */
-                    simErr = nbNormalizedHistogramError(histogram->data[i].variable, effTotalNum);
+                    simErr = nbNormalizedHistogramError(&(histogram->data[i].variable), &effTotalNum);
 
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
-                    err = sqrt(sqr(err) + sqr(simErr));
-                    tmp = (data->data[i].variable - (n / effTotalNum)) / err;
-                    chiSq += sqr(tmp);
+                    err = mw_hypot(&err, &simErr);
+                    tmp = mw_div(&n, &effTotalNum);
+                    tmp = mw_sub(&(data->data[i].variable), &tmp);
+                    tmp = mw_div(&tmp, &err);
+                    tmp = sqr(&tmp);
+                    chiSq = mw_add(&chiSq, &tmp);
                     break;
 
                 case NBODY_CHISQ_ALT:
-                    chiSq += nbChisqAlt(data->data[i].variable, n / effTotalNum);
+                    tmp = mw_div(&n, &effTotalNum);
+                    tmp = nbChisqAlt(&(data->data[i].variable), &tmp);
+                    chiSq = mw_add(&chiSq, &tmp);
                     break;
 
                 case NBODY_POISSON:
                     /* Poisson one */
-                    chiSq += nbPoissonTerm(data->data[i].variable, n / effTotalNum);
+                    tmp = mw_div(&n, &effTotalNum);
+                    tmp = nbPoissonTerm(&(data->data[i].variable), &tmp);
+                    chiSq = mw_add(&chiSq, &tmp);
                     break;
 
                 case NBODY_KOLMOGOROV:
-                    chiSq = mw_fmax(chiSq, fabs(data->data[i].variable - (n / effTotalNum)));
+                    tmp = mw_div(&n, &effTotalNum);
+                    tmp = mw_sub(&(data->data[i].variable), &tmp);
+                    tmp = mw_fabs(&tmp);
+                    chiSq = mw_fmax(&chiSq, &tmp);
                     break;
 
                 case NBODY_KULLBACK_LEIBLER:
                     /* "Relative entropy" */
-                    chiSq += nbKullbackLeiblerTerm(data->data[i].variable, n / effTotalNum);
+                    tmp = mw_div(&n, &effTotalNum);
+                    tmp = nbKullbackLeiblerTerm(&(data->data[i].variable), &tmp);
+                    chiSq = mw_add(&chiSq, &tmp);
                     break;
 
                 case NBODY_SAHA:
                     /* This will actually find ln(W). W is an unreasonably large number. */
-                    chiSq += nbSahaTerm(n, scale * data->data[i].variable);
+                    tmp = mw_mul(&scale, &(data->data[i].variable));
+                    tmp = nbSahaTerm(&n, &tmp);
+                    chiSq = mw_add(&chiSq, &tmp);
                     break;
 
                 case NBODY_INVALID_METHOD:

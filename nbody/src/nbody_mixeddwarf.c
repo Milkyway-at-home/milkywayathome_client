@@ -34,79 +34,145 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
 
+#include "nbody_autodiff.h"
+#include <stdio.h>
+#include <time.h>
+
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
+
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
-
 /*      MODEL SPECIFIC FUNCTIONS       */
-static inline real potential( real r, const Dwarf* comp1, const Dwarf* comp2)
+static inline real_0 potential( real_0 r, const Dwarf* comp1, const Dwarf* comp2)
 {
     /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
-    real potential_light  = get_potential(comp1, r);
-    real potential_dark   = get_potential(comp2, r);
-    real potential_result = (potential_light + potential_dark);
+    real_0 potential_light  = get_potential(comp1, r);
+    real_0 potential_dark   = get_potential(comp2, r);
+    real_0 potential_result = (potential_light + potential_dark);
 
     return (potential_result);
 }
 
-static inline real density( real r, const Dwarf* comp1, const Dwarf* comp2)
+static inline real potential_real( real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real potential_light  = get_potential_real(comp1, comp2, r, TRUE);
+    real potential_dark   = get_potential_real(comp1, comp2, r, FALSE);
+    real potential_result = mw_add(&potential_light, &potential_dark);
+
+    return (potential_result);
+}
+
+static inline real_0 density( real_0 r, const Dwarf* comp1, const Dwarf* comp2)
 {
     /*this is the density distribution function. Returns the density at a given radius.*/
     
-    real density_light = get_density(comp1, r);
-    real density_dark  = get_density(comp2, r);
-    real density_result = (density_light + density_dark );
+    real_0 density_light = get_density(comp1, r);
+    real_0 density_dark  = get_density(comp2, r);
+    real_0 density_result = (density_light + density_dark );
+
+    return density_result;
+}
+
+static inline real density_real( real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    /*this is the density distribution function. Returns the density at a given radius.*/
+    
+    real density_light = get_density_real(comp1, comp2, r, TRUE);
+    real density_dark  = get_density_real(comp1, comp2, r, FALSE);
+    real density_result = mw_add(&density_light, &density_dark);
 
     return density_result;
 }
 
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
+static inline real_0 first_derivative_potential(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
 {
-    /*yes, this does in fact use a 5-point stencil*/
-    real h = 0.001;
-    real deriv;
-    real p1, p2, p3, p4, denom;
-    
-    p1 =   1.0 * (*func)( (x - 2.0 * h), comp1, comp2);
-    p2 = - 8.0 * (*func)( (x - h)      , comp1, comp2);
-    p3 = - 1.0 * (*func)( (x + 2.0 * h), comp1, comp2);
-    p4 =   8.0 * (*func)( (x + h)      , comp1, comp2);
-    denom = inv( 12.0 * h);
-    deriv = (p1 + p2 + p3 + p4) * denom;
-    return deriv;
+    real_0 d_dr_pot_light = get_first_derv_potential(comp1, r);
+    real_0 d_dr_pot_dark  = get_first_derv_potential(comp2, r);
+
+    real_0 d_dr_pot_result = d_dr_pot_light + d_dr_pot_dark;
+    return d_dr_pot_result;
 }
 
-static inline real second_derivative(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
+static inline real first_derivative_potential_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
 {
-    /*yes, this also uses a five point stencil*/
-    real h = 0.001;
-    real deriv;
-    real p1, p2, p3, p4, p5, denom;
+    real d_dr_pot_light = get_first_derv_potential_real(comp1, comp2, r, TRUE);
+    real d_dr_pot_dark  = get_first_derv_potential_real(comp1, comp2, r, FALSE);
 
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , comp1, comp2);
-    p2 =  16.0 * (*func)( (x + h)       , comp1, comp2);
-    p3 = -30.0 * (*func)( (x)           , comp1, comp2);
-    p4 =  16.0 * (*func)( (x - h)       , comp1, comp2);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , comp1, comp2);
-    denom = inv( 12.0 * h * h);
-    deriv = (p1 + p2 + p3 + p4 + p5) * denom;
-    return deriv;
+    real d_dr_pot_result = mw_add(&d_dr_pot_light, &d_dr_pot_dark);
+    return d_dr_pot_result;
 }
 
-static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), real lower, real upper, const Dwarf* comp1, const Dwarf* comp2, real energy)
+static inline real_0 first_derivative_density(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
 {
-    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
+    real_0 d_dr_den_light = get_first_derv_density(comp1, r);
+    real_0 d_dr_den_dark  = get_first_derv_density(comp2, r);
+
+    real_0 d_dr_den_result = d_dr_den_light + d_dr_den_dark;
+    return d_dr_den_result;
+}
+
+static inline real first_derivative_density_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d_dr_den_light = get_first_derv_density_real(comp1, comp2, r, TRUE);
+    real d_dr_den_dark  = get_first_derv_density_real(comp1, comp2, r, FALSE);
+
+    real d_dr_den_result = mw_add(&d_dr_den_light, &d_dr_den_dark);
+    return d_dr_den_result;
+}
+
+static inline real_0 second_derivative_potential(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real_0 d2_dr2_pot_light = get_second_derv_potential(comp1, r);
+    real_0 d2_dr2_pot_dark  = get_second_derv_potential(comp2, r);
+
+    real_0 d2_dr2_pot_result = d2_dr2_pot_light + d2_dr2_pot_dark;
+    return d2_dr2_pot_result;
+}
+
+static inline real second_derivative_potential_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d2_dr2_pot_light = get_second_derv_potential_real(comp1, comp2, r, TRUE);
+    real d2_dr2_pot_dark  = get_second_derv_potential_real(comp1, comp2, r, FALSE);
+
+    real d2_dr2_pot_result = mw_add(&d2_dr2_pot_light, &d2_dr2_pot_dark);
+    return d2_dr2_pot_result;
+}
+
+static inline real_0 second_derivative_density(real_0 r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real_0 d2_dr2_den_light = get_second_derv_density(comp1, r);
+    real_0 d2_dr2_den_dark  = get_second_derv_density(comp2, r);
+
+    real_0 d2_dr2_den_result = d2_dr2_den_light + d2_dr2_den_dark;
+    return d2_dr2_den_result;
+}
+
+static inline real second_derivative_density_real(real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    real d2_dr2_den_light = get_second_derv_density_real(comp1, comp2, r, TRUE);
+    real d2_dr2_den_dark  = get_second_derv_density_real(comp1, comp2, r, FALSE);
+
+    real d2_dr2_den_result = mw_add(&d2_dr2_den_light, &d2_dr2_den_dark);
+    return d2_dr2_den_result;
+}
+
+static real_0 gauss_quad(real_0 (*func)(real_0, const Dwarf*, const Dwarf*, real_0), real_0 lower, real_0 upper, const Dwarf* comp1, const Dwarf* comp2, real_0 energy)
+{
+    /*This is a gaussian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
      */
-    real Ng, hg, lowerg, upperg;
-    real intv = 0.0;//initial value of integral
-    real coef1, coef2;//parameters for gaussian quad
-    real c1, c2, c3;
-    real x1, x2, x3;
-    real x1n, x2n, x3n;
-    real a, b;
-    real benchmark;
+    real_0 Ng, hg, lowerg, upperg;
+    real_0 intv = 0.0;//initial value of integral
+    real_0 coef1, coef2;//parameters for gaussian quad
+    real_0 c1, c2, c3;
+    real_0 x1, x2, x3;
+    real_0 x1n, x2n, x3n;
+    real_0 a, b;
+    real_0 benchmark;
     
     if(lower > upper)
     {
@@ -197,20 +263,20 @@ static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), rea
     return intv;
 }
 
-static inline real max_finder(real (*profile)(real , real , const Dwarf*, const Dwarf*), real r, const Dwarf* comp1, const Dwarf* comp2, real a, real b, real c, int limit, real tolerance)
+static inline real_0 max_finder(real_0 (*profile)(real_0 , real_0 , const Dwarf*, const Dwarf*), real_0 r, const Dwarf* comp1, const Dwarf* comp2, real_0 a, real_0 b, real_0 c, int limit, real_0 tolerance)
 {
     /*this is a maxfinding routine to find the maximum of the density.
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
      */
-    real RATIO = 0.61803399;
-    real RATIO_COMPLEMENT = 1.0 - RATIO;
+    real_0 RATIO = 0.61803399;
+    real_0 RATIO_COMPLEMENT = 1.0 - RATIO;
     int counter = 0;
     
-    real profile_x1, profile_x2, x0, x1, x2, x3;
+    real_0 profile_x1, profile_x2, x0, x1, x2, x3;
     x0 = a;
     x3 = c;
     
-    if (mw_fabs(b - c) > mw_fabs(b - a))
+    if (mw_fabs_0(b - c) > mw_fabs_0(b - a))
     {
         x1 = b;
         x2 = b + (RATIO_COMPLEMENT * (c - b)); 
@@ -224,7 +290,7 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
     profile_x1 = -(*profile)(x1, r, comp1, comp2);
     profile_x2 = -(*profile)(x2, r, comp1, comp2);
     
-    while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
+    while (mw_fabs_0(x3 - x0) > (tolerance * (mw_fabs_0(x1) + mw_fabs_0(x2)) ) )
     {
         counter++;
         if (profile_x2 < profile_x1)
@@ -232,7 +298,7 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
             x0 = x1;
             x1 = x2;
             x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
-            profile_x1 = (real)profile_x2;
+            profile_x1 = (real_0)profile_x2;
             profile_x2 = -(*profile)(x2, r, comp1, comp2);
         }
         else
@@ -240,7 +306,7 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
             x3 = x2;
             x2 = x1;
             x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
-            profile_x2 = (real)profile_x1;
+            profile_x2 = (real_0)profile_x1;
             profile_x1 = -(*profile)(x1, r, comp1, comp2);
         }
         
@@ -261,23 +327,23 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
 }
 
 
-static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), const Dwarf* comp1, const Dwarf* comp2, real function_value, real lower_bound, real upper_bound)
+static inline real_0 root_finder(real_0 (*func)(real_0, const Dwarf*, const Dwarf*), const Dwarf* comp1, const Dwarf* comp2, real_0 function_value, real_0 lower_bound, real_0 upper_bound)
 {
     //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
     unsigned int i = 0;
 
     int N = 4;
     unsigned int intervals = N;
-    real interval_bound;
+    real_0 interval_bound;
 
     /*interval + 1 because for N intervals there are N + 1 values*/
-    real * values = mwCalloc(intervals + 1, sizeof(real));
-    real * interval_bounds = mwCalloc(intervals + 1, sizeof(real));
+    real_0 * values = mwCalloc(intervals + 1, sizeof(real_0));
+    real_0 * interval_bounds = mwCalloc(intervals + 1, sizeof(real_0));
     /*intervals+1 because you want to include the upperbound in the interval*/
     for(i = 0; i < intervals + 1; i++)
     {
         /* breaking up the range between bounds into smaller intervals*/
-        interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
+        interval_bound = ((upper_bound - lower_bound) * (real_0)i) / (real_0)intervals + lower_bound;
         /*function value at those intervals*/
         values[i] = (*func)(interval_bound, comp1, comp2) - function_value;
 	if(isnan(values[i]))
@@ -290,11 +356,11 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
 	interval_bounds[i] = interval_bound;
     }
     
-    real mid_point = 0;
-    real mid_point_funcval = 0;
+    real_0 mid_point = 0;
+    real_0 mid_point_funcval = 0;
     unsigned int counter = 0;
-    real new_upper_bound = 0;
-    real new_lower_bound = 0;
+    real_0 new_upper_bound = 0;
+    real_0 new_lower_bound = 0;
     int roots_found = 0;
     int q = 0;
     
@@ -326,7 +392,7 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
             
             mid_point_funcval = 1;
             counter = 0;
-            while(mw_fabs(mid_point_funcval) > .0001)
+            while(mw_fabs_0(mid_point_funcval) > 1e-15)
             {
                 mid_point = (new_lower_bound + new_upper_bound) / 2.0;
                 mid_point_funcval = (*func)(mid_point, comp1, comp2) - function_value;
@@ -341,7 +407,7 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
                 }
                 counter++;
                 
-                if(counter > 10000)
+                if(counter > 100000)
                 {
                     break;
                 }
@@ -370,23 +436,23 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
+static real_0 fun(real_0 ri, const Dwarf* comp1, const Dwarf* comp2, real_0 energy)
 {
     
-    real first_deriv_psi;
-    real second_deriv_psi;
-    real first_deriv_density;
-    real second_deriv_density;
-    real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
-    real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
-    real diff;
-    real func;
+    real_0 first_deriv_psi;
+    real_0 second_deriv_psi;
+    real_0 first_deriv_density;
+    real_0 second_deriv_density;
+    real_0 dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
+    real_0 denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
+    real_0 diff;
+    real_0 func;
 
-    first_deriv_psi      = first_derivative(potential, ri, comp1, comp2);
-    first_deriv_density  = first_derivative(density,   ri, comp1, comp2);
+    first_deriv_psi      = first_derivative_potential(ri, comp1, comp2);
+    first_deriv_density  = first_derivative_density(ri, comp1, comp2);
 
-    second_deriv_psi     = second_derivative(potential, ri, comp1, comp2);
-    second_deriv_density = second_derivative(density,   ri, comp1, comp2);
+    second_deriv_psi     = second_derivative_potential(ri, comp1, comp2);
+    second_deriv_density = second_derivative_density(ri, comp1, comp2);
     
     /*
     * Instead of calculating the second derivative of density with respect to -pot directly, 
@@ -407,18 +473,18 @@ static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
         first_deriv_psi = 1.0e-6;//this should be small enough
     }
     
-    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
-    diff = mw_fabs(energy - potential(ri, comp1, comp2));
+    dsqden_dpsisq = second_deriv_density * inv_0(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv_0(sqr_0(first_deriv_psi));
+    diff = mw_fabs_0(energy - potential(ri, comp1, comp2));
     
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
     {
-        denominator = minushalf( diff );
+        denominator = minushalf_0( diff );
     }
     else
     {
         /*if the r is exactly at the singularity then move it a small amount.*/
-        denominator = minushalf( mw_fabs(energy - potential(ri + 0.0001, comp1, comp2) ) );
+        denominator = minushalf_0( mw_fabs_0(energy - potential(ri + 0.0001, comp1, comp2) ) );
     }
     
     
@@ -435,10 +501,10 @@ static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
         
 }
 
-static inline real find_upperlimit_r(const Dwarf* comp1, const Dwarf* comp2, real energy, real search_range, real r)
+static inline real_0 find_upperlimit_r(const Dwarf* comp1, const Dwarf* comp2, real_0 energy, real_0 search_range, real_0 r)
 {
     int counter = 0;
-    real upperlimit_r = 0.0;
+    real_0 upperlimit_r = 0.0;
 
     do
     {
@@ -456,35 +522,35 @@ static inline real find_upperlimit_r(const Dwarf* comp1, const Dwarf* comp2, rea
         
     }while(1);
         
-    return mw_fabs(upperlimit_r);
+    return mw_fabs_0(upperlimit_r);
 }
  
-static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* comp2)
+static inline real_0 dist_fun(real_0 v, real_0 r, const Dwarf* comp1, const Dwarf* comp2)
 {
     /*This returns the value of the distribution function*/
     
     //-------------------------------
-    real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
-    real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
-    real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
-    real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+    real_0 mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
+    real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
+    real_0 rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
+    real_0 rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
     //-------------------------------
     
     
-    real distribution_function = 0.0;
-//     real cons = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
-    real cons = 0.03582244801567226;
-    real energy = 0.0;
-    real upperlimit_r = 0.0;
-    real lowerlimit_r = 0.0; 
+    real_0 distribution_function = 0.0;
+//     real_0 cons = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+    real_0 cons = 0.03582244801567226;
+    real_0 energy = 0.0;
+    real_0 upperlimit_r = 0.0;
+    real_0 lowerlimit_r = 0.0; 
     int counter = 0;
-    real search_range = 0.0;   
+    real_0 search_range = 0.0;   
     
     /*energy as defined in binney*/
     energy = potential(r, comp1, comp2) - 0.5 * v * v; 
     
     /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
-    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
+    search_range = 20.0 * mw_sqrt_0( mw_fabs_0( sqr_0(mass_d / energy) - sqr_0(rscale_d) ));
     
     /*dynamic search range*/
     /* This is done this way because we are searching for the r' where:
@@ -516,16 +582,883 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
      */
     lowerlimit_r = 10.0 * (upperlimit_r);
 
-    /*This calls guassian quad to integrate the function for a given energy*/
+    /*This calls gaussian quad to integrate the function for a given energy*/
     distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
     return distribution_function;
 }
 
-/*      SAMPLING FUNCTIONS      */
-static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, real bound)
+/* These functions prep the Dwarf structs for rejection sampling */
+static inline void set_p0(Dwarf* comp)
+{
+    /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
+    /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
+    //as defined in Binney and Tremaine 2nd ed:
+    //the r200 is now used for all potentials to provide the bounds for density sampling
+    real_0 mass = comp->mass;
+    comp->originmass = comp->mass; //need to store original mass value for nfw AUTODIFF
+    real_0 rscale = comp->scaleLength;
+    real_0 r200 = mw_cbrt_0(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
+    real_0 c = r200 / rscale; //halo concentration
+    real_0 term = mw_log_0(1.0 + c) - c / (1.0 + c);
+    real_0 p0 = 200.0 * cube_0(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+    comp->r200 = r200;
+    comp->p0 = p0;
+}
+
+static inline void get_extra_nfw_mass(Dwarf* comp, real_0 bound)
+{
+    /* The mass inputted is taken to be the M200 mass (mass within radius r200).*/
+    /* If the sampling boundary goes above or below r200, this function resets the mass of the component.*/
+    real_0 rs = comp->scaleLength;
+    real_0 r = bound;
+    real_0 m = 4.0 * M_PI * comp->p0 * cube_0(rs) * (mw_log_0( (rs + r) / rs) - r / (rs + r));
+    comp->mass = m;
+}
+
+static inline real get_real_nfw_mass(real* mass, real* scale) //This function propagates the needed derivative information of the previous two functions
+{
+    real tmp1, tmp2;
+
+    tmp1 = mw_mul_s(mass, 1.0/(vol_pcrit));
+    real r200 = mw_cbrt(&tmp1);
+
+    real c = mw_div(&r200, scale);
+
+    tmp1 = mw_add_s(&c, 1.0);
+    tmp1 = mw_div(&c, &tmp1);
+    tmp2 = mw_log1p(&c);
+    real term = mw_sub(&tmp2, &tmp1);
+
+    tmp1 = mw_mul_s(&term, 3.0);
+    tmp1 = inv(&tmp1);
+    tmp2 = cube(&c);
+    tmp1 = mw_mul(&tmp1, &tmp2);
+    real p0 = mw_mul_s(&tmp1, 200.0 * pcrit);
+
+    real r = mw_mul_s(&r200, 5.0);
+
+    tmp1 = mw_add(scale, &r);
+    tmp1 = mw_div(&tmp1, scale);
+    tmp1 = mw_log(&tmp1);
+    tmp2 = mw_add(scale, &r);
+    tmp2 = mw_div(&r, &tmp2);
+    tmp1 = mw_sub(&tmp1, &tmp2);
+    tmp2 = cube(scale);
+    tmp1 = mw_mul(&tmp2, &tmp1);
+    tmp1 = mw_mul(&p0, &tmp1);
+    real m = mw_mul_s(&tmp1, 4.0*M_PI);
+
+    return m;
+}
+
+/* AUTODIFF METHODS FOR CALCULATING INITIAL DERIVATIVES */
+#if AUTODIFF
+  static inline real radial_dist(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight) //Normalized radial distribution
+  {
+      real tmp;
+
+      real_0 scale_b = comp1->scaleLength;
+      real_0 mass_b = comp1->originmass;
+      real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
+      real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
+
+      real scale_light = mw_real_var(scale_b, BARYON_RADIUS_POS);
+      real mass_light = mw_real_var(mass_b, BARYON_MASS_POS);
+      real xi_R = mw_real_var(xi_scale, RADIUS_RATIO_POS);
+      real xi_M = mw_real_var(xi_mass, MASS_RATIO_POS);
+
+      tmp = inv(&xi_R);
+      tmp = mw_add_s(&tmp, -1.0);
+      real scale_dark = mw_mul(&tmp, &scale_light);
+
+      tmp = inv(&xi_M);
+      tmp = mw_add_s(&tmp, -1.0);
+      real mass_dark = mw_mul(&tmp, &mass_light);
+
+      real r_real = mw_real_var(r, BACKWARDS_TIME_POS); //This gradient position is unused in this part of the code, so we are borrowing it
+      tmp = sqr(&r_real);
+      tmp = mw_mul_s(&tmp, 4.0*M_PI);
+
+      real density = get_density_real(comp1, comp2, &r_real, isLight);
+      real mass;
+
+      if(isLight)
+      {
+          mass = mass_light;
+          switch(comp1->type)
+          {
+              case NFW:
+                  mass = get_real_nfw_mass(&mass_light, &scale_light);
+                  break;
+          }
+      }
+      else
+      {
+          mass = mass_dark;
+          switch(comp2->type)
+          {
+              case NFW:
+                  mass = get_real_nfw_mass(&mass_dark, &scale_dark);
+                  break;
+          }
+      }
+
+      tmp = mw_mul(&tmp, &density);
+      real result = mw_div(&tmp, &mass);
+      //printReal(&result, "RAD_DIST");
+      return result;
+  }
+
+static inline int hessianIndex(int i, int j)
+{
+    int eff_i, eff_j, k;
+    if(i<j)
+    {
+        eff_i = j;
+        eff_j = i;
+    }
+    else
+    {
+        eff_i = i;
+        eff_j = j;
+    }
+    k = (int) (eff_i*(eff_i+1)/2 + eff_j);
+    return k;
+}
+
+static inline real_0 find_root_hessian(real* func_val, int i, int j)
+{
+    real_0 df_de = func_val->gradient[R_COORD_POS] * mw_exp_0(func_val->lnfactor_gradient);
+    real_0 root_grad_i = -func_val->gradient[i] * mw_exp_0(func_val->lnfactor_gradient) / df_de;
+    real_0 root_grad_j = -func_val->gradient[j] * mw_exp_0(func_val->lnfactor_gradient) / df_de;
+
+    real_0 d2f_de2 = func_val->hessian[hessianIndex(R_COORD_POS, R_COORD_POS)] * mw_exp_0(func_val->lnfactor_hessian);
+    real_0 d2f_dedxi = func_val->hessian[hessianIndex(i, R_COORD_POS)] * mw_exp_0(func_val->lnfactor_hessian);
+    real_0 d2f_dedxj = func_val->hessian[hessianIndex(j, R_COORD_POS)] * mw_exp_0(func_val->lnfactor_hessian);
+    real_0 d2f_dxidxj = func_val->hessian[hessianIndex(i, j)] * mw_exp_0(func_val->lnfactor_hessian);
+
+    real_0 numer = d2f_dedxi*root_grad_j + d2f_dedxj*root_grad_i + d2f_de2*root_grad_i*root_grad_j + d2f_dxidxj;
+    real_0 denom = -df_de;
+
+    real_0 hess = numer/denom;
+
+    return hess;
+}
+
+static inline real find_upperlimit_r_real(const Dwarf* comp1, const Dwarf* comp2, real* energy, real_0 search_range, real* r)
 {
     int counter = 0;
-    real r, u, val;
+    real_0 upperlimit_r_val = 0.0;
+    real upperlimit_r = ZERO_REAL;
+    real func_root_val;
+
+    mwbool use_default_r = FALSE;
+    do
+    {
+        upperlimit_r_val = root_finder(potential, comp1, comp2, energy->value, 0.0, search_range);
+
+        //Check upperlimit_r
+        if(isinf(upperlimit_r_val) == FALSE && upperlimit_r_val != 0.0 && isnan(upperlimit_r_val) == FALSE){break;}
+        
+        counter++;
+        
+        if(counter > 10000)
+        {
+            use_default_r = TRUE;
+            break;
+        }
+        
+    }while(1);
+
+    if(use_default_r)
+    {
+        upperlimit_r = *r;
+    }
+    else
+    {
+        upperlimit_r.value = upperlimit_r_val;
+        //mw_printf("upperlimit = %.15f\n\n",upperlimit_r_val);
+        upperlimit_r.gradient[R_COORD_POS] = 1.0; //This gradient position is unused here
+        func_root_val = potential_real(&upperlimit_r, comp1, comp2);
+        func_root_val = mw_sub(&func_root_val, energy);
+
+        //Derivative of root-finding algorithm
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[BARYON_RADIUS_POS] / func_root_val.gradient[R_COORD_POS], BARYON_RADIUS_POS);
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[RADIUS_RATIO_POS]  / func_root_val.gradient[R_COORD_POS], RADIUS_RATIO_POS);
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[BARYON_MASS_POS]   / func_root_val.gradient[R_COORD_POS], BARYON_MASS_POS);
+        setRealGradient(&upperlimit_r, -func_root_val.gradient[MASS_RATIO_POS]    / func_root_val.gradient[R_COORD_POS], MASS_RATIO_POS);
+
+        //Hessian of root-finding algorithm
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, BARYON_RADIUS_POS), BARYON_RADIUS_POS, BARYON_RADIUS_POS);
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, RADIUS_RATIO_POS ), BARYON_RADIUS_POS, RADIUS_RATIO_POS );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, BARYON_MASS_POS  ), BARYON_RADIUS_POS, BARYON_MASS_POS  );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_RADIUS_POS, MASS_RATIO_POS   ), BARYON_RADIUS_POS, MASS_RATIO_POS   );
+
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , RADIUS_RATIO_POS ), RADIUS_RATIO_POS , RADIUS_RATIO_POS );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , BARYON_MASS_POS  ), RADIUS_RATIO_POS , BARYON_MASS_POS  );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, RADIUS_RATIO_POS , MASS_RATIO_POS   ), RADIUS_RATIO_POS , MASS_RATIO_POS   );
+
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , BARYON_MASS_POS  ), BARYON_MASS_POS  , BARYON_MASS_POS  );
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, BARYON_MASS_POS  , MASS_RATIO_POS   ), BARYON_MASS_POS  , MASS_RATIO_POS   );
+
+        setRealHessian(&upperlimit_r, find_root_hessian(&func_root_val, MASS_RATIO_POS   , MASS_RATIO_POS   ), MASS_RATIO_POS   , MASS_RATIO_POS   );
+    }
+
+    //We need a derivative with respect to the velocity for the hessian calculation later. Hessians of velocities are surprisingly not needed
+    setRealGradient(&upperlimit_r, -func_root_val.gradient[BACKWARDS_TIME_POS]/ func_root_val.gradient[R_COORD_POS], BACKWARDS_TIME_POS);
+
+    return mw_fabs(&upperlimit_r);
+}
+
+static real gauss_quad_real(real (*func)(real*, const Dwarf*, const Dwarf*, real*), real* lower, real* upper, const Dwarf* comp1, const Dwarf* comp2, real* energy)
+{
+    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
+     * If switching the order of the limits was needed to do this then the negative of the integral is returned.
+     */
+    real_0 Ng;
+    real hg, lowerg, upperg;
+    real intv = ZERO_REAL;//initial value of integral
+    real coef1, coef2;//parameters for gaussian quad
+    real_0 c1, c2, c3;
+    real_0 x1, x2, x3;
+    real x1n, x2n, x3n;
+    real a, b;
+    real benchmark;
+    real part1, part2, part3;
+    
+    if(lower->value > upper->value)
+    {
+        a = *upper;
+        b = *lower;
+    }
+    else
+    {
+        a = *lower; 
+        b = *upper;
+    }
+    
+    benchmark = mw_mul_s(&a, 1.5);
+    Ng = 100.0;//integral resolution
+    hg = mw_sub(&benchmark, &a);
+    hg = mw_mul_s(&hg, inv_0(Ng));
+    lowerg = a;
+    upperg = mw_add(&lowerg, &hg);
+
+    coef2 = mw_add(&lowerg, &upperg);//initializes the first coeff to change the function limits
+    coef2 = mw_mul_s(&coef2, 0.5);
+    coef1 = mw_sub(&upperg, &lowerg);//initializes the second coeff to change the function limits
+    coef1 = mw_mul_s(&coef1, 0.5);
+    c1 = 0.55555555555; //5.0 / 9.0;
+    c2 = 0.88888888888; //8.0 / 9.0;
+    c3 = 0.55555555555; //5.0 / 9.0;
+    x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
+    x2 = 0.00000000000;
+    x3 = 0.77459666924; //sqrt(3.0 / 5.0);
+
+    x1n = mw_mul_s(&coef1, x1);
+    x1n = mw_add(&x1n, &coef2);
+
+    /*should be: x2n = (coef1 * x2 + coef2);*/
+    x2n = (coef2);
+
+    x3n = mw_mul_s(&coef1, x3);
+    x3n = mw_add(&x3n, &coef2);
+
+    int counter = 0;
+    while (1)
+    {
+        //gauss quad
+        part1 = (*func)(&x1n, comp1, comp2, energy);
+        part1 = mw_mul(&part1, &coef1);
+        part1 = mw_mul_s(&part1, c1);
+
+        part2 = (*func)(&x2n, comp1, comp2, energy);
+        part2 = mw_mul(&part2, &coef1);
+        part2 = mw_mul_s(&part2, c2);
+
+        part3 = (*func)(&x3n, comp1, comp2, energy);
+        part3 = mw_mul(&part3, &coef1);
+        part3 = mw_mul_s(&part3, c3);
+
+        intv = mw_add(&intv, &part1);
+        intv = mw_add(&intv, &part2);
+        intv = mw_add(&intv, &part3);
+
+        lowerg = upperg;
+        upperg = mw_add(&upperg, &hg);
+
+        coef2 = mw_add(&lowerg, &upperg);//initializes the first coeff to change the function limits
+        coef2 = mw_mul_s(&coef2, 0.5);
+        coef1 = mw_sub(&upperg, &lowerg);//initializes the second coeff to change the function limits
+        coef1 = mw_mul_s(&coef1, 0.5);
+
+        x1n = mw_mul_s(&coef1, x1);
+        x1n = mw_add(&x1n, &coef2);
+
+        /*should be: x2n = (coef1 * x2 + coef2);*/
+        x2n = (coef2);
+
+        x3n = mw_mul_s(&coef1, x3);
+        x3n = mw_add(&x3n, &coef2);
+
+        if(lowerg.value > benchmark.value)
+        {
+            Ng = 10.0;//integral resolution
+            hg = mw_sub(&b, &benchmark);
+            hg = mw_mul_s(&hg, inv_0(Ng));
+        }
+            
+        if(upper->value > lower->value)
+        {
+            if(lowerg.value >= upper->value)//loop termination clause
+            {
+                break;
+            }
+        }
+        else if(lower->value > upper->value)
+        {
+            if(lowerg.value >= lower->value)//loop termination clause
+            {
+                break;
+            }
+        }
+        
+        if(counter > 100000)
+        {
+            break;
+        }
+        else
+        {
+            counter++;
+        }
+        
+        
+    }
+    
+    if(lower->value > upper->value)
+    {
+        intv = mw_mul_s(&intv, -1.0);
+    }
+    
+    return intv;
+}
+
+static real fun_real(real* ri, const Dwarf* comp1, const Dwarf* comp2, real* energy)
+{
+    
+    real first_deriv_psi;
+    real second_deriv_psi;
+    real first_deriv_density;
+    real second_deriv_density;
+    real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
+    real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
+    real diff;
+    real func;
+    real tmp1, tmp2;
+
+    first_deriv_psi      = first_derivative_potential_real(ri, comp1, comp2);
+    first_deriv_density  = first_derivative_density_real(ri, comp1, comp2);
+
+    second_deriv_psi     = second_derivative_potential_real(ri, comp1, comp2);
+    second_deriv_density = second_derivative_density_real(ri, comp1, comp2);    
+    
+    /*just in case*/
+    if(first_deriv_psi.value == 0.0)
+    {
+        first_deriv_psi = mw_real_const(1.0e-6);//this should be small enough
+    }
+
+    tmp1 = inv(&first_deriv_psi);
+    tmp1 = mw_mul(&second_deriv_density, &tmp1);
+    tmp2 = sqr(&first_deriv_psi);
+    tmp2 = inv(&tmp2);
+    tmp2 = mw_mul(&second_deriv_psi, &tmp2);
+    tmp2 = mw_mul(&first_deriv_density, &tmp2);
+    dsqden_dpsisq = mw_sub(&tmp1, &tmp2);
+
+    tmp1 = potential_real(ri, comp1, comp2);
+    tmp1 = mw_sub(energy, &tmp1);
+    diff = mw_fabs(&tmp1);
+    
+    /*we don't want to have a 0 in the demon*/
+    if(diff.value != 0.0)
+    {
+        denominator = minushalf( &diff );
+    }
+    else
+    {
+        /*if the r is exactly at the singularity then move it a small amount.*/
+        real ri_shift = mw_add_s(ri, 0.0001);
+        tmp1 = potential_real(&ri_shift, comp1, comp2);
+        tmp1 = mw_sub(energy, &tmp1);
+        tmp1 = mw_fabs(&tmp1);
+        denominator = minushalf(&tmp1);
+    }
+    
+    func = mw_mul(&dsqden_dpsisq, &denominator);
+    return func;
+        
+}
+
+//"REAL" version of dist_fun for calculating derivatives
+static inline real dist_fun_real(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2)
+{
+    /*This returns the value of the distribution function*/
+    
+    //-------------------------------
+      real tmp;
+
+      real_0 scale_b = comp1->scaleLength;
+      real_0 mass_b = comp1->originmass;
+      real_0 xi_scale = comp1->scaleLength / (comp1->scaleLength + comp2->scaleLength);
+      real_0 xi_mass = comp1->originmass / (comp1->originmass + comp2->originmass);
+
+      real scale_light = mw_real_var(scale_b, BARYON_RADIUS_POS);
+      real mass_light = mw_real_var(mass_b, BARYON_MASS_POS);
+      real xi_R = mw_real_var(xi_scale, RADIUS_RATIO_POS);
+      real xi_M = mw_real_var(xi_mass, MASS_RATIO_POS);
+
+      tmp = inv(&xi_R);
+      tmp = mw_add_s(&tmp, -1.0);
+      real scale_dark = mw_mul(&tmp, &scale_light);
+
+      tmp = inv(&xi_M);
+      tmp = mw_add_s(&tmp, -1.0);
+      real mass_dark = mw_mul(&tmp, &mass_light);
+
+      real v_real = mw_real_var(v, BACKWARDS_TIME_POS);
+    //-------------------------------
+    
+    
+    real distribution_function = ZERO_REAL;
+//     real_0 cons = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+    real_0 cons = 0.03582244801567226;
+    real energy = ZERO_REAL;
+    real upperlimit_r = ZERO_REAL;
+    real lowerlimit_r = ZERO_REAL; 
+    int counter = 0;
+    real_0 search_range = 0.0;   
+    
+    /*energy as defined in binney*/
+    tmp = sqr(&v_real);
+    tmp = mw_mul_s(&tmp, 0.5);
+    real pot = potential_real(r, comp1, comp2);
+    energy = mw_sub(&pot, &tmp); 
+    
+    /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
+    search_range = 20.0 * mw_sqrt_0( mw_fabs_0( sqr_0(mass_dark.value / energy.value) - sqr_0(scale_dark.value) ));
+    
+    
+    while(potential(search_range, comp1, comp2) > energy.value)
+    {
+        search_range = 100.0 * search_range;
+        
+        if(counter > 100)
+        {
+            search_range = 100.0 * (scale_light.value + scale_dark.value);//default
+            break;
+        }
+        counter++;
+    }
+    upperlimit_r = find_upperlimit_r_real(comp1, comp2, &energy, search_range, r);
+
+    lowerlimit_r = mw_real_const(upperlimit_r.value * 10.0);
+
+    /*This calls guassian quad to integrate the function for a given energy*/
+    tmp = sqr(&v_real);
+    tmp = mw_mul_s(&tmp, cons);
+    real gauss_val = gauss_quad_real(fun_real, &lowerlimit_r, &upperlimit_r, comp1, comp2, &energy);
+    distribution_function = mw_mul(&tmp, &gauss_val);
+
+    return distribution_function;
+}
+
+  static inline real vel_dist(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2) //Normalized velocity distribution
+  {
+      //Report normalized distribution value
+      real dist_val = dist_fun_real(v, r, comp1, comp2);
+      real den = density_real(r, comp1, comp2);
+      real tmp = mw_div(&dist_val, &den);
+      tmp = mw_mul_s(&tmp, 4*M_PI);
+      return tmp;
+  }
+
+  /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR RADIUS---------------------------------------------------*/
+  static inline real_0 gradIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
+  {
+      real dist_val = radial_dist(r, comp1, comp2, isLight);
+      return dist_val.gradient[i] * mw_exp_0(dist_val.lnfactor_gradient);
+  }
+
+  static inline real_0 getGradIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i)
+  {
+      real_0 numBins = 20.0;
+      real_0 integral;
+
+      real_0 a = 0.0;
+      real_0 b = r->value;
+      real_0 width = (b-a)/numBins;
+      real_0 a_tmp;
+      real_0 b_tmp;
+      real_0 c1 = 0.55555555555; //5.0 / 9.0;
+      real_0 c2 = 0.88888888888; //8.0 / 9.0;
+      real_0 c3 = 0.55555555555; //5.0 / 9.0;
+      real_0 x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
+      real_0 x2 = 0.00000000000;
+      real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
+      real_0 r1, r2, r3, integrand1, integrand2, integrand3;
+
+      integral = 0;
+      for(int k = 0; k < numBins; k++)
+      {
+          a_tmp = k*width;
+          b_tmp = (k+1)*width;
+          r1 = (b_tmp-a_tmp)*x1/2.0 + (b_tmp+a_tmp)/2.0;
+          r2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
+          r3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
+
+          integrand1 = gradIntegrand_rad(r1, comp1, comp2, isLight, i);
+          integrand2 = gradIntegrand_rad(r2, comp1, comp2, isLight, i);
+          integrand3 = gradIntegrand_rad(r3, comp1, comp2, isLight, i);
+
+          integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
+                    + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
+                    + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
+      }
+      real dist_val = radial_dist(r->value, comp1, comp2, isLight);
+      integral = -integral / dist_val.value;
+      //mw_printf("INTEGRAL = %.15f\n", integral);
+      return integral;
+  }
+
+  static inline void getGradientInfo_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight)
+  {
+      real_0 integral;
+
+      //a_b derivative
+      integral = getGradIntegral_rad(r, comp1, comp2, isLight, BARYON_RADIUS_POS);
+      setRealGradient(r, integral, BARYON_RADIUS_POS);
+
+      //xi_R derivative
+      integral = getGradIntegral_rad(r, comp1, comp2, isLight, RADIUS_RATIO_POS);
+      setRealGradient(r, integral, RADIUS_RATIO_POS);
+
+      //M_b derivative
+      integral = getGradIntegral_rad(r, comp1, comp2, isLight, BARYON_MASS_POS);
+      setRealGradient(r, integral, BARYON_MASS_POS);
+
+      //xi_M derivative
+      integral = getGradIntegral_rad(r, comp1, comp2, isLight, MASS_RATIO_POS);
+      setRealGradient(r, integral, MASS_RATIO_POS);
+  }
+
+  static inline real_0 hessIntegrand_rad(real_0 r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
+  {
+      real dist_val = radial_dist(r, comp1, comp2, isLight);
+      //mw_printf("r = %.15f, hess_val = %.15f\n", r, dist_val.hessian[hessianIndex(i, j)]);
+      return dist_val.hessian[hessianIndex(i, j)] * mw_exp_0(dist_val.lnfactor_hessian);
+  }
+
+  static inline real_0 getHessIntegral_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight, int i, int j)
+  {
+      real_0 integral;
+      real_0 numBins = 50.0;
+
+      real_0 a = 0.0;
+      real_0 b = r->value;
+      real_0 width = (b-a)/numBins;
+      real_0 a_tmp;
+      real_0 b_tmp;
+      real_0 c1 = 0.55555555555; //5.0 / 9.0;
+      real_0 c2 = 0.88888888888; //8.0 / 9.0;
+      real_0 c3 = 0.55555555555; //5.0 / 9.0;
+      real_0 x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
+      real_0 x2 = 0.00000000000;
+      real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
+      real_0 r1, r2, r3, integrand1, integrand2, integrand3;
+
+      real_0 df_dx_i = gradIntegrand_rad(r->value, comp1, comp2, isLight, i);
+      real_0 df_dx_j = gradIntegrand_rad(r->value, comp1, comp2, isLight, j);
+
+      real dist_val = radial_dist(r->value, comp1, comp2, isLight);
+      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS] * mw_exp_0(dist_val.lnfactor_gradient);
+
+      integral = 0.0;
+      for(int k = 0; k < numBins; k++)
+      {
+          a_tmp = k*width;
+          b_tmp = (k+1)*width;
+          r1 = (b_tmp-a_tmp)*x1/2.0 + (b_tmp+a_tmp)/2.0;
+          r2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
+          r3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
+
+          integrand1 = hessIntegrand_rad(r1, comp1, comp2, isLight, i, j);
+          integrand2 = hessIntegrand_rad(r2, comp1, comp2, isLight, i, j);
+          integrand3 = hessIntegrand_rad(r3, comp1, comp2, isLight, i, j);
+
+          integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
+                    + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
+                    + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
+      }
+
+      integral += df_dx_i * r->gradient[j] * mw_exp_0(r->lnfactor_gradient)
+                + df_dx_j * r->gradient[i] * mw_exp_0(r->lnfactor_gradient)
+                + df_de * r->gradient[i] * mw_exp_0(r->lnfactor_gradient) * r->gradient[j] * mw_exp_0(r->lnfactor_gradient); // Other terms of the Hessian
+      integral = -integral / dist_val.value;
+      return integral;
+  }
+
+  static inline void getHessianInfo_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight)
+  {
+      real_0 integral;
+
+      //hessian (a_b, a_b)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, BARYON_RADIUS_POS, BARYON_RADIUS_POS);
+      setRealHessian(r, integral, BARYON_RADIUS_POS, BARYON_RADIUS_POS);
+
+      //hessian (a_b, xi_R)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+      setRealHessian(r, integral, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+
+      //hessian (a_b, M_b)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, BARYON_RADIUS_POS, BARYON_MASS_POS);
+      setRealHessian(r, integral, BARYON_RADIUS_POS, BARYON_MASS_POS);
+
+      //hessian (a_b, xi_M)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, BARYON_RADIUS_POS, MASS_RATIO_POS);
+      setRealHessian(r, integral, BARYON_RADIUS_POS, MASS_RATIO_POS);
+
+      //hessian (xi_R, xi_R)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+      setRealHessian(r, integral, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+
+      //hessian (xi_R, M_b)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, RADIUS_RATIO_POS, BARYON_MASS_POS);
+      setRealHessian(r, integral, RADIUS_RATIO_POS, BARYON_MASS_POS);
+
+      //hessian (xi_R, xi_M)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, RADIUS_RATIO_POS, MASS_RATIO_POS);
+      setRealHessian(r, integral, RADIUS_RATIO_POS, MASS_RATIO_POS);
+
+      //hessian (M_b, M_b)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, BARYON_MASS_POS, BARYON_MASS_POS);
+      setRealHessian(r, integral, BARYON_MASS_POS, BARYON_MASS_POS);
+
+      //hessian (M_b, xi_M)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, BARYON_MASS_POS, MASS_RATIO_POS);
+      setRealHessian(r, integral, BARYON_MASS_POS, MASS_RATIO_POS);
+
+      //hessian (xi_M, xi_M)
+      integral = getHessIntegral_rad(r, comp1, comp2, isLight, MASS_RATIO_POS, MASS_RATIO_POS);
+      setRealHessian(r, integral, MASS_RATIO_POS, MASS_RATIO_POS);      
+  }
+
+  static inline void getDwarfDerivativeInfo_rad(real* r, const Dwarf* comp1, const Dwarf* comp2, mwbool isLight)
+  {
+      //Calculate gradient
+      getGradientInfo_rad(r, comp1, comp2, isLight);
+
+      //Calculate hessian
+      getHessianInfo_rad(r, comp1, comp2, isLight);
+  }
+
+  /*---------------------------------------------------METHODS TO CALCULATE DERIVATIVES FOR VELOCITY---------------------------------------------------*/
+  static inline real_0 gradIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
+  {
+      real dist_val = vel_dist(v, r, comp1, comp2);
+      return dist_val.gradient[i] * mw_exp_0(dist_val.lnfactor_gradient);
+  }
+
+  static inline real_0 getGradIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i)
+  {
+      real_0 numBins = 10.0;
+      real_0 integral;
+
+      real_0 a = 0.0;
+      real_0 b = v->value;
+      real_0 width = (b-a)/numBins;
+      real_0 a_tmp;
+      real_0 b_tmp;
+      real_0 c1 = 0.55555555555; //5.0 / 9.0;
+      real_0 c2 = 0.88888888888; //8.0 / 9.0;
+      real_0 c3 = 0.55555555555; //5.0 / 9.0;
+      real_0 x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
+      real_0 x2 = 0.00000000000;
+      real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
+      real_0 v1, v2, v3, integrand1, integrand2, integrand3;
+
+      integral = 0.0;
+      for(int k = 0; k < numBins; k++)
+      {
+          a_tmp = k*width;
+          b_tmp = (k+1)*width;
+          v1 = (b_tmp-a_tmp)*x1/2.0 + (b_tmp+a_tmp)/2.0;
+          v2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
+          v3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
+
+          integrand1 = gradIntegrand_vel(v1, r, comp1, comp2, i);
+          integrand2 = gradIntegrand_vel(v2, r, comp1, comp2, i);
+          integrand3 = gradIntegrand_vel(v3, r, comp1, comp2, i);
+
+          integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
+                    + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
+                    + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
+      }
+
+      real dist_val = vel_dist(v->value, r, comp1, comp2);
+      integral = -integral / dist_val.value;
+      return integral;
+  }
+
+  static inline void getGradientInfo_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2)
+  {
+      real_0 integral;
+
+      //a_b derivative
+      integral = getGradIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS);
+      setRealGradient(v, integral, BARYON_RADIUS_POS);
+
+      //xi_R derivative
+      integral = getGradIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS);
+      setRealGradient(v, integral, RADIUS_RATIO_POS);
+
+      //M_b derivative
+      integral = getGradIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS);
+      setRealGradient(v, integral, BARYON_MASS_POS);
+
+      //xi_M derivative
+      integral = getGradIntegral_vel(v, r, comp1, comp2, MASS_RATIO_POS);
+      setRealGradient(v, integral, MASS_RATIO_POS);
+  }
+
+  static inline real_0 hessIntegrand_vel(real_0 v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
+  {
+      real dist_val = vel_dist(v, r, comp1, comp2);
+      return dist_val.hessian[hessianIndex(i, j)] * mw_exp_0(dist_val.lnfactor_hessian);
+  }
+
+  static inline real_0 getHessIntegral_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2, int i, int j)
+  {
+      real_0 integral;
+      real_0 numBins = 10.0;
+
+      real_0 a = 0.0;
+      real_0 b = v->value;
+      real_0 width = (b-a)/numBins;
+      real_0 c1 = 0.55555555555; //5.0 / 9.0;
+      real_0 c2 = 0.88888888888; //8.0 / 9.0;
+      real_0 c3 = 0.55555555555; //5.0 / 9.0;
+      real_0 x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
+      real_0 x2 = 0.00000000000;
+      real_0 x3 = 0.77459666924; //sqrt(3.0 / 5.0);
+      real_0 v1, v2, v3, integrand1, integrand2, integrand3;
+
+      real dist_val = vel_dist(v->value, r, comp1, comp2);
+      real_0 df_dx_i = dist_val.gradient[i] * mw_exp_0(dist_val.lnfactor_gradient);
+      real_0 df_dx_j = dist_val.gradient[j] * mw_exp_0(dist_val.lnfactor_gradient);
+
+      real_0 df_de = dist_val.gradient[BACKWARDS_TIME_POS] * mw_exp_0(dist_val.lnfactor_gradient);
+
+      integral = 0.0;
+      real_0 a_tmp = a;
+      real_0 b_tmp = a + width;
+      for(int k = 0; k < numBins; k++)
+      {
+          v1 = (b_tmp-a_tmp)*x1/2.0 + (b_tmp+a_tmp)/2.0;
+          v2 = (b_tmp-a_tmp)*x2/2.0 + (b_tmp+a_tmp)/2.0;
+          v3 = (b_tmp-a_tmp)*x3/2.0 + (b_tmp+a_tmp)/2.0;
+
+          integrand1 = hessIntegrand_vel(v1, r, comp1, comp2, i, j);
+          integrand2 = hessIntegrand_vel(v2, r, comp1, comp2, i, j);
+          integrand3 = hessIntegrand_vel(v3, r, comp1, comp2, i, j);
+
+          integral += (b_tmp-a_tmp)/2.0*c1*( integrand1 )
+                    + (b_tmp-a_tmp)/2.0*c2*( integrand2 )
+                    + (b_tmp-a_tmp)/2.0*c3*( integrand3 );
+
+          a_tmp += width;
+          b_tmp += width;
+      }
+
+//      mw_printf("r = %.15f\n", r->value);
+//      mw_printf("v = %.15f\n\n", v->value);
+
+//      mw_printf("integral= %.15f\n", integral);
+//      mw_printf("df_dx_i = %.15f\n", df_dx_i);
+//      mw_printf("df_dx_j = %.15f\n", df_dx_j);
+//      mw_printf("df_de   = %.15f\n", df_de);
+//      mw_printf("dv_dx_i = %.15f\n", v->gradient[i]);
+//      mw_printf("dv_dx_j = %.15f\n", v->gradient[j]);
+//      mw_printf("f       = %.15f\n\n", dist_val.value);
+
+      integral += df_dx_i * v->gradient[j] * mw_exp_0(v->lnfactor_gradient)
+               + df_dx_j * v->gradient[i] * mw_exp_0(v->lnfactor_gradient)
+               + df_de * v->gradient[i] * mw_exp_0(v->lnfactor_gradient) * v->gradient[j] * mw_exp_0(v->lnfactor_gradient); // Other terms of the Hessian
+      integral = -integral / dist_val.value;
+      return integral;
+  }
+
+  static inline void getHessianInfo_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2)
+  {
+      real_0 integral;
+
+      //hessian (a_b, a_b)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, BARYON_RADIUS_POS);
+      setRealHessian(v, integral, BARYON_RADIUS_POS, BARYON_RADIUS_POS);
+
+      //hessian (a_b, xi_R)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+      setRealHessian(v, integral, BARYON_RADIUS_POS, RADIUS_RATIO_POS);
+
+      //hessian (a_b, M_b)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, BARYON_MASS_POS);
+      setRealHessian(v, integral, BARYON_RADIUS_POS, BARYON_MASS_POS);
+
+      //hessian (a_b, xi_M)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_RADIUS_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, BARYON_RADIUS_POS, MASS_RATIO_POS);
+
+      //hessian (xi_R, xi_R)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+      setRealHessian(v, integral, RADIUS_RATIO_POS, RADIUS_RATIO_POS);
+
+      //hessian (xi_R, M_b)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, BARYON_MASS_POS);
+      setRealHessian(v, integral, RADIUS_RATIO_POS, BARYON_MASS_POS);
+
+      //hessian (xi_R, xi_M)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, RADIUS_RATIO_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, RADIUS_RATIO_POS, MASS_RATIO_POS);
+
+      //hessian (M_b, M_b)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, BARYON_MASS_POS);
+      setRealHessian(v, integral, BARYON_MASS_POS, BARYON_MASS_POS);
+
+      //hessian (M_b, xi_M)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, BARYON_MASS_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, BARYON_MASS_POS, MASS_RATIO_POS);
+
+      //hessian (xi_M, xi_M)
+      integral = getHessIntegral_vel(v, r, comp1, comp2, MASS_RATIO_POS, MASS_RATIO_POS);
+      setRealHessian(v, integral, MASS_RATIO_POS, MASS_RATIO_POS);  
+  }
+
+  static inline void getDwarfDerivativeInfo_vel(real* v, real* r, const Dwarf* comp1, const Dwarf* comp2)
+  {
+      //Calculate gradient
+      getGradientInfo_vel(v, r, comp1, comp2);
+
+      //Calculate hessian
+      getHessianInfo_vel(v, r, comp1, comp2);
+  }
+
+#endif //AUTODIFF
+
+/*      SAMPLING FUNCTIONS      */
+static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real_0 rho_max, real_0 bound)
+{
+    int counter = 0;
+    real_0 r, u, val;
     
     /*this technically calls the massless density but that is fine because
     * the masses would cancel in the denom since 
@@ -538,8 +1471,8 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
      */
     while (1)
     {
-        r = (real)mwXrandom(dsfmtState, 0.0, 1.0) * bound;
-        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
+        r = (real_0)mwXrandom(dsfmtState, 0.0, 1.0) * bound;
+        u = (real_0)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * get_density(comp, r);
 
         if(val / rho_max > u)
@@ -557,36 +1490,29 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
             counter++;
         }
     }
-    return r;
+    real r_real = mw_real_const(r);
+    return r_real;
 }
 
-static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt_t* dsfmtState)
-{
-    
-    /*
-     * WE TOOK IN MASS IN SIMULATION UNITS, WHICH HAVE THE UNITS OF KPC^3/GY^2 
-     * LENGTH IN KPC AND TIME IN GY THEREFORE, THE velocities ARE OUTPUTING IN KPC/GY
-     * THIS IS EQUAL TO 0.977813107 KM/S
-     */
-    
-    
+static inline real vel_mag(real* r, const Dwarf* comp1, const Dwarf* comp2, dsfmt_t* dsfmtState)
+{    
     int counter = 0;
-    real v, u, d;
+    real_0 v, u, d;
     
     /* having the upper limit as exactly v_esc is bad since the dist fun seems to blow up there for small r. */
-    real v_esc = 0.99 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
+    real_0 v_esc = 0.99 * mw_sqrt_0( mw_fabs_0(2.0 * potential( showRealValue(r), comp1, comp2) ) );
     
-    real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
+    real_0 dist_max = max_finder(dist_fun, showRealValue(r), comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     while(1)
     {
 
-        v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
-        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
+        v = (real_0)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
+        u = (real_0)mwXrandom(dsfmtState, 0.0, 1.0);
 
-        d = dist_fun(v, r, comp1, comp2);
+        d = dist_fun(v, showRealValue(r), comp1, comp2);
         
 
-        if(mw_fabs(d / dist_max) > u)
+        if(mw_fabs_0(d / dist_max) > u)
         {
             break;
         }
@@ -601,29 +1527,34 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
             counter++;
         }
     }
-//     v *= 0.977813107;//changing from kpc/gy to km/s
-    return v; //km/s
+    real v_val = mw_real_const(v);
+
+    //Report veloctiy
+    return v_val;
 }
 
-static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
+static inline mwvector get_components(dsfmt_t* dsfmtState, real* rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
     /* have to sample in this way because sampling angles and then converting
      * to xyz leads to strong dependence on the rad, which could lead to bunching 
      * at the poles.
      */
-    real r_sq, r_scaling;
+    real r_sq, r_scaling, tmp;
     mwvector vec;
 
     do                                       
     {
         vec = mwRandomUnitPoint(dsfmtState); /* pick point in NDIM-space */
-        r_sq = mw_sqrv(vec);                 /* compute radius squared */
+        r_sq = mw_sqrv(&vec);                 /* compute radius squared */
     }
-    while (r_sq > 1.0);                      /* reject if outside unit sphere */
+    while (showRealValue(&r_sq) > 1.0);                      /* reject if outside unit sphere */
 
-    r_scaling = rad / mw_sqrt(r_sq);         /* compute scaling factor */
-    mw_incmulvs(vec, r_scaling);             /* rescale to radius given */
+    tmp = mw_sqrt(&r_sq);
+    r_scaling = mw_div(rad, &tmp);         /* compute scaling factor */
+    vec.x = mw_mul(&vec.x, &r_scaling);    /* rescale to radius given */
+    vec.y = mw_mul(&vec.y, &r_scaling);
+    vec.z = mw_mul(&vec.z, &r_scaling);
     
     /* this is r * (u_vec / |u|). 
      * the r gives the magnitude, rad.
@@ -635,93 +1566,75 @@ static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 }
 
 static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, 
-								mwvector rShift, mwvector vShift, real comp_mass, unsigned int compStart, unsigned int compEnd)
+								mwvector* rShift, mwvector* vShift, real* comp_mass, unsigned int compStart, unsigned int compEnd)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
      * and center of momentum. It then shifts the center of mass and center of momentum
      * to the expected value for its position in the orbit.
      */
-    real cm_x = 0.0;
-    real cm_y = 0.0;
-    real cm_z = 0.0;
-    real cm_vx = 0.0;
-    real cm_vy = 0.0;
-    real cm_vz = 0.0;
+    real cm_x = ZERO_REAL;
+    real cm_y = ZERO_REAL;
+    real cm_z = ZERO_REAL;
+    real cm_vx = ZERO_REAL;
+    real cm_vy = ZERO_REAL;
+    real cm_vz = ZERO_REAL;
+    real tmp;
     unsigned int i;
     for(i = compStart; i < compEnd; i++)
     {
-        cm_x += mass[i] * x[i];
-        cm_y += mass[i] * y[i];
-        cm_z += mass[i] * z[i];
+        cm_x = mw_mad(&mass[i], &x[i], &cm_x);
+        cm_y = mw_mad(&mass[i], &y[i], &cm_y);
+        cm_z = mw_mad(&mass[i], &z[i], &cm_z);
         
-        cm_vx += mass[i] * vx[i];
-        cm_vy += mass[i] * vy[i];
-        cm_vz += mass[i] * vz[i];
+        cm_vx = mw_mad(&mass[i], &vx[i], &cm_vx);
+        cm_vy = mw_mad(&mass[i], &vy[i], &cm_vy);
+        cm_vz = mw_mad(&mass[i], &vz[i], &cm_vz);
     }
      
-    cm_x = cm_x / (comp_mass);
-    cm_y = cm_y / (comp_mass);
-    cm_z = cm_z / (comp_mass);
+    cm_x = mw_div(&cm_x, comp_mass);
+    cm_y = mw_div(&cm_y, comp_mass);
+    cm_z = mw_div(&cm_z, comp_mass);
     
-    cm_vx = cm_vx / (comp_mass);
-    cm_vy = cm_vy / (comp_mass);
-    cm_vz = cm_vz / (comp_mass);
+    cm_vx = mw_div(&cm_vx, comp_mass);
+    cm_vy = mw_div(&cm_vy, comp_mass);
+    cm_vz = mw_div(&cm_vz, comp_mass);
 
     for(i = compStart; i < compEnd; i++)
     {
-        x[i] = x[i] - cm_x + rShift.x;
-        y[i] = y[i] - cm_y + rShift.y;
-        z[i] = z[i] - cm_z + rShift.z;
+        tmp = mw_sub(&x[i], &cm_x);
+        x[i] = mw_add(&tmp, &rShift->x);
+        tmp = mw_sub(&y[i], &cm_y);
+        y[i] = mw_add(&tmp, &rShift->y);
+        tmp = mw_sub(&z[i], &cm_z);
+        z[i] = mw_add(&tmp, &rShift->z);
         
-        vx[i] = vx[i] - cm_vx + vShift.x;
-        vy[i] = vy[i] - cm_vy + vShift.y;
-        vz[i] = vz[i] - cm_vz + vShift.z;
+        tmp = mw_sub(&vx[i], &cm_vx);
+        vx[i] = mw_add(&tmp, &vShift->x);
+        tmp = mw_sub(&vy[i], &cm_vy);
+        vy[i] = mw_add(&tmp, &vShift->y);
+        tmp = mw_sub(&vz[i], &cm_vz);
+        vz[i] = mw_add(&tmp, &vShift->z);
     }
     return 1;
-}
-
-static inline void set_p0(Dwarf* comp)
-{
-    /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
-    /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
-    //as defined in Binney and Tremaine 2nd ed:
-    //the r200 is now used for all potentials to provide the bounds for density sampling
-    real mass = comp->mass; 
-    real rscale = comp->scaleLength;
-    real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
-    real c = r200 / rscale; //halo concentration
-    real term = mw_log(1.0 + c) - c / (1.0 + c);
-    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
-    comp->r200 = r200;
-    comp->p0 = p0;
-}
-
-static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
-{
-    /* The mass inputted is taken to be the M200 mass (mass within radius r200).*/
-    /* If the sampling boundary goes above or below r200, this function resets the mass of the component.*/
-    real rs = comp->scaleLength;
-    real r = bound;
-    real m = 4.0 * M_PI * comp->p0 * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r));
-    comp->mass = m;
 }
 
 
 /*      DWARF GENERATION        */
 static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, 
                                      Dwarf* comp1,  Dwarf* comp2, 
-                                    mwbool ignore, mwvector rShift, mwvector vShift)
+                                    mwbool ignore, mwvector* rShift, mwvector* vShift)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
     * etc).    See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
     * 183.
     */
+        mw_printf("Generating Mixed Dwarf...\n");
         unsigned int i;
         int table;
         Body b;
-        real r, v;
+        real r, v, tmp;
  
         real * x  = mwCalloc(nbody, sizeof(real));
         real * y  = mwCalloc(nbody, sizeof(real));
@@ -733,14 +1646,30 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         
         
         mwvector vec;
-        real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
-        real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        real_0 rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
+        real_0 rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        real_0 rscale_sum = rscale_l + rscale_d;
         set_p0(comp1);
         set_p0(comp2);
-        real bound1 ;
-        real bound2 ;
+        real_0 bound1 ;
+        real_0 bound2 ;        
         
-        
+        real_0 mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
+        real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
+        real_0 dwarf_mass = mass_l + mass_d;
+
+        real scale_light = mw_real_var(rscale_l, BARYON_RADIUS_POS);            /*Setting dwarf light mass gradient position*/
+        real scale_xi    = mw_real_var(rscale_l/rscale_sum, RADIUS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
+        tmp = inv(&scale_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real scale_dark  = mw_mul(&scale_light, &tmp);
+
+        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass gradient position*/
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
+        tmp = inv(&mass_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real mass_dark  = mw_mul(&mass_light, &tmp);
+
         switch(comp1->type)
         {
             case Plummer:
@@ -749,12 +1678,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             case NFW:
                 bound1 = 5.0 * comp1->r200;
 		get_extra_nfw_mass(comp1, bound1);
+                mass_light = get_real_nfw_mass(&mass_light, &scale_light);
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
                 break;
         }
-
         switch(comp2->type)
         {
             case Plummer:
@@ -763,36 +1692,57 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             case NFW:
                 bound2 = 5.0 * comp2->r200;
 		get_extra_nfw_mass(comp2, bound2);
+                mass_dark = get_real_nfw_mass(&mass_dark, &scale_dark);
                 break;
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
         }
-        
-        
-        real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
-        real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
-        real dwarf_mass = mass_l + mass_d;
 
 
     //---------------------------------------------------------------------------------------------------        
         unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
+        real mass_light_particle = mw_mul_s(&mass_light, inv_0((real_0) half_bodies));//half the particles are light matter
+        real mass_dark_particle  = mw_mul_s(&mass_dark , inv_0((real_0) half_bodies));
     //----------------------------------------------------------------------------------------------------
 
 	
         /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
-       
-        
+
         /*finding the max of the individual components*/
-        int place_holder = 0;
-        real rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l; //these are the analytic equations for the radius where r^2rho is max;
-        real rho_max_dark  = mw_sqrt(2.0 / 3.0) * rscale_d;
-        rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-        rho_max_dark  = sqr(rho_max_dark)  * get_density(comp2, rho_max_dark);
+        real_0 rho_max_light = 0;
+        real_0 rho_max_dark  = 0;
+
+        switch(comp1->type)
+        {
+            case Plummer:
+                rho_max_light = mw_sqrt_0(2.0 / 3.0) * comp1->scaleLength;
+                break;
+            case NFW:
+                rho_max_light = comp1->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_light = comp1->scaleLength / 2.0;
+                break;
+        }
+
+        switch(comp2->type)
+        {
+            case Plummer:
+                rho_max_dark = mw_sqrt_0(2.0 / 3.0) * comp2->scaleLength;
+                break;
+            case NFW:
+                rho_max_dark = comp2->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_dark = comp2->scaleLength / 2.0;
+                break;
+        }
+
+        rho_max_light = sqr_0(rho_max_light) * get_density(comp1, rho_max_light);
+        rho_max_dark  = sqr_0(rho_max_dark)  * get_density(comp2, rho_max_dark);
         
     	/*initializing particles:*/
         memset(&b, 0, sizeof(b));
@@ -819,7 +1769,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
+                if(isinf(showRealValue(&r)) == FALSE && showRealValue(&r) != 0.0 && isnan(showRealValue(&r)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -831,13 +1781,13 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
-            
-//             mw_printf("\rvelocity of particle %i", i + 1);
+
             counter = 0;
             do
             {
-                v = vel_mag(r, comp1, comp2, prng);
-                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+                v = vel_mag(&r, comp1, comp2, prng);
+                //mw_printf("VELOCTIY ATTEMPT\n");
+                if(isinf(showRealValue(&v)) == FALSE && showRealValue(&v) != 0.0 && isnan(showRealValue(&v)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -849,20 +1799,94 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
-            vec = get_components(prng, v);   
+            //printReal(&v,"Body Vel");
+
+            //mw_printf("BODY VEL = %.15f\n", showRealValue(&v));
+            vec = get_components(prng, &v); 
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
-            vec = get_components(prng, r);  
+            //mw_printf("BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&vec.x), showRealValue(&vec.y), showRealValue(&vec.z));
+
+            //mw_printf("BODY POS = %.15f\n", showRealValue(&r));
+            vec = get_components(prng, &r);  
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
+            //mw_printf("BODY POS = [%.15f, %.15f, %.15f]\n", showRealValue(&vec.x), showRealValue(&vec.y), showRealValue(&vec.z));
         }
+
+      #if AUTODIFF // Calculating the initial dwarf derivatives is time consuming, so we are multithreading this process alone
+          mw_printf("    Calculating initial dwarf derivatives...\n");
+          real r_val, v_val;
+          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z;
+        #ifdef _OPENMP
+          real_0 t = omp_get_wtime();
+          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
+        #else
+          clock_t t;
+          t = clock();
+        #endif
+          for (i = 0; i < nbody; i++)
+          {      
+              // Get dwarf derivative information for radius     
+              r_val = mw_hypot(&x[i], &y[i]);
+              r_val = mw_hypot(&r_val, &z[i]);
+              old_x = x[i].value;
+              old_y = y[i].value;
+              old_z = z[i].value;
+
+              x_frac = x[i].value / r_val.value;
+              y_frac = y[i].value / r_val.value;
+              z_frac = z[i].value / r_val.value;
+              if (i < half_bodies)
+              {
+                  getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, TRUE);
+              }
+              else if(i >= half_bodies)
+              {
+                  getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, FALSE);
+              }
+              x[i] = mw_mul_s(&r_val, x_frac);
+              y[i] = mw_mul_s(&r_val, y_frac);
+              z[i] = mw_mul_s(&r_val, z_frac);
+
+              x[i].value = old_x;
+              y[i].value = old_y;
+              z[i].value = old_z;
+
+              // Get dwarf derivative information for velocity     
+              v_val = mw_hypot(&vx[i], &vy[i]);
+              v_val = mw_hypot(&v_val, &vz[i]);
+              old_x = vx[i].value;
+              old_y = vy[i].value;
+              old_z = vz[i].value;
+
+              vx_frac = vx[i].value / v_val.value;
+              vy_frac = vy[i].value / v_val.value;
+              vz_frac = vz[i].value / v_val.value;
+              getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2);
+              vx[i] = mw_mul_s(&v_val, vx_frac);
+              vy[i] = mw_mul_s(&v_val, vy_frac);
+              vz[i] = mw_mul_s(&v_val, vz_frac);
+
+              vx[i].value = old_x;
+              vy[i].value = old_y;
+              vz[i].value = old_z;
+          }
+        #ifdef _OPENMP
+          real_0 time_taken = omp_get_wtime() - t;
+        #else
+          t = clock() - t;
+          real_0 time_taken = ((real_0)t)/CLOCKS_PER_SEC; // in seconds
+        #endif
+          mw_printf("    Derivative calculation took %.3f seconds\n", time_taken);
+      #endif
 
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, half_bodies, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_light, 0, half_bodies); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_dark, half_bodies, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
@@ -886,12 +1910,16 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             b.bodynode.pos.x = x[i];
             b.bodynode.pos.y = y[i];
             b.bodynode.pos.z = z[i];
+
+            //mw_printf("BODY POS  = [%.15f, %.15f, %.15f]\n", showRealValue(&b.bodynode.pos.x), showRealValue(&b.bodynode.pos.y), showRealValue(&b.bodynode.pos.z));
             
             b.vel.x = vx[i];
             b.vel.y = vy[i];
             b.vel.z = vz[i];
+
+            //mw_printf(" BODY VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&b.vel.x), showRealValue(&b.vel.y), showRealValue(&b.vel.z));
             
-            assert(nbPositionValid(b.bodynode.pos));
+            assert(nbPositionValid(&b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
@@ -904,6 +1932,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         free(vy);
         free(vz);
         free(masses);
+
+        mw_printf("Mixed Dwarf Generated!\n");
         
         return 1;             
         
@@ -911,9 +1941,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
 int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
-                                     Dwarf* comp1,  Dwarf* comp2, mwvector rShift, mwvector vShift)
+                                     Dwarf* comp1,  Dwarf* comp2, mwvector* rShift, mwvector* vShift, mwbool cmCalc)
 {
-    /* NOTE: unction is designed to mimic the above function, but bypass the need for the
+        mw_printf("RUNNING TEST VERSION OF MIXED DWARF!\n");
+    /* NOTE: function is designed to mimic the above function, but bypass the need for the
 	* for the lua state. It is used in the test unit for constructing multi-component
 	* dwarf galaxies. Any changes to the above function not pertaining to pushing the bodies
 	* should be made here
@@ -921,7 +1952,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         unsigned int i;
         int table;
         Body b;
-        real r, v;
+        real r, v, tmp;
  
         real * x  = mwCalloc(nbody, sizeof(real));
         real * y  = mwCalloc(nbody, sizeof(real));
@@ -933,14 +1964,30 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         
         
         mwvector vec;
-        real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
-        real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        real_0 rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
+        real_0 rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
+        real_0 rscale_sum = rscale_l + rscale_d;
         set_p0(comp1);
         set_p0(comp2);
-        real bound1 ;
-        real bound2 ;
+        real_0 bound1 ;
+        real_0 bound2 ;        
         
-        
+        real_0 mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
+        real_0 mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
+        real_0 dwarf_mass = mass_l + mass_d;
+
+        real scale_light = mw_real_var(rscale_l, BARYON_RADIUS_POS);            /*Setting dwarf light mass gradient position*/
+        real scale_xi    = mw_real_var(rscale_l/rscale_sum, RADIUS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
+        tmp = inv(&scale_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real scale_dark  = mw_mul(&scale_light, &tmp);
+
+        real mass_light = mw_real_var(mass_l, BARYON_MASS_POS);            /*Setting dwarf light mass gradient position*/
+        real mass_xi    = mw_real_var(mass_l/dwarf_mass, MASS_RATIO_POS);  /*Setting dwarf mass ratio gradient position*/
+        tmp = inv(&mass_xi);
+        tmp = mw_add_s(&tmp, -1.0);
+        real mass_dark  = mw_mul(&mass_light, &tmp);
+
         switch(comp1->type)
         {
             case Plummer:
@@ -949,6 +1996,11 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             case NFW:
                 bound1 = 5.0 * comp1->r200;
 		get_extra_nfw_mass(comp1, bound1);
+                mass_light = get_real_nfw_mass(&mass_light, &scale_light);
+                if( mw_abs_0(showRealValue(&mass_light) - comp1->mass) > 0.00001 )
+                {
+                    mw_printf("Incorrect NFW Light Mass Detected! Expected = %.15f, Actual  = %.15f\n", comp1->mass, showRealValue(&mass_light));
+                }
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
@@ -963,36 +2015,61 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             case NFW:
                 bound2 = 5.0 * comp2->r200;
 		get_extra_nfw_mass(comp2, bound2);
+                mass_dark = get_real_nfw_mass(&mass_dark, &scale_dark);
+                if( mw_abs_0(showRealValue(&mass_dark) - comp2->mass) > 0.00001 )
+                {
+                    mw_printf("Incorrect NFW Dark Mass Detected! Expected = %.15f, Actual  = %.15f\n", comp2->mass, showRealValue(&mass_dark));
+                }
                 break;
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
         }
-        
-        
-        real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
-        real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
-        real dwarf_mass = mass_l + mass_d;
 
 
     //---------------------------------------------------------------------------------------------------        
         unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
+        real mass_light_particle = mw_mul_s(&mass_light, inv_0((real_0) half_bodies));//half the particles are light matter
+        real mass_dark_particle  = mw_mul_s(&mass_dark , inv_0((real_0) half_bodies));
     //----------------------------------------------------------------------------------------------------
 
 	
         /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
         mwbool isdark = TRUE;
         mwbool islight = FALSE;
-       
-        
+
         /*finding the max of the individual components*/
-        int place_holder = 0;
-        real rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l; //these are the analytic equations for the radius where r^2rho is max;
-        real rho_max_dark  = mw_sqrt(2.0 / 3.0) * rscale_d;
-        rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-        rho_max_dark  = sqr(rho_max_dark)  * get_density(comp2, rho_max_dark);
+        real_0 rho_max_light = 0;
+        real_0 rho_max_dark  = 0;
+
+        switch(comp1->type)
+        {
+            case Plummer:
+                rho_max_light = mw_sqrt_0(2.0 / 3.0) * comp1->scaleLength;
+                break;
+            case NFW:
+                rho_max_light = comp1->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_light = comp1->scaleLength / 2.0;
+                break;
+        }
+
+        switch(comp2->type)
+        {
+            case Plummer:
+                rho_max_dark = mw_sqrt_0(2.0 / 3.0) * comp2->scaleLength;
+                break;
+            case NFW:
+                rho_max_dark = comp2->scaleLength;
+                break;
+            case General_Hernquist:
+                rho_max_dark = comp2->scaleLength / 2.0;
+                break;
+        }
+
+        rho_max_light = sqr_0(rho_max_light) * get_density(comp1, rho_max_light);
+        rho_max_dark  = sqr_0(rho_max_dark)  * get_density(comp2, rho_max_dark);
         
     	/*initializing particles:*/
         //memset(&b, 0, sizeof(b));
@@ -1019,7 +2096,7 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
+                if(isinf(showRealValue(&r)) == FALSE && showRealValue(&r) != 0.0 && isnan(showRealValue(&r)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -1036,8 +2113,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             counter = 0;
             do
             {
-                v = vel_mag(r, comp1, comp2, prng);
-                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+                v = vel_mag(&r, comp1, comp2, prng);
+                if(isinf(showRealValue(&v)) == FALSE && showRealValue(&v) != 0.0 && isnan(showRealValue(&v)) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -1050,36 +2127,102 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                 
             }while (1);
 			
-            vec   = get_components(prng, v);   
+            vec   = get_components(prng, &v);   
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
-            vec   = get_components(prng, r);  
+            vec   = get_components(prng, &r);  
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
         }
 
+      #if AUTODIFF // Calculating the initial dwarf derivatives is time consuming, so we are multithreading this process alone
+          mw_printf("    Calculating initial dwarf derivatives...\n");
+          real r_val, v_val;
+          real_0 x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z;
+        #ifdef _OPENMP
+          real_0 t = omp_get_wtime();
+          #pragma omp parallel for private(i, r_val, v_val, x_frac, y_frac, z_frac, vx_frac, vy_frac, vz_frac, old_x, old_y, old_z) shared(x, y, z, vx, vy, vz, comp1, comp2, half_bodies) schedule(dynamic)
+        #else
+          clock_t t;
+          t = clock();
+        #endif
+          for (i = 0; i < nbody; i++)
+          {      
+              // Get dwarf derivative information for radius     
+              r_val = mw_hypot(&x[i], &y[i]);
+              r_val = mw_hypot(&r_val, &z[i]);
+              old_x = x[i].value;
+              old_y = y[i].value;
+              old_z = z[i].value;
+
+              x_frac = x[i].value / r_val.value;
+              y_frac = y[i].value / r_val.value;
+              z_frac = z[i].value / r_val.value;
+              if (i < half_bodies)
+              {
+                  getDwarfDerivativeInfo_rad(&r_val, comp1, comp2, TRUE);
+              }
+              x[i] = mw_mul_s(&r_val, x_frac);
+              y[i] = mw_mul_s(&r_val, y_frac);
+              z[i] = mw_mul_s(&r_val, z_frac);
+
+              x[i].value = old_x;
+              y[i].value = old_y;
+              z[i].value = old_z;
+
+              // Get dwarf derivative information for velocity     
+              v_val = mw_hypot(&vx[i], &vy[i]);
+              v_val = mw_hypot(&v_val, &vz[i]);
+              old_x = vx[i].value;
+              old_y = vy[i].value;
+              old_z = vz[i].value;
+
+              vx_frac = vx[i].value / v_val.value;
+              vy_frac = vy[i].value / v_val.value;
+              vz_frac = vz[i].value / v_val.value;
+              if (i < half_bodies)
+              {
+                  getDwarfDerivativeInfo_vel(&v_val, &r_val, comp1, comp2); //Only testing derivatives for light component
+              }
+              vx[i] = mw_mul_s(&v_val, vx_frac);
+              vy[i] = mw_mul_s(&v_val, vy_frac);
+              vz[i] = mw_mul_s(&v_val, vz_frac);
+
+              vx[i].value = old_x;
+              vy[i].value = old_y;
+              vz[i].value = old_z;
+          }
+        #ifdef _OPENMP
+          real_0 time_taken = omp_get_wtime() - t;
+        #else
+          t = clock() - t;
+          real_0 time_taken = ((real_0)t)/CLOCKS_PER_SEC; // in seconds
+        #endif
+          printf("    Derivative calculation took %.3f seconds\n", time_taken);
+      #endif
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, half_bodies, nbody); //corrects dark component
-        //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
+        if(cmCalc) //For test version, we sometimes don't want this calculation
+        {
+            cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_light, 0, half_bodies); //corrects light component
+	    cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, &mass_dark, half_bodies, nbody); //corrects dark component
+        }
 
 
         /* pushing the bodies */
         for (i = 0; i < nbody; i++)
         {
+	    pos[i].x  = x[i];
+	    pos[i].y  = y[i];
+	    pos[i].z  = z[i];
 
-			pos[i].x  = x[i];
-			pos[i].y  = y[i];
-			pos[i].z  = z[i];
+            vel[i].x = vx[i];
+            vel[i].y = vy[i];
+            vel[i].z = vz[i];
 
-			vel[i].x = vx[i];
-			vel[i].y = vy[i];
-			vel[i].z = vz[i];
-
-			bodyMasses[i] = masses[i];
+            bodyMasses[i] = masses[i];
         }
         
         /* go now and be free!*/
@@ -1102,7 +2245,7 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
         static mwbool ignore;
-        static real nbodyf = 0.0;
+        static real_0 nbodyf = 0.0;
         static Dwarf* comp1 = NULL;
         static Dwarf* comp2 = NULL;
         static const MWNamedArg argTable[] =
@@ -1124,7 +2267,7 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         handleNamedArgumentTable(luaSt, argTable, 1);
         
         return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, comp1, comp2, ignore,
-                                                                 *position, *velocity);
+                                                                 position, velocity);
 }
 
 

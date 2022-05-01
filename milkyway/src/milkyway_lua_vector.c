@@ -22,6 +22,7 @@
 
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_vector.h"
+#include "milkyway_lua_math.h"
 #include "milkyway_util.h"
 
 
@@ -70,14 +71,14 @@ static int absVector(lua_State* luaSt)
     mwvector* v;
 
     v = checkVector(luaSt, 1);
-    lua_pushnumber(luaSt, (lua_Number) mw_absv(*v));
+    pushReal(luaSt, mw_absv(v));
 
     return 1;
 }
 
 static int lengthVector(lua_State* luaSt)
 {
-    lua_pushnumber(luaSt, (lua_Number) mw_length(*checkVector(luaSt, 1)));
+    pushReal(luaSt, mw_length(checkVector(luaSt, 1)));
     return 1;
 }
 
@@ -97,10 +98,10 @@ static int createVector(lua_State* luaSt)
             return 1;
 
         case 3:
-            v.x = luaL_checknumber(luaSt, 1);
-            v.y = luaL_checknumber(luaSt, 2);
-            v.z = luaL_checknumber(luaSt, 3);
-            v.w = 0.0;
+            v.x = mw_real_const(luaL_checknumber(luaSt, 1));
+            v.y = mw_real_const(luaL_checknumber(luaSt, 2));
+            v.z = mw_real_const(luaL_checknumber(luaSt, 3));
+            v.w = ZERO_REAL;
             pushVector(luaSt, v);
             return 1;
 
@@ -117,7 +118,7 @@ static int toStringVector(lua_State* luaSt)
     char* str;
 
     v = checkVector(luaSt, 1);
-    str = showVector(*v);
+    str = showVector(v);
     lua_pushstring(luaSt, str);
     free(str);
 
@@ -135,14 +136,14 @@ static int checkScalarVectorArgs(lua_State* luaSt, real* s, mwvector* v)
 {
     if (lua_isnumber(luaSt, 1))
     {
-        *s = lua_tonumber(luaSt, 1);
+        *s = *toReal(luaSt, 1);
         *v = *checkVector(luaSt, 2);
         return 1;
     }
     else if (lua_isnumber(luaSt, 2))
     {
         *v = *checkVector(luaSt, 1);
-        *s = lua_tonumber(luaSt, 2);
+        *s = *toReal(luaSt, 2);
         return -1;
     }
     else
@@ -162,7 +163,7 @@ static int addVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushVector(luaSt, mw_addv(v1, v2));
+    pushVector(luaSt, mw_addv(&v1, &v2));
     return 1;
 }
 
@@ -171,7 +172,7 @@ static int crossVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushVector(luaSt, mw_crossv(v1, v2));
+    pushVector(luaSt, mw_crossv(&v1, &v2));
     return 1;
 }
 
@@ -180,7 +181,7 @@ static int subVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    pushVector(luaSt, mw_subv(v1, v2));
+    pushVector(luaSt, mw_subv(&v1, &v2));
     return 1;
 }
 
@@ -189,7 +190,7 @@ static int distVector(lua_State* luaSt)
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
-    lua_pushnumber(luaSt, mw_distv(v1, v2));
+    pushReal(luaSt, mw_distv(&v1, &v2));
     return 1;
 }
 
@@ -202,13 +203,13 @@ static int divVector(lua_State* luaSt)
     if (lua_isnumber(luaSt, 2))
     {
         v1 = *checkVector(luaSt, 1);
-        s = lua_tonumber(luaSt, 2);
-        pushVector(luaSt, mw_divvs(v1, s));
+        s = *toReal(luaSt, 2);
+        pushVector(luaSt, mw_divvs(&v1, &s));
     }
     else
     {
         check2Vector(luaSt, &v1, &v2);
-        pushVector(luaSt, mw_divv(v1, v2));
+        pushVector(luaSt, mw_divv(&v1, &v2));
     }
 
     return 1;
@@ -217,6 +218,7 @@ static int divVector(lua_State* luaSt)
 static int multVector(lua_State* luaSt)
 {
     mwvector v1, v2;
+    mwvector result;
     real s;
     int rc;
 
@@ -225,12 +227,15 @@ static int multVector(lua_State* luaSt)
     {
         /* Vector * Vector */
         check2Vector(luaSt, &v1, &v2);
-        lua_pushnumber(luaSt, mw_dotv(v1, v2));
+        pushReal(luaSt, mw_dotv(&v1, &v2));
     }
     else
     {
         /* Vector * Scalar */
-        pushVector(luaSt, mw_mulvs(v1, s));
+        result.x = mw_mul(&v1.x, &s);
+        result.y = mw_mul(&v1.y, &s);
+        result.z = mw_mul(&v1.z, &s);
+        pushVector(luaSt, result);
     }
 
     return 1;
@@ -241,7 +246,7 @@ static int negVector(lua_State* luaSt)
     mwvector v;
 
     v = *checkVector(luaSt, 1);
-    pushVector(luaSt, mw_negv(v));
+    pushVector(luaSt, mw_negv(&v));
 
     return 1;
 }
@@ -269,17 +274,17 @@ static const luaL_reg methodsVector[] =
 
 static const Xet_reg_pre gettersVector[] =
 {
-    { "x", getNumber, offsetof(mwvector, x) },
-    { "y", getNumber, offsetof(mwvector, y) },
-    { "z", getNumber, offsetof(mwvector, z) },
+    { "x", getReal, offsetof(mwvector, x) },
+    { "y", getReal, offsetof(mwvector, y) },
+    { "z", getReal, offsetof(mwvector, z) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersVector[] =
 {
-    { "x", setNumber, offsetof(mwvector, x) },
-    { "y", setNumber, offsetof(mwvector, y) },
-    { "z", setNumber, offsetof(mwvector, z) },
+    { "x", setReal, offsetof(mwvector, x) },
+    { "y", setReal, offsetof(mwvector, y) },
+    { "z", setReal, offsetof(mwvector, z) },
     { NULL, NULL, 0 }
 };
 

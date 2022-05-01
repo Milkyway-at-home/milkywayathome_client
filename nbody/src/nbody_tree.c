@@ -39,13 +39,13 @@ static inline int nbSubIndex(Body* p, NBodyCell* q)
 
     /* accumulate subcell index */
     /* loop over dimensions */
-    if (X(Pos(q)) <= X(Pos(p)))     /* if beyond midpoint */
+    if (showRealValue(&X(&Pos(q))) <= showRealValue(&X(&Pos(p))))     /* if beyond midpoint */
         ind += NSUB >> (0 + 1);     /* skip over subcells */
 
-    if (Y(Pos(q)) <= Y(Pos(p)))
+    if (showRealValue(&Y(&Pos(q))) <= showRealValue(&Y(&Pos(p))))
         ind += NSUB >> (1 + 1);
 
-    if (Z(Pos(q)) <= Z(Pos(p)))
+    if (showRealValue(&Z(&Pos(q))) <= showRealValue(&Z(&Pos(p))))
         ind += NSUB >> (2 + 1);
 
     return ind;
@@ -53,14 +53,14 @@ static inline int nbSubIndex(Body* p, NBodyCell* q)
 
 static inline void nbIncAddNBodyQuadMatrix(NBodyQuadMatrix* RESTRICT a, NBodyQuadMatrix* RESTRICT b)
 {
-    a->xx += b->xx;
-    a->xy += b->xy;
-    a->xz += b->xz;
+    a->xx = mw_add(&a->xx, &b->xx);
+    a->xy = mw_add(&a->xy, &b->xy);
+    a->xz = mw_add(&a->xz, &b->xz);
 
-    a->yy += b->yy;
-    a->yz += b->yz;
+    a->yy = mw_add(&a->yy, &b->yy);
+    a->yz = mw_add(&a->yz, &b->yz);
 
-    a->zz += b->zz;
+    a->zz = mw_add(&a->zz, &b->zz);
 }
 
 /* hackQuad: descend tree, evaluating quadrupole moments.  Note that this
@@ -69,12 +69,13 @@ static inline void nbIncAddNBodyQuadMatrix(NBodyQuadMatrix* RESTRICT a, NBodyQua
  */
 static void hackQuad(NBodyCell* p)
 {
+    real tmp1, tmp2;
     unsigned int ndesc, i;
     NBodyNode* desc[NSUB];
     NBodyNode* q;
     mwvector dr;
     real drsq;
-    NBodyQuadMatrix quad = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    NBodyQuadMatrix quad = { ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL, ZERO_REAL };
 
     ndesc = 0;                                  /* count occupied subnodes  */
     for (i = 0; i < NSUB; ++i)                  /* loop over all subnodes   */
@@ -93,22 +94,40 @@ static void hackQuad(NBodyCell* p)
             hackQuad((NBodyCell*) q);           /* then process it first    */
         }
 
-        dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
-        drsq = mw_sqrv(dr);                     /* and dot prod. (dr . dr)  */
+        dr = mw_subv(&Pos(q), &Pos(p));           /* find displacement vect.  */
+        drsq = mw_sqrv(&dr);                     /* and dot prod. (dr . dr)  */
 
         /* Outer product scaled by 3, then subtract drsq off the
          * diagonal to form quad moment*/
         {
             real m = Mass(q);   /* from CM of subnode */
 
-            quad.xx = m * (3.0 * (X(dr) * X(dr)) - drsq);
-            quad.xy = m * (3.0 * (X(dr) * Y(dr)));
-            quad.xz = m * (3.0 * (X(dr) * Z(dr)));
+            tmp1 = mw_mul(&X(&dr), &X(&dr));
+            tmp1 = mw_mul_s(&tmp1, 3.0);
+            tmp1 = mw_sub(&tmp1, &drsq);
+            quad.xx = mw_mul(&m, &tmp1);
 
-            quad.yy = m * (3.0 * (Y(dr) * Y(dr)) - drsq);
-            quad.yz = m * (3.0 * (Y(dr) * Z(dr)));
+            tmp1 = mw_mul(&X(&dr), &Y(&dr));
+            tmp1 = mw_mul_s(&tmp1, 3.0);
+            quad.xy = mw_mul(&m, &tmp1);
 
-            quad.zz = m * (3.0 * (Z(dr) * Z(dr)) - drsq);
+            tmp1 = mw_mul(&X(&dr), &Z(&dr));
+            tmp1 = mw_mul_s(&tmp1, 3.0);
+            quad.xz = mw_mul(&m, &tmp1);
+
+            tmp1 = mw_mul(&Y(&dr), &Y(&dr));
+            tmp1 = mw_mul_s(&tmp1, 3.0);
+            tmp1 = mw_sub(&tmp1, &drsq);
+            quad.yy = mw_mul(&m, &tmp1);
+
+            tmp1 = mw_mul(&Y(&dr), &Z(&dr));
+            tmp1 = mw_mul_s(&tmp1, 3.0);
+            quad.yz = mw_mul(&m, &tmp1);
+
+            tmp1 = mw_mul(&Z(&dr), &Z(&dr));
+            tmp1 = mw_mul_s(&tmp1, 3.0);
+            tmp1 = mw_sub(&tmp1, &drsq);
+            quad.zz = mw_mul(&m, &tmp1);
         }
 
         if (isCell(q)) /* if subnode is cell       */
@@ -155,7 +174,7 @@ static void threadTree(NBodyNode* p, NBodyNode* n)
  */
 static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 {
-    real xyzmax;
+    real_0 xyzmax;
     const Body* p;
     const NBodyCell* root = t->root;
 
@@ -164,9 +183,9 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
     {
-        xyzmax = mw_fmax(xyzmax, mw_abs(X(Pos(p)) - X(Pos(root))));
-        xyzmax = mw_fmax(xyzmax, mw_abs(Y(Pos(p)) - Y(Pos(root))));
-        xyzmax = mw_fmax(xyzmax, mw_abs(Z(Pos(p)) - Z(Pos(root))));
+        xyzmax = mw_fmax_0(xyzmax, mw_abs_0(showRealValue(&X(&Pos(p))) - showRealValue(&X(&Pos(root)))));
+        xyzmax = mw_fmax_0(xyzmax, mw_abs_0(showRealValue(&Y(&Pos(p))) - showRealValue(&Y(&Pos(root)))));
+        xyzmax = mw_fmax_0(xyzmax, mw_abs_0(showRealValue(&Z(&Pos(p))) - showRealValue(&Z(&Pos(root)))));
     }
 
     while (t->rsize < 2.0 * xyzmax)
@@ -219,23 +238,24 @@ static void nbNewTree(NBodyState* st, NBodyTree* t)
     t->maxDepth = 0;
 
     t->root = nbMakeCell(st, t);      /* allocate the root cell */
-    mw_zerov(Pos(t->root));           /* initialize the midpoint */
+    mw_zerov(&Pos(t->root));           /* initialize the midpoint */
 }
 
 
 ALWAYS_INLINE
-static inline real calcOffset(real pPos, real qPos, real qsize)
+static inline real calcOffset(real* pPos, real* qPos, real_0 qsize)
 {
     /* offset from parent */
-    return qPos + 0.25 * (pPos < qPos ? -qsize : qsize);
+    real_0 tmp_val = 0.25 * (showRealValue(pPos) < showRealValue(qPos) ? -qsize : qsize);
+    return mw_add_s(qPos, tmp_val);
 }
 
 ALWAYS_INLINE
-static inline void nbInitMidpoint(NBodyCell* c, const Body* p, const NBodyCell* q, real qsize)
+static inline void nbInitMidpoint(NBodyCell* c, const Body* p, const NBodyCell* q, real_0 qsize)
 {
-    X(Pos(c)) = calcOffset(X(Pos(p)), X(Pos(q)), qsize);
-    Y(Pos(c)) = calcOffset(Y(Pos(p)), Y(Pos(q)), qsize);
-    Z(Pos(c)) = calcOffset(Z(Pos(p)), Z(Pos(q)), qsize);
+    Pos(c).x = calcOffset(&X(&Pos(p)), &X(&Pos(q)), qsize);
+    Pos(c).y = calcOffset(&Y(&Pos(p)), &Y(&Pos(q)), qsize);
+    Pos(c).z = calcOffset(&Z(&Pos(p)), &Z(&Pos(q)), qsize);
 }
 
 /* loadBody: descend tree and insert body p in appropriate place. */
@@ -244,10 +264,13 @@ static void nbLoadBody(NBodyState* st, NBodyTree* t, Body* p)
     NBodyCell* q;
     NBodyCell* c;
     size_t qind;
+    size_t cind;
     unsigned int lev;
-    real qsize;
+    real_0 qsize;
+    //mw_printf("Body POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
+    //mw_printf("Body VEL = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Vel(p))), showRealValue(&Y(&Vel(p))), showRealValue(&Z(&Vel(p))) );
 
-    q = t->root;                                /* start with tree t.root */
+    q = (NBodyCell*) t->root;                                /* start with tree t.root */
     qind = nbSubIndex(p, q);                    /* get index of subcell */
     qsize = t->rsize;                           /* keep track of cell size */
     lev = 0;                                    /* count levels descended */
@@ -282,38 +305,40 @@ static void nbLoadBody(NBodyState* st, NBodyTree* t, Body* p)
 }
 
 ALWAYS_INLINE
-static inline real bmax2Inc(real cmPos, real pPos, real psize)
+static inline real_0 bmax2Inc(real_0 cmPos, real_0 pPos, real_0 psize)
 {
-    real dmin;
+    real_0 dmin;
     dmin = cmPos - (pPos - 0.5 * psize);         /* dist from 1st corner */
-    return sqr(mw_fmax(dmin, psize - dmin));      /* sum max distance^2 */
+    return sqr_0(mw_fmax_0(dmin, psize - dmin));      /* sum max distance^2 */
 }
 
 ALWAYS_INLINE
-static inline real calcSW93MaxDist2(const NBodyCell* p, const mwvector cmpos, real psize)
+static inline real_0 calcSW93MaxDist2(const NBodyCell* p, const mwvector* cmpos, real_0 psize)
 {
-    real bmax2;
+    real_0 bmax2;
 
     /* compute max distance^2 */
     /* loop over dimensions */
-    bmax2 = bmax2Inc(X(cmpos), X(Pos(p)), psize);
-    bmax2 += bmax2Inc(Y(cmpos), Y(Pos(p)), psize);
-    bmax2 += bmax2Inc(Z(cmpos), Z(Pos(p)), psize);
+    bmax2 = bmax2Inc(showRealValue(&X(cmpos)), showRealValue(&X(&Pos(p))), psize);
+    bmax2 += bmax2Inc(showRealValue(&Y(cmpos)), showRealValue(&Y(&Pos(p))), psize);
+    bmax2 += bmax2Inc(showRealValue(&Z(cmpos)), showRealValue(&Z(&Pos(p))), psize);
 
     return bmax2;
 }
 
 /* assign critical radius for cell p, using center-of-mass position
  * cmpos and cell size psize. */
-static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeRSize, mwvector cmpos, real psize)
+static inline real_0 findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real_0 treeRSize, mwvector* cmpos, real_0 psize)
 {
-    real rc, bmax2;
+    real_0 rc, bmax2;
+    real tmp;
+    mwvector diff;
 
     if (mw_unlikely(ctx->theta == 0.0))
     {
         /* Do an exact force calculation by always opening cells */
         rc = 2.0 * treeRSize;
-        return sqr(rc);
+        return sqr_0(rc);
     }
 
     /* return square of radius */
@@ -321,17 +346,25 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
     {
         case TreeCode:
             /* use size plus offset */
-            rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
-            return sqr(rc);
+            diff = mw_subv(cmpos, &Pos(p));
+            tmp = mw_length(&diff);
+            if (showRealValue(&tmp) < 0.000001)
+            {
+                mw_printf("ZERO DISTANCE CALCULATED!\n");
+                mw_printf("    P POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
+                mw_printf("    CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(cmpos)), showRealValue(&Y(cmpos)), showRealValue(&Z(cmpos)) );
+            }
+            rc = (psize / ctx->theta) + showRealValue(&tmp);
+            return sqr_0(rc);
 
         case SW93:                           /* use S&W's criterion? */
             /* compute max distance^2 */
             bmax2 = calcSW93MaxDist2(p, cmpos, psize);
-            return bmax2 / sqr(ctx->theta);      /* using max dist from cm */
+            return bmax2 / sqr_0(ctx->theta);      /* using max dist from cm */
 
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */
-            return sqr(rc);
+            return sqr_0(rc);
 
         case InvalidCriterion:
         case Exact: /* Uses separate path */
@@ -342,7 +375,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
     }
 }
 
-static inline void nbCheckTreeDim(NBodyTree* tree, real pPos, real cmPos, real halfPsize)
+static inline void nbCheckTreeDim(NBodyTree* tree, real_0 pPos, real_0 cmPos, real_0 halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
     if (   cmPos < pPos - halfPsize       /* if out of bounds */
@@ -370,28 +403,31 @@ static inline void nbCheckTreeDim(NBodyTree* tree, real pPos, real cmPos, real h
     }
 }
 
-static inline void nbCheckTreeStructure(NBodyTree* tree, const mwvector pPos, const mwvector cmPos, const real psize)
+static inline void nbCheckTreeStructure(NBodyTree* tree, const mwvector* pPos, const mwvector* cmPos, const real_0 psize)
 {
-    real halfPsize = 0.5 * psize;
+    real_0 halfPsize = 0.5 * psize;
 
-    nbCheckTreeDim(tree, X(pPos), X(cmPos), halfPsize);
-    nbCheckTreeDim(tree, Y(pPos), Y(cmPos), halfPsize);
-    nbCheckTreeDim(tree, Z(pPos), Z(cmPos), halfPsize);
+    //mw_printf("P POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(pPos)), showRealValue(&Y(pPos)), showRealValue(&Z(pPos)) );
+    //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(cmPos)), showRealValue(&Y(cmPos)), showRealValue(&Z(cmPos)) );
+    nbCheckTreeDim(tree, showRealValue(&X(pPos)), showRealValue(&X(cmPos)), halfPsize);
+    nbCheckTreeDim(tree, showRealValue(&Y(pPos)), showRealValue(&Y(cmPos)), halfPsize);
+    nbCheckTreeDim(tree, showRealValue(&Z(pPos)), showRealValue(&Z(cmPos)), halfPsize);
 }
 
 
 /* hackCofM: descend tree finding center-of-mass coordinates and
  * setting critical cell radii.
  */
-static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real psize)
+static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real_0 psize)
 {
     int i;
     NBodyNode* q;
     mwvector cmpos = ZERO_VECTOR;                /* init center of mass */
+    mwvector tmp;
 
     assert(psize >= REAL_EPSILON);
 
-    Mass(p) = 0.0;                              /* init total mass... */
+    Mass(p) = ZERO_REAL;                              /* init total mass... */
     for (i = 0; i < NSUB; ++i)                  /* loop over subnodes */
     {
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
@@ -401,15 +437,19 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real ps
                 hackCofM(ctx, tree, (NBodyCell*) q, 0.5 * psize); /* find subcell cm */
             }
 
-            Mass(p) += Mass(q);                       /* sum total mass */
+            Mass(p) = mw_add(&Mass(p), &Mass(q));                       /* sum total mass */
                                                       /* weight pos by mass */
-            mw_incaddv_s(cmpos, Pos(q), Mass(q));     /* sum c-of-m position */
+            tmp = mw_mulvs(&Pos(q), &Mass(q));
+            cmpos = mw_addv(&cmpos, &tmp);     /* sum c-of-m position */
+            //mw_printf("Mass(q) = %.15f\n", showRealValue(&Mass(q)));
+            //mw_printf("Q POS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&Pos(q))), showRealValue(&Y(&Pos(q))), showRealValue(&Z(&Pos(q))) );
+            //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&cmpos)), showRealValue(&Y(&cmpos)), showRealValue(&Z(&cmpos)) );
         }
     }
 
-    if (Mass(p) > 0.0)                          /* usually, cell has mass   */
+    if (showRealValue(&Mass(p)) > 0.0)                          /* usually, cell has mass   */
     {
-        mw_incdivs(cmpos, Mass(p));            /* so find c-of-m position  */
+        cmpos = mw_divvs(&cmpos, &Mass(p));            /* so find c-of-m position  */
     }
     else                                        /* but if no mass inside    */
     {
@@ -417,9 +457,10 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real ps
         cmpos = Pos(p);                /* use geo. center for now  */
     }
 
-    nbCheckTreeStructure(tree, Pos(p), cmpos, psize);
+    //mw_printf("CMPOS = [%.15f, %.15f, %.15f]\n", showRealValue(&X(&cmpos)), showRealValue(&Y(&cmpos)), showRealValue(&Z(&cmpos)) );
+    nbCheckTreeStructure(tree, &Pos(p), &cmpos, psize);
 
-    Rcrit2(p) = findRCrit(ctx, p, tree->rsize, cmpos, psize);            /* set critical radius */
+    Rcrit2(p) = findRCrit(ctx, p, tree->rsize, &cmpos, psize);            /* set critical radius */
     Pos(p) = cmpos;             /* and center-of-mass pos */
 }
 
@@ -431,13 +472,14 @@ NBodyStatus nbMakeTree(const NBodyCtx* ctx, NBodyState* st)
     Body* p;
     const Body* endp = st->bodytab + st->nbody;
     NBodyTree* t = &st->tree;
+    NBodyCell* q;
 
     nbNewTree(st, t);                                /* flush existing tree, etc */
 
     expandBox(t, st->bodytab, st->nbody);            /* and expand cell to fit */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
-        if (Mass(p) != 0.0)                  /* exclude test particles */
+        if (showRealValue(&Mass(p)) != 0.0)                  /* exclude test particles */
             nbLoadBody(st, t, p);              /* and insert into tree */
     }
 
@@ -453,8 +495,45 @@ NBodyStatus nbMakeTree(const NBodyCtx* ctx, NBodyState* st)
         return NBODY_TREE_STRUCTURE_ERROR;
 
     threadTree((NBodyNode*) t->root, NULL);        /* add Next and More links */
+
     if (ctx->useQuad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
+
+    /*Code here is for debugging tree-incest errors*/
+    mwbool checkIncest = FALSE;
+    if (checkIncest)
+    {
+        for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
+        {
+            mwbool skipSelf = FALSE;
+            q = (NBodyCell*) t->root; 
+            while (q != NULL)               /* while not at end of scan */
+            {
+                if (isBody(q))      /* If is a body or far enough away to approximate */
+                {
+                    if (mw_likely((Body*) q == p))   /* self-interaction? */
+                    {
+                        skipSelf = TRUE;   /* Encountered self */
+                    }
+
+                    q = Next(q);  /* Follow next link */
+                }
+                else
+                {
+                     q = More(q); /* Follow to the next level if need to go deeper */
+                }
+            }
+
+            if (!skipSelf)
+            {
+                /* If a body does not encounter itself in its traversal of the
+                 * tree, it is "tree incest" */
+
+                mw_printf("Incest found in nbody_tree.c at %p = [%.15f, %.15f, %.15f]\n", p, showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))) );
+            }
+        }
+    }
+    /*----------------------------------------------*/
 
     return NBODY_SUCCESS;
 }

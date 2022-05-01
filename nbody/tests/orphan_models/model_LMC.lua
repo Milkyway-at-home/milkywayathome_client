@@ -27,7 +27,8 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      timeBack   = 3.945,
+      eps2       = calculateEps2(nbody, dwarfRadius, 0),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
@@ -42,7 +43,8 @@ function makeContext()
       LMC           = true,
       LMCmass       = LMCMASS,
       LMCscale      = LMCSCALE,
-      LMCDynaFric   = true
+      LMCDynaFric   = true,
+      coulomb_log   = 0.470003629
    }
 end
 
@@ -56,9 +58,11 @@ function makeBodies(ctx, potential)
       LMCmass     = LMCMASS,
       LMCscale    = LMCSCALE,
       LMCDynaFric = true,
-      ftime       = 4.5,
-      tstop       = 4.0,
-      dt          = ctx.timestep / 10.0
+      coulomb_log = 0.470003629,
+      ftime       = 3.945,
+      tstop       = 3.945,
+      dt          = ctx.timestep / 10.0,
+      sunGCDist = 8.0
       }
 
    return predefinedModels.plummer{
