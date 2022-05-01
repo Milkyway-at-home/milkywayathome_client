@@ -153,7 +153,6 @@ static int createRandomLMCNBodyState(lua_State* luaSt)       /** Only used to cr
     int nbody;
     size_t nShift;
     dsfmt_t* dsfmtState;
-    real r;
     NBodyState st = EMPTY_NBODYSTATE;
 
     ctx = *checkNBodyCtx(luaSt, 1);
@@ -280,8 +279,8 @@ static int toStringNBodyState(lua_State* luaSt)
 static void readCLRequestFromTable(lua_State* luaSt, CLRequest* clr, int table)
 {
     static const char* prefVendor;
-    static real platformf;
-    static real devicef;
+    static real_0 platformf;
+    static real_0 devicef;
     static mwbool nonResponsive;
     static mwbool enableProfiling;
 

@@ -76,15 +76,15 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     fclose(body_inputs);
     body_inputs = mwOpenResolved(body_file, "r");
    
-    real * ty = mwCalloc(fsize, sizeof(real));
-    real * id = mwCalloc(fsize, sizeof(real));
-    real * x  = mwCalloc(fsize, sizeof(real));
-    real * y  = mwCalloc(fsize, sizeof(real));
-    real * z  = mwCalloc(fsize, sizeof(real));
-    real * vx = mwCalloc(fsize, sizeof(real));
-    real * vy = mwCalloc(fsize, sizeof(real));
-    real * vz = mwCalloc(fsize, sizeof(real));
-    real * masses = mwCalloc(fsize, sizeof(real));
+    real_0 * ty = mwCalloc(fsize, sizeof(real_0));
+    real_0 * id = mwCalloc(fsize, sizeof(real_0));
+    real_0 * x  = mwCalloc(fsize, sizeof(real_0));
+    real_0 * y  = mwCalloc(fsize, sizeof(real_0));
+    real_0 * z  = mwCalloc(fsize, sizeof(real_0));
+    real_0 * vx = mwCalloc(fsize, sizeof(real_0));
+    real_0 * vy = mwCalloc(fsize, sizeof(real_0));
+    real_0 * vz = mwCalloc(fsize, sizeof(real_0));
+    real_0 * masses = mwCalloc(fsize, sizeof(real_0));
     
     unsigned int nbody = fsize;
     memset(&b, 0, sizeof(b));
@@ -131,21 +131,21 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     {
         b.bodynode.type = ty[i];
         b.bodynode.id = id[i];
-        b.bodynode.mass = masses[i];
+        b.bodynode.mass = mw_real_const(masses[i]);
 
         /*this actually gets the position and velocity vectors and pushes table of bodies*/
         /*They are meant to give the dwarf an initial position and vel*/
         /* you have to work for your bodynode */
-        b.bodynode.pos.x = x[i];
-        b.bodynode.pos.y = y[i];
-        b.bodynode.pos.z = z[i];
+        b.bodynode.pos.x = mw_real_const(x[i]);
+        b.bodynode.pos.y = mw_real_const(y[i]);
+        b.bodynode.pos.z = mw_real_const(z[i]);
         
-        b.vel.x = vx[i];
-        b.vel.y = vy[i];
-        b.vel.z = vz[i];
+        b.vel.x = mw_real_const(vx[i]);
+        b.vel.y = mw_real_const(vy[i]);
+        b.vel.z = mw_real_const(vz[i]);
         
 //         mw_printf("%f %f %f %f %f %f %f\n", b.bodynode.pos.x, b.bodynode.pos.y, b.bodynode.pos.z, b.vel.x, b.vel.y, b.vel.z, b.bodynode.mass);
-        assert(nbPositionValid(b.bodynode.pos));
+        assert(nbPositionValid(&b.bodynode.pos));
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);
     }

@@ -34,27 +34,27 @@ int main()
     int k0_fails=0;
     int k1_fails=0;
 
-    const real min_val = 0.5;
-    const real max_val = 60.0;
-    const real step = 0.0001;
+    const real_0 min_val = 0.5;
+    const real_0 max_val = 60.0;
+    const real_0 step = 0.0001;
     const int nTests = 100000;
-    const real ZERO_THRESHOLD = 1.0e-7;
+    const real_0 ZERO_THRESHOLD = 1.0e-7;
 
-    real x;
-    real wronskian;
-    real i0_derv;
-    real i1_derv;
-    real k0_derv;
-    real k1_derv;
-    real comp_wron;
-    real comp_i0;
-    real comp_i1;
-    real comp_k0;
-    real comp_k1;
+    real_0 x;
+    real_0 wronskian;
+    real_0 i0_derv;
+    real_0 i1_derv;
+    real_0 k0_derv;
+    real_0 k1_derv;
+    real_0 comp_wron;
+    real_0 comp_i0;
+    real_0 comp_i1;
+    real_0 comp_k0;
+    real_0 comp_k1;
 
     for (int j=0; j<nTests; j++) {
         int fails = 0;
-        x = ((real)rand()/(real)RAND_MAX)*(max_val - min_val) + min_val;
+        x = ((real_0)rand()/(real_0)RAND_MAX)*(max_val - min_val) + min_val;
         //mw_printf("X = %.15f\n",x);
         //mw_printf("I0(X) = %.15f\n", besselI0(x));
         //mw_printf("I1(X) = %.15f\n", besselI1(x));
@@ -67,11 +67,11 @@ int main()
         i1_derv = (besselI1(x+step)-besselI1(x-step))/2.0/step;
         k1_derv = (besselK1(x+step)-besselK1(x-step))/2.0/step;
 
-        comp_wron = mw_abs(wronskian - 1.0/x)*x;
-        comp_i0 = mw_abs(i0_derv - besselI1(x))/besselI1(x);
-        comp_k0 = mw_abs(k0_derv + besselK1(x))/besselK1(x);
-        comp_i1 = mw_abs(i1_derv - besselI0(x) + besselI1(x)/x)/i1_derv;
-        comp_k1 = -mw_abs(k1_derv + besselK0(x) + besselK1(x)/x)/k1_derv;
+        comp_wron = mw_abs_0(wronskian - 1.0/x)*x;
+        comp_i0 = mw_abs_0(i0_derv - besselI1(x))/besselI1(x);
+        comp_k0 = mw_abs_0(k0_derv + besselK1(x))/besselK1(x);
+        comp_i1 = mw_abs_0(i1_derv - besselI0(x) + besselI1(x)/x)/i1_derv;
+        comp_k1 = -mw_abs_0(k1_derv + besselK0(x) + besselK1(x)/x)/k1_derv;
 
         if(comp_wron > ZERO_THRESHOLD) {
             fails += 1;

@@ -28,27 +28,29 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void nbReverseOrbit(mwvector* finalPos,
                     mwvector* finalVel,
                     const Potential* pot,
-                    mwvector pos,
-                    mwvector vel,
-                    real tstop,
-                    real dt);
+                    mwvector* pos,
+                    mwvector* vel,
+                    real_0 tstop,
+                    real_0 dt,
+                    real_0 sun_dist);
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
                     mwvector* LMCfinalPos,
                     mwvector* LMCfinalVel,
                     const Potential* pot,
-                    mwvector pos,
-                    mwvector vel,
-                    mwvector LMCposition,
-                    mwvector LMCvelocity,
+                    mwvector* pos,
+                    mwvector* vel,
+                    mwvector* LMCposition,
+                    mwvector* LMCvelocity,
                     mwbool LMCDynaFric,
-                    real ftime,
-                    real tstop,
-                    real dt,
-                    real LMCmass,
-                    real LMCscale,
-                    real coulomb_log);
+                    real_0 ftime,
+                    real_0 tstop,
+                    real_0 dt,
+                    real* LMCmass,
+                    real* LMCscale,
+                    real_0 sun_dist,
+                    real_0 coulomb_log);
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr);
 
@@ -57,11 +59,28 @@ void getLMCPosVel(mwvector * LMCposPtr, mwvector * LMCvelPtr);
 void nbPrintReverseOrbit(mwvector* finalPos,
                          mwvector* finalVel,
                          const Potential* pot,
-                         mwvector pos,
-                         mwvector vel,
-                         real tstop,
-                         real tstopforward,
-                         real dt);
+                         mwvector* pos,
+                         mwvector* vel,
+                         real_0 tstop,
+                         real_0 tstopforward,
+                         real_0 dt);
+
+void nbPrintReverseOrbit_LMC(mwvector* finalPos,
+                         mwvector* finalVel,
+                         mwvector* LMCfinalPos,
+                         mwvector* LMCfinalVel,
+                         const Potential* pot,
+                         mwvector* pos,
+                         mwvector* vel,
+                         mwvector* LMCposition,
+                         mwvector* LMCvelocity,
+                         mwbool LMCDynaFric,
+                         real_0 tstop,
+                         real_0 tstopforward,
+                         real_0 dt,
+                         real* LMCmass,
+                         real* LMCscale,
+                         real_0 coulomb_log);
     
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 

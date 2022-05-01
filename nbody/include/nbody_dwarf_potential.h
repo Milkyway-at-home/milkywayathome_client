@@ -32,8 +32,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-real get_potential(const Dwarf* args, real r);
-real get_density(const Dwarf* args, real r);
+real_0 get_potential(const Dwarf* args, real_0 r);
+real_0 get_density(const Dwarf* args, real_0 r);
+
+real_0 get_first_derv_potential(const Dwarf* args, real_0 r);
+real_0 get_first_derv_density(const Dwarf* args, real_0 r);
+real_0 get_second_derv_potential(const Dwarf* args, real_0 r);
+real_0 get_second_derv_density(const Dwarf* args, real_0 r);
+
+real get_potential_real(const Dwarf* model_light, const Dwarf* model_dark, real* r, mwbool isLight);
+real get_density_real(const Dwarf* model_light, const Dwarf* model_dark, real* r, mwbool isLight);
+
+real get_first_derv_potential_real(const Dwarf* model_light, const Dwarf* model_dark, real* r, mwbool isLight);
+real get_first_derv_density_real(const Dwarf* model_light, const Dwarf* model_dark, real* r, mwbool isLight);
+real get_second_derv_potential_real(const Dwarf* model_light, const Dwarf* model_dark, real* r, mwbool isLight);
+real get_second_derv_density_real(const Dwarf* model_light, const Dwarf* model_dark, real* r, mwbool isLight);
 
 #ifdef __cplusplus
 }

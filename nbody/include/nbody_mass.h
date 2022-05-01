@@ -28,21 +28,29 @@
 extern "C" {
 #endif
 
-real probability_match(int n, real k, real pobs);
+real_0 probability_match(int n, real_0 ktmp, real_0 pobs);
 
-real GammaFunc(const real z);
+real_0 GammaFunc(const real_0 z);
 
-real IncompleteGammaFunc(real a, real x);
+real_0 IncompleteGammaFunc(real_0 a, real_0 x);
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
-real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
+real calc_vLOS(const mwvector* v, const mwvector* p, real_0 sunGCdist);
 
-real calc_distance(const mwvector p, real sunGCdist);	
+real calc_distance(const mwvector* p, real_0 sunGCdist);
 
-void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_factor);
+mwvector LBtoY(real* lambda, real* beta);
 
-void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist, int histBins);
+real ln_FB5_dist(mwvector* x, mwvector* gamma1, mwvector* gamma2, mwvector* gamma3, real* kappa, real* beta);
+
+real add_logspace(real* r1, real* r2);
+
+real getBodyBinFrac(const NBodyCtx* ctx, const HistogramParams* hp, const Body* p, int HistIndex);
+
+void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real_0 correction_factor);
+
+void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real_0 * use_body, real * var, real_0 sigma_cutoff, int histBins, mwbool contBins, real * bodyFraction);
 
 real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram);
 

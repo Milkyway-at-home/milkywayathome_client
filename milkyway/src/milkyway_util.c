@@ -226,20 +226,20 @@ int mwDisableDenormalsSSE(void)
 
 
 /* From the extra parameters, read them as doubles */
-real* mwReadRestArgs(const char** rest, unsigned int n)
+real_0* mwReadRestArgs(const char** rest, unsigned int n)
 {
     unsigned int i;
-    real* parameters = NULL;
+    real_0* parameters = NULL;
 
     if (!rest)
         return NULL;
 
-    parameters = (real*) mwMalloc(n * sizeof(real));
+    parameters = (real_0*) mwMalloc(n * sizeof(real_0));
 
     errno = 0;
     for (i = 0; i < n; ++i)
     {
-        parameters[i] = (real) strtod(rest[i], NULL);
+        parameters[i] = (real_0) strtod(rest[i], NULL);
         if (errno)
         {
             mwPerror("Error parsing command line fit parameters at '%s'", rest[i]);
@@ -400,18 +400,20 @@ mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState)
 {
     mwvector vec;
 
-    X(vec) = mwUnitRandom(dsfmtState);
-    Y(vec) = mwUnitRandom(dsfmtState);
-    Z(vec) = mwUnitRandom(dsfmtState);
-    W(vec) = 0.0;
+    X(&vec) = mw_real_const(mwUnitRandom(dsfmtState));
+    Y(&vec) = mw_real_const(mwUnitRandom(dsfmtState));
+    Z(&vec) = mw_real_const(mwUnitRandom(dsfmtState));
+    W(&vec) = ZERO_REAL;
 
     return vec;
 }
 
-mwvector mwRandomPoint(dsfmt_t* dsfmtState, real s)
+mwvector mwRandomPoint(dsfmt_t* dsfmtState, real* s)
 {
     mwvector v = mwRandomUnitPoint(dsfmtState);
-    mw_incmulvs(v, s);
+    v.x = mw_mul(&v.x, s);
+    v.y = mw_mul(&v.y, s);
+    v.z = mw_mul(&v.z, s);
     return v;
 }
 
@@ -419,40 +421,43 @@ mwvector mwRandomPoint(dsfmt_t* dsfmtState, real s)
 mwvector mwRandomUnitVector(dsfmt_t* dsfmtState)
 {
     mwvector v = mwRandomUnitPoint(dsfmtState);
-    mw_normalize(v);
+    mw_normalize(&v);
     return v;
 }
 
-mwvector mwRandomVector(dsfmt_t* dsfmtState, real r)
+mwvector mwRandomVector(dsfmt_t* dsfmtState, real* s)
 {
     mwvector v = mwRandomUnitVector(dsfmtState);
-    mw_incmulvs(v, r);
+    v.x = mw_mul(&v.x, s);
+    v.y = mw_mul(&v.y, s);
+    v.z = mw_mul(&v.z, s);
     return v;
 }
 
 //constrain angle to [0, 2pi)
-real constrainAngle(real a){
-    a = mw_fmod(a, 2*M_PI);
-    if(a < 0)
-        a += 2*M_PI;
-    return a;
+real constrainAngle(real* a){
+    real twopi = mw_real_const(2*M_PI);
+    *a = mw_fmod(a, &twopi);
+    if(showRealValue(a) < 0)
+        *a = mw_add(a, &twopi);
+    return *a;
 }
 
 /* Check for a timesteps etc. which will actually finish. */
-int mwCheckNormalPosNumEps(real n)
+int mwCheckNormalPosNumEps(real_0 n)
 {
     return !isfinite(n) || n <= REAL_EPSILON;
 }
 
 /* Check for positive, real numbers that can be any size */
-int mwCheckNormalPosNum(real n)
+int mwCheckNormalPosNum(real_0 n)
 {
     return !isfinite(n) || n <= 0.0;
 }
 
 
 /* Check for real numbers that can be any size */
-int mwCheckNormalNum(real n)
+int mwCheckNormalNum(real_0 n)
 {
     return !isfinite(n);
 }

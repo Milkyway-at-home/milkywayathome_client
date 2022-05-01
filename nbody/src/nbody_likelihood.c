@@ -65,14 +65,14 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
 {
     MainStruct* dat;
     MainStruct* match;
-    real emd = NAN;
-    real cost_component = NAN;
-    real vel_disp = NAN;
-    real beta_disp = NAN;
-    real beta_component = NAN;
-    real LOS_velocity_component = NAN;
-    real distance_component = NAN;
-    real likelihood = NAN;
+    real emd = mw_real_const(NAN);
+    real cost_component = mw_real_const(NAN);
+    real vel_disp = mw_real_const(NAN);
+    real beta_disp = mw_real_const(NAN);
+    real beta_component = mw_real_const(NAN);
+    real LOS_velocity_component = mw_real_const(NAN);
+    real distance_component = mw_real_const(NAN);
+    real likelihood = mw_real_const(NAN);
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
 
@@ -80,47 +80,47 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
     {
         emd = nbMatchEMD(dat, match);
         cost_component = nbCostComponent(dat->histograms[0], match->histograms[0]);
-        likelihood = emd + cost_component;
+        likelihood = mw_add(&emd, &cost_component);
         
         if(use_betadisp)
         {
             beta_disp = nbLikelihood(dat->histograms[1], match->histograms[1]);
-            likelihood += beta_disp;
+            likelihood = mw_add(&likelihood, &beta_disp);
         }
         if(use_veldisp)
         {
             vel_disp = nbLikelihood(dat->histograms[2], match->histograms[2]);
-            likelihood += vel_disp;
+            likelihood = mw_add(&likelihood, &vel_disp);
         }
         if(use_betacomp)
         {
             if(!dat->usage[4] || !match->usage[4])
             {
                 mw_printf("One of these files does not contain any info for average beta\n");
-                return NAN;
+                return mw_real_const(NAN);
             }
             beta_component = nbLikelihood(dat->histograms[3], match->histograms[3]);
-            likelihood += beta_component;
+            likelihood = mw_add(&likelihood, &beta_component);
         }
         if(use_vlos)
         {
             if(!dat->usage[3] || !match->usage[3])
             {
                 mw_printf("One of these files does not contain any info for average vlos\n");
-                return NAN;
+                return mw_real_const(NAN);
             }
             LOS_velocity_component = nbLikelihood(dat->histograms[4], match->histograms[4]);
-            likelihood += LOS_velocity_component;
+            likelihood = mw_add(&likelihood, &LOS_velocity_component);
         }
         if(use_dist)
         {
             if(!dat->usage[5] || !match->usage[5])
             {
                 mw_printf("One of these files does not contain any info for average distance\n");
-                return NAN;
+                return mw_real_const(NAN);
             }
             distance_component = nbLikelihood(dat->histograms[5], match->histograms[5]);
-            likelihood += distance_component;
+            likelihood = mw_add(&likelihood, &distance_component);
         }
         
     }
@@ -140,24 +140,24 @@ real * nbSystemLikelihood(const NBodyState* st,
     
     real geometry_component;
     real cost_component;
-    real velocity_dispersion_component = NAN;
-    real beta_dispersion_component = NAN;
-    real beta_component = NAN;
-    real LOS_velocity_component = NAN;
-    real distance_component = NAN;
-    real likelihood = NAN;
+    real velocity_dispersion_component = mw_real_const(NAN);
+    real beta_dispersion_component = mw_real_const(NAN);
+    real beta_component = mw_real_const(NAN);
+    real LOS_velocity_component = mw_real_const(NAN);
+    real distance_component = mw_real_const(NAN);
+    real likelihood = mw_real_const(NAN);
 
     static real likelihoodArray[8];
 
     static real NANArray[8]; /*This array contains NANs for each element so that it may be properly passed from this function*/
-    NANArray[0] = NAN;
-    NANArray[1] = NAN;
-    NANArray[2] = NAN;
-    NANArray[3] = NAN;
-    NANArray[4] = NAN;
-    NANArray[5] = NAN;
-    NANArray[6] = NAN;
-    NANArray[7] = NAN;
+    NANArray[0] = mw_real_const(NAN);
+    NANArray[1] = mw_real_const(NAN);
+    NANArray[2] = mw_real_const(NAN);
+    NANArray[3] = mw_real_const(NAN);
+    NANArray[4] = mw_real_const(NAN);
+    NANArray[5] = mw_real_const(NAN);
+    NANArray[6] = mw_real_const(NAN);
+    NANArray[7] = mw_real_const(NAN);
     
     if (data->histograms[0]->lambdaBins != histogram->histograms[0]->lambdaBins)
     {
@@ -185,54 +185,64 @@ real * nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody)
+        //mw_printf("totalNum = %.15f\n", showRealValue(&histogram->histograms[0]->totalNum));
+        if (showRealValue(&histogram->histograms[0]->totalNum) < 0.0001 * (real_0) st->nbody)
         {
             static real worstEMD_Array[8];
-            real worstEMD;
+            real_0 worstEMD;
 
             mw_printf("Number of particles in bins is very small compared to total. "
                       "(%u << %u). Skipping distance calculation\n",
-                      histogram->histograms[0]->totalNum,
-                      st->nbody
+                      (int) mw_round_0(showRealValue(&histogram->histograms[0]->totalNum)),
+                      (int) mw_round_0(st->nbody)
                 );
             worstEMD = nbWorstCaseEMD(histogram->histograms[0]);
 
-            worstEMD_Array[0] = worstEMD;
-            worstEMD_Array[1] = worstEMD;
-            worstEMD_Array[2] = 0.0;
-            worstEMD_Array[3] = 0.0;
-            worstEMD_Array[4] = 0.0;
-            worstEMD_Array[5] = 0.0;
-            worstEMD_Array[6] = 0.0;
-            worstEMD_Array[7] = 0.0;
+            worstEMD_Array[0] = mw_real_const(worstEMD);
+            worstEMD_Array[1] = mw_real_const(worstEMD);
+            worstEMD_Array[2] = ZERO_REAL;
+            worstEMD_Array[3] = ZERO_REAL;
+            worstEMD_Array[4] = ZERO_REAL;
+            worstEMD_Array[5] = ZERO_REAL;
+            worstEMD_Array[6] = ZERO_REAL;
+            worstEMD_Array[7] = ZERO_REAL;
             //return 2.0 * worstEMD;
             return worstEMD_Array; //Changed.  See above comment.
         }
         // this function has been changed to accept MainStruct
+        //mw_printf("BEFORE EMD\n");
         geometry_component = nbMatchEMD(data, histogram);
+        //mw_printf("AFTER EMD\n");
         //mw_printf("EMD Calculated!\n");
     }
     else
     {
         geometry_component = nbCalcChisq(data->histograms[0], histogram->histograms[0], method);
     }
+    //mw_printf("Geometry = %.15f\n",showRealValue(&geometry_component));
     
     /* likelihood due to the amount of mass in the histograms */
-    
+    //mw_printf("BEFORE COST\n");
     cost_component = nbCostComponent(data->histograms[0], histogram->histograms[0]);
+    //mw_printf("AFTER COST\n");
+    //mw_printf("Cost = %.15f\n",showRealValue(&cost_component));
 
-    likelihood = geometry_component + cost_component;
+    likelihood = mw_add(&geometry_component, &cost_component);
     
     /* likelihood due to the vel dispersion per bin of the two hist */
     if(st->useBetaDisp)
     {
+        //mw_printf("BEFORE B_DISP\n");
         beta_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1]);
-        likelihood += beta_dispersion_component;
+        //mw_printf("AFTER B_DISP\n");
+        likelihood = mw_add(&likelihood, &beta_dispersion_component);
+        //mw_printf("BDisp = %.15f\n",showRealValue(&beta_dispersion_component));
     }
     if(st->useVelDisp)
     {
         velocity_dispersion_component = nbLikelihood(data->histograms[2], histogram->histograms[2]);
-        likelihood += velocity_dispersion_component;
+        likelihood = mw_add(&likelihood, &velocity_dispersion_component);
+        //mw_printf("VDisp = %.15f\n",showRealValue(&velocity_dispersion_component));
     }
     if(st->useVlos)
     {
@@ -242,7 +252,8 @@ real * nbSystemLikelihood(const NBodyState* st,
             return NANArray;
         }  
         LOS_velocity_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
-        likelihood += LOS_velocity_component;
+        likelihood = mw_add(&likelihood, &LOS_velocity_component);
+        //mw_printf("vLOS = %.15f\n",showRealValue(&LOS_velocity_component));
     }
     if(st->useBetaComp)
     {
@@ -252,7 +263,8 @@ real * nbSystemLikelihood(const NBodyState* st,
             return NANArray;
         }  
         beta_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
-        likelihood += beta_component;
+        likelihood = mw_add(&likelihood, &beta_component);
+        //mw_printf("Beta = %.15f\n",showRealValue(&beta_component));
     }
     if(st->useDist)
     {
@@ -262,7 +274,8 @@ real * nbSystemLikelihood(const NBodyState* st,
             return NANArray;
         }  
         distance_component = nbLikelihood(data->histograms[5], histogram->histograms[5]);
-        likelihood += distance_component;
+        likelihood = mw_add(&likelihood, &distance_component);
+        //mw_printf("Dist = %.15f\n",showRealValue(&distance_component));
     }
 
     likelihoodArray[0]=likelihood;

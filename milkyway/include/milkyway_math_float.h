@@ -36,99 +36,94 @@
 #endif
 
 
-typedef MW_ALIGN_TYPE_V(4) float real;
-typedef MW_ALIGN_TYPE_V(8) float float2[2];
-typedef MW_ALIGN_TYPE_V(16) float float4[4];
-
+typedef MW_ALIGN_TYPE_V(4) float real_0;
 
 #define REAL_EPSILON FLT_EPSILON
 #define REAL_MAX FLT_MAX
 #define REAL_MIN FLT_MIN
 
 
-#define mw_sin   sinf
-#define mw_cos   cosf
-#define mw_tan   tanf
-#define mw_asin  asinf
-#define mw_acos  acosf
-#define mw_atan  atanf
-#define mw_log   logf
-#define mw_log1p log1pf
-#define mw_exp   expf
-#define mw_expm1 expm1f
-#define mw_log10 log10f
-#define mw_sinh  sinhf
-#define mw_cosh  coshf
-#define mw_tanh  tanhf
-#define mw_pow   powf
+#define mw_sin_0   sinf
+#define mw_cos_0   cosf
+#define mw_tan_0   tanf
+#define mw_asin_0  asinf
+#define mw_acos_0  acosf
+#define mw_atan_0  atanf
+#define mw_log_0   logf
+#define mw_log1p_0 log1pf
+#define mw_exp_0   expf
+#define mw_expm1_0 expm1f
+#define mw_log10_0 log10f
+#define mw_sinh_0  sinhf
+#define mw_cosh_0  coshf
+#define mw_pow_0   powf
 
-#define mw_abs   fabsf
+#define mw_abs_0   fabsf
 
-#define mw_acosh acoshf
-#define mw_acospi(x) (mw_acos(x) / M_PI))
-#define mw_asinh asinhf
-#define mw_asinpi (mw_asin(x) / M_PI))
-#define mw_atan2 atan2f
-#define mw_atanh atanhf
-#define mw_atanpi(x) (mw_atan(x) / M_PI)
-#define mw_atan2pi(x) (mw_atan2(x) / M_PI)
-#define mw_cbrt cbrtf
-#define mw_ceil ceilf
-#define mw_copysign copysignf
-#define mw_cospi(x) mw_cos(M_PI * (x))
-#define mw_sinpi(x) mw_sin(M_PI * (x))
-#define mw_tanpi(x) (mw_tan(M_PI * (x)))
-#define mw_erfc erfcf
-#define mw_erf erff
+#define mw_acosh_0 acoshf
+#define mw_acospi_0(x) (mw_acos_0(x) / M_PI)
+#define mw_asinh_0 asinhf
+#define mw_asinpi_0(x) (mw_asin_0(x) / M_PI)
+#define mw_atan2_0 atan2f
+#define mw_atanh_0 atanhf
+#define mw_atanpi_0(x) (mw_atan_0(x) / M_PI)
+#define mw_atan2pi_0(x,y) (mw_atan2_0(x,y) / M_PI)
+#define mw_cbrt_0 cbrtf
+#define mw_ceil_0 ceilf
+#define mw_copysign_0 copysignf
+#define mw_cospi_0(x) mw_cos_0(M_PI * (x))
+#define mw_sinpi_0(x) mw_sin_0(M_PI * (x))
+#define mw_tanpi_0(x) (mw_tan_0(M_PI * (x)))
+#define mw_erfc_0 erfcf
+#define mw_erf_0 erff
 
 #if HAVE_EXP2
-  #define mw_exp2 exp2f
+  #define mw_exp2_0 exp2f
 #else
-  #define mw_exp2(x) mw_pow(2.0, (x))
+  #define mw_exp2_0(x) mw_pow_0(2.0, (x))
 #endif /* HAVE_EXP2 */
 
 #if HAVE_EXP10
-  #define mw_exp10 exp10f
+  #define mw_exp10_0 exp10f
 #else
-  #define mw_exp10(x) mw_powr((real) 10.0, x)
+  #define mw_exp10_0(x) mw_powr_0((real_0) 10.0, x)
 #endif /* HAVE_EXP10 */
 
-#define mw_fabs fabsf
-#define mw_fdim fdimf
-#define mw_floor floorf
+#define mw_fabs_0 fabsf
+#define mw_fdim_0 fdimf
+#define mw_floor_0 floorf
 
-#define mw_fmod fmodf
+#define mw_fmod_0 fmodf
 
 /* CHECKME: mw_fract */
-#define mw_fract(x) mw_fmin((x) – mw_floor(x), 0x1.fffffep-1f)
+//#define mw_fract_0(x) mw_fmin_0((x) – mw_floor_0(x), 0x1.fffffep-1f)  NOT USED ANYWHERE IN CODE!
 
-#define mw_frexp frexpf
-#define mw_ilogb ilogbf
-#define mw_ldexp ldexpf
-#define mw_tgamma tgammaf
-#define mw_tgamma_r tgamma_rf
-#define mw_lgamma lgammaf
-#define mw_lgamma_r lgamma_rf
-#define mw_log2 log2f
-#define mw_logb logbf
-#define mw_mad(a, b, c) (((a) * (b)) + (c))
-#define mw_modf modff
-#define mw_nan nanf
-#define mw_nextafter nextafterf
+//#define mw_frexp_0 frexpf                                       NOT USED ANYWHERE IN CODE!
+//#define mw_ilogb_0 ilogbf                                       NOT USED ANYWHERE IN CODE!
+#define mw_ldexp_0 ldexpf
+#define mw_tgamma_0 tgammaf
+#define mw_tgamma_r_0 tgamma_rf
+#define mw_lgamma_0 lgammaf
+#define mw_lgamma_r_0 lgamma_rf
+#define mw_log2_0 log2f
+#define mw_logb_0 logbf
+#define mw_mad_0(a, b, c) (((a) * (b)) + (c))
+//#define mw_modf_0 modff                                         NOT USED ANYWHERE IN CODE!
+//#define mw_nan_0 nanf                                           NOT USED ANYWHERE IN CODE!
+#define mw_nextafter_0 nextafterf
 
 /* TODO: assertions that these satisfy integer y or x >= 0 */
-#define mw_pown(x, iy) powf(x, iy)
-#define mw_powr(x, y) powf(x, y)
+//#define mw_pown_0(x, iy) powf(x, iy)                            NOT USED ANYWHERE IN CODE!
+#define mw_powr_0(x, y) powf(x, y)
 
-#define mw_remainder remainderf
-#define mw_remquo remquof
-#define mw_rint rintf
-#define mw_rootn(x, y) mw_pow((x), 1.0f / (y))
-#define mw_round roundf
+//#define mw_remainder_0 remainderf                               NOT USED ANYWHERE IN CODE!
+//#define mw_remquo_0 remquof                                     NOT USED ANYWHERE IN CODE!
+//#define mw_rint_0 rintf                                         NOT USED ANYWHERE IN CODE!
+//#define mw_rootn_0(x, y) mw_pow_0((x), 1.0f / (y))              NOT USED ANYWHERE IN CODE!
+#define mw_round_0 roundf
 
-#define mw_sqrt sqrtf
-#define mw_tgamma tgammaf
-#define mw_trunc truncf
+#define mw_sqrt_0 sqrtf
+//#define mw_trunc_0 truncf                                       NOT USED ANYWHERE IN CODE!
 
 
 #endif /* _MILKYWAY_MATH_FLOAT_H_ */

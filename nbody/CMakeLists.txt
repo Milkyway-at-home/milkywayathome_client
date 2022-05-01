@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 1
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 80
+set(nbody_VERSION_MINOR 84
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
@@ -76,10 +76,12 @@ if(NOT DOUBLEPREC AND NBODY_CRLIBM)
 endif()
 
 print_separator()
-message("   Building:          ${PROJECT_NAME}")
-message("   BOINC Application: ${BOINC_APPLICATION}")
-message("   Double precision:  ${DOUBLEPREC}")
-message("   Enable crlibm:     ${NBODY_CRLIBM}")
+message("   Building:              ${PROJECT_NAME}")
+message("   BOINC Application:     ${BOINC_APPLICATION}")
+message("   Double precision:      ${DOUBLEPREC}")
+message("   Auto differentiation:  ${AUTODIFF}")
+message("   Logspace Derivatives:  ${AUTODIFF_LOG}")
+message("   Enable crlibm:         ${NBODY_CRLIBM}")
 message("  ----")
 print_libs()
 print_separator()
@@ -130,6 +132,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
                   ${NBODY_SRC_DIR}/nbody_potential.c
                   ${NBODY_SRC_DIR}/nbody_bessel.c
+                  ${NBODY_SRC_DIR}/nbody_autodiff.c
                   ${NBODY_SRC_DIR}/nbody_virial.c
                   ${NBODY_SRC_DIR}/nbody_density.c
                   ${NBODY_SRC_DIR}/nbody_friction.c
@@ -166,6 +169,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_bessel.h
+                      ${NBODY_INCLUDE_DIR}/nbody_autodiff.h
                       ${NBODY_INCLUDE_DIR}/nbody_virial.h
                       ${NBODY_INCLUDE_DIR}/nbody_density.h
                       ${NBODY_INCLUDE_DIR}/nbody_friction.h

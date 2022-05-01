@@ -35,14 +35,14 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
 {
     mwvector cmPos;
     mwvector cmVel;
-    cmVel = nbCenterOfMom(st);
-    if (st->tree.root)
-    {
-        cmPos = Pos(st->tree.root);
+    if(!ctx->useBestLike || showRealValue(&st->bestLikelihood) == DEFAULT_WORST_CASE){
+        cmVel = nbCenterOfMom(st);
+        cmPos = nbCenterOfMass(st);
     }
     else
     {
-        cmPos = nbCenterOfMass(st);
+        cmVel = nbCenterOfMom_Best(st);
+        cmPos = nbCenterOfMass_Best(st);
     }
 
     fprintf(f,
@@ -53,8 +53,8 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
             nbf->outputCartesian,
             nbf->outputlbrCartesian,
             (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT),
-            X(cmPos), Y(cmPos), Z(cmPos),
-            X(cmVel), Y(cmVel), Z(cmVel)
+            showRealValue(&X(&cmPos)), showRealValue(&Y(&cmPos)), showRealValue(&Z(&cmPos)),
+            showRealValue(&X(&cmVel)), showRealValue(&Y(&cmVel)), showRealValue(&Z(&cmVel))
         );
 
 }
@@ -121,12 +121,12 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         mw_printf("Failed to get Histogram Parameters. Not including Lambda-Beta in Output file.\n");
         LambdaBetaAvailable = FALSE;
     }
-    nbGetHistTrig(&histTrig, &hp);
+    nbGetHistTrig(&histTrig, &hp, ctx->leftHanded);
     /*----------------------------------------------------*/
 
     mwbool isLight = FALSE;
     Body* outputTab = st->bestLikelihoodBodyTab;
-    if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
+    if(!ctx->useBestLike || showRealValue(&st->bestLikelihood) == DEFAULT_WORST_CASE){
         outputTab = st->bodytab;
     }
     const Body* endp = outputTab + st->nbody;
@@ -142,33 +142,33 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         {
             fprintf(f,
                     " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
-                    X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+                    showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))),
+                    showRealValue(&X(&Vel(p))), showRealValue(&Y(&Vel(p))), showRealValue(&Z(&Vel(p))), showRealValue(&Mass(p)));
         }
         else if (nbf->outputlbrCartesian)
         {
-            lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
-            vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
+            lbr = cartesianToLbr(&Pos(p), ctx->sunGCDist);
+            vLOS = calc_vLOS(&Vel(p), &Pos(p), ctx->sunGCDist);
             fprintf(f,
                     " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
-                    X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
-                    L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
+                    showRealValue(&X(&Pos(p))), showRealValue(&Y(&Pos(p))), showRealValue(&Z(&Pos(p))),
+                    showRealValue(&L(&lbr)), showRealValue(&B(&lbr)), showRealValue(&R(&lbr)),
+                    showRealValue(&X(&Vel(p))), showRealValue(&Y(&Vel(p))), showRealValue(&Z(&Vel(p))), showRealValue(&Mass(p)), showRealValue(&vLOS));   
         }
         else
         {
-            lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
+            lbr = cartesianToLbr(&Pos(p), ctx->sunGCDist);
             fprintf(f,
                     " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
-                    L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p));
+                    showRealValue(&L(&lbr)), showRealValue(&B(&lbr)), showRealValue(&R(&lbr)),
+                    showRealValue(&X(&Vel(p))), showRealValue(&Y(&Vel(p))), showRealValue(&Z(&Vel(p))), showRealValue(&Mass(p)));
         }
         if (LambdaBetaAvailable)
         {
-            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, Pos(p), ctx->sunGCDist);
-            lambda_val = L(lambdaBetaR);
-            beta_val = B(lambdaBetaR);
-            fprintf(f,", %22.15f, %22.15f\n", lambda_val, beta_val);
+            lambdaBetaR = nbXYZToLambdaBeta(&histTrig, &Pos(p), ctx->sunGCDist);
+            lambda_val = L(&lambdaBetaR);
+            beta_val = B(&lambdaBetaR);
+            fprintf(f,", %22.15f, %22.15f\n", showRealValue(&lambda_val), showRealValue(&beta_val));
         }
         else
         {

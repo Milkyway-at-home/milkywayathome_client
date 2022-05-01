@@ -51,9 +51,11 @@ function randomNBodyCtx(prng)
    end
    sigma = prng:random(1.5,3.0)
    correct = math.sqrt(2*3.1415926535)/(math.sqrt(2*3.1415926535)*erf(sigma/math.sqrt(2)) - 2*sigma*math.exp(-sigma*sigma/2))
+   randTimeEvolve = prng:random(0, 10)
    return NBodyCtx.create{
       timestep      = prng:random(1.0e-5, 1.0e-4),
-      timeEvolve    = prng:random(0, 10),
+      timeEvolve    = randTimeEvolve,
+      timeBack      = randTimeEvolve * prng:random(0.95, 1.05),
       theta         = prng:random(0, 1),
       eps2          = prng:random(1.0e-9, 1.0e-3),
       b             = prng:random(40.0,60.0),
@@ -71,10 +73,10 @@ function randomNBodyCtx(prng)
       BetaCorrect   = correct,
       VelCorrect    = correct,
       DistCorrect   = correct,
-      IterMax       = prng:randomListItem({ 2, 3, 4, 5 }),
+      IterMax       = prng:randomListItem({ 2, 3, 4, 5, 6 }),
       allowIncest   = true,
       quietErrors   = true,
-      LMC           = prng:randomBool(),
+      LMC           = false,
       LMCmass       = prng:random(1.0e5,1.0e6),
       LMCscale      = prng:random(1.0,20.0),
       LMCDynaFric   = prng:randomBool()
@@ -118,6 +120,7 @@ for i = 1, nTests do
 
    m = SM.randomPlummer(prng, 500)
    ctx = randomNBodyCtx(prng)
+   --print(tostring(ctx))
    ctx:addPotential(SP.randomPotential(prng))
 
    testSteps = floor(prng:random(0, 51))
@@ -127,8 +130,13 @@ for i = 1, nTests do
    else
       st = NBodyState.create(ctx, m)
    end
+   --print(tostring(st).."\n")
 
    stClone = st:clone()
+
+   if (not(st == stClone)) then
+      printf(tostring(ctx).."\n")
+   end
 
    assert(st == stClone,
           string.format("Failed to properly clone state:\nstate 1 = %s\nstate 2 = %s\n",
