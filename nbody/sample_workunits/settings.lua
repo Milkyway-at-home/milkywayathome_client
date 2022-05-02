@@ -1,16 +1,16 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
--- /*               2019-2021    Eric Mendelsohn */
--- /*               2021              Tom Donlon */
+-- /*               2019-2022 Eric Mendelsohn    */
+-- /*               2021-2022 Tom Donlon         */
 -- /*      Rensselaer Polytechnic Institute      */
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR USER:
 -- This is the end user version of the lua parameter file. 
 -- It gives all the options you can change. You may not need all of them.
--- The first half of the file is settings the Nbody simulation. 
--- The second half of the file is code for generating the initial 
+-- The first half of the file contains settings for the Nbody simulation. 
+-- The second half of the file is code that generates the initial 
 -- conditions of the simulation, and is not something that
--- the typical end user needs to change. 
+-- the typical end user will need to change. 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
@@ -18,13 +18,26 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.80"   -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.84"      -- -- MINIMUM APP VERSION
 
-run_null_potential    = false    -- -- NULL POTENTIAL SWITCH
-use_tree_code         = true     -- -- USE TREE CODE (NOT EXACT)
-print_reverse_orbit   = false    -- -- PRINT REVERSE ORBIT SWITCH 
-print_out_parameters  = false    -- -- PRINT OUT ALL PARAMETERS
+run_null_potential    = false       -- -- NULL POTENTIAL SWITCH
+use_tree_code         = true        -- -- USE TREE CODE (NOT EXACT)
+print_reverse_orbit   = false       -- -- PRINT REVERSE ORBIT SWITCH 
+print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- COORDINATE OPTIONS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+SunGCDist             = 8.0         -- -- Distance between Sun and Galactic Center (kpc) 
+LeftHandedCoords      = false       -- -- If true, work in left-handed galactocentric cartesian coordinates
+                                    -- -- (e.g. the Sun is located at positive X)
+                                    
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
 
@@ -100,7 +113,11 @@ Ntime_steps          = 3000   -- -- number of timesteps to run (ignored if times
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
                                     -- -- (NOTE: This is turned on automatically if manual_bodies is true,
                                     -- -- since the softening parameter is determined only by the dwarf bodies)
-max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
+max_soft_par          = 0.1         -- -- kpc, if switch above is turned on, use this as the max softening parameter
+UseOldSofteningLength = 0           -- -- If 1, uses old softening length formula from v1.76 and earlier
+                                    -- -- (this is only useful to compare with/match simulations 
+                                    -- --  that were run before v1.80)
+CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRICTION
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -148,43 +165,6 @@ end
 -- XX -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- XX --
 -- XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX --
 
-
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- HISTOGRAM SETTINGS   -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- Left this in the file in order to not mess up the  -- -- -- --
--- -- -- -- -- initial nbody context, but it's not meant for use  -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-lda_bins        = 50      -- number of bins in lamdba direction
-lda_lower_range = -150    -- lower range for lambda
-lda_upper_range = 150     -- upepr range for lamdba
-
-bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
-bta_lower_range = -15     -- lower range for beta
-bta_upper_range = 15      -- upper range for beta
-
-SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
-SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
-Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
--- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-nbodyLikelihoodMethod = "EMD"   -- Hist compare method
-use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
-best_like_start      = 0.98    -- what percent of sim to start
-
-use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = false    -- use velocity dispersions in likelihood
-
--- if one of these is true, will get output for all 3 of the new histograms
--- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = true  -- calculate average beta, use in likelihood
-use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
-use_avg_dist         = true  -- calculate average distance, use in likelihood
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
-        
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
 TooManyTimesteps = 0
 
@@ -228,7 +208,7 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d, UseOldSofteningLength)
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with s.p. squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
@@ -238,36 +218,43 @@ function get_soft_par()
     end
 end
 
-
+-- A lot of this is hard-coded to the default values.
+-- This is because lite users don't need to optimize histograms, 
+-- and having all the options for histogram optimization in the 
+-- settings file just makes things bloated.
 function makeContext()
    return NBodyCtx.create{
-      timeEvolve  = evolveTime,
-      timeBack    = revOrbTime,
-      timestep    = get_timestep(),
-      eps2        = get_soft_par(),
-      b           = orbit_parameter_b,
-      r           = orbit_parameter_r,
-      vx          = orbit_parameter_vx,
-      vy          = orbit_parameter_vy,
-      vz          = orbit_parameter_vz,
-      criterion   = criterion,
-      useQuad     = true,
-      useBestLike   = use_best_likelihood,
-      BestLikeStart = eff_best_like_start,
-      useVelDisp    = use_vel_disps,
-      useBetaDisp   = use_beta_disps,
-      useBetaComp   = use_beta_comp,
-      useVlos       = use_vlos_comp,
-      useDist       = use_avg_dist,
+      timeEvolve    = evolveTime,
+      timeBack      = revOrbTime,
+      timestep      = get_timestep(),
+      eps2          = get_soft_par(),
+      b             = orbit_parameter_b,
+      r             = orbit_parameter_r,
+      vx            = orbit_parameter_vx,
+      vy            = orbit_parameter_vy,
+      vz            = orbit_parameter_vz,
+      criterion     = criterion,
+      OutputLB      = false,
+      useQuad       = true,
+      useBestLike   = false,
+      BestLikeStart = 0.98,
+      useVelDisp    = false,
+      useBetaDisp   = false,
+      useBetaComp   = false,
+      useVlos       = false,
+      useDist       = false,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
-      BetaSigma     = SigmaCutoff,
-      VelSigma      = SigmaCutoff,
-      DistSigma     = SigmaCutoff,
-      IterMax       = SigmaIter,
-      BetaCorrect   = Correction,
-      VelCorrect    = Correction,
-      DistCorrect   = Correction,
+      BetaSigma     = 2.5,
+      VelSigma      = 2.5,
+      DistSigma     = 2.5,
+      IterMax       = 6,
+      BetaCorrect   = 1.111,
+      VelCorrect    = 1.111,
+      DistCorrect   = 1.111,
+      leftHanded    = LeftHandedCoords,
+      useContBins   = false,
+      bleedInRange  = 1,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
@@ -275,6 +262,7 @@ function makeContext()
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
       LMCDynaFric   = LMC_DynamicalFriction,
+      coulomb_log   = CoulombLogarithm,
       calibrationRuns = 0
    }
 end
@@ -305,9 +293,11 @@ function makeBodies(ctx, potential)
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
                     LMCDynaFric = LMC_DynamicalFriction,
+                    coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
-	            dt          = ctx.timestep / 10.0
+	            dt          = ctx.timestep / 10.0,
+	            sunGCDist   = SunGCDist
 	            }
 
               
@@ -317,21 +307,39 @@ function makeBodies(ctx, potential)
 	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0
+	            dt        = ctx.timestep / 10.0,
+	            sunGCDist = SunGCDist
 	            }
          end
     end
     
-    if(print_reverse_orbit == true) then
-        local placeholderPos, placeholderVel = PrintReverseOrbit{
-            potential = potential,
-            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-            tstop     = .14,
-            tstopf    = .20,
-            dt        = ctx.timestep / 10.0
-        }
+     if(print_reverse_orbit == true) then
         print('Printing reverse orbit')
+        if (LMC_body) then
+            local placeholderPos, placeholderVel, LMCplaceholderPos, LMCplaceholderVel = PrintReverseOrbit_LMC{
+                potential = potential,
+                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	        LMCposition = Vector.create(-1.1, -41.1, -27.9),
+	        LMCvelocity = Vector.create(-57, -226, 221), 
+                LMCmass     = LMC_Mass,
+                LMCscale    = LMC_scaleRadius,
+                LMCDynaFric = LMC_DynamicalFriction,
+                tstop     = .14,
+                tstopf    = .20,
+                dt        = ctx.timestep / 10.0,
+                coulomb_log = CoulombLogarithm
+            }
+        else
+            local placeholderPos, placeholderVel = PrintReverseOrbit{
+                potential = potential,
+                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+                tstop     = .14,
+                tstopf    = .20,
+                dt        = ctx.timestep / 10.0
+            }
+        end
     end
 
 
@@ -379,16 +387,8 @@ function makeBodies(ctx, potential)
 end
 
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
-argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
-
--- -- -- -- -- -- -- -- -- DWARF CREATION -- -- -- -- -- -- -- --
-if use_best_likelihood then
-    evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
-    eff_best_like_start = best_like_start / (2.0 - best_like_start)
-else
-    eff_best_like_start = best_like_start
-end
 
 
 if(ModelComponents == 1) then

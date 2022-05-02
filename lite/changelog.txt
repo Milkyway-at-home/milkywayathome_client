@@ -1,3 +1,12 @@
+v1.84.0:
+ - Updated to the most current (autodiff) version of Nbody v1.84
+ - Can now specify the distance of the Sun from the Galactic Center
+ - Can now run in a left handed coordinate system
+ - Lots of context changes
+ - Softening length change, as well as a switch to use the old softening length calculation
+ - Reverse orbit output now includes the LMC
+ - Cleaned up some bloaty junk in the part of settings.lua users aren't supposed to touch
+
 v1.80.2:
  - added variable Coulomb logarithm
 
