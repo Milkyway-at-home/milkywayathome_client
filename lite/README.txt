@@ -12,9 +12,10 @@ entire Nbody project on your own, which has historically been a
 rather painful rite of passage for new users.
 
 Currently, MilkyWay@home Nbody Lite is only tested on and supported
-for machines running the most recent version of Ubuntu OS (In theory
-it works on older versions of Ubuntu and different linux OS's, but this
-has not been tested). Windows and MacOS are not currently supported.
+for machines running any Ubuntu 18+ LTS (In theory it works on older 
+versions of Ubuntu and different Linux OS's, but this has not been tested). 
+Windows and MacOS are not currently supported, but Nbody Lite has been
+confirmed to work on Linux emulators on those OS's).
 
 ======================================================
 Installation
