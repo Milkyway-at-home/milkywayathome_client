@@ -33,11 +33,11 @@ then
     rm -r build
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=ON -DBOINC_APPLICATION=OFF -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=OFF -DAUTODIFF_LOG=OFF ../milkywayathome_client/
+    cmake -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=OFF -DNBODY_GL=ON -DBOINC_APPLICATION=OFF -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=OFF -DAUTODIFF_LOG=OFF ../milkywayathome_client/
     make -j 
     cd ..
 
-fi      
+fi
 
 if $package
 then
@@ -53,15 +53,16 @@ then
     #get binary file
     cp ./build/bin/milkyway_nbody ./mwah_nbody_lite/bin
 
-    #get .lua file
+    #get .lua file and GUI .lua file
     cp ./milkywayathome_client/nbody/sample_workunits/settings.lua ./mwah_nbody_lite/bin
+    cp ./milkywayathome_client/nbody/sample_workunits/settings_gui.lua ./mwah_nbody_lite/bin
 
     #get example manual bodies file
     cp ./milkywayathome_client/nbody/sample_workunits/manual_bodies_example.in ./mwah_nbody_lite/bin
 
-    #get mwah_lite documentation and run.sh
+    #get mwah_lite documentation, run.sh, and GUI files
     cp -r ./milkywayathome_client/lite/. ./mwah_nbody_lite
-
+  
     echo "Nbody Lite: Nbody Lite successfully built"
 
 fi
