@@ -38,7 +38,7 @@ static inline float distMetric(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr
     float lambda = arr1[i].lambda - arr2[j].lambda;
     float beta = arr1[i].beta - arr2[j].beta;
 
-    return sqrtf((lambda * lambda) + (beta * beta));
+    return sqrt((lambda * lambda) + (beta * beta));
 }
 
 /* Compare two floats using ZERO_THRESHOLD */            

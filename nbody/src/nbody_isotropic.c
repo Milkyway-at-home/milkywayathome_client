@@ -35,108 +35,108 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_lua_types.h"
 #include "nbody_isotropic.h"
 
-/*Note: minusfivehalves_0(x) raises to x^-5/2 power and minushalf_0(x) is x^-1/2*/
+/*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
 
 /*      MODEL SPECIFIC FUNCTIONS       */
-static inline real_0 potential( real_0 r, real_0 * args, dsfmt_t* dsfmtState)
+static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
 {
     /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
     //-------------------------------
-    real_0 mass_l   = args[0];
-    real_0 mass_d   = args[1];
-    real_0 rscale_l = args[2];
-    real_0 rscale_d = args[3];
+    real mass_l   = args[0];
+    real mass_d   = args[1];
+    real rscale_l = args[2];
+    real rscale_d = args[3];
     //-------------------------------
-    real_0 potential_light  = mass_l / mw_sqrt_0(sqr_0(r) + sqr_0(rscale_l));
-    real_0 potential_dark   = mass_d / mw_sqrt_0(sqr_0(r) + sqr_0(rscale_d));
-    real_0 potential_result = -(potential_light + potential_dark);
+    real potential_light  = mass_l / mw_sqrt(sqr(r) + sqr(rscale_l));
+    real potential_dark   = mass_d / mw_sqrt(sqr(r) + sqr(rscale_d));
+    real potential_result = -(potential_light + potential_dark);
 
     return (-potential_result);
 }
 
-static inline real_0 density( real_0 r, real_0 * args, dsfmt_t* dsfmtState)
+static inline real density( real r, real * args, dsfmt_t* dsfmtState)
 {
     /*this is the density distribution function. Returns the density at a given radius.*/
     //-------------------------------
-    real_0 mass_l   = args[0];
-    real_0 mass_d   = args[1];
-    real_0 rscale_l = args[2];
-    real_0 rscale_d = args[3];
+    real mass_l   = args[0];
+    real mass_d   = args[1];
+    real rscale_l = args[2];
+    real rscale_d = args[3];
     //-------------------------------
     
-    real_0 rscale_lCube = cube_0(rscale_l); 
-    real_0 rscale_dCube = cube_0(rscale_d);
-    real_0 density_light = (mass_l / rscale_lCube) * (minusfivehalves_0( (1.0 + sqr_0(r)/sqr_0(rscale_l)) ) );
-    real_0 density_dark  = (mass_d / rscale_dCube) * (minusfivehalves_0( (1.0 + sqr_0(r)/sqr_0(rscale_d)) ) ); 
-    real_0 density_result = (3.0 / (4.0 * M_PI)) * ( density_light + density_dark );
+    real rscale_lCube = cube(rscale_l); 
+    real rscale_dCube = cube(rscale_d);
+    real density_light = (mass_l / rscale_lCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_l)) ) );
+    real density_dark  = (mass_d / rscale_dCube) * (minusfivehalves( (1.0 + sqr(r)/sqr(rscale_d)) ) ); 
+    real density_result = (3.0 / (4.0 * M_PI)) * ( density_light + density_dark );
 
     return density_result;
 }
 
-static inline real_0 mass_en( real_0 r, real_0 mass, real_0 scaleRad)
+static inline real mass_en( real r, real mass, real scaleRad)
 {
     /*BE CAREFUL! this function returns the mass enclosed in a single plummer sphere!*/
-    real_0 mass_enclosed = mass * cube_0(r) * minusthreehalves_0( ( sqr_0(r) + sqr_0(scaleRad) ) ) ;
+    real mass_enclosed = mass * cube(r) * minusthreehalves( ( sqr(r) + sqr(scaleRad) ) ) ;
 
     return mass_enclosed;
 }
 
-static inline real_0 profile_rho(real_0 r, real_0 * args, dsfmt_t* dsfmtState)
+static inline real profile_rho(real r, real * args, dsfmt_t* dsfmtState)
 {
-    real_0 result = r * r * density(r, args, dsfmtState);    
+    real result = r * r * density(r, args, dsfmtState);    
     return result;
 }
 
 
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real_0 first_derivative(real_0 (*func)(real_0, real_0 *, dsfmt_t*), real_0 x, real_0 * funcargs, dsfmt_t* dsfmtState)
+static inline real first_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this does in fact use a 5-point stencil*/
-    real_0 h = 0.001;
-    real_0 deriv;
-    real_0 p1, p2, p3, p4, denom;
+    real h = 0.001;
+    real deriv;
+    real p1, p2, p3, p4, denom;
     
     p1 =   1.0 * (*func)( (x - 2.0 * h), funcargs, dsfmtState);
     p2 = - 8.0 * (*func)( (x - h)      , funcargs, dsfmtState);
     p3 = - 1.0 * (*func)( (x + 2.0 * h), funcargs, dsfmtState);
     p4 =   8.0 * (*func)( (x + h)      , funcargs, dsfmtState);
-    denom = inv_0( 12.0 * h);
+    denom = inv( 12.0 * h);
     deriv = (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
 
-static inline real_0 second_derivative(real_0 (*func)(real_0, real_0 *, dsfmt_t*), real_0 x, real_0 * funcargs, dsfmt_t* dsfmtState)
+static inline real second_derivative(real (*func)(real, real *, dsfmt_t*), real x, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*yes, this also uses a five point stencil*/
-    real_0 h = 0.001;
-    real_0 deriv;
-    real_0 p1, p2, p3, p4, p5, denom;
+    real h = 0.001;
+    real deriv;
+    real p1, p2, p3, p4, p5, denom;
 
     p1 = - 1.0 * (*func)( (x + 2.0 * h) , funcargs, dsfmtState);
     p2 =  16.0 * (*func)( (x + h)       , funcargs, dsfmtState);
     p3 = -30.0 * (*func)( (x)           , funcargs, dsfmtState);
     p4 =  16.0 * (*func)( (x - h)       , funcargs, dsfmtState);
     p5 = - 1.0 * (*func)( (x - 2.0 * h) , funcargs, dsfmtState);
-    denom = inv_0( 12.0 * h * h);
+    denom = inv( 12.0 * h * h);
     deriv = (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
 
-static real_0 gauss_quad(real_0 (*func)(real_0, real_0 *, dsfmt_t*), real_0 lower, real_0 upper, real_0 * funcargs, dsfmt_t* dsfmtState)
+static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real upper, real * funcargs, dsfmt_t* dsfmtState)
 {
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
      */
-    real_0 Ng, hg, lowerg, upperg;
-    real_0 intv = 0.0;//initial value of integral
-    real_0 coef1, coef2;//parameters for gaussian quad
-    real_0 c1, c2, c3;
-    real_0 x1, x2, x3;
-    real_0 x1n, x2n, x3n;
-    real_0 a, b;
-    real_0 benchmark;
+    real Ng, hg, lowerg, upperg;
+    real intv = 0.0;//initial value of integral
+    real coef1, coef2;//parameters for gaussian quad
+    real c1, c2, c3;
+    real x1, x2, x3;
+    real x1n, x2n, x3n;
+    real a, b;
+    real benchmark;
     
     if(lower > upper)
     {
@@ -227,20 +227,20 @@ static real_0 gauss_quad(real_0 (*func)(real_0, real_0 *, dsfmt_t*), real_0 lowe
     return intv;
 }
 
-static inline real_0 max_finder(real_0 (*profile)(real_0 , real_0*, dsfmt_t*), real_0* profileParams, real_0 a, real_0 b, real_0 c, int limit, real_0 tolerance, dsfmt_t* dsfmtState)
+static inline real max_finder(real (*profile)(real , real*, dsfmt_t*), real* profileParams, real a, real b, real c, int limit, real tolerance, dsfmt_t* dsfmtState)
 {
     /*this is a maxfinding routine to find the maximum of the density.
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
      */
-    real_0 RATIO = 0.61803399;
-    real_0 RATIO_COMPLEMENT = 1.0 - RATIO;
+    real RATIO = 0.61803399;
+    real RATIO_COMPLEMENT = 1.0 - RATIO;
     int counter = 0;
     
-    real_0 profile_x1, profile_x2, x0, x1, x2, x3;
+    real profile_x1, profile_x2, x0, x1, x2, x3;
     x0 = a;
     x3 = c;
     
-    if (mw_fabs_0(b - c) > mw_fabs_0(b - a))
+    if (mw_fabs(b - c) > mw_fabs(b - a))
     {
         x1 = b;
         x2 = b + (RATIO_COMPLEMENT * (c - b)); 
@@ -254,7 +254,7 @@ static inline real_0 max_finder(real_0 (*profile)(real_0 , real_0*, dsfmt_t*), r
     profile_x1 = -(*profile)(x1, profileParams, dsfmtState);
     profile_x2 = -(*profile)(x2, profileParams, dsfmtState);
     
-    while (mw_fabs_0(x3 - x0) > (tolerance * (mw_fabs_0(x1) + mw_fabs_0(x2)) ) )
+    while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
         counter++;
         if (profile_x2 < profile_x1)
@@ -262,7 +262,7 @@ static inline real_0 max_finder(real_0 (*profile)(real_0 , real_0*, dsfmt_t*), r
             x0 = x1;
             x1 = x2;
             x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
-            profile_x1 = (real_0)profile_x2;
+            profile_x1 = (real)profile_x2;
             profile_x2 = -(*profile)(x2, profileParams, dsfmtState);
         }
         else
@@ -270,7 +270,7 @@ static inline real_0 max_finder(real_0 (*profile)(real_0 , real_0*, dsfmt_t*), r
             x3 = x2;
             x2 = x1;
             x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
-            profile_x2 = (real_0)profile_x1;
+            profile_x2 = (real)profile_x1;
             profile_x1 = -(*profile)(x1, profileParams, dsfmtState);
         }
         
@@ -291,7 +291,7 @@ static inline real_0 max_finder(real_0 (*profile)(real_0 , real_0*, dsfmt_t*), r
 }
 
 
-static inline real_0 root_finder(real_0 (*func)(real_0, real_0*, dsfmt_t*), real_0* function_parameters, real_0 function_value, real_0 lower_bound, real_0 upper_bound, dsfmt_t* dsfmtState)
+static inline real root_finder(real (*func)(real, real*, dsfmt_t*), real* function_parameters, real function_value, real lower_bound, real upper_bound, dsfmt_t* dsfmtState)
 {
     //requires lower_bound and upper_bound to evaluate to opposite sign when func-function_value
     if(function_parameters == NULL || func == NULL)
@@ -302,26 +302,26 @@ static inline real_0 root_finder(real_0 (*func)(real_0, real_0*, dsfmt_t*), real
 
     int N = 4;
     unsigned int intervals = N;
-    real_0 interval_bound;
+    real interval_bound;
 
     /*interval + 1 because for N intervals there are N + 1 values*/
-    real_0 * values = mwCalloc(intervals + 1, sizeof(real_0));
-    real_0 * interval_bounds = mwCalloc(intervals + 1, sizeof(real_0));
+    real * values = mwCalloc(intervals + 1, sizeof(real));
+    real * interval_bounds = mwCalloc(intervals + 1, sizeof(real));
     /*intervals+1 because you want to include the upperbound in the interval*/
     for(i = 0; i < intervals + 1; i++)
     {
         /* breaking up the range between bounds into smaller intervals*/
-        interval_bound = ((upper_bound - lower_bound) * (real_0)i) / (real_0)intervals + lower_bound;
+        interval_bound = ((upper_bound - lower_bound) * (real)i) / (real)intervals + lower_bound;
         interval_bounds[i] = interval_bound;
         /*function value at those intervals*/
         values[i] = (*func)(interval_bound, function_parameters, dsfmtState) - function_value;
     }
     
-    real_0 mid_point = 0;
-    real_0 mid_point_funcval = 0;
+    real mid_point = 0;
+    real mid_point_funcval = 0;
     unsigned int counter = 0;
-    real_0 new_upper_bound = 0;
-    real_0 new_lower_bound = 0;
+    real new_upper_bound = 0;
+    real new_lower_bound = 0;
     int roots_found = 0;
     int q = 0;
     
@@ -353,7 +353,7 @@ static inline real_0 root_finder(real_0 (*func)(real_0, real_0*, dsfmt_t*), real
             
             mid_point_funcval = 1;
             counter = 0;
-            while(mw_fabs_0(mid_point_funcval) > .0001)
+            while(mw_fabs(mid_point_funcval) > .0001)
             {
                 mid_point = (new_lower_bound + new_upper_bound) / 2.0;
                 mid_point_funcval = (*func)(mid_point, function_parameters, dsfmtState) - function_value;
@@ -397,20 +397,20 @@ static inline real_0 root_finder(real_0 (*func)(real_0, real_0*, dsfmt_t*), real
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-real_0 fun(real_0 ri, real_0 * args, dsfmt_t* dsfmtState)
+real fun(real ri, real * args, dsfmt_t* dsfmtState)
 {
     //-------------------------------    
-    real_0 energy   = args[4];
+    real energy   = args[4];
     //-------------------------------
     
-    real_0 first_deriv_psi;
-    real_0 second_deriv_psi;
-    real_0 first_deriv_density;
-    real_0 second_deriv_density;
-    real_0 dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
-    real_0 denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
-    real_0 diff;
-    real_0 func;
+    real first_deriv_psi;
+    real second_deriv_psi;
+    real first_deriv_density;
+    real second_deriv_density;
+    real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
+    real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
+    real diff;
+    real func;
 
     first_deriv_psi      = first_derivative(potential, ri, args, dsfmtState);
     first_deriv_density  = first_derivative(density,   ri, args, dsfmtState);
@@ -438,19 +438,19 @@ real_0 fun(real_0 ri, real_0 * args, dsfmt_t* dsfmtState)
         first_deriv_psi = 1.0e-6;//this should be small enough
     }
     
-    dsqden_dpsisq = second_deriv_density * inv_0(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv_0(sqr_0(first_deriv_psi));
-    diff = mw_fabs_0(energy - potential(ri, args, dsfmtState));
+    dsqden_dpsisq = second_deriv_density * inv(first_deriv_psi) - first_deriv_density * second_deriv_psi * inv(sqr(first_deriv_psi));
+    diff = mw_fabs(energy - potential(ri, args, dsfmtState));
     
     
     /*we don't want to have a 0 in the demon*/
     if(diff != 0.0)
     {
-        denominator = minushalf_0( mw_fabs_0(energy - potential(ri, args, dsfmtState) ) );
+        denominator = minushalf( mw_fabs(energy - potential(ri, args, dsfmtState) ) );
     }
     else
     {
         /*if the r is exactly at the singularity then move it a small amount.*/
-        denominator = minushalf_0( mw_fabs_0(energy - potential(ri + 0.0001, args, dsfmtState) ) );
+        denominator = minushalf( mw_fabs(energy - potential(ri + 0.0001, args, dsfmtState) ) );
     }
     
     
@@ -466,10 +466,10 @@ real_0 fun(real_0 ri, real_0 * args, dsfmt_t* dsfmtState)
         
 }
 
-static inline real_0 find_upperlimit_r(dsfmt_t* dsfmtState, real_0 * args, real_0 energy, real_0 search_range, real_0 r)
+static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * args, real energy, real search_range, real r)
 {
     int counter = 0;
-    real_0 upperlimit_r = 0.0;
+    real upperlimit_r = 0.0;
     
     do
     {
@@ -487,36 +487,36 @@ static inline real_0 find_upperlimit_r(dsfmt_t* dsfmtState, real_0 * args, real_
         
     }while(1);
         
-    return mw_fabs_0(upperlimit_r);
+    return mw_fabs(upperlimit_r);
 }
  
-static inline real_0 dist_fun(real_0 v, real_0 * args, dsfmt_t* dsfmtState)
+static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 {
     /*This returns the value of the distribution function*/
     
     //-------------------------------
-    real_0 mass_l   = args[0];
-    real_0 mass_d   = args[1];
-    real_0 rscale_l = args[2];
-    real_0 rscale_d = args[3];
-    real_0 r        = args[4];
+    real mass_l   = args[0];
+    real mass_d   = args[1];
+    real rscale_l = args[2];
+    real rscale_d = args[3];
+    real r        = args[4];
     //-------------------------------
     
     
-    real_0 distribution_function = 0.0;
-//     real_0 c = inv_0( (mw_sqrt_0(8.0) * sqr_0(M_PI)) );
-    real_0 c = 0.03582244801567226;
-    real_0 energy = 0.0;
-    real_0 upperlimit_r = 0.0;
-    real_0 lowerlimit_r = 0.0; 
+    real distribution_function = 0.0;
+//     real c = inv( (mw_sqrt(8.0) * sqr(M_PI)) );
+    real c = 0.03582244801567226;
+    real energy = 0.0;
+    real upperlimit_r = 0.0;
+    real lowerlimit_r = 0.0; 
     int counter = 0;
-    real_0 search_range = 0.0;   
+    real search_range = 0.0;   
     
     /*energy as defined in binney*/
     energy = potential(r, args, dsfmtState) - 0.5 * v * v; 
     
     /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
-    search_range = 20.0 * mw_sqrt_0( mw_fabs_0( sqr_0(mass_d / energy) - sqr_0(rscale_d) ));
+    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
     
     /*dynamic search range*/
     /* This is done this way because we are searching for the r' where:
@@ -543,7 +543,7 @@ static inline real_0 dist_fun(real_0 v, real_0 * args, dsfmt_t* dsfmtState)
     upperlimit_r = find_upperlimit_r(dsfmtState, args, energy, search_range, r);
     
     
-    real_0 funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
+    real funcargs[5] = {mass_l, mass_d, rscale_l, rscale_d, energy};
     
     /*This lowerlimit should be good enough. In the important case where the upperlimit is small (close to the singularity in the integrand)
      * then 5 times it is already where the integrand is close to 0 since it goes to 0 quickly. 
@@ -558,15 +558,15 @@ static inline real_0 dist_fun(real_0 v, real_0 * args, dsfmt_t* dsfmtState)
 
 
 /*      SAMPLING FUNCTIONS      */
-static inline real r_mag(dsfmt_t* dsfmtState, real_0 * args, real_0 rho_max, real_0 bound)
+static inline real r_mag(dsfmt_t* dsfmtState, real * args, real rho_max, real bound)
 {
     int counter = 0;
-    real_0 r, u, val;
+    real r, u, val;
     
     while (1)
     {
-        r = (real_0)mwXrandom(dsfmtState, 0.0, bound);
-        u = (real_0)mwXrandom(dsfmtState, 0.0, 1.0);
+        r = (real)mwXrandom(dsfmtState, 0.0, bound);
+        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         val = r * r * density(r, args, dsfmtState);
 
         if(val / rho_max > u)
@@ -585,10 +585,10 @@ static inline real r_mag(dsfmt_t* dsfmtState, real_0 * args, real_0 rho_max, rea
         }
     }
         
-    return mw_real_const(r);
+    return r;
 }
 
-static inline real vel_mag(dsfmt_t* dsfmtState, real_0 r, real_0 * args)
+static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
 {
     
     /*
@@ -598,27 +598,27 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real_0 r, real_0 * args)
      */
     
     //-------------------------------
-    real_0 mass_l   = args[0];
-    real_0 mass_d   = args[1];
-    real_0 rscale_l = args[2];
-    real_0 rscale_d = args[3];
+    real mass_l   = args[0];
+    real mass_d   = args[1];
+    real rscale_l = args[2];
+    real rscale_d = args[3];
     //-------------------------------
     
     int counter = 0;
-    real_0 v, u, d;
-    real_0 v_esc = mw_sqrt_0( mw_fabs_0(2.0 * potential( r, args, dsfmtState) ) );
+    real v, u, d;
+    real v_esc = mw_sqrt( mw_fabs(2.0 * potential( r, args, dsfmtState) ) );
     
-    real_0 parameters[5] = {mass_l, mass_d, rscale_l, rscale_d, r};
-    real_0 dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2, dsfmtState);
+    real parameters[5] = {mass_l, mass_d, rscale_l, rscale_d, r};
+    real dist_max = max_finder(dist_fun, parameters, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2, dsfmtState);
    
     while(1)
     {
 
-        v = (real_0)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
-        u = (real_0)mwXrandom(dsfmtState, 0.0, 1.0);
+        v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
+        u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
         
         d = dist_fun(v, parameters, dsfmtState);
-        if(mw_fabs_0(d / dist_max) > u)
+        if(mw_fabs(d / dist_max) > u)
         {
             break;
         }
@@ -636,83 +636,78 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real_0 r, real_0 * args)
     
 
 //     v *= 0.977813107;//changing from kpc/gy to km/s
-    return mw_real_const(v); //km/s
+    return v; //km/s
 }
 
-static inline mwvector get_components(dsfmt_t* dsfmtState, real* rad)
+static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
     mwvector vec;
-    real_0 phi, theta;
+    real phi, theta;
     
     /*defining some angles*/
-    theta = mw_acos_0( mwXrandom(dsfmtState, -1.0, 1.0) );
+    theta = mw_acos( mwXrandom(dsfmtState, -1.0, 1.0) );
     phi = mwXrandom( dsfmtState, 0.0, 1.0 ) * 2.0 * M_PI;
 
     /*this is standard formula for x,y,z components in spherical*/
-    X(&vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_cos_0( phi ));        /*x component*/
-    Y(&vec) = mw_mul_s(rad, mw_sin_0( theta ) * mw_sin_0( phi ));        /*y component*/
-    Z(&vec) = mw_mul_s(rad, mw_cos_0( theta ));                          /*z component*/
+    X(vec) = rad * mw_sin( theta ) * mw_cos( phi );        /*x component*/
+    Y(vec) = rad * mw_sin( theta ) * mw_sin( phi );        /*y component*/
+    Z(vec) = rad * mw_cos( theta );                   /*z component*/
 
     return vec;
 }
 
 
-static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector* rShift, mwvector* vShift, real_0 dwarf_mass, int nbody)
+static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, real * vz, real * mass, mwvector rShift, mwvector vShift, real dwarf_mass, int nbody)
 {
     /*  
      * This function takes the table of bodies produced and zeroes the center of mass 
      * and center of momentum. It then shifts the center of mass and center of momentum
      * to the expected value for its position in the orbit.
      */
-    real cm_x = ZERO_REAL;
-    real cm_y = ZERO_REAL;
-    real cm_z = ZERO_REAL;
-    real cm_vx = ZERO_REAL;
-    real cm_vy = ZERO_REAL;
-    real cm_vz = ZERO_REAL;
-    real tmp;
-    unsigned int i;
+    real cm_x = 0.0;
+    real cm_y = 0.0;
+    real cm_z = 0.0;
+    real cm_vx = 0.0;
+    real cm_vy = 0.0;
+    real cm_vz = 0.0;
+    int i;
     for(i = 0; i < nbody; i++)
     {
-        cm_x = mw_mad(&mass[i], &x[i], &cm_x);
-        cm_y = mw_mad(&mass[i], &y[i], &cm_y);
-        cm_z = mw_mad(&mass[i], &z[i], &cm_z);
+        cm_x += mass[i] * x[i];
+        cm_y += mass[i] * y[i];
+        cm_z += mass[i] * z[i];
         
-        cm_vx = mw_mad(&mass[i], &vx[i], &cm_vx);
-        cm_vy = mw_mad(&mass[i], &vy[i], &cm_vy);
-        cm_vz = mw_mad(&mass[i], &vz[i], &cm_vz);
+        cm_vx += mass[i] * vx[i];
+        cm_vy += mass[i] * vy[i];
+        cm_vz += mass[i] * vz[i];
     }
      
-    cm_x = mw_mul_s(&cm_x, inv_0(dwarf_mass));
-    cm_y = mw_mul_s(&cm_y, inv_0(dwarf_mass));
-    cm_z = mw_mul_s(&cm_z, inv_0(dwarf_mass));
+    cm_x = cm_x / (dwarf_mass);
+    cm_y = cm_y / (dwarf_mass);
+    cm_z = cm_z / (dwarf_mass);
     
-    cm_vx = mw_mul_s(&cm_vx, inv_0(dwarf_mass));
-    cm_vy = mw_mul_s(&cm_vy, inv_0(dwarf_mass));
-    cm_vz = mw_mul_s(&cm_vz, inv_0(dwarf_mass));
-
+    cm_vx = cm_vx / (dwarf_mass);
+    cm_vy = cm_vy / (dwarf_mass);
+    cm_vz = cm_vz / (dwarf_mass);
+    
     for(i = 0; i < nbody; i++)
     {
-        tmp = mw_sub(&x[i], &cm_x);
-        x[i] = mw_add(&tmp, &rShift->x);
-        tmp = mw_sub(&y[i], &cm_y);
-        y[i] = mw_add(&tmp, &rShift->y);
-        tmp = mw_sub(&z[i], &cm_z);
-        z[i] = mw_add(&tmp, &rShift->z);
+        x[i] = x[i] - cm_x + rShift.x;
+        y[i] = y[i] - cm_y + rShift.y;
+        z[i] = z[i] - cm_z + rShift.z;
         
-        tmp = mw_sub(&vx[i], &cm_vx);
-        vx[i] = mw_add(&tmp, &vShift->x);
-        tmp = mw_sub(&vy[i], &cm_vy);
-        vy[i] = mw_add(&tmp, &vShift->y);
-        tmp = mw_sub(&vz[i], &cm_vz);
-        vz[i] = mw_add(&tmp, &vShift->z);
+        vx[i] = vx[i] - cm_vx + vShift.x;
+        vy[i] = vy[i] - cm_vy + vShift.y;
+        vz[i] = vz[i] - cm_vz + vShift.z;
     }
+    
+
     return 1;
 }
 
 /*      DWARF GENERATION        */
-static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real_0 mass1, real_0 mass2, mwbool ignore, mwvector* rShift, mwvector* vShift, real_0 radiusScale1, real_0 radiusScale2)
+static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
@@ -733,23 +728,21 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real * masses = mwCalloc(nbody, sizeof(real));
         
         mwvector vec;
-        real_0 dwarf_mass = mass1 + mass2;
+        real dwarf_mass = mass1 + mass2;
         
         
-        //FIXME: If you want to use AUTODIFF here, you will need to assign each mass and radius here to a position in the gradient (using mw_real_var). Setting these as constants for the time being.
-
-        real_0 mass_l   = mass1; /*mass of the light component*/
-        real_0 mass_d   = mass2; /*mass of the dark component*/
-        real_0 rscale_l = radiusScale1; /*scale radius of the light component*/
-        real_0 rscale_d = radiusScale2; /*scale radius of the dark component*/
+        real mass_l   = mass1; /*mass of the light component*/
+        real mass_d   = mass2; /*mass of the dark component*/
+        real rscale_l = radiusScale1; /*scale radius of the light component*/
+        real rscale_d = radiusScale2; /*scale radius of the dark component*/
         
-        real_0 bound = 50.0 * (rscale_l + rscale_d);
+        real bound = 50.0 * (rscale_l + rscale_d);
 
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mw_real_const(mass_l / (real_0)(0.5 * (real_0) nbody));//half the particles are light matter
-        real mass_dark_particle  = mw_real_const(mass_d / (real_0)(0.5 * (real_0) nbody));
+        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
+        real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -759,13 +752,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
        /*since the potential and density are a sum of the two components, setting the mass of one 
         * component to zero effectively gives a single component potential and density. 
         */
-        real_0 args[4] = {mass_l, mass_d, rscale_l, rscale_d};
-        real_0 parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
-        real_0 parameters_dark[4]  = {0.0, mass_d, rscale_l, rscale_d};
+        real args[4] = {mass_l, mass_d, rscale_l, rscale_d};
+        real parameters_light[4] = {mass_l, 0.0, rscale_l, rscale_d};
+        real parameters_dark[4]  = {0.0, mass_d, rscale_l, rscale_d};
 
         /*finding the max of the individual components*/
-        real_0 rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
-        real_0 rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
+        real rho_max_light = max_finder(profile_rho, parameters_light, 0, rscale_l, 2.0 * (rscale_l), 20, 1e-4, prng );
+        real rho_max_dark  = max_finder(profile_rho, parameters_dark, 0, rscale_d, 2.0 * (rscale_d), 20, 1e-4, prng );
         
      
      /*initializing particles:*/
@@ -792,7 +785,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(showRealValue(&r)) == FALSE && showRealValue(&r) != 0.0 && isnan(showRealValue(&r)) == FALSE){break;}
+                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -811,8 +804,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             counter = 0;
             do
             {
-                v = vel_mag(prng, showRealValue(&r), args);
-                if(isinf(showRealValue(&v)) == FALSE && showRealValue(&v) != 0.0 && isnan(showRealValue(&v)) == FALSE){break;}
+                v = vel_mag(prng, r, args);
+                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
                 if(counter > 1000)
                 {
@@ -825,12 +818,12 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                 
             }while (1);
 
-            vec = get_components(prng, &v);   
+            vec = get_components(prng, v);   
             vx[i] = vec.x;
             vy[i] = vec.y;
             vz[i] = vec.z;
             
-            vec = get_components(prng, &r);  
+            vec = get_components(prng, r);  
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
@@ -865,7 +858,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             b.vel.y = vy[i];
             b.vel.z = vz[i];
             
-            assert(nbPositionValid(&b.bodynode.pos));
+            assert(nbPositionValid(b.bodynode.pos));
             pushBody(luaSt, &b);
             lua_rawseti(luaSt, table, i + 1);
         }
@@ -889,8 +882,8 @@ int nbGenerateIsotropic(lua_State* luaSt)
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
         static mwbool ignore;
-        static real_0 mass1 = 0.0, nbodyf = 0.0, radiusScale1 = 0.0;
-        static real_0 mass2 = 0.0, radiusScale2 = 0.0;
+        static real mass1 = 0.0, nbodyf = 0.0, radiusScale1 = 0.0;
+        static real mass2 = 0.0, radiusScale2 = 0.0;
 
         static const MWNamedArg argTable[] =
         {
@@ -914,7 +907,7 @@ int nbGenerateIsotropic(lua_State* luaSt)
         
         
         return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, mass1, mass2, ignore,
-                                                                 position, velocity, radiusScale1, radiusScale2);
+                                                                 *position, *velocity, radiusScale1, radiusScale2);
 }
 
 void registerGenerateIsotropic(lua_State* luaSt)

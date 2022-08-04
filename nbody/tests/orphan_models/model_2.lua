@@ -15,7 +15,7 @@ dwarfRadius = 0.2
 function makePotential()
    return Potential.create{
       spherical = Spherical.hernquist{ mass = 67479.9, scale = 0.6 },
-      disk      = Disk.miyamotoNagai{ mass = 224933, scaleLength = 6, scaleHeight = 0.3 },
+      disk      = Disk.doubleExponential{ mass = 224933, scaleLength = 6, scaleHeight = 0.3 },
       disk2     = Disk.none{ mass = 3.0e5 },
       halo      = Halo.nfw{ vhalo = 120, scaleLength = 22.25 }
    }
@@ -24,9 +24,8 @@ end
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
-      timeEvolve = 2.0,
-      timeBack   = 2.0,
-      eps2       = calculateEps2(nbody, dwarfRadius, 0),
+      timeEvolve = 3.945,
+      eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
@@ -46,9 +45,8 @@ function makeBodies(ctx, potential)
       potential = potential,
       position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.5)),
       velocity  = Vector.create(-157, 78, 107),
-      tstop     = 2.0,
-      dt        = ctx.timestep / 10.0,
-      sunGCDist = 8.0
+      tstop     = 4.0,
+      dt        = ctx.timestep / 10.0
    }
 
    return predefinedModels.plummer{

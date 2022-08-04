@@ -36,15 +36,15 @@ extern "C" {
 #define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
 
 
-#define DEFAULT_SUN_GC_DISTANCE ((real_0) 8.0)
+#define DEFAULT_SUN_GC_DISTANCE ((real) 8.0)
 #define DEFAULT_CRITERION TreeCode
-#define DEFAULT_TREE_ROOT_SIZE ((real_0) 4.0)
+#define DEFAULT_TREE_ROOT_SIZE ((real) 4.0)
 
-#define DEFAULT_B_START_COORD ((real_0) 53.5)
-#define DEFAULT_R_START_COORD ((real_0) 28.6)
-#define DEFAULT_VX_START_COORD ((real_0) -156)
-#define DEFAULT_VY_START_COORD ((real_0) 79)
-#define DEFAULT_VZ_START_COORD ((real_0) 107)
+#define DEFAULT_B_START_COORD ((real) 53.5)
+#define DEFAULT_R_START_COORD ((real) 28.6)
+#define DEFAULT_VX_START_COORD ((real) -156)
+#define DEFAULT_VY_START_COORD ((real) 79)
+#define DEFAULT_VZ_START_COORD ((real) 107)
 
 #define DEFAULT_USE_QUADRUPOLE_MOMENTS TRUE
 #define DEFAULT_ALLOW_INCEST FALSE
@@ -57,30 +57,30 @@ extern "C" {
 #define DEFAULT_USE_VLOS FALSE
 #define DEFAULT_USE_DIST FALSE
 
-#define DEFAULT_BEST_LIKELIHOOD_START ((real_0) 0.95)
+#define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
 #define DEFAULT_OUTPUT_FREQUENCY ((int) 1000)
-#define DEFAULT_SIGMA_CUTOFF ((real_0) 2.5)
-#define DEFAULT_SIGMA_ITER ((real_0) 6)
-#define DEFAULT_DISP_CORRECTION ((real_0) 1.111)
+#define DEFAULT_SIGMA_CUTOFF ((real) 2.5)
+#define DEFAULT_SIGMA_ITER ((real) 6)
+#define DEFAULT_DISP_CORRECTION ((real) 1.111)
 
-#define DEFAULT_NOT_USE ((real_0) -1)
+#define DEFAULT_NOT_USE ((real) -1)
   /*
     Return this when a big likelihood is needed.
   */
-#define DEFAULT_WORST_CASE ((real_0) 9999999.9)
+#define DEFAULT_WORST_CASE ((real) 9999999.9)
  /*
     Return this when a small likelihood is needed.
   */
-#define DEFAULT_BEST_CASE ((real_0) 1e-9)
+#define DEFAULT_BEST_CASE ((real) 1e-9)
 
 #define histogramPhi 128.79
 #define histogramTheta 54.39
 #define histogramPsi 90.70
-#define histogramlambdaStart ((real_0) -50.0)
-#define histogramlambdaEnd ((real_0) 50.0)
+#define histogramlambdaStart ((real) -50.0)
+#define histogramlambdaEnd ((real) 50.0)
 #define histogramlambdaBins ((unsigned int) 34)
-#define histogrambetaStart ((real_0) -25.0)
-#define histogrambetaEnd ((real_0) 25.0)
+#define histogrambetaStart ((real) -25.0)
+#define histogrambetaEnd ((real) 25.0)
 #define histogrambetaBins ((unsigned int) 10)
 
 

@@ -20,7 +20,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 /* WARNING THIS CODE DOES NOT USE MILKYWAY@HOME LIBRARIES. BEWARE WHEN RUNNING IT ON MULTIPLE SYSTEMS*/
 #include "nbody_caustic.h"
-#include "milkyway_math.h"
 
 const double G = 1.0;
 const double a_n[] = {1.0,40.1,20.1,13.6,10.4,8.4,7.0,6.1,5.3,4.8,4.3,4.0,3.7,3.4,3.2,3.0,2.8,2.7,2.5,2.4,2.3};
@@ -248,63 +247,59 @@ static void gfield_close(double rho, double z, int n, double *rfield, double *zf
     }  
 }
  
-mwvector causticHaloAccel(const Halo* h, mwvector* pos, real* r_var)
+mwvector causticHaloAccel(const Halo* h, mwvector pos, real r)
 {
 
     mwvector accel;
-    double r = showRealValue(r_var);
 
 /* 20070507 bwillett used hypot from math.h */
 
 
-    double rho=0.0, z=0.0, rfield, zfield;
-    double R, l, tr, tl;
+    real rho=0.0, z=0.0, rfield, zfield;
+    real R, l, tr, tl;
     int n;
 
     rfield = 0.0;
     zfield = 0.0;
-    real tmp;
 
 
-    tmp = mw_hypot(&X(pos), &Y(pos));
-    rho = showRealValue(&tmp);
+
+    rho = mw_sqrt(sqr(X(pos))+sqr(Y(pos)));
 
     for (n = 1; n <= 20; n++)
     {
 
         /* tricusp */
-        R=(3.0-mw_sqrt_0(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
-        l=(3.0+mw_sqrt_0(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
-        tr=2.0*p_n[n]*mw_sqrt_0(cube_0(R)*(1.0-R));
-        tl=2.0*p_n[n]*mw_sqrt_0(cube_0(l)*(1.0-l));
+        R=(3.0-mw_sqrt(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
+        l=(3.0+mw_sqrt(1.0+(8.0/p_n[n])*(rho-a_n[n])))/4.0;
+        tr=2.0*p_n[n]*mw_sqrt(cube(R)*(1.0-R));
+        tl=2.0*p_n[n]*mw_sqrt(cube(l)*(1.0-l));
 
 
-        if( (showRealValue(&Z(pos))<=tr && showRealValue(&Z(pos))>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(&Z(pos))>=tl && showRealValue(&Z(pos))<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (showRealValue(&Z(pos))>=-tr && showRealValue(&Z(pos))<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (showRealValue(&Z(pos))<=-tl && showRealValue(&Z(pos))>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
+        if( (Z(pos)<=tr && Z(pos)>=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (Z(pos)>=tl && Z(pos)<=tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) || (Z(pos)>=-tr && Z(pos)<=0.0 && rho>=a_n[n] && rho<=a_n[n]+p_n[n]) || (Z(pos)<=-tl && Z(pos)>=-tr && rho>=(a_n[n]-p_n[n]/8.0) && rho<=a_n[n]) )  //close
         {
-            gfield_close(rho,showRealValue(&Z(pos)),n,&rfield,&zfield);
+            gfield_close(rho,Z(pos),n,&rfield,&zfield);
         }
 
         else /* far */
         {
-            gfield_far(rho,showRealValue(&Z(pos)),n,&rfield,&zfield);        
+            gfield_far(rho,Z(pos),n,&rfield,&zfield);        
         }
 
     }
 
-    //FIXME: If we ever plan on using this potential, we need to first make sure this code is compatible with AUTODIFF
-
     if(rho<0.000001)
     {
-        X(&accel) = ZERO_REAL;
-        Y(&accel) = ZERO_REAL;
+        X(accel) = 0.0;
+        Y(accel) = 0.0;
     }
     else
     {
-        X(&accel) = mw_mul_s(&X(pos), rfield/rho);
-        Y(&accel) = mw_mul_s(&Y(pos), rfield/rho);
+        X(accel) = (rfield*X(pos))/rho;
+        Y(accel) = (rfield*Y(pos))/rho;
     }
 
-    Z(&accel) = mw_real_const(zfield);
+    Z(accel) = zfield;
 
     //printf("%f, %f, %f, %f, %f, %f\n", X(pos), Y(pos), Z(pos), X(accel), Y(accel), Z(accel));
     

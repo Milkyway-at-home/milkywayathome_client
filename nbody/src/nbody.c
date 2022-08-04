@@ -32,7 +32,6 @@
 #include "nbody_likelihood.h"
 #include "nbody_histogram.h"
 #include "nbody_types.h"
-#include "nbody_autodiff.h"
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -123,7 +122,7 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx, NBodyState* st)
 {
     mwvector acc;
-    mwvector pos = mw_vec(mw_real_const(1.0), mw_real_const(1.0), ZERO_REAL);
+    mwvector pos = mw_vec(1.0, 1.0, 0.0);
 
     if (ctx->potentialType != EXTERNAL_POTENTIAL_CUSTOM_LUA)
     {
@@ -136,7 +135,7 @@ static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx,
         return TRUE;
     }
 
-    nbEvalPotentialClosure(st, &pos, &acc);
+    nbEvalPotentialClosure(st, pos, &acc);
     return st->potentialEvalError;
 }
 
@@ -191,12 +190,12 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
     if(!ctx->LMC)
     {
         mwvector zero;
-        SET_VECTOR(&zero,ZERO_REAL,ZERO_REAL,ZERO_REAL);
-        return nbStepSystemPlain(ctx, st, &zero, &zero); 
+        SET_VECTOR(zero,0,0,0);
+        return nbStepSystemPlain(ctx, st, zero, zero); 
     }
     else
     {
-        return nbStepSystemPlain(ctx, st, &st->shiftByLMC[st->step], &st->shiftByLMC[st->step+1]);
+        return nbStepSystemPlain(ctx, st, st->shiftByLMC[st->step], st->shiftByLMC[st->step+1]);
     }
 }
 
@@ -219,14 +218,14 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
 {
     MainStruct* data = NULL;
     MainStruct* histogram = NULL;
-    real likelihood = mw_real_const(NAN);
-    real likelihood_EMD = mw_real_const(NAN);
-    real likelihood_Mass = mw_real_const(NAN);
-    real likelihood_Beta = mw_real_const(NAN);
-    real likelihood_Vel = mw_real_const(NAN);
-    real likelihood_VelAvg = mw_real_const(NAN);
-    real likelihood_BetaAvg = mw_real_const(NAN);
-    real likelihood_Dist = mw_real_const(NAN);
+    real likelihood = NAN;
+    real likelihood_EMD = NAN;
+    real likelihood_Mass = NAN;
+    real likelihood_Beta = NAN;
+    real likelihood_Vel = NAN;
+    real likelihood_VelAvg = NAN;
+    real likelihood_BetaAvg = NAN;
+    real likelihood_Dist = NAN;
     NBodyLikelihoodMethod method;
 
     real *likelihoodArray;
@@ -282,7 +281,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         }
         
         
-        likelihoodArray    = nbSystemLikelihood(st, data, histogram, method);
+        likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
         likelihood         = likelihoodArray[0];
         likelihood_EMD     = likelihoodArray[1];
         likelihood_Mass    = likelihoodArray[2];
@@ -303,14 +302,14 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         * It previous returned the worse case when the likelihood == 0. 
         * Changed it to be best case, 1e-9 which has been added in nbody_defaults.h
         */
-        if (showRealValue(&likelihood) > DEFAULT_WORST_CASE || showRealValue(&likelihood) < (-1 * DEFAULT_WORST_CASE) )
+        if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1 * DEFAULT_WORST_CASE) )
         {
             mw_printf("Poor likelihood.  Returning worst case.\n");
-            setRealValue(&likelihood, DEFAULT_WORST_CASE);
+            likelihood = DEFAULT_WORST_CASE;
         }
-        else if(showRealValue(&likelihood) == 0.0)
+        else if(likelihood == 0.0)
         {
-            setRealValue(&likelihood, DEFAULT_BEST_CASE);
+            likelihood = DEFAULT_BEST_CASE;
         }
         
         
@@ -318,7 +317,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
          * replace it with the best likelihood 
          */
         /* only do the comparison if we are using the best likelihood code */
-        if(mw_fabs_0(showRealValue(&likelihood)) > mw_fabs_0(showRealValue(&st->bestLikelihood)) && ctx->useBestLike)
+        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood) && ctx->useBestLike)
         {
             likelihood         = st->bestLikelihood;
             likelihood_EMD     = st->bestLikelihood_EMD;
@@ -340,7 +339,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             {
                 nbWriteHistogram(nbf->histoutFileName, ctx, st, histogram);
             }
-        }        
+        }
+        
     }
     
     free(histogram);
@@ -349,52 +349,35 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
   if (calculateLikelihood)
     {
         /* Reported negated distance since the search maximizes this */
-      if (isnan(showRealValue(&likelihood)))
+      if (isnan(likelihood))
         {
-            setRealValue(&likelihood, DEFAULT_WORST_CASE);
+            likelihood = DEFAULT_WORST_CASE;
             mw_printf("Likelihood was NAN. Returning worst case. \n");
-            //mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
-            //return NBODY_SUCCESS;
+            mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
+            return NBODY_SUCCESS;
         }
-        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -showRealValue(&likelihood));
-        //printRealGradient(&likelihood, "likelihood");
-
-        mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -showRealValue(&likelihood_EMD));
-        //printRealGradient(&likelihood_EMD, "likelihood_EMD");
-
-        mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -showRealValue(&likelihood_Mass));
-        //printRealGradient(&likelihood_Mass, "likelihood_Mass");
-
+        mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
+        mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -likelihood_EMD);
+        mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -likelihood_Mass);
 	if (st->useBetaDisp)
         {
-            mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -showRealValue(&likelihood_Beta));
-            //printRealGradient(&likelihood_Beta, "likelihood_Beta");
+            mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -likelihood_Beta);
         }
 	if (st->useVelDisp)
         {
-            mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -showRealValue(&likelihood_Vel));
-            //printRealGradient(&likelihood_Vel, "likelihood_Vel");
+            mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -likelihood_Vel);
         }
        if (st->useBetaComp)
        {
-           mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -showRealValue(&likelihood_BetaAvg));
-           //printRealGradient(&likelihood_BetaAvg, "likelihood_BetaAvg");
+           mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -likelihood_BetaAvg);
        }
        if (st->useVlos)
        {
-           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -showRealValue(&likelihood_VelAvg));
-           //printRealGradient(&likelihood_VelAvg, "likelihood_VelAvg");
+           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_VelAvg);
        }
        if (st->useDist)
        {
-           mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -showRealValue(&likelihood_Dist));
-           //printRealGradient(&likelihood_Dist, "likelihood_Dist");
-       }
-
-       /* Write out the derivative information from AUTODIFF if file available */
-       if(nbf->autoDiffFileName)
-       {
-           nbWriteAutoDiff(nbf->autoDiffFileName, &likelihood);
+           mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
        }
     }
 
@@ -409,7 +392,7 @@ int nbMain(const NBodyFlags* nbf)
     CLRequest clr;
 
     NBodyStatus rc = NBODY_SUCCESS;
-    real_0 ts = 0.0, te = 0.0;
+    real ts = 0.0, te = 0.0;
 
     if (!nbOutputIsUseful(nbf))
     {
@@ -440,7 +423,7 @@ int nbMain(const NBodyFlags* nbf)
     NBodyState initialState = EMPTY_NBODYSTATE;
     //for the first run, just assume the best likelihood timestep will occur in middle of best-likelihood window
     //convert eff_best_like_start to the original best like start
-    real_0 ogBestLikeStart = (2*ctx->BestLikeStart)/(ctx->BestLikeStart + 1);
+    real ogBestLikeStart = (2*ctx->BestLikeStart)/(ctx->BestLikeStart + 1);
     if(ctx->useBestLike){
         //assume evolve time has been adjusted to be the end of the best-likelihood window
         st->previousForwardTime = ctx->timeEvolve/(2 - ogBestLikeStart);
@@ -512,7 +495,7 @@ int nbMain(const NBodyFlags* nbf)
 
         if(i < ctx->calibrationRuns){
             //grab the best likelihood time
-            real_0 forwardTime = st->bestLikelihood_time;
+            real forwardTime = st->bestLikelihood_time;
             //reset the state for the next run
             *st = (NBodyState)EMPTY_NBODYSTATE;
             cloneNBodyState(st, &initialState);

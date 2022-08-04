@@ -281,8 +281,8 @@ function checkTestResult(test, resultTable)
 
    if doesNotMatch then
       io.stderr:write("Failing test:\n")
-      io.stderr:write(string.format("Got: hash = %s, status = %s, failed = %s\nExpected: hash = %s, status = %s, failed = %s\n",
-                                    hash, status, tostring(failed), expected.result, expected.status, tostring(expected.failed)))
+      io.stderr:write(string.format("Got hash = %s, status = %s, failed = %s\nExpected:\n",
+                                    hash, status, tostring(failed)))
       printResult(test)
    end
 

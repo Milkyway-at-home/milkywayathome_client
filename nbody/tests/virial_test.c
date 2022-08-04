@@ -29,7 +29,7 @@ int main()
 
     int test_fails=0;
 
-    const int nTests = 100;
+    const int nTests = 1000;
     const real ZERO_THRESHOLD = 1.0e-5;
 
     real a_b, a_d, M_b, M_d, flip, lhs, rhs, comp;
@@ -56,7 +56,7 @@ int main()
         }
 
         rhs = nbCalculateVirial(a_b, a_d, M_b, M_d);
-        comp = mw_abs_0(lhs-rhs);
+        comp = mw_abs(lhs-rhs);
 
         if (comp > ZERO_THRESHOLD) {
             mw_printf("LHS = %.15f\n", lhs);

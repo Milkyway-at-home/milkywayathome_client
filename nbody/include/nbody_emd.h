@@ -27,9 +27,9 @@
 
 typedef struct
 {
-    real_0 weight; /* Normalized Weight */
-    real_0 lambda;    /* Lambda Position */
-    real_0 beta; /* Beta Position */
+    real weight; /* Normalized Weight */
+    real lambda;    /* Lambda Position */
+    real beta; /* Beta Position */
 } WeightPos;
 
 
@@ -38,15 +38,15 @@ typedef struct
 extern "C" {
 #endif
 
-real_0 emdCalc(const real_0* RESTRICT signature_arr1,
-              const real_0* RESTRICT signature_arr2,
+real emdCalc(const real* RESTRICT signature_arr1,
+              const real* RESTRICT signature_arr2,
               unsigned int size1,
               unsigned int size2,
-              real_0* RESTRICT lower_bound);
+              real* RESTRICT lower_bound);
 
 real nbMatchEMD(const MainStruct* data, const MainStruct* histogram);
 
-real_0 nbWorstCaseEMD(const NBodyHistogram* hist  );
+real nbWorstCaseEMD(const NBodyHistogram* hist  );
 
 #ifdef __cplusplus
 }

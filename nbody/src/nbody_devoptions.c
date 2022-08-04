@@ -24,7 +24,7 @@
 #include "nbody.h"
 #include "nbody_io.h"
 
-int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, real_0 freq)
+int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, real freq)
 {
     int rc = 0;
     freq = (freq == 0.0)*1.0 + freq;

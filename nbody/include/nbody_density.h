@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-real nbExtDensity(const Potential* pot, mwvector* pos, real_0 time);
+real nbExtDensity(const Potential* pot, mwvector pos, real time);
 
 #ifdef __cplusplus
 }

@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-real_0 nbCalculateVirial(real_0 a_b, real_0 a_d, real_0 M_b, real_0 M_d);
+real nbCalculateVirial(real a_b, real a_d, real M_b, real M_d);
 
 #ifdef __cplusplus
 }
