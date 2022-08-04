@@ -144,8 +144,8 @@ static mwbool invalidHaloWarning(halo_t type)
 /* Check for valid halo values and calculate constants. Return true if error. */
 mwbool checkHaloConstants(Halo* h)
 {
-    real_0 phi, cp, cps, sp, sps;
-    real_0 qxs, qys;
+    real phi, cp, cps, sp, sps;
+    real qxs, qys;
 
     switch (h->type)
     {
@@ -154,7 +154,7 @@ mwbool checkHaloConstants(Halo* h)
             {
                 return invalidHaloWarning(h->type);
             }
-            if (h->flattenZ < mw_pow_0(2.0,-0.5))
+            if (h->flattenZ < mw_pow(2.0,-0.5))
             {
                 mw_printf("Flatten Z is too small! Will generate negative densities!\n");
                 return invalidHaloWarning(h->type);
@@ -179,24 +179,24 @@ mwbool checkHaloConstants(Halo* h)
                 return invalidHaloWarning(h->type);
             }
 
-            phi = d2r_0(h->triaxAngle);
-            cp  = mw_cos_0(phi);
-            cps = sqr_0(cp);
-            sp  = mw_sin_0(phi);
-            sps = sqr_0(sp);
+            phi = d2r(h->triaxAngle);
+            cp  = mw_cos(phi);
+            cps = sqr(cp);
+            sp  = mw_sin(phi);
+            sps = sqr(sp);
 
-            qxs = sqr_0(h->flattenX);
-            qys = sqr_0(h->flattenY);
+            qxs = sqr(h->flattenX);
+            qys = sqr(h->flattenY);
 
             h->c1 = (cps / qxs) + (sps / qys);
             h->c2 = (cps / qys) + (sps / qxs);
 
             /* 2 * sin(x) * cos(x) == sin(2 * x) */
-            h->c3 = mw_sin_0(2.0 * phi) * ((qys - qxs) / (qxs * qys));
-            if (   mw_pow_0(qxs/(qxs+1),0.5) > (h->flattenZ)
-                || (mw_pow_0(h->flattenX,-2.718281828459)+1) < (h->flattenZ)
+            h->c3 = mw_sin(2.0 * phi) * ((qys - qxs) / (qxs * qys));
+            if (   mw_pow(qxs/(qxs+1),0.5) > (h->flattenZ)
+                || (mw_pow(h->flattenX,-2.718281828459)+1) < (h->flattenZ)
                 || (h->flattenY) < 0.999999 || (h->flattenY) > 1.000001
-                || phi < 0 || phi > M_PI)
+                || phi < 0 || phi > 3.141592653589793)
             {
                 mw_printf("WARNING: The density may not be positive definite for the given parameters of halo type '%s'\n", showHaloT(h->type));
             }

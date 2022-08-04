@@ -236,12 +236,7 @@ int dofileWithArgs(lua_State* luaSt,
                    const char** args,
                    unsigned int nArgs)
 {
-    //mw_printf("BEFORE CHECK 1\n");
-    int check1 = luaL_loadfile(luaSt, filename);
-    //mw_printf("BEFORE CHECK 2\n");
-    int check2 = doWithArgs(luaSt, args, nArgs);
-    //mw_printf("AFTER CHECKS\n");
-    return check1 || check2;
+    return luaL_loadfile(luaSt, filename) || doWithArgs(luaSt, args, nArgs);
 }
 
 int mwBindBOINCStatus(lua_State* luaSt)

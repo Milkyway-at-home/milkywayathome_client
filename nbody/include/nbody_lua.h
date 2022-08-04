@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 int nbOpenPotentialEvalStatePerThread(NBodyState* st, const NBodyFlags* nbf);
-void nbEvalPotentialClosure(NBodyState* st, mwvector* pos, mwvector* aOut);
+void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut);
 int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp);
 NBodyLikelihoodMethod nbEvaluateLikelihoodMethod(lua_State* luaSt);
 int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp);

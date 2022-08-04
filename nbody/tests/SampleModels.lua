@@ -35,11 +35,10 @@ SampleModels.sampleModels = {
             position = Vector.create(-22.0415, -3.35444, 19.9539),
             velocity = Vector.create(118.444, 168.874, -67.6378),
             mass = mass,
-            scaleRadius = r0,
-            ignore = false
+            scaleRadius = r0
          }
 
-         return mod, calculateEps2(nbody, r0, 0), calculateTimestep(mass, r0)
+         return mod, calculateEps2(nbody, r0), calculateTimestep(mass, r0)
       end,
 
    modelB =
@@ -58,7 +57,7 @@ SampleModels.sampleModels = {
             velocity = vel,
             mass = smallMass,
             scaleRadius = smallR0,
-            ignore = false
+            ignore = true
          }
 
          m2 = predefinedModels.plummer{
@@ -71,7 +70,7 @@ SampleModels.sampleModels = {
             ignore = true
          }
 
-         eps2 = calculateEps2(nbody, smallR0, 1)
+         eps2 = calculateEps2(nbody, smallR0)
          dt   = calculateTimestep(smallMass + bigMass, smallR0)
          return mergeTables(m1, m2), eps2, dt
       end

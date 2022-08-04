@@ -55,8 +55,6 @@
 #endif
 
 #include "milkyway_math_supplemental.h"
-#include "milkyway_math_autodiff.h"
-#include "milkyway_math_supplemental2.h"
 #include "milkyway_vectors.h"
 
 

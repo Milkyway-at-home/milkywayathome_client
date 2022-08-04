@@ -91,12 +91,6 @@ Build options can be passed to cmake on the command line with
 @item DOUBLEPREC
 @tab ON
 @tab Use double precision
-@item AUTODIFF
-@tab OFF
-@tab Use auto differentiation
-@item AUTODIFF_LOG
-@tab OFF
-@tab Calculate derivatives in logspace
 @item NBODY_OPENMP
 @tab ON*
 @tab Use OpenMP for threading (* OFF if not supported by compiler)
