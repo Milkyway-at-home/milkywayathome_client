@@ -613,11 +613,11 @@ void nbWriteHistogram(const char* histoutFileName,
 }
 
 /* Get normalized histogram counts and errors */
-static void nbNormalizeHistogram(NBodyHistogram* histogram)
+static void nbNormalizeHistogram(NBodyHistogram* histogram, int total_simulated_bodies)
 {
-    unsigned int i;
-    unsigned int j;
-    unsigned int Histindex;
+    unsigned int i1, i2;
+    unsigned int j1, j2;
+    unsigned int Histindex1, Histindex2;
     real count;
 
     const HistogramParams* hp = &histogram->params;
@@ -633,18 +633,37 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     HistData* histData = histogram->data;
 
 
-    for (i = 0; i < lambdaBins; ++i)
+    for (i1 = 0; i1 < lambdaBins; ++i1)
     {
-        for(j = 0; j < betaBins; ++j)
+        for(j1 = 0; j1 < betaBins; ++j1)
         {
-            Histindex = i * betaBins + j;
+            Histindex1 = i1 * betaBins + j1;
             count = (real) histData[Histindex].rawCount;
             
             /* Report center of the bins */
-            histData[Histindex].lambda = ((real) i + 0.5) * lambdaSize + lambdaStart;
-            histData[Histindex].beta   = ((real) j + 0.5) * betaSize + betaStart;
-            histData[Histindex].variable  = count / totalNum;
-            histData[Histindex].err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex1].lambda = ((real) i1 + 0.5) * lambdaSize + lambdaStart;
+            histData[Histindex1].beta   = ((real) j1 + 0.5) * betaSize + betaStart;
+            histData[Histindex1].variable  = count / totalNum;
+        }
+    }
+
+    //Calculating errors in normalized histogram with binomial statistics.
+    for (i1 = 0; i1 < lambdaBins; ++i1)
+    {
+        for(j1 = 0; j1 < betaBins; ++j1)
+        {
+            Histindex1 = i1 * betaBins + j1;
+            histData[Histindex1].err = (1.0 - 2.0*histData[Histindex1].variable)*sqr(histData[Histindex1].variable)*totalNum/total_simulated_bodies*(1.0 - histData[Histindex1].variable*totalNum*total_simulated_bodies);
+            for(i2 = 0; i2 < lambdaBins; ++i2)
+            {
+                for(j2 = 0; j2 < betaBins; ++j2)
+                {
+                    Histindex2 = i2 * betaBins + j2;
+                    histData[Histindex1].err += sqr(histData[Histindex1].variable)*sqr(histData[Histindex2].variable)*totalNum*total_simulated_bodies*(1.0 - histData[Histindex2].variable*totalNum*total_simulated_bodies);
+                }
+            }
+            histData[Histindex1].err = histData[Histindex1].err/totalNum;
+            histData[Histindex1].err = mw_sqrt(histData[Histindex1].err);            
         }
     }
 }
@@ -1004,7 +1023,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
     }
     
-    nbNormalizeHistogram(all->histograms[0]); // sets up normalized counts histogram
+    nbNormalizeHistogram(all->histograms[0], body_count); // sets up normalized counts histogram
 
     //freeing up mwcallocs (which is essentially a malloc)
     free(use_velbody);

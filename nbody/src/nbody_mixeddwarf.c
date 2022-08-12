@@ -788,11 +788,39 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
        
         
         /*finding the max of the individual components*/
-        int place_holder = 0;
-        real rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l; //these are the analytic equations for the radius where r^2rho is max;
-        real rho_max_dark  = mw_sqrt(2.0 / 3.0) * rscale_d;
-        rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-        rho_max_dark  = sqr(rho_max_dark)  * get_density(comp2, rho_max_dark);
+        real rho_max_light, rho_max_dark;
+
+        switch(comp1->type) //these are the analytic equations for the radius where r^2rho is max;
+        {
+            case Plummer:
+                rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+            case NFW:
+                rho_max_light = rscale_l;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+            case General_Hernquist:
+                rho_max_light = rscale_l / 2.0;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+        }
+
+        switch(comp2->type) //these are the analytic equations for the radius where r^2rho is max;
+        {
+            case Plummer:
+                rho_max_dark = mw_sqrt(2.0 / 3.0) * rscale_d;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+            case NFW:
+                rho_max_dark = rscale_d;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+            case General_Hernquist:
+                rho_max_dark = rscale_d / 2.0;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+        }
         
     	/*initializing particles:*/
         memset(&b, 0, sizeof(b));
@@ -988,11 +1016,39 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
        
         
         /*finding the max of the individual components*/
-        int place_holder = 0;
-        real rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l; //these are the analytic equations for the radius where r^2rho is max;
-        real rho_max_dark  = mw_sqrt(2.0 / 3.0) * rscale_d;
-        rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-        rho_max_dark  = sqr(rho_max_dark)  * get_density(comp2, rho_max_dark);
+        real rho_max_light, rho_max_dark;
+
+        switch(comp1->type) //these are the analytic equations for the radius where r^2rho is max;
+        {
+            case Plummer:
+                rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+            case NFW:
+                rho_max_light = rscale_l;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+            case General_Hernquist:
+                rho_max_light = rscale_l / 2.0;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+        }
+
+        switch(comp2->type) //these are the analytic equations for the radius where r^2rho is max;
+        {
+            case Plummer:
+                rho_max_dark = mw_sqrt(2.0 / 3.0) * rscale_d;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+            case NFW:
+                rho_max_dark = rscale_d;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+            case General_Hernquist:
+                rho_max_dark = rscale_d / 2.0;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+        }
         
     	/*initializing particles:*/
         //memset(&b, 0, sizeof(b));

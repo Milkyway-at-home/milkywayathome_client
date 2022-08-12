@@ -38,6 +38,10 @@ LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
+
+SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
+
+UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -116,12 +120,12 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-orbit_parameter_l  = 258
-orbit_parameter_b  = 45.8
-orbit_parameter_r  = 21.5
-orbit_parameter_vx = -185.5
-orbit_parameter_vy = 54.7
-orbit_parameter_vz = 147.4
+preset_orbit_parameter_l  = 258
+preset_orbit_parameter_b  = 45.8
+preset_orbit_parameter_r  = 21.5
+preset_orbit_parameter_vx = -185.5
+preset_orbit_parameter_vy = 54.7
+preset_orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -182,7 +186,7 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d, UseOldSofteningLength)
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
@@ -204,6 +208,7 @@ function makeContext()
       vx          = orbit_parameter_vx,
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
+      sunGCDist   = SunGCDist,
       criterion   = criterion,
       OutputLB    = Output_LB_coord,
       useQuad     = true,
@@ -383,6 +388,12 @@ if (#arg >= 12) then
   orbit_parameter_vz  = round( tonumber(arg[12]), dec )
   manual_body_file = arg[13]
 else
+  orbit_parameter_l   = preset_orbit_parameter_l
+  orbit_parameter_b   = preset_orbit_parameter_b
+  orbit_parameter_r   = preset_orbit_parameter_r
+  orbit_parameter_vx  = preset_orbit_parameter_vx
+  orbit_parameter_vy  = preset_orbit_parameter_vy
+  orbit_parameter_vz  = preset_orbit_parameter_vz
   manual_body_file = arg[7] -- File with Individual Particles (.out file)
 end
 
