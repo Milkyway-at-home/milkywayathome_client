@@ -363,6 +363,7 @@ arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+--argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 -- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --

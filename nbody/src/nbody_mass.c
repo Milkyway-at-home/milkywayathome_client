@@ -323,6 +323,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     real n = (real) histogram->totalSimulated;
     real nSim_uncut = (real) histogram->totalNum;   /* Total simulated before dropping bins */
     real nData = (real) data->totalNum;
+    real nDataVariance = 0.0;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
@@ -351,6 +352,8 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * Correcting for bins in the comparison histogram that are not 
      * included in the comparison.
      */
+    real var_sum = 0.0;
+    real sqr_sum = 0.0;
     for (unsigned int i = 0; i < nbins; ++i)
     {
         if(!data->data[i].useBin)
@@ -358,7 +361,15 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
             rawCount = mw_round(histogram->data[i].variable * nSim_uncut);
             nSim -= rawCount;
         }
-
+        /*FIXME: This calculation rederives the errors in the non-normalized counts from errors in the data
+          However, we cannot invert the calculation if any of the normalized counts equal 0.5. It would be 
+          easier to implement if the histogram stored the non-normalized values, but that's likely another
+          project for the future.*/
+        else if (histogram->data[i].variable != 0.5)
+        {
+            var_sum += sqr(histogram->data[i].err) / (1 - 2.0*histogram->data[i].variable);
+            sqr_sum += sqr(histogram->data[i].variable) / (1 - 2.0*histogram->data[i].variable);
+        }
     }
     
     /* this is the newest version of the cost function
@@ -366,6 +377,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * and the poisson error for the data
      */
     p = ( nSim / n) ;
+    nDataVariance = sqr(nData)*var_sum/(sqr_sum-1.0);
 
     /*Print statements for debugging likelihood*/
 //    mw_printf("dataMass = %.15f\n",dataMass);
@@ -376,7 +388,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 //    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
 
     real num = - sqr(dataMass * nData - histMass * nSim);
-    real denom = 2.0 * (sqr(dataMass) * nData + sqr(histMass) * nSim * p * (1.0 - p));
+    real denom = 2.0 * (sqr(dataMass) * nDataVariance + sqr(histMass) * nSim * p * (1.0 - p));
     real CostComponent = num / denom; //this is the log of the cost component
 
     /* the cost component is negative. Returning a postive value */

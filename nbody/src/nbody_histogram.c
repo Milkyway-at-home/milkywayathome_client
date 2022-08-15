@@ -613,12 +613,12 @@ void nbWriteHistogram(const char* histoutFileName,
 }
 
 /* Get normalized histogram counts and errors */
-static void nbNormalizeHistogram(NBodyHistogram* histogram, int total_simulated_bodies)
+static void nbNormalizeHistogram(NBodyHistogram* histogram)
 {
     unsigned int i1, i2;
     unsigned int j1, j2;
     unsigned int Histindex1, Histindex2;
-    real count;
+    real count, N_i, N_j, varN_i, varN_j;
 
     const HistogramParams* hp = &histogram->params;
 
@@ -629,6 +629,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram, int total_simulated_
     real lambdaStart = hp->lambdaStart;
     real betaStart = hp->betaStart;
 
+    real n = (real) histogram->totalSimulated;
     real totalNum = (real) histogram->totalNum;
     HistData* histData = histogram->data;
 
@@ -638,7 +639,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram, int total_simulated_
         for(j1 = 0; j1 < betaBins; ++j1)
         {
             Histindex1 = i1 * betaBins + j1;
-            count = (real) histData[Histindex].rawCount;
+            count = (real) histData[Histindex1].rawCount;
             
             /* Report center of the bins */
             histData[Histindex1].lambda = ((real) i1 + 0.5) * lambdaSize + lambdaStart;
@@ -653,16 +654,30 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram, int total_simulated_
         for(j1 = 0; j1 < betaBins; ++j1)
         {
             Histindex1 = i1 * betaBins + j1;
-            histData[Histindex1].err = (1.0 - 2.0*histData[Histindex1].variable)*sqr(histData[Histindex1].variable)*totalNum/total_simulated_bodies*(1.0 - histData[Histindex1].variable*totalNum*total_simulated_bodies);
+            if (histData[Histindex1].variable < 1.0/totalNum)
+            {
+                N_i = 1.0;
+                varN_i = N_i*(N_i/n)*(1.0-N_i/n); //binomial variance
+                histData[Histindex1].err = (1.0 - 2.0/totalNum)*varN_i;
+            }
+            else
+            {
+                N_i = histData[Histindex1].variable*totalNum;
+                varN_i = N_i*(N_i/n)*(1.0-N_i/n); //binomial variance
+                histData[Histindex1].err = (1.0 - 2.0*histData[Histindex1].variable)*varN_i;
+            }
+
             for(i2 = 0; i2 < lambdaBins; ++i2)
             {
                 for(j2 = 0; j2 < betaBins; ++j2)
                 {
                     Histindex2 = i2 * betaBins + j2;
-                    histData[Histindex1].err += sqr(histData[Histindex1].variable)*sqr(histData[Histindex2].variable)*totalNum*total_simulated_bodies*(1.0 - histData[Histindex2].variable*totalNum*total_simulated_bodies);
+                    N_j = histData[Histindex1].variable*totalNum;
+                    varN_j = N_j*(N_j/n)*(1.0-N_j/n); //binomial variance
+                    histData[Histindex1].err += sqr(histData[Histindex1].variable)*varN_j;
                 }
             }
-            histData[Histindex1].err = histData[Histindex1].err/totalNum;
+            histData[Histindex1].err /= sqr(totalNum);
             histData[Histindex1].err = mw_sqrt(histData[Histindex1].err);            
         }
     }
@@ -1023,7 +1038,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
         }
     }
     
-    nbNormalizeHistogram(all->histograms[0], body_count); // sets up normalized counts histogram
+    nbNormalizeHistogram(all->histograms[0]); // sets up normalized counts histogram
 
     //freeing up mwcallocs (which is essentially a malloc)
     free(use_velbody);
