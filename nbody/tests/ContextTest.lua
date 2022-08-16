@@ -22,7 +22,7 @@ require "NBodyTesting"
 SP = require "SamplePotentials"
 SM = require "SampleModels"
 
-local generatingResults = true
+local generatingResults = false
 
 -- returns (ctx, st)
 function getTestNBodyState(t)
@@ -76,8 +76,8 @@ local resultTable = {
    potentials   = SP.samplePotentialNames,
    models       = SM.sampleModelNames,
    nbody        = { 100, 1024 },
-   nSteps       = { 1, 3, 8 },
-   seeds        = { 1234567890, 609746760, 1000198000 },
+   nSteps       = { 1, 8 },
+   seeds        = { 1234567890, 609746760 },
    thetas       = { 1.0, 0.9, 0.5, 0.3 },
    treeRSizes   = { 8.0, 4.0, 2.0, 1.0 },
    criterion    = { "SW93", "TreeCode", "BH86", "Exact" },

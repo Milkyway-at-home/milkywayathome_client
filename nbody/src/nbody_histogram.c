@@ -52,11 +52,13 @@ static real nbHistogramBetaBinSize(const HistogramParams* hp)
     return binSize;
 }
 
-real nbNormalizedHistogramError(unsigned int n, real total)
+
+/*WARNING: These are NOT the errors in the normalized counts, but rather the errors in the
+  counts divided by the total number of bodies within the histogram. There IS a difference!*/
+real nbNormalizedHistogramError(unsigned int n, real total_histogram, real total_simulated)
 {
     real real_n = (real) n;
-    real norm_n = real_n / total;
-    return (n == 0) ? inv(total) : mw_sqrt((1.0 - 2.0*norm_n) * real_n + norm_n*norm_n*total) / total;
+    return ((n == 0) ? mw_sqrt(inv(total_simulated)*(1.0-inv(total_simulated))) : mw_sqrt(real_n*(real_n/total_simulated)*(1.0-(real_n/total_simulated))))/total_histogram; //Binomial Errors
 }
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
@@ -615,10 +617,9 @@ void nbWriteHistogram(const char* histoutFileName,
 /* Get normalized histogram counts and errors */
 static void nbNormalizeHistogram(NBodyHistogram* histogram)
 {
-    unsigned int i1, i2;
-    unsigned int j1, j2;
-    unsigned int Histindex1, Histindex2;
-    real count, N_i, N_j, varN_i, varN_j;
+    unsigned int i, j;
+    unsigned int Histindex;
+    real count;
 
     const HistogramParams* hp = &histogram->params;
 
@@ -634,51 +635,18 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     HistData* histData = histogram->data;
 
 
-    for (i1 = 0; i1 < lambdaBins; ++i1)
+    for (i = 0; i < lambdaBins; ++i)
     {
-        for(j1 = 0; j1 < betaBins; ++j1)
+        for(j = 0; j < betaBins; ++j)
         {
-            Histindex1 = i1 * betaBins + j1;
-            count = (real) histData[Histindex1].rawCount;
+            Histindex = i * betaBins + j;
+            count = (real) histData[Histindex].rawCount;
             
             /* Report center of the bins */
-            histData[Histindex1].lambda = ((real) i1 + 0.5) * lambdaSize + lambdaStart;
-            histData[Histindex1].beta   = ((real) j1 + 0.5) * betaSize + betaStart;
-            histData[Histindex1].variable  = count / totalNum;
-        }
-    }
-
-    //Calculating errors in normalized histogram with binomial statistics.
-    for (i1 = 0; i1 < lambdaBins; ++i1)
-    {
-        for(j1 = 0; j1 < betaBins; ++j1)
-        {
-            Histindex1 = i1 * betaBins + j1;
-            if (histData[Histindex1].variable < 1.0/totalNum)
-            {
-                N_i = 1.0;
-                varN_i = N_i*(N_i/n)*(1.0-N_i/n); //binomial variance
-                histData[Histindex1].err = (1.0 - 2.0/totalNum)*varN_i;
-            }
-            else
-            {
-                N_i = histData[Histindex1].variable*totalNum;
-                varN_i = N_i*(N_i/n)*(1.0-N_i/n); //binomial variance
-                histData[Histindex1].err = (1.0 - 2.0*histData[Histindex1].variable)*varN_i;
-            }
-
-            for(i2 = 0; i2 < lambdaBins; ++i2)
-            {
-                for(j2 = 0; j2 < betaBins; ++j2)
-                {
-                    Histindex2 = i2 * betaBins + j2;
-                    N_j = histData[Histindex1].variable*totalNum;
-                    varN_j = N_j*(N_j/n)*(1.0-N_j/n); //binomial variance
-                    histData[Histindex1].err += sqr(histData[Histindex1].variable)*varN_j;
-                }
-            }
-            histData[Histindex1].err /= sqr(totalNum);
-            histData[Histindex1].err = mw_sqrt(histData[Histindex1].err);            
+            histData[Histindex].lambda    = ((real) i + 0.5) * lambdaSize + lambdaStart;
+            histData[Histindex].beta      = ((real) j + 0.5) * betaSize + betaStart;
+            histData[Histindex].variable  = count / totalNum;
+            histData[Histindex].err       = nbNormalizedHistogramError(histData[i].rawCount, totalNum, n);
         }
     }
 }

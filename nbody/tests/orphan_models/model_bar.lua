@@ -32,7 +32,7 @@ function makeContext()
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
       timeBack    = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = calculateEps2(nbody, dwarfRadius,0),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,

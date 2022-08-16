@@ -350,10 +350,8 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
     /*
      * Correcting for bins in the comparison histogram that are not 
-     * included in the comparison.
+     * included in the comparison. Also calculating data errors.
      */
-    real var_sum = 0.0;
-    real sqr_sum = 0.0;
     for (unsigned int i = 0; i < nbins; ++i)
     {
         if(!data->data[i].useBin)
@@ -361,14 +359,11 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
             rawCount = mw_round(histogram->data[i].variable * nSim_uncut);
             nSim -= rawCount;
         }
-        /*FIXME: This calculation rederives the errors in the non-normalized counts from errors in the data
-          However, we cannot invert the calculation if any of the normalized counts equal 0.5. It would be 
-          easier to implement if the histogram stored the non-normalized values, but that's likely another
-          project for the future.*/
-        else if (histogram->data[i].variable != 0.5)
+        /*WARNING: These are NOT the errors in the normalized counts, but rather the errors in the
+          counts divided by the total number of bodies within the histogram. There IS a difference!*/
+        else
         {
-            var_sum += sqr(histogram->data[i].err) / (1 - 2.0*histogram->data[i].variable);
-            sqr_sum += sqr(histogram->data[i].variable) / (1 - 2.0*histogram->data[i].variable);
+            nDataVariance += sqr(data->data[i].err*nData);
         }
     }
     
@@ -377,7 +372,6 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
      * and the poisson error for the data
      */
     p = ( nSim / n) ;
-    nDataVariance = sqr(nData)*var_sum/(sqr_sum-1.0);
 
     /*Print statements for debugging likelihood*/
 //    mw_printf("dataMass = %.15f\n",dataMass);

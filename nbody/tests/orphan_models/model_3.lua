@@ -15,7 +15,7 @@ dwarfRadius = 0.2
 function makePotential()
    return Potential.create{
       spherical = Spherical.hernquist{ mass = 67479.9, scale = 0.6 },
-      disk      = Disk.doubleExponential{ mass = 224933, scaleLength = 6, scaleHeight = 0.3 },
+      disk      = Disk.sech2Exponential{ mass = 224933, scaleLength = 6, scaleHeight = 0.3 },
       disk2     = Disk.none{ mass = 3.0e5 },
       halo      = Halo.logarithmic{ vhalo = 81, scaleLength = 12, flattenZ = 1 }
    }
@@ -25,7 +25,7 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = calculateEps2(nbody, dwarfRadius,0),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
