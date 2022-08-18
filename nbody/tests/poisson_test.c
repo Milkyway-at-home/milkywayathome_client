@@ -39,7 +39,7 @@ static const real mass_thresh = 1.0/222288.47; /*1 Solar Mass*/
 static const real pi = 3.1415926535;
 
 static const int nPotentials = 10;
-static const int nPositions = 40;
+static const int nPositions = 100;
 static const real min_pos = -10.0;
 static const real max_pos = 10.0;
 
