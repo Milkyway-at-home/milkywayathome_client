@@ -168,35 +168,57 @@ static real nbCalculateEps2(real nbody, real a_b, real a_d, real M_b, real M_d)
     return eps2;
 }
 
+static real nbCalculateEps2_OLD(real nbody, real a_b, real a_d, real M_b, real M_d) /** Old softening length formula from v1.76 and earlier **/
+{
+    real a = (M_b*a_b + M_d*a_d)/(M_b+M_d);
+    real eps = a / 10.0 / mw_sqrt(nbody);
+    real eps2 = sqr(eps);
+    if (eps2 <= REAL_EPSILON) {
+        eps2 = REAL_EPSILON;
+    }
+    mw_printf("Optimal Softening Length = %.15f kpc\n", eps);
+    return eps2;
+}
+
 static int luaCalculateEps2(lua_State* luaSt)
 {
-    int nbody, arg_num;
+    int nbody, arg_num, use_old_softening_length;
     real r0, a_b, a_d, M_b, M_d;
 
     arg_num = lua_gettop(luaSt);
 
-    if (arg_num == 5)
+    if (arg_num == 6)
     {
         nbody = (int) luaL_checkinteger(luaSt, 1);
         a_b = luaL_checknumber(luaSt, 2);
         a_d = luaL_checknumber(luaSt, 3);
         M_b = luaL_checknumber(luaSt, 4);
         M_d = luaL_checknumber(luaSt, 5);
+        use_old_softening_length = (int) luaL_checkinteger(luaSt, 6);
+        
     }
-    else if (arg_num == 2) /** Single component only requires scale radius. **/
+    else if (arg_num == 3) /** Single component only requires scale radius. **/
     {
         nbody = (int) luaL_checkinteger(luaSt, 1);
         a_b = luaL_checknumber(luaSt, 2);
         a_d = 1.0; /** can be anything but zero **/
         M_b = 1.0; /** can be anything but zero **/
         M_d = 0.0; /** must be zero **/
+        use_old_softening_length = (int) luaL_checkinteger(luaSt, 3);
     }
     else
     {
-        return luaL_argerror(luaSt, 0, "Expected 2 or 5 arguments");
+        return luaL_argerror(luaSt, 0, "Expected 3 or 6 arguments");
     }
 
-    lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, a_b, a_d, M_b, M_d));
+    if (use_old_softening_length)
+    {
+        lua_pushnumber(luaSt, nbCalculateEps2_OLD((real) nbody, a_b, a_d, M_b, M_d));
+    }
+    else
+    {
+        lua_pushnumber(luaSt, nbCalculateEps2((real) nbody, a_b, a_d, M_b, M_d));
+    }
 
     return 1;
 }

@@ -323,6 +323,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     real n = (real) histogram->totalSimulated;
     real nSim_uncut = (real) histogram->totalNum;   /* Total simulated before dropping bins */
     real nData = (real) data->totalNum;
+    real nDataVariance = 0.0;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
@@ -349,7 +350,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     
     /*
      * Correcting for bins in the comparison histogram that are not 
-     * included in the comparison.
+     * included in the comparison. Also calculating data errors.
      */
     for (unsigned int i = 0; i < nbins; ++i)
     {
@@ -358,7 +359,12 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
             rawCount = mw_round(histogram->data[i].variable * nSim_uncut);
             nSim -= rawCount;
         }
-
+        /*WARNING: These are NOT the errors in the normalized counts, but rather the errors in the
+          counts divided by the total number of bodies within the histogram. There IS a difference!*/
+        else
+        {
+            nDataVariance += sqr(data->data[i].err*nData);
+        }
     }
     
     /* this is the newest version of the cost function
@@ -376,7 +382,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 //    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
 
     real num = - sqr(dataMass * nData - histMass * nSim);
-    real denom = 2.0 * (sqr(dataMass) * nData + sqr(histMass) * nSim * p * (1.0 - p));
+    real denom = 2.0 * (sqr(dataMass) * nDataVariance + sqr(histMass) * nSim * p * (1.0 - p));
     real CostComponent = num / denom; //this is the log of the cost component
 
     /* the cost component is negative. Returning a postive value */

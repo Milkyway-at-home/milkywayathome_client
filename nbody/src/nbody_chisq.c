@@ -190,7 +190,7 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                      * we need to correct the errors in case there
                      * were any bins we are skipping for matching to
                      * the data */
-                    simErr = nbNormalizedHistogramError(histogram->data[i].variable, effTotalNum);
+                    simErr = nbNormalizedHistogramError(histogram->data[i].variable, effTotalNum, histogram->totalSimulated);
 
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
                     err = sqrt(sqr(err) + sqr(simErr));

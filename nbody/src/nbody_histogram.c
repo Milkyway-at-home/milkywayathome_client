@@ -52,11 +52,13 @@ static real nbHistogramBetaBinSize(const HistogramParams* hp)
     return binSize;
 }
 
-real nbNormalizedHistogramError(unsigned int n, real total)
+
+/*WARNING: These are NOT the errors in the normalized counts, but rather the errors in the
+  counts divided by the total number of bodies within the histogram. There IS a difference!*/
+real nbNormalizedHistogramError(unsigned int n, real total_histogram, real total_simulated)
 {
     real real_n = (real) n;
-    real norm_n = real_n / total;
-    return (n == 0) ? inv(total) : mw_sqrt((1.0 - 2.0*norm_n) * real_n + norm_n*norm_n*total) / total;
+    return ((n == 0) ? mw_sqrt(inv(total_simulated)*(1.0-inv(total_simulated))) : mw_sqrt(real_n*(real_n/total_simulated)*(1.0-(real_n/total_simulated))))/total_histogram; //Binomial Errors
 }
 
 real nbCorrectRenormalizedInHistogram(const NBodyHistogram* histogram, const NBodyHistogram* data)
@@ -615,8 +617,7 @@ void nbWriteHistogram(const char* histoutFileName,
 /* Get normalized histogram counts and errors */
 static void nbNormalizeHistogram(NBodyHistogram* histogram)
 {
-    unsigned int i;
-    unsigned int j;
+    unsigned int i, j;
     unsigned int Histindex;
     real count;
 
@@ -629,6 +630,7 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
     real lambdaStart = hp->lambdaStart;
     real betaStart = hp->betaStart;
 
+    real n = (real) histogram->totalSimulated;
     real totalNum = (real) histogram->totalNum;
     HistData* histData = histogram->data;
 
@@ -641,10 +643,10 @@ static void nbNormalizeHistogram(NBodyHistogram* histogram)
             count = (real) histData[Histindex].rawCount;
             
             /* Report center of the bins */
-            histData[Histindex].lambda = ((real) i + 0.5) * lambdaSize + lambdaStart;
-            histData[Histindex].beta   = ((real) j + 0.5) * betaSize + betaStart;
+            histData[Histindex].lambda    = ((real) i + 0.5) * lambdaSize + lambdaStart;
+            histData[Histindex].beta      = ((real) j + 0.5) * betaSize + betaStart;
             histData[Histindex].variable  = count / totalNum;
-            histData[Histindex].err    = nbNormalizedHistogramError(histData[i].rawCount, totalNum);
+            histData[Histindex].err       = nbNormalizedHistogramError(histData[i].rawCount, totalNum, n);
         }
     }
 }
