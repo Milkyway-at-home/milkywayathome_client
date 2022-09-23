@@ -18,7 +18,7 @@ then
     make -j 
 fi
 
-cd /home/axiomomen/MilkyWay/build/bin
+cd $PathToMilkyWayAtHomeClientFolder/build/bin
 
 if $run 
 then
