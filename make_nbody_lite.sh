@@ -33,10 +33,9 @@ then
     rm -r build
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=OFF -DNBODY_GL=ON -DBOINC_APPLICATION=OFF -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=OFF -DAUTODIFF_LOG=OFF ../milkywayathome_client/
+    cmake -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=ON -DBOINC_APPLICATION=OFF -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF -DAUTODIFF=OFF -DAUTODIFF_LOG=OFF ../milkywayathome_client/
     make -j 
     cd ..
-
 fi
 
 if $package
@@ -64,6 +63,5 @@ then
     cp -r ./milkywayathome_client/lite/. ./mwah_nbody_lite
   
     echo "Nbody Lite: Nbody Lite successfully built"
-
 fi
     

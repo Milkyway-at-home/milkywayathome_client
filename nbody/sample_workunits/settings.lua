@@ -386,6 +386,25 @@ function makeBodies(ctx, potential)
     
 end
 
+--dummy function to avoid erorr messages
+function makeHistogram()
+    return HistogramParams.create{
+     --Orphan Stream coordinate transformation angles
+     phi = 128.79,
+     theta = 54.39,
+     psi = 90.70,
+     
+     -- ANGULAR RANGE AND NUMBER OF BINS
+     lambdaStart = -150,
+     lambdaEnd   = 150,
+     lambdaBins  = 50,
+     
+     betaStart = -15,
+     betaEnd   = 15,
+     betaBins  = 1
+}
+end
+
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)

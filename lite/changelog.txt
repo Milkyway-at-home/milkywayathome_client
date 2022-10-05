@@ -1,3 +1,7 @@
+v1.84.1:
+ - fixed bug where multi outputs wouldn't work
+ - hushed the errors about the makeHistogram function
+
 v1.84.0:
  - Updated to the most current (autodiff) version of Nbody v1.84
  - Can now specify the distance of the Sun from the Galactic Center
