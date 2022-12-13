@@ -252,9 +252,6 @@ function makeContext()
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
-      leftHanded    = LeftHandedCoords,
-      useContBins   = false,
-      bleedInRange  = 1,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
@@ -296,8 +293,7 @@ function makeBodies(ctx, potential)
                     coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
 	            tstop       = revOrbTime,
-	            dt          = ctx.timestep / 10.0,
-	            sunGCDist   = SunGCDist
+	            dt          = ctx.timestep / 10.0
 	            }
 
               
