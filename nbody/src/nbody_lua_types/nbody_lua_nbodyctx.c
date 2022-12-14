@@ -180,8 +180,12 @@ static int createNBodyCtx(lua_State* luaSt)
         }
     #endif
     
-    {
-        int major = 0, minor = 0;
+    /*
+    This looks really old and I don't think we have to check for WUs with version < 0.9 anymore.
+    I'm going to remove it (otherwise nbody lite prints two version statements due to the nbReadMinVersion
+    call here) and if it ends up breaking something, put it back later */
+    // {
+        // int major = 0, minor = 0;
 
         /* Automatically correct the timestep size so an integer
          * number of timesteps covers the evolution time.
@@ -190,17 +194,20 @@ static int createNBodyCtx(lua_State* luaSt)
          * avoid not validating against currently existing workunits
          */
 
-        if (  !nbReadMinVersion(luaSt, &major, &minor)    /* If we fail to read version */
-            || (major > 0 || (major == 0 && minor >= 90)) /* Version required >= 0.90 */
-            || (major == 0 && minor == 0))                /* Min version not set */
-        {
-            ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
-        }
-        else
-        {
-            mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
-        }
-    }
+        // if (  !nbReadMinVersion(luaSt, &major, &minor)    /* If we fail to read version */
+        //     || (major > 0 || (major == 0 && minor >= 90)) /* Version required >= 0.90 */
+        //     || (major == 0 && minor == 0))                /* Min version not set */
+        // {
+        //     ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
+        // }
+        // else
+        // {
+        //     mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
+        // }
+    // }
+    
+    //instead, just put this here -Tom
+    ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;

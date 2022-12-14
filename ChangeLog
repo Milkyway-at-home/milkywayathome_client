@@ -1,3 +1,13 @@
+nbody 1.85:
+	- now declares binary version being used at runtime in terminal
+	- all workunits have timesteps corrected, not just those with
+	  versions < 0.80 (side effect of the above, see nbody_lua_nbodyctx.c)
+	- Lots of additions and changes that weren't properly tracked. 
+	  For example, autodiff was added in 1.84, and then removed
+	  for this version. LMC was added in 1.82 and has had numerous 
+	  bug fixes since then. I don't know all the changes, so I
+	  can't list them, but we need to be better about this from now
+	  on. -Tom
 
 separation 1.0:
 	- CAL version removed.
