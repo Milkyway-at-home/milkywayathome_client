@@ -303,8 +303,7 @@ function makeBodies(ctx, potential)
 	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0,
-	            sunGCDist = SunGCDist
+	            dt        = ctx.timestep / 10.0
 	            }
          end
     end
