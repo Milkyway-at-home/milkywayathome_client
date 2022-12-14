@@ -1,3 +1,6 @@
+v1.84.3:
+ - can now perform runs with or without the LMC again
+
 v1.84.2:
  - LMC and multi-output now both work
  - up to date with most recent pushes
