@@ -2,12 +2,12 @@
 #/* Copyright (c) 2016 Siddhartha Shelton */
 
 rebuild=false
-run=false
-run_compare=true
+run=true
+run_compare=false
 compare_only=false
 get_flag_list=false
 
-PathToMilkyWayAtHomeClientFolder='INSERT PATHWAY HERE'
+PathToMilkyWayAtHomeClientFolder='/mnt/c/wsl/MW@h/old_binary'
 
 if $rebuild
 then
@@ -24,10 +24,10 @@ if $run
 then
     ./milkyway_nbody \
     -f $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/sample_workunits/for_developers.lua \
-    -o $PathToMilkyWayAtHomeClientFolder/results/inputs/test.out \
-    -z $PathToMilkyWayAtHomeClientFolder/results/inputs/test.hist \
-    -n 8 -b -w 1 -P -e 54231651 \
-    -i 4.0 1.0 0.2 0.2 12.0 0.2 \
+    -o $PathToMilkyWayAtHomeClientFolder/test.out \
+    -z $PathToMilkyWayAtHomeClientFolder/test.hist \
+    -n 10 -b -w 1 -P -e 54231651 \
+    -i 1.0 1.0 0.2 0.2 1.0 0.2 \
     
 fi
 
