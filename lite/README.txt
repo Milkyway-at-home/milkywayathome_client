@@ -135,4 +135,4 @@ Q: What is a structure mass?
 
 A: A structure mass is a unit of mass used internally by
 MilkyWay@home that simplifies internal calculations. One
-structure mass is equal to 22288.47 Solar masses.
+structure mass is equal to 222288.47 Solar masses.
