@@ -173,7 +173,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     int failed = 0;
 
     //mw_printf("HASHN - Before initializing context\n");
-    hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.0
+    hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.1
     //EVP_MD_CTX_init(&hashCtx);           //OPENSSL V1.0.2
 
     //mw_printf("HASHN - Before core\n");
@@ -182,7 +182,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     //mw_printf("HASHN - Before free\n");
     //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
     //if (!EVP_MD_CTX_cleanup(&hashCtx)) //OPENSSL V1.0.2
-    if (!EVP_MD_CTX_reset(&hashCtx))  //OPENSSL V1.1.0
+    if (!EVP_MD_CTX_reset(&hashCtx))  //OPENSSL V1.1.1
     {
         mw_printf("Error cleaning up hash context\n");
         return 1;
@@ -373,7 +373,7 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     int failed = 0;
 
     //mw_printf("HASHBOD - Before hashCtx creation\n");
-    hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.0
+    hashCtx = EVP_MD_CTX_new();        //OPENSSL V1.1.1
     //EVP_MD_CTX_init(&hashCtx);           //OPENSSL V1.0.2
 
     //mw_printf("HASHBOD - Before hashBodiesCore\n");
@@ -382,7 +382,7 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     //mw_printf("HASHBOD - Before free\n");
     //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
     //if (!EVP_MD_CTX_cleanup(&hashCtx)) //OPENSSL V1.0.2
-    if (!EVP_MD_CTX_reset(&hashCtx))  //OPENSSL V1.1.0
+    if (!EVP_MD_CTX_reset(&hashCtx))  //OPENSSL V1.1.1
     {
         mw_printf("Error cleaning up hash context\n");
         return 1;
