@@ -382,7 +382,7 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     //mw_printf("HASHBOD - Before free\n");
     //EVP_MD_CTX_free(hashCtx);        //OPENSSL V1.1.0
     //if (!EVP_MD_CTX_cleanup(&hashCtx)) //OPENSSL V1.0.2
-    if (!EVP_MD_CTX_reset(hashCtx))  //OPENSSL V1.1.1
+    if (!EVP_MD_CTX_reset(&hashCtx))  //OPENSSL V1.1.1
     {
         mw_printf("Error cleaning up hash context\n");
         return 1;
