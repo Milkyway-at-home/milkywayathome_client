@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-static const real h = mw_pow(2.0,-12.0);
+static const real h = 0.00024414062; // mw_pow(2.0,-12.0)
 static const real thresh = 0.1;
 static const real mass_thresh = 1.0/222288.47; /*1 Solar Mass*/
 static const real pi = 3.1415926535;
