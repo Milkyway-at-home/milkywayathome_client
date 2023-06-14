@@ -148,7 +148,7 @@ foreach(model_name ${orphan_model_names})
 endforeach()
 
 function(make_bodycount_test_set n)
-  add_custom_target(test_${n} COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*__${n}_test$"
+  add_custom_target(test_${n} COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*__${n}_test$$"
                               DEPENDS milkyway_nbody
                               COMMENT "Running model tests with ${n} bodies")
 endfunction()
