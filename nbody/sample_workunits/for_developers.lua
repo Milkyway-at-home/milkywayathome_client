@@ -103,10 +103,10 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
+useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
 freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
-timestep_control      = false       -- -- control number of steps      -- --
+timestep_control      = true       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
 
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
@@ -114,7 +114,8 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
-
+-- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
+n=3
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
@@ -198,6 +199,7 @@ end
 
 function makeContext()
    return NBodyCtx.create{
+      dwarfn      = n,
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
@@ -371,61 +373,22 @@ function round(num, places)
   return floor(num * mult + 0.5) / mult
 end
 
--- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
-multi_input = true
-
-if(multi_input == false) then
-    -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
-    dec = 9.0
-    evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
-    time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
-    rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
-    light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-    mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
-    light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-    if (#arg >= 12) then
-        orbit_parameter_l   = round( tonumber(arg[7]), dec )
-        orbit_parameter_b   = round( tonumber(arg[8]), dec )
-        orbit_parameter_r   = round( tonumber(arg[9]), dec )
-        orbit_parameter_vx  = round( tonumber(arg[10]), dec )
-        orbit_parameter_vy  = round( tonumber(arg[11]), dec )
-        orbit_parameter_vz  = round( tonumber(arg[12]), dec )
-        manual_body_file = arg[13]
-    else
-        orbit_parameter_l   = preset_orbit_parameter_l
-        orbit_parameter_b   = preset_orbit_parameter_b
-        orbit_parameter_r   = preset_orbit_parameter_r
-        orbit_parameter_vx  = preset_orbit_parameter_vx
-        orbit_parameter_vy  = preset_orbit_parameter_vy
-        orbit_parameter_vz  = preset_orbit_parameter_vz
-        manual_body_file = arg[7] -- File with Individual Particles (.out file)
-    end
-else
-    dec = 9.0
-    evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
-    time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
-    rscale_l         = round( 2.9, dec )    -- Baryonic Radius (kpc)
-    light_r_ratio    = round( 0.2, dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-    mass_l           = round( 24207.03, dec )    -- Baryonic Mass (Structure Mass Units)
-    light_mass_ratio = round( 0.0830, dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-    if (#arg >= 12) then
-        orbit_parameter_l   = round( 302.801, dec )
-        orbit_parameter_b   = round( -44.328, dec )
-        orbit_parameter_r   = round( 62.4, dec )
-        orbit_parameter_vx  = round( 21.99, dec )
-        orbit_parameter_vy  = round( -201.36, dec )
-        orbit_parameter_vz  = round( 171.25, dec )
-        manual_body_file = arg[13]
-    else
-        orbit_parameter_l   = preset_orbit_parameter_l
-        orbit_parameter_b   = preset_orbit_parameter_b
-        orbit_parameter_r   = preset_orbit_parameter_r
-        orbit_parameter_vx  = preset_orbit_parameter_vx
-        orbit_parameter_vy  = preset_orbit_parameter_vy
-        orbit_parameter_vz  = preset_orbit_parameter_vz
-        manual_body_file = arg[7] -- File with Individual Particles (.out file)
-    end
-end
+-- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
+dec = 9.0
+evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
+time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
+rscale_l         = round( 2.9, dec )    -- Baryonic Radius (kpc)
+light_r_ratio    = round( 0.2, dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = round( 24207.03, dec )    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = round( 0.0830, dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = round( 302.801, dec )
+orbit_parameter_b   = round( -44.328, dec )
+orbit_parameter_r   = round( 62.4, dec )
+orbit_parameter_vx  = round( 21.99, dec )
+orbit_parameter_vy  = round( -201.36, dec )
+orbit_parameter_vz  = round( 171.25, dec )
+manual_body_file = arg[13]
+-- File with Individual Particles (.out file)
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio

@@ -97,6 +97,8 @@ static int createNBodyCtx(lua_State* luaSt)
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
             { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
 
+            { "dwarfn",        LUA_TNUMBER,  NULL, FALSE,  &ctx.dwarfn},
+
             { "b",             LUA_TNUMBER,  NULL, FALSE,  &ctx.b   },
             { "r",             LUA_TNUMBER,  NULL, FALSE,  &ctx.r   },
             { "vx",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vx  },

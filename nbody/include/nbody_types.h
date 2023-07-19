@@ -448,6 +448,8 @@ typedef struct MW_ALIGN_TYPE
     real timeBack;
     real treeRSize;
     real sunGCDist;
+    
+    real dwarfn;  /* Number of dwarfs input */
 
     real b;     /* orbital parameters */
     real r;
@@ -474,7 +476,7 @@ typedef struct MW_ALIGN_TYPE
     
     real BestLikeStart;       /* after what portion of the sim should the calc start */
     real OutputFreq;          /* frequency of writing outputs */
-    
+
     real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
     real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
     real DistSigma;           /* sigma cutoff for the outlier rejection for the bin dists dispersions */ 
@@ -503,6 +505,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYCTX_TYPE "NBodyCtx"
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
+                         0,                                                                             \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \

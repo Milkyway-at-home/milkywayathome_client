@@ -27,6 +27,8 @@ const NBodyCtx defaultNBodyCtx =
     /* .eps2            */  0.0,
     /* .theta           */  -1.0,  /* Invalid */
 
+    /* .dwarfn          */  0,
+
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,
     /* .timeBack        */  0.0,

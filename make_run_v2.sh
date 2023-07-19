@@ -1,20 +1,20 @@
 #!/bin/bash
 #/* Copyright (c) 2016 Siddhartha Shelton */
 
-rebuild=false
-run=false
-run_compare=true
+rebuild=true
+run=true
+run_compare=false
 compare_only=false
 get_flag_list=false
 
-PathToMilkyWayAtHomeClientFolder='INSERT PATHWAY HERE'
+PathToMilkyWayAtHomeClientFolder='/mnt/c'
 
 if $rebuild
 then
     rm -r build
     mkdir build
     cd build
-    cmake  -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=OFF -DBOINC_APPLICATION=ON -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/
+    cmake  -DCMAKE_BUILD_TYPE=Debug -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=OFF -DBOINC_APPLICATION=ON -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/
     make -j 
 fi
 
@@ -24,8 +24,8 @@ if $run
 then
     ./milkyway_nbody \
     -f $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/sample_workunits/for_developers.lua \
-    -o $PathToMilkyWayAtHomeClientFolder/results/inputs/test.out \
-    -z $PathToMilkyWayAtHomeClientFolder/results/inputs/test.hist \
+    -o $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/build/bin/test.out \
+    -z $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/test.hist \
     -n 8 -b -w 1 -P -e 54231651 \
     -i 4.0 1.0 0.2 0.2 12.0 0.2 \
     
