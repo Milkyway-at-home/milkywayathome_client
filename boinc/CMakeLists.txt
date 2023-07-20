@@ -207,7 +207,6 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/app_ipc.cpp
                   ${BOINC_LIB_SRC_DIR}/diagnostics.cpp
                   ${BOINC_LIB_SRC_DIR}/filesys.cpp
-                  ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
                   ${BOINC_LIB_SRC_DIR}/md5.cpp
                   ${BOINC_LIB_SRC_DIR}/md5_file.cpp
                   ${BOINC_LIB_SRC_DIR}/mem_usage.cpp
@@ -230,6 +229,7 @@ if(WIN32)
   list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/win_util.cpp
                             ${BOINC_LIB_SRC_DIR}/diagnostics_win.cpp
                             ${BOINC_LIB_SRC_DIR}/stackwalker_win.cpp
+                            ${BOINC_LIB_SRC_DIR}/wslinfo.cpp
                             ${BOINC_LIB_SRC_DIR}/procinfo_win.cpp)
 endif()
 
