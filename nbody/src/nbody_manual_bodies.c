@@ -56,13 +56,13 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     if (body_inputs == NULL)//make sure the file is available
     {
         mw_printf("Error opening data file '%s'\n", body_file);
-        return NULL;
+        return 0;
     }
     
     if (fsize == 0)//if the file is empty then throw error
     {
         mw_printf("Data file line count = 0\n");
-        return NULL;
+        return 0;
     }
     
     while (fgets(lineBuf, (int) sizeof(lineBuf), body_inputs))
