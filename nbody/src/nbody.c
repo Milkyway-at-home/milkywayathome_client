@@ -121,6 +121,7 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 /* Try to run a potential function and see if it fails. Return TRUE on failure. */
 static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx, NBodyState* st)
 {
+	//mw_printf("nbVerifyPotentialFunction\n");
     mwvector acc;
     mwvector pos = mw_vec(1.0, 1.0, 0.0);
 
@@ -142,6 +143,7 @@ static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx,
 /* Try evaluating everything in the file to make sure it's OK */
 int nbVerifyFile(const NBodyFlags* nbf)
 {
+	//mw_printf("nbVerifyFile\n");
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_NBODYSTATE;
     HistogramParams hp;

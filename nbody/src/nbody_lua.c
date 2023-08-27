@@ -541,6 +541,7 @@ int nbEvaluateHistogramParams(lua_State* luaSt, HistogramParams* hp)
  * for file verification */
 int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
 {
+	//mw_printf("nbHistogramParamsCheck\n");
     lua_State* luaSt;
     int rc;
     NBodyLikelihoodMethod method;
@@ -560,6 +561,7 @@ int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
 
 static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
 {
+	//mw_printf("nbEvaluateBodies\n");
     int level, nResults;
 
     level = lua_gettop(luaSt);
@@ -588,6 +590,7 @@ static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
 
 static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
 {
+	//mw_printf("nbEvaluateInitialNBodyState\n");
     Body* bodies;
     int nbody;
 
@@ -601,8 +604,7 @@ static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodySta
     
     if (!bodies)
         return 1;
-
-    
+	
     setInitialNBodyState(st, ctx, bodies, nbody);
 
     return 0;

@@ -115,6 +115,51 @@ static real einasto_pot(const Dwarf* model, real r)                             
     return coeff * term;                                                                                                 //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*                             SIDM                                                                                      */
+/*                            [ATRIBUTION]                                                                               */
+static real sidm_den(const Dwarf* model, real r)                                                                         //
+{                              																							 //
+	const real r1 = model->r1;																							 //
+	real p;																							 			 //
+	real rscale;																									 //
+	if(r <= r1)																											 //
+	{																													 //
+		p = model->p0;																									 //
+		rscale = model->rc;	       																						 //
+		return p/(1 + sqr(r/rscale));																					 //
+	}																													 //
+	else																												 //
+	{																													 //
+		p = model->ps;																									 //
+		rscale = model->scaleLength;																					 //
+		return p/((r/rscale) * sqr(1 + r/rscale));																		 //
+	}																													 //
+}                                                                                                                        //
+                                                                                                                         //
+static real sidm_pot(const Dwarf* model, real r)                                                                         //
+{                                                                                                                        //
+	const real r1 = model->r1;
+	const real p0 = model->p0;
+	const real rc = model->rc;
+	const real ps = model->ps;
+	const real rs = model->scaleLength;
+	const real C4 = 0;
+	const real C1 = 0;
+	const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));
+	
+	
+	if(r <= r1)
+	{
+		const real C2 = (C3-C1)/r1 - 4.0*M_PI*ps*mw_log(1+r1/rs)/r1 - 4.0*M_PI*p0*sqr(rc)*(mw_log(sqr(r1)+sqr(rc))/2 + rc*atan(r1/rc)/r1);
+		return 4.0*M_PI*p0*sqr(rc)*(mw_log(sqr(r)+sqr(rc)) + rc*atan(r/rc)/r) + C1/r + C2; 
+	}
+	else
+	{
+		return  (-4.0 * M_PI * cube(rs) * ps * mw_log(1.0 + r/rs) / r) + C3/r + C4;  
+	}																													//
+}                                                                                                                        //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 real get_potential(const Dwarf* model, real r)
 {
@@ -131,9 +176,12 @@ real get_potential(const Dwarf* model, real r)
         case General_Hernquist:
             pot_temp = gen_hern_pot(model, r );
             break;
-//         case Einasto:
-//             einasto_pot(model, r);
-//             break;
+         case Einasto:
+             einasto_pot(model, r);
+             break;
+		case SIDM:
+			pot_temp = sidm_pot(model, r);
+			break;
         case InvalidDwarf:
         default:
             mw_fail("Invalid dwarf type\n");
@@ -159,9 +207,12 @@ real get_density(const Dwarf* model, real r)
         case General_Hernquist:
             den_temp = gen_hern_den(model, r );
             break;
-//         case Einasto:
-//             einasto_den(model, r);
-//             break;
+         case Einasto:
+             einasto_den(model, r);
+             break;
+		case SIDM:
+			den_temp = sidm_den(model, r);
+			break;
         case InvalidDwarf:
         default:
             mw_fail("Invalid dwarf type");

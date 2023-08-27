@@ -43,11 +43,13 @@ static const MWEnumAssociation dwarfOptions[] =
     { "nfw",                  NFW,                 },
     { "general_hernquist",    General_Hernquist,   },
     { "einasto",              Einasto,             },
+	{ "sidm", 				  SIDM,				   },
     END_MW_ENUM_ASSOCIATION
 };
 
 static int createDwarf(lua_State* luaSt, const MWNamedArg* argTable, Dwarf* h)
 {
+	//mw_printf("createDwarf\n");
     oneTableArgument(luaSt, argTable);
     pushDwarf(luaSt, h);
     return 1;
@@ -110,6 +112,24 @@ static int createEinastoDwarf(lua_State* luaSt)
     return createDwarf(luaSt, argTable, &h);
 }
 
+static int createSIDMDwarf(lua_State* luaSt)
+{
+	//mw_printf("createSIDMDwarf\n");
+    static Dwarf h = EMPTY_DWARF;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+			{ "r1", 		 LUA_TNUMBER, NULL, TRUE, &h.r1 },
+			{ "rc", 		 LUA_TNUMBER, NULL, TRUE, &h.rc },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = SIDM;
+	h.r1 = h.scaleLength;
+    return createDwarf(luaSt, argTable, &h);
+}
+
 int getDwarfT(lua_State* luaSt, void* v)
 {
     return pushEnum(luaSt, dwarfOptions, *(int*) v);
@@ -140,6 +160,7 @@ static const luaL_reg methodsDwarf[] =
     { "nfw",                  createNFWDwarf        },
     { "general_hernquist",    createGen_HernDwarf   },
     { "einasto",              createEinastoDwarf    },
+	{ "sidm",             	  createSIDMDwarf   	},
     { NULL, NULL }
 };
 
@@ -181,6 +202,7 @@ int registerDwarfKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createNFWDwarf, "nfw");
     setModelTableItem(luaSt, table, createGen_HernDwarf, "general_hernquist");
     setModelTableItem(luaSt, table, createEinastoDwarf, "einasto");
+	setModelTableItem(luaSt, table, createSIDMDwarf, "sidm");
 
     /* Getting the number of keys in a table is a pain */
     lua_pushnumber(luaSt, 3);

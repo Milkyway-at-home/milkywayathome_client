@@ -681,18 +681,34 @@ static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real *
     return 1;
 }
 
-static inline void set_p0(Dwarf* comp)
+static inline void set_vars(Dwarf* comp)
 {
-    /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
+    /*this is only used for the nfw and sidm but it is technically valid for all the profiles. easier to have it here*/
     /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
     //as defined in Binney and Tremaine 2nd ed:
     //the r200 is now used for all potentials to provide the bounds for density sampling
     real mass = comp->mass; 
     real rscale = comp->scaleLength;
     real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
-    real c = r200 / rscale; //halo concentration
-    real term = mw_log(1.0 + c) - c / (1.0 + c);
-    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+	real p0;
+	if(comp->type == SIDM)
+	{
+		real r1 = comp->r1;
+		real rc = comp->rc;
+
+		real D1 = r1*sqr(1+r1/rscale)/(rscale+rscale*sqr(r1/rc));
+		real D2 = cube(rscale)*(mw_log(1+r200/rscale)-mw_log(1+r1/rscale)-r200/(rscale+r200)+r1/(rscale+r1));
+		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*atan(r1/rc)+r1/(1+sqr(r1/rc)));
+		
+		p0 = mass/(4*M_PI*(D1*D2+D3));
+		comp->ps = p0*D1;
+	}
+	else
+	{
+		real c = r200 / rscale; //halo concentration
+		real term = mw_log(1.0 + c) - c / (1.0 + c);
+		p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+	}
     comp->r200 = r200;
     comp->p0 = p0;
 }
@@ -701,9 +717,28 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
 {
     /* The mass inputted is taken to be the M200 mass (mass within radius r200).*/
     /* If the sampling boundary goes above or below r200, this function resets the mass of the component.*/
-    real rs = comp->scaleLength;
-    real r = bound;
-    real m = 4.0 * M_PI * comp->p0 * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r));
+	real m;
+	real r = bound;
+	real rs = comp->scaleLength;
+	
+	if(comp->type == SIDM)
+	{
+		const real r1 = comp->r1;
+		const real p0 = comp->p0;
+		const real rc = comp->rc;
+		const real ps = comp->ps;
+		const real C1 = 0;
+		const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));
+		
+		if(r <= r1)
+			m = 4.0*M_PI*p0*sqr(rc)*(r/(1+sqr(rc/r)) - rc*atan(r/rc) + r/(1+sqr(r/rc))) - C1;
+		else
+			m = 4.0 *M_PI*cube(rs)*ps*(mw_log(1+r/rs) - r/(rs+r)) - C3;  																	
+	}
+	else
+	{
+		m = 4.0 * M_PI * comp->p0 * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r));
+	}
     comp->mass = m;
 }
 
@@ -718,6 +753,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
     * etc).    See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
     * 183.
     */
+		//mw_printf("nbGenerateMixedDwarfCore\n");
+		
         unsigned int i;
         int table;
         Body b;
@@ -735,8 +772,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         mwvector vec;
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
-        set_p0(comp1);
-        set_p0(comp2);
+        set_vars(comp1);
+        set_vars(comp2);
         real bound1 ;
         real bound2 ;
         
@@ -748,11 +785,15 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 break;
             case NFW:
                 bound1 = 5.0 * comp1->r200;
-		get_extra_nfw_mass(comp1, bound1);
+				get_extra_nfw_mass(comp1, bound1);
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
                 break;
+			case SIDM:
+				bound1 = 5.0 * comp1->r200;
+				get_extra_nfw_mass(comp1, bound1);
+				break;
         }
 
         switch(comp2->type)
@@ -767,6 +808,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
+			case SIDM:
+				bound2 = 5.0 * comp2->r200;
+				get_extra_nfw_mass(comp2, bound2);
+				break;
         }
         
         
@@ -804,6 +849,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 rho_max_light = rscale_l / 2.0;
                 rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
                 break;
+			case SIDM:
+                rho_max_light = (rscale_l > comp1->r1) ? rscale_l : comp1->r1;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
         }
 
         switch(comp2->type) //these are the analytic equations for the radius where r^2rho is max;
@@ -820,6 +869,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 rho_max_dark = rscale_d / 2.0;
                 rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
                 break;
+			case SIDM:
+                rho_max_dark = (rscale_d > comp2->r1) ? rscale_d : comp2->r1;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
         }
         
     	/*initializing particles:*/
@@ -827,7 +880,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         lua_createtable(luaSt, nbody, 0);
         table = lua_gettop(luaSt);      
         int counter = 0;
-        
 
         /*getting the radii and velocities for the bodies*/
         for (i = 0; i < nbody; i++)
@@ -865,10 +917,15 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             do
             {
                 v = vel_mag(r, comp1, comp2, prng);
+				
+				//mw_printf("%f ", v);
+				
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+				
+				
                 
                 if(counter > 1000)
-                {
+				{
                     exit(-1);
                 }
                 else
@@ -877,6 +934,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 }
                 
             }while (1);
+			
             vec = get_components(prng, v);   
             vx[i] = vec.x;
             vy[i] = vec.y;
@@ -885,6 +943,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             x[i] = vec.x;
             y[i] = vec.y;
             z[i] = vec.z;
+			
+			
         }
 
 
@@ -892,7 +952,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component
 		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, half_bodies, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
-
 
         /* pushing the bodies */
         for (i = 0; i < nbody; i++)
@@ -963,8 +1022,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
         mwvector vec;
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
-        set_p0(comp1);
-        set_p0(comp2);
+        set_vars(comp1);
+        set_vars(comp2);
         real bound1 ;
         real bound2 ;
         
@@ -976,11 +1035,15 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                 break;
             case NFW:
                 bound1 = 5.0 * comp1->r200;
-		get_extra_nfw_mass(comp1, bound1);
+				get_extra_nfw_mass(comp1, bound1);
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
                 break;
+			case SIDM:
+				bound1 = 5.0 * comp1->r200;
+				get_extra_nfw_mass(comp1, bound1);
+				break;
         }
 
         switch(comp2->type)
@@ -995,6 +1058,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
+			case SIDM:
+				bound2 = 5.0 * comp2->r200;
+				get_extra_nfw_mass(comp2, bound2);
+				break;
         }
         
         
@@ -1032,6 +1099,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                 rho_max_light = rscale_l / 2.0;
                 rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
                 break;
+			case SIDM:
+                rho_max_light = (rscale_l > comp1->r1) ? rscale_l : comp1->r1;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
         }
 
         switch(comp2->type) //these are the analytic equations for the radius where r^2rho is max;
@@ -1046,6 +1117,10 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
                 break;
             case General_Hernquist:
                 rho_max_dark = rscale_d / 2.0;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+			case SIDM:
+                rho_max_dark = (rscale_d > comp2->r1) ? rscale_d : comp2->r1;
                 rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
                 break;
         }
@@ -1154,6 +1229,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
 
 int nbGenerateMixedDwarf(lua_State* luaSt)
 {
+		//mw_printf("nbGenerateMixedDwarf\n");
+		
         static dsfmt_t* prng;
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
@@ -1176,6 +1253,7 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
 
         if (lua_gettop(luaSt) != 1)
             return luaL_argerror(luaSt, 1, "Expected 1 arguments");
+		
         
         handleNamedArgumentTable(luaSt, argTable, 1);
         
