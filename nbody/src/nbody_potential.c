@@ -142,12 +142,57 @@ mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
     return v;
 }
 
+/*
 mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
 {
+    //mw_printf("-----------------------------------------\n");
+    //mw_printf("body position = {%.15f,%.15f,%.15f}\n", pos.x, pos.y, pos.z);
+    //mw_printf("LMC position = {%.15f,%.15f,%.15f}\n", pos1.x, pos1.y, pos1.z);
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
     real tmp = mw_sqrt(mw_pow(scale,2.0) + mw_pow(dist,2.0));
     mw_incmulvs(v, mass/mw_pow(tmp,3.0));
+    return v;
+}
+*/
+
+//NFW accel from Erkal
+/*
+mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2)
+{
+    //mw_printf("-----------------------------------------\n");
+    //mw_printf("body position = {%.15f,%.15f,%.15f}\n", pos.x, pos.y, pos.z);
+    //mw_printf("LMC position = {%.15f,%.15f,%.15f}\n", pos1.x, pos1.y, pos1.z);    
+    mwvector v = mw_subv(pos1, pos);
+    //mw_printf("v = {%.15f,%.15f,%.15f}\n", v.x, v.y, v.z);
+    real dist = mw_distv(pos, pos1);
+    //mw_printf("dist = %.15f\n", dist);
+
+    if (dist <= scale2)
+    {
+	real tmp1 = mw_log(1.0 + (dist/scale)) - (dist/(dist + scale));
+	real tmp2 = mw_log(1.0 + (scale2/scale)) - (scale2/(scale2 + scale));
+	real mass_LMC = mass*tmp1/tmp2;
+	mw_incmulvs(v, mass_LMC/mw_pow(dist,3.0));
+    }
+    else
+    {
+        mw_incmulvs(v, mass/mw_pow(dist,3.0));
+    }    
+
+    //mw_printf("accel = {%.15f,%.15f,%.15f}\n", v.x, v.y, v.z);
+    return v;
+}
+*/
+
+//Hernquist accel
+
+mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2)
+{
+    mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mw_pow((scale + dist), 2.0);
+    mw_incmulvs(v, mass/(tmp*dist));
     return v;
 }
 
@@ -503,6 +548,26 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
     return acc;
 }
 
+static inline mwvector NFWerkalHaloAccel(const Halo* halo, mwvector pos)
+{
+    mwvector acc;
+
+    const real a = halo->scaleLength;
+    const real q  = halo->flattenZ;
+    const real M  = halo->mass;
+
+    real c = M/(mw_log(1.0 + 15.3) - (15.3/(1.0 + 15.3)));  //c = 15.3
+    real d = mw_sqrt(mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + (mw_pow(Z(pos),2.0)/mw_pow(q,2.0)));
+    real tmp1 = (a*mw_pow(d,2.0)) + mw_pow(d,3.0);
+    real tmp2 = mw_log(1.0 + (d/a));
+
+    X(acc) = c * ((X(pos)/tmp1) - (X(pos)*tmp2/mw_pow(d,3.0)));
+    Y(acc) = c * ((Y(pos)/tmp1) - (Y(pos)*tmp2/mw_pow(d,3.0)));
+    Z(acc) = c * ((Z(pos)/(q*q)/tmp1) - (Z(pos)*tmp2/(q*q)/mw_pow(d,3.0)));
+
+    return acc;
+}
+
 static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 {
     const real a = h->scaleLength;
@@ -692,6 +757,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
         case LogarithmicHalo:
             acctmp = logHaloAccel(&pot->halo, pos);
             break;
+	case NFWerkalHalo:
+	    acctmp = NFWerkalHaloAccel(&pot->halo, pos);
+	    break;
         case NFWHalo:
             acctmp = nfwHaloAccel(&pot->halo, pos, r);
             break;

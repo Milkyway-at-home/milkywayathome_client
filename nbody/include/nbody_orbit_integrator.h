@@ -48,6 +48,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real dt,
                     real LMCmass,
                     real LMCscale,
+		    real LMCscale2,
                     real coulomb_log);
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr);

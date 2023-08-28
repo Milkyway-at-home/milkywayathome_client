@@ -105,6 +105,29 @@ static inline real logarithmicHaloDensity(const Halo* h, mwvector pos) /** flatt
     return v*v*numer/2.0/pi/denom;
 }
 
+static inline real NFWerkalHaloDensity(const Halo* h, mwvector pos)
+{
+    const real a = h->scaleLength;
+    const real q  = h->flattenZ;
+    const real M  = h->mass;
+  
+    real c = -M/4.0/pi/(mw_log(1.0 + 15.3) - (15.3/(1.0 + 15.3)));  //c = 15.3
+    real d = mw_sqrt(mw_pow(X(pos),2.0) + mw_pow(Y(pos),2.0) + (mw_pow(Z(pos),2.0)/mw_pow(q,2.0)));
+    real tmp1 = mw_pow(X(pos),2.0)*(1.0 - (1.0/mw_pow(q,2.0)));
+    real tmp2 = mw_pow(Y(pos),2.0)*(1.0 - (1.0/mw_pow(q,2.0)));
+    real tmp3 = 2*mw_pow(Z(pos),2.0)*((1.0/mw_pow(q,4.0)) - (1/mw_pow(q,2.0)));
+    real tmp4 = mw_pow(X(pos),2.0)*(((1.0/mw_pow(q,2.0)) - 2.0)*d + ((1.0/mw_pow(q,2.0)) - 1.0)*a);
+    real tmp5 = mw_pow(Y(pos),2.0)*(((1.0/mw_pow(q,2.0)) - 2.0)*d + ((1.0/mw_pow(q,2.0)) - 1.0)*a);
+    real tmp6 = (mw_pow(Z(pos),2.0)/mw_pow(q,4.0))*((((2.0*mw_pow(q,2.0)) - 3.0)*d) + ((mw_pow(q,2.0) - 1.0)*2.0*a));
+
+    real density = c*( (mw_log(1.0 + (d/a))*(tmp1 + tmp2 + tmp3)/mw_pow(d, 5.0)) + ( (tmp4 + tmp5 + tmp6)/(mw_pow(d,4.0)*mw_pow((d+a),2.0)) ) );
+
+    if(density < 0)  return 0.0;
+
+    return density;
+
+}
+
 static inline real NFWHaloDensity(const Halo* h,  real r)
 {
     const real a = h->scaleLength;
@@ -324,6 +347,9 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
         case LogarithmicHalo:
             density += logarithmicHaloDensity(&(pot->halo), pos);
             break;
+	case NFWerkalHalo:
+	    density += NFWerkalHaloDensity(&(pot->halo), pos);
+	    break;
         case NFWHalo:
             density += NFWHaloDensity(&(pot->halo), r);
             break;

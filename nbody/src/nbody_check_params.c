@@ -161,6 +161,13 @@ mwbool checkHaloConstants(Halo* h)
             }
             break;
 
+	case NFWerkalHalo:
+	    if (!isfinite(h->scaleLength) || !isfinite(h->flattenZ) || !isfinite(h->mass))
+	    {
+		return invalidHaloWarning(h->type);
+	    }
+	    break;
+
         case NFWHalo:
             if (!isfinite(h->vhalo) || !isfinite(h->scaleLength))
             {

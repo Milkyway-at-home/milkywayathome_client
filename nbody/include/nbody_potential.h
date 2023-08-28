@@ -29,7 +29,7 @@ extern "C" {
 
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time);
 mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass);
-mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale);
+mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2);
 
 #ifdef __cplusplus
 }

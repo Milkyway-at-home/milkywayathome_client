@@ -130,7 +130,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector LMCx;
     mwvector a, externAcc;
     const Body* b;
-    real lmcmass, lmcscale;
+    real lmcmass, lmcscale, lmcscale2 ;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
@@ -144,11 +144,13 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
+	lmcscale2 = ctx->LMCscale2;
     }
     else {
         SET_VECTOR(LMCx,0.0,0.0,0.0);
         lmcmass = 0.0;
         lmcscale = 1.0;
+	lmcscale2 = 1.0;
     }
 
   #ifdef _OPENMP
@@ -165,7 +167,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale, lmcscale2));
                 /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
                     sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
                     take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
@@ -190,7 +192,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
+                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale, lmcscale2));
                 mw_incaddv(a, externAcc);
 
                 accels[i] = a;
@@ -233,7 +235,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     mwvector LMCx;
     mwvector a, externAcc;
     const Body* b;
-    real lmcmass, lmcscale;
+    real lmcmass, lmcscale, lmcscale2;
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
@@ -245,11 +247,13 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
         LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
+	lmcscale2 = ctx->LMCscale2;
     }
     else {
         SET_VECTOR(LMCx,0.0,0.0,0.0);
         lmcmass = 0.0;
         lmcscale = 1.0;
+	lmcscale2 = 1.0;
     }
 
   #ifdef _OPENMP
@@ -265,7 +269,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale, lmcscale2));
                 mw_incaddv(a, externAcc);
                 
                 accels[i] = a;
@@ -280,7 +284,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("CUSTOM POTENTIAL - EXACT\n");
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
+                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale, lmcscale2));
                 mw_incaddv(a, externAcc);
 
                 accels[i] = a;

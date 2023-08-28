@@ -103,6 +103,8 @@ const char* showHaloT(halo_t x)
     {
         case LogarithmicHalo:
             return "LogarithmicHalo";
+        case NFWerkalHalo:
+	    return "NFWerkalHalo";
         case NFWHalo:
             return "NFWHalo";
         case TriaxialHalo:
@@ -539,6 +541,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  LMC             = %s\n"
                      "  LMCmass         = %f\n"
                      "  LMCscale        = %f\n"
+		     "  LMCscale2       = %f\n"
                      "  LMCDynaFric     = %s\n"
                      "  checkpointT     = %d\n"
                      "  nStep           = %u\n"

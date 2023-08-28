@@ -57,6 +57,14 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyFlags* nbf, const NBodyCtx*
             X(cmVel), Y(cmVel), Z(cmVel)
         );
 
+    if (ctx->LMC)
+    {
+        fprintf(f,
+             "LMC position = %f, %f, %f,   LMC velocity = %f, %f, %f, \n",
+             st->LMCpos.x, st->LMCpos.y, st->LMCpos.z,
+             st->LMCvel.x, st->LMCvel.y, st->LMCvel.z
+             );
+    }
 }
 
 static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both, mwbool LBavailable)
