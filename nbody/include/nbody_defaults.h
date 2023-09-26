@@ -34,7 +34,7 @@ extern "C" {
 
 /* 15 minutes */
 #define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
-
+  
 
 #define DEFAULT_SUN_GC_DISTANCE ((real) 8.0)
 #define DEFAULT_CRITERION TreeCode

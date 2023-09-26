@@ -88,7 +88,8 @@ static int createNBodyCtx(lua_State* luaSt)
     real nStepf = 0.0;
 
     static const MWNamedArg argTable[] =
-        {
+        {   
+            { "dwarfn",        LUA_TNUMBER,  NULL, TRUE,  &ctx.dwarfn        },
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
             { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },
@@ -96,8 +97,6 @@ static int createNBodyCtx(lua_State* luaSt)
             { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
             { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
             { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
-
-            { "dwarfn",        LUA_TNUMBER,  NULL, FALSE,  &ctx.dwarfn},
 
             { "b",             LUA_TNUMBER,  NULL, FALSE,  &ctx.b   },
             { "r",             LUA_TNUMBER,  NULL, FALSE,  &ctx.r   },
@@ -255,6 +254,7 @@ static const luaL_reg methodsNBodyCtx[] =
 
 static const Xet_reg_pre gettersNBodyCtx[] =
 {
+    { "dwarfn",          getNumber,     offsetof(NBodyCtx, dwarfn)        },
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)      },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)    },
     { "timeBack",        getNumber,     offsetof(NBodyCtx, timeBack)      },
@@ -296,6 +296,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 
 static const Xet_reg_pre settersNBodyCtx[] =
 {
+    { "dwarfn",          setNumber,     offsetof(NBodyCtx, dwarfn)        },
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)      },
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)    },
     { "timeBack",        setNumber,     offsetof(NBodyCtx, timeBack)      },

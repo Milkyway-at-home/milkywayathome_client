@@ -31,7 +31,7 @@ nbodyMinVersion       = "1.85"  -- -- MINIMUM APP VERSION                       
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
 print_reverse_orbit   = true   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
-print_out_parameters  = true   -- -- PRINT OUT ALL PARAMETERS                          -- --
+print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
 LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15

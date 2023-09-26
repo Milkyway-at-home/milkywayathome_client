@@ -1,5 +1,5 @@
 #!/bin/bash
-#/* Copyright (c) 2016 Siddhartha Shelton */
+#/* Copyright (c) 2016 Siddhartha Shelton */earl grey
 
 rebuild=true
 run=true
@@ -25,7 +25,7 @@ then
     ./milkyway_nbody \
     -f $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/nbody/sample_workunits/for_developers.lua \
     -o $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/build/bin/test.out \
-    -z $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/test.hist \
+    -z $PathToMilkyWayAtHomeClientFolder/milkywayathome_client/build/bin/test.hist \
     -n 8 -b -w 1 -P -e 54231651 \
     -i 4.0 1.0 0.2 0.2 12.0 0.2 \
     

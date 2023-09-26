@@ -554,7 +554,6 @@ static int nbSetNumThreads(int numThreads)
   #ifdef _OPENMP
     int nProc = omp_get_num_procs();
     int nBoinc = mwGetBoincNumCPU();
-
     if (nProc <= 0) /* It's happened before... */
     {
         mw_printf("Number of processors %d is crazy\n", nProc);
@@ -568,7 +567,7 @@ static int nbSetNumThreads(int numThreads)
     }
 
     if (numThreads != 0)
-    {
+    {   
         omp_set_num_threads(numThreads);
         mw_printf("Using OpenMP %d max threads on a system with %d processors\n",
                   omp_get_max_threads(),

@@ -759,6 +759,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
 {
     return feqWithNan(ctx1->eps2, ctx2->eps2)
         && feqWithNan(ctx1->theta, ctx2->theta)
+        && feqWithNan(ctx1->dwarfn, ctx2->dwarfn)
         && feqWithNan(ctx1->timestep, ctx2->timestep)
         && feqWithNan(ctx1->timeEvolve, ctx2->timeEvolve)
         && feqWithNan(ctx1->timeBack, ctx2->timeBack)
