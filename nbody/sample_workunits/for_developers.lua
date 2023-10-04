@@ -30,10 +30,10 @@ nbodyMinVersion       = "1.85"  -- -- MINIMUM APP VERSION                       
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
-print_reverse_orbit   = true   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
+print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
+LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
@@ -120,12 +120,14 @@ n=3
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
+--[[
 preset_orbit_parameter_l  = 258
 preset_orbit_parameter_b  = 45.8
 preset_orbit_parameter_r  = 21.5
 preset_orbit_parameter_vx = -185.5
 preset_orbit_parameter_vy = 54.7
 preset_orbit_parameter_vz = 147.4
+]]
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
@@ -244,15 +246,21 @@ end
 
 
 function makeBodies(ctx, potential)
-  local firstModel
-  local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
+    print("makeBodies")
+  local firstModel = {}
+  local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = {}, {}
+  --Setting finalPosition, finalVelocity as empty list, LMC value will be nil
     if TooManyTimesteps == 1 then
         totalBodies = 1
     end
 
     if(run_null_potential == true and manual_bodies == true) then
-        finalPosition = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
-        finalVelocity = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+        for i = 1, n do
+            table.insert(finalPosition, lbrToCartesian(ctx, Vector.create(orbit_parameter_l[i], orbit_parameter_b[i], orbit_parameter_r[i])))
+        end
+        for i = 1, n do
+            table.insert(finalVelocity, Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz))
+        end
     elseif(run_null_potential == true) then
         print("placing dwarf at origin")
         finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
@@ -275,39 +283,52 @@ function makeBodies(ctx, potential)
 
               
 	    else
-	        finalPosition, finalVelocity = reverseOrbit{
+            print("work")
+	        for i =1, n do
+                local finalP, finalV = reverseOrbit{
 	            potential = potential,
-	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-	            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l[i], orbit_parameter_b[i], orbit_parameter_r[i])),
+	            velocity  = Vector.create(orbit_parameter_vx[i], orbit_parameter_vy[i], orbit_parameter_vz[i]),
 	            tstop     = revOrbTime,
 	            dt        = ctx.timestep / 10.0
 	            }
+            table.insert(finalPosition, finalP)
+            table.insert(finalVelocity, finalV)
+            end
          end
     end
     
     if(print_reverse_orbit == true) then
-        local placeholderPos, placeholderVel = PrintReverseOrbit{
-            potential = potential,
-            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-            velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-            tstop     = .14,
-            tstopf    = .20,
-            dt        = ctx.timestep / 10.0
-        }
+        local placeholderPos, placeholderVel = {}, {}
+            for i = 1, n do
+                local phPos, phVel = PrintReverseOrbit{
+                potential = potential,
+                position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+                velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+                tstop     = .14,
+                tstopf    = .20,
+                dt        = ctx.timestep / 10.0
+                }
+            table.insert(placeholderPos, phPos)
+            table.insert(placeholderVel, phVel)
+            end
         print('Printing reverse orbit')
     end
 
 
     if(ModelComponents == 2) then 
-        firstModel = predefinedModels.mixeddwarf{
-            nbody       = totalBodies,
-            prng        = prng,
-            position    = finalPosition,
-            velocity    = finalVelocity,
-            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
-            ignore      = true
-        }
+        for i = 1, n do
+            local Model = predefinedModels.mixeddwarf{
+                nbody       = totalBodies,
+                prng        = prng,
+                position    = finalPosition[i],
+                velocity    = finalVelocity[i],
+                comp1       = Dwarf.plummer{mass = mass_l[i], scaleLength = rscale_l[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
+                comp2       = Dwarf.plummer{mass = mass_d[i], scaleLength = rscale_d[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
+                ignore      = true
+                }
+            table.insert(firstModel, Model)
+    end
         
     elseif(ModelComponents == 1) then
         firstModel = predefinedModels.plummer{
@@ -377,16 +398,16 @@ end
 dec = 9.0
 evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
 time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
-rscale_l         = round( 2.9, dec )    -- Baryonic Radius (kpc)
-light_r_ratio    = round( 0.2, dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = round( 24207.03, dec )    -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = round( 0.0830, dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l   = round( 302.801, dec )
-orbit_parameter_b   = round( -44.328, dec )
-orbit_parameter_r   = round( 62.4, dec )
-orbit_parameter_vx  = round( 21.99, dec )
-orbit_parameter_vy  = round( -201.36, dec )
-orbit_parameter_vz  = round( 171.25, dec )
+rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
+light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = {round( 24207.03, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
+orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
+orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec )}
+orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec )}
+orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec )}
+orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
 manual_body_file = arg[13]
 -- File with Individual Particles (.out file)
 
@@ -400,16 +421,24 @@ else
 end
 
 
+local dwarfMass = {}
+local rscale_t = {}
+local rscale_d = {}
+local mass_d = {}
 if(ModelComponents == 1) then
-   dwarfMass = mass_l
-   rscale_t  = rscale_l
-   rscale_d  = 1.0
-   mass_d    = 0.0
-else
-   dwarfMass = mass_l / light_mass_ratio
-   rscale_t  = rscale_l / light_r_ratio
-   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+    for i = 1, n do
+        dwarfMass[i]  = mass_l[i]
+        rscale_t[i]   = rscale_l[i]
+        rscale_d[i]  = 1.0
+        mass_d[i]     = 0.0
+    end
+else    
+    for i = 1, n do
+        dwarfMass[i] = mass_l[i] / light_mass_ratio[i]
+        rscale_t[i]  = rscale_l[i] / light_r_ratio[i]
+        rscale_d[i]  = rscale_t[i] * (1.0 - light_r_ratio[i])
+        mass_d[i]    = dwarfMass[i] * (1.0 - light_mass_ratio[i])
+    end
 end
    
 

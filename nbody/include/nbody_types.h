@@ -451,11 +451,11 @@ typedef struct MW_ALIGN_TYPE
     
     real dwarfn;  /* Number of dwarfs input */
 
-    real b;     /* orbital parameters */
-    real r;
-    real vx;
-    real vy;
-    real vz;
+    real b[2];     /* orbital parameters */
+    real r[2];
+    real vx[2];
+    real vy[2];
+    real vz[2];
 
     criterion_t criterion;
     ExternalPotentialType potentialType;
@@ -506,7 +506,7 @@ typedef struct MW_ALIGN_TYPE
 #define NBODYCTX_TYPE "NBodyCtx"
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
                          0,                                                                             \
-                         0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
+                         {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0},                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
                          FALSE, FALSE, FALSE, FALSE,                                                    \

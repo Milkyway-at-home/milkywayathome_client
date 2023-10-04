@@ -1,7 +1,7 @@
 #!/bin/bash
 #/* Copyright (c) 2016 Siddhartha Shelton */earl grey
 
-rebuild=true
+rebuild=false
 run=true
 run_compare=false
 compare_only=false

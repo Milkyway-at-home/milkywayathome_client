@@ -541,6 +541,18 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             break;
 
         case LUA_TTABLE:
+            int len = luaL_len(luaSt, idx); // Get length of table
+            /*int len = luaL_len(luaSt, idx);*/ 
+            double* arr = (double*) v;      // Set the c type as double
+
+            for (int i = 1; i <= len; i++)
+            {
+                lua_rawgeti(luaSt, idx, i);
+                arr[i - 1] = lua_tonumber(luaSt, -1);
+                lua_pop(luaSt, 1);          // Delete the read data
+            }
+            break;
+
         case LUA_TFUNCTION:
         case LUA_TLIGHTUSERDATA:
         case LUA_TTHREAD:

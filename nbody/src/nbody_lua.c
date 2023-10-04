@@ -189,7 +189,6 @@ static int bindVersionNumber(lua_State* luaSt)
 static int nbCheckMinVersionRequired(lua_State* luaSt)
 {
     int major = 0, minor = 0;
-    mw_printf("check nbCheckMinVersionRequired");
     if (!nbReadMinVersion(luaSt, &major, &minor))
     {
         return FALSE;
@@ -244,7 +243,6 @@ lua_State* nbLuaOpen(mwbool debug)
  */
 lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf, NBodyState* st)
 {   
-    mw_printf("nbOpenLuaStateWithScript");
     char* script;
     lua_State* luaSt;
     int execFailed;
