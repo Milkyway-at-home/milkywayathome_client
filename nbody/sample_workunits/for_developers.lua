@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 1000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.85"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -115,7 +115,7 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
         
 
 -- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
-n=3
+n=2
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
@@ -151,7 +151,7 @@ end
 function get_timestep()
     if(timestep_control) then
         t = (evolveTime) / (Ntime_steps)
-    elseif(ModelComponents == 2) then
+    elseif(ModelComponents == 2) then--disable now for multidwarfs
 
         --Mass of a single dark matter sphere enclosed within light rscale
         mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
@@ -188,7 +188,7 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d, UseOldSofteningLength)
+    sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1], UseOldSofteningLength)
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
@@ -246,7 +246,6 @@ end
 
 
 function makeBodies(ctx, potential)
-    print("makeBodies")
   local firstModel = {}
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = {}, {}
   --Setting finalPosition, finalVelocity as empty list, LMC value will be nil
@@ -283,7 +282,6 @@ function makeBodies(ctx, potential)
 
               
 	    else
-            print("work")
 	        for i =1, n do
                 local finalP, finalV = reverseOrbit{
 	            potential = potential,
@@ -293,8 +291,8 @@ function makeBodies(ctx, potential)
 	            dt        = ctx.timestep / 10.0
 	            }
             table.insert(finalPosition, finalP)
-            table.insert(finalVelocity, finalV)
-            end
+            table.insert(finalVelocity, finalV)     
+            end       
          end
     end
     
@@ -317,6 +315,7 @@ function makeBodies(ctx, potential)
 
 
     if(ModelComponents == 2) then 
+        print("work\n")
         for i = 1, n do
             local Model = predefinedModels.mixeddwarf{
                 nbody       = totalBodies,
@@ -327,8 +326,11 @@ function makeBodies(ctx, potential)
                 comp2       = Dwarf.plummer{mass = mass_d[i], scaleLength = rscale_d[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
                 ignore      = true
                 }
-            table.insert(firstModel, Model)
-    end
+            for _, row in ipairs(Model) do
+                table.insert(firstModel, row)
+            end
+        print("workdone\n")
+        end
         
     elseif(ModelComponents == 1) then
         firstModel = predefinedModels.plummer{
@@ -421,10 +423,10 @@ else
 end
 
 
-local dwarfMass = {}
-local rscale_t = {}
-local rscale_d = {}
-local mass_d = {}
+dwarfMass = {}
+rscale_t = {}
+rscale_d = {}
+mass_d = {}
 if(ModelComponents == 1) then
     for i = 1, n do
         dwarfMass[i]  = mass_l[i]

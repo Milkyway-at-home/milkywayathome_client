@@ -567,7 +567,7 @@ static int nbSetNumThreads(int numThreads)
     }
 
     if (numThreads != 0)
-    {   
+    {
         omp_set_num_threads(numThreads);
         mw_printf("Using OpenMP %d max threads on a system with %d processors\n",
                   omp_get_max_threads(),
