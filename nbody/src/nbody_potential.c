@@ -131,9 +131,9 @@ static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
     return val;
 }
 
-/**********************************************************************************************************************************************************************************************/
+/*LMC potentials*/
 
-mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
+static inline mwvector pointLmcAccel (const mwvector pos, const mwvector pos1, const real mass)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
@@ -142,7 +142,7 @@ mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
     return v;
 }
 
-mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
+static inline mwvector plummerLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
@@ -151,6 +151,14 @@ mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, 
     return v;
 }
 
+static inline mwvector hernquistLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
+{
+    mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mw_pow((scale + dist), 2.0);
+    mw_incmulvs(v, mass/(tmp*dist));
+    return v;
+}
 
 /*spherical bulge potentials*/
 
@@ -761,9 +769,21 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
     return acc;
 }
 
-
-
-
-
-
+mwvector LMCAcceleration(int LMCfunction, const mwvector pos, const mwvector pos1, const real mass, const real scale)
+{
+    mwvector lmcAcc;
+    /*Calculate the LMC Accelerations*/
+    switch (LMCfunction)
+    {
+        case 1:
+            lmcAcc = plummerLmcAccel(pos, pos1, mass, scale);
+            break;
+        case 2:
+            lmcAcc = hernquistLmcAccel(pos, pos1, mass, scale);
+            break;
+        default:
+            mw_fail("Invalid LMC type in external acceleration\n");
+    }
+    return lmcAcc;
+}
 

@@ -1,13 +1,13 @@
 #!/bin/bash
 #/* Copyright (c) 2016 Siddhartha Shelton */
 
-rebuild=false
+rebuild=true
 run=false
-run_compare=true
+run_compare=false
 compare_only=false
 get_flag_list=false
 
-PathToMilkyWayAtHomeClientFolder='INSERT PATHWAY HERE'
+PathToMilkyWayAtHomeClientFolder='/home/hiroka/MilkyWay'
 
 if $rebuild
 then

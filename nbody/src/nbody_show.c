@@ -443,7 +443,7 @@ char* showBody(const Body* p)
 
     if (!p)
         return NULL;
-
+/home/hiroka//LMC_function_test
     vel = showVector(Vel(p));
     pos = showVector(Pos(p));
 
@@ -537,6 +537,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
                      "  LMC             = %s\n"
+		     "  LMCfunction     = %s\n"
                      "  LMCmass         = %f\n"
                      "  LMCscale        = %f\n"
                      "  LMCDynaFric     = %s\n"
@@ -555,6 +556,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
                      showBool(ctx->LMC),
+		     ctx->LMCfunction,
                      ctx->LMCmass,
                      ctx->LMCscale,
                      showBool(ctx->LMCDynaFric),
