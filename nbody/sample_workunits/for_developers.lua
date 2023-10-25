@@ -282,17 +282,13 @@ function makeBodies(ctx, potential)
 
               
 	    else
-	        for i =1, n do
-                local finalP, finalV = reverseOrbit{
-	            potential = potential,
-	            position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l[i], orbit_parameter_b[i], orbit_parameter_r[i])),
-	            velocity  = Vector.create(orbit_parameter_vx[i], orbit_parameter_vy[i], orbit_parameter_vz[i]),
-	            tstop     = revOrbTime,
-	            dt        = ctx.timestep / 10.0
-	            }
-            table.insert(finalPosition, finalP)
-            table.insert(finalVelocity, finalV)     
-            end       
+                local potential = potential--Maybe could cause problem
+                local position  = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
+                local velocity  = Vector.creates(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+                local tstop     = revOrbTime
+                local dt        = ctx.timestep / 10.0 
+                
+            finalPosition, finalVelocity = reverseOrbits(potential, position, velocity, tstop, dt)
          end
     end
     

@@ -33,6 +33,15 @@ void nbReverseOrbit(mwvector* finalPos,
                     real tstop,
                     real dt);
 
+void nbReverseOrbits(mwvector* finalPos,
+                    mwvector* finalVel,
+                    const Potential* pot,
+                    mwvector* pos,
+                    mwvector* vel,
+                    size_t len,
+                    real tstop,
+                    real dt);
+
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
                     mwvector* LMCfinalPos,

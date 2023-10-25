@@ -53,6 +53,19 @@ int pushVector(lua_State* luaSt, mwvector vIn)
     return 1;
 }
 
+int pushVectorTable(lua_State* luaSt, mwvector* vecArray, size_t len)
+{
+    lua_newtable(luaSt); 
+
+    for (size_t i = 0; i < len; ++i)
+    {
+        pushVector(luaSt, vecArray[i]); 
+        lua_rawseti(luaSt, -2, i + 1);
+    }
+
+    return 1;
+}
+
 int getVector(lua_State* luaSt, void* v)
 {
     pushVector(luaSt, *(mwvector*) v);
@@ -106,6 +119,46 @@ static int createVector(lua_State* luaSt)
 
         default:
             return luaL_argerror(luaSt, 3, "Expected 0 or 3 arguments to create vector");
+    }
+
+    return 1;
+}
+
+static int createsVector(lua_State* luaSt)
+{
+    if (!lua_istable(luaSt, 1) || !lua_istable(luaSt, 2) || !lua_istable(luaSt, 3))
+    {
+        return luaL_argerror(luaSt, 1, "Expected 3 tables to create vector table");
+    }
+
+    size_t len1 = lua_objlen(luaSt, 1); 
+    size_t len2 = lua_objlen(luaSt, 2); 
+    size_t len3 = lua_objlen(luaSt, 3);  //Length Index for three tables  
+    //Use luaL_len for 5.2 or higher version
+
+    if (len1 != len2 || len1 != len3 || len2 != len3) {
+        return luaL_error(luaSt, "Lengths of tables do not match");
+    }
+
+    lua_newtable(luaSt);
+
+    for (int i = 1; i <= len1; ++i)
+    {
+        lua_rawgeti(luaSt, 1, i);
+        double x = luaL_checknumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+
+        lua_rawgeti(luaSt, 2, i);
+        double y = luaL_checknumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+
+        lua_rawgeti(luaSt, 3, i);
+        double z = luaL_checknumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+
+        mwvector v = {x, y, z, 0.0};
+        pushVector(luaSt, v);
+        lua_rawseti(luaSt, -2, i);
     }
 
     return 1;
@@ -260,6 +313,7 @@ static const luaL_reg metaMethodsVector[] =
 static const luaL_reg methodsVector[] =
 {
     { "create", createVector },
+    { "creates", createsVector },
     { "abs",    absVector},
     { "length", lengthVector},
     { "cross",  crossVector},

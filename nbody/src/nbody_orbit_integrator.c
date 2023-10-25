@@ -85,6 +85,53 @@ void nbReverseOrbit(mwvector* finalPos,
     mw_printf("Dwarf Initial Velocity: [%.15f,%.15f,%.15f]\n", X(v), Y(v), Z(v));
 }
 
+void nbReverseOrbits(mwvector* finalPos,
+                    mwvector* finalVel,
+                    const Potential* pot,
+                    mwvector* pos,
+                    mwvector* vel,
+                    size_t len,
+                    real tstop,
+                    real dt)
+{
+    for (size_t i = 0; i < len; ++i)
+    {
+        mwvector acc, v, x;
+        real t;
+        real dt_half = dt / 2.0;
+        int initialLArrayIndex = tstop/dt;
+
+        // Set the initial conditions
+        x = pos[i];
+        v = vel[i];
+        mw_incnegv(v);
+
+        // Get the initial acceleration
+        acc = nbExtAcceleration(pot, x, 0);
+        //do this loop backward in order to get an accurate time for time-dependent potentials
+        for (t = 0; t >= tstop*(-1); t -= dt)
+        {
+            // Update the velocities and positions
+            mw_incaddv_s(v, acc, dt_half);
+            mw_incaddv_s(x, v, dt); 
+
+            
+            // Compute the new acceleration
+            acc = nbExtAcceleration(pot, x, t);
+            
+            mw_incaddv_s(v, acc, dt_half);
+        }
+        
+        /* Report the final values (don't forget to reverse the velocities) */
+        mw_incnegv(v);
+        
+        finalPos[i] = x;
+        finalVel[i] = v;
+        mw_printf("Dwarf %d Initial Position: [%.15f,%.15f,%.15f]\n", i+1, X(x), Y(x), Z(x));
+        mw_printf("Dwarf %d Initial Velocity: [%.15f,%.15f,%.15f]\n", i+1, X(v), Y(v), Z(v));
+    }
+}
+
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
                     mwvector* LMCfinalPos,

@@ -223,6 +223,55 @@ static int luaCalculateEps2(lua_State* luaSt)
     return 1;
 }
 
+static int luaReverseOrbitS(lua_State* luaSt)
+{       
+    size_t lenPos = lua_objlen(luaSt, 2); 
+    size_t lenVel = lua_objlen(luaSt, 3);
+
+    int arg_num;
+    Potential* pot;
+    mwvector pos[lenPos];
+    mwvector vel[lenPos];
+    mwvector finalPos[lenPos];
+    mwvector finalVel[lenPos];
+    real tstop, dt;
+
+    arg_num = lua_gettop(luaSt);
+
+    if (arg_num != 5)
+    {
+        return luaL_argerror(luaSt, 0, "Expected 5 arguments");
+    }
+
+
+    if (lenPos != lenVel) {
+        return luaL_error(luaSt, "Lengths of tables do not match");
+    }
+
+    pot = (Potential*) luaL_checkudata(luaSt, 1, POTENTIAL_TYPE);
+
+    for (int i = 1; i <= lenPos; ++i) 
+    {
+        lua_rawgeti(luaSt, 2, i);  
+        pos[i-1] = *(mwvector*) checkVector(luaSt, -1); 
+        lua_pop(luaSt, 1);
+
+        lua_rawgeti(luaSt, 3, i);  
+        vel[i-1] = *(mwvector*) checkVector(luaSt, -1); 
+        lua_pop(luaSt, 1);
+    }
+
+    tstop = luaL_checknumber(luaSt, 4);
+    dt = luaL_checknumber(luaSt, 5);
+    
+    nbReverseOrbits(finalPos, finalVel, pot, pos, lenPos, vel, tstop, dt);
+
+    pushVectorTable(luaSt, finalPos, lenPos);
+    pushVectorTable(luaSt, finalVel, lenPos);
+
+    return 2;
+}
+
 static int luaReverseOrbit(lua_State* luaSt)
 {
     mwvector finalPos, finalVel;
@@ -235,8 +284,8 @@ static int luaReverseOrbit(lua_State* luaSt)
     static const MWNamedArg argTable[] =
         {
             { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
-            { "position",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos           },
-            { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
+            { "position",   LUA_TTABLE,    NULL,           TRUE, &pos           },
+            { "velocity",   LUA_TTABLE,    NULL,           TRUE, &vel           },
             { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
             { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
             END_MW_NAMED_ARG
@@ -397,6 +446,7 @@ static int luaPrintReverseOrbit(lua_State* luaSt)
 void registerModelFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "plummerTimestepIntegral", luaPlummerTimestepIntegral);
+    lua_register(luaSt, "reverseOrbits", luaReverseOrbitS);
     lua_register(luaSt, "reverseOrbit", luaReverseOrbit);
     lua_register(luaSt, "reverseOrbit_LMC", luaReverseOrbit_LMC);
     lua_register(luaSt, "PrintReverseOrbit", luaPrintReverseOrbit);
