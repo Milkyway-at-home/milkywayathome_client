@@ -264,7 +264,7 @@ static int luaReverseOrbitS(lua_State* luaSt)
     tstop = luaL_checknumber(luaSt, 4);
     dt = luaL_checknumber(luaSt, 5);
     
-    nbReverseOrbits(finalPos, finalVel, pot, pos, lenPos, vel, tstop, dt);
+    nbReverseOrbits(finalPos, finalVel, pot, pos, vel, lenPos, tstop, dt);
 
     pushVectorTable(luaSt, finalPos, lenPos);
     pushVectorTable(luaSt, finalVel, lenPos);

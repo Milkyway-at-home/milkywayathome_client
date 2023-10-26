@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 1000   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.85"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -311,7 +311,6 @@ function makeBodies(ctx, potential)
 
 
     if(ModelComponents == 2) then 
-        print("work\n")
         for i = 1, n do
             local Model = predefinedModels.mixeddwarf{
                 nbody       = totalBodies,
@@ -325,7 +324,7 @@ function makeBodies(ctx, potential)
             for _, row in ipairs(Model) do
                 table.insert(firstModel, row)
             end
-        print("workdone\n")
+            print(string.format("Dwarf %d bodies generation finished", i))
         end
         
     elseif(ModelComponents == 1) then
