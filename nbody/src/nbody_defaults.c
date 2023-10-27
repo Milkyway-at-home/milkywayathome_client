@@ -68,8 +68,8 @@ const NBodyCtx defaultNBodyCtx =
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
 
     /* .LMC             */  FALSE,
-    /* .LMCmass         */  0.0,
     /* LMCfunction */ FALSE,
+    /* .LMCmass         */  0.0,
     /* .LMCscale        */  0.0,
     /* .LMCDynaFric     */  FALSE,
     /* .coulomb_log     */  0.0,
