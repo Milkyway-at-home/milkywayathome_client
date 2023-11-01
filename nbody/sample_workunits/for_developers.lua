@@ -33,7 +33,7 @@ use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                   
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
 LMC_scaleRadius       = 15
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
@@ -116,6 +116,36 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
 
 -- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
 n=2
+
+arg = { ... } -- -- TAKING USER INPUT
+assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
+assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
+argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+--argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
+prng = DSFMT.create(argSeed)
+
+-- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
+function round(num, places)
+  local mult = 10.0^(places)
+  return floor(num * mult + 0.5) / mult
+end
+
+-- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
+dec = 9.0
+evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
+time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
+rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
+light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = {round( 24207.03, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
+orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
+orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec )}
+orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec )}
+orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec )}
+orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
+manual_body_file = arg[13]
+-- File with Individual Particles (.out file)
 
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
@@ -265,30 +295,57 @@ function makeBodies(ctx, potential)
         finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
     else 
     	if (LMC_body) then
-    		finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbit_LMC{
-	            potential   = potential,
-	            position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
-	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	            LMCvelocity = Vector.create(-57, -226, 221), 
-                    LMCmass     = LMC_Mass,
-                    LMCscale    = LMC_scaleRadius,
-                    LMCDynaFric = LMC_DynamicalFriction,
-                    coulomb_log = CoulombLogarithm,
-                    ftime       = evolveTime,
-	            tstop       = revOrbTime,
-	            dt          = ctx.timestep / 10.0
-	            }
+            -- Old Single Body function with LMC and Method:
 
-              
+    		-- finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbit_LMC{
+	        --     potential   = potential,
+	        --     position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+	        --     velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	        --     LMCposition = Vector.create(-1.1, -41.1, -27.9),
+	        --     LMCvelocity = Vector.create(-57, -226, 221), 
+            --         LMCmass     = LMC_Mass,
+            --         LMCscale    = LMC_scaleRadius,
+            --         LMCDynaFric = LMC_DynamicalFriction,
+            --         coulomb_log = CoulombLogarithm,
+            --         ftime       = evolveTime,
+	        --     tstop       = revOrbTime,
+	        --     dt          = ctx.timestep / 10.0
+	        --     }
+
+            local potential = potential
+            local position = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
+            local velocity = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+            local LMCposition = Vector.create(-1.1, -41.1, -27.9)
+            local LMCvelocity = Vector.create(-57, -226, 221)
+            local LMCmass = LMC_Mass
+            local LMCscale = LMC_scaleRadius
+            local LMCDynaFric = LMC_DynamicalFriction
+            local coulomb_log = CoulombLogarithm
+            local ftime = evolveTime
+            local tstop = revOrbTime
+            local dt = ctx.timestep / 10.0      
+            local masses    = dwarfMass  
+
+            finalPosition, finalVelocity = reverseOrbitS_LMC(potential, position, velocity, LMCposition, LMCvelocity, LMCmass, LMCscale, LMCDynaFric, coulomb_log, ftime, tstop, dt, masses)      
 	    else
-                local potential = potential--Maybe could cause problem
-                local position  = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
-                local velocity  = Vector.creates(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
-                local tstop     = revOrbTime
-                local dt        = ctx.timestep / 10.0 
-                
-            finalPosition, finalVelocity = reverseOrbits(potential, position, velocity, tstop, dt)
+            local potential = potential
+            local position  = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
+            local velocity  = Vector.creates(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+            local tstop     = revOrbTime
+            local dt        = ctx.timestep / 10.0 
+            local masses    = dwarfMass
+
+            finalPosition, finalVelocity = reverseOrbitS(potential, position, velocity, tstop, dt, masses)
+            
+            -- Old Single Body function and Method:
+            
+            -- finalPosition, finalVelocity = reverseOrbit{
+	        --     potential = potential,
+	        --     position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
+	        --     velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
+	        --     tstop     = revOrbTime,
+	        --     dt        = ctx.timestep / 10.0
+	        --     }
          end
     end
     
@@ -378,35 +435,7 @@ function makeHistogram()
 end
 
 
-arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
-assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
-argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
---argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
-prng = DSFMT.create(argSeed)
 
--- -- -- -- -- -- -- -- -- ROUNDING USER INPUT -- -- -- -- -- -- -- --
-function round(num, places)
-  local mult = 10.0^(places)
-  return floor(num * mult + 0.5) / mult
-end
-
--- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
-dec = 9.0
-evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
-time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
-rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
-light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = {round( 24207.03, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
-orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
-orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec )}
-orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec )}
-orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec )}
-orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
-manual_body_file = arg[13]
--- File with Individual Particles (.out file)
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio

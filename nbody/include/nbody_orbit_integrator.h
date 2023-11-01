@@ -40,7 +40,8 @@ void nbReverseOrbits(mwvector* finalPos,
                     mwvector* vel,
                     size_t len,
                     real tstop,
-                    real dt);
+                    real dt,
+                    real* masses);
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
                     mwvector* finalVel,
@@ -58,6 +59,26 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real LMCmass,
                     real LMCscale,
                     real coulomb_log);
+    
+void nbReverseOrbitS_LMC(mwvector* finalPos,
+                    mwvector* finalVel,
+                    mwvector* LMCfinalPos,
+                    mwvector* LMCfinalVel,
+                    const Potential* pot,
+                    mwvector* pos,
+                    mwvector* vel,
+                    size_t len,
+                    mwvector LMCposition,
+                    mwvector LMCvelocity,
+                    mwbool LMCDynaFric,
+                    real ftime,
+                    real tstop,
+                    real dt,
+                    real LMCmass,
+                    real LMCscale,
+                    real coulomb_log,
+                    real* masses
+                    );                
 
 void getLMCArray(mwvector ** shiftArrayPtr, size_t * shiftSizePtr);
 
@@ -71,6 +92,8 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          real tstop,
                          real tstopforward,
                          real dt);
-    
+
+mwvector gravity(mwvector v1, mwvector v2, real m2);
+
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 
