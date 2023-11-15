@@ -4,7 +4,7 @@
 	ignore = dirty
 [submodule "glm"]
 	path = glm
-	url = https://github.com/Groovounet/glm.git
+	url = https://github.com/g-truc/glm
 	ignore = dirty
 [submodule "glfw"]
 	path = glfw
