@@ -1,10 +1,10 @@
 [submodule "boinc/boinc"]
 	path = boinc/boinc
-	url = https://github.com/Milkyway-at-home/boinc-1.git
+	url = https://github.com/BOINC/boinc.git
 	ignore = dirty
 [submodule "glm"]
 	path = glm
-	url = https://github.com/g-truc/glm
+	url = https://github.com/Milkyway-at-home/glm.git
 	ignore = dirty
 [submodule "glfw"]
 	path = glfw
@@ -12,4 +12,4 @@
 	ignore = dirty
 [submodule "mwtao/tao"]
 	path = mwtao/tao
-	url = https://github.com/Milkyway-at-home/tao
+	url = https://github.com/Milkyway-at-home/tao.git
