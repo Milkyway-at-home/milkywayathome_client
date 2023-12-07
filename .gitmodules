@@ -2,10 +2,6 @@
 	path = boinc/boinc
 	url = https://github.com/BOINC/boinc.git
 	ignore = dirty
-[submodule "glm"]
-	path = glm
-	url = https://github.com/Milkyway-at-home/glm.git
-	ignore = dirty
 [submodule "glfw"]
 	path = glfw
 	url = https://github.com/elmindreda/glfw.git
