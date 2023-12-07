@@ -102,3 +102,6 @@ build_iphone
 *.mp4
 *.avi
 /include
+input
+output
+test_env
