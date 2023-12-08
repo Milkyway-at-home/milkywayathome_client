@@ -105,3 +105,5 @@ build_iphone
 input
 output
 test_env
+run_nbody.sh
+build_client.sh 
