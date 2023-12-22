@@ -1,5 +1,4 @@
 #!/bin/bash
-#/* Copyright (c) 2023 Kevin Roux */
 
 run=true
 run_compare=false

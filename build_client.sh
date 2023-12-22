@@ -1,5 +1,4 @@
 #!/bin/bash
-#/* Copyright (c) 2023 Kevin Roux */
 
 cd "$(dirname "$0")"
 PathToMilkyWayAtHomeClientDirectory="$(pwd)"
