@@ -27,10 +27,12 @@ Nbody
   and SSE2 (at least on x86, not sure about other architectures)
 
 - Returning nil from makePotential() for N-body will run the
-    simulation without an external potential
+  simulation without an external potential
 
 - Device information is exposed to the workunit through the
-    deviceInfo table if it is used.
+  deviceInfo table if it is used.
+
+- **Bar code currently does not pass all tests**
 
 Tests
 -----------------
@@ -47,6 +49,14 @@ Tests
   $ make test_${n}
 
   Currently n = 100, 1024, 10000 are available.
+
+  Single tests can be run with:
+
+  $ ctest -R <Test_Name> 
+
+  Get a more versbose output with:
+
+  $ ctest -R <Test_Name> -VV
 
 TAO
 --------------------------------------------------------------------------------
