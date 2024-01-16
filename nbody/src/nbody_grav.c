@@ -23,6 +23,8 @@
 #include "nbody_util.h"
 #include "nbody_grav.h"
 #include "milkyway_util.h"
+#include "nbody_density.h"
+#include <time.h>
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -39,12 +41,54 @@
  *     mapForceBody(). Measurably better with the inline, but only
  *     slightly.
  */
+
+static int DarkMatterScatter(const NBodyCtx* ctx, const Body* p,NBodyState* st){
+	real darkmatter_sigma = ctx->darkmatter_sigma;
+	real v_rel = mw_sqrt(mw_pow(p->vel.x,2) + mw_pow(p->vel.y,2) + mw_pow(p->vel.z,2));
+        mwvector pos = p->bodynode.pos;
+        //real  pos = sqrt(pow(p->bodynode.pos.x,2) + pow(p->bodynode.pos.y,2) + pow(p->bodynode.pos.z,2));
+        real mass = p->bodynode.mass;
+        //real  r = sqrt(pow(pos.x,2) + pow(pos.y,2) + pow(pos.z,2));
+	real curTime = st->step * ctx->timestep;
+        real  darkmatter_density = nbExtDensity(&ctx->pot,pos,curTime);
+	mw_printf("ran darkmatterscatter\n");
+        real  gamma = (darkmatter_sigma * darkmatter_density * v_rel)/ mass;
+        return gamma;
+	
+}
+
+/*
+static int DarkMatterScatter(const NBodyCtx* ctx, const Body* p) {
+        real darkmatter_sigma = ctx->darkmatter_sigma;
+        //mwvector v_rel = p->vel;
+	real v_rel = sqrt(pow(p->vel.x,2) + pow(p->vel.y,2) + pow(p->vel.z,2));
+        mwvector pos = p->bodynode.pos;
+	//real  pos = sqrt(pow(p->bodynode.pos.x,2) + pow(p->bodynode.pos.y,2) + pow(p->bodynode.pos.z,2));
+        real mass = p->bodynode.mass;
+        //real  r = sqrt(pow(pos.x,2) + pow(pos.y,2) + pow(pos.z,2));
+        real  darkmatter_density = nbExtDensity(&ctx->pot,pos,time);
+        real  gamma = (darkmatter_sigma * darkmatter_density * v_rel)/ mass;
+        return gamma;
+}
+*/
+
+
+
+
 static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     mwbool skipSelf = FALSE;
-
+    DarkMatterScatter(ctx,p,st);
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
+    bool scattered = False;
+
+    float scatter_prob_halo = DarkMatterScatter(ctx,p,st);
+    srand(time(NULL));
+    float random_number = (float)rand() / (float)RAND_MAX ;
+    if (random_number < scatter_prob_halo) { 
+	scattered = True;
+    }
 
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
@@ -97,6 +141,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                     acc0.x -= dr5inv * Qdr.x;
                     acc0.y -= dr5inv * Qdr.y;
                     acc0.z -= dr5inv * Qdr.z;
+
                 }
             }
             else
@@ -120,7 +165,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
         nbReportTreeIncest(ctx, st);
     }
 
-    return acc0;
+    return acc0,scattered;
 }
 
 static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
@@ -165,6 +210,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
+		real gamma = DarkMatterScatter(ctx, b, st);
                 externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
                     sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
@@ -263,7 +309,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 //mw_printf("DEFAULT POTENTIAL - EXACT\n");
                 b = &bodies[i];
-                a = nbGravity_Exact(ctx, st, b);
+                a,scattered  = nbGravity_Exact(ctx, st, b);
                 //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
                 externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 mw_incaddv(a, externAcc);

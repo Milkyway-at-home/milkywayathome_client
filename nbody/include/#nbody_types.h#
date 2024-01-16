@@ -356,8 +356,7 @@ typedef struct MW_ALIGN_TYPE
     NBodyTree tree;
     NBodyNode* freeCell;      /* list of free cells */
     char* checkpointResolved;
-    Body* bodytab;
-    Body* scattered;            /* points to array of bodies */
+    Body* bodytab;            /* points to array of bodies */
     Body* bestLikelihoodBodyTab;     /* this one used for out file generation */
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
@@ -485,12 +484,12 @@ typedef struct MW_ALIGN_TYPE
     real DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
 
     mwbool LMC;
+    int LMCfunction;
 
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
     real coulomb_log;          /* Coulomb Logarithm used in dynamical friction */
-
 
     unsigned int calibrationRuns; //for calibrating time-dependent potentials
 
@@ -499,7 +498,6 @@ typedef struct MW_ALIGN_TYPE
     unsigned int nStep;
 
     Potential pot;
-    real darkmatter_sigma;
 
 
 } NBodyCtx;

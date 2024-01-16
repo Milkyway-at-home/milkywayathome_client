@@ -3,7 +3,7 @@
 # After this, to run the whole testing suite, go to the newly created test_env folder and type 'make test' to run a specific test say 'ctest -R __test_name_here__' with the -VV option on if you want verbose output (otherwise you get no output)
 
 # Specify YOUR OWN path here, in the folder which contains the milkywayathome_client directory
-PathToMilkyWayAtHomeClientFolder='INSERT PATHWAY HERE'
+PathToMilkyWayAtHomeClientFolder='/home/ethan'
 # Note, you need to specify if you plan to run the GPU testing suite. 'true' for true, 'false' for false 
 includeGPUtesting=false
 

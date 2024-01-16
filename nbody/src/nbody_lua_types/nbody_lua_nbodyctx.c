@@ -132,6 +132,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "LMCDynaFric",   LUA_TBOOLEAN, NULL, FALSE, &ctx.LMCDynaFric   },
             { "coulomb_log",   LUA_TNUMBER,  NULL, FALSE, &ctx.coulomb_log   },
             { "calibrationRuns", LUA_TNUMBER, "UINT", FALSE, &ctx.calibrationRuns},
+	    { "darkmatter_sigma", LUA_TNUMBER, "UINT", FALSE, &ctx.darkmatter_sigma},
             END_MW_NAMED_ARG
         };
 
@@ -288,6 +289,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "LMCscale",        getNumber,     offsetof(NBodyCtx, LMCscale)      },
     { "LMCDynaFric",     getBool,       offsetof(NBodyCtx, LMCDynaFric)   },
     { "coulomb_log",     getNumber,     offsetof(NBodyCtx, coulomb_log)   },
+    { "darkmatter_sigma", getNumber, offsetof(NBodyCtx, darkmatter_sigma) },
     { "calibrationRuns", getNumber,     offsetof(NBodyCtx, calibrationRuns)},
     { NULL, NULL, 0 }
 };
@@ -330,6 +332,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "LMCDynaFric",     setBool,       offsetof(NBodyCtx, LMCDynaFric)   },
     { "coulomb_log",     setNumber,     offsetof(NBodyCtx, coulomb_log)   },
     { "calibrationRuns", setNumber,     offsetof(NBodyCtx, calibrationRuns)},
+    { "darkmatter_sigma", setNumber,    offsetof(NBodyCtx, darkmatter_sigma)},
     { NULL, NULL, 0 }
 };
 

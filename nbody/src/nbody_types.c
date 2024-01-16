@@ -796,6 +796,7 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->LMCscale, ctx2->LMCscale)
         && feqWithNan(ctx1->LMCDynaFric, ctx2->LMCDynaFric)
         && feqWithNan(ctx1->coulomb_log, ctx2->coulomb_log)
-        && feqWithNan(ctx1->calibrationRuns, ctx2->calibrationRuns);
+        && feqWithNan(ctx1->calibrationRuns, ctx2->calibrationRuns)
+	&& feqWithNan(ctx1->darkmatter_sigma, ctx2->darkmatter_sigma);
 }
 

@@ -1,0 +1,426 @@
+-- The C compiler identification is AppleClang 13.1.6.13160021
+-- The CXX compiler identification is AppleClang 13.1.6.13160021
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test HAVE_FP_MODEL_FAST
+-- Performing Test HAVE_FP_MODEL_FAST - Failed
+-- Performing Test HAVE_F_FAST_MATH
+-- Performing Test HAVE_F_FAST_MATH - Success
+-- Performing Test HAVE_FP_MODEL_PRECISE
+-- Performing Test HAVE_FP_MODEL_PRECISE - Failed
+-- Performing Test HAVE_F_NO_UNSAFE_MATH_OPTIMIZATIONS
+-- Performing Test HAVE_F_NO_UNSAFE_MATH_OPTIMIZATIONS - Success
+-- Performing Test HAVE_FLAG_STATIC_LIBSTDCPP
+-- Performing Test HAVE_FLAG_STATIC_LIBSTDCPP - Success
+-- Performing Test HAVE_FLAG_STATIC_LIBGCC
+-- Performing Test HAVE_FLAG_STATIC_LIBGCC - Success
+-- Performing Test HAVE_FLAG_PTHREAD
+-- Performing Test HAVE_FLAG_PTHREAD - Success
+-- Looking for stpcpy
+-- Looking for stpcpy - found
+-- Looking for shm_open in rt
+-- Looking for shm_open in rt - not found
+-- Looking for dlopen in dl
+-- Looking for dlopen in dl - found
+-- Performing Test HAVE_FLAG_-Wno-psabi
+-- Performing Test HAVE_FLAG_-Wno-psabi - Success
+-- Performing Test HAVE_FLAG_-std=gnu99
+-- Performing Test HAVE_FLAG_-std=gnu99 - Success
+-- Performing Test HAVE_FLAG_-xc99
+-- Performing Test HAVE_FLAG_-xc99 - Failed
+-- Performing Test HAVE_FLAG_-maccumulate-outgoing-args
+-- Performing Test HAVE_FLAG_-maccumulate-outgoing-args - Failed
+-- Found OpenCL: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/OpenCL.framework  
+-- Could NOT find OpenMP_C (missing: OpenMP_C_FLAGS OpenMP_C_LIB_NAMES) 
+-- Could NOT find OpenMP_CXX (missing: OpenMP_CXX_FLAGS OpenMP_CXX_LIB_NAMES) 
+-- Could NOT find OpenMP (missing: OpenMP_C_FOUND OpenMP_CXX_FOUND) 
+-- Found OpenGL: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/OpenGL.framework   
+-- Found Curses: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/lib/libcurses.tbd  
+-- Found OpenSSL: /opt/homebrew/Cellar/openssl@1.1/1.1.1t/lib/libcrypto.dylib (found version "1.1.1t")  
+-- Looking for include file smmintrin.h
+-- Looking for include file smmintrin.h - not found
+-- Looking for include file pmmintrin.h
+-- Looking for include file pmmintrin.h - not found
+-- Looking for include file emmintrin.h
+-- Looking for include file emmintrin.h - not found
+-- Looking for dcgettext
+-- Looking for dcgettext - not found
+-- Looking for include file dlfcn.h
+-- Looking for include file dlfcn.h - found
+-- Looking for include file float.h
+-- Looking for include file float.h - found
+-- Looking for include file fnmatch.h
+-- Looking for include file fnmatch.h - found
+-- Looking for gettext
+-- Looking for gettext - not found
+-- Looking for include file glob.h
+-- Looking for include file glob.h - found
+-- Looking for include file langinfo.h
+-- Looking for include file langinfo.h - found
+-- Looking for include file mcheck.h
+-- Looking for include file mcheck.h - not found
+-- Looking for include file memory.h
+-- Looking for include file memory.h - found
+-- Looking for mtrace
+-- Looking for mtrace - not found
+-- Looking for srandom
+-- Looking for srandom - found
+-- Looking for include file stdint.h
+-- Looking for include file stdint.h - found
+-- Looking for include file stdlib.h
+-- Looking for include file stdlib.h - found
+-- Looking for strerror
+-- Looking for strerror - found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - found
+-- Looking for vasprintf
+-- Looking for vasprintf - found
+-- Looking for secure_getenv
+-- Looking for secure_getenv - not found
+-- Looking for __secure_getenv
+-- Looking for __secure_getenv - not found
+-- Found PkgConfig: /opt/homebrew/bin/pkg-config (found version "0.29.2") 
+-- Could NOT find readline (missing: READLINE_LIBRARY) 
+-- Looking for include file atomic.h
+-- Looking for include file atomic.h - not found
+-- Looking for include file intrin.h
+-- Looking for include file intrin.h - not found
+-- Looking for include file pthread.h
+-- Looking for include file pthread.h - found
+-- Looking for include file stddef.h
+-- Looking for include file stddef.h - found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Looking for pthread_yield
+-- Looking for pthread_yield - not found
+-- Looking for sched_yield
+-- Looking for sched_yield - found
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of int
+-- Check size of int - done
+-- Check size of void*
+-- Check size of void* - done
+-- Performing Test OPA_HAVE_ATTRIBUTE_PURE
+-- Performing Test OPA_HAVE_ATTRIBUTE_PURE - Success
+-- Performing Test OPA_HAVE_ATTRIBUTE_FORMAT
+-- Performing Test OPA_HAVE_ATTRIBUTE_FORMAT - Success
+-- Performing Test ACCEPTS_BOGUS_ASM
+-- Performing Test ACCEPTS_BOGUS_ASM - Failed
+-- Performing Test OPA_HAVE_GCC_X86_32_64
+-- Performing Test OPA_HAVE_GCC_X86_32_64 - Failed
+-- Performing Test OPA_HAVE_GCC_X86_32_64_P3
+-- Performing Test OPA_HAVE_GCC_X86_32_64_P3 - Failed
+-- Performing Test OPA_HAVE_GCC_AND_IA64_ASM
+-- Performing Test OPA_HAVE_GCC_AND_IA64_ASM - Failed
+-- Performing Test OPA_HAVE_GCC_AND_POWERPC_ASM
+-- Performing Test OPA_HAVE_GCC_AND_POWERPC_ASM - Failed
+-- Performing Test OPA_HAVE_GCC_AND_SICORTEX_ASM
+-- Performing Test OPA_HAVE_GCC_AND_SICORTEX_ASM - Failed
+-- Performing Test OPA_HAVE_GCC_INTRINSIC_ATOMICS
+-- Performing Test OPA_HAVE_GCC_INTRINSIC_ATOMICS - Success
+-- Performing Test OPA_HAVE_NT_INTRINSICS
+-- Performing Test OPA_HAVE_NT_INTRINSICS - Failed
+-- Performing Test OPA_HAVE_SUN_ATOMIC_OPS
+-- Performing Test OPA_HAVE_SUN_ATOMIC_OPS - Failed
+-- Looking for include file windows.h
+-- Looking for include file windows.h - not found
+-- Looking for include file direct.h
+-- Looking for include file direct.h - not found
+-- Looking for include file fcntl.h
+-- Looking for include file fcntl.h - found
+-- Looking for include file signal.h
+-- Looking for include file signal.h - found
+-- Looking for include file process.h
+-- Looking for include file process.h - not found
+-- Looking for include file inttypes.h
+-- Looking for include file inttypes.h - found
+-- Looking for include file malloc.h
+-- Looking for include file malloc.h - not found
+-- Looking for asprintf
+-- Looking for asprintf - found
+-- Looking for include file fpu_control.h
+-- Looking for include file fpu_control.h - not found
+-- Looking for include file sys/resource.h
+-- Looking for include file sys/resource.h - found
+-- Looking for include file sys/mman.h
+-- Looking for include file sys/mman.h - found
+-- Looking for include file sys/stat.h
+-- Looking for include file sys/stat.h - found
+-- Looking for include file sys/wait.h
+-- Looking for include file sys/wait.h - found
+-- Looking for include file sys/time.h
+-- Looking for include file sys/time.h - found
+-- Looking for exp10
+-- Looking for exp10 - not found
+-- Looking for exp2
+-- Looking for exp2 - found
+-- Looking for sincos
+-- Looking for sincos - not found
+-- Looking for fmax
+-- Looking for fmax - found
+-- Looking for fmin
+-- Looking for fmin - found
+-- Looking for posix_memalign
+-- Looking for posix_memalign - found
+-- Looking for _aligned_malloc
+-- Looking for _aligned_malloc - not found
+-- Looking for __mingw_aligned_malloc
+-- Looking for __mingw_aligned_malloc - not found
+-- Looking for clock_gettime
+-- Looking for clock_gettime - not found
+-- Looking for gettimeofday
+-- Looking for gettimeofday - found
+-- Looking for sigaction
+-- Looking for sigaction - found
+-- Looking for mach_absolute_time
+-- Looking for mach_absolute_time - found
+-- Looking for fenv.h
+-- Looking for fenv.h - found
+-- Found LibGMP: /opt/homebrew/lib/libgmp.dylib  
+-- Found LibMPFR: /opt/homebrew/lib/libmpfr.dylib  
+-- Found Git: /usr/bin/git (found version "2.32.1 (Apple Git-133)") 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/ethan/Documents/test_env
+[  5%] Building C object crlibm/CMakeFiles/crlibm.dir/crlibm_private.c.o
+[  5%] Building C object crlibm/CMakeFiles/crlibm.dir/triple-double.c.o
+[ 11%] Building C object crlibm/CMakeFiles/crlibm.dir/exp-td.c.o
+[ 11%] Building C object crlibm/CMakeFiles/crlibm.dir/exp-td-standalone.c.o
+[ 17%] Building C object crlibm/CMakeFiles/crlibm.dir/expm1-standalone.c.o
+[ 17%] Building C object crlibm/CMakeFiles/crlibm.dir/expm1.c.o
+[ 23%] Building C object crlibm/CMakeFiles/crlibm.dir/log.c.o
+[ 29%] Building C object crlibm/CMakeFiles/crlibm.dir/log1p.c.o
+[ 29%] Building C object crlibm/CMakeFiles/crlibm.dir/rem_pio2_accurate.c.o
+[ 35%] Building C object crlibm/CMakeFiles/crlibm.dir/trigo_fast.c.o
+[ 35%] Building C object crlibm/CMakeFiles/crlibm.dir/trigo_accurate.c.o
+[ 41%] Building C object crlibm/CMakeFiles/crlibm.dir/trigpi.c.o
+[ 41%] Building C object crlibm/CMakeFiles/crlibm.dir/asincos.c.o
+[ 47%] Building C object crlibm/CMakeFiles/crlibm.dir/pow.c.o
+[ 52%] Building C object crlibm/CMakeFiles/crlibm.dir/atan_fast.c.o
+[ 52%] Building C object crlibm/CMakeFiles/crlibm.dir/atan_accurate.c.o
+[ 58%] Building C object crlibm/CMakeFiles/crlibm.dir/csh_fast.c.o
+[ 58%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/scs_private.c.o
+[ 64%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/addition_scs.c.o
+[ 70%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/division_scs.c.o
+[ 70%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/print_scs.c.o
+[ 76%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/double2scs.c.o
+[ 76%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/zero_scs.c.o
+[ 82%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/multiplication_scs.c.o
+[ 82%] Building C object crlibm/CMakeFiles/crlibm.dir/scs_lib/scs2double.c.o
+[ 88%] Linking C static library ../lib/libcrlibm.a
+[ 88%] Built target crlibm
+[ 94%] Building C object crlibm/tests/CMakeFiles/blind_test.dir/blind_test.c.o
+[ 94%] Building C object crlibm/tests/CMakeFiles/blind_test.dir/test_common.c.o
+[100%] Linking C executable ../../bin/blind_test
+[100%] Built target blind_test
+[ 25%] Building C object openpa/CMakeFiles/opa.dir/src/opa_primitives.c.o
+[ 25%] Building C object openpa/CMakeFiles/opa.dir/src/opa_queue.c.o
+[ 50%] Linking C static library ../lib/libopa.a
+[ 50%] Built target opa
+[ 75%] Building C object openpa/test/CMakeFiles/sanity.dir/sanity.c.o
+[100%] Linking C executable ../../bin/sanity
+[100%] Built target sanity
+Consolidate compiler generated dependencies of target opa
+[ 66%] Built target opa
+[100%] Building C object openpa/test/CMakeFiles/test_primitives.dir/test_primitives.c.o
+[100%] Linking C executable ../../bin/test_primitives
+[100%] Built target test_primitives
+[ 66%] Built target opa
+[ 66%] Building C object openpa/test/CMakeFiles/test_barriers.dir/test_barriers.c.o
+[100%] Linking C executable ../../bin/test_barriers
+[100%] Built target test_barriers
+[ 66%] Built target opa
+[100%] Building C object openpa/test/CMakeFiles/test_queue.dir/test_queue.c.o
+[100%] Linking C executable ../../bin/test_queue
+[100%] Built target test_queue
+[  0%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_chisq.c.o
+[  2%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_grav.c.o
+[  4%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_io.c.o
+[  4%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_curses.c.o
+[  7%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_types.c.o
+[  7%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_tree.c.o
+[  9%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_orbit_integrator.c.o
+[  9%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_potential.c.o
+[ 11%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_bessel.c.o
+[ 14%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_virial.c.o
+[ 14%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_density.c.o
+[ 16%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_friction.c.o
+[ 16%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody.c.o
+[ 19%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_plain.c.o
+[ 19%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_check_params.c.o
+[ 21%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_isotropic.c.o
+[ 23%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_mixeddwarf.c.o
+[ 23%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_manual_bodies.c.o
+[ 26%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_dwarf_potential.c.o
+[ 26%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_plummer.c.o
+[ 28%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_nfw.c.o
+[ 30%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_hernq.c.o
+[ 30%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_show.c.o
+[ 33%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_checkpoint.c.o
+[ 33%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_defaults.c.o
+[ 35%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_coordinates.c.o
+[ 35%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_shmem.c.o
+[ 38%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_util.c.o
+[ 40%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_emd.c.o
+[ 40%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_mass.c.o
+[ 42%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_devoptions.c.o
+[ 42%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_likelihood.c.o
+[ 45%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_histogram.c.o
+[ 45%] Building C object nbody/CMakeFiles/nbody.dir/src/nbody_caustic.c.o
+[ 47%] Building C object nbody/CMakeFiles/nbody.dir/src/blender_visualizer.c.o
+[ 50%] Linking C static library ../lib/libnbody.a
+[ 50%] Built target nbody
+[ 52%] Building C object dSFMT/CMakeFiles/dsfmt.dir/dSFMT.c.o
+[ 52%] Linking C static library ../lib/libdsfmt.a
+[ 52%] Built target dsfmt
+[ 52%] Building C object milkyway/CMakeFiles/milkyway.dir/src/milkyway_util.c.o
+[ 54%] Building C object milkyway/CMakeFiles/milkyway.dir/src/milkyway_alloc.c.o
+[ 57%] Building C object milkyway/CMakeFiles/milkyway.dir/src/milkyway_rename.c.o
+[ 57%] Building CXX object milkyway/CMakeFiles/milkyway.dir/src/milkyway_boinc_util.cc.o
+[ 59%] Building C object milkyway/CMakeFiles/milkyway.dir/src/milkyway_show.c.o
+[ 59%] Building C object milkyway/CMakeFiles/milkyway.dir/src/milkyway_cpuid.c.o
+[ 61%] Building C object milkyway/CMakeFiles/milkyway.dir/src/milkyway_timing.c.o
+[ 61%] Linking CXX static library ../lib/libmilkyway.a
+[ 61%] Built target milkyway
+Consolidate compiler generated dependencies of target crlibm
+[ 97%] Built target crlibm
+[100%] Building C object nbody/tests/CMakeFiles/emd_test.dir/emd_test.c.o
+[100%] Linking CXX executable ../../bin/emd_test
+[100%] Built target emd_test
+Consolidate compiler generated dependencies of target nbody
+[ 50%] Built target nbody
+Consolidate compiler generated dependencies of target dsfmt
+[ 52%] Built target dsfmt
+Consolidate compiler generated dependencies of target milkyway
+[ 61%] Built target milkyway
+[ 97%] Built target crlibm
+[100%] Building C object nbody/tests/CMakeFiles/bessel_test.dir/bessel_test.c.o
+[100%] Linking CXX executable ../../bin/bessel_test
+[100%] Built target bessel_test
+[ 27%] Built target nbody
+[ 27%] Building C object popt/CMakeFiles/popt.dir/src/popt.c.o
+[ 28%] Building C object popt/CMakeFiles/popt.dir/src/poptparse.c.o
+[ 30%] Building C object popt/CMakeFiles/popt.dir/src/poptconfig.c.o
+[ 30%] Building C object popt/CMakeFiles/popt.dir/src/popthelp.c.o
+[ 31%] Building C object popt/CMakeFiles/popt.dir/src/poptint.c.o
+[ 31%] Linking C static library ../lib/libpopt.a
+[ 31%] Built target popt
+[ 32%] Building C object lua/CMakeFiles/lua51.dir/src/lapi.c.o
+[ 34%] Building C object lua/CMakeFiles/lua51.dir/src/lcode.c.o
+[ 34%] Building C object lua/CMakeFiles/lua51.dir/src/ldebug.c.o
+[ 35%] Building C object lua/CMakeFiles/lua51.dir/src/ldo.c.o
+[ 35%] Building C object lua/CMakeFiles/lua51.dir/src/ldump.c.o
+[ 36%] Building C object lua/CMakeFiles/lua51.dir/src/lfunc.c.o
+[ 38%] Building C object lua/CMakeFiles/lua51.dir/src/lgc.c.o
+[ 38%] Building C object lua/CMakeFiles/lua51.dir/src/llex.c.o
+[ 39%] Building C object lua/CMakeFiles/lua51.dir/src/lmem.c.o
+[ 39%] Building C object lua/CMakeFiles/lua51.dir/src/lobject.c.o
+[ 40%] Building C object lua/CMakeFiles/lua51.dir/src/lopcodes.c.o
+[ 40%] Building C object lua/CMakeFiles/lua51.dir/src/lparser.c.o
+[ 42%] Building C object lua/CMakeFiles/lua51.dir/src/lstate.c.o
+[ 43%] Building C object lua/CMakeFiles/lua51.dir/src/lstring.c.o
+[ 43%] Building C object lua/CMakeFiles/lua51.dir/src/ltable.c.o
+[ 44%] Building C object lua/CMakeFiles/lua51.dir/src/ltm.c.o
+[ 44%] Building C object lua/CMakeFiles/lua51.dir/src/lundump.c.o
+[ 46%] Building C object lua/CMakeFiles/lua51.dir/src/lvm.c.o
+[ 46%] Building C object lua/CMakeFiles/lua51.dir/src/lzio.c.o
+[ 47%] Building C object lua/CMakeFiles/lua51.dir/src/lauxlib.c.o
+[ 48%] Building C object lua/CMakeFiles/lua51.dir/src/lbaselib.c.o
+[ 48%] Building C object lua/CMakeFiles/lua51.dir/src/ldblib.c.o
+[ 50%] Building C object lua/CMakeFiles/lua51.dir/src/liolib.c.o
+[ 50%] Building C object lua/CMakeFiles/lua51.dir/src/lmathlib.c.o
+[ 51%] Building C object lua/CMakeFiles/lua51.dir/src/loslib.c.o
+[ 51%] Building C object lua/CMakeFiles/lua51.dir/src/ltablib.c.o
+[ 52%] Building C object lua/CMakeFiles/lua51.dir/src/lstrlib.c.o
+[ 53%] Building C object lua/CMakeFiles/lua51.dir/src/linit.c.o
+[ 53%] Building C object lua/CMakeFiles/lua51.dir/src/loadlib_rel.c.o
+[ 55%] Linking C static library ../lib/liblua51.a
+[ 55%] Built target lua51
+[ 56%] Built target dsfmt
+[ 61%] Built target milkyway
+[ 63%] Building C object milkyway/CMakeFiles/milkyway_lua.dir/src/milkyway_lua_marshal.c.o
+[ 64%] Building C object milkyway/CMakeFiles/milkyway_lua.dir/src/milkyway_lua_util.c.o
+[ 64%] Building C object milkyway/CMakeFiles/milkyway_lua.dir/src/milkyway_lua_math.c.o
+[ 65%] Building C object milkyway/CMakeFiles/milkyway_lua.dir/src/milkyway_lua_vector.c.o
+[ 65%] Building C object milkyway/CMakeFiles/milkyway_lua.dir/src/milkyway_lua_dsfmt.c.o
+[ 67%] Building C object milkyway/CMakeFiles/milkyway_lua.dir/src/milkyway_lua_types.c.o
+[ 67%] Linking CXX static library ../lib/libmilkyway_lua.a
+[ 67%] Built target milkyway_lua
+[ 86%] Built target crlibm
+[ 86%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua.c.o
+[ 88%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_models.c.o
+[ 88%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_util.c.o
+[ 89%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_misc.c.o
+[ 89%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_types.c.o
+[ 90%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_type_marshal.c.o
+[ 92%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_nbodystate.c.o
+[ 92%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_nbodyctx.c.o
+[ 93%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_body.c.o
+[ 93%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_halo.c.o
+[ 94%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_disk.c.o
+[ 96%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_spherical.c.o
+[ 96%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_dwarf.c.o
+[ 97%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_potential.c.o
+[ 97%] Building C object nbody/CMakeFiles/nbody_lua.dir/src/nbody_lua_types/nbody_lua_histogram_params.c.o
+[ 98%] Linking C static library ../lib/libnbody_lua.a
+[ 98%] Built target nbody_lua
+[ 98%] Building C object nbody/tests/CMakeFiles/poisson_test.dir/poisson_test.c.o
+[ 48%] Built target nbody
+[ 51%] Built target dsfmt
+[ 60%] Built target milkyway
+[ 95%] Built target crlibm
+[ 97%] Building C object nbody/tests/CMakeFiles/virial_test.dir/virial_test.c.o
+[100%] Linking CXX executable ../../bin/virial_test
+[100%] Built target virial_test
+[ 27%] Built target nbody
+Consolidate compiler generated dependencies of target popt
+[ 31%] Built target popt
+Consolidate compiler generated dependencies of target lua51
+[ 55%] Built target lua51
+[ 56%] Built target dsfmt
+[ 61%] Built target milkyway
+Consolidate compiler generated dependencies of target milkyway_lua
+[ 67%] Built target milkyway_lua
+[ 86%] Built target crlibm
+Consolidate compiler generated dependencies of target nbody_lua
+[ 98%] Built target nbody_lua
+[ 98%] Building C object nbody/tests/CMakeFiles/mixeddwarf_test.dir/mixeddwarf_test.c.o
+[100%] Linking CXX executable ../../bin/mixeddwarf_test
+[100%] Built target mixeddwarf_test
+[ 27%] Built target nbody
+[ 31%] Built target popt
+[ 55%] Built target lua51
+[ 56%] Built target dsfmt
+[ 61%] Built target milkyway
+[ 67%] Built target milkyway_lua
+[ 86%] Built target crlibm
+[ 98%] Built target nbody_lua
+[ 98%] Building C object nbody/tests/CMakeFiles/nbody_test_driver.dir/nbody_test_driver.c.o
+[100%] Linking CXX executable ../../bin/nbody_test_driver
+[100%] Built target nbody_test_driver
+[  3%] Built target popt
+[ 26%] Built target lua51
+[ 27%] Building C object lua/CMakeFiles/lua.dir/src/lua.c.o
+[ 27%] Linking C executable ../bin/lua
+[ 27%] Built target lua
+[ 28%] Built target dsfmt
+[ 31%] Built target opa
+[ 36%] Built target milkyway
+[ 41%] Built target milkyway_lua
+[ 60%] Built target crlibm
+[ 71%] Built target nbody_lua
+[ 97%] Built target nbody
+[ 98%] Building C object nbody/CMakeFiles/milkyway_nbody.dir/src/main.c.o
+[100%] Linking CXX executable ../bin/milkyway_nbody
+[100%] Built target milkyway_nbody

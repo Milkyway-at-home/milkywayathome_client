@@ -79,7 +79,8 @@ const NBodyCtx defaultNBodyCtx =
 
     /* .calibrationRuns */   0,
 
-    /* .pot             */  EMPTY_POTENTIAL
+    /* .pot             */  EMPTY_POTENTIAL,
+    /* .darkmatter_sigma */ 0.0,
 };
 
 const HistogramParams defaultHistogramParams =
