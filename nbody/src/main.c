@@ -720,7 +720,6 @@ int main(int argc, const char* argv[])
     {
         rc = nbMain(&nbf);
         rc = nbStatusToRC(rc);
-
         //mw_printf("Before noCleanCheckpoint\n");
 
         if (!nbf.noCleanCheckpoint)

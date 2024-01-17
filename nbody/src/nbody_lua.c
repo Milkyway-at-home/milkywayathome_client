@@ -558,12 +558,12 @@ int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
 }
 
 static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
-{
+{   
     int level, nResults;
 
     level = lua_gettop(luaSt);
     if (getBodiesFunc(luaSt))
-    {
+    {   
         return NULL;
     }
 

@@ -272,7 +272,7 @@ static int luaReverseOrbitS(lua_State* luaSt)
     tstop = luaL_checknumber(luaSt, 4);
     dt = luaL_checknumber(luaSt, 5);
     
-    nbReverseOrbits(finalPos, finalVel, pot, pos, vel, lenPos, tstop, dt, masses);
+    nbReverseOrbitS(finalPos, finalVel, pot, pos, vel, lenPos, tstop, dt, masses);
 
     pushVectorTable(luaSt, finalPos, lenPos);
     pushVectorTable(luaSt, finalVel, lenPos);
@@ -339,14 +339,19 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
     mwvector vel[lenPos];
     mwvector finalPos[lenPos];
     mwvector finalVel[lenPos];
-    real tstop, dt;
+    mwvector* LMCpos; 
+    mwvector* LMCvel;
+    mwvector LMCfinalPos, LMCfinalVel;
+    mwbool LMCDynaFric = FALSE;
+    real LMCmass, LMCscale, coulomb_log, tstop, dt, ftime;
     real masses[lenPos];
+    real rscales[lenPos];
 
     arg_num = lua_gettop(luaSt);
 
-    if (arg_num != 13)
+    if (arg_num != 14)
     {
-        return luaL_argerror(luaSt, 0, "Expected 13 arguments");
+        return luaL_argerror(luaSt, 0, "Expected 14 arguments");
     }
 
 
@@ -367,6 +372,11 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
         lua_rawgeti(luaSt, 13, i);
         masses[i-1] = luaL_checknumber(luaSt, -1);
         lua_pop(luaSt, 1);
+
+        lua_rawgeti(luaSt, 14, i);
+        rscales[i-1] = luaL_checknumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+        
     }
 
     pot = (Potential*) luaL_checkudata(luaSt, 1, POTENTIAL_TYPE);
@@ -374,8 +384,8 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
     LMCvel = checkVector(luaSt, 5);
     LMCmass = luaL_checknumber(luaSt, 6);
     LMCscale = luaL_checknumber(luaSt, 7);
-    coulomb_log = luaL_checknumber(luaSt, 8);
-    LMCDynaFric = luaL_checknumber(luaSt, 9);
+    LMCDynaFric = luaL_checknumber(luaSt, 8);
+    coulomb_log = luaL_checknumber(luaSt, 9);
     tstop = luaL_checknumber(luaSt, 10);
     ftime = luaL_checknumber(luaSt, 11);
     dt = luaL_checknumber(luaSt, 12);
@@ -385,7 +395,7 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(finalPos, finalVel, &LMCfinalPos, &LMCfinalVel, pot, pos, vel, lenPos, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale, coulomb_log, masses);
+    nbReverseOrbitS_LMC(finalPos, finalVel, &LMCfinalPos, &LMCfinalVel, pot, pos, vel, lenPos, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale, coulomb_log, masses, rscales);
     pushVectorTable(luaSt, finalPos, lenPos);
     pushVectorTable(luaSt, finalVel, lenPos);
     pushVector(luaSt, LMCfinalPos);

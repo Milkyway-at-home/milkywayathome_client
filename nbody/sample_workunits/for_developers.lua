@@ -24,7 +24,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 1000   -- -- NUMBER OF BODIES                                  -- --
+totalBodies           = 1   -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.85"  -- -- MINIMUM APP VERSION                               -- --
 
@@ -104,7 +104,7 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
 useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+freqOfOutputs         = 15         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control      = true       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
@@ -115,7 +115,7 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
         
 
 -- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
-n=2
+n=11
 
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
@@ -134,19 +134,28 @@ end
 dec = 9.0
 evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
 time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
-rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
-light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = {round( 24207.03, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
-orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
-orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec )}
-orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec )}
-orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec )}
-orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
+-- rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
+-- light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+-- mass_l           = {round( 24207.03, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
+-- light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+-- orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
+-- orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
+-- orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec )}
+-- orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec )}
+-- orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec )}
+-- orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
 manual_body_file = arg[13]
 -- File with Individual Particles (.out file)
-
+rscale_l         = {round( 2.9, dec ),round( 1.53, dec ),round( 1.425,dec),round( 0.43,dec),round( 0.725,dec),round( 0.96,dec),round( 1.25,dec),round( 0.465,dec),round( 0.59,dec),round( 0.42,dec),round(0.505 ,dec)}    -- Baryonic Radius (kpc)
+light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec ),round(  0.2,dec),round(  0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec)}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = {round( 24207.03, dec ),round( 1066.45, dec ),round( 801.57,dec),round( 208.90,dec),round( 93.74,dec),round( 29.10,dec),round( 18.88,dec),round( 16.44,dec),round( 11.31,dec),round( 8.97,dec),round( 10.57,dec)}    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec ),round( 0.1429,dec),round( 0.0067,dec),round( 0.0674,dec),round( 0.0240,dec),round( 0.0100,dec),round( 0.0159,dec),round( 0.0115,dec),round( 0.0038,dec),round( 0.0087,dec)}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec ),round( 237.104,dec),round( 225.985,dec),round( 287.535,dec),round( 220.164,dec),round( 243.498,dec),round( 260.112,dec),round( 86.368,dec),round( 104.9,dec),round( 74.305,dec)}
+orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec ),round( -65.651,dec),round( 49.112,dec),round( -83.157,dec),round( 67.229,dec),round( 42.272,dec),round( -22.223,dec),round( 34.722,dec),round( 44.8,dec),round( 79.823,dec)}
+orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec ),round( 143,dec),round( 250,dec),round( 88.91,dec),round( 220,dec),round( 90,dec),round( 100,dec),round( 80,dec),round( 60,dec),round( 220,dec)}
+orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec ),round( -27.04,dec),round( 48.17,dec),round( -22.11,dec),round( 94.87,dec),round( -194.39,dec),round( -28.48,dec),round( -59.22,dec),round( 19.12,dec),round( 23.95,dec)}
+orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec ),round( -172.14,dec),round( -16.36,dec),round( 197.28,dec),round( 209.73,dec),round( 30.33,dec),round( -79.13,dec),round( 60.33,dec),round( 38.13,dec),round( 47.45,dec)}
+orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec ),round( 101.21,dec),round( 254.15,dec),round( -102.1,dec),round( 114.61,dec),round( 49.13,dec),round( 164.44,dec),round( -263.33,dec),round( -160.51,dec),round( 68.05,dec)}
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
@@ -313,20 +322,21 @@ function makeBodies(ctx, potential)
 	        --     }
 
             local potential = potential
-            local position = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
-            local velocity = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
+            local position = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
+            local velocity = Vector.creates(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
             local LMCposition = Vector.create(-1.1, -41.1, -27.9)
             local LMCvelocity = Vector.create(-57, -226, 221)
             local LMCmass = LMC_Mass
             local LMCscale = LMC_scaleRadius
-            local LMCDynaFric = LMC_DynamicalFriction
+            local LMCDynaFric = LMC_DynamicalFriction and 1 or 0
             local coulomb_log = CoulombLogarithm
             local ftime = evolveTime
             local tstop = revOrbTime
             local dt = ctx.timestep / 10.0      
             local masses    = dwarfMass  
+            local rscales = rscale_t
 
-            finalPosition, finalVelocity = reverseOrbitS_LMC(potential, position, velocity, LMCposition, LMCvelocity, LMCmass, LMCscale, LMCDynaFric, coulomb_log, ftime, tstop, dt, masses)      
+            finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbitS_LMC(potential, position, velocity, LMCposition, LMCvelocity, LMCmass, LMCscale, LMCDynaFric, coulomb_log, ftime, tstop, dt, masses, rscales)      
 	    else
             local potential = potential
             local position  = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
@@ -348,7 +358,7 @@ function makeBodies(ctx, potential)
 	        --     }
          end
     end
-    
+
     if(print_reverse_orbit == true) then
         local placeholderPos, placeholderVel = {}, {}
             for i = 1, n do
@@ -365,7 +375,6 @@ function makeBodies(ctx, potential)
             end
         print('Printing reverse orbit')
     end
-
 
     if(ModelComponents == 2) then 
         for i = 1, n do
@@ -396,24 +405,23 @@ function makeBodies(ctx, potential)
         }
   
     end
-  
     if(manual_bodies) then
         manualModel = predefinedModels.manual_bodies{
         body_file   = manual_body_file,
     }
          
     end
-    
     if(ModelComponents > 0 and manual_bodies) then 
         return firstModel, manualModel
     elseif(ModelComponents == 0 and manual_bodies) then
         return manualModel
-    elseif(ModelComponents > 0 and not manual_bodies) then
+    elseif(ModelComponents > 0 and not manual_bodies) then        
+        print("done")
         return firstModel
     else    
         print("Don't you want to simulate something?")
     end
-    
+    print("finished makebodies")
 end
 
 function makeHistogram()
@@ -433,8 +441,6 @@ function makeHistogram()
      betaBins  = bta_bins
 }
 end
-
-
 
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
