@@ -34,6 +34,33 @@ Nbody
 
 - **Bar code currently does not pass all tests**
 
+Instructions for Compiling Nbody (With BOINC on)
+---------------------------------------------------------------------------------------------------
+Step 0.  Ensure proper packages are installed
+    (For Ubuntu) `sudo apt-get install mingw-w64 cmake`
+
+Step 1.  Download all necessary files
+```
+git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
+cd milkywayathome_client
+git submodule init
+git submodule update --recursive
+```
+NOTE: If you are running on WSL (Windows Subsystem Linux), you may need to run the following commands
+```
+git submodule sync
+git submodule init
+git submodule update
+```
+Step 2.  Compile Nbody
+```
+./build_client
+```
+Step 3.  Run a Nbody Simulation
+```
+./run_nbody
+```
+
 Tests
 -----------------
   Tests can be run by running:
