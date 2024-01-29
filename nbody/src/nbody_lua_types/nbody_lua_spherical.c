@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 #include "nbody_lua_spherical.h"
+#include "nbody_check_params.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 
