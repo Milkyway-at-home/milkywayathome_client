@@ -381,6 +381,7 @@ rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+rscale_dm        = (rscale_l * (1 - light_r_ratio)) / light_r_ratio
 if (#arg >= 7) then
 	sigma = round( tonumber(arg[7]), dec )
 if (#arg >= 13) then
