@@ -210,57 +210,15 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
         mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale); // Relative Accleration from Milkyway accleration from LMC
         steps = t/dt;
 
-        if (t == 0){// Initiate the velocity
-                // Shift the body
-            mw_incnegv(mw_acc);
-            LMC_acc = nbExtAcceleration(pot, LMCx, t);
-            if (LMCDynaFric) 
-            {
-                DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, TRUE, 0, coulomb_log);
-                mw_incnegv(DF_acc); /* Inverting drag force for reverse orbit */
-                mw_incaddv(LMC_acc, DF_acc);
-            }
-            mw_incaddv(LMC_acc, mw_acc);
-            
-            //if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc1 from MW(both) and DF = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
-
-            for (size_t i = 0; i < len; ++i)
-            {
-                // Get the Starting acceleration
-                acc[i] = nbExtAcceleration(pot, x[i], t);
-                mw_incaddv(acc[i], mw_acc);
-                mw_incaddv(acc[i], plummerAccel(x[i], LMCx, LMCmass, LMCscale));//Aceleration from LMC to dwarfs
-                LMC_acci = plummerAccel(LMCx, x[i], masses[i], scales[i]);//Acceleration from dwarfs to LMC
-                //LMC_acci = pointAccel(LMCx, x[i], masses[i]);
-                mw_incaddv(LMC_acc, LMC_acci);
-                //if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc1 from Dwarfs %d = [%.15f,%.15f,%.15f] at t = %f\n", i+1 , X(LMC_acci), Y(LMC_acci), Z(LMC_acci), t);}
-                
-
-                //if (step % 1000 == 0) // For Testing
-                // Total Accleration From other Dwarfs
-                for (size_t j = 0; j < len; ++j)
-                {
-                    if (i != j)
-                    {   
-                        mwvector accFromJ = plummerAccel(x[i], x[j], masses[j], scales[j]);
-                        //mwvector accFromJ = pointAccel(x[i], x[j], masses[j]);
-                        acc[i] = mw_addv(acc[i], accFromJ);                   
-                    }
-                } 
-
-                // Update Velocities for first time by dt_half step
-                mw_incaddv_s(v[i], acc[i], dt_half);
-            }
-            mw_incaddv_s(LMCv, LMC_acc, dt_half);
-        }     
+        // Shift the body
+        mw_incnegv(mw_acc);
 
     	if( steps % 10 == 0){ 
     		bacArray[a] = mw_acc;
         	a++;
     	}   
 
-        // Shift the body
-        mw_incnegv(mw_acc);
+        LMC_acc = nbExtAcceleration(pot, LMCx, t);
         if (LMCDynaFric) 
         {
             DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, TRUE, 0, coulomb_log);
@@ -269,17 +227,18 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
         }
         mw_incaddv(LMC_acc, mw_acc);
         
-        if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc1 from MW(both) and DF = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
+        //if (step % 10 == 0 & step <= 500) {mw_printf("LMC_acc1 from MW(both) and DF = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
 
         for (size_t i = 0; i < len; ++i)
         {
-            // Get the Starting acceleration
+            // Get the Starting accelerations
+            acc[i] = nbExtAcceleration(pot, x[i], t);
             mw_incaddv(acc[i], mw_acc);
             mw_incaddv(acc[i], plummerAccel(x[i], LMCx, LMCmass, LMCscale));//Aceleration from LMC to dwarfs
             LMC_acci = plummerAccel(LMCx, x[i], masses[i], scales[i]);//Acceleration from dwarfs to LMC
             //LMC_acci = pointAccel(LMCx, x[i], masses[i]);
             mw_incaddv(LMC_acc, LMC_acci);
-            //if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc1 from Dwarfs %d = [%.15f,%.15f,%.15f] at t = %f\n", i+1 , X(LMC_acci), Y(LMC_acci), Z(LMC_acci), t);}
+            // if (step % 10 == 0 & step <= 500) {mw_printf("LMC_acc1 from Dwarfs %d = [%.15f,%.15f,%.15f] at t = %f\n", i+1 , X(LMC_acci), Y(LMC_acci), Z(LMC_acci), t);}
             
 
             //if (step % 1000 == 0) // For Testing
@@ -300,7 +259,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
             mw_incaddv_s(x[i], v[i], dt); 
         }
         
-        //if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc1 from MW(both) and DF and Dwarfs= [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
+        //if (step % 10 == 0 & step <= 500) {mw_printf("LMC_acc1 from MW(both) and DF = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
 
 
         // //if (steps % 10 == 0 & steps <= 500) {
@@ -325,6 +284,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
 
         //** Get the Second Half acceleration    
         mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale); // Relative Accleration from Milkyway
+        LMC_acc = nbExtAcceleration(pot, LMCx, t-dt_half);
         // Shift the body
         mw_incnegv(mw_acc);
         
@@ -335,10 +295,12 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
         }
         mw_incaddv(LMC_acc, mw_acc);
 
-        if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc2 from MW(both) and DF = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
+        //if (step % 10 == 0 & step <= 500) {mw_printf("LMC_acc2 from MW(both) and DF = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t-dt_half);}
 
         for (size_t i = 0; i < len; ++i)
         {
+            //Get the second Starting accelerations
+            acc[i] = nbExtAcceleration(pot, x[i], t-dt_half);
             mw_incaddv(acc[i], mw_acc);
             mw_incaddv(acc[i], plummerAccel(x[i], LMCx, LMCmass, LMCscale));//Aceleration from LMC to dwarfs
 
@@ -360,7 +322,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
             mw_incaddv_s(v[i], acc[i], dt_half);
         }
 
-        if (steps % 10 == 0 & steps <= 500) {mw_printf("LMC_acc1 from MW and DF and Dwarfs= [%.15f,%.15f,%.15f] at t = %f\n\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);}
+        //if (step % 10 == 0 & step <= 500) {mw_printf("LMC_acc2 from MW and DF and Dwarfs= [%.15f,%.15f,%.15f] at t = %f\n\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t-dt_half);}
 
         // //if (steps % 10 == 0 & steps <= 500) {
         //     mw_printf("LMC_acc = [%.15f,%.15f,%.15f] at t = %f\n", X(LMC_acc), Y(LMC_acc), Z(LMC_acc), t);
@@ -399,14 +361,14 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
     mwFreeA(forArray);
 
     /* Report the final values (don't forget to reverse the velocities) */
-    // for (size_t i = 0; i < len; ++i)// Store the Final velocity and position
-    // {   
-    //     mw_incnegv(v[i]);
-    //     finalPos[i] = x[i];
-    //     finalVel[i] = v[i];
-    //     mw_printf("Dwarf %d Initial Position: %.15f,%.15f,%.15f\n", i+1, X(x[i]), Y(x[i]), Z(x[i]));
-    //     mw_printf("Dwarf %d Initial Velocity: %.15f,%.15f,%.15f\n", i+1, X(v[i]), Y(v[i]), Z(v[i]));
-    // }
+    for (size_t i = 0; i < len; ++i)// Store the Final velocity and position
+    {   
+        mw_incnegv(v[i]);
+        finalPos[i] = x[i];
+        finalVel[i] = v[i];
+        mw_printf("Dwarf %d Initial Position: %.15f,%.15f,%.15f\n", i+1, X(x[i]), Y(x[i]), Z(x[i]));
+        mw_printf("Dwarf %d Initial Velocity: %.15f,%.15f,%.15f\n", i+1, X(v[i]), Y(v[i]), Z(v[i]));
+    }
 
     mw_incnegv(LMCv);
     *LMCfinalPos = LMCx;
@@ -419,13 +381,13 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
     LMCpos = LMCx;
     LMCvel = LMCv;
 
-    for (size_t i = 0; i < 200; ++i) {
-        mw_printf("[");
-        for (size_t j = 0; j < len; ++j){
-            mw_printf("(%f, %f, %f)",track[i][j].x, track[i][j].y, track[i][j].z);
-        }
-        mw_printf("]\n");
-    }
+    // for (size_t i = 0; i < 200; ++i) {
+    //     mw_printf("[");
+    //     for (size_t j = 0; j < len; ++j){
+    //         mw_printf("(%f, %f, %f)",track[i][j].x, track[i][j].y, track[i][j].z);
+    //     }
+    //     mw_printf("]\n");
+    // }
 }
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
