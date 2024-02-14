@@ -37,7 +37,11 @@ Nbody
 Instructions for Compiling Nbody (With BOINC on)
 ---------------------------------------------------------------------------------------------------
 Step 0.  Ensure proper packages are installed
-    (For Ubuntu) `sudo apt-get install mingw-w64 cmake`
+
+    (For Ubuntu) sudo apt-get install mingw-w64 cmake
+    (OpenGL)     sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+    (NCurses)    sudo apt-get install libncurses5-dev libncursesw5-dev
+    (OpenSSL)    sudo apt-get install libssl-dev
 
 Step 1.  Download all necessary files
 ```
@@ -64,26 +68,30 @@ Step 3.  Run a Nbody Simulation
 Tests
 -----------------
   Tests can be run by running:
+  ```
   $ make test
-
+  ```
   However this runs all of the tests, which takes forever. You can run
   (from the tests directory) some core functionality tests with:
+  ```
   $ make check
-
+  ```
   Other tests  can be run with a certain number of bodies depending on
   how long you want to wait with:
-
+  ```
   $ make test_${n}
-
+  ```
   Currently n = 100, 1024, 10000 are available.
 
   Single tests can be run with:
-
+  ```
   $ ctest -R <Test_Name> 
-
+  ```
   Get a more versbose output with:
-
+  ```
   $ ctest -R <Test_Name> -VV
+  ```
+  If only 25 tests are running instead of 88 tests, you are missing libraries (check Step 0 for compiling N-body)
 
 TAO
 --------------------------------------------------------------------------------
