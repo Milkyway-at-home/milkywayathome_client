@@ -199,7 +199,7 @@ set(boinc_lib_headers boinc/version.h
                       boinc/win_build/config.h
                       ${BOINC_LIB_SRC_DIR}/str_util.h
                       ${BOINC_LIB_SRC_DIR}/procinfo.h
-                      ${BOINC_LIB_SRC_DIR}/hostinfo.h
+                      ${BOINC_LIB_SRC_DIR}/wslinfo.h
                       ${BOINC_LIB_SRC_DIR}/proc_control.h
                       ${BOINC_LIB_SRC_DIR}/opencl_boinc.h)
 
@@ -221,7 +221,7 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/base64.cpp
                   ${BOINC_LIB_SRC_DIR}/url.cpp
                   ${BOINC_LIB_SRC_DIR}/coproc.cpp
-                  ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
+                  ${BOINC_LIB_SRC_DIR}/wslinfo.cpp
                   ${BOINC_LIB_SRC_DIR}/procinfo.cpp
                   ${BOINC_LIB_SRC_DIR}/proc_control.cpp
                   ${BOINC_LIB_SRC_DIR}/opencl_boinc.cpp)
