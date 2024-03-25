@@ -82,6 +82,7 @@ int NearestNeighbors(NbodyState* st, Body* p){
 		float current_size = mw_pow(total_size,3);
 		for(int i=0; i<8; i++){
 			if (X(q->pos) - 0.5 * current_size <= body_pos[0] && X(q->pos) + 0.5* current_size >= body_pos[0] && Y(q->pos) - 0.5 * current_size <= body_pos[1] && Y(q->pos) + 0.5* current_size >= body_pos[1] && Z(q->pos) - 0.5 * current_size <= body_pos[2] && Z(q->pos) + 0.5* current_size >= body_pos[2]){
+				
 				 q = (NBodyCell*) Subp(q)[i]; //We have determined that the particle is within this subcell, therefore we are going down a level by making the subcell the new cell
 			}
 		}

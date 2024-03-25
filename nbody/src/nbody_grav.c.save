@@ -73,44 +73,14 @@ static int DarkMatterScatter(const NBodyCtx* ctx, const Body* p) {
 
 
 // NearestNeighbors finds the 32 nearest nearest neigbbors to each particle every timestep using the octree in order to calculate scattering between particles
-int NearestNeighbors(NbodyState* st, Body* p){
-	int currentlevel = 1;
-	float* body_pos = {X(pos(p)), Y(pos(p)), Z(pos(p))};
-	NbodyNode* q  =  st->tree.root;
-	float total_size = q.rsize;
-	while(!isBody(Subp(q[i]))){ // is the body not a leaf?
-		float current_size = mw_pow(total_size,3);
-		for(int i=0; i<8; i++){
-			if (X(q->pos) - 0.5 * current_size <= body_pos[0] && X(q->pos) + 0.5* current_size >= body_pos[0] && Y(q->pos) - 0.5 * current_size <= body_pos[1] && Y(q->pos) + 0.5* current_size >= body_pos[1] && Z(q->pos) - 0.5 * current_size <= body_pos[2] && Z(q->pos) + 0.5* current_size >= body_pos[2]){
-				 q = (NBodyCell*) Subp(q)[i]; //We have determined that the particle is within this subcell, therefore we are going down a level by making the subcell the new cell
-			}
-		}
-        }
-	/*for(int i=0; i<8; i++){
-		if (isBody(Subp(q[i]))){ // is the current node a leaf?
-			// add body to list of candidate nodes
-		} else {
-			// find the closest node and descend to the next level	
-			q = (NBodyCell*) Subp(q)[i];
-			currentlevel++;
-		}
-	}*/
-	/*for(int i =0;i<8;i++){
-		float present_size = total_size * (mw_pow(total_size,-currentlevel));
-		real x_lower;
-		real x_upper;
-		real y_lower;
-		real y_upper;
-		real z_lower;
-		real z_upper;
-		if (isBody(Subp(q[i]))){ // is leaf?
+int NearestNeighbors(NbodyState* st){
+	int currentlevel = 0;
+	NbodyNode* currentnode =  st->tree.root;
+	for (int i = 0; i<8; i++){
+		if (isBody(Subp(currentnode))) {
 
-		} else {
-			//x_lower = body_pos[0] - psize * 0.5;
-			x_lower = ;
-		}
 	}
-	*/
+
 }
 
 

@@ -78,14 +78,6 @@ int NearestNeighbors(NbodyState* st, Body* p){
 	float* body_pos = {X(pos(p)), Y(pos(p)), Z(pos(p))};
 	NbodyNode* q  =  st->tree.root;
 	float total_size = q.rsize;
-	while(!isBody(Subp(q[i]))){ // is the body not a leaf?
-		float current_size = mw_pow(total_size,3);
-		for(int i=0; i<8; i++){
-			if (X(q->pos) - 0.5 * current_size <= body_pos[0] && X(q->pos) + 0.5* current_size >= body_pos[0] && Y(q->pos) - 0.5 * current_size <= body_pos[1] && Y(q->pos) + 0.5* current_size >= body_pos[1] && Z(q->pos) - 0.5 * current_size <= body_pos[2] && Z(q->pos) + 0.5* current_size >= body_pos[2]){
-				 q = (NBodyCell*) Subp(q)[i]; //We have determined that the particle is within this subcell, therefore we are going down a level by making the subcell the new cell
-			}
-		}
-        }
 	/*for(int i=0; i<8; i++){
 		if (isBody(Subp(q[i]))){ // is the current node a leaf?
 			// add body to list of candidate nodes
@@ -95,8 +87,8 @@ int NearestNeighbors(NbodyState* st, Body* p){
 			currentlevel++;
 		}
 	}*/
-	/*for(int i =0;i<8;i++){
-		float present_size = total_size * (mw_pow(total_size,-currentlevel));
+	for(int i =0;i<8;i++){
+		float present_size = total_size/currentlevel;
 		real x_lower;
 		real x_upper;
 		real y_lower;
@@ -107,10 +99,9 @@ int NearestNeighbors(NbodyState* st, Body* p){
 
 		} else {
 			//x_lower = body_pos[0] - psize * 0.5;
-			x_lower = ;
+			x_lower = ;	
 		}
 	}
-	*/
 }
 
 
