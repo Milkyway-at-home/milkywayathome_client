@@ -71,18 +71,38 @@ static int DarkMatterScatter(const NBodyCtx* ctx, const Body* p) {
 }
 */
 
-
+void push(node_t *head, float distance, float position[3]){  // add new element to linked list
+	node_t *current = head;
+	while (current->next != NULL) {
+		current = current->next;
+	}
+	current->next = (node_t *) malloc(sizeof(node_t));
+	current->next->distance = distance;
+	current->next->position = position;
+	current->next->next = NULL;
+}
 // NearestNeighbors finds the 32 nearest nearest neigbbors to each particle every timestep using the octree in order to calculate scattering between particles
 int NearestNeighbors(NbodyState* st, Body* p){
+	typedef struct node { //linked list definition for nearest nodes/particles
+		float distance;
+		float position[3];
+		struct node *next;
+	} node_t;
+	node_t *head = NULL;
+	head = (node_t *) malloc(sizeof(node_t));
 	int currentlevel = 1;
 	float* body_pos = {X(pos(p)), Y(pos(p)), Z(pos(p))};
 	NbodyNode* q  =  st->tree.root;
 	float total_size = q.rsize;
 	while(!isBody(Subp(q[i]))){ // is the body not a leaf?
-		float current_size = mw_pow(total_size,3);
+		float current_size =  total_size * mw_pow(2,-1 * currentlevel);
 		for(int i=0; i<8; i++){
 			if (X(q->pos) - 0.5 * current_size <= body_pos[0] && X(q->pos) + 0.5* current_size >= body_pos[0] && Y(q->pos) - 0.5 * current_size <= body_pos[1] && Y(q->pos) + 0.5* current_size >= body_pos[1] && Z(q->pos) - 0.5 * current_size <= body_pos[2] && Z(q->pos) + 0.5* current_size >= body_pos[2]){
 				 q = (NBodyCell*) Subp(q)[i]; //We have determined that the particle is within this subcell, therefore we are going down a level by making the subcell the new cell
+				
+
+			} else {
+				continue;	
 			}
 		}
         }
