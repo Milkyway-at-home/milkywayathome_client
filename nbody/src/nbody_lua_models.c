@@ -277,6 +277,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     static real dt = 0.0;
     static real tstop = 0.0;
     static real ftime = 0.0;
+    static int LMCfunction = 0;
     static real LMCmass = 0.0;
     static real LMCscale = 0.0;
     static real coulomb_log = 0.0;
@@ -294,6 +295,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             { "velocity",    LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel         },
             { "LMCposition", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos      },
             { "LMCvelocity", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel      },
+	    { "LMCfunction", LUA_TNUMBER,   NULL,           TRUE, &LMCfunction },
             { "LMCmass",     LUA_TNUMBER,   NULL,           TRUE, &LMCmass     },
             { "LMCscale",    LUA_TNUMBER,   NULL,           TRUE, &LMCscale    },
             { "coulomb_log", LUA_TNUMBER,   NULL,           TRUE, &coulomb_log },
@@ -333,7 +335,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale, coulomb_log);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCfunction, LMCmass, LMCscale, coulomb_log);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

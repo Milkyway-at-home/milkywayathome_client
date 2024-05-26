@@ -131,7 +131,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector a, externAcc;
     const Body* b;
     real lmcmass, lmcscale;
-    int lmcfunction
+    int lmcfunction;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
@@ -237,7 +237,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
     mwvector a, externAcc;
     const Body* b;
     real lmcmass, lmcscale;
-    int lmffunction;
+    int lmcfunction;
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);

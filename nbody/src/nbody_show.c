@@ -443,7 +443,7 @@ char* showBody(const Body* p)
 
     if (!p)
         return NULL;
-/home/hiroka//LMC_function_test
+
     vel = showVector(Vel(p));
     pos = showVector(Pos(p));
 

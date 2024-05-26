@@ -46,6 +46,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real ftime,
                     real tstop,
                     real dt,
+		    int LMCfunction,
                     real LMCmass,
                     real LMCscale,
                     real coulomb_log);
