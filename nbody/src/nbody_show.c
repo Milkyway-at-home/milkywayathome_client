@@ -537,7 +537,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
                      "  LMC             = %s\n"
-		     "  LMCfunction     = %s\n"
+		     "  LMCfunction     = %d\n"
                      "  LMCmass         = %f\n"
                      "  LMCscale        = %f\n"
                      "  LMCDynaFric     = %s\n"

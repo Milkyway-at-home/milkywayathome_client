@@ -312,23 +312,24 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 12:
+        case 13:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
             LMCpos = checkVector(luaSt, 4);
             LMCvel = checkVector(luaSt, 5);
-            LMCmass = luaL_checknumber(luaSt, 6);
-            LMCscale = luaL_checknumber(luaSt, 7);
-            coulomb_log = luaL_checknumber(luaSt, 8);
-            LMCDynaFric = luaL_checknumber(luaSt, 9);
-            tstop = luaL_checknumber(luaSt, 10);
-            ftime = luaL_checknumber(luaSt, 11);
-            dt = luaL_checknumber(luaSt, 12);
+	    LMCfunction = luaL_checknumber(luaSt, 6);
+            LMCmass = luaL_checknumber(luaSt, 7);
+            LMCscale = luaL_checknumber(luaSt, 8);
+            coulomb_log = luaL_checknumber(luaSt, 9);
+            LMCDynaFric = luaL_checknumber(luaSt, 10);
+            tstop = luaL_checknumber(luaSt, 11);
+            ftime = luaL_checknumber(luaSt, 12);
+            dt = luaL_checknumber(luaSt, 13);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 12 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 13 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
