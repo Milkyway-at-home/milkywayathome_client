@@ -277,7 +277,7 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     static real dt = 0.0;
     static real tstop = 0.0;
     static real ftime = 0.0;
-    static int LMCfunction = 0;
+    static int LMCfunction = 1;
     static real LMCmass = 0.0;
     static real LMCscale = 0.0;
     static real coulomb_log = 0.0;

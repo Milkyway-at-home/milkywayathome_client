@@ -484,7 +484,7 @@ typedef struct MW_ALIGN_TYPE
     real DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
 
     mwbool LMC;
-    int LMCfunction;
+    int LMCfunction;           /* LMC function switch */
 
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */

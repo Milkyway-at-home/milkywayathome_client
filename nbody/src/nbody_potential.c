@@ -773,7 +773,7 @@ mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvect
 {
     mwvector lmcAcc;
     /*Calculate the LMC Accelerations*/
-    switch (LMCfunction)
+    switch (LMCfunction + 1) /* +1 for debug (printing values from lua)*/
     {
         case 1:
             lmcAcc = plummerLmcAccel(pos, pos1, mass, scale);
