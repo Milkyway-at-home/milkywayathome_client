@@ -47,8 +47,7 @@ Step 1.  Download all necessary files
 ```
 git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
 cd milkywayathome_client
-git submodule init
-git submodule update --recursive
+git submodule update --init --recursive
 ```
 NOTE: If you are running on WSL (Windows Subsystem Linux), you may need to run the following commands
 ```

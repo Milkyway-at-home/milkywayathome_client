@@ -882,13 +882,13 @@ int nbGenerateIsotropic(lua_State* luaSt)
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
         static mwbool ignore;
-        static real mass1 = 0.0, nbodyf = 0.0, nbody_lightf = 0.0, radiusScale1 = 0.0;
+        static real mass1 = 0.0, nbodyf = 0.0, nbody_lightf = -1.0, radiusScale1 = 0.0;
         static real mass2 = 0.0, radiusScale2 = 0.0;
 
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "nbody_light",          LUA_TNUMBER,     NULL,                    TRUE,    &nbody_lightf      },
+            { "nbody_light",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_lightf      },
             { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
             { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
             { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
@@ -905,7 +905,10 @@ int nbGenerateIsotropic(lua_State* luaSt)
             return luaL_argerror(luaSt, 1, "Expected 1 arguments");
         
         handleNamedArgumentTable(luaSt, argTable, 1);
-        
+
+        if (nbody_lightf < 0) {
+            nbody_lightf = nbodyf / 2;
+        }
         
         return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_lightf, mass1, mass2, ignore,
                                                                  *position, *velocity, radiusScale1, radiusScale2);
