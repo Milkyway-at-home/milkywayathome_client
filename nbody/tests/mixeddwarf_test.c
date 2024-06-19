@@ -184,6 +184,7 @@ int testPlummerPlummer()
 	int failed = 0;
 	
 	unsigned int numBodies = 10000;
+	unsigned int numBodies_light = numBodies / 2;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
 	real* masses           = mwCalloc(numBodies, sizeof(real));
@@ -236,6 +237,7 @@ int testPlummerNFW()
 	int failed = 0;
 	
 	unsigned int numBodies = 10000; //The more bodies, the better the virial ratio will be. This is a good number of bodies
+	unsigned int numBodies_light = numBodies / 2;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
 	real* masses           = mwCalloc(numBodies, sizeof(real));
