@@ -1,7 +1,7 @@
 #!/bin/bash
 
-run=false
-run_compare=true
+run=true
+run_compare=false
 compare_only=false
 get_flag_list=false
 
@@ -15,9 +15,9 @@ if $run
 then
     ./milkyway_nbody \
     -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
-    -o $PathToMilkyWayAtHomeClientDirectory/output/output_equal_sidd.out \
-    -z $PathToMilkyWayAtHomeClientDirectory/output/output_equal_sidd.hist \
-    -n 11 -b -w 1 -P -e 54231651 \
+    -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
+    -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
+    -n 8 -b -w 1 -P -e 54231651 \
     -i 4.0 1.0 0.2 0.2 12.0 0.2 \
     
 fi
@@ -25,11 +25,11 @@ fi
 if $run_compare
 then
     ./milkyway_nbody \
-    -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers_norm.lua \
-    -o $PathToMilkyWayAtHomeClientDirectory/output/output_new.out \
-    -z $PathToMilkyWayAtHomeClientDirectory/output/output_new.hist \
-    -h $PathToMilkyWayAtHomeClientDirectory/output/output_equal_sidd.hist \
-    -n 11 -b -w 1 -P -e 54231651 \
+    -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
+    -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
+    -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
+    -h $PathToMilkyWayAtHomeClientDirectory/input/input.hist \
+    -n 8 -b -w 1 -P -e 54231651 \
     -p 4.0 1.0 0.2 0.2 12.0 0.2 \
 
 fi
@@ -44,8 +44,8 @@ fi
 if $compare_only 
 then
     ./milkyway_nbody \
-    -h $PathToMilkyWayAtHomeClientDirectory/inputs/test_nbody100000.hist \
-    -S $PathToMilkyWayAtHomeClientDirectory/outputs/resultstemp.hist \
+    -h $PathToMilkyWayAtHomeClientDirectory/input/input.hist \
+    -S $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
 
 fi
 
