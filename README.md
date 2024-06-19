@@ -9,7 +9,12 @@ Separation
 Nbody
 --------------------------------------------------------------------------------
 - Simulations are described with Lua input files which can be used
-  to produce an arbitrary initial configuration of particles.
+  to produce an arbitrary initial configuration of particles. 
+
+- Number of particles can be indicated in the Lua input file as 
+  a total number of bodies where half will be baryons and half 
+  will be dark matter particles or as the total number of bodies
+  with the number of baryons as an extra parameter  
 
 - Various options are available for applying external potentials
   to a system.
