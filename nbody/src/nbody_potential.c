@@ -142,8 +142,9 @@ mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
     return v;
 }
 
+//Plummer accel
 /*
-mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
+mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2)
 {
     //mw_printf("-----------------------------------------\n");
     //mw_printf("body position = {%.15f,%.15f,%.15f}\n", pos.x, pos.y, pos.z);
@@ -568,6 +569,19 @@ static inline mwvector NFWerkalHaloAccel(const Halo* halo, mwvector pos)
     return acc;
 }
 
+
+static inline mwvector SphericalNFWerkalHaloAccel(const Halo* halo, mwvector pos, real r)
+{
+    const real a = halo->scaleLength;
+    const real M  = halo->mass;
+
+    const real ar = a + r;
+    const real tmp = M/(mw_log(1.0 + 15.3) - (15.3/(1.0 + 15.3)));  //c = 15.3
+    const real c = tmp*(r - (ar*mw_log(1 + (r/a))))/(r*r*r*ar);							
+
+    return mw_mulvs(pos, c);
+}
+
 static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 {
     const real a = h->scaleLength;
@@ -760,6 +774,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 	case NFWerkalHalo:
 	    acctmp = NFWerkalHaloAccel(&pot->halo, pos);
 	    break;
+	case SphericalNFWerkalHalo:
+	    acctmp = SphericalNFWerkalHaloAccel(&pot->halo, pos, r);
+            break;
         case NFWHalo:
             acctmp = nfwHaloAccel(&pot->halo, pos, r);
             break;

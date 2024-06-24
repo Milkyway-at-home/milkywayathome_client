@@ -88,21 +88,23 @@ typedef struct MW_ALIGN_TYPE
 #define _NO_HALO 0
 #define _LOG_HALO 1
 #define _NFWerkal_HALO 2
-#define _NFW_HALO 3
-#define _TRIAXIAL_HALO 4
-#define _CAUSTIC_HALO 5
-#define _AS_HALO 6
-#define _WE_HALO 7
-#define _NFWM_HALO 8
-#define _PLUMMER_HALO 9
-#define _HERNQUIST_HALO 10
-#define _NINKOVIC_HALO 11
+#define _SphericalNFWerkal_HALO 3
+#define _NFW_HALO 4
+#define _TRIAXIAL_HALO 5
+#define _CAUSTIC_HALO 6
+#define _AS_HALO 7
+#define _WE_HALO 8
+#define _NFWM_HALO 9
+#define _PLUMMER_HALO 10
+#define _HERNQUIST_HALO 11
+#define _NINKOVIC_HALO 12
 typedef enum
 {
     InvalidHalo        = InvalidEnum,
     NoHalo             = _NO_HALO,
     LogarithmicHalo    = _LOG_HALO,
     NFWerkalHalo       = _NFWerkal_HALO,
+    SphericalNFWerkalHalo = _SphericalNFWerkal_HALO,
     NFWHalo            = _NFW_HALO,
     TriaxialHalo       = _TRIAXIAL_HALO,
     CausticHalo        = _CAUSTIC_HALO,

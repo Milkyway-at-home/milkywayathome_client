@@ -277,6 +277,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
     mw_printf("Dwarf Initial Position: [%.15f,%.15f,%.15f]\n", X(x), Y(x), Z(x));
     mw_printf("Dwarf Initial Velocity: [%.15f,%.15f,%.15f]\n", X(v), Y(v), Z(v));
+    mw_printf("LMC model: Hernquist\n"); /* for testing */
     mw_printf("Initial LMC position: [%.15f,%.15f,%.15f]\n",X(LMCx),Y(LMCx),Z(LMCx));
     mw_printf("Initial LMC velocity: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
 
