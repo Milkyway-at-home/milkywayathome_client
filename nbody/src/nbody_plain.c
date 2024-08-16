@@ -274,12 +274,12 @@ static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvect
     mwvector dr;
     mwvector dv;
 
-    dr = mw_mulvs(st->LMCvel,dt);
-    mw_incaddv(st->LMCpos,dr);
-
     mwvector acc_total = mw_addv(acc, acc_i);
     dv = mw_mulvs(acc_total, dtHalf);
     mw_incaddv(st->LMCvel,dv);
+
+    dr = mw_mulvs(st->LMCvel,dt);
+    mw_incaddv(st->LMCpos,dr);
     
 }
 
