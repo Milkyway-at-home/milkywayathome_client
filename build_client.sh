@@ -1,11 +1,11 @@
 #!/bin/bash
 
 cd "$(dirname "$0")"
-PathToMilkyWayAtHomeClientDirectory="$(pwd)"
+PathToMilkyWayAtHomeClientDirectory="/mnt/b/working/milkywayathome_client"
 echo "Path to milkywayathome_client directory: $PathToMilkyWayAtHomeClientDirectory"
 
 rm -r build
 mkdir build
 cd build
-cmake  -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=OFF -DBOINC_APPLICATION=ON -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientDirectory/
+cmake  -DCMAKE_BUILD_TYPE=Release -DNBODY_DEV_OPTIONS=ON -DNBODY_GL=OFF -DBOINC_APPLICATION=OFF -DSEPARATION=OFF -DDOUBLEPREC=ON -DNBODY_OPENMP=ON -DNBODY_OPENCL=OFF $PathToMilkyWayAtHomeClientDirectory/
 make -j

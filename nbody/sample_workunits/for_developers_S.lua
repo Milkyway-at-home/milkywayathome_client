@@ -28,20 +28,20 @@ totalBodies           = 40000   -- -- NUMBER OF BODIES                          
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
 nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                               -- --
 
-run_null_potential    = true   -- -- NULL POTENTIAL SWITCH                             -- --
+run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC                                   -- --
-LMC_scaleRadius       = 15
-LMC_Mass              = 449865.888
+LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
+LMC_scaleRadius       = 8.32 --15
+LMC_Mass              = 202439.6497  --449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
 
-UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler -- --
+UseOldSofteningLength = 1         -- -- Uses old softening length formula from v1.76 and eariler -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -53,7 +53,7 @@ UseOldSofteningLength = 0         -- -- Uses old softening length formula from v
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
+ModelComponents   = 1         -- -- TWO COMPONENTS SWITCH      -- --
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
@@ -104,7 +104,7 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
 useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 99        -- -- FREQUENCY OF WRITING OUTPUTS -- --
+freqOfOutputs         = 1000         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control      = true       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
@@ -115,10 +115,12 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
         
 
 
+
+
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
-argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
+argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
 --argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
@@ -130,11 +132,11 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
+evolveTime       = round( 3.63330 , dec )    -- Forward Time (Gyrs)
 time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
 -- rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
 -- light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
--- mass_l           = {round( 24207.03, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
+-- mass_l           = {round( 2427.20, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
 -- light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
 -- orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
 -- orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
@@ -145,18 +147,30 @@ time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
 manual_body_file = arg[13]
 -- File with Individual Particles (.out file)
 -- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
-n=11 --  change n as the number of dwarfs input
--- Dwarf series: 1.SMC 2. Sag 3.Fornax 4.LeoI 5.Sculptor 6.LeoII 7.Sextans 8.Carina 9.Draco 10.Umi 11.CvnI
-rscale_l         = {round( 2.9, dec ),round( 1.53, dec ),round( 1.425,dec),round( 0.43,dec),round( 0.725,dec),round( 0.96,dec),round( 1.25,dec),round( 0.465,dec),round( 0.59,dec),round( 0.42,dec),round(0.505 ,dec)}    -- Baryonic Radius (kpc)
-light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec ),round(  0.2,dec),round(  0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec)}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = {round( 2427.196, dec ),round( 106.931, dec ),round( 80.372,dec),round( 20.946,dec),round( 9.400,dec),round( 2.918,dec),round( 1.893,dec),round( 1.649,dec),round( 1.134,dec),round( 0.899,dec),round( 1.060,dec)}    -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec ),round( 0.1429,dec),round( 0.0067,dec),round( 0.0674,dec),round( 0.0240,dec),round( 0.0100,dec),round( 0.0159,dec),round( 0.0115,dec),round( 0.0038,dec),round( 0.0087,dec)}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec ),round( 237.104,dec),round( 225.985,dec),round( 287.535,dec),round( 220.164,dec),round( 243.498,dec),round( 260.112,dec),round( 86.368,dec),round( 104.9,dec),round( 74.305,dec)}
-orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec ),round( -65.651,dec),round( 49.112,dec),round( -83.157,dec),round( 67.229,dec),round( 42.272,dec),round( -22.223,dec),round( 34.722,dec),round( 44.8,dec),round( 79.823,dec)}
-orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec ),round( 143,dec),round( 250,dec),round( 88.91,dec),round( 220,dec),round( 90,dec),round( 100,dec),round( 80,dec),round( 60,dec),round( 220,dec)}
-orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec ),round( -27.04,dec),round( 48.17,dec),round( -22.11,dec),round( 94.87,dec),round( -194.39,dec),round( -28.48,dec),round( -59.22,dec),round( 19.12,dec),round( 23.95,dec)}
-orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec ),round( -172.14,dec),round( -16.36,dec),round( 197.28,dec),round( 209.73,dec),round( 30.33,dec),round( -79.13,dec),round( 60.33,dec),round( 38.13,dec),round( 47.45,dec)}
-orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec ),round( 101.21,dec),round( 254.15,dec),round( -102.1,dec),round( 114.61,dec),round( 49.13,dec),round( 164.44,dec),round( -263.33,dec),round( -160.51,dec),round( 68.05,dec)}
+n=2
+-- Dwarf series: 1.SMC 2.Sag 3.Fornax 4.LeoI 5.Sculptor 6.LeoII 7.Sextans 8.Carina 9.Draco 10.Umi 11.CvnI
+-- Orphan Sagittarius
+-- rscale_l         = {round( 1.0,dec)}    -- Baryonic Radius (kpc)
+-- light_r_ratio    = {round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+-- mass_l           = {round(  44.98658882 ,dec)}    -- Baryonic Mass (Structure Mass Units)
+-- light_mass_ratio = {round( 0.05,dec)}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+-- orbit_parameter_l   = {round( 299 ,dec)}
+-- orbit_parameter_b   = {round( 5.75 ,dec)}
+-- orbit_parameter_r   = {round( 17.8,dec)}
+-- orbit_parameter_vx  = {round(  -237.4,dec)}
+-- orbit_parameter_vy  = {round(  4.4,dec)}
+-- orbit_parameter_vz  = {round( 233.1 ,dec)}
+
+rscale_l         = {round( 2.89,dec),round( 1.0, dec )}    -- Baryonic Radius (kpc)
+light_r_ratio    = {round( 0.2, dec ),round( 0.2,dec)}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = {round(  2519.25 ,dec),round( 44.98658882, dec )}    -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = {round( 0.4,dec),round( 0.05, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = {round( 302.801 ,dec),round( 299, dec )}
+orbit_parameter_b   = {round( -44.328 ,dec),round( 5.75, dec )}
+orbit_parameter_r   = {round( 62.4,dec),round( 17.8, dec )}
+orbit_parameter_vx  = {round(  21.99,dec),round( -237.4, dec )}
+orbit_parameter_vy  = {round(  -201.36,dec),round(4.4, dec )}
+orbit_parameter_vz  = {round( 171.25 ,dec),round( 233.1, dec )}
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
@@ -179,12 +193,18 @@ function makePotential()
        return nil
    else
         --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
+        -- return  Potential.create{
+        --     spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
+        --     disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+        --     disk2     = Disk.none{ mass = 3.0e5 },
+        --     halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
+        -- }--vhalo = 74.61 kpc/gy = 73 km/s
         return  Potential.create{
-            spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
-            disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            disk2     = Disk.none{ mass = 3.0e5 },
-            halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
-        }--vhalo = 74.61 kpc/gy = 73 km/s
+            spherical = Spherical.hernquist{ mass  = 20243.9650, scale = 0.442 },
+            disk  = Disk.miyamotoNagai{ mass = 305908.804, scaleLength = 3.0, scaleHeight = 0.28 },
+            disk2 = Disk.none{ mass = 0.0 },
+            halo  = Halo.nfwmass{ scaleLength = 16.0, mass = 1.96591393e6 }
+            }--vhalo = 74.61 kpc/gy = 73 km/s
    end
 end
 
@@ -325,8 +345,8 @@ function makeBodies(ctx, potential)
             local potential = potential
             local position = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))
             local velocity = Vector.creates(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz)
-            local LMCposition = Vector.create(-1.1, -41.1, -27.9)
-            local LMCvelocity = Vector.create(-57, -226, 221)
+            local LMCposition = Vector.create(-0.52, -40.8, -26.5)
+            local LMCvelocity = Vector.create(-58.2, -231, 226)
             local LMCmass = LMC_Mass
             local LMCscale = LMC_scaleRadius
             local LMCDynaFric = LMC_DynamicalFriction and 1 or 0
@@ -410,7 +430,6 @@ function makeBodies(ctx, potential)
             end
             print(string.format("Dwarf %d bodies generation finished", i))
         end
-  
     end
     if(manual_bodies) then
         manualModel = predefinedModels.manual_bodies{
