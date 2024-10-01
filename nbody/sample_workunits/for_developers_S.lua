@@ -150,17 +150,18 @@ end
 dec = 9.0
 evolveTime       = round( 3.63330 , dec )    -- Forward Time (Gyrs)
 time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
--- rscale_l         = {round( 2.9, dec ),round( 1.53, dec )}    -- Baryonic Radius (kpc)
--- light_r_ratio    = {round( 0.2, dec ),round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
--- mass_l           = {round( 2427.20, dec ),round( 1066.45, dec )}    -- Baryonic Mass (Structure Mass Units)
--- light_mass_ratio = {round( 0.0830, dec ),round( 0.0594, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
--- orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec )}
--- orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec )}
--- orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec )}
--- orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec )}
--- orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec )}
--- orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
-manual_body_file = arg[13]
+
+-- rscale_l         = {round( 2.89, dec )}    -- Baryonic Radius (kpc)
+-- light_r_ratio    = {round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+-- mass_l           = {round( 6298.125, dec )}    -- Baryonic Mass (Structure Mass Units)
+-- light_mass_ratio = {round( 0.4, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+-- orbit_parameter_l   = {round( 302.801, dec )}
+-- orbit_parameter_b   = {round( -44.328, dec )}
+-- orbit_parameter_r   = {round( 62.4, dec )}
+-- orbit_parameter_vx  = {round( 21.99, dec )}
+-- orbit_parameter_vy  = {round( -201.36, dec )}
+-- orbit_parameter_vz  = {round( 171.25, dec )}
+
 -- File with Individual Particles (.out file)
 -- Dwarf series: 1.SMC 2.Sag 3.Fornax 4.LeoI 5.Sculptor 6.LeoII 7.Sextans 8.Carina 9.Draco 10.Umi 11.CvnI
 -- Orphan Sagittarius
@@ -176,9 +177,9 @@ manual_body_file = arg[13]
 -- orbit_parameter_vy  = {round(  4.4,dec)}
 -- orbit_parameter_vz  = {round( 233.1 ,dec)}
 
-rscale_l         = {round( 2.89,dec),round( 1.0, dec )}    -- Baryonic Radius (kpc)
+rscale_l         = {round( 1.5895,dec),round( 1.0, dec )}    -- Baryonic Radius (kpc) 2.89,1.445, 1.5895, 1.734, 2.023, 
 light_r_ratio    = {round( 0.2, dec ),round( 0.2,dec)}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = {round(  2519.25 ,dec),round( 44.98658882, dec )}    -- Baryonic Mass (Structure Mass Units)
+mass_l           = {round(  6298.125,dec),round( 44.98658882, dec )}    -- Baryonic Mass (Structure Mass Units) 6298.125 ，
 light_mass_ratio = {round( 0.4,dec),round( 0.05, dec )}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
 orbit_parameter_l   = {round( 302.801 ,dec),round( 299, dec )}
 orbit_parameter_b   = {round( -44.328 ,dec),round( 5.75, dec )}
