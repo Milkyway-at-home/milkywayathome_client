@@ -34,8 +34,8 @@ print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
 
 LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
-LMC_scaleRadius       = 8.32 --15
-LMC_Mass              = 202439.6497  --449865.888
+LMC_scaleRadius       = 8.76 --15
+LMC_Mass              = 218634.8191    --449865.888
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
 
@@ -46,6 +46,8 @@ UseOldSofteningLength = 1         -- -- Uses old softening length formula from v
 
 
 
+-- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
+n=2
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -53,11 +55,25 @@ UseOldSofteningLength = 1         -- -- Uses old softening length formula from v
 -- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 1         -- -- TWO COMPONENTS SWITCH      -- --
+---ModelComponents   = 1         -- -- TWO COMPONENTS SWITCH      -- --
+componentList = {1,1}
+-- componentList should be a table (list) with each entry being either 1 or 2.
+-- 1 indicates a single component model, 2 indicates a two-component model.
+if #componentList ~= n then
+    error("Error: The length of the component list does not match the value of n.")
+end
+
+local hasNonZeroComponent = false
+for _, component in ipairs(componentList) do
+    if component ~= 0 then
+        hasNonZeroComponent = true
+        break
+    end
+end
+
+
 manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
-
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
@@ -146,10 +162,9 @@ time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
 -- orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec )}
 manual_body_file = arg[13]
 -- File with Individual Particles (.out file)
--- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
-n=2
 -- Dwarf series: 1.SMC 2.Sag 3.Fornax 4.LeoI 5.Sculptor 6.LeoII 7.Sextans 8.Carina 9.Draco 10.Umi 11.CvnI
 -- Orphan Sagittarius
+
 -- rscale_l         = {round( 1.0,dec)}    -- Baryonic Radius (kpc)
 -- light_r_ratio    = {round( 0.2, dec )}    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 -- mass_l           = {round(  44.98658882 ,dec)}    -- Baryonic Mass (Structure Mass Units)
@@ -171,6 +186,7 @@ orbit_parameter_r   = {round( 62.4,dec),round( 17.8, dec )}
 orbit_parameter_vx  = {round(  21.99,dec),round( -237.4, dec )}
 orbit_parameter_vy  = {round(  -201.36,dec),round(4.4, dec )}
 orbit_parameter_vz  = {round( 171.25 ,dec),round( 233.1, dec )}
+
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
@@ -185,6 +201,7 @@ preset_orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
+-- manual_body_file = arg[13]
 TooManyTimesteps = 0
         
 function makePotential()
@@ -316,13 +333,15 @@ function makeBodies(ctx, potential)
     if(run_null_potential == true and manual_bodies == true) then
         for i = 1, n do
             table.insert(finalPosition, lbrToCartesian(ctx, Vector.create(orbit_parameter_l[i], orbit_parameter_b[i], orbit_parameter_r[i])))
-        end
-        for i = 1, n do
             table.insert(finalVelocity, Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz))
         end
     elseif(run_null_potential == true) then
         print("placing dwarf at origin")
-        finalPosition, finalVelocity = Vector.create(0, 0, 0), Vector.create(0, 0, 0)
+        for i = 1, n do
+            table.insert(finalPosition, Vector.create(0, 0, 0))
+            table.insert(finalVelocity, Vector.create(0, 0, 0))
+        end
+        print(finalPosition[1])
     else 
     	if (LMC_body) then
             -- Old Single Body function with LMC and Method:
@@ -397,8 +416,48 @@ function makeBodies(ctx, potential)
         print('Printing reverse orbit')
     end
 
-    if(ModelComponents == 2) then 
-        for i = 1, n do
+    -- if(ModelComponents == 2) then 
+    --     for i = 1, n do
+    --         local Model = predefinedModels.mixeddwarf{
+    --             nbody       = totalBodies,
+    --             prng        = prng,
+    --             position    = finalPosition[i],
+    --             velocity    = finalVelocity[i],
+    --             comp1       = Dwarf.plummer{mass = mass_l[i], scaleLength = rscale_l[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
+    --             comp2       = Dwarf.plummer{mass = mass_d[i], scaleLength = rscale_d[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
+    --             ignore      = true
+    --             }
+    --         for _, row in ipairs(Model) do
+    --             table.insert(firstModel, row)
+    --         end
+    --         print(string.format("Dwarf %d bodies generation finished", i))
+    --     end
+        
+    -- elseif(ModelComponents == 1) then
+    --     for i = 1, n do
+    --         local Model = predefinedModels.plummer{
+    --             nbody       = totalBodies,
+    --             prng        = prng,
+    --             position    = finalPosition[i],
+    --             velocity    = finalVelocity[i],
+    --             mass        = mass_l[i],
+    --             scaleRadius = rscale_l[i],
+    --             ignore      = false
+    --         }
+    --         for _, row in ipairs(Model) do
+    --             table.insert(firstModel, row)
+    --         end
+    --         print(string.format("Dwarf %d bodies generation finished", i))
+    --     end
+    -- end
+    for i = 1, n do
+        local componentType = componentList[i]
+        
+        if componentType ~= 1 and componentType ~= 2 and componentType ~= 0 then
+            error(string.format("Error: Invalid component type %d at index %d. Only 1 or 2 are allowed.", componentType, i))
+        end
+    
+        if componentType == 2 then 
             local Model = predefinedModels.mixeddwarf{
                 nbody       = totalBodies,
                 prng        = prng,
@@ -407,15 +466,13 @@ function makeBodies(ctx, potential)
                 comp1       = Dwarf.plummer{mass = mass_l[i], scaleLength = rscale_l[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
                 comp2       = Dwarf.plummer{mass = mass_d[i], scaleLength = rscale_d[i]}, -- Dwarf Options: plummer, nfw, general_hernquist
                 ignore      = true
-                }
+            }
             for _, row in ipairs(Model) do
                 table.insert(firstModel, row)
             end
-            print(string.format("Dwarf %d bodies generation finished", i))
-        end
-        
-    elseif(ModelComponents == 1) then
-        for i = 1, n do
+            print(string.format("Dwarf %d bodies generation finished with two components", i))
+    
+        elseif componentType == 1 then
             local Model = predefinedModels.plummer{
                 nbody       = totalBodies,
                 prng        = prng,
@@ -428,7 +485,7 @@ function makeBodies(ctx, potential)
             for _, row in ipairs(Model) do
                 table.insert(firstModel, row)
             end
-            print(string.format("Dwarf %d bodies generation finished", i))
+            print(string.format("Dwarf %d bodies generation finished with a single component", i))
         end
     end
     if(manual_bodies) then
@@ -437,16 +494,18 @@ function makeBodies(ctx, potential)
     }
          
     end
-    if(ModelComponents > 0 and manual_bodies) then 
+    if hasNonZeroComponent and manual_bodies then
+        print("FirstModel & ManualModel")
         return firstModel, manualModel
-    elseif(ModelComponents == 0 and manual_bodies) then
-        return manualModel
-    elseif(ModelComponents > 0 and not manual_bodies) then        
-        print("done")
+    elseif hasNonZeroComponent and not manual_bodies then
+        print("FirstModel")
         return firstModel
-    else    
-        print("Don't you want to simulate something?")
-    end
+    elseif not hasNonZeroComponent and manual_bodies then        
+        print("ManualModel")
+        return manualModel
+    else
+        error("Don't you want to simulate something?")
+    end    
     print("finished makebodies")
 end
 
