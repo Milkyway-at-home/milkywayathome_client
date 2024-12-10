@@ -72,6 +72,9 @@ GPU version
 Multithreaded version
 @item BOINC
 BOINC libraries
+@item NBODY_PAPI
+@tab OFF
+@tab Use PAPI for FLOPS counting
 @end table
 
 @section Build Options

@@ -113,6 +113,8 @@ Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
 
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
 max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
+
+count_flops          = false       -- -- enable FLOPS counting using PAPI (requires NBODY_PAPI=ON)
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 
@@ -238,7 +240,8 @@ function makeContext()
       LMCscale      = LMC_scaleRadius,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
-      calibrationRuns = numCalibrationRuns
+      calibrationRuns = numCalibrationRuns,
+      countFlops    = count_flops
    }
 end
 

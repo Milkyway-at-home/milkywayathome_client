@@ -530,3 +530,13 @@ endif()
 
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 
+# Add PAPI option
+option(NBODY_PAPI "Enable PAPI FLOP counting" OFF)
+
+if(NBODY_PAPI)
+    find_package(PAPI REQUIRED)
+    include_directories(${PAPI_INCLUDE_DIRS})
+    add_definitions(-DNBODY_PAPI)
+    target_link_libraries(milkyway_nbody ${PAPI_LIBRARIES})
+endif()
+

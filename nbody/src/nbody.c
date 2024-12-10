@@ -390,9 +390,33 @@ int nbMain(const NBodyFlags* nbf)
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
     CLRequest clr;
-
     NBodyStatus rc = NBODY_SUCCESS;
     real ts = 0.0, te = 0.0;
+
+#ifdef NBODY_PAPI
+    int EventSet = PAPI_NULL;
+    long_long values[3];
+    
+    if (ctx->count_flops) {  // Only initialize PAPI if enabled in Lua
+        if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT) {
+            mw_printf("PAPI library init error!\n");
+            return NBODY_ERROR;
+        }
+        
+        if (PAPI_create_eventset(&EventSet) != PAPI_OK) {
+            mw_printf("PAPI create eventset error!\n");
+            return NBODY_ERROR;
+        }
+        
+        if (PAPI_add_event(EventSet, PAPI_FP_OPS) != PAPI_OK ||
+            PAPI_add_event(EventSet, PAPI_FP_INS) != PAPI_OK ||
+            PAPI_add_event(EventSet, PAPI_VEC_FP) != PAPI_OK) {
+            mw_printf("PAPI add events error!\n");
+            return NBODY_ERROR;
+        }
+        PAPI_start(EventSet);
+    }
+#endif
 
     if (!nbOutputIsUseful(nbf))
     {
@@ -543,6 +567,22 @@ int nbMain(const NBodyFlags* nbf)
     destroyNBodyState(st);
     //mw_printf("After destroyNBodyState\n");
     destroyNBodyState(&initialState);
+
+#ifdef NBODY_PAPI
+    if (ctx->count_flops) {
+        PAPI_stop(EventSet, values);
+        mw_printf("\n--------------------------------------------------------------------------------\n");
+        mw_printf("PAPI Performance Counters:\n");
+        mw_printf("Total Floating Point Operations: %lld\n", values[0]);
+        mw_printf("FP Instructions: %lld\n", values[1]); 
+        mw_printf("Vectorized FP Operations: %lld\n", values[2]);
+        mw_printf("--------------------------------------------------------------------------------\n");
+        
+        PAPI_cleanup_eventset(EventSet);
+        PAPI_destroy_eventset(&EventSet);
+        PAPI_shutdown();
+    }
+#endif
 
     return rc;
 }
