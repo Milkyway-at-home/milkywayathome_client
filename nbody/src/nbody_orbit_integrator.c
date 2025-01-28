@@ -366,6 +366,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
         mw_incnegv(v[i]);
         finalPos[i] = x[i];
         finalVel[i] = v[i];
+        track[199][i] = x[i];
         mw_printf("Dwarf %d Initial Position: %.15f,%.15f,%.15f\n", i+1, X(x[i]), Y(x[i]), Z(x[i]));
         mw_printf("Dwarf %d Initial Velocity: %.15f,%.15f,%.15f\n", i+1, X(v[i]), Y(v[i]), Z(v[i]));
     }
@@ -381,13 +382,13 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
     LMCpos = LMCx;
     LMCvel = LMCv;
 
-    // for (size_t i = 0; i < 200; ++i) {
-    //     mw_printf("[");
-    //     for (size_t j = 0; j < len; ++j){
-    //         mw_printf("(%f, %f, %f)",track[i][j].x, track[i][j].y, track[i][j].z);
-    //     }
-    //     mw_printf("]\n");
-    // }
+    for (size_t i = 0; i < 200; ++i) {
+        mw_printf("[");
+        for (size_t j = 0; j < len; ++j){
+            mw_printf("(%f, %f, %f)",track[i][j].x, track[i][j].y, track[i][j].z);
+        }
+        mw_printf("]\n");
+    }
 }
 
 void nbReverseOrbit_LMC(mwvector* finalPos,
