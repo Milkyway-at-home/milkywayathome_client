@@ -183,8 +183,8 @@ int testPlummerPlummer()
 {
 	int failed = 0;
 	
-	unsigned int numBodies = 10000;
-	unsigned int numBodies_light = numBodies / 2;
+	unsigned int numBodies = 50000;
+	unsigned int numBodies_light = 10000;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
 	real* masses           = mwCalloc(numBodies, sizeof(real));
@@ -206,14 +206,14 @@ int testPlummerPlummer()
 	//Make the two plummers identical, an arbtrary choice
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
 	comp2->type        = comp1->type;
-	comp2->mass        = comp1->mass;
-	comp2->scaleLength = comp1->scaleLength;
+	comp2->mass        = 48.0;
+	comp2->scaleLength = 0.8;
 
 	dsfmt_t prng;
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, numBodies_light, comp1, comp2, rshift, vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-plummer\n");
@@ -267,7 +267,7 @@ int testPlummerNFW()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, numBodies_light, comp1, comp2, rshift, vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-NFW\n");

@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
-                                     Dwarf* comp1,  Dwarf* comp2, mwvector rShift, mwvector vShift);
+                                     unsigned int nbody_light, Dwarf* dwarf, Dwarf* light, mwvector rshift, mwvector vshift);
 
 int nbGenerateMixedDwarf(lua_State* luaSt);
 void registerGenerateMixedDwarf(lua_State* luaSt);
