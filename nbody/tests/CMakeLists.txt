@@ -88,6 +88,10 @@ add_test(NAME custom_arg_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
            COMMAND nbody_test_driver "RunArgumentTests.lua" $<TARGET_FILE:milkyway_nbody>)
 
+add_test(NAME multidwarf_test
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "multidwarfTest.lua")
+
 
 add_test(NAME emd_test COMMAND emd_test)
 
