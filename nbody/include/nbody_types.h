@@ -390,7 +390,8 @@ typedef struct MW_ALIGN_TYPE
     real bestLikelihood_BetaAvg;   /* Beta avg component of likelihood */
     real bestLikelihood_VelAvg;    /* Velocity avg component of likelihood */
     real bestLikelihood_Dist;      /* Distance component of likelihood */
-    real bestLikelihood_PropMot;   /* Proper motion component of likelihood */
+    real bestLikelihood_PM_dec;   /* Proper motion component of likelihood */
+    real bestLikelihood_PM_ra;
     real bestLikelihood_time;      /* to store the evolve time at which the best likelihood occurred */
     int bestLikelihood_count;      /* count of how many times the likelihood improved */
     mwbool useVelDisp;             /* whether or not to use the vel disp comparison */
@@ -429,7 +430,7 @@ typedef struct MW_ALIGN_TYPE
                            NULL, ZERO_VECTOR, ZERO_VECTOR,                                  \
                            NULL, 0,                                                        \
                            0, 0, 0,                                                         \
-                           0, 0, 0, 0, 0,                                                   \
+                           0, 0, 0, 0, 0, 0,                                                  \
                            0, 0,                                                             \
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
                            FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \

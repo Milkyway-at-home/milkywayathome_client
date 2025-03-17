@@ -49,6 +49,14 @@ mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist);
 void nbGetHistTrig(NBHistTrig* ht, const HistogramParams* hp);
 real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real runGCDist);
 mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real runGCDist);
+
+real latmucomponent(mwvector xyz, real vz);
+real mulongcomponent(mwvector xyz, real vx);
+mwvector cartesianalign(mwvector v, real NGPdec, real NGPra, real lNCP);
+real nbVXVYVZtomuRA(mwvector xyz, mwvector vxvyvz, real sunVelx, real sunVely, real sunVelz,
+                                real sunGCDist, real NGPdec, real lNCP);
+real nbVXVYVZtomuDec(mwvector xyz, mwvector vxvyvz, real sunVelx, real sunVely, real sunVelz,
+                                real sunGCDist, real NGPdec, real lNCP);
 #ifdef __cplusplus
 }
 #endif

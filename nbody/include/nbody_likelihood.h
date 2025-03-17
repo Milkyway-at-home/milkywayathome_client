@@ -37,7 +37,7 @@ real * nbSystemLikelihood(const NBodyState* st,
 int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method);
 
 real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool vel_disp, mwbool beta_disp, 
-					mwbool use_betacomp, mwbool use_vlos, mwbool use_dist);
+					mwbool use_betacomp, mwbool use_vlos, mwbool use_dist, mwbool use_pm);
 
 #ifdef __cplusplus
 }

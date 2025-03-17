@@ -162,3 +162,82 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
     B(lambdabetar) = r2d(mw_asin(tempZ / R(lambdabetar)));
     return lambdabetar;
 }
+
+real mucomponent(mwvector xyz, real v)
+{
+    real r = mw_sqrt(mw_pow(X(xyz),2)+mw_pow(Y(xyz),2)+mw_pow(Z(xyz),2));
+    real mu = v/r;
+    mu = r2d(mu);
+    return mu;
+}
+
+mwvector cartesianalign(mwvector v, real rNGPdec, real rNGPra, real rlNCP)
+{
+    mwvector t = v;
+
+    real rot11 = mw_cos(rNGPra)*mw_cos(rNGPdec)*mw_cos(rlNCP) - mw_sin(rNGPra)*mw_sin(rlNCP);
+    real rot12 = mw_cos(rNGPra)*mw_cos(rNGPdec)*mw_sin(rlNCP) + mw_sin(rNGPra)*mw_cos(rlNCP);
+    real rot13 = -mw_cos(rNGPra)*mw_sin(rNGPdec);
+    real rot21 = -mw_sin(rNGPra)*mw_cos(rNGPdec)*mw_cos(rlNCP) - mw_cos(rNGPra)*mw_sin(rlNCP);
+    real rot22 = -mw_sin(rNGPra)*mw_cos(rNGPdec)*mw_sin(rlNCP) + mw_cos(rNGPra)*mw_cos(rlNCP);
+    real rot23 = mw_sin(rNGPra)*mw_sin(rNGPdec);
+    real rot31 = -mw_sin(rNGPdec)*mw_cos(rlNCP);
+    real rot32 = mw_sin(rNGPdec)*mw_sin(rlNCP);
+    real rot33 = mw_cos(rNGPdec);
+
+    X(v) = rot11 * X(t) + rot12 * Y(t) + rot13 * Z(t);
+    Y(v) = rot21 * X(t) + rot22 * Y(t) + rot23 * Z(t);
+    Z(v) = rot31 * X(t) + rot32 * Y(t) + rot33 * Z(t);
+
+    return v;
+}
+
+real nbVXVYVZtomuRA(mwvector xyz, mwvector vxvyvz, real sunVelx, real sunVely, real sunVelz,
+                                real sunGCDist, real NGPdec, real lNCP)
+{
+    real mura;
+    NGPdec = 90-27.4;
+    NGPdec = d2r(NGPdec);
+    real NGPra = d2r(192);
+
+    X(xyz) += sunGCDist;
+    X(vxvyvz) -= sunVelx;
+    Y(vxvyvz) -= sunVely;
+    Z(vxvyvz) -= sunVelz;
+
+    xyz = cartesianalign(xyz, NGPdec, NGPra, lNCP);
+    vxvyvz = cartesianalign(vxvyvz, NGPdec, NGPra, lNCP);
+
+    mura = mucomponent(xyz, Y(vxvyvz));
+
+    /* conversion to milliarcsec per year */
+    mura = mura*3600;
+    mura = mura/(mw_pow(10,6));
+    
+    return mura;
+}
+
+real nbVXVYVZtomuDec(mwvector xyz, mwvector vxvyvz, real sunVelx, real sunVely, real sunVelz,
+                                real sunGCDist, real NGPdec, real lNCP)
+{
+    real mudec;
+    NGPdec = 90-27.4;
+    NGPdec = d2r(NGPdec);
+    real NGPra = d2r(192);
+
+    X(xyz) += sunGCDist;
+    X(vxvyvz) -= sunVelx;
+    Y(vxvyvz) -= sunVely;
+    Z(vxvyvz) -= sunVelz;
+
+    xyz = cartesianalign(xyz, NGPdec, NGPra, lNCP);
+    vxvyvz = cartesianalign(vxvyvz, NGPdec, NGPra, lNCP);
+
+    mudec = mucomponent(xyz,Z(vxvyvz));
+
+    /* conversion to milliarcsec per year */
+    mudec = mudec*3600;
+    mudec = mudec/(mw_pow(10,6));
+    
+    return mudec;
+}

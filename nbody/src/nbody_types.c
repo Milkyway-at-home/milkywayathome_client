@@ -205,7 +205,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->bestLikelihood_BetaAvg = DEFAULT_WORST_CASE;
     st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
     st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
-    st->bestLikelihood_PropMot = DEFAULT_WORST_CASE;
+    st->bestLikelihood_PM_dec = DEFAULT_WORST_CASE;
+    st->bestLikelihood_PM_ra  = DEFAULT_WORST_CASE;
     st->bestLikelihood_time    = 0.0;
     st->bestLikelihood_count   = 0;
     

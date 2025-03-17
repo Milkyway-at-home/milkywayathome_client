@@ -42,6 +42,9 @@ LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF 
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
+SunVely               = 229.2     -- -- Sun's velocity                                                         -- --
+SunVelx               = 10.3
+SunVelz               = 6.9
 
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -83,7 +86,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -94,6 +97,7 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 use_beta_comp        = true  -- calculate average beta, use in likelihood
 use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
 use_avg_dist         = true  -- calculate average distance, use in likelihood
+use_pm_comp          = true  -- calculate proper motion, use in likelihood
 
 -- number of additional forward evolutions to do to calibrate the rotation of the bar
 -- numCalibrationRuns + 1 additional forward evolutions will be done
@@ -211,6 +215,9 @@ function makeContext()
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
       sunGCDist   = SunGCDist,
+      sunVelx     = SunVelx,
+      sunVely     = SunVely,
+      sunVelz     = SunVelz,
       criterion   = criterion,
       OutputLB    = Output_LB_coord,
       useQuad     = true,
@@ -221,15 +228,18 @@ function makeContext()
       useBetaComp   = use_beta_comp,
       useVlos       = use_vlos_comp,
       useDist       = use_avg_dist,
+      usePropMot    = use_pm_comp,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
       DistSigma     = SigmaCutoff,
+      PMSigma       = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
+      PMCorrect     = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
@@ -390,7 +400,7 @@ if (#arg >= 12) then
   orbit_parameter_vx  = round( tonumber(arg[10]), dec )
   orbit_parameter_vy  = round( tonumber(arg[11]), dec )
   orbit_parameter_vz  = round( tonumber(arg[12]), dec )
-  manual_body_file = arg[13]
+  manual_body_file = arg[15]
 else
   orbit_parameter_l   = preset_orbit_parameter_l
   orbit_parameter_b   = preset_orbit_parameter_b
