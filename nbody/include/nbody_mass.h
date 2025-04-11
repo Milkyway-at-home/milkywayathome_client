@@ -37,6 +37,7 @@ real IncompleteGammaFunc(real a, real x);
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
+//real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist, real sunVelx, real sunVely, real sunVelz);
 
 real calc_distance(const mwvector p, real sunGCdist);	
 
@@ -44,7 +45,7 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
 
 void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist, int histBins);
 
-real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram);
+real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram, int avgBins);
 
 #ifdef __cplusplus
 }

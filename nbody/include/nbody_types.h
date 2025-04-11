@@ -330,6 +330,7 @@ typedef struct
     int hasRawCounts;
     HistogramParams params;
     real massPerParticle;
+    unsigned int betaDispBins;
 
     /* This is used as a variable length struct. Do not add any fields
      * after data. */
@@ -515,8 +516,8 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                            \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
-                         FALSE, FALSE, FALSE, FALSE, FALSE,                                                   \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
+                         FALSE, FALSE, FALSE, FALSE,                                                   \
                          0, 0,                                                                          \
                          0, 0, 0, 0, 0, 0, 0, 0, 0,                                                          \
                          FALSE,                                                                         \
@@ -631,4 +632,3 @@ int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2)
 
 
 #endif /* _NBODY_TYPES_H_ */
-

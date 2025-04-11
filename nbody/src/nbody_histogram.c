@@ -855,8 +855,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                     if(all->usage[i]) all->histograms[i]->data[Histindex].rawCount++;
 
                 ++totalNum;
-                
-                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
+
+                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
                 location = calc_distance(Pos(p), ctx->sunGCDist);
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
@@ -1037,6 +1037,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     mwbool readMass = FALSE; /*Read the mass per particle for the histogram*/
     mwbool readLambdaBins = FALSE; /* Read the number of bins in the lambda direction */
     mwbool readBetaBins = FALSE; /* Read the number of bins the beta direction */
+    mwbool readBetaDispBins = FALSE;
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
     mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
     mwbool buildHist = FALSE; /* only want to build the histogrma once */
@@ -1044,6 +1045,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
+    unsigned int betaDispBins = 0;
     mwbool used = FALSE;  /* indicates whether or not to expect extra histogram parameters */
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
@@ -1159,6 +1161,16 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         if (!readBetaBins)
         {
             rc = sscanf(lineBuf, " betaBins = %u \n", &betaBins);
+            if(rc == 1)
+            {
+                readBetaBins = TRUE;
+                continue;
+            }
+        }
+
+        if (!readBetaDispBins)
+        {
+            rc = sscanf(lineBuf, " betaDispBins = %u \n", &betaDispBins);
             if(rc == 1)
             {
                 readBetaBins = TRUE;
@@ -1321,6 +1333,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             all->histograms[i]->totalNum = nGen;
             all->histograms[i]->totalSimulated = totalSim;
             all->histograms[i]->massPerParticle = mass;
+            all->histograms[i]->betaDispBins = betaDispBins;
         }
     }
     
