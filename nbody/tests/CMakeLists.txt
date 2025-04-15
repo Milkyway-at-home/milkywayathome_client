@@ -54,10 +54,14 @@ add_executable(virial_test virial_test.c)
 
 set(virial_test_link_libs nbody
                           milkyway)
-
+  
 add_executable(mixeddwarf_test mixeddwarf_test.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
+
+add_executable(momentum_offset_test momentum_offset_test.c)
+
+set(momentum_offset_test_link_libs "${nbody_exe_link_libs}")
 
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
@@ -65,6 +69,7 @@ if(NBODY_CRLIBM)
     list(APPEND poisson_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND virial_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND momentum_offset_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
@@ -72,6 +77,7 @@ milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_li
 milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_link_libs}")
 milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
+milkyway_link(momentum_offset_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${momentum_offset_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -88,9 +94,9 @@ add_test(NAME custom_arg_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
            COMMAND nbody_test_driver "RunArgumentTests.lua" $<TARGET_FILE:milkyway_nbody>)
 
-add_test(NAME multidwarf_test
+add_test(NAME multidwarf_generation_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-           COMMAND nbody_test_driver "multidwarfTest.lua")
+           COMMAND nbody_test_driver "md_generationTest.lua")
 
 
 add_test(NAME emd_test COMMAND emd_test)
@@ -101,7 +107,7 @@ add_test(NAME poisson_test COMMAND poisson_test)
 
 add_test(NAME virial_test COMMAND virial_test)
 
-add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
+add_test(NAME momentum_offset_test COMMAND momentum_offset_test)
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")

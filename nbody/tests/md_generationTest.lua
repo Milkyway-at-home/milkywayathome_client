@@ -40,7 +40,7 @@ sigmaIter = 6
 correct = 1.111
 
 ndwarfs = 4             --
-nbodies = 4000      --
+nbodies = 4000000      --
 dt = 0.001      --
 
 LMC_presence = false
@@ -310,6 +310,7 @@ for d=1, ndwarfs do
     print(string.format("(Δx, Δy, Δz):\t(%f, %f, %f)", delta_x, delta_y, delta_z))
     delta_rscale = 100*(rscale_med[d]/halfmass_rad_factor/rscale_exp[d]-1)  -- in percent
     print(string.format("Δa (scale radius):\t%3f%% ", delta_rscale))
+    print(string.format("L:\t\t\t%3f", L_tot[d]))
     delta_L = 100*(L_tot[d]/L_exp[d]-1)             -- in percent
     print(string.format("ΔL:\t\t\t%3f%%", delta_L))
 

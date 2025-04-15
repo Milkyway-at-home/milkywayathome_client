@@ -140,6 +140,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_mixeddwarf.c
                   ${NBODY_SRC_DIR}/nbody_manual_bodies.c
                   ${NBODY_SRC_DIR}/nbody_dwarf_potential.c
+                  ${NBODY_SRC_DIR}/nbody_plummer_momentum.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_nfw.c
                   ${NBODY_SRC_DIR}/nbody_hernq.c
@@ -175,6 +176,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_manual_bodies.h
                       ${NBODY_INCLUDE_DIR}/nbody_dwarf_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer.h
+                      ${NBODY_INCLUDE_DIR}/nbody_plummer_momentum.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
                       ${NBODY_INCLUDE_DIR}/nbody_hernq.h
                       ${NBODY_INCLUDE_DIR}/nbody.h

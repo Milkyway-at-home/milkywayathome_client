@@ -61,6 +61,7 @@ fi
   make poisson_test
   make virial_test
   make mixeddwarf_test
+  make momentum_offset_test
   make nbody_test_driver
   make all
 
