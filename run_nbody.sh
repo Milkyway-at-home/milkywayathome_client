@@ -18,7 +18,7 @@ then
     -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
     -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
     -n 32 -b -w 1 -P -e 54231651 \
-    -i 1.0 0.0 0.181216 0.182799 1.22251 0.0126171 \
+    -i 0.5 0.0 0.181216 0.182799 1.22251 0.0126171 \
     
 fi
 

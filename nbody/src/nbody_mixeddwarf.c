@@ -747,18 +747,7 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
 
 
 /*      DWARF GENERATION        */
-/* Fucntion used when called without nbody_light paramter and defaults the value to half the total number of bodies
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody,
-                                    Dwarf* comp1,  Dwarf* comp2, 
-                                    mwbool ignore, mwvector rShift, mwvector vShift)
-{
-    unsigned int nbody_light = nbody / 2;
-    return nbGenerateMixedDwarfCoreNew(luaSt, prng, nbody, nbody_light, comp1, comp2, ignore, rShift, vShift);
-}
-*/
-
-/* Function used when called with nbody_light paramter */
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_light,
+static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
                                      Dwarf* comp1,  Dwarf* comp2, 
                                     mwbool ignore, mwvector rShift, mwvector vShift)
 {
@@ -825,8 +814,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
     //---------------------------------------------------------------------------------------------------    
-        unsigned int nbody_dark = nbody - nbody_light;
-        real mass_light_particle = mass_l / ((real) nbody_light);//half the particles are light matter unless specified 
+        unsigned int nbody_dark = nbody - nbody_baryon;
+        real mass_light_particle = mass_l / ((real) nbody_baryon);//half the particles are light matter unless specified 
         real mass_dark_particle = mass_d / ((real) nbody_dark);
     //----------------------------------------------------------------------------------------------------
 
@@ -885,12 +874,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             do
             {
                 
-                if(i < nbody_light)
+                if(i < nbody_baryon)
                 {
                     r = r_mag(prng, comp1, rho_max_light, bound1);
                     masses[i] = mass_light_particle;
                 }
-                else if(i >= nbody_light)
+                else if(i >= nbody_baryon)
                 {
                     r = r_mag(prng, comp2, rho_max_dark, bound2);
                     masses[i] = mass_dark_particle;
@@ -913,12 +902,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             counter = 0;
             do
             {
-                if(i < nbody_light)
+                if(i < nbody_baryon)
                 {   
                     mwbool isDark = FALSE;
                     v = vel_mag(r, comp1, comp2, isDark, prng);
                 }
-                else if(i >= nbody_light)
+                else if(i >= nbody_baryon)
                 {
                     mwbool isDark = TRUE;
                     v = vel_mag(r, comp1, comp2, isDark, prng);
@@ -948,8 +937,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_light); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_light, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_baryon); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_baryon, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
@@ -957,11 +946,11 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         for (i = 0; i < nbody; i++)
         {
             b.bodynode.id   = i + 1;
-            if(i < nbody_light)
+            if(i < nbody_baryon)
             {
                 b.bodynode.type = BODY(islight);
             }
-            else if(i >= nbody_light)
+            else if(i >= nbody_baryon)
             {
                 b.bodynode.type = BODY(isdark);
             }
@@ -997,7 +986,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 }
 
 
-int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_light,
+int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
                                      Dwarf* comp1,  Dwarf* comp2, mwvector rShift, mwvector vShift)
 {
     /* NOTE: unction is designed to mimic the above function, but bypass the need for the
@@ -1063,8 +1052,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
 
 
     //---------------------------------------------------------------------------------------------------        
-        unsigned int nbody_dark = nbody - nbody_light;
-        real mass_light_particle = mass_l / ((real) nbody_light);//half the particles are light matter unless specified 
+        unsigned int nbody_dark = nbody - nbody_baryon;
+        real mass_light_particle = mass_l / ((real) nbody_baryon);//half the particles are light matter unless specified 
         real mass_dark_particle = mass_d / ((real) nbody_dark);
     //----------------------------------------------------------------------------------------------------
 
@@ -1123,12 +1112,12 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             do
             {
                 
-                if(i < nbody_light)
+                if(i < nbody_baryon)
                 {
                     r = r_mag(prng, comp1, rho_max_light, bound1);
                     masses[i] = mass_light_particle;
                 }
-                else if(i >= nbody_light)
+                else if(i >= nbody_baryon)
                 {
                     r = r_mag(prng, comp2, rho_max_dark, bound2);
                     masses[i] = mass_dark_particle;
@@ -1151,12 +1140,12 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             counter = 0;
             do
             {
-                if(i < nbody_light)
+                if(i < nbody_baryon)
                 {   
                     mwbool isDark = FALSE;
                     v = vel_mag(r, comp1, comp2, isDark, prng);
                 }
-                else if(i >= nbody_light)
+                else if(i >= nbody_baryon)
                 {
                     mwbool isDark = TRUE;
                     v = vel_mag(r, comp1, comp2, isDark, prng);
@@ -1187,8 +1176,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
 
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_light); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_light, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_baryon); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_baryon, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
@@ -1228,13 +1217,13 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         static const mwvector* velocity = NULL;
         static mwbool ignore;
         static real nbodyf = 0.0;
-        static real nbody_lightf = -1.0;
+        static real nbody_baryonf = -1.0;
         static Dwarf* comp1 = NULL;
         static Dwarf* comp2 = NULL;
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "nbody_light",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_lightf      },
+            { "nbody_baryon",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf      },
             { "comp1",                LUA_TUSERDATA,   DWARF_TYPE,              TRUE,    &comp1             },
             { "comp2",                LUA_TUSERDATA,   DWARF_TYPE,              TRUE,    &comp2             },
             { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
@@ -1250,11 +1239,11 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         
         handleNamedArgumentTable(luaSt, argTable, 1);
 
-        if (nbody_lightf < 0){
-            nbody_lightf = nbodyf / 2;
+        if (nbody_baryonf < 0){
+            nbody_baryonf = nbodyf / 2;
         }
 
-        return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_lightf, comp1, comp2, ignore,
+        return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_baryonf, comp1, comp2, ignore,
                                                                  *position, *velocity);
 }
 

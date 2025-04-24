@@ -183,7 +183,7 @@ int nbReadMinVersion(lua_State* luaSt, int* major, int* minor)
         return FALSE;
     }
     
-    mw_printf("Running MilkyWay@home Nbody v%s\n", version);
+    // mw_printf("Running MilkyWay@home Nbody v%s\n", version);
     return TRUE;
 }
 
