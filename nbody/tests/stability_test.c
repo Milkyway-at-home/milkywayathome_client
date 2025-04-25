@@ -18,6 +18,9 @@
 #include "nbody_types.h"
 #include "nbody_lua.h"
 #include "nbody_lua_types.h"
+#include "nbody_lua_models.h"
+#include "milkyway_alloc.h"
+#include "milkyway_math.h"
 
 static real mass_enclosed_function(Dwarf *comp, real radius) {
     return 4 * M_PI * sqr(radius) * get_density(comp, radius);
@@ -28,6 +31,9 @@ static real counts_per_bin(Dwarf *comp, real radius, real mass_per_particle, rea
 }
 
 static real kl_divergence(real *p, real *q, size_t size) {
+    // Calculate the Kullback-Leibler divergence between two probability distributions
+    // q is the theoretical density distribution
+    // p is the simulation density distribution
     const real epsilon = 1e-10;
     real sum_p = 0.0;
     real sum_q = 0.0;
@@ -58,8 +64,8 @@ int run_nbody(const char** dwarf_params) {
     if (getcwd(cwd, sizeof(cwd)) == NULL) return 1;
     
     snprintf(command, sizeof(command), 
-             "%s/../../bin/milkyway_nbody "
-             "-f %s/../../../nbody/sample_workunits/test_env_lua/plummer_plummer.lua "
+             "%s/bin/milkyway_nbody "
+             "-f %s/../nbody/sample_workunits/test_env_lua/plummer_plummer.lua "
              "-o %s/output.out "
              "-z %s/output.hist "
              "-n 8 -b -w 1 -P -e 54231651 "
@@ -68,11 +74,12 @@ int run_nbody(const char** dwarf_params) {
              dwarf_params[0], dwarf_params[1], dwarf_params[2], 
              dwarf_params[3], dwarf_params[4], dwarf_params[5]);
     
+    printf("Running command: %s\n", command);
     return system(command);
 }
 
 // Function to read parameters from Lua file
-int read_lua_parameters(const char* input_file, const char** dwarf_params, real* nbody, real* nbody_baryon, Dwarf** comp1, Dwarf** comp2) {
+int read_lua_parameters(const char* input_file, const char** dwarf_params, real* nbody, real* nbody_baryon, Dwarf** comp1, Dwarf** comp2, real* timestep) {
     printf("Opening Lua state with file: %s\n", input_file);
     
     NBodyFlags nbf = {
@@ -87,6 +94,31 @@ int read_lua_parameters(const char* input_file, const char** dwarf_params, real*
         printf("Failed to open Lua state\n");
         return 1;
     }
+
+    // Register all necessary types and models
+    registerNBodyTypes(L);
+    registerPredefinedModelGenerators(L);
+
+    // Get nbody values from global variables 
+    lua_getglobal(L, "totalBodies");
+    if (!lua_isnumber(L, -1)) {
+        printf("totalBodies is not a number\n");
+        lua_close(L);
+        return 1;
+    }
+    *nbody = lua_tonumber(L, -1);
+    printf("Debug: totalBodies from Lua: %f\n", *nbody);
+    lua_pop(L, 1);
+
+    lua_getglobal(L, "totalLightBodies");
+    if (!lua_isnumber(L, -1)) {
+        printf("totalLightBodies is not a number\n");
+        lua_close(L);
+        return 1;
+    }
+    *nbody_baryon = lua_tonumber(L, -1);
+    printf("Debug: totalLightBodies from Lua: %f\n", *nbody_baryon);
+    lua_pop(L, 1);
 
     // Get the makeBodies function
     lua_getglobal(L, "makeBodies");
@@ -112,6 +144,24 @@ int read_lua_parameters(const char* input_file, const char** dwarf_params, real*
         return 1;
     }
 
+    // Get the timestep from the context
+    lua_getfield(L, -1, "timestep");
+    if (!lua_isnumber(L, -1)) {
+        printf("timestep is not a number\n");
+        lua_close(L);
+        return 1;
+    }
+    *timestep = lua_tonumber(L, -1);
+    lua_pop(L, 1);
+
+    // Validate timestep
+    if (*timestep <= 0.0 || !isfinite(*timestep)) {
+        printf("Invalid timestep value: %f\n", *timestep);
+        lua_close(L);
+        return 1;
+    }
+    printf("Valid timestep value: %f\n", *timestep);
+
     // Push nil for potential
     lua_pushnil(L);
 
@@ -123,52 +173,50 @@ int read_lua_parameters(const char* input_file, const char** dwarf_params, real*
         return 1;
     }
 
-    // Get the number of bodies
-    lua_getglobal(L, "totalBodies");
-    if (!lua_isnumber(L, -1)) {
-        printf("totalBodies is not a number\n");
-        lua_close(L);
-        return 1;
-    }
-    *nbody = lua_tonumber(L, -1);
-    lua_pop(L, 1);
-
-    lua_getglobal(L, "totalLightBodies");
-    if (!lua_isnumber(L, -1)) {
-        printf("totalLightBodies is not a number\n");
-        lua_close(L);
-        return 1;
-    }
-    *nbody_baryon = lua_tonumber(L, -1);
-    lua_pop(L, 1);
-
-    // Get the model object
+    // Get the components from the model's table
+    lua_getfield(L, -1, "components");
     if (!lua_istable(L, -1)) {
-        printf("makeBodies did not return a table\n");
+        printf("components table not found in model\n");
         lua_close(L);
         return 1;
     }
 
-    // Get the model's components
+    // Get comp1
     lua_getfield(L, -1, "comp1");
     if (!lua_isuserdata(L, -1)) {
         printf("comp1 is not a userdata\n");
         lua_close(L);
         return 1;
     }
-    *comp1 = (Dwarf*)mw_checknamedudata(L, -1, DWARF_TYPE);
+    *comp1 = (Dwarf*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
+    // Get comp2
     lua_getfield(L, -1, "comp2");
     if (!lua_isuserdata(L, -1)) {
         printf("comp2 is not a userdata\n");
         lua_close(L);
         return 1;
     }
-    *comp2 = (Dwarf*)mw_checknamedudata(L, -1, DWARF_TYPE);
+    *comp2 = (Dwarf*)lua_touserdata(L, -1);
     lua_pop(L, 1);
 
-    printf("Successfully read all Lua parameters\n");
+    printf("Read parameters from Lua file:\n");
+    printf("nbody: %f\n", *nbody);
+    printf("nbody_baryon: %f\n", *nbody_baryon);
+    
+    // Validate nbody values
+    if (*nbody <= 0 || *nbody_baryon <= 0) {
+        printf("Error: Invalid nbody values - nbody: %f, nbody_baryon: %f\n", *nbody, *nbody_baryon);
+        return 1;
+    }
+    
+    printf("comp1 mass: %f\n", (*comp1)->mass);
+    printf("comp1 scale length: %f\n", (*comp1)->scaleLength);
+    printf("comp2 mass: %f\n", (*comp2)->mass);
+    printf("comp2 scale length: %f\n", (*comp2)->scaleLength);
+    printf("timestep: %f\n", *timestep);
+
     lua_close(L);
     return 0;
 }
@@ -178,12 +226,12 @@ int main()
     printf("Starting stability test...\n");
     
     const char* dwarf_params[] = {
-        "0.1",       // ft
-        "0.0",       // time_ratio
-        "0.181216",  // rscale_baryon
-        "0.182799",  // radius_ratio
-        "1.22251",   // baryon mass
-        "0.0126171"  // mass ratio
+        "0.1",       
+        "0.0",       
+        "0.181216",  
+        "0.182799",  
+        "1.22251",   
+        "0.0126171"  
     };
 
     char cwd[1024];
@@ -193,7 +241,7 @@ int main()
     }
 
     char input_file[1024];
-    snprintf(input_file, sizeof(input_file), "%s/../../../nbody/sample_workunits/test_env_lua/plummer_plummer.lua", cwd);
+    snprintf(input_file, sizeof(input_file), "%s/../nbody/sample_workunits/test_env_lua/plummer_plummer.lua", cwd);
     printf("Input file path: %s\n", input_file);
 
     if (access(input_file, F_OK) == -1) {
@@ -204,37 +252,216 @@ int main()
     // First, read the parameters from the Lua file
     real nbody, nbody_baryon;
     Dwarf *comp1, *comp2;
+    real timestep;
     printf("Reading Lua parameters...\n");
-    if (read_lua_parameters(input_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2) != 0) {
+    if (read_lua_parameters(input_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2, &timestep) != 0) {
         printf("Failed to read Lua parameters\n");
         return 1;
     }
 
-    printf("Read parameters from Lua file:\n");
-    printf("nbody: %f\n", nbody);
-    printf("nbody_baryon: %f\n", nbody_baryon);
-    printf("comp1 mass: %f\n", comp1->mass);
-    printf("comp2 mass: %f\n", comp2->mass);
+    // Calculate the mass per particle for each component
+    real nbody_dark = nbody - nbody_baryon;
+    real mass_per_particle_baryon = (comp1)->mass / nbody_baryon;
+    real mass_per_particle_dark = (comp2)->mass / nbody_dark;
+    printf("mass_per_particle_baryon: %f\n", mass_per_particle_baryon);
+    printf("mass_per_particle_dark: %f\n", mass_per_particle_dark);
 
-    // Now run the simulation separately
+    // Calculating bin width
+    real bin_width = mw_fmin(comp1->scaleLength, comp2->scaleLength) / 5;
+    printf("Bin width: %f\n", bin_width);
+
+    // Calculate number of bins needed for each component (matching np.arange)
+    int num_bins_baryon = (int)((4.0 * comp1->scaleLength - 0.2 * comp1->scaleLength) / bin_width) + 1;
+    int num_bins_dark = (int)((4.0 * comp2->scaleLength - 0.2 * comp2->scaleLength) / bin_width) + 1;
+
+    printf("Using %d bins for baryon component and %d bins for dark matter component\n", 
+           num_bins_baryon, num_bins_dark);
+
+    // Creating radius arrays for KL divergence calculation for each component (bin centers)
+    real* radius_array_baryon = mwCallocA(num_bins_baryon, sizeof(real));
+    real* radius_array_dark = mwCallocA(num_bins_dark, sizeof(real));
+
+    // Create bin edges (like np.histogram)
+    real* bin_edges_baryon = mwCallocA(num_bins_baryon + 1, sizeof(real));
+    real* bin_edges_dark = mwCallocA(num_bins_dark + 1, sizeof(real));
+
+    // Set bin edges
+    for (int i = 0; i <= num_bins_baryon; i++) {
+        bin_edges_baryon[i] = 0.2 * comp1->scaleLength + i * bin_width;
+    }
+    for (int i = 0; i <= num_bins_dark; i++) {
+        bin_edges_dark[i] = 0.2 * comp2->scaleLength + i * bin_width;
+    }
+
+    // Set bin centers
+    for (int i = 0; i < num_bins_baryon; i++) {
+        radius_array_baryon[i] = (bin_edges_baryon[i] + bin_edges_baryon[i + 1]) / 2.0;
+    }
+    for (int i = 0; i < num_bins_dark; i++) {
+        radius_array_dark[i] = (bin_edges_dark[i] + bin_edges_dark[i + 1]) / 2.0;
+    }
+
+    // Print bin edges and centers
+    printf("Baryon bin edges:\n");
+    for (int i = 0; i <= num_bins_baryon; i++) {
+        printf("%.6f ", bin_edges_baryon[i]);
+    }
+    printf("\nBaryon bin centers:\n");
+    for (int i = 0; i < num_bins_baryon; i++) {
+        printf("%.6f ", radius_array_baryon[i]);
+    }
+    printf("\nDark matter bin edges:\n");
+    for (int i = 0; i <= num_bins_dark; i++) {
+        printf("%.6f ", bin_edges_dark[i]);
+    }
+    printf("\nDark matter bin centers:\n");
+    for (int i = 0; i < num_bins_dark; i++) {
+        printf("%.6f ", radius_array_dark[i]);
+    }
+    printf("\n");
+
+    // Calculate the theoretical density distribution for each component 
+    real* theoretical_density_baryon = mwCallocA(num_bins_baryon, sizeof(real));
+    real* theoretical_density_dark = mwCallocA(num_bins_dark, sizeof(real));
+
+    for (int i = 0; i < num_bins_baryon; i++) {
+        theoretical_density_baryon[i] = counts_per_bin(comp1, radius_array_baryon[i], mass_per_particle_baryon, bin_width);
+    }
+
+    for (int i = 0; i < num_bins_dark; i++) {
+        theoretical_density_dark[i] = counts_per_bin(comp2, radius_array_dark[i], mass_per_particle_dark, bin_width);
+    }
+
+    // Print theoretical densities
+    printf("Theoretical baryon density distribution:\n");
+    for (int i = 0; i < num_bins_baryon; i++) {
+        printf("%.6f ", theoretical_density_baryon[i]);
+    }
+    printf("\nTheoretical dark matter density distribution:\n");
+    for (int i = 0; i < num_bins_dark; i++) {
+        printf("%.6f ", theoretical_density_dark[i]);
+    }
+    printf("\n");
+    
+    // Run a simulation 
     printf("Running N-body simulation...\n");
     if (run_nbody(dwarf_params) != 0) {
         printf("N-body simulation failed\n");
         return 1;
     }
+    printf("N-body simulation completed successfully\n");
 
-    const char *input_filename = "output.out";
-    printf("Reading particle file: %s\n", input_filename);
-    ParticleCollection *data = read_particle_file(input_filename);
+    // Calculate the total number of timesteps in the simulation (2 Gyr)
+    int total_timesteps = 2 / timestep;
 
-    if (data) {
-        printf("Successfully read particle file\n");
-        free_particle_collection(data);
-    } else {
+    // Calculate how many timesteps 0.1 Gyr is in the simulation
+    int timesteps_0_1_Gyr = 0.1 / timestep;
+
+    // Calculate the KL divergence at multiple timesteps
+    
+
+    const char* output_filename = "output.out";
+    printf("Checking for output file: %s\n", output_filename);
+    
+    // Check if the output file exists
+    if (access(output_filename, F_OK) == -1) {
+        printf("Error: Output file '%s' does not exist\n", output_filename);
+        return 1;
+    }
+    printf("Output file exists, attempting to read...\n");
+    
+    ParticleCollection* data = read_particle_file(output_filename);
+    if (!data) {
         printf("Failed to read particle file\n");
         return 1;
     }
 
+    printf("Successfully read %zu particles\n", data->count);
+    
+    // Print some basic info about the particles
+    if (data->count > 0) {
+        printf("First particle info:\n");
+        printf("  Type: %d\n", data->particles[0].type);
+        printf("  Position: (%f, %f, %f)\n", 
+               data->particles[0].x,
+               data->particles[0].y,
+               data->particles[0].z);
+    }
+
+    // Calculate the simulation density distribution for each component
+    real* simulation_density_baryon = mwCallocA(num_bins_baryon, sizeof(real));
+    real* simulation_density_dark = mwCallocA(num_bins_dark, sizeof(real));
+
+    // Initialize simulation densities to zero
+    for (int i = 0; i < num_bins_baryon; i++) {
+        simulation_density_baryon[i] = 0.0;
+    }
+    for (int i = 0; i < num_bins_dark; i++) {
+        simulation_density_dark[i] = 0.0;
+    }
+
+    // Calculate simulation densities using histogram binning
+    printf("Calculating simulation densities for baryon particles...\n");
+    for (int i = 0; i < nbody_baryon; i++) {
+        if (i >= data->count) {
+            printf("Error: Trying to access particle %d but only have %zu particles\n", i, data->count);
+            break;
+        }
+        real radius = sqrt(data->particles[i].x * data->particles[i].x + 
+                          data->particles[i].y * data->particles[i].y + 
+                          data->particles[i].z * data->particles[i].z);
+
+        // Find the bin for this radius
+        for (int bin = 0; bin < num_bins_baryon; bin++) {
+            if (radius >= bin_edges_baryon[bin] && radius < bin_edges_baryon[bin + 1]) {
+                simulation_density_baryon[bin] += 1.0;
+                break;
+            }
+        }
+    }
+
+    printf("Calculating simulation densities for dark matter particles...\n");
+    for (int i = nbody_baryon; i < nbody; i++) {
+        if (i >= data->count) {
+            printf("Error: Trying to access particle %d but only have %zu particles\n", i, data->count);
+            break;
+        }
+        real radius = sqrt(data->particles[i].x * data->particles[i].x + 
+                          data->particles[i].y * data->particles[i].y + 
+                          data->particles[i].z * data->particles[i].z);
+
+        // Find the bin for this radius
+        for (int bin = 0; bin < num_bins_dark; bin++) {
+            if (radius >= bin_edges_dark[bin] && radius < bin_edges_dark[bin + 1]) {
+                simulation_density_dark[bin] += 1.0;
+                break;
+            }
+        }
+    }
+
+    // Print simulation densities
+    printf("Simulation baryon density distribution:\n");
+    for (int i = 0; i < num_bins_baryon; i++) {
+        printf("%.6f ", simulation_density_baryon[i]);
+    }
+    printf("\nSimulation dark matter density distribution:\n");
+    for (int i = 0; i < num_bins_dark; i++) {
+        printf("%.6f ", simulation_density_dark[i]);
+    }
+    printf("\n");
+
+    // Calculate the Kullback-Leibler divergence for each component
+    real kl_divergence_baryon = kl_divergence(simulation_density_baryon, theoretical_density_baryon, num_bins_baryon);
+    real kl_divergence_dark = kl_divergence(simulation_density_dark, theoretical_density_dark, num_bins_dark);
+
+    printf("KL divergence for baryon component: %f\n", kl_divergence_baryon);
+    printf("KL divergence for dark matter component: %f\n", kl_divergence_dark);
+    
+    // Free the particle collection
+    printf("Freeing particle collection...\n");
+    free_particle_collection(data);
+    printf("Particle collection freed successfully\n");
+    
     printf("Test completed successfully\n");
     return 0;
 }

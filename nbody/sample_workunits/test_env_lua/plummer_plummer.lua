@@ -304,15 +304,25 @@ function makeBodies(ctx, potential)
 
 
     if(ModelComponents == 2) then 
+        -- Create components first
+        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}
+        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}
+        
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,
             nbody_baryon  = totalLightBodies,
             prng          = prng,
             position      = finalPosition,
             velocity      = finalVelocity,
-            comp1         = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2         = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp1         = comp1,
+            comp2         = comp2,
             ignore        = true
+        }
+        
+        -- Store components in the model's table
+        firstModel.components = {
+            comp1 = comp1,
+            comp2 = comp2,
         }
         
     elseif(ModelComponents == 1) then
