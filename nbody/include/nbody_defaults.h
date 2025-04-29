@@ -37,11 +37,6 @@ extern "C" {
 
 
 #define DEFAULT_SUN_GC_DISTANCE ((real) 8.0)
-#define DEFAULT_SUN_VEL_Y ((real) 229.2)
-#define DEFAULT_SUN_VEL_X ((real) 10.3)
-#define DEFAULT_SUN_VEL_Z ((real) 6.9)
-#define DEFAULT_L_NCP ((real) 123)
-#define DEFAULT_NGP_DEC ((real) 129.25)
 #define DEFAULT_CRITERION TreeCode
 #define DEFAULT_TREE_ROOT_SIZE ((real) 4.0)
 
@@ -61,7 +56,6 @@ extern "C" {
 #define DEFAULT_USE_BETA_COMP FALSE
 #define DEFAULT_USE_VLOS FALSE
 #define DEFAULT_USE_DIST FALSE
-#define DEFAULT_USE_PROP_MOT FALSE
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
 #define DEFAULT_OUTPUT_FREQUENCY ((int) 1000)

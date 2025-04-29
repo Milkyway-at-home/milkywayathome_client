@@ -37,7 +37,6 @@ real IncompleteGammaFunc(real a, real x);
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist);
-//real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist, real sunVelx, real sunVely, real sunVelz);
 
 real calc_distance(const mwvector p, real sunGCdist);	
 

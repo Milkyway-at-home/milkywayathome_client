@@ -63,5 +63,6 @@ fi
   make mixeddwarf_test
   make nbody_test_driver
   make average_bins_test
+  
   make all
 

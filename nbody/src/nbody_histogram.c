@@ -855,8 +855,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                     if(all->usage[i]) all->histograms[i]->data[Histindex].rawCount++;
 
                 ++totalNum;
-
-                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
+                
+                v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 location = calc_distance(Pos(p), ctx->sunGCDist);
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
