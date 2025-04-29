@@ -61,40 +61,40 @@ static inline real density( real r, const Dwarf* comp1, const Dwarf* comp2)
 
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
+static inline real first_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
 {
     /*yes, this does in fact use a 5-point stencil*/
     real h = 0.001;
     real deriv;
     real p1, p2, p3, p4, denom;
     
-    p1 =   1.0 * (*func)( (x - 2.0 * h), comp1, comp2);
-    p2 = - 8.0 * (*func)( (x - h)      , comp1, comp2);
-    p3 = - 1.0 * (*func)( (x + 2.0 * h), comp1, comp2);
-    p4 =   8.0 * (*func)( (x + h)      , comp1, comp2);
+    p1 =   1.0 * (*func)(comp1, (x - 2.0 * h));
+    p2 = - 8.0 * (*func)(comp1, (x - h) );
+    p3 = - 1.0 * (*func)(comp1, (x + 2.0 * h));
+    p4 =   8.0 * (*func)(comp1, (x + h));
     denom = inv( 12.0 * h);
     deriv = (p1 + p2 + p3 + p4) * denom;
     return deriv;
 }
 
-static inline real second_derivative(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
+static inline real second_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
 {
     /*yes, this also uses a five point stencil*/
-    real h = 0.001;
+    real h = 0.001; 
     real deriv;
     real p1, p2, p3, p4, p5, denom;
 
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , comp1, comp2);
-    p2 =  16.0 * (*func)( (x + h)       , comp1, comp2);
-    p3 = -30.0 * (*func)( (x)           , comp1, comp2);
-    p4 =  16.0 * (*func)( (x - h)       , comp1, comp2);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , comp1, comp2);
+    p1 = - 1.0 * (*func)(comp1, (x + 2.0 * h));
+    p2 =  16.0 * (*func)(comp1, (x + h));   
+    p3 = -30.0 * (*func)(comp1, (x));
+    p4 =  16.0 * (*func)(comp1, (x - h));
+    p5 = - 1.0 * (*func)(comp1, (x - 2.0 * h));
     denom = inv( 12.0 * h * h);
     deriv = (p1 + p2 + p3 + p4 + p5) * denom;
     return deriv;
 }
 
-static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), real lower, real upper, const Dwarf* comp1, const Dwarf* comp2, real energy)
+static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real, mwbool), real lower, real upper, const Dwarf* comp1, const Dwarf* comp2, real energy, mwbool isDark)
 {
     /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
      * If switching the order of the limits was needed to do this then the negative of the integral is returned.
@@ -142,9 +142,9 @@ static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), rea
     while (1)
     {
                 //gauss quad
-        intv = intv + c1 * (*func)(x1n, comp1, comp2, energy) * coef1 +
-                      c2 * (*func)(x2n, comp1, comp2, energy) * coef1 + 
-                      c3 * (*func)(x3n, comp1, comp2, energy) * coef1;
+        intv = intv + c1 * (*func)(x1n, comp1, comp2, energy, isDark) * coef1 +
+                      c2 * (*func)(x2n, comp1, comp2, energy, isDark) * coef1 + 
+                      c3 * (*func)(x3n, comp1, comp2, energy, isDark) * coef1;
 
         lowerg = upperg;
         upperg = upperg + hg;
@@ -197,7 +197,7 @@ static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real), rea
     return intv;
 }
 
-static inline real max_finder(real (*profile)(real , real , const Dwarf*, const Dwarf*), real r, const Dwarf* comp1, const Dwarf* comp2, real a, real b, real c, int limit, real tolerance)
+static inline real max_finder(real (*profile)(real , real , const Dwarf*, const Dwarf*, mwbool), real r, const Dwarf* comp1, const Dwarf* comp2, mwbool isDark, real a, real b, real c, int limit, real tolerance)
 {
     /*this is a maxfinding routine to find the maximum of the density.
      * It uses Golden Section Search as outlined in Numerical Recipes 3rd edition
@@ -221,8 +221,8 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
         x1 = b - (RATIO_COMPLEMENT * (b - a));
     }
 
-    profile_x1 = -(*profile)(x1, r, comp1, comp2);
-    profile_x2 = -(*profile)(x2, r, comp1, comp2);
+    profile_x1 = -(*profile)(x1, r, comp1, comp2, isDark);
+    profile_x2 = -(*profile)(x2, r, comp1, comp2, isDark);
     
     while (mw_fabs(x3 - x0) > (tolerance * (mw_fabs(x1) + mw_fabs(x2)) ) )
     {
@@ -233,7 +233,7 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
             x1 = x2;
             x2 = RATIO * x2 + RATIO_COMPLEMENT * x3;
             profile_x1 = (real)profile_x2;
-            profile_x2 = -(*profile)(x2, r, comp1, comp2);
+            profile_x2 = -(*profile)(x2, r, comp1, comp2, isDark);
         }
         else
         {
@@ -241,7 +241,7 @@ static inline real max_finder(real (*profile)(real , real , const Dwarf*, const 
             x2 = x1;
             x1 = RATIO * x1 + RATIO_COMPLEMENT * x0;
             profile_x2 = (real)profile_x1;
-            profile_x1 = -(*profile)(x1, r, comp1, comp2);
+            profile_x1 = -(*profile)(x1, r, comp1, comp2, isDark);
         }
         
         if(counter > limit)
@@ -370,23 +370,29 @@ static inline real root_finder(real (*func)(real, const Dwarf*, const Dwarf*), c
 }
 
 /*      VELOCITY DISTRIBUTION FUNCTION CALCULATION      */
-static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy)
+static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy, mwbool isDark)
 {
     
     real first_deriv_psi;
     real second_deriv_psi;
-    real first_deriv_density;
-    real second_deriv_density;
+    real first_deriv_density; 
+    real second_deriv_density; 
     real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
     real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
     real diff;
     real func;
 
-    first_deriv_psi      = first_derivative(potential, ri, comp1, comp2);
-    first_deriv_density  = first_derivative(density,   ri, comp1, comp2);
+    first_deriv_psi  = first_derivative(get_potential, ri, comp1) + first_derivative(get_potential, ri, comp2);
+ 
+    second_deriv_psi = second_derivative(get_potential, ri, comp1) + second_derivative(get_potential, ri, comp2);
 
-    second_deriv_psi     = second_derivative(potential, ri, comp1, comp2);
-    second_deriv_density = second_derivative(density,   ri, comp1, comp2);
+    if (!isDark) {
+        first_deriv_density  = first_derivative(get_density,   ri, comp1);
+        second_deriv_density = second_derivative(get_density,   ri, comp1);
+    } else {
+        first_deriv_density  = first_derivative(get_density,   ri, comp2);
+        second_deriv_density = second_derivative(get_density,   ri, comp2);
+    }
     
     /*
     * Instead of calculating the second derivative of density with respect to -pot directly, 
@@ -459,7 +465,7 @@ static inline real find_upperlimit_r(const Dwarf* comp1, const Dwarf* comp2, rea
     return mw_fabs(upperlimit_r);
 }
  
-static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* comp2)
+static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* comp2, mwbool isDark)
 {
     /*This returns the value of the distribution function*/
     
@@ -517,7 +523,7 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     lowerlimit_r = 10.0 * (upperlimit_r);
 
     /*This calls guassian quad to integrate the function for a given energy*/
-    distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy);
+    distribution_function = v * v * cons * gauss_quad(fun, lowerlimit_r, upperlimit_r, comp1, comp2, energy, isDark);
     return distribution_function;
 }
 
@@ -560,7 +566,7 @@ static inline real r_mag(dsfmt_t* dsfmtState, const Dwarf* comp, real rho_max, r
     return r;
 }
 
-static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt_t* dsfmtState)
+static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, mwbool isDark ,dsfmt_t* dsfmtState)
 {
     
     /*
@@ -576,14 +582,14 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, dsfmt
     /* having the upper limit as exactly v_esc is bad since the dist fun seems to blow up there for small r. */
     real v_esc = 0.99 * mw_sqrt( mw_fabs(2.0 * potential( r, comp1, comp2) ) );
     
-    real dist_max = max_finder(dist_fun, r, comp1, comp2, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
+    real dist_max = max_finder(dist_fun, r, comp1, comp2, isDark, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     while(1)
     {
 
         v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
 
-        d = dist_fun(v, r, comp1, comp2);
+        d = dist_fun(v, r, comp1, comp2, isDark);
         
 
         if(mw_fabs(d / dist_max) > u)
@@ -709,18 +715,7 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
 
 
 /*      DWARF GENERATION        */
-/* Fucntion used when called without nbody_light paramter and defaults the value to half the total number of bodies
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody,
-                                    Dwarf* comp1,  Dwarf* comp2, 
-                                    mwbool ignore, mwvector rShift, mwvector vShift)
-{
-    unsigned int nbody_light = nbody / 2;
-    return nbGenerateMixedDwarfCoreNew(luaSt, prng, nbody, nbody_light, comp1, comp2, ignore, rShift, vShift);
-}
-*/
-
-/* Function used when called with nbody_light paramter */
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_light,
+static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
                                      Dwarf* comp1,  Dwarf* comp2, 
                                     mwbool ignore, mwvector rShift, mwvector vShift)
 {
@@ -787,8 +782,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
     //---------------------------------------------------------------------------------------------------    
-        unsigned int nbody_dark = nbody - nbody_light;
-        real mass_light_particle = mass_l / ((real) nbody_light);//half the particles are light matter unless specified 
+        unsigned int nbody_dark = nbody - nbody_baryon;
+        real mass_light_particle = mass_l / ((real) nbody_baryon);//half the particles are light matter unless specified 
         real mass_dark_particle = mass_d / ((real) nbody_dark);
     //----------------------------------------------------------------------------------------------------
 
@@ -847,12 +842,12 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             do
             {
                 
-                if(i < nbody_light)
+                if(i < nbody_baryon)
                 {
                     r = r_mag(prng, comp1, rho_max_light, bound1);
                     masses[i] = mass_light_particle;
                 }
-                else if(i >= nbody_light)
+                else if(i >= nbody_baryon)
                 {
                     r = r_mag(prng, comp2, rho_max_dark, bound2);
                     masses[i] = mass_dark_particle;
@@ -875,7 +870,17 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
             counter = 0;
             do
             {
-                v = vel_mag(r, comp1, comp2, prng);
+                if(i < nbody_baryon)
+                {   
+                    mwbool isDark = FALSE;
+                    v = vel_mag(r, comp1, comp2, isDark, prng);
+                }
+                else if(i >= nbody_baryon)
+                {
+                    mwbool isDark = TRUE;
+                    v = vel_mag(r, comp1, comp2, isDark, prng);
+                }
+                /*to ensure that v is finite and nonzero*/
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
                 if(counter > 1000)
@@ -900,8 +905,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_light); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_light, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_baryon); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_baryon, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
@@ -909,11 +914,11 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         for (i = 0; i < nbody; i++)
         {
             b.bodynode.id   = i + 1;
-            if(i < nbody_light)
+            if(i < nbody_baryon)
             {
                 b.bodynode.type = BODY(islight);
             }
-            else if(i >= nbody_light)
+            else if(i >= nbody_baryon)
             {
                 b.bodynode.type = BODY(isdark);
             }
@@ -949,7 +954,7 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 }
 
 
-int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
+int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
                                      Dwarf* comp1,  Dwarf* comp2, mwvector rShift, mwvector vShift)
 {
     /* NOTE: unction is designed to mimic the above function, but bypass the need for the
@@ -1015,9 +1020,9 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
 
 
     //---------------------------------------------------------------------------------------------------        
-        unsigned int half_bodies = nbody / 2;
-        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody);
+        unsigned int nbody_dark = nbody - nbody_baryon;
+        real mass_light_particle = mass_l / ((real) nbody_baryon);//half the particles are light matter unless specified 
+        real mass_dark_particle = mass_d / ((real) nbody_dark);
     //----------------------------------------------------------------------------------------------------
 
 	
@@ -1075,12 +1080,12 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             do
             {
                 
-                if(i < half_bodies)
+                if(i < nbody_baryon)
                 {
                     r = r_mag(prng, comp1, rho_max_light, bound1);
                     masses[i] = mass_light_particle;
                 }
-                else if(i >= half_bodies)
+                else if(i >= nbody_baryon)
                 {
                     r = r_mag(prng, comp2, rho_max_dark, bound2);
                     masses[i] = mass_dark_particle;
@@ -1103,7 +1108,17 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
             counter = 0;
             do
             {
-                v = vel_mag(r, comp1, comp2, prng);
+                if(i < nbody_baryon)
+                {   
+                    mwbool isDark = FALSE;
+                    v = vel_mag(r, comp1, comp2, isDark, prng);
+                }
+                else if(i >= nbody_baryon)
+                {
+                    mwbool isDark = TRUE;
+                    v = vel_mag(r, comp1, comp2, isDark, prng);
+                }
+                /*to ensure that v is finite and nonzero*/
                 if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
                 
                 if(counter > 1000)
@@ -1129,8 +1144,8 @@ int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMas
 
 
         /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, half_bodies); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, half_bodies, nbody); //corrects dark component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_baryon); //corrects light component
+		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_baryon, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
 
@@ -1170,13 +1185,13 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         static const mwvector* velocity = NULL;
         static mwbool ignore;
         static real nbodyf = 0.0;
-        static real nbody_lightf = -1.0;
+        static real nbody_baryonf = -1.0;
         static Dwarf* comp1 = NULL;
         static Dwarf* comp2 = NULL;
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "nbody_light",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_lightf      },
+            { "nbody_baryon",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf      },
             { "comp1",                LUA_TUSERDATA,   DWARF_TYPE,              TRUE,    &comp1             },
             { "comp2",                LUA_TUSERDATA,   DWARF_TYPE,              TRUE,    &comp2             },
             { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
@@ -1192,11 +1207,11 @@ int nbGenerateMixedDwarf(lua_State* luaSt)
         
         handleNamedArgumentTable(luaSt, argTable, 1);
 
-        if (nbody_lightf < 0){
-            nbody_lightf = nbodyf / 2;
+        if (nbody_baryonf < 0){
+            nbody_baryonf = nbodyf / 2;
         }
 
-        return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_lightf, comp1, comp2, ignore,
+        return nbGenerateMixedDwarfCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_baryonf, comp1, comp2, ignore,
                                                                  *position, *velocity);
 }
 
