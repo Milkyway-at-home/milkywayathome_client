@@ -61,23 +61,7 @@ static inline real density( real r, const Dwarf* comp1, const Dwarf* comp2)
 
 
 /*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-static inline real first_derivative_two_component(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
-{
-    /*yes, this does in fact use a 5-point stencil*/
-    real h = 0.001;
-    real deriv;
-    real p1, p2, p3, p4, denom;
-    
-    p1 =   1.0 * (*func)( (x - 2.0 * h), comp1, comp2);
-    p2 = - 8.0 * (*func)( (x - h)      , comp1, comp2);
-    p3 = - 1.0 * (*func)( (x + 2.0 * h), comp1, comp2);
-    p4 =   8.0 * (*func)( (x + h)      , comp1, comp2);
-    denom = inv( 12.0 * h);
-    deriv = (p1 + p2 + p3 + p4) * denom;
-    return deriv;
-}
-
-static inline real first_derivative_one_component(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
+static inline real first_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
 {
     /*yes, this does in fact use a 5-point stencil*/
     real h = 0.001;
@@ -93,24 +77,7 @@ static inline real first_derivative_one_component(real (*func)(const Dwarf*, rea
     return deriv;
 }
 
-static inline real second_derivative_two_component(real (*func)(real, const Dwarf*, const Dwarf*), real x, const Dwarf* comp1, const Dwarf* comp2)
-{
-    /*yes, this also uses a five point stencil*/
-    real h = 0.001;
-    real deriv;
-    real p1, p2, p3, p4, p5, denom;
-
-    p1 = - 1.0 * (*func)( (x + 2.0 * h) , comp1, comp2);
-    p2 =  16.0 * (*func)( (x + h)       , comp1, comp2);
-    p3 = -30.0 * (*func)( (x)           , comp1, comp2);
-    p4 =  16.0 * (*func)( (x - h)       , comp1, comp2);
-    p5 = - 1.0 * (*func)( (x - 2.0 * h) , comp1, comp2);
-    denom = inv( 12.0 * h * h);
-    deriv = (p1 + p2 + p3 + p4 + p5) * denom;
-    return deriv;
-}
-
-static inline real second_derivative_one_component(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
+static inline real second_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
 {
     /*yes, this also uses a five point stencil*/
     real h = 0.001; 
@@ -408,22 +375,23 @@ static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy, mw
     
     real first_deriv_psi;
     real second_deriv_psi;
-    real first_deriv_density; /*Single component needed for density derivatives*/
+    real first_deriv_density; 
     real second_deriv_density; 
     real dsqden_dpsisq;/*second derivative of density with respect to -potential (psi) */
     real denominator; /*the demoninator of the distribution function: 1/sqrt(E-Psi)*/
     real diff;
     real func;
 
-    first_deriv_psi      = first_derivative_two_component(potential, ri, comp1, comp2);
-    second_deriv_psi = second_derivative_two_component(potential, ri, comp1, comp2);
+    first_deriv_psi  = first_derivative(get_potential, ri, comp1) + first_derivative(get_potential, ri, comp2);
+ 
+    second_deriv_psi = second_derivative(get_potential, ri, comp1) + second_derivative(get_potential, ri, comp2);
 
     if (!isDark) {
-        first_deriv_density  = first_derivative_one_component(get_density,   ri, comp1);
-        second_deriv_density = second_derivative_one_component(get_density,   ri, comp1);
+        first_deriv_density  = first_derivative(get_density,   ri, comp1);
+        second_deriv_density = second_derivative(get_density,   ri, comp1);
     } else {
-        first_deriv_density  = first_derivative_one_component(get_density,   ri, comp2);
-        second_deriv_density = second_derivative_one_component(get_density,   ri, comp2);
+        first_deriv_density  = first_derivative(get_density,   ri, comp2);
+        second_deriv_density = second_derivative(get_density,   ri, comp2);
     }
     
     /*

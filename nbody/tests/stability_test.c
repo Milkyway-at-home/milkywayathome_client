@@ -226,12 +226,12 @@ int main()
     printf("Starting stability test...\n");
     
     const char* dwarf_params[] = {
-        "0.1",       
+        "0.2",       
         "0.0",       
-        "0.181216",  
-        "0.182799",  
-        "1.22251",   
-        "0.0126171"  
+        "0.2",  
+        "0.2",  
+        "12.0",   
+        "0.2"  
     };
 
     char cwd[1024];
@@ -281,7 +281,7 @@ int main()
     real* radius_array_baryon = mwCallocA(num_bins_baryon, sizeof(real));
     real* radius_array_dark = mwCallocA(num_bins_dark, sizeof(real));
 
-    // Create bin edges (like np.histogram)
+    // Create bin edges 
     real* bin_edges_baryon = mwCallocA(num_bins_baryon + 1, sizeof(real));
     real* bin_edges_dark = mwCallocA(num_bins_dark + 1, sizeof(real));
 
@@ -295,10 +295,10 @@ int main()
 
     // Set bin centers
     for (int i = 0; i < num_bins_baryon; i++) {
-        radius_array_baryon[i] = (bin_edges_baryon[i] + bin_edges_baryon[i + 1]) / 2.0;
+        radius_array_baryon[i] = bin_edges_baryon[i] + bin_width / 2.0;
     }
     for (int i = 0; i < num_bins_dark; i++) {
-        radius_array_dark[i] = (bin_edges_dark[i] + bin_edges_dark[i + 1]) / 2.0;
+        radius_array_dark[i] = bin_edges_dark[i] + bin_width / 2.0;
     }
 
     // Print bin edges and centers
@@ -351,116 +351,226 @@ int main()
     }
     printf("N-body simulation completed successfully\n");
 
-    // Calculate the total number of timesteps in the simulation (2 Gyr)
-    int total_timesteps = 2 / timestep;
+    // Calculate the KL divergence at the initial timestep
+    const char* initial_output_filename = "0";
+    printf("Checking for initial output file: %s\n", initial_output_filename);
 
-    // Calculate how many timesteps 0.1 Gyr is in the simulation
-    int timesteps_0_1_Gyr = 0.1 / timestep;
-
-    // Calculate the KL divergence at multiple timesteps
-    
-
-    const char* output_filename = "output.out";
-    printf("Checking for output file: %s\n", output_filename);
-    
-    // Check if the output file exists
-    if (access(output_filename, F_OK) == -1) {
-        printf("Error: Output file '%s' does not exist\n", output_filename);
-        return 1;
-    }
-    printf("Output file exists, attempting to read...\n");
-    
-    ParticleCollection* data = read_particle_file(output_filename);
-    if (!data) {
-        printf("Failed to read particle file\n");
+    // Check if the initial output file exists
+    if (access(initial_output_filename, F_OK) == -1) {
+        printf("Error: Initial output file '%s' does not exist\n", initial_output_filename);
         return 1;
     }
 
-    printf("Successfully read %zu particles\n", data->count);
-    
-    // Print some basic info about the particles
-    if (data->count > 0) {
-        printf("First particle info:\n");
-        printf("  Type: %d\n", data->particles[0].type);
-        printf("  Position: (%f, %f, %f)\n", 
-               data->particles[0].x,
-               data->particles[0].y,
-               data->particles[0].z);
+    // Read the initial output file
+    ParticleCollection* initial_data = read_particle_file(initial_output_filename);
+    if (!initial_data) {
+        printf("Failed to read initial output file\n");
+        return 1;
     }
 
-    // Calculate the simulation density distribution for each component
-    real* simulation_density_baryon = mwCallocA(num_bins_baryon, sizeof(real));
-    real* simulation_density_dark = mwCallocA(num_bins_dark, sizeof(real));
+    printf("Successfully read %zu particles from initial file\n", initial_data->count);
 
-    // Initialize simulation densities to zero
+    // Calculate the initial density distribution for each component
+    real* initial_density_baryon = mwCallocA(num_bins_baryon, sizeof(real));
+    real* initial_density_dark = mwCallocA(num_bins_dark, sizeof(real));
+
+    // Initialize initial densities to zero
     for (int i = 0; i < num_bins_baryon; i++) {
-        simulation_density_baryon[i] = 0.0;
+        initial_density_baryon[i] = 0.0;
     }
     for (int i = 0; i < num_bins_dark; i++) {
-        simulation_density_dark[i] = 0.0;
+        initial_density_dark[i] = 0.0;
     }
 
-    // Calculate simulation densities using histogram binning
-    printf("Calculating simulation densities for baryon particles...\n");
+    // Calculate initial densities using histogram binning
+    printf("Calculating initial densities for baryon particles...\n");
     for (int i = 0; i < nbody_baryon; i++) {
-        if (i >= data->count) {
-            printf("Error: Trying to access particle %d but only have %zu particles\n", i, data->count);
+        if (i >= initial_data->count) {
+            printf("Error: Trying to access particle %d but only have %zu particles\n", i, initial_data->count);
             break;
         }
-        real radius = sqrt(data->particles[i].x * data->particles[i].x + 
-                          data->particles[i].y * data->particles[i].y + 
-                          data->particles[i].z * data->particles[i].z);
+        real radius = sqrt(initial_data->particles[i].x * initial_data->particles[i].x + 
+                        initial_data->particles[i].y * initial_data->particles[i].y + 
+                        initial_data->particles[i].z * initial_data->particles[i].z);
 
         // Find the bin for this radius
         for (int bin = 0; bin < num_bins_baryon; bin++) {
             if (radius >= bin_edges_baryon[bin] && radius < bin_edges_baryon[bin + 1]) {
-                simulation_density_baryon[bin] += 1.0;
+                initial_density_baryon[bin] += 1.0;
                 break;
             }
         }
     }
 
-    printf("Calculating simulation densities for dark matter particles...\n");
+    printf("Calculating initial densities for dark matter particles...\n");
     for (int i = nbody_baryon; i < nbody; i++) {
-        if (i >= data->count) {
-            printf("Error: Trying to access particle %d but only have %zu particles\n", i, data->count);
+        if (i >= initial_data->count) {
+            printf("Error: Trying to access particle %d but only have %zu particles\n", i, initial_data->count);
             break;
         }
-        real radius = sqrt(data->particles[i].x * data->particles[i].x + 
-                          data->particles[i].y * data->particles[i].y + 
-                          data->particles[i].z * data->particles[i].z);
+        real radius = sqrt(initial_data->particles[i].x * initial_data->particles[i].x + 
+                        initial_data->particles[i].y * initial_data->particles[i].y + 
+                        initial_data->particles[i].z * initial_data->particles[i].z);
 
         // Find the bin for this radius
         for (int bin = 0; bin < num_bins_dark; bin++) {
             if (radius >= bin_edges_dark[bin] && radius < bin_edges_dark[bin + 1]) {
-                simulation_density_dark[bin] += 1.0;
+                initial_density_dark[bin] += 1.0;
                 break;
             }
         }
     }
 
-    // Print simulation densities
-    printf("Simulation baryon density distribution:\n");
+    // Print initial densities
+    printf("Initial baryon density distribution:\n");
     for (int i = 0; i < num_bins_baryon; i++) {
-        printf("%.6f ", simulation_density_baryon[i]);
+        printf("%.6f ", initial_density_baryon[i]);
     }
-    printf("\nSimulation dark matter density distribution:\n");
+    printf("\nInitial dark matter density distribution:\n");
     for (int i = 0; i < num_bins_dark; i++) {
-        printf("%.6f ", simulation_density_dark[i]);
+        printf("%.6f ", initial_density_dark[i]);
     }
     printf("\n");
 
-    // Calculate the Kullback-Leibler divergence for each component
-    real kl_divergence_baryon = kl_divergence(simulation_density_baryon, theoretical_density_baryon, num_bins_baryon);
-    real kl_divergence_dark = kl_divergence(simulation_density_dark, theoretical_density_dark, num_bins_dark);
+    // Kullback-Leibler divergence for each component for the initial timestep
+    real kl_divergence_baryon_initial = kl_divergence(initial_density_baryon, theoretical_density_baryon, num_bins_baryon);
+    real kl_divergence_dark_initial = kl_divergence(initial_density_dark, theoretical_density_dark, num_bins_dark);
 
-    printf("KL divergence for baryon component: %f\n", kl_divergence_baryon);
-    printf("KL divergence for dark matter component: %f\n", kl_divergence_dark);
-    
+    printf("KL divergence for baryon component: %f\n", kl_divergence_baryon_initial);
+    printf("KL divergence for dark matter component: %f\n", kl_divergence_dark_initial);
+
+    if (kl_divergence_baryon_initial > 0.01 || kl_divergence_dark_initial > 0.01) {
+        printf("Initial KL divergence is too high\n");
+        return 1;
+    }
+
     // Free the particle collection
-    printf("Freeing particle collection...\n");
-    free_particle_collection(data);
+    free_particle_collection(initial_data);
     printf("Particle collection freed successfully\n");
+
+    // Calculate the total number of timesteps in the simulation (using dwarf_param[0] which is 2.0 Gyr)
+    int total_timesteps = atof(dwarf_params[0]) / timestep;
+    printf("Total timesteps: %d\n", total_timesteps);
+
+    // Calculate how many timesteps 0.1 Gyr is in the simulation
+    int timesteps_0_1_Gyr = 0.1 / timestep;
+    printf("Timesteps 0.1 Gyr: %d\n", timesteps_0_1_Gyr);
+
+    //Calculating first timestep to start from
+    int first_timestep = timesteps_0_1_Gyr - 1;
+    printf("First timestep: %d\n", first_timestep);
+    
+    // Calculate the KL divergence at multiple timesteps
+    for (int i = first_timestep; i < total_timesteps; i += timesteps_0_1_Gyr) {
+        
+        printf("i: %d\n", i);
+        char output_filename[32];
+        snprintf(output_filename, sizeof(output_filename), "%d", i);
+        printf("Checking for output file: %s\n", output_filename);
+        
+        // Check if the output file exists
+        if (access(output_filename, F_OK) == -1) {
+            printf("Error: Output file '%s' does not exist\n", output_filename);
+            return 1;
+        }
+        printf("Output file exists, attempting to read...\n");
+        
+        ParticleCollection* data = read_particle_file(output_filename);
+        if (!data) {
+            printf("Failed to read particle file\n");
+            return 1;
+        }
+
+        printf("Successfully read %zu particles\n", data->count);
+        
+        // Print some basic info about the particles
+        if (data->count > 0) {
+            printf("First particle info:\n");
+            printf("  Type: %d\n", data->particles[0].type);
+            printf("  Position: (%f, %f, %f)\n", 
+                data->particles[0].x,
+                data->particles[0].y,
+                data->particles[0].z);
+        }
+
+        // Calculate the simulation density distribution for each component
+        real* simulation_density_baryon = mwCallocA(num_bins_baryon, sizeof(real));
+        real* simulation_density_dark = mwCallocA(num_bins_dark, sizeof(real));
+
+        // Initialize simulation densities to zero
+        for (int i = 0; i < num_bins_baryon; i++) {
+            simulation_density_baryon[i] = 0.0;
+        }
+        for (int i = 0; i < num_bins_dark; i++) {
+            simulation_density_dark[i] = 0.0;
+        }
+
+        // Calculate simulation densities using histogram binning
+        printf("Calculating simulation densities for baryon particles...\n");
+        for (int i = 0; i < nbody_baryon; i++) {
+            if (i >= data->count) {
+                printf("Error: Trying to access particle %d but only have %zu particles\n", i, data->count);
+                break;
+            }
+            real radius = sqrt(data->particles[i].x * data->particles[i].x + 
+                            data->particles[i].y * data->particles[i].y + 
+                            data->particles[i].z * data->particles[i].z);
+
+            // Find the bin for this radius
+            for (int bin = 0; bin < num_bins_baryon; bin++) {
+                if (radius >= bin_edges_baryon[bin] && radius < bin_edges_baryon[bin + 1]) {
+                    simulation_density_baryon[bin] += 1.0;
+                    break;
+                }
+            }
+        }
+
+        printf("Calculating simulation densities for dark matter particles...\n");
+        for (int i = nbody_baryon; i < nbody; i++) {
+            if (i >= data->count) {
+                printf("Error: Trying to access particle %d but only have %zu particles\n", i, data->count);
+                break;
+            }
+            real radius = sqrt(data->particles[i].x * data->particles[i].x + 
+                            data->particles[i].y * data->particles[i].y + 
+                            data->particles[i].z * data->particles[i].z);
+
+            // Find the bin for this radius
+            for (int bin = 0; bin < num_bins_dark; bin++) {
+                if (radius >= bin_edges_dark[bin] && radius < bin_edges_dark[bin + 1]) {
+                    simulation_density_dark[bin] += 1.0;
+                    break;
+                }
+            }
+        }
+
+        // Print simulation densities
+        printf("Simulation baryon density distribution:\n");
+        for (int i = 0; i < num_bins_baryon; i++) {
+            printf("%.6f ", simulation_density_baryon[i]);
+        }
+        printf("\nSimulation dark matter density distribution:\n");
+        for (int i = 0; i < num_bins_dark; i++) {
+            printf("%.6f ", simulation_density_dark[i]);
+        }
+        printf("\n");
+
+        // Kullback-Leibler divergence for each component
+        real kl_divergence_baryon = kl_divergence(simulation_density_baryon, theoretical_density_baryon, num_bins_baryon);
+        real kl_divergence_dark = kl_divergence(simulation_density_dark, theoretical_density_dark, num_bins_dark);
+
+        printf("KL divergence for baryon component: %f\n", kl_divergence_baryon);
+        printf("KL divergence for dark matter component: %f\n", kl_divergence_dark);
+
+        if (mw_fabs(kl_divergence_baryon - kl_divergence_baryon_initial) > 0.005 || mw_fabs(kl_divergence_dark - kl_divergence_dark_initial) > 0.005) {
+            printf("KL divergence fluctuation is too high showing instability\n");
+            return 1;
+        }
+
+        // Free data at the end of each iteration
+        free_particle_collection(data);
+        printf("Particle collection freed successfully\n");
+    }
     
     printf("Test completed successfully\n");
     return 0;
