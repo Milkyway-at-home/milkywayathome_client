@@ -1,6 +1,10 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- Test Environment Lua File 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
 -- This is the developer version of the lua parameter file. 
 -- It gives all the options you can have. 
@@ -24,18 +28,18 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 50000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
-totalLightBodies      = 10000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
+totalBodies           = 40000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
+totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
 nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                                                      -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
+run_null_potential    = true   -- -- NULL POTENTIAL SWITCH                                                    -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                                               -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
+LMC_body              = false    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
 LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
 LMC_Mass              = 449865.888  -- -- SMU                                                                  -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
@@ -43,7 +47,7 @@ CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DY
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
 
-UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
+UseOldSofteningLength = 1         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
@@ -105,8 +109,8 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false      -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+useMultiOutputs       = true      -- -- WRITE MULTIPLE OUTPUTS       -- --
+freqOfOutputs         = 1         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control      = false       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
@@ -300,15 +304,25 @@ function makeBodies(ctx, potential)
 
 
     if(ModelComponents == 2) then 
+        -- Create components first
+        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}
+        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}
+        
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,
             nbody_baryon  = totalLightBodies,
             prng          = prng,
             position      = finalPosition,
             velocity      = finalVelocity,
-            comp1         = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2         = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp1         = comp1,
+            comp2         = comp2,
             ignore        = true
+        }
+        
+        -- Store components in the model's table
+        firstModel.components = {
+            comp1 = comp1,
+            comp2 = comp2,
         }
         
     elseif(ModelComponents == 1) then
