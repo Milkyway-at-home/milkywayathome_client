@@ -64,8 +64,8 @@ int main()
     histogram4->histograms[1]->data[1].variable= 14;
     histogram4->histograms[1]->data[2].variable= 4;
     histogram4->histograms[1]->data[0].err= 2;      
-    histogram4->histograms[1]->data[1].err= 12; 
-    histogram4->histograms[1]->data[2].err= 5; 
+    histogram4->histograms[1]->data[1].err= 5; 
+    histogram4->histograms[1]->data[2].err= 12; 
 
     histogram5->histograms[1]->lambdaBins = 3;
     histogram5->histograms[1]->betaBins = 1;
@@ -94,27 +94,27 @@ int main()
         printf("\tFailed standard average bin calculation: likelihood was %2.2f, expected .5", avgScore);
         return 1;
     }
-    else if (avgScore2 < .499 && avgScore2 > .501)
+    else if (avgScore2 < .499 || avgScore2 > .501)
     {
         printf("\tFailed average bin calculation with missing data: likelihood was %2.2f, expected .5", avgScore2);
         return 1;
     }
-    else if (score < .499 && score > .501)
+    else if (score < .499 || score > .501)
     {
         printf("\tFailed standard bin calculation with avgBins=0: likelihood was %2.2f, expected .5", score);
         return 1;
     }
-    else if (score1 < .499 && score1 > .501)
+    else if (score1 < .499 || score1 > .501)
     {
         printf("\tFailed standard bin calculation with avgBins=1: likelihood was %2.2f, expected .5", score1);
         return 1;
     }
-    else if (score2 < .499 && score2 > .501)
+    else if (score2 < .499 || score2 > .501)
     {
         printf("\tFailed standard bin calculation with avgBins=2: likelihood was %2.2f, expected .5", avgScore);
         return 1;
     }
-    else if (boundScore < .499 && boundScore > .501)
+    else if (boundScore < .499 || boundScore > .501)
     {
         printf("\tFailed average bin calculation on boundary of histogram: likelihood was %2.2f, expected .5", avgScore);
         return 1;
