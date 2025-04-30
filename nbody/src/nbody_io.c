@@ -153,8 +153,8 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
-            mu_dec = nbVXVYVZtomuDec(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP,ctx->NGPra);
-            mu_ra = nbVXVYVZtomuRA(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP,ctx->NGPra);
+            mu_dec = nbVXVYVZtomuDec(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP);
+            mu_ra = nbVXVYVZtomuRA(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP);
             fprintf(f,
                     " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),

@@ -36,8 +36,8 @@ int testObject(mwvector* to, real compareMuDec, real compareMuRA) {
     real epsilon = 0.1;
     real mudec, mura;
 
-    mudec = nbVXVYVZtomuDec(to[0],to[1],ctx.sunVelx,ctx.sunVely,ctx.sunVelz,ctx.sunGCDist,ctx.NGPdec,ctx.lNCP,ctx.NGPra);
-    mura = nbVXVYVZtomuRA(to[0],to[1],ctx.sunVelx,ctx.sunVely,ctx.sunVelz,ctx.sunGCDist,ctx.NGPdec,ctx.lNCP,ctx.NGPra);
+    mudec = nbVXVYVZtomuDec(to[0],to[1],ctx.sunVelx,ctx.sunVely,ctx.sunVelz,ctx.sunGCDist,ctx.NGPdec,ctx.lNCP);
+    mura = nbVXVYVZtomuRA(to[0],to[1],ctx.sunVelx,ctx.sunVely,ctx.sunVelz,ctx.sunGCDist,ctx.NGPdec,ctx.lNCP);
     mw_printf("mura: %.15f, mudec: %.15f\n", -mudec, -mura);
 
     if ((mw_abs(mudec - compareMuDec) >= epsilon) || (mw_abs(mura - compareMuRA) >= epsilon)) {
