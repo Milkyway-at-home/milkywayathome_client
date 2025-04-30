@@ -899,8 +899,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 location = calc_distance(Pos(p), ctx->sunGCDist);
-                mu_dec = nbVXVYVZtomuDec(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->lNCP);
-                mu_ra = nbVXVYVZtomuRA(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->lNCP);
+                mu_dec = nbVXVYVZtomuDec(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->lNCP, ctx->NGPra);
+                mu_ra = nbVXVYVZtomuRA(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->lNCP, ctx->NGPra);
 
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  

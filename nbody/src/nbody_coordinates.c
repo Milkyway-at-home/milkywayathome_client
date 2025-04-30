@@ -219,15 +219,12 @@ mwvector cartesianalign(mwvector v, real rNGPdec, real rNGPra, real rlNCP)
 }
 
 real nbVXVYVZtomuRA(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
-                                real sunGCDist, real NGPdec, real lNCP)
+                                real sunGCDist, real NGPdec, real lNCP, real NGPra)
 {
     mwvector xyz = xyzin;
     mwvector vxvyvz = vxvyvzin;
 
     real mura;
-    NGPdec = d2r(27.4);
-    real NGPra = d2r(192);
-    lNCP = d2r(122);
 
     X(xyz) += sunGCDist;
     X(vxvyvz) -= sunVelx;
@@ -254,15 +251,12 @@ real nbVXVYVZtomuRA(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVel
 }
 
 real nbVXVYVZtomuDec(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
-                                real sunGCDist, real NGPdec, real lNCP)
+                                real sunGCDist, real NGPdec, real lNCP, real NGPra)
 {
     mwvector xyz = xyzin;
     mwvector vxvyvz = vxvyvzin;
 
     real mudec;
-    NGPdec = d2r(27.4);
-    real NGPra = d2r(192);
-    lNCP = d2r(122);
 
     X(xyz) += sunGCDist;
     X(vxvyvz) -= sunVelx;
