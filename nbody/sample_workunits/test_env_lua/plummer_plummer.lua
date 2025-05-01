@@ -16,6 +16,7 @@
 -- matter component parameters. meaning you input should look like
 -- ft, time_ratio, rscale_baryon, radius_ratio, baryon mass, mass ratio
 -- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2 (52.5, 28.6, -156, 79, 107)
+-- 222288.47 solar masses = 1 Structure Mass Unit (SMU)
 
 -- available option: using a user inputted list of bodies. Sent in as an 
 -- optional arguement after dwarf parameter list
@@ -28,8 +29,8 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 40000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
-totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
+totalBodies           = 88257   -- -- NUMBER OF TOTAL BODIES                                                   -- --
+totalLightBodies      = 10000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
 nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                                                      -- --
@@ -47,7 +48,7 @@ CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DY
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
 
-UseOldSofteningLength = 1         -- -- Uses old softening length formula from v1.76 and eariler               -- --
+UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
@@ -208,7 +209,7 @@ function makeContext()
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = get_soft_par(),
+      eps2        = 1e-4,
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,

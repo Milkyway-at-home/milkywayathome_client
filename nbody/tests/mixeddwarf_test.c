@@ -81,7 +81,7 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 }
 
 //This function checks to ensure that the 2 components are individually and the dwarf as a whole are centered at 0
-int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies)
+int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies, unsigned int numBodies_light)
 {
 	//Note, this function relies on the fact that half the bodies are baryonic and half dark matter
 	int failed = 0;
@@ -105,7 +105,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
     real cm_vy_comp2 = 0.0;
     real cm_vz_comp2 = 0.0;
 
-	for(unsigned int i = 0; i < numBodies / 2; i++)
+	for(unsigned int i = 0; i < numBodies_light; i++)
 	{
 		cm_x_comp1 += mass[i] * pos[i].x;
 		cm_y_comp1 += mass[i] * pos[i].y;
@@ -116,7 +116,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 		cm_vy_comp1 += mass[i] * vel[i].y;
 	}
 
-	for(unsigned int i = numBodies / 2; i < numBodies; i++)
+	for(unsigned int i = numBodies_light; i < numBodies; i++)
 	{
 		cm_x_comp2 += mass[i] * pos[i].x;
 		cm_y_comp2 += mass[i] * pos[i].y;
@@ -220,7 +220,7 @@ int testPlummerPlummer()
 	failed += checkVirialRatio(comp1, comp2, positions, velocities, masses, numBodies);
 
 	printf("Checking center of mass and momentum of plummer-plummer\n");
-	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies);
+	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies, numBodies_light);
 
 	free(positions);
 	free(velocities);
@@ -274,7 +274,7 @@ int testPlummerNFW()
 	failed += checkVirialRatio(comp1, comp2, positions, velocities, masses, numBodies);
 
 	printf("Checking center of mass and momentum of plummer-NFW\n");
-	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies);
+	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies, numBodies_light);
 
 	free(positions);
 	free(velocities);
