@@ -382,10 +382,12 @@ static real fun(real ri, const Dwarf* comp1, const Dwarf* comp2, real energy, mw
     real diff;
     real func;
 
+    // Potential derivatives must be calculated with both components combined since the velocity is dependent on the total potential of the dwarf
     first_deriv_psi  = first_derivative(get_potential, ri, comp1) + first_derivative(get_potential, ri, comp2);
  
     second_deriv_psi = second_derivative(get_potential, ri, comp1) + second_derivative(get_potential, ri, comp2);
 
+    // Density derivatives must be calculated for each component so that baryons are not assigned dark matter velocities and vice versa
     if (!isDark) {
         first_deriv_density  = first_derivative(get_density,   ri, comp1);
         second_deriv_density = second_derivative(get_density,   ri, comp1);

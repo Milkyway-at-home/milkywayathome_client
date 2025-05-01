@@ -11,6 +11,9 @@
 -- The second half of the file is code that generates the initial 
 -- conditions of the simulation, and is not something that
 -- the typical end user will need to change. 
+
+-- NOTE --
+-- 1 Structure Mass Unit (SMU) = 222288.47 solar masses
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
