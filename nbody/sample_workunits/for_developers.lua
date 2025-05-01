@@ -29,7 +29,7 @@ totalBodies           = 40000   -- -- NUMBER OF TOTAL BODIES                    
 totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
-nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                                                      -- --
+nbodyMinVersion       = "1.90"  -- -- MINIMUM APP VERSION                                                      -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
