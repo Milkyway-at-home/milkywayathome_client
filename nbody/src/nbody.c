@@ -295,9 +295,6 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         likelihood_PM_dec  = likelihoodArray[8];
         likelihood_PM_ra   = likelihoodArray[9];
 
-        mw_printf("Dec likelihood:%.15f",-likelihood_PM_dec);
-        mw_printf("RA likelihood:%.15f",-likelihood_PM_ra);
-
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
           1.#INF00000, -1.#INF00000, or 0.#INF000000.  The server reads these as -1, 1, and 0

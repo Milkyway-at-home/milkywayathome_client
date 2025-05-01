@@ -1338,7 +1338,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         if(usedOrbitParams) // new histogram output, there are more parameters to read in
         {
             rc = sscanf(lineBuf,
-                        "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                        "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
                         &useBin,
                         &lambda,
                         &beta,

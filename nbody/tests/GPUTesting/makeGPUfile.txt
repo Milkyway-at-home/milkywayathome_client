@@ -62,9 +62,9 @@ add_executable(mixeddwarf_test mixeddwarf_test.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
-add_executable(propmot_test propmot_test.c)
+add_executable(propermotion_test propermotion_test.c)
 
-set(propmot_test_link_libs "${nbody_exe_link_libs}")
+set(propermotion_test_link_libs "${nbody_exe_link_libs}")
 
 add_executable(gpu_sanity gpu_test.c)
 
@@ -88,7 +88,7 @@ if(NBODY_CRLIBM)
     list(APPEND poisson_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND virial_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
-    list(APPEND propmot_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND propermotion_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND gpu_sanity_link_libs ${CRLIBM_LIBRARY})
     list(APPEND gpu_basicModelsPart1_link_libs ${CRLIBM_LIBRARY})
     list(APPEND gpu_basicModelsPart2_link_libs ${CRLIBM_LIBRARY})
@@ -100,7 +100,7 @@ milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_li
 milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_link_libs}")
 milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
-milkyway_link(propmot_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propmot_test_link_libs}")
+milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermotion_test_link_libs}")
 milkyway_link(gpu_sanity ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_sanity_link_libs}")
 milkyway_link(gpu_basicModelsPart1 ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_basicModelsPart1_link_libs}")
 milkyway_link(gpu_basicModelsPart2 ${BOINC_APPLICATION} ${NBODY_STATIC} "${gpu_basicModelsPart2_link_libs}")
@@ -132,7 +132,7 @@ add_test(NAME virial_test COMMAND virial_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
-add_test(NAME propmot_test COMMAND propmot_test)
+add_test(NAME propermotion_test COMMAND propermotion_test)
 
 add_test(NAME gpu_sanity
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"

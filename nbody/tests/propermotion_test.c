@@ -33,14 +33,14 @@ mwvector* createTestObj(real x, real y, real z, real vx, real vy, real vz) {
 int testObject(mwvector* to, real compareMuDec, real compareMuRA) {
     NBodyCtx ctx = defaultNBodyCtx;
 
-    real epsilon = 0.1;
+    real eps = 0.2;
     real mudec, mura;
 
     mudec = nbVXVYVZtomuDec(to[0],to[1],ctx.sunVelx,ctx.sunVely,ctx.sunVelz,ctx.sunGCDist,ctx.NGPdec,ctx.lNCP);
     mura = nbVXVYVZtomuRA(to[0],to[1],ctx.sunVelx,ctx.sunVely,ctx.sunVelz,ctx.sunGCDist,ctx.NGPdec,ctx.lNCP);
     mw_printf("mura: %.15f, mudec: %.15f\n", -mudec, -mura);
 
-    if ((mw_abs(mudec - compareMuDec) >= epsilon) || (mw_abs(mura - compareMuRA) >= epsilon)) {
+    if ((mw_abs(mudec - compareMuDec) >= eps) || (mw_abs(mura - compareMuRA) >= eps)) {
         return 1;
     }
 

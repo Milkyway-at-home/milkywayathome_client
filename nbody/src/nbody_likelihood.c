@@ -132,7 +132,6 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 return NAN;
             }
             dec_pm_component = nbLikelihood(dat->histograms[6], match->histograms[6]);
-            mw_printf("Dec component is: %.15f\n",-dec_pm_component);
             likelihood += dec_pm_component;
 
             if(!dat->usage[7] || !match->usage[7])
@@ -141,7 +140,6 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 return NAN;
             }
             ra_pm_component = nbLikelihood(dat->histograms[7], match->histograms[7]);
-            mw_printf("RA component is: %.15f\n",-ra_pm_component);
             likelihood += ra_pm_component;
         }
         

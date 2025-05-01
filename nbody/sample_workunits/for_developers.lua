@@ -86,7 +86,7 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = true    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
 use_beta_disps       = true    -- use beta dispersions in likelihood
@@ -373,7 +373,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expects either 6, 7, 12, or 13 arguments, and optional manual body list")
+assert((#arg == 6 or #arg == 7 or #arg == 12 or #arg == 13), "Expects either 6, 7, 12, or 13 arguments, and optional manual body list")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 --argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
