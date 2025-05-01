@@ -21,7 +21,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.86"      -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.90"      -- -- MINIMUM APP VERSION
 
 run_null_potential    = false       -- -- NULL POTENTIAL SWITCH
 use_tree_code         = true        -- -- USE TREE CODE (NOT EXACT)
@@ -74,6 +74,7 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST
 -- -- -- -- -- for the generation of the dwarf bodies -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies      = 40000        -- -- Number of Bodies
+totalLightBodies = 20000        -- -- Number of Baryons
 evolveTime       = 3.0          -- -- Forward Time (Gyr)
 revOrbTime       = 3.0          -- -- Reverse Orbit Time (Gyr)
 rscale_l         = 0.3          -- -- Baryonic Radius (kpc)
@@ -343,13 +344,14 @@ function makeBodies(ctx, potential)
 
     if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
-            nbody       = totalBodies,
-            prng        = prng,
-            position    = finalPosition,
-            velocity    = finalVelocity,
-            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
-            ignore      = true
+            nbody        = totalBodies,
+            nbody_baryon = totalLightBodies,
+            prng         = prng,
+            position     = finalPosition,
+            velocity     = finalVelocity,
+            comp1        = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp2        = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            ignore       = true
         }
         
     elseif(ModelComponents == 1) then
