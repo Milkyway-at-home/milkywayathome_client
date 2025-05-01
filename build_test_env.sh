@@ -63,6 +63,6 @@ fi
   make mixeddwarf_test
   make nbody_test_driver
   make stability_test
-  make propmot_test
+  make proper_motion_test
   make all
 
