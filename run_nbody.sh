@@ -44,8 +44,8 @@ fi
 if $compare_only 
 then
     ./milkyway_nbody \
-    -h $PathToMilkyWayAtHomeClientDirectory/inputs/test_nbody100000.hist \
-    -S $PathToMilkyWayAtHomeClientDirectory/outputs/resultstemp.hist \
+    -h $PathToMilkyWayAtHomeClientDirectory/input/input.hist \
+    -S $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
 
 fi
 

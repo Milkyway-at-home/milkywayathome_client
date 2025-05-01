@@ -81,7 +81,7 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 }
 
 //This function checks to ensure that the 2 components are individually and the dwarf as a whole are centered at 0
-int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies)
+int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies, unsigned int numBodies_light)
 {
 	//Note, this function relies on the fact that half the bodies are baryonic and half dark matter
 	int failed = 0;
@@ -105,7 +105,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
     real cm_vy_comp2 = 0.0;
     real cm_vz_comp2 = 0.0;
 
-	for(unsigned int i = 0; i < numBodies / 2; i++)
+	for(unsigned int i = 0; i < numBodies_light; i++)
 	{
 		cm_x_comp1 += mass[i] * pos[i].x;
 		cm_y_comp1 += mass[i] * pos[i].y;
@@ -116,7 +116,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 		cm_vy_comp1 += mass[i] * vel[i].y;
 	}
 
-	for(unsigned int i = numBodies / 2; i < numBodies; i++)
+	for(unsigned int i = numBodies_light; i < numBodies; i++)
 	{
 		cm_x_comp2 += mass[i] * pos[i].x;
 		cm_y_comp2 += mass[i] * pos[i].y;
@@ -183,7 +183,8 @@ int testPlummerPlummer()
 {
 	int failed = 0;
 	
-	unsigned int numBodies = 10000;
+	unsigned int numBodies = 50000;
+	unsigned int numBodies_light = 10000;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
 	real* masses           = mwCalloc(numBodies, sizeof(real));
@@ -205,21 +206,21 @@ int testPlummerPlummer()
 	//Make the two plummers identical, an arbtrary choice
 	Dwarf* comp2       = mwMalloc(sizeof(Dwarf));
 	comp2->type        = comp1->type;
-	comp2->mass        = comp1->mass;
-	comp2->scaleLength = comp1->scaleLength;
+	comp2->mass        = 48.0;
+	comp2->scaleLength = 0.8;
 
 	dsfmt_t prng;
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, numBodies_light, comp1, comp2, rshift, vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-plummer\n");
 	failed += checkVirialRatio(comp1, comp2, positions, velocities, masses, numBodies);
 
 	printf("Checking center of mass and momentum of plummer-plummer\n");
-	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies);
+	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies, numBodies_light);
 
 	free(positions);
 	free(velocities);
@@ -236,6 +237,7 @@ int testPlummerNFW()
 	int failed = 0;
 	
 	unsigned int numBodies = 10000; //The more bodies, the better the virial ratio will be. This is a good number of bodies
+	unsigned int numBodies_light = numBodies / 2;
 	mwvector* positions    = mwCalloc(numBodies, sizeof(mwvector));
 	mwvector* velocities   = mwCalloc(numBodies, sizeof(mwvector));
 	real* masses           = mwCalloc(numBodies, sizeof(real));
@@ -265,14 +267,14 @@ int testPlummerNFW()
 	dsfmt_init_gen_rand(&prng, 1234); //initialize the random variable
 
 	//Actually generate the dwarf bodies by calling a special version of the actual generation function from nbody_mixeddwarf.c
-	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, comp1, comp2, rshift, vshift);
+	nbGenerateMixedDwarfCore_TESTVER(positions, velocities, masses, &prng, numBodies, numBodies_light, comp1, comp2, rshift, vshift);
 	//printf("x: %1f y: %1f z: %1f vx: %1f vy: %1f vz: %1f\n", positions[0].x, positions[0].y, positions[0].z, velocities[0].x, velocities[0].y, velocities[0].z);
 	
 	printf("Checking Virial stability of plummer-NFW\n");
 	failed += checkVirialRatio(comp1, comp2, positions, velocities, masses, numBodies);
 
 	printf("Checking center of mass and momentum of plummer-NFW\n");
-	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies);
+	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies, numBodies_light);
 
 	free(positions);
 	free(velocities);

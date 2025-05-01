@@ -4,6 +4,9 @@ cd "$(dirname "$0")"
 PathToMilkyWayAtHomeClientDirectory="$(pwd)"
 echo "Path to milkywayathome_client directory: $PathToMilkyWayAtHomeClientDirectory"
 
+mkdir -p output
+mkdir -p input
+
 rm -r build
 mkdir build
 cd build
