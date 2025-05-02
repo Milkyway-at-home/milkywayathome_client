@@ -32,6 +32,11 @@ const NBodyCtx defaultNBodyCtx =
     /* .timeBack        */  0.0,
     /* .treeRSize       */  DEFAULT_TREE_ROOT_SIZE,
     /* .sunGCDist       */  DEFAULT_SUN_GC_DISTANCE,
+    /* .sunVelx         */  DEFAULT_SUN_VEL_X,
+    /* .sunVely         */  DEFAULT_SUN_VEL_Y,
+    /* .sunVelz         */  DEFAULT_SUN_VEL_Z,
+    /* .NGPdec          */  DEFAULT_NGP_DEC,
+    /* .lNCP            */  DEFAULT_L_NCP,
 
     /* .b               */  DEFAULT_B_START_COORD,
     /* .r               */  DEFAULT_R_START_COORD,
@@ -49,6 +54,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .useBetaComp     */  DEFAULT_USE_BETA_COMP,
     /* .useVlos         */  DEFAULT_USE_VLOS,
     /* .useDist         */  DEFAULT_USE_DIST, 
+    /* .usePropMot      */  DEFAULT_USE_PROP_MOT,
     /* .MultiOutput     */  FALSE,
 
     /* .OutputLB        */  FALSE,
@@ -62,10 +68,12 @@ const NBodyCtx defaultNBodyCtx =
     /* .BetaSigma       */  DEFAULT_SIGMA_CUTOFF,
     /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
     /* .DistSigma       */  DEFAULT_SIGMA_CUTOFF,
+    /* .PMSigma         */  DEFAULT_SIGMA_CUTOFF,
     /* .IterMax         */  DEFAULT_SIGMA_ITER,
     /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
+    /* .PMCorrect       */  DEFAULT_DISP_CORRECTION,
 
     /* .LMC             */  FALSE,
     /* .LMCmass         */  0.0,

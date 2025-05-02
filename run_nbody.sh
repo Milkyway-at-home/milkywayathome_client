@@ -41,6 +41,7 @@ fi
 #-S -> use emd, cost, beta dispersion
 #-V -> use emd, cost, velocity dispersion
 #-D -> use emd, cost, beta dispersion and velocity dispersion
+#-A -> compare all components of the likelihood 
 if $compare_only 
 then
     ./milkyway_nbody \
