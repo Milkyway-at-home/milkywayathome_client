@@ -347,8 +347,8 @@ typedef struct
     // 3: vlos avg
     // 4: beta avg
     // 5: dist avg
-    mwbool usage[6];
-    NBodyHistogram* histograms[6]; 
+    mwbool usage[7];
+    NBodyHistogram* histograms[7]; 
 } MainStruct;
 
 /* Mutable state used during an evaluation */
@@ -400,6 +400,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool useBetaComp;            /* whether or not to use the avg beta comparison */
     mwbool useVlos;                /* whether or not to use the avg vlos comparison */
     mwbool useDist;                /* whether or not to use the avg distance comparison */
+    mwbool usePropMot; /* whether or not to use the proper motion comparison */
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -433,7 +434,7 @@ typedef struct MW_ALIGN_TYPE
                            0, 0, 0, 0, 0, 0,                                                  \
                            0, 0,                                                             \
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
+                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
                            NULL, NULL, NULL, NULL}
 
 
@@ -449,7 +450,13 @@ typedef struct MW_ALIGN_TYPE
     real timeEvolve;
     real timeBack;
     real treeRSize;
-    real sunGCDist;
+
+    real sunGCDist; /* constants */
+    real sunVelx;
+    real sunVely;
+    real sunVelz;
+    real NGPdec;
+    real lNCP;
 
     real b;     /* orbital parameters */
     real r;
@@ -467,6 +474,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool useBetaComp;       /* use the beta average comparison calc */
     mwbool useVlos;           /* use the line of sight velocity comparison calc */
     mwbool useDist;           /* use the average distance comparison calc */
+    mwbool usePropMot;        /* use the proper motion comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
 
     mwbool OutputLB;          /* Puts LB information in output file '-o' */
@@ -480,10 +488,12 @@ typedef struct MW_ALIGN_TYPE
     real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
     real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
     real DistSigma;           /* sigma cutoff for the outlier rejection for the bin dists dispersions */
+    real PMSigma;             /* sigma cutoff for the proper motion */
     real IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
     real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
     real DistCorrect;         /* correction factor for correcting the distribution after outlier rejection */
+    real PMCorrect;           /* correction factor for correcting the distribution after outlier rejection */
 
     mwbool LMC;
 
@@ -504,13 +514,13 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                    \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
-                         FALSE, FALSE, FALSE, FALSE,                                                    \
+                         FALSE, FALSE, FALSE, FALSE, FALSE,                                             \
                          0, 0,                                                                          \
-                         0, 0, 0, 0, 0, 0, 0,                                                           \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0,                                                     \
                          FALSE,                                                                         \
                          0, 0, FALSE, 0,                                                                \
                          0,                                                                             \

@@ -406,10 +406,16 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram, i
     {
         if (data->data[i].useBin)
         {
-            if (avgBins>1 && avgBins%2!=0) /*calculate average of bins used for beta dispersion calculation, can only average over an odd number of bins*/
-            {  
+            if (avgBins>1) /*calculate average of bins used for beta dispersion calculation, can only average over an odd number of bins*/
+            {
+                if (avgBins%2 == 0)
+                {
+                    printf("\tAveraging over an even number of bins is not currently supported, setting number to one less (%2d) \n", avgBins-1);
+                    avgBins -= 1;
+                }  
                 unsigned int n = avgBins; /*number of bins used in average*/
-                real varSum = 0.0; 
+                real varSum = 0.0;
+                real valSum = 0.0; 
                 for (unsigned int k = 0; k < avgBins; ++k)
                 {
                     int index = i - (avgBins-1)/2 + k;
@@ -425,10 +431,13 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram, i
                     else
                     {
                         varSum += sqr(histogram->data[index].err);
+                        valSum += histogram->data[index].variable;
                     }
                 }
-                err_hist = sqrt(varSum)/n; /*variance of the average is the sum of the variances/n^2 */ 
+                err_hist = mw_sqrt(varSum)/n; /*variance of the average is the sum of the variances/n^2 */ 
                 err_data = data->data[i].err;
+                Hist = valSum/n; /*average value across bins used */ 
+                Data = data->data[i].variable;
             }
             else
             {
@@ -437,31 +446,7 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram, i
             }
             if(err_data > 0)
             {
-                if (avgBins>1 && avgBins%2!=0) /*calculate average of bins used for beta dispersion calculation, can only average over an odd number of bins*/
-                {  
-                    unsigned int n = avgBins; /*number of bins used in average*/
-                    real valSum = 0.0; 
-                    for (unsigned int k = 0; k < avgBins; ++k)
-                    {
-                        int index = i - (avgBins-1)/2 + k;
-                        if (index<0 || index>=nbins) /*do not try to use bins that are off the range of the histogram or have no data */
-                        {
-                            n -= 1;
-                        }
-                        else if (histogram->data[index].err<=0) /*do not try to use bins that have no damage*/
-                        {
-                            n -= 1;
-                        }
-                        
-                        else
-                        {
-                            valSum += histogram->data[index].variable;
-                        }
-                    }
-                    Hist = valSum/n; /*average value across bins used */ 
-                    Data = data->data[i].variable;
-                }
-                else
+                if (avgBins<=1) 
                 {
                     Data = data->data[i].variable;
                     Hist = histogram->data[i].variable;

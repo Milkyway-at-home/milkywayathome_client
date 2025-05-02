@@ -85,6 +85,7 @@ int main()
 
     real avgScore =  nbLikelihood(histogram->histograms[1], histogram2->histograms[1], histogram->histograms[1]->betaDispBins); //var 1 = 1, var 2 = 14, err 1 = 12, err 2 = 5, should give total difference and error of 13 -> 1 sigma difference -> likelihood 1
     real avgScore2 =  nbLikelihood(histogram->histograms[1], histogram3->histograms[1], histogram->histograms[1]->betaDispBins); //same numbers as above
+    real avgScore3 =  nbLikelihood(histogram->histograms[1], histogram2->histograms[1], 4); //same numbers as above
     real score =  nbLikelihood(histogram->histograms[1], histogram4->histograms[1], 0); //only center bin considered, so same numbers as above
     real score1 =  nbLikelihood(histogram->histograms[1], histogram4->histograms[1], 1); //only center bin considered, so same numbers as above
     real score2 =  nbLikelihood(histogram->histograms[1], histogram4->histograms[1], 2); //only center bin considered, so same numbers as above
@@ -97,6 +98,11 @@ int main()
     else if (avgScore2 < .499 || avgScore2 > .501)
     {
         printf("\tFailed average bin calculation with missing data: likelihood was %2.2f, expected .5", avgScore2);
+        return 1;
+    }
+    else if (avgScore2 < .499 || avgScore2 > .501)
+    {
+        printf("\tFailed average bin calculation with avgBins=4: likelihood was %2.2f, expected .5", avgScore2);
         return 1;
     }
     else if (score < .499 || score > .501)
