@@ -79,7 +79,8 @@ typedef enum MWCALtargetEnum {
     MW_CAL_TARGET_THAMES    = 21,
     MW_CAL_TARGET_LOMBOK    = 22,
 
-    MW_CAL_TARGET_HAWAII    = 23
+    MW_CAL_TARGET_HAWAII    = 23,
+    MW_CAL_TARGET_RADEON_VII  = 24
 } MWCALtargetEnum;
 
 typedef struct
