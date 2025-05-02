@@ -67,6 +67,10 @@ add_executable(stability_test stability_test.c)
 
 set(stability_test_link_libs "${nbody_exe_link_libs}")
 
+add_executable(propermotion_test propermotion_test.c)
+
+set(propermotion_test_link_libs "${nbody_exe_link_libs}")
+
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
@@ -75,6 +79,7 @@ if(NBODY_CRLIBM)
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND average_bins_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND stability_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND propermotion_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
@@ -84,6 +89,7 @@ milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_li
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 milkyway_link(average_bins_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${average_bins_test_link_libs}")
 milkyway_link(stability_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${stability_test_link_libs}")
+milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermotion_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -114,6 +120,8 @@ add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests" COMMAND average_bins_test)
 
 add_test(NAME stability_test COMMAND stability_test)
+
+add_test(NAME propermotion_test COMMAND propermotion_test)
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
