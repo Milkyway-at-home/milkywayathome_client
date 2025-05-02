@@ -131,7 +131,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for the declination component of proper motion\n");
                 return NAN;
             }
-            dec_pm_component = nbLikelihood(dat->histograms[6], match->histograms[6]);
+            dec_pm_component = nbLikelihood(dat->histograms[6], match->histograms[6], 1);
             likelihood += dec_pm_component;
 
             if(!dat->usage[7] || !match->usage[7])
@@ -139,7 +139,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for the declination component of proper motion\n");
                 return NAN;
             }
-            ra_pm_component = nbLikelihood(dat->histograms[7], match->histograms[7]);
+            ra_pm_component = nbLikelihood(dat->histograms[7], match->histograms[7], 1);
             likelihood += ra_pm_component;
         }
         
@@ -297,14 +297,14 @@ real * nbSystemLikelihood(const NBodyState* st,
             mw_printf("One of these files does not contain any info for declination proper motion\n");
             return NANArray;
         }
-        dec_pm_component = nbLikelihood(data->histograms[6],histogram->histograms[6]);
+        dec_pm_component = nbLikelihood(data->histograms[6],histogram->histograms[6], 1);
         likelihood += dec_pm_component;
         if(!data->usage[7] || !histogram->usage[7])
         {
             mw_printf("One of these files does not contain any info for declination proper motion\n");
             return NANArray;
         }
-        ra_pm_component = nbLikelihood(data->histograms[7],histogram->histograms[7]);
+        ra_pm_component = nbLikelihood(data->histograms[7],histogram->histograms[7], 1);
         likelihood += ra_pm_component;
 
     }
