@@ -23,6 +23,9 @@
 
 #if ENABLE_CURSES
   #include <errno.h>
+  #if HAVE_SYS_STAT_H
+    #include <sys/stat.h>
+  #endif
 #endif
 
 
