@@ -57,7 +57,7 @@ set(virial_test_link_libs nbody
 
 add_executable(mixeddwarf_test mixeddwarf_test.c test_env_util.c)
 
-set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}" lua51)
+set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
 add_executable(stability_test stability_test.c test_env_util.c)
 

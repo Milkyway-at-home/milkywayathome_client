@@ -129,7 +129,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 
 		cm_vx_comp1 += mass[i] * vel[i].x;
 		cm_vy_comp1 += mass[i] * vel[i].y;
-		cm_vy_comp1 += mass[i] * vel[i].y;
+		cm_vz_comp1 += mass[i] * vel[i].z;
 	}
 
 	for(unsigned int i = numBodies_baryon; i < numBodies; i++)
@@ -140,7 +140,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 
 		cm_vx_comp2 += mass[i] * vel[i].x;
 		cm_vy_comp2 += mass[i] * vel[i].y;
-		cm_vy_comp2 += mass[i] * vel[i].y;
+		cm_vz_comp2 += mass[i] * vel[i].z;
 	}
 
 	cm_x_comp1 /= totalMass_l;
@@ -205,6 +205,8 @@ int testMixedDwarf(const char* dwarf_potential_type)
     Dwarf *comp1 = NULL;
     Dwarf *comp2 = NULL;
     real timestep = 0.0;
+    unsigned int numBodies = 0;
+    unsigned int numBodies_baryon = 0;
 
 	const char* dwarf_params[] = {
         EVOLUTION_TIME,
@@ -232,7 +234,7 @@ int testMixedDwarf(const char* dwarf_potential_type)
         }
     }
     
-    // Find the plummer_plummer.lua file
+    // Find the lua file
     input_lua_file = find_lua_file(dwarf_potential_type);
     if (!input_lua_file) {
         printf("Error: Could not find %s.lua in any expected location\n", dwarf_potential_type);
@@ -250,83 +252,48 @@ int testMixedDwarf(const char* dwarf_potential_type)
         free(input_lua_file);
         return failed;
     }
-    
-    unsigned int numBodies = (unsigned int)nbody;
-    unsigned int numBodies_baryon = (unsigned int)nbody_baryon;
-    
-    // Initialize Lua state
-	NBodyFlags nbf = {
-        .inputFile = input_lua_file,
-        .debugLuaLibs = TRUE,  // Enable debug output
-        .forwardedArgs = dwarf_params,
-        .numForwardedArgs = 6
-    };
-    
-    lua_State* luaSt = nbOpenLuaStateWithScript(&nbf, NULL);
+
+    // Convert to unsigned integers
+    numBodies = (unsigned int)nbody;
+    numBodies_baryon = (unsigned int)nbody_baryon;
+    nbody_dark = nbody - nbody_baryon;
+
+    printf("Total bodies: %u, Baryon bodies: %u, Dark matter bodies: %u\n", 
+           numBodies, numBodies_baryon, (unsigned int)nbody_dark);
+
+    // Initialize Lua state and PRNG
+    lua_State* luaSt = luaL_newstate();
     if (!luaSt) {
-        printf("Error: Failed to open Lua state\n");
+        printf("Error: Failed to create Lua state\n");
         failed = 1;
         free(input_lua_file);
+        free(comp1);
+        free(comp2);
         return failed;
     }
 
+    luaL_openlibs(luaSt);
+    
+    // Initialize random number generator
+    dsfmt_t prng;
+    dsfmt_init_gen_rand(&prng, 1234); // Using a fixed seed for reproducibility
+    
+    // Set up shift vectors (zero for testing)
+    mwvector rShift = ZERO_VECTOR;
+    mwvector vShift = ZERO_VECTOR;
+    
     // Generate the mixed dwarf
     printf("Generating mixed dwarf galaxy...\n");
     
-    // Instead of trying to create a PRNG directly, let Lua do the work
-    // Execute Lua code to create a PRNG and store it in a global variable
-    if (luaL_dostring(luaSt, "prng = mw.createRandom(1234)") != 0) {
-        printf("Error creating PRNG in Lua: %s\n", lua_tostring(luaSt, -1));
+    if (nbGenerateMixedDwarfCore(luaSt, &prng, numBodies, numBodies_baryon, comp1, comp2, FALSE, rShift, vShift) != 0) {
+        printf("Error: Failed to generate mixed dwarf\n");
         failed = 1;
-        lua_close(luaSt);
         free(input_lua_file);
+        free(comp1);
+        free(comp2);
+        lua_close(luaSt);
         return failed;
     }
-    
-    // Push a table onto the Lua stack with all the parameters needed for mixeddwarf generation
-    lua_newtable(luaSt);
-    
-    // Add nbody parameter
-    lua_pushnumber(luaSt, nbody);
-    lua_setfield(luaSt, -2, "nbody");
-    
-    // Add nbody_baryon parameter
-    lua_pushnumber(luaSt, nbody_baryon);
-    lua_setfield(luaSt, -2, "nbody_baryon");
-    
-    // Add comp1 and comp2
-    lua_pushlightuserdata(luaSt, comp1);
-    lua_setfield(luaSt, -2, "comp1");
-    
-    lua_pushlightuserdata(luaSt, comp2);
-    lua_setfield(luaSt, -2, "comp2");
-    
-    // Create and add position vector (at origin)
-    mwvector* position = mwCalloc(1, sizeof(mwvector));
-    position->x = 0.0;
-    position->y = 0.0;
-    position->z = 0.0;
-    lua_pushlightuserdata(luaSt, position);
-    lua_setfield(luaSt, -2, "position");
-    
-    // Create and add velocity vector (zero velocity)
-    mwvector* velocity = mwCalloc(1, sizeof(mwvector));
-    velocity->x = 0.0;
-    velocity->y = 0.0;
-    velocity->z = 0.0;
-    lua_pushlightuserdata(luaSt, velocity);
-    lua_setfield(luaSt, -2, "velocity");
-    
-    // Add ignore flag
-    lua_pushboolean(luaSt, 0);  // false
-    lua_setfield(luaSt, -2, "ignore");
-    
-    // Get the PRNG from the global variable we just created
-    lua_getglobal(luaSt, "prng");
-    lua_setfield(luaSt, -2, "prng");
-    
-    // Call the function with the table on the stack
-    nbGenerateMixedDwarf(luaSt);
     
 	printf("Mixed dwarf galaxy generated\n");
     
@@ -335,8 +302,6 @@ int testMixedDwarf(const char* dwarf_potential_type)
     if (!particles) {
         printf("Error: Failed to read initial.out file\n");
         failed = 1;
-        free(position);
-        free(velocity);
         lua_close(luaSt);
         free(input_lua_file);
         free(comp1);
@@ -349,8 +314,6 @@ int testMixedDwarf(const char* dwarf_potential_type)
         printf("Error: Expected %u particles, but got %zu\n", numBodies, particles->count);
         failed = 1;
         free_particle_collection(particles);
-        free(position);
-        free(velocity);
         lua_close(luaSt);
         free(input_lua_file);
         free(comp1);
@@ -372,8 +335,6 @@ int testMixedDwarf(const char* dwarf_potential_type)
         if (velocities) free(velocities);
         if (masses) free(masses);
         free_particle_collection(particles);
-        free(position);
-        free(velocity);
         lua_close(luaSt);
         free(input_lua_file);
         free(comp1);
@@ -405,8 +366,6 @@ int testMixedDwarf(const char* dwarf_potential_type)
     free(positions);
     free(velocities);
     free(masses);
-    free(position);
-    free(velocity);
 	free(input_lua_file);
 	free(comp1);
 	free(comp2);

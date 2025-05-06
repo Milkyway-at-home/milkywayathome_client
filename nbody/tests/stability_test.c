@@ -263,7 +263,7 @@ int testStability(const char* dwarf_potential_type) {
         MASS_RATIO
     };
     
-    // Find the plummer_plummer.lua file
+    // Find the lua file
     input_lua_file = find_lua_file(dwarf_potential_type);
     if (!input_lua_file) {
         fprintf(stderr, "Error: Could not find %s.lua in any expected location\n", dwarf_potential_type);
