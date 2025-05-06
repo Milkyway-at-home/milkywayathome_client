@@ -31,12 +31,12 @@ totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES             
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
 nbodyMinVersion       = "1.90"  -- -- MINIMUM APP VERSION                                                      -- --
 
-run_null_potential    = true   -- -- NULL POTENTIAL SWITCH                                                    -- --
+run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                                               -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
+LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
 LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
 preset_LMC_Mass       = 449865.888  -- -- SMU -- -- only if <12 params are used                                -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
