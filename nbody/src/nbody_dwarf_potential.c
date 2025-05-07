@@ -145,12 +145,12 @@ static real cored_pot(const Dwarf* model, real r)                               
 	const real rs = model->scaleLength;                                                                                  //
 	const real C4 = 0;                                                                                                   //
 	const real C1 = 0;                                                                                                   //
-	const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));                                                                                                         
+	const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));                                                                                                         
                                                                                                                          //
 	if(r <= r1)                                                                                                          //
 	{                                                                                                                    //
-		const real C2 = (C3-C1)/r1 - 4.0*M_PI*ps*mw_log(1+r1/rs)/r1 - 4.0*M_PI*p0*sqr(rc)*(mw_log(sqr(r1)+sqr(rc))/2 + rc*atan(r1/rc)/r1);
-		return 4.0*M_PI*p0*sqr(rc)*(mw_log(sqr(r)+sqr(rc)) + rc*atan(r/rc)/r) + C1/r + C2;                               // 
+		const real C2 = (C3-C1)/r1 - 4.0*M_PI*ps*mw_log(1+r1/rs)/r1 - 4.0*M_PI*p0*sqr(rc)*(mw_log(sqr(r1)+sqr(rc))/2 + rc*mw_atan(r1/rc)/r1);
+		return 4.0*M_PI*p0*sqr(rc)*(mw_log(sqr(r)+sqr(rc)) + rc*mw_atan(r/rc)/r) + C1/r + C2;                               // 
 	}                                                                                                                    //
 	else                                                                                                                 //
 	{                                                                                                                    //
@@ -174,9 +174,9 @@ real get_potential(const Dwarf* model, real r)
         case General_Hernquist:
             pot_temp = gen_hern_pot(model, r );
             break;
-         case Einasto:
-             einasto_pot(model, r);
-             break;
+        //case Einasto:
+        //    einasto_pot(model, r);
+        //    break;
         case Cored:
             pot_temp = cored_pot(model, r);
             break;
@@ -205,9 +205,9 @@ real get_density(const Dwarf* model, real r)
         case General_Hernquist:
             den_temp = gen_hern_den(model, r );
             break;
-         case Einasto:
-             einasto_den(model, r);
-             break;
+        //case Einasto:
+        //    einasto_den(model, r);
+        //    break;
         case Cored:
             den_temp = cored_den(model, r);
             break;

@@ -1,9 +1,19 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- Test Environment Lua File 
 -- Plummer-Plummer Dwarf model 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- Total number of bodies are meant to be run with Eric's Parameters 
+-- baryon scale radius = 0.181216 kpc
+-- radius ratio = 0.182799
+-- baryon mass = 1.22251 SMU
+-- mass ratio = 0.0126171
+-- This gives a ratio of mass per baryon particle/ mass per dark matter particle of 0.1
+-- Set to null potential to test stability of dwarf (no Milky Way potential or LMC)
+-- Set multiple outputs to true 
+-- Set generate initial output to true 
+-- Softening parameter currently hard coded since the calculation needs to be changed
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
@@ -321,8 +331,8 @@ function makeBodies(ctx, potential)
 
     if(ModelComponents == 2) then 
         -- Create components
-        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist
-        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist
+        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
         
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,

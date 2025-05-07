@@ -707,7 +707,7 @@ static inline void set_vars(Dwarf* comp)
 
 		real D1 = r1*sqr(1+r1/rscale)/(rscale+rscale*sqr(r1/rc));
 		real D2 = cube(rscale)*(mw_log(1+r200/rscale)-mw_log(1+r1/rscale)-r200/(rscale+r200)+r1/(rscale+r1));
-		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*atan(r1/rc)+r1/(1+sqr(r1/rc)));
+		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc)));
 
 		p0 = mass/(4*M_PI*(D1*D2+D3));
 		comp->ps = p0*D1;
@@ -737,10 +737,10 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
 		const real rc = comp->rc;
 		const real ps = comp->ps;
 		const real C1 = 0;
-		const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));
+		const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));
 
 		if(r <= r1)
-			m = 4.0*M_PI*p0*sqr(rc)*(r/(1+sqr(rc/r)) - rc*atan(r/rc) + r/(1+sqr(r/rc))) - C1;
+			m = 4.0*M_PI*p0*sqr(rc)*(r/(1+sqr(rc/r)) - rc*mw_atan(r/rc) + r/(1+sqr(r/rc))) - C1;
 		else
 			m = 4.0 *M_PI*cube(rs)*ps*(mw_log(1+r/rs) - r/(rs+r)) - C3;  																	
 	}
