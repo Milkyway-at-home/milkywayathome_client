@@ -19,15 +19,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include "nbody.h"
 #include "nbody_particle_data.h"
-#include "nbody_dwarf_potential.h"
-#include "nbody_types.h"
-#include "nbody_lua.h"
-#include "nbody_lua_types.h"
-#include "nbody_lua_models.h"
-#include "milkyway_alloc.h"
-#include "milkyway_math.h"
+#include "test_env_util.h"
 
 /* Dwarf galaxy parameters */
 #define EVOLUTION_TIME "2.0"                  /* Evolution time in Gyr */
@@ -41,21 +34,41 @@
 #define INITIAL_KL_THRESHOLD 0.01   /* Maximum acceptable initial KL divergence */
 #define KL_FLUCTUATION_THRESHOLD 0.005 /* Maximum acceptable KL divergence fluctuation */
 
-/* Search paths configuration */
-#define MAX_SEARCH_PATHS 10        /* Maximum number of paths to search */
-#define MAX_PATH_LENGTH 1024       /* Maximum length of a path */
+/* Maximum path length */
+#define MAX_PATH_LENGTH 1024
 
-/* Function prototypes for memory management */
+/**
+ * @brief Clean up all allocated memory
+ */
 static void cleanup_all_memory(
     char* input_lua_file,
-    real* baryon_radius_array, real* dark_radius_array,
+    real* baryon_bin_centers, real* dark_bin_centers,
     real* baryon_bin_edges, real* dark_bin_edges,
     real* baryon_theoretical_density, real* dark_theoretical_density,
     real* baryon_theoretical_probability, real* dark_theoretical_probability,
     real* baryon_simulation_density, real* dark_simulation_density,
     real* baryon_simulation_probability, real* dark_simulation_probability,
     ParticleCollection* particle_data
-);
+) {
+    // Free all memory - safe to call with NULL pointers
+    free(input_lua_file);
+    free(baryon_bin_centers);
+    free(dark_bin_centers);
+    free(baryon_bin_edges);
+    free(dark_bin_edges);
+    free(baryon_theoretical_density);
+    free(dark_theoretical_density);
+    free(baryon_theoretical_probability);
+    free(dark_theoretical_probability);
+    free(baryon_simulation_density);
+    free(dark_simulation_density);
+    free(baryon_simulation_probability);
+    free(dark_simulation_probability);
+    
+    if (particle_data) {
+        free_particle_collection(particle_data);
+    }
+}
 
 /**
  * @brief Calculate the mass enclosed within a given radius for a dwarf component
@@ -154,453 +167,19 @@ static real kl_divergence(const real *p, const real *q, size_t size) {
 }
 
 /**
- * @brief Find the test lua file using multiple search paths
+ * @brief Fucntion for the stability test for a given dwarf potential type
  * 
- * @param filename The filename to search for
- * @return char* Path to the file if found, NULL otherwise (caller must free)
- */
-static char* find_lua_file(const char* filename) {
-    if (filename == NULL || strlen(filename) == 0) {
-        fprintf(stderr, "Error: Invalid filename provided to find_lua_file\n");
-        return NULL;
-    }
-    
-    char* result = mwCallocA(MAX_PATH_LENGTH, sizeof(char));
-    if (result == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed in find_lua_file\n");
-        return NULL;
-    }
-    
-    char cwd[MAX_PATH_LENGTH];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        fprintf(stderr, "Error: Failed to get current working directory: %s\n", strerror(errno));
-        free(result);
-        return NULL;
-    }
-    
-    // Try common relative paths for different possible execution locations
-    const char* relative_paths[] = {
-        "../../../nbody/sample_workunits/test_env_lua",
-        "/../nbody/sample_workunits/test_env_lua",
-        "../nbody/sample_workunits/test_env_lua",
-        "../sample_workunits/test_env_lua",
-        "../test_env_lua"
-    };
-    
-    size_t num_paths = sizeof(relative_paths) / sizeof(relative_paths[0]);
-        
-    // Try each relative path
-    for (size_t i = 0; i < num_paths && i < MAX_SEARCH_PATHS; i++) {
-        if (strlen(relative_paths[i]) == 0) {
-            // Current directory
-            snprintf(result, MAX_PATH_LENGTH, "%s/%s", cwd, filename);
-        } else {
-            snprintf(result, MAX_PATH_LENGTH, "%s%s/%s", 
-                    (relative_paths[i][0] == '/') ? cwd : "", 
-                    relative_paths[i], filename);
-        }
-        
-        printf("Trying path: %s\n", result);
-        fflush(stdout);
-        
-        if (access(result, F_OK) != -1) {
-            printf("Found file at: %s\n", result);
-            fflush(stdout);
-            return result;
-        }
-    }
-    
-    // File not found
-    fprintf(stderr, "Error: Could not find file '%s' in any search path\n", filename);
-    free(result);
-    return NULL;
-}
-
-/**
- * @brief Find the milkyway_nbody executable
- * 
- * @return char* Path to the executable if found, NULL otherwise (caller must free)
- */
-static char* find_milkyway_nbody() {
-    char* result = mwCallocA(MAX_PATH_LENGTH, sizeof(char));
-    if (result == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed in find_milkyway_nbody\n");
-        return NULL;
-    }
-    
-    char cwd[MAX_PATH_LENGTH];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        fprintf(stderr, "Error: Failed to get current working directory: %s\n", strerror(errno));
-        free(result);
-        return NULL;
-    }
-    
-    // Try common relative paths for the executable
-    const char* relative_paths[] = {
-        "../../bin",
-        "../bin",
-        "bin",
-        "..",
-        "../.."
-    };
-    
-    size_t num_paths = sizeof(relative_paths) / sizeof(relative_paths[0]);
-    
-    // Try each relative path
-    for (size_t i = 0; i < num_paths && i < MAX_SEARCH_PATHS; i++) {
-        snprintf(result, MAX_PATH_LENGTH, "%s/%s/milkyway_nbody", cwd, relative_paths[i]);
-        
-        // For the current directory option, don't add an extra slash
-        if (strcmp(relative_paths[i], ".") == 0) {
-            snprintf(result, MAX_PATH_LENGTH, "%s/milkyway_nbody", cwd);
-        }
-        
-        printf("Trying executable path: %s\n", result);
-        fflush(stdout);
-        
-        if (access(result, X_OK) != -1) {
-            printf("Found executable at: %s\n", result);
-            fflush(stdout);
-            return result;
-        }
-    }
-    
-    // If not found with relative paths, try to find it in PATH
-    snprintf(result, MAX_PATH_LENGTH, "milkyway_nbody");
-    if (system("which milkyway_nbody > /dev/null 2>&1") == 0) {
-        printf("Found executable in PATH: milkyway_nbody\n");
-        fflush(stdout);
-        return result;
-    }
-    
-    // Executable not found
-    fprintf(stderr, "Error: Could not find milkyway_nbody executable\n");
-    free(result);
-    return NULL;
-}
-
-/**
- * @brief Run the nbody simulation with the given parameters
- * 
- * @param dwarf_params Array of parameters for the dwarf galaxy
- * @param lua_file Path to the Lua file
+ * @param dwarf_potential_type The type of dwarf potential to use
  * @return int 0 on success, non-zero on failure
  */
-int run_nbody(const char** dwarf_params, const char* lua_file) {
-    if (!dwarf_params) {
-        fprintf(stderr, "Error: Null dwarf parameters array in run_nbody\n");
-        return 1;
-    }
-    
-    if (!lua_file) {
-        fprintf(stderr, "Error: Null Lua file path in run_nbody\n");
-        return 1;
-    }
-    
-    // Validate the lua file exists
-    if (access(lua_file, F_OK) == -1) {
-        fprintf(stderr, "Error: Lua file '%s' does not exist\n", lua_file);
-        return 1;
-    }
-
-    char command[MAX_PATH_LENGTH * 2];  // Larger buffer for the command
-    char cwd[MAX_PATH_LENGTH];
-    
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        fprintf(stderr, "Error: Failed to get current working directory: %s\n", strerror(errno));
-        return 1;
-    }
-    
-    // Find the milkyway_nbody executable
-    char* bin_path = find_milkyway_nbody();
-    if (!bin_path) {
-        fprintf(stderr, "Error: Could not find milkyway_nbody executable\n");
-        return 1;
-    }
-    
-    // Validate all parameters before building command
-    for (int i = 0; i < 6; i++) {
-        if (!dwarf_params[i] || strlen(dwarf_params[i]) == 0) {
-            fprintf(stderr, "Error: Invalid dwarf parameter at index %d\n", i);
-            free(bin_path);
-            return 1;
-        }
-    }
-    
-    // Build the command with proper escaping
-    snprintf(command, sizeof(command), 
-             "%s "
-             "-f \"%s\" "
-             "-o \"%s/output.out\" "
-             "-z \"%s/output.hist\" "
-             "-n 8 -b -w 1 -P -e 54231651 "
-             "-i %s %s %s %s %s %s",
-             bin_path, lua_file, cwd, cwd,
-             dwarf_params[0], dwarf_params[1], dwarf_params[2], 
-             dwarf_params[3], dwarf_params[4], dwarf_params[5]);
-    
-    printf("Running command: %s\n", command);
-    fflush(stdout);
-    
-    int result = system(command);
-    if (result != 0) {
-        fprintf(stderr, "Error: Command execution failed with code %d\n", result);
-    }
-    
-    // Free memory
-    free(bin_path);
-    
-    return result;
-}
-
-/**
- * @brief Read parameters from a Lua file
- * 
- * @param input_lua_file Path to the Lua file
- * @param dwarf_params Array of parameters for the dwarf galaxy
- * @param nbody Output: total number of bodies
- * @param nbody_baryon Output: number of baryon bodies
- * @param comp1 Output: first dwarf component
- * @param comp2 Output: second dwarf component
- * @param timestep Output: simulation timestep
- * @return int 0 on success, non-zero on failure
- */
-int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, real* nbody, real* nbody_baryon, Dwarf** comp1, Dwarf** comp2, real* timestep) {
-    if (!input_lua_file || !dwarf_params || !nbody || !nbody_baryon || !comp1 || !comp2 || !timestep) {
-        fprintf(stderr, "Error: Null parameter provided to read_lua_parameters\n");
-        return 1;
-    }
-    
-    printf("Opening Lua state with file: %s\n", input_lua_file);
-    fflush(stdout);
-    
-    // Validate the lua file exists
-    if (access(input_lua_file, F_OK) == -1) {
-        fprintf(stderr, "Error: Lua file '%s' does not exist\n", input_lua_file);
-        return 1;
-    }
-    
-    NBodyFlags nbf = {
-        .inputFile = input_lua_file,
-        .debugLuaLibs = TRUE,  // Enable debug output
-        .forwardedArgs = dwarf_params,
-        .numForwardedArgs = 6
-    };
-
-    lua_State* L = nbOpenLuaStateWithScript(&nbf, NULL);
-    if (!L) {
-        fprintf(stderr, "Failed to open Lua state with script %s\n", input_lua_file);
-        fflush(stdout);
-        return 1;
-    }
-
-    // Register all necessary types and models
-    registerNBodyTypes(L);
-    registerPredefinedModelGenerators(L);
-
-    // Get nbody values from global variables 
-    lua_getglobal(L, "totalBodies");
-    if (!lua_isnumber(L, -1)) {
-        fprintf(stderr, "Error: totalBodies is not a number in Lua file\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *nbody = lua_tonumber(L, -1);
-    printf("totalBodies from Lua: %f\n", *nbody);
-    fflush(stdout);
-    lua_pop(L, 1);
-
-    lua_getglobal(L, "totalLightBodies");
-    if (!lua_isnumber(L, -1)) {
-        fprintf(stderr, "Error: totalLightBodies is not a number in Lua file\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *nbody_baryon = lua_tonumber(L, -1);
-    printf("totalLightBodies from Lua: %f\n", *nbody_baryon);
-    fflush(stdout);
-    lua_pop(L, 1);
-
-    // Validate nbody values before proceeding
-    if (*nbody <= 0 || *nbody_baryon <= 0 || *nbody_baryon > *nbody) {
-        fprintf(stderr, "Error: Invalid nbody values - nbody: %f, nbody_baryon: %f\n", *nbody, *nbody_baryon);
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    // Get the makeBodies function
-    lua_getglobal(L, "makeBodies");
-    if (!lua_isfunction(L, -1)) {
-        fprintf(stderr, "Error: makeBodies function not found in Lua script\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    // Get the makeContext function
-    lua_getglobal(L, "makeContext");
-    if (!lua_isfunction(L, -1)) {
-        fprintf(stderr, "Error: makeContext function not found in Lua script\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    // Call makeContext
-    printf("Calling makeContext...\n");
-    fflush(stdout);
-    if (lua_pcall(L, 0, 1, 0) != 0) {
-        fprintf(stderr, "Error calling makeContext: %s\n", lua_tostring(L, -1));
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    // Get the timestep from the context
-    lua_getfield(L, -1, "timestep");
-    if (!lua_isnumber(L, -1)) {
-        fprintf(stderr, "Error: timestep is not a number in Lua context\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *timestep = lua_tonumber(L, -1);
-    lua_pop(L, 1);
-
-    // Validate timestep
-    if (*timestep <= 0.0 || !isfinite(*timestep)) {
-        fprintf(stderr, "Error: Invalid timestep value: %f\n", *timestep);
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    printf("Valid timestep value: %f\n", *timestep);
-    fflush(stdout);
-
-    // Push nil for potential
-    lua_pushnil(L);
-
-    // Call makeBodies
-    printf("Calling makeBodies...\n");
-    fflush(stdout);
-    if (lua_pcall(L, 2, 1, 0) != 0) {
-        fprintf(stderr, "Error calling makeBodies: %s\n", lua_tostring(L, -1));
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    // Get the components from the model's table
-    lua_getfield(L, -1, "components");
-    if (!lua_istable(L, -1)) {
-        fprintf(stderr, "Error: components table not found in model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    // Get comp1
-    lua_getfield(L, -1, "comp1");
-    if (!lua_isuserdata(L, -1)) {
-        fprintf(stderr, "Error: comp1 is not a userdata in Lua model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *comp1 = (Dwarf*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    // Get comp2
-    lua_getfield(L, -1, "comp2");
-    if (!lua_isuserdata(L, -1)) {
-        fprintf(stderr, "Error: comp2 is not a userdata in Lua model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *comp2 = (Dwarf*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    // Validate the components
-    if (!*comp1 || !*comp2) {
-        fprintf(stderr, "Error: Invalid dwarf components\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    printf("Read parameters from Lua file:\n");
-    printf("nbody: %f\n", *nbody);
-    printf("nbody_baryon: %f\n", *nbody_baryon);
-    printf("comp1 mass: %f\n", (*comp1)->mass);
-    printf("comp1 scale length: %f\n", (*comp1)->scaleLength);
-    printf("comp2 mass: %f\n", (*comp2)->mass);
-    printf("comp2 scale length: %f\n", (*comp2)->scaleLength);
-    printf("timestep: %f\n", *timestep);
-    fflush(stdout);
-
-    // Validate component parameters
-    if ((*comp1)->mass <= 0 || (*comp1)->scaleLength <= 0 || 
-        (*comp2)->mass <= 0 || (*comp2)->scaleLength <= 0) {
-        fprintf(stderr, "Error: Invalid component parameters\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-
-    lua_close(L);
-    return 0;
-}
-
-/**
- * @brief Clean up all allocated memory
- */
-static void cleanup_all_memory(
-    char* input_lua_file,
-    real* baryon_radius_array, real* dark_radius_array,
-    real* baryon_bin_edges, real* dark_bin_edges,
-    real* baryon_theoretical_density, real* dark_theoretical_density,
-    real* baryon_theoretical_probability, real* dark_theoretical_probability,
-    real* baryon_simulation_density, real* dark_simulation_density,
-    real* baryon_simulation_probability, real* dark_simulation_probability,
-    ParticleCollection* particle_data
-) {
-    // Free all memory - safe to call with NULL pointers
-    free(input_lua_file);
-    free(baryon_radius_array);
-    free(dark_radius_array);
-    free(baryon_bin_edges);
-    free(dark_bin_edges);
-    free(baryon_theoretical_density);
-    free(dark_theoretical_density);
-    free(baryon_theoretical_probability);
-    free(dark_theoretical_probability);
-    free(baryon_simulation_density);
-    free(dark_simulation_density);
-    free(baryon_simulation_probability);
-    free(dark_simulation_probability);
-    
-    if (particle_data) {
-        free_particle_collection(particle_data);
-    }
-}
-
-/**
- * @brief Main function for the stability test
- * 
- * @return int 0 on success, non-zero on failure
- */
-int main() {
+int testStability(const char* dwarf_potential_type) {
     printf("Starting stability test...\n");
     fflush(stdout);
     
     // Initialize all pointers to NULL
     char* input_lua_file = NULL;
-    real* baryon_radius_array = NULL;
-    real* dark_radius_array = NULL;
+    real* baryon_bin_centers = NULL;
+    real* dark_bin_centers = NULL;
     real* baryon_bin_edges = NULL;
     real* dark_bin_edges = NULL;
     real* baryon_theoretical_density = NULL;
@@ -627,11 +206,24 @@ int main() {
     int num_bins_dark = 0;
     real initial_kl_divergence_baryon = 0.0;
     real initial_kl_divergence_dark = 0.0;
-    int result = 0;
+    int failed = 0;
     
     // Clean up any output files from previous runs
     printf("Cleaning up any output files from previous runs...\n");
     fflush(stdout);
+
+    // Remove initial output file 
+    const char* initial_output_files[] = {"initial.out", "initial.hist"};
+    for (int i = 0; i < sizeof(initial_output_files) / sizeof(initial_output_files[0]); i++) {
+        if (access(initial_output_files[i], F_OK) != -1) {
+            if (remove(initial_output_files[i]) == 0) {
+                printf("Removed old output file: %s\n", initial_output_files[i]);
+            } else {
+                fprintf(stderr, "Failed to remove old output file: %s - %s\n", 
+                      initial_output_files[i], strerror(errno));
+            }
+        }
+    }
     
     char output_filename[MAX_PATH_LENGTH];
     // Remove output files with numeric names (0, 1, 2, etc.)
@@ -647,15 +239,15 @@ int main() {
         }
     }
     
-    // Remove other output files
-    const char* other_output_files[] = {"output.out", "output.hist"};
-    for (int i = 0; i < sizeof(other_output_files) / sizeof(other_output_files[0]); i++) {
-        if (access(other_output_files[i], F_OK) != -1) {
-            if (remove(other_output_files[i]) == 0) {
-                printf("Removed old output file: %s\n", other_output_files[i]);
+    // Remove final output files
+    const char* final_output_files[] = {"output.out", "output.hist"};
+    for (int i = 0; i < sizeof(final_output_files) / sizeof(final_output_files[0]); i++) {
+        if (access(final_output_files[i], F_OK) != -1) {
+            if (remove(final_output_files[i]) == 0) {
+                printf("Removed old output file: %s\n", final_output_files[i]);
             } else {
                 fprintf(stderr, "Failed to remove old output file: %s - %s\n", 
-                      other_output_files[i], strerror(errno));
+                      final_output_files[i], strerror(errno));
             }
         }
     }
@@ -671,11 +263,11 @@ int main() {
         MASS_RATIO
     };
     
-    // Find the plummer_plummer.lua file
-    input_lua_file = find_lua_file("plummer_plummer.lua");
+    // Find the lua file
+    input_lua_file = find_lua_file(dwarf_potential_type);
     if (!input_lua_file) {
-        fprintf(stderr, "Error: Could not find plummer_plummer.lua in any expected location\n");
-        result = 1;
+        fprintf(stderr, "Error: Could not find %s.lua in any expected location\n", dwarf_potential_type);
+        failed = 1;
         goto cleanup;
     }
     
@@ -688,7 +280,7 @@ int main() {
     if (read_lua_parameters(input_lua_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2, &timestep) != 0) {
         fprintf(stderr, "Error: Failed to read Lua parameters\n");
         fflush(stdout);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -696,21 +288,21 @@ int main() {
     nbody_dark = nbody - nbody_baryon;
     if (nbody_dark <= 0) {
         fprintf(stderr, "Error: Invalid number of dark matter particles: %f\n", nbody_dark);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
     // Validate component parameters
     if (comp1 == NULL || comp2 == NULL) {
         fprintf(stderr, "Error: Invalid dwarf components (NULL)\n");
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
     if (comp1->mass <= 0 || comp2->mass <= 0) {
         fprintf(stderr, "Error: Invalid component masses: comp1=%f, comp2=%f\n", 
                comp1->mass, comp2->mass);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
@@ -720,7 +312,7 @@ int main() {
     if (mass_per_particle_baryon <= 0 || mass_per_particle_dark <= 0) {
         fprintf(stderr, "Error: Invalid mass per particle: baryon=%f, dark=%f\n", 
                mass_per_particle_baryon, mass_per_particle_dark);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
@@ -732,14 +324,14 @@ int main() {
     if (comp1->scaleLength <= 0 || comp2->scaleLength <= 0) {
         fprintf(stderr, "Error: Invalid scale lengths: comp1=%f, comp2=%f\n", 
                comp1->scaleLength, comp2->scaleLength);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
     bin_width = mw_fmin(comp1->scaleLength, comp2->scaleLength) / 5.0;
     if (bin_width <= 0) {
         fprintf(stderr, "Error: Invalid bin width: %f\n", bin_width);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
@@ -753,7 +345,7 @@ int main() {
     if (num_bins_baryon <= 0 || num_bins_dark <= 0) {
         fprintf(stderr, "Error: Invalid number of bins: baryon=%d, dark=%d\n", 
                num_bins_baryon, num_bins_dark);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -762,12 +354,12 @@ int main() {
     fflush(stdout);
 
     // Creating radius arrays for KL divergence calculation for each component (bin centers)
-    baryon_radius_array = mwCallocA(num_bins_baryon, sizeof(real));
-    dark_radius_array = mwCallocA(num_bins_dark, sizeof(real));
+    baryon_bin_centers = mwCallocA(num_bins_baryon, sizeof(real));
+    dark_bin_centers = mwCallocA(num_bins_dark, sizeof(real));
     
-    if (baryon_radius_array == NULL || dark_radius_array == NULL) {
+    if (baryon_bin_centers == NULL || dark_bin_centers == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for radius arrays\n");
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -777,7 +369,7 @@ int main() {
     
     if (baryon_bin_edges == NULL || dark_bin_edges == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for bin edges\n");
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -788,7 +380,7 @@ int main() {
 
     // Initialize baryon bin centers
     for (int i = 0; i < num_bins_baryon; i++) {
-        baryon_radius_array[i] = baryon_bin_edges[i] + bin_width / 2.0;
+        baryon_bin_centers[i] = baryon_bin_edges[i] + bin_width / 2.0;
     }
     
     // Initialize dark matter bin edges
@@ -798,7 +390,7 @@ int main() {
 
     // Initialize dark matter bin centers
     for (int i = 0; i < num_bins_dark; i++) {
-        dark_radius_array[i] = dark_bin_edges[i] + bin_width / 2.0;
+        dark_bin_centers[i] = dark_bin_edges[i] + bin_width / 2.0;
     }
 
     // Print the bin edges and centers
@@ -816,13 +408,13 @@ int main() {
 
     printf("Baryon bin centers: ");
     for (int i = 0; i < num_bins_baryon; i++) {
-        printf("%.6f ", baryon_radius_array[i]);
+        printf("%.6f ", baryon_bin_centers[i]);
     }
     printf("\n");
 
     printf("Dark matter bin centers: ");
     for (int i = 0; i < num_bins_dark; i++) {
-        printf("%.6f ", dark_radius_array[i]);
+        printf("%.6f ", dark_bin_centers[i]);
     }
     printf("\n");
     fflush(stdout);
@@ -835,19 +427,19 @@ int main() {
         fprintf(stderr, "Error: Failed to allocate memory for theoretical densities\n");
         if (baryon_theoretical_density) free(baryon_theoretical_density);
         if (dark_theoretical_density) free(dark_theoretical_density);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
     // Calculate theoretical density for baryon component
     for (int i = 0; i < num_bins_baryon; i++) {
-        baryon_theoretical_density[i] = counts_per_bin(comp1, baryon_radius_array[i], 
+        baryon_theoretical_density[i] = counts_per_bin(comp1, baryon_bin_centers[i], 
                                          mass_per_particle_baryon, bin_width);
     }
     
     // Calculate theoretical density for dark matter component
     for (int i = 0; i < num_bins_dark; i++) {
-        dark_theoretical_density[i] = counts_per_bin(comp2, dark_radius_array[i], 
+        dark_theoretical_density[i] = counts_per_bin(comp2, dark_bin_centers[i], 
                                        mass_per_particle_dark, bin_width);
     }
 
@@ -875,7 +467,7 @@ int main() {
         if (dark_theoretical_density) free(dark_theoretical_density);
         if (baryon_theoretical_probability) free(baryon_theoretical_probability);
         if (dark_theoretical_probability) free(dark_theoretical_probability);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -900,7 +492,7 @@ int main() {
     if (run_nbody(dwarf_params, input_lua_file) != 0) {
         fprintf(stderr, "Error: N-body simulation failed\n");
         fflush(stdout);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     
@@ -908,7 +500,7 @@ int main() {
     fflush(stdout);
 
     // Calculate the KL divergence at the initial timestep
-    const char* initial_output_filename = "0";
+    const char* initial_output_filename = "initial.out";
     printf("Checking for initial output file: %s\n", initial_output_filename);
     fflush(stdout);
 
@@ -916,7 +508,7 @@ int main() {
     if (access(initial_output_filename, F_OK) == -1) {
         fprintf(stderr, "Error: Initial output file '%s' does not exist\n", initial_output_filename);
         fflush(stdout);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -925,7 +517,7 @@ int main() {
     if (!particle_data) {
         fprintf(stderr, "Error: Failed to read initial output file '%s'\n", initial_output_filename);
         fflush(stdout);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -937,7 +529,7 @@ int main() {
         fprintf(stderr, "Error: Expected %f particles but got %zu particles\n", 
                nbody, particle_data->count);
         free_particle_collection(particle_data);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -950,7 +542,7 @@ int main() {
         if (baryon_simulation_density) free(baryon_simulation_density);
         if (dark_simulation_density) free(dark_simulation_density);
         free_particle_collection(particle_data);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -1026,7 +618,7 @@ int main() {
         if (baryon_simulation_probability) free(baryon_simulation_probability);
         if (dark_simulation_probability) free(dark_simulation_probability);
         free_particle_collection(particle_data);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -1055,7 +647,7 @@ int main() {
     if (initial_kl_divergence_baryon < 0 || initial_kl_divergence_dark < 0) {
         fprintf(stderr, "Error: Negative KL divergence indicates calculation error\n");
         free_particle_collection(particle_data);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -1063,7 +655,7 @@ int main() {
         fprintf(stderr, "Error: Initial KL divergence is too high (> %f)\n", INITIAL_KL_THRESHOLD);
         fflush(stdout);
         free_particle_collection(particle_data);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
 
@@ -1076,7 +668,7 @@ int main() {
     int total_timesteps = (int)(atof(dwarf_params[0]) / timestep);
     if (total_timesteps <= 0) {
         fprintf(stderr, "Error: Invalid total timesteps: %d\n", total_timesteps);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     printf("Total timesteps: %d\n", total_timesteps);
@@ -1086,7 +678,7 @@ int main() {
     int timesteps_0_1_Gyr = (int)(0.1 / timestep);
     if (timesteps_0_1_Gyr <= 0) {
         fprintf(stderr, "Error: Invalid timesteps per 0.1 Gyr: %d\n", timesteps_0_1_Gyr);
-        result = 1;
+        failed = 1;
         goto cleanup;
     }
     printf("Timesteps per 0.1 Gyr: %d\n", timesteps_0_1_Gyr);
@@ -1114,7 +706,7 @@ int main() {
         if (access(output_filename, F_OK) == -1) {
             fprintf(stderr, "Error: Output file '%s' does not exist\n", output_filename);
             fflush(stdout);
-            result = 1;
+            failed = 1;
             goto cleanup;
         }
         
@@ -1125,7 +717,7 @@ int main() {
         if (!particle_data) {
             fprintf(stderr, "Error: Failed to read particle file '%s'\n", output_filename);
             fflush(stdout);
-            result = 1;
+            failed = 1;
             goto cleanup;
         }
 
@@ -1141,7 +733,7 @@ int main() {
             if (simulation_density_baryon) free(simulation_density_baryon);
             if (simulation_density_dark) free(simulation_density_dark);
             free_particle_collection(particle_data);
-            result = 1;
+            failed = 1;
             goto cleanup;
         }
 
@@ -1225,7 +817,7 @@ int main() {
             if (simulation_probability_density_baryon) free(simulation_probability_density_baryon);
             if (simulation_probability_density_dark) free(simulation_probability_density_dark);
             free_particle_collection(particle_data);
-            result = 1;
+            failed = 1;
             goto cleanup;
         }
 
@@ -1260,7 +852,7 @@ int main() {
             free(simulation_density_baryon);
             free(simulation_density_dark);
             free_particle_collection(particle_data);
-            result = 1;
+            failed = 1;
             goto cleanup;
         }
 
@@ -1276,7 +868,7 @@ int main() {
             free(simulation_density_baryon);
             free(simulation_density_dark);
             free_particle_collection(particle_data);
-            result = 1;
+            failed = 1;
             goto cleanup;
         }
 
@@ -1303,10 +895,10 @@ int main() {
     input_lua_file = NULL;
     
     // Free additional memory that wasn't being freed before
-    free(baryon_radius_array);
-    baryon_radius_array = NULL;
-    free(dark_radius_array);
-    dark_radius_array = NULL;
+    free(baryon_bin_centers);
+    baryon_bin_centers = NULL;
+    free(dark_bin_centers);
+    dark_bin_centers = NULL;
     free(baryon_bin_edges);
     baryon_bin_edges = NULL;
     free(dark_bin_edges);
@@ -1325,14 +917,14 @@ int main() {
     fflush(stdout);
     
     // Success - return directly instead of falling through to cleanup
-    result = 0;
-    return result;
+    failed = 0;
+    return failed;
     
 cleanup:
     // Centralized cleanup for all allocated memory
     cleanup_all_memory(
         input_lua_file, 
-        baryon_radius_array, dark_radius_array,
+        baryon_bin_centers, dark_bin_centers,
         baryon_bin_edges, dark_bin_edges,
         baryon_theoretical_density, dark_theoretical_density,
         baryon_theoretical_probability, dark_theoretical_probability,
@@ -1341,12 +933,34 @@ cleanup:
         particle_data
     );
     
-    if (result == 0) {
+    if (failed == 0) {
         printf("Test completed successfully\n");
     } else {
         printf("Test failed\n");
     }
     fflush(stdout);
     
-    return result;
+    return failed;
+}
+
+/**
+ * @brief Main function for the stability test
+ * 
+ * @return int 0 on success, non-zero on failure
+ */
+int main() {
+
+    int failed = 0;
+    
+    failed += testStability("plummer_plummer.lua");
+    //failed += testStability("plummer_nfw.lua");
+    //failed += testStability("cored_cored.lua");
+
+    if (failed == 0) {
+        printf("All stability tests passed successfully!\n");
+    } else {
+        printf("Some stability tests failed\n");
+    }
+
+    return failed;
 }

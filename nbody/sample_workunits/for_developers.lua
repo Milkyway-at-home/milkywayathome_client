@@ -1,6 +1,6 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
 -- This is the developer version of the lua parameter file. 
 -- It gives all the options you can have. 
@@ -19,7 +19,12 @@
 -- MUST still include dwarf parameter list
 -- can control what model to use below
 -- simulation time still taken as the first parameter in the list
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+-- IMPORTANT -- IMPORTANT -- IMPORTANT -- IMPORTANT -- IMPORTANT -- 
+-- Structural changes to this file also need to be changed in the 
+-- lua files in the test_env_lua directory (nbody/sample_workunits/test_env_lua/)
+-- especially if the changes are not backwards compatible with the previous format
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
         
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -43,9 +48,9 @@ LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF 
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
-SunVely               = 229.2     -- -- Sun's velocity                                                         -- --
-SunVelx               = 10.3
-SunVelz               = 6.9
+SunVelx               = 10.3      -- -- Sun's x-velocity                                                       -- --
+SunVely               = 229.2     -- -- Sun's y-velocity                                                       -- --
+SunVelz               = 6.9       -- -- Sun's z-velocity                                                       -- --
 
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -104,21 +109,25 @@ use_pm_comp          = true  -- calculate proper motion, use in likelihood
 -- numCalibrationRuns + 1 additional forward evolutions will be done
 -- if no bar potential is being used, this variable will be ignored
 numCalibrationRuns = 0
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
--- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-useMultiOutputs       = false      -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- These options only work if you compile nbody with  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
 
-timestep_control      = false       -- -- control number of steps      -- --
-Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
+useMultiOutputs       = false      -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
+freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
 
-use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
-max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+timestep_control      = false       -- -- control number of steps                                                          -- --
+Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
+
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
+
+generate_initial_output = false     -- -- save initial galaxy state to initial.out before evolution                        -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
 
 
@@ -311,14 +320,18 @@ function makeBodies(ctx, potential)
 
 
     if(ModelComponents == 2) then 
+        -- Create components
+        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored        
+        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,
             nbody_baryon  = totalLightBodies,
             prng          = prng,
             position      = finalPosition,
             velocity      = finalVelocity,
-            comp1         = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2         = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp1         = comp1,
+            comp2         = comp2,
             ignore        = true
         }
         
