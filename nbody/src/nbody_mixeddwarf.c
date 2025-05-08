@@ -33,6 +33,7 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_mixeddwarf.h"
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
+#include "nbody_io.h"
 
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
 
@@ -689,35 +690,185 @@ static int cm_correction_by_comp(real * x, real * y, real * z, real * vx, real *
     return 1;
 }
 
-static inline void set_p0(Dwarf* comp)
+static inline void set_vars(Dwarf* comp)
 {
-    /*this is only used for the nfw but it is technically valid for all the profiles. easier to have it here*/
+    /*this is only used for the nfw and sidm but it is technically valid for all the profiles. easier to have it here*/
     /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
     //as defined in Binney and Tremaine 2nd ed:
     //the r200 is now used for all potentials to provide the bounds for density sampling
     real mass = comp->mass; 
     real rscale = comp->scaleLength;
     real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
-    real c = r200 / rscale; //halo concentration
-    real term = mw_log(1.0 + c) - c / (1.0 + c);
-    real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+	real p0;
+	if(comp->type == Cored)
+	{
+		real r1 = comp->r1;
+		real rc = comp->rc;
+
+		real D1 = r1*sqr(1+r1/rscale)/(rscale+rscale*sqr(r1/rc));
+		real D2 = cube(rscale)*(mw_log(1+r200/rscale)-mw_log(1+r1/rscale)-r200/(rscale+r200)+r1/(rscale+r1));
+		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc)));
+
+		p0 = mass/(4*M_PI*(D1*D2+D3));
+		comp->ps = p0*D1;
+	}
+	else
+	{
+		real c = r200 / rscale; //halo concentration
+		real term = mw_log(1.0 + c) - c / (1.0 + c);
+		p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+	}
     comp->r200 = r200;
     comp->p0 = p0;
 }
-
+  
 static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
 {
     /* The mass inputted is taken to be the M200 mass (mass within radius r200).*/
     /* If the sampling boundary goes above or below r200, this function resets the mass of the component.*/
-    real rs = comp->scaleLength;
-    real r = bound;
-    real m = 4.0 * M_PI * comp->p0 * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r));
+	real m;
+	real r = bound;
+	real rs = comp->scaleLength;
+
+	if(comp->type == Cored)
+	{
+		const real r1 = comp->r1;
+		const real p0 = comp->p0;
+		const real rc = comp->rc;
+		const real ps = comp->ps;
+		const real C1 = 0;
+		const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));
+
+		if(r <= r1)
+			m = 4.0*M_PI*p0*sqr(rc)*(r/(1+sqr(rc/r)) - rc*mw_atan(r/rc) + r/(1+sqr(r/rc))) - C1;
+		else
+			m = 4.0 *M_PI*cube(rs)*ps*(mw_log(1+r/rs) - r/(rs+r)) - C3;  																	
+	}
+	else
+	{
+		m = 4.0 * M_PI * comp->p0 * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r));
+	}
     comp->mass = m;
 }
 
+// outputs the initial state of the generated dwarf galaxy to a file named "initial.out".
+static int nbOutputInitialBodies(const real* x, const real* y, const real* z,
+                                 const real* vx, const real* vy, const real* vz,
+                                 const real* masses, unsigned int nbody, 
+                                 unsigned int nbody_baryon, 
+                                 mwvector rShift, mwvector vShift,
+                                 lua_State* luaSt)
+{
+    /* Check if output generation is enabled */
+    mwbool generate_output = FALSE;
+    lua_getglobal(luaSt, "generate_initial_output");
+    if (!lua_isnil(luaSt, -1)) {
+        generate_output = (mwbool) lua_toboolean(luaSt, -1);
+    }
+    lua_pop(luaSt, 1);
+
+    if (!generate_output)
+    {
+        return 0;  /* Do nothing if output generation is disabled */
+    }
+
+    FILE* f;
+    unsigned int i;
+    
+    /* Define the same constants as in nbGenerateMixedDwarfCore */
+    mwbool isdark = TRUE;
+    mwbool islight = FALSE;
+    
+    /* Open the file for writing */
+    f = mw_fopen("initial.out", "w");
+    if (!f)
+    {
+        mw_printf("Error opening 'initial.out' for writing\n");
+        return 1;
+    }
+
+    /* Create temporary bodies array for use with nbOutputBodies */
+    Body* bodies = mwCalloc(nbody, sizeof(Body));
+    if (!bodies)
+    {
+        mw_printf("Failed to allocate memory for bodies\n");
+        fclose(f);
+        return 1;
+    }
+
+    /* Fill in the bodies array with our generated data */
+    for (i = 0; i < nbody; i++)
+    {
+        bodies[i].bodynode.id = i + 1;
+        bodies[i].bodynode.mass = masses[i];
+        bodies[i].bodynode.type = (i < nbody_baryon) ? BODY(islight) : BODY(isdark);
+        bodies[i].bodynode.pos.x = x[i];
+        bodies[i].bodynode.pos.y = y[i];
+        bodies[i].bodynode.pos.z = z[i];
+        bodies[i].vel.x = vx[i];
+        bodies[i].vel.y = vy[i];
+        bodies[i].vel.z = vz[i];
+    }
+
+    /* Setup temporary NBodyState */
+    NBodyState st = EMPTY_NBODYSTATE;
+    st.nbody = nbody;
+    st.bodytab = bodies;
+    
+    /* Setup temporary NBodyCtx with values from Lua */
+    NBodyCtx ctx = EMPTY_NBODYCTX;
+    
+    /* Get sunGCDist from Lua instead of hardcoding */
+    real sunGCDist = 8.0; /* Default value if not found in Lua */
+    lua_getglobal(luaSt, "SunGCDist");
+    if (lua_isnumber(luaSt, -1))
+    {
+        sunGCDist = lua_tonumber(luaSt, -1);
+    }
+    lua_pop(luaSt, 1);
+    ctx.sunGCDist = sunGCDist;
+    
+    ctx.potentialType = EXTERNAL_POTENTIAL_NONE; /* This will set hasMilkyway = 0 */
+    
+    /* Setup temporary NBodyFlags */
+    NBodyFlags nbf = {0};
+    
+    /* Check if we should use lbr Cartesian output */
+    mwbool outputLBCoord = FALSE;
+    lua_getglobal(luaSt, "Output_LB_coord");
+    if (lua_isboolean(luaSt, -1))
+    {
+        outputLBCoord = (mwbool) lua_toboolean(luaSt, -1);
+    }
+    lua_pop(luaSt, 1);
+    
+    nbf.outputlbrCartesian = TRUE; /* Default to TRUE for full output */
+    nbf.outputCartesian = FALSE;
+    ctx.OutputLB = outputLBCoord;
+    
+    /* Write headers */
+    mw_boinc_print(f, "<bodies>\n");
+    
+    /* Use the standard output function */
+    int rc = nbOutputBodies(f, &ctx, &st, &nbf);
+    
+    /* Write footer */
+    mw_boinc_print(f, "</bodies>\n");
+    
+    free(bodies);
+    
+    if (fclose(f) < 0)
+    {
+        mwPerror("Error closing output file 'initial.out'");
+        return 1;
+    }
+    
+    mw_printf("Initial body data written to 'initial.out'\n");
+    return rc;
+}
 
 /*      DWARF GENERATION        */
-static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
+int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
                                      Dwarf* comp1,  Dwarf* comp2, 
                                     mwbool ignore, mwvector rShift, mwvector vShift)
 {
@@ -743,8 +894,8 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         mwvector vec;
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
-        set_p0(comp1);
-        set_p0(comp2);
+        set_vars(comp1);
+        set_vars(comp2);
         real bound1 ;
         real bound2 ;
         
@@ -756,10 +907,14 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 break;
             case NFW:
                 bound1 = 5.0 * comp1->r200;
-		get_extra_nfw_mass(comp1, bound1);
+		        get_extra_nfw_mass(comp1, bound1);
                 break;
             case General_Hernquist:
                 bound1 =  50.0 * (rscale_l + rscale_d);
+                break;
+            case Cored:
+                bound1 = 5.0 * comp1->r200;
+                get_extra_nfw_mass(comp1, bound1);
                 break;
         }
 
@@ -770,10 +925,14 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 break;
             case NFW:
                 bound2 = 5.0 * comp2->r200;
-		get_extra_nfw_mass(comp2, bound2);
+		        get_extra_nfw_mass(comp2, bound2);
                 break;
             case General_Hernquist:
                 bound2 =  50.0 * (rscale_l + rscale_d);
+                break;
+            case Cored:
+                bound2 = 5.0 * comp2->r200;
+                get_extra_nfw_mass(comp2, bound2);
                 break;
         }
         
@@ -812,6 +971,11 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 rho_max_light = rscale_l / 2.0;
                 rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
                 break;
+            case Cored:
+                rho_max_light = (rscale_l > comp1->r1) ? rscale_l : comp1->r1;
+                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
+                break;
+
         }
 
         switch(comp2->type) //these are the analytic equations for the radius where r^2rho is max;
@@ -826,6 +990,10 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
                 break;
             case General_Hernquist:
                 rho_max_dark = rscale_d / 2.0;
+                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
+                break;
+            case Cored:
+                rho_max_dark = (rscale_d > comp2->r1) ? rscale_d : comp2->r1;
                 rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
                 break;
         }
@@ -911,6 +1079,18 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
 		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_baryon, nbody); //corrects dark component
         //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
 
+        /* Check if we should generate initial output file */
+        mwbool generate_initial_output = FALSE;
+        lua_getglobal(luaSt, "generate_initial_output");
+        if (!lua_isnil(luaSt, -1)) {
+            generate_initial_output = (mwbool) lua_toboolean(luaSt, -1);
+        }
+        lua_pop(luaSt, 1);
+        
+        /* Write initial state to file if requested */
+         if (generate_initial_output) {
+            nbOutputInitialBodies(x, y, z, vx, vy, vz, masses, nbody, nbody_baryon, rShift, vShift, luaSt);
+        }
 
         /* pushing the bodies */
         for (i = 0; i < nbody; i++)
@@ -954,231 +1134,6 @@ static int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned in
         return 1;             
         
 }
-
-
-int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon,
-                                     Dwarf* comp1,  Dwarf* comp2, mwvector rShift, mwvector vShift)
-{
-    /* NOTE: unction is designed to mimic the above function, but bypass the need for the
-	* for the lua state. It is used in the test unit for constructing multi-component
-	* dwarf galaxies. Any changes to the above function not pertaining to pushing the bodies
-	* should be made here
-    */
-        unsigned int i;
-        int table;
-        Body b;
-        real r, v;
- 
-        real * x  = mwCalloc(nbody, sizeof(real));
-        real * y  = mwCalloc(nbody, sizeof(real));
-        real * z  = mwCalloc(nbody, sizeof(real));
-        real * vx = mwCalloc(nbody, sizeof(real));
-        real * vy = mwCalloc(nbody, sizeof(real));
-        real * vz = mwCalloc(nbody, sizeof(real));
-        real * masses = mwCalloc(nbody, sizeof(real));
-        
-        
-        mwvector vec;
-        real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
-        real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
-        set_p0(comp1);
-        set_p0(comp2);
-        real bound1 ;
-        real bound2 ;
-        
-        
-        switch(comp1->type)
-        {
-            case Plummer:
-                bound1 =  50.0 * (rscale_l + rscale_d);
-                break;
-            case NFW:
-                bound1 = 5.0 * comp1->r200;
-		get_extra_nfw_mass(comp1, bound1);
-                break;
-            case General_Hernquist:
-                bound1 =  50.0 * (rscale_l + rscale_d);
-                break;
-        }
-
-        switch(comp2->type)
-        {
-            case Plummer:
-                bound2 =  50.0 * (rscale_l + rscale_d);
-                break;
-            case NFW:
-                bound2 = 5.0 * comp2->r200;
-		get_extra_nfw_mass(comp2, bound2);
-                break;
-            case General_Hernquist:
-                bound2 =  50.0 * (rscale_l + rscale_d);
-                break;
-        }
-        
-        
-        real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
-        real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
-        real dwarf_mass = mass_l + mass_d;
-
-
-    //---------------------------------------------------------------------------------------------------        
-        unsigned int nbody_dark = nbody - nbody_baryon;
-        real mass_light_particle = mass_l / ((real) nbody_baryon);//half the particles are light matter unless specified 
-        real mass_dark_particle = mass_d / ((real) nbody_dark);
-    //----------------------------------------------------------------------------------------------------
-
-	
-        /* dark matter type is TRUE or 1. Light matter type is False, or 0*/
-        mwbool isdark = TRUE;
-        mwbool islight = FALSE;
-       
-        
-        /*finding the max of the individual components*/
-        real rho_max_light, rho_max_dark;
-
-        switch(comp1->type) //these are the analytic equations for the radius where r^2rho is max;
-        {
-            case Plummer:
-                rho_max_light = mw_sqrt(2.0 / 3.0) * rscale_l;
-                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-                break;
-            case NFW:
-                rho_max_light = rscale_l;
-                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-                break;
-            case General_Hernquist:
-                rho_max_light = rscale_l / 2.0;
-                rho_max_light = sqr(rho_max_light) * get_density(comp1, rho_max_light);
-                break;
-        }
-
-        switch(comp2->type) //these are the analytic equations for the radius where r^2rho is max;
-        {
-            case Plummer:
-                rho_max_dark = mw_sqrt(2.0 / 3.0) * rscale_d;
-                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
-                break;
-            case NFW:
-                rho_max_dark = rscale_d;
-                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
-                break;
-            case General_Hernquist:
-                rho_max_dark = rscale_d / 2.0;
-                rho_max_dark = sqr(rho_max_dark) * get_density(comp2, rho_max_dark);
-                break;
-        }
-        
-    	/*initializing particles:*/
-        //memset(&b, 0, sizeof(b));
-        //lua_createtable(luaSt, nbody, 0);
-        //table = lua_gettop(luaSt);      
-        int counter = 0;
-        
-
-        /*getting the radii and velocities for the bodies*/
-        for (i = 0; i < nbody; i++)
-        {
-            counter = 0;
-            do
-            {
-                
-                if(i < nbody_baryon)
-                {
-                    r = r_mag(prng, comp1, rho_max_light, bound1);
-                    masses[i] = mass_light_particle;
-                }
-                else if(i >= nbody_baryon)
-                {
-                    r = r_mag(prng, comp2, rho_max_dark, bound2);
-                    masses[i] = mass_dark_particle;
-                }
-                /*to ensure that r is finite and nonzero*/
-                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
-                
-                if(counter > 1000)
-                {
-                    exit(-1);
-                }
-                else
-                {
-                    counter++;
-                }
-                
-            }while (1);
-            
-//             mw_printf("\rvelocity of particle %i", i + 1);
-            counter = 0;
-            do
-            {
-                if(i < nbody_baryon)
-                {   
-                    mwbool isDark = FALSE;
-                    v = vel_mag(r, comp1, comp2, isDark, prng);
-                }
-                else if(i >= nbody_baryon)
-                {
-                    mwbool isDark = TRUE;
-                    v = vel_mag(r, comp1, comp2, isDark, prng);
-                }
-                /*to ensure that v is finite and nonzero*/
-                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
-                
-                if(counter > 1000)
-                {
-                    exit(-1);
-                }
-                else
-                {
-                    counter++;
-                }
-                
-            }while (1);
-			
-            vec   = get_components(prng, v);   
-            vx[i] = vec.x;
-            vy[i] = vec.y;
-            vz[i] = vec.z;
-            vec   = get_components(prng, r);  
-            x[i] = vec.x;
-            y[i] = vec.y;
-            z[i] = vec.z;
-        }
-
-
-        /* getting the center of mass and momentum correction */
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_l, 0, nbody_baryon); //corrects light component
-		cm_correction_by_comp(x, y, z, vx, vy, vz, masses, rShift, vShift, mass_d, nbody_baryon, nbody); //corrects dark component
-        //cm_correction(x, y, z, vx, vy, vz, masses, rShift, vShift, dwarf_mass, nbody);
-
-
-        /* pushing the bodies */
-        for (i = 0; i < nbody; i++)
-        {
-
-			pos[i].x  = x[i];
-			pos[i].y  = y[i];
-			pos[i].z  = z[i];
-
-			vel[i].x = vx[i];
-			vel[i].y = vy[i];
-			vel[i].z = vz[i];
-
-			bodyMasses[i] = masses[i];
-        }
-        
-        /* go now and be free!*/
-        free(x);
-        free(y);
-        free(z);
-        free(vx);
-        free(vy);
-        free(vz);
-        free(masses);
-        
-        return 1;             
-        
-}
-
 
 int nbGenerateMixedDwarf(lua_State* luaSt)
 {

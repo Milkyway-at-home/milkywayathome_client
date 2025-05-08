@@ -55,7 +55,7 @@ add_executable(virial_test virial_test.c)
 set(virial_test_link_libs nbody
                           milkyway)
 
-add_executable(mixeddwarf_test mixeddwarf_test.c)
+add_executable(mixeddwarf_test mixeddwarf_test.c test_env_util.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
@@ -63,7 +63,7 @@ add_executable(average_bins_test average_bins_test.c)
 
 set(average_bins_test_link_libs "${nbody_exe_link_libs}")
 
-add_executable(stability_test stability_test.c)
+add_executable(stability_test stability_test.c test_env_util.c)
 
 set(stability_test_link_libs "${nbody_exe_link_libs}")
 
