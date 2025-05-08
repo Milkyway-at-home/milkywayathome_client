@@ -33,9 +33,11 @@ function makeContext()
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
+      PMSigma       = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
+      PMCorrect     = 1.111,
       IterMax       = 6
    }
 end

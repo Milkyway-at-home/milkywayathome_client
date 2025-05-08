@@ -400,7 +400,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool useBetaComp;            /* whether or not to use the avg beta comparison */
     mwbool useVlos;                /* whether or not to use the avg vlos comparison */
     mwbool useDist;                /* whether or not to use the avg distance comparison */
-    mwbool usePropMot; /* whether or not to use the proper motion comparison */
+    mwbool usePropMot;             /* whether or not to use the proper motion comparison */
     mwbool ignoreResponsive;
     mwbool usesExact;
     mwbool usesQuad;
@@ -431,10 +431,10 @@ typedef struct MW_ALIGN_TYPE
                            NULL, ZERO_VECTOR, ZERO_VECTOR,                                  \
                            NULL, 0,                                                         \
                            0, 0, 0,                                                         \
-                           0, 0, 0, 0, 0, 0,                                                  \
-                           0, 0,                                                             \
+                           0, 0, 0, 0, 0, 0,                                                \
+                           0, 0,                                                            \
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
+                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,\
                            NULL, NULL, NULL, NULL}
 
 
@@ -456,6 +456,7 @@ typedef struct MW_ALIGN_TYPE
     real sunVely;
     real sunVelz;
     real NGPdec;
+    real NGPra;
     real lNCP;
 
     real b;     /* orbital parameters */
@@ -514,7 +515,7 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                    \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,               \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \

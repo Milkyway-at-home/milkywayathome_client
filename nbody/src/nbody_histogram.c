@@ -503,7 +503,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "Beta Dispersion, Beta Dispersion Error, "
             "LOS Velocity Dispersion, Velocity Dispersion Error, "
             "LOS Velocity, LOS Velocity Error, Beta Average, Beta Average Error, "
-            "Distance, Distance Error, PM (Dec), PM (Dec) Error"
+            "Distance, Distance Error, PM (Dec), PM (Dec) Error, "
             "PM (RA), PM (RA) Error\n"
             "#\n"
             "\n"
@@ -526,6 +526,7 @@ void nbPrintHistogram(FILE* f, const MainStruct* all)
     fprintf(f, "totalSimulated = %u\n", all->histograms[0]->totalSimulated);
     fprintf(f, "lambdaBins = %u\n", all->histograms[0]->lambdaBins);
     fprintf(f, "betaBins = %u\n", all->histograms[0]->betaBins);
+    if(all->usage[6]) fprintf(f, "hasPM = 1\n");
     if(all->usage[3]) fprintf(f, "!\n");
     
     
@@ -899,8 +900,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
                 
                 v_line_of_sight = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);//calc the heliocentric line of sight vel
                 location = calc_distance(Pos(p), ctx->sunGCDist);
-                mu_dec = nbVXVYVZtomuDec(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->lNCP);
-                mu_ra = nbVXVYVZtomuRA(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->lNCP);
+                mu_dec = nbVXVYVZtomuDec(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->NGPra, ctx->lNCP);
+                mu_ra = nbVXVYVZtomuRA(Pos(p), Vel(p), ctx->sunVelx, ctx->sunVely, ctx->sunVelz, ctx->sunGCDist, ctx->NGPdec, ctx->NGPra, ctx->lNCP);
 
 
                 vlos[ub_counter] = v_line_of_sight;//store the vlos's so as to not have to recalc  
@@ -1149,7 +1150,8 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     mwbool readMass = FALSE; /*Read the mass per particle for the histogram*/
     mwbool readLambdaBins = FALSE; /* Read the number of bins in the lambda direction */
     mwbool readBetaBins = FALSE; /* Read the number of bins the beta direction */
-    mwbool readBetaDispBins = FALSE;
+    mwbool readBetaDispBins = FALSE; /*Read the number of beta dispersion bins to average over*/
+    mwbool readHasPM = FALSE; /*Read if histogram contains proper motion bins*/
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
     mwbool readClosingTag = FALSE; /* Read the </histogram> tag */
     mwbool buildHist = FALSE; /* only want to build the histogrma once */
@@ -1157,8 +1159,9 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
-    unsigned int betaDispBins = 0;
+    unsigned int betaDispBins = 0; /*Number of beta dispersion bins to average over*/
     mwbool usedOrbitParams = FALSE;  /* indicates whether or not to expect extra histogram parameters for orbit fitting */
+    unsigned int hasPM = FALSE; /* Indicates whether or not to expect histogram bins for proper motions*/
     real mass = 0;            /*mass per particle read from the histogram */
     char lineBuf[1024];
 
@@ -1285,7 +1288,17 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             rc = sscanf(lineBuf, " betaDispBins = %u \n", &betaDispBins);
             if(rc == 1)
             {
-                readBetaBins = TRUE;
+                readBetaDispBins = TRUE;
+                continue;
+            }
+        }
+
+        if (!readHasPM)
+        {
+            rc = sscanf(lineBuf, " hasPM = %u \n", &hasPM);
+            if(rc == 1)
+            {
+                readHasPM = TRUE;
                 continue;
             }
         }
@@ -1349,47 +1362,88 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
         if(usedOrbitParams) // new histogram output, there are more parameters to read in
         {
-            rc = sscanf(lineBuf,
-                        "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-                        &useBin,
-                        &lambda,
-                        &beta,
-                        &variable[0],
-                        &errors[0],
-                        &variable[1],
-                        &errors[1],
-                        &variable[2],
-                        &errors[2],
-                        &variable[3],
-                        &errors[3],
-                        &variable[4],
-                        &errors[4],
-                        &variable[5],
-                        &errors[5],
-                        &variable[6],
-                        &errors[6],
-                        &variable[7],
-                        &errors[7]);
-
-
-            // only save the numbers that are used
-            for(int i = 0; i < 8; i++)
-            {
-                if(all->usage[i])
+            if(hasPM == 1) // histogram additionally has proper motion
+            {   rc = sscanf(lineBuf,
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                    &useBin,
+                    &lambda,
+                    &beta,
+                    &variable[0],
+                    &errors[0],
+                    &variable[1],
+                    &errors[1],
+                    &variable[2],
+                    &errors[2],
+                    &variable[3],
+                    &errors[3],
+                    &variable[4],
+                    &errors[4],
+                    &variable[5],
+                    &errors[5],
+                    &variable[6],
+                    &errors[6],
+                    &variable[7],
+                    &errors[7]);
+                
+                // only save the numbers that are used
+                for(int i = 0; i < 8; i++)
                 {
-                    all->histograms[i]->data[fileCount].useBin = useBin;
-                    all->histograms[i]->data[fileCount].lambda = lambda;
-                    all->histograms[i]->data[fileCount].beta = beta;
-                    all->histograms[i]->data[fileCount].variable = variable[i];
-                    all->histograms[i]->data[fileCount].err = errors[i];
+                    if(all->usage[i])
+                    {
+                        all->histograms[i]->data[fileCount].useBin = useBin;
+                        all->histograms[i]->data[fileCount].lambda = lambda;
+                        all->histograms[i]->data[fileCount].beta = beta;
+                        all->histograms[i]->data[fileCount].variable = variable[i];
+                        all->histograms[i]->data[fileCount].err = errors[i];
+                    }
+                }
+
+                if (rc != 19)
+                {
+                    mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
+                    error = TRUE;
+                    break;
                 }
             }
+            else //histogram only has original orbit parameters
+            {   rc = sscanf(lineBuf,
+                    "%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+                    &useBin,
+                    &lambda,
+                    &beta,
+                    &variable[0],
+                    &errors[0],
+                    &variable[1],
+                    &errors[1],
+                    &variable[2],
+                    &errors[2],
+                    &variable[3],
+                    &errors[3],
+                    &variable[4],
+                    &errors[4],
+                    &variable[5],
+                    &errors[5]);
             
-            if (rc != 15)
-            {
-                mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
-                error = TRUE;
-                break;
+
+                // only save the numbers that are used
+                for(int i = 0; i < 6; i++)
+                {
+                    if(all->usage[i])
+                    {
+                        all->histograms[i]->data[fileCount].useBin = useBin;
+                        all->histograms[i]->data[fileCount].lambda = lambda;
+                        all->histograms[i]->data[fileCount].beta = beta;
+                        all->histograms[i]->data[fileCount].variable = variable[i];
+                        all->histograms[i]->data[fileCount].err = errors[i];
+                    }
+                }
+
+                if (rc != 15)
+                {
+                    mw_printf("Error reading histogram line %d: %s", lineNum, lineBuf);
+                    error = TRUE;
+                    break;
+                }
             }
         }
 
@@ -1436,7 +1490,11 @@ MainStruct* nbReadHistogram(const char* histogramFile)
 
     // checking to make sure there's something in the histogram
     unsigned int num = 3;
-    if(usedOrbitParams) num = 8; // more histogram parameters for the new output
+    if(usedOrbitParams) // more histogram parameters for the new output
+    {
+        if(hasPM == 1) num = 8;
+        else num = 6;
+    } 
 
     unsigned int used_hist = 0;
     for(unsigned int i = 0; i < num; i++)
