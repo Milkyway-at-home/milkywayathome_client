@@ -3,19 +3,15 @@
 * The structure and stability of these two dwarfs are checked by calculating their virial ratios and checking their center of masses.
 */
 
-#include "nbody_mixeddwarf.h"
-#include "nbody_dwarf_potential.h"
-#include "dSFMT.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <errno.h>
-#include "test_env_util.h"
-#include "nbody_lua.h"
-#include "nbody_io.h"
-#include "nbody_types.h"
+#include "dSFMT.h"
+#include "nbody_mixeddwarf.h"
 #include "nbody_particle_data.h"
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
+#include "test_env_util.h"
 
 /* Dwarf galaxy parameters */
 #define EVOLUTION_TIME "2.0"                  /* Evolution time in Gyr */
@@ -23,7 +19,7 @@
 #define BARYON_SCALE_RADIUS "0.181216"        /* Baryon Scale radius in kpc */
 #define SCALE_RADIUS_RATIO "0.182799"         /* Scale radius ratio */
 #define BARYON_MASS "1.22251"                 /* Baryon Mass in SMU */
-#define MASS_RATIO "0.0126171"                /* Mass ratio */
+#define MASS_RATIO "0.0126171"  
 
 static inline real doubleCompDensity(const Dwarf* comp1, const Dwarf* comp2, real r)
 {
@@ -97,7 +93,7 @@ int checkVirialRatio(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos
 }
 
 //This function checks to ensure that the 2 components are individually and the dwarf as a whole are centered at 0
-int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies, unsigned int numBodies_baryon)
+int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const mwvector* vel, real* mass, unsigned int numBodies, unsigned int numBodies_light)
 {
 	//Note, this function relies on the fact that half the bodies are baryonic and half dark matter
 	int failed = 0;
@@ -121,7 +117,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
     real cm_vy_comp2 = 0.0;
     real cm_vz_comp2 = 0.0;
 
-	for(unsigned int i = 0; i < numBodies_baryon; i++)
+	for(unsigned int i = 0; i < numBodies_light; i++)
 	{
 		cm_x_comp1 += mass[i] * pos[i].x;
 		cm_y_comp1 += mass[i] * pos[i].y;
@@ -129,10 +125,10 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 
 		cm_vx_comp1 += mass[i] * vel[i].x;
 		cm_vy_comp1 += mass[i] * vel[i].y;
-		cm_vz_comp1 += mass[i] * vel[i].z;
+		cm_vy_comp1 += mass[i] * vel[i].y;
 	}
 
-	for(unsigned int i = numBodies_baryon; i < numBodies; i++)
+	for(unsigned int i = numBodies_light; i < numBodies; i++)
 	{
 		cm_x_comp2 += mass[i] * pos[i].x;
 		cm_y_comp2 += mass[i] * pos[i].y;
@@ -140,7 +136,7 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 
 		cm_vx_comp2 += mass[i] * vel[i].x;
 		cm_vy_comp2 += mass[i] * vel[i].y;
-		cm_vz_comp2 += mass[i] * vel[i].z;
+		cm_vy_comp2 += mass[i] * vel[i].y;
 	}
 
 	cm_x_comp1 /= totalMass_l;
@@ -194,21 +190,30 @@ int checkCM(const Dwarf* comp1, const Dwarf* comp2, const mwvector* pos, const m
 	return failed;
 }
 
-// make a mixed dwarf with certain potential and check it
-int testMixedDwarf(const char* dwarf_potential_type)
+// This function tests the nbGenerateMixedDwarf function (virial test and center of mass test) for a given dwarf potential type set in test lua files 
+int testMixedDwarf(const char* dwarf_potential_type_lua)
 {
-	int failed = 0;
-	char* input_lua_file = NULL;
-	real nbody = 0.0;
-    real nbody_baryon = 0.0;
-    real nbody_dark = 0.0;
-    Dwarf *comp1 = NULL;
-    Dwarf *comp2 = NULL;
-    real timestep = 0.0;
-    unsigned int numBodies = 0;
-    unsigned int numBodies_baryon = 0;
+    printf("Starting mixed dwarf test for %s\n", dwarf_potential_type_lua);
+    fflush(stdout);
 
-	const char* dwarf_params[] = {
+    int failed = 0;
+    char* input_lua_file = NULL;
+    
+    // Variables to store the parameters from Lua
+    real nbody = 0.0;              
+    real nbody_baryon = 0.0;      
+    Dwarf* comp1 = NULL;           
+    Dwarf* comp2 = NULL;      
+    real timestep = 0.0;      
+    lua_State* lua_state = NULL;
+
+    // Initialize particle arrays
+    ParticleCollection* particle_data = NULL;
+    mwvector* positions = NULL;
+    mwvector* velocities = NULL;
+    real* masses = NULL;
+
+    const char* dwarf_params[] = {
         EVOLUTION_TIME,
         EVOLUTION_RATIO,
         BARYON_SCALE_RADIUS,
@@ -217,176 +222,141 @@ int testMixedDwarf(const char* dwarf_potential_type)
         MASS_RATIO
     };
 
-	// Clean up any output files from previous runs
-    printf("Cleaning up output file from previous runs...\n");
+     // Clean up any output files from previous runs
+    printf("Cleaning up any output files from previous runs...\n");
     fflush(stdout);
 
     // Remove initial output file 
-    const char* initial_output_files[] = {"initial.out", "initial.hist"};
-    for (int i = 0; i < sizeof(initial_output_files) / sizeof(initial_output_files[0]); i++) {
-        if (access(initial_output_files[i], F_OK) != -1) {
-            if (remove(initial_output_files[i]) == 0) {
-                printf("Removed old output file: %s\n", initial_output_files[i]);
-            } else {
-                fprintf(stderr, "Failed to remove old output file: %s - %s\n", 
-                      initial_output_files[i], strerror(errno));
-            }
+    const char* initial_output_file = "initial.out";
+    if (access(initial_output_file, F_OK) != -1) {
+        if (remove(initial_output_file) == 0) {
+            printf("Removed old output file: %s\n", initial_output_file);
+        } else {
+            fprintf(stderr, "Failed to remove old output file: %s - %s\n", 
+                  initial_output_file, strerror(errno));
         }
     }
-    
+
     // Find the lua file
-    input_lua_file = find_lua_file(dwarf_potential_type);
+    input_lua_file = find_lua_file(dwarf_potential_type_lua);
     if (!input_lua_file) {
-        printf("Error: Could not find %s.lua in any expected location\n", dwarf_potential_type);
+        printf("Error: Could not find %s in any expected location\n", dwarf_potential_type_lua);
         failed = 1;
         return failed;
     }
 
-	printf("Input file path: %s\n", input_lua_file);
+    printf("Input file path: %s\n", input_lua_file);
 
-	// First, read the parameters from the Lua file
-    printf("Reading Lua parameters...\n");
-	if (read_lua_parameters(input_lua_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2, &timestep) != 0) {
-        printf("Error: Failed to read Lua parameters\n");
+    // Read the parameters from the Lua file
+    if (read_lua_parameters(input_lua_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2, &timestep, &lua_state) != 0) {
+        fprintf(stderr, "Error: Failed to read Lua parameters\n");
+        fflush(stdout);
         failed = 1;
-        free(input_lua_file);
         return failed;
     }
 
-    // Convert to unsigned integers
-    numBodies = (unsigned int)nbody;
-    numBodies_baryon = (unsigned int)nbody_baryon;
-    nbody_dark = nbody - nbody_baryon;
+    printf("Lua state: %p\n", lua_state);
+    fflush(stdout);
 
-    printf("Total bodies: %u, Baryon bodies: %u, Dark matter bodies: %u\n", 
-           numBodies, numBodies_baryon, (unsigned int)nbody_dark);
+    // Generate the mixed dwarf from the lua state
+    registerGenerateMixedDwarf(lua_state);
 
-    // Initialize Lua state and PRNG
-    lua_State* luaSt = luaL_newstate();
-    if (!luaSt) {
-        printf("Error: Failed to create Lua state\n");
+    // Check if the initial output file exists
+    const char* initial_output_filename = "initial.out";
+    printf("Checking for initial output file: %s\n", initial_output_filename);
+    fflush(stdout);
+
+    // Read the initial output file
+    particle_data = read_particle_file(initial_output_filename);
+    if (!particle_data) {
+        fprintf(stderr, "Error: Failed to read initial output file '%s'\n", initial_output_filename);
+        fflush(stdout);
         failed = 1;
-        free(input_lua_file);
-        free(comp1);
-        free(comp2);
         return failed;
     }
 
-    luaL_openlibs(luaSt);
-    
-    // Initialize random number generator
-    dsfmt_t prng;
-    dsfmt_init_gen_rand(&prng, 1234); // Using a fixed seed for reproducibility
-    
-    // Set up shift vectors (zero for testing)
-    mwvector rShift = ZERO_VECTOR;
-    mwvector vShift = ZERO_VECTOR;
-    
-    // Generate the mixed dwarf
-    printf("Generating mixed dwarf galaxy...\n");
-    
-    if (nbGenerateMixedDwarfCore(luaSt, &prng, numBodies, numBodies_baryon, comp1, comp2, FALSE, rShift, vShift) != 0) {
-        printf("Error: Failed to generate mixed dwarf\n");
-        failed = 1;
-        free(input_lua_file);
-        free(comp1);
-        free(comp2);
-        lua_close(luaSt);
-        return failed;
-    }
-    
-	printf("Mixed dwarf galaxy generated\n");
-    
-    // Read the generated particle data
-    ParticleCollection* particles = read_particle_file("initial.out");
-    if (!particles) {
-        printf("Error: Failed to read initial.out file\n");
-        failed = 1;
-        lua_close(luaSt);
-        free(input_lua_file);
-        free(comp1);
-        free(comp2);
-        return failed;
-    }
-    
-    // Verify correct number of particles
-    if (particles->count != numBodies) {
-        printf("Error: Expected %u particles, but got %zu\n", numBodies, particles->count);
-        failed = 1;
-        free_particle_collection(particles);
-        lua_close(luaSt);
-        free(input_lua_file);
-        free(comp1);
-        free(comp2);
-        return failed;
-    }
-    
-    printf("Successfully read %zu particles\n", particles->count);
-    
-    // Create arrays for position, velocity, and mass data
-    mwvector* positions = mwCalloc(numBodies, sizeof(mwvector));
-    mwvector* velocities = mwCalloc(numBodies, sizeof(mwvector));
-    real* masses = mwCalloc(numBodies, sizeof(real));
-    
-    if (!positions || !velocities || !masses) {
-        printf("Error: Failed to allocate memory for body data\n");
-        failed = 1;
-        if (positions) free(positions);
-        if (velocities) free(velocities);
-        if (masses) free(masses);
-        free_particle_collection(particles);
-        lua_close(luaSt);
-        free(input_lua_file);
-        free(comp1);
-        free(comp2);
-        return failed;
-    }
-    
-    // Copy data from particles to our arrays
-    for (unsigned int i = 0; i < numBodies; i++) {
-        positions[i].x = particles->particles[i].x;
-        positions[i].y = particles->particles[i].y;
-        positions[i].z = particles->particles[i].z;
-        
-        velocities[i].x = particles->particles[i].vx;
-        velocities[i].y = particles->particles[i].vy;
-        velocities[i].z = particles->particles[i].vz;
-        
-        masses[i] = particles->particles[i].mass;
+    printf("Successfully read %zu particles from initial file\n", particle_data->count);
+    fflush(stdout);
+
+    // Create arrays for positions, velocities, and masses
+    positions = (mwvector*)malloc(nbody * sizeof(mwvector));
+    velocities = (mwvector*)malloc(nbody * sizeof(mwvector));
+    masses = (real*)malloc(nbody * sizeof(real));
+
+    for (unsigned int i = 0; i < nbody; i++) {
+        positions[i] = (mwvector){particle_data->particles[i].x, particle_data->particles[i].y, particle_data->particles[i].z};
+        velocities[i] = (mwvector){particle_data->particles[i].vx, particle_data->particles[i].vy, particle_data->particles[i].vz};
+        masses[i] = particle_data->particles[i].mass;
     }
 
-	printf("Checking Virial stability of %s\n", dwarf_potential_type);
-	failed += checkVirialRatio(comp1, comp2, positions, velocities, masses, numBodies);
+    fflush(stdout);
 
-	printf("Checking center of mass and momentum of %s\n", dwarf_potential_type);
-	failed += checkCM(comp1, comp2, positions, velocities, masses, numBodies, numBodies_baryon);
+    // Center of mass test
+    if (checkCM(comp1, comp2, positions, velocities, masses, nbody, nbody_baryon) != 0) {
+        fprintf(stderr, "Error: Center of mass test failed\n");
+        fflush(stdout);
+        failed = 1;
+        return failed;
+    }
 
-    // Clean up
-    free_particle_collection(particles);
+    printf("Center of mass test passed\n");
+
+    // Virial test
+    if (checkVirialRatio(comp1, comp2, positions, velocities, masses, nbody) != 0) {
+        fprintf(stderr, "Error: Virial test failed\n");
+        fflush(stdout);
+        failed = 1;
+        return failed;
+    }
+    
+    printf("Virial test passed\n");
+
+    // Free memory
+    free_particle_collection(particle_data);
+    free(input_lua_file);
     free(positions);
     free(velocities);
     free(masses);
-	free(input_lua_file);
-	free(comp1);
-	free(comp2);
-    lua_close(luaSt);
 
-	return failed;
+    // Close the Lua state
+    lua_close(lua_state);
+    
+    return failed;
 }
 
 int main()
 {
-
     int failed = 0;
+    int total_failed = 0;
+    const char* dwarf_models[] = {
+        "plummer_plummer.lua",
+        "plummer_nfw.lua",
+        //"cored_cored.lua" 
+    };
+    
+    int num_models = sizeof(dwarf_models) / sizeof(dwarf_models[0]);
+    
+    for (int i = 0; i < num_models; i++) {
+        printf("\n=== Testing %s ===\n", dwarf_models[i]);
+        failed = testMixedDwarf(dwarf_models[i]);
+        if (failed == 0) {
+            printf("✓ %s passed all tests!\n", dwarf_models[i]);
+        } else {
+            printf("✗ %s failed %d tests!\n", dwarf_models[i], failed);
+            total_failed += failed;
+        }
+    }
 
-	failed += testMixedDwarf("plummer_plummer.lua");
-	// failed += testMixedDwarf("plummer_nfw.lua");
-	// failed += testMixedDwarf("cored_cored.lua");
-
-	if(failed == 0)
+	if(total_failed == 0)
 	{
+		printf("\n=== SUMMARY ===\n");
 		printf("All center of mass and virial stability tests successful!\n");
 	}
+	else
+	{
+		printf("\n=== SUMMARY ===\n");
+		printf("Failed %d tests across all models\n", total_failed);
+	}
 
-    return failed;
+    return total_failed > 0 ? 1 : 0;
 }

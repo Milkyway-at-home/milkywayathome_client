@@ -172,7 +172,7 @@ static real kl_divergence(const real *p, const real *q, size_t size) {
  * @param dwarf_potential_type The type of dwarf potential to use
  * @return int 0 on success, non-zero on failure
  */
-int testStability(const char* dwarf_potential_type) {
+int testStability(const char* dwarf_potential_type_lua) {
     printf("Starting stability test...\n");
     fflush(stdout);
     
@@ -207,21 +207,29 @@ int testStability(const char* dwarf_potential_type) {
     real initial_kl_divergence_baryon = 0.0;
     real initial_kl_divergence_dark = 0.0;
     int failed = 0;
+
+    // Initialize the dwarf parameters
+    const char* dwarf_params[] = {
+        EVOLUTION_TIME,
+        EVOLUTION_RATIO,
+        BARYON_SCALE_RADIUS,
+        SCALE_RADIUS_RATIO,
+        BARYON_MASS,
+        MASS_RATIO
+    };
     
     // Clean up any output files from previous runs
     printf("Cleaning up any output files from previous runs...\n");
     fflush(stdout);
 
     // Remove initial output file 
-    const char* initial_output_files[] = {"initial.out", "initial.hist"};
-    for (int i = 0; i < sizeof(initial_output_files) / sizeof(initial_output_files[0]); i++) {
-        if (access(initial_output_files[i], F_OK) != -1) {
-            if (remove(initial_output_files[i]) == 0) {
-                printf("Removed old output file: %s\n", initial_output_files[i]);
-            } else {
-                fprintf(stderr, "Failed to remove old output file: %s - %s\n", 
-                      initial_output_files[i], strerror(errno));
-            }
+    const char* initial_output_file = "initial.out";
+    if (access(initial_output_file, F_OK) != -1) {
+        if (remove(initial_output_file) == 0) {
+            printf("Removed old output file: %s\n", initial_output_file);
+        } else {
+            fprintf(stderr, "Failed to remove old output file: %s - %s\n", 
+                  initial_output_file, strerror(errno));
         }
     }
     
@@ -254,19 +262,10 @@ int testStability(const char* dwarf_potential_type) {
     printf("Cleanup complete.\n");
     fflush(stdout);
 
-    const char* dwarf_params[] = {
-        EVOLUTION_TIME,
-        EVOLUTION_RATIO,
-        BARYON_SCALE_RADIUS,
-        SCALE_RADIUS_RATIO,
-        BARYON_MASS,
-        MASS_RATIO
-    };
-    
     // Find the lua file
-    input_lua_file = find_lua_file(dwarf_potential_type);
+    input_lua_file = find_lua_file(dwarf_potential_type_lua);
     if (!input_lua_file) {
-        fprintf(stderr, "Error: Could not find %s.lua in any expected location\n", dwarf_potential_type);
+        fprintf(stderr, "Error: Could not find %s.lua in any expected location\n", dwarf_potential_type_lua);
         failed = 1;
         goto cleanup;
     }
@@ -274,10 +273,10 @@ int testStability(const char* dwarf_potential_type) {
     printf("Input file path: %s\n", input_lua_file);
     fflush(stdout);
 
-    // First, read the parameters from the Lua file
+    // Read the parameters from the Lua file
     printf("Reading Lua parameters...\n");
     fflush(stdout);
-    if (read_lua_parameters(input_lua_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2, &timestep) != 0) {
+    if (read_lua_parameters(input_lua_file, dwarf_params, &nbody, &nbody_baryon, &comp1, &comp2, &timestep, NULL) != 0) {
         fprintf(stderr, "Error: Failed to read Lua parameters\n");
         fflush(stdout);
         failed = 1;
@@ -946,21 +945,45 @@ cleanup:
 /**
  * @brief Main function for the stability test
  * 
- * @return int 0 on success, non-zero on failure
+ * @return 0 if all tests passed, 1 if any test failed
  */
 int main() {
 
     int failed = 0;
-    
-    failed += testStability("plummer_plummer.lua");
-    //failed += testStability("plummer_nfw.lua");
-    //failed += testStability("cored_cored.lua");
+    int total_failed = 0;
 
-    if (failed == 0) {
-        printf("All stability tests passed successfully!\n");
-    } else {
-        printf("Some stability tests failed\n");
+    // List of dwarf models to test
+    const char* dwarf_models[] = {
+        "plummer_plummer.lua",
+        "plummer_nfw.lua",
+        //"cored_cored.lua" 
+    };
+
+    // Number of models to test
+    int num_models = sizeof(dwarf_models) / sizeof(dwarf_models[0]);
+
+    // Test each model
+    for (int i = 0; i < num_models; i++) {
+        printf("\n=== Testing %s ===\n", dwarf_models[i]);
+        failed = testStability(dwarf_models[i]);
+        if (failed == 0) {
+            printf("✓ %s passed all tests!\n", dwarf_models[i]);
+        } else {
+            printf("✗ %s failed %d tests!\n", dwarf_models[i], failed);
+            total_failed += failed;
+        }
     }
 
-    return failed;
+	if(total_failed == 0)
+	{
+		printf("\n=== SUMMARY ===\n");
+		printf("All Kullback-Leibler divergence stability tests successful!\n");
+	}
+	else
+	{
+		printf("\n=== SUMMARY ===\n");
+		printf("Failed %d tests across all models\n", total_failed);
+	}
+
+    return total_failed > 0 ? 1 : 0;
 }

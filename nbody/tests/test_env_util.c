@@ -229,9 +229,11 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
  * @param comp1 Output: first dwarf component
  * @param comp2 Output: second dwarf component
  * @param timestep Output: simulation timestep
+ * @param lua_state_out Output: pointer to store the created Lua state (can be NULL if not needed)
  * @return int 0 on success, non-zero on failure
  */
-int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, real* nbody, real* nbody_baryon, Dwarf** comp1, Dwarf** comp2, real* timestep) {
+int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, real* nbody, real* nbody_baryon, 
+                       Dwarf** comp1, Dwarf** comp2, real* timestep, lua_State** lua_state_out) {
     if (!input_lua_file || !dwarf_params || !nbody || !nbody_baryon || !comp1 || !comp2 || !timestep) {
         fprintf(stderr, "Error: Null parameter provided to read_lua_parameters\n");
         return 1;
@@ -417,6 +419,12 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
         return 1;
     }
 
-    lua_close(L);
+    // Return the Lua state if requested, otherwise close it
+    if (lua_state_out) {
+        *lua_state_out = L;
+    } else {
+        lua_close(L);
+    }
+    
     return 0;
 }
