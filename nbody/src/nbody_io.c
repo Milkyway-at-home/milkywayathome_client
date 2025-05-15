@@ -63,7 +63,7 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both, mwbool LBa
 {
     if (both)
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s",
+        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s",
                 "x", 
                 "y",  
                 "z",  
@@ -74,7 +74,9 @@ static void nbPrintBodyOutputHeader(FILE* f, int cartesian, int both, mwbool LBa
                 "v_y",
                 "v_z",
                 "mass", 
-                "v_los"
+                "v_los",
+                "mu_dec",
+                "mu_ra"
             );
     }
     else
@@ -110,6 +112,8 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     real vLOS;
     real lambda_val;
     real beta_val;
+    real mu_dec;
+    real mu_ra;
 
     /*Get Histogram Parameters for Lambda-Beta Calculation*/
     NBodyLikelihoodMethod method;
@@ -149,11 +153,13 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
+            mu_dec = nbVXVYVZtomuDec(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP);
+            mu_ra = nbVXVYVZtomuRA(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP);
             fprintf(f,
-                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
+                    " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),
                     L(lbr), B(lbr), R(lbr),
-                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS);   
+                    X(Vel(p)), Y(Vel(p)), Z(Vel(p)), Mass(p), vLOS, mu_dec, mu_ra);   
         }
         else
         {

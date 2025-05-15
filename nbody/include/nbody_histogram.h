@@ -36,7 +36,7 @@ MainStruct* nbReadHistogram(const char* histogramFile);
 MainStruct* nbCreateHistogram(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp);
 
 void nbPrintHistogram(FILE* f, const MainStruct* histogram);
-
+    
 void nbWriteHistogram(const char* histoutFileName,
                       const NBodyCtx* ctx,
                       const NBodyState* st,

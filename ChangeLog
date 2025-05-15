@@ -1,3 +1,8 @@
+nbody 1.90
+	- Velocity distribution function now separate for baryons and dark matter
+	- Number of baryons can be set directly now and not automatically set as half the total number of bodies (set to half automatically if not specified in lua file) 
+	- Added new stability test that uses  Kullback–Leibler (KL) divergence to compare the simulation probability density distribution to the theoretical probability distribution function
+
 nbody 1.85:
 	- now declares binary version being used at runtime in terminal
 	- all workunits have timesteps corrected, not just those with

@@ -205,6 +205,8 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->bestLikelihood_BetaAvg = DEFAULT_WORST_CASE;
     st->bestLikelihood_VelAvg  = DEFAULT_WORST_CASE;
     st->bestLikelihood_Dist    = DEFAULT_WORST_CASE;
+    st->bestLikelihood_PM_dec = DEFAULT_WORST_CASE;
+    st->bestLikelihood_PM_ra  = DEFAULT_WORST_CASE;
     st->bestLikelihood_time    = 0.0;
     st->bestLikelihood_count   = 0;
     
@@ -764,6 +766,11 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->timeBack, ctx2->timeBack)
         && feqWithNan(ctx1->treeRSize, ctx2->treeRSize)
         && feqWithNan(ctx1->sunGCDist, ctx2->sunGCDist)
+        && feqWithNan(ctx1->sunVelx, ctx2->sunVelx)
+        && feqWithNan(ctx1->sunVely, ctx2->sunVely)
+        && feqWithNan(ctx1->sunVelz, ctx2->sunVelz)
+        && feqWithNan(ctx1->NGPdec, ctx2->NGPdec)
+        && feqWithNan(ctx1->lNCP, ctx2->lNCP)
         && feqWithNan(ctx1->criterion, ctx2->criterion)
         && (ctx1->potentialType == ctx2->potentialType)
         && feqWithNan(ctx1->OutputLB, ctx2->OutputLB)
@@ -775,6 +782,8 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->useBetaComp, ctx2->useBetaComp)
         && feqWithNan(ctx1->useVlos, ctx2->useVlos)
         && feqWithNan(ctx1->useDist, ctx2->useDist)
+        && feqWithNan(ctx1->useDist, ctx2->useDist)
+        && feqWithNan(ctx1->usePropMot, ctx2->usePropMot)
         && feqWithNan(ctx1->BestLikeStart, ctx2->BestLikeStart)
         && feqWithNan(ctx1->Nstep_control, ctx2->Nstep_control)
         && feqWithNan(ctx1->Ntsteps, ctx2->Ntsteps)
@@ -783,10 +792,12 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->BetaSigma, ctx2->BetaSigma)
         && feqWithNan(ctx1->VelSigma, ctx2->VelSigma)
         && feqWithNan(ctx1->DistSigma, ctx2->DistSigma)
+        && feqWithNan(ctx1->PMSigma, ctx2->PMSigma)
         && feqWithNan(ctx1->IterMax, ctx2->IterMax)
         && feqWithNan(ctx1->BetaCorrect, ctx2->BetaCorrect)
         && feqWithNan(ctx1->VelCorrect, ctx2->VelCorrect)
         && feqWithNan(ctx1->DistCorrect, ctx2->DistCorrect)
+        && feqWithNan(ctx1->PMCorrect, ctx2->PMCorrect)
         && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
         && ctx1->checkpointT == ctx2->checkpointT
         && feqWithNan(ctx1->nStep, ctx2->nStep)

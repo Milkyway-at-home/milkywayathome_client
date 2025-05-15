@@ -162,3 +162,124 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
     B(lambdabetar) = r2d(mw_asin(tempZ / R(lambdabetar)));
     return lambdabetar;
 }
+
+mwvector findLatUnitVec(mwvector xyz) {
+    mwvector e_b;
+
+    real l = L(xyz);
+    real b = r2d(B(xyz));
+    b = d2r(90-b);
+
+    X(e_b) = -mw_cos(l)*mw_cos(b);
+    Y(e_b) = -mw_cos(b)*mw_sin(l);
+    Z(e_b) = mw_sin(b);
+
+    return e_b;
+}
+
+mwvector findLongUnitVec(mwvector xyz) {
+    mwvector e_l;
+    
+    real l = L(xyz);
+
+    X(e_l) = -mw_sin(l);
+    Y(e_l) = mw_cos(l);
+    Z(e_l) = 0;
+
+    return e_l;
+}
+
+mwvector cartesianalign(mwvector v, real rNGPdec, real rNGPra, real rlNCP)
+{
+    mwvector t = v;
+
+    real cl = mw_cos(rlNCP);
+    real sl = mw_sin(rlNCP);
+    real cd = mw_cos(rNGPdec);
+    real sd = mw_sin(rNGPdec);
+    real ca = mw_cos(rNGPra);
+    real sa = mw_sin(rNGPra);
+
+    /* rotation matrix into the new coordinate system */
+    real rot11 = ca*cd*cl - sa*sl;
+    real rot12 = -ca*cd*sl - sa*cl;
+    real rot13 = ca*sd;
+    real rot21 = sa*cd*cl+ca*sl;
+    real rot22 = -sa*cd*sl + ca*cl;
+    real rot23 = sa*sd;
+    real rot31 = -sd*cl;
+    real rot32 = sd*sl;
+    real rot33 = cd;
+
+    X(v) = rot11 * X(t) + rot12 * Y(t) + rot13 * Z(t);
+    Y(v) = rot21 * X(t) + rot22 * Y(t) + rot23 * Z(t);
+    Z(v) = rot31 * X(t) + rot32 * Y(t) + rot33 * Z(t);
+
+    return v;
+}
+
+real nbVXVYVZtomuRA(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
+                                real sunGCDist, real NGPdec, real lNCP)
+{
+    mwvector xyz = xyzin;
+    mwvector vxvyvz = vxvyvzin;
+
+    real mura;
+    real NGPra = d2r(192);
+
+    X(xyz) += sunGCDist;
+    X(vxvyvz) -= sunVelx;
+    Y(vxvyvz) -= sunVely;
+    Z(vxvyvz) -= sunVelz;
+
+    xyz = cartesianalign(xyz, NGPdec, NGPra, lNCP);
+    vxvyvz = cartesianalign(vxvyvz, NGPdec, NGPra, lNCP);
+
+    mwvector lbr = cartesianToLbr_rad(xyz,0);
+    mwvector e_ra = findLongUnitVec(lbr);
+
+    real dist = mw_length(xyz);
+    real comp_ra = mw_dotv(vxvyvz,e_ra);
+    mura = comp_ra / dist;
+
+    mura = r2d(mura);
+
+    /* conversion to milliarcsec per year */
+    mura = mura*3600;
+    mura = mura/(mw_pow(10,6));
+    
+    return -1 * mura;
+}
+
+real nbVXVYVZtomuDec(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
+                                real sunGCDist, real NGPdec, real lNCP)
+{
+    mwvector xyz = xyzin;
+    mwvector vxvyvz = vxvyvzin;
+
+    real mudec;
+    real NGPra = d2r(192);
+
+    X(xyz) += sunGCDist;
+    X(vxvyvz) -= sunVelx;
+    Y(vxvyvz) -= sunVely;
+    Z(vxvyvz) -= sunVelz;
+
+    xyz = cartesianalign(xyz, NGPdec, NGPra, lNCP);
+    vxvyvz = cartesianalign(vxvyvz, NGPdec, NGPra, lNCP);
+
+    mwvector lbr = cartesianToLbr_rad(xyz,0);
+    mwvector e_dec = findLatUnitVec(lbr);
+
+    real dist = mw_length(xyz);
+    real comp_dec = mw_dotv(vxvyvz,e_dec);
+    mudec = comp_dec / dist;
+
+    mudec = r2d(mudec);
+
+    /* conversion to milliarcsec per year */
+    mudec = mudec*3600;
+    mudec = mudec/(mw_pow(10,6));
+    
+    return -1 * mudec;
+}
