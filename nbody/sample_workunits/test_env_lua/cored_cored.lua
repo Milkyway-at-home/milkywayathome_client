@@ -136,7 +136,7 @@ Ntime_steps           = 3000        -- -- number of timesteps to run            
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
 max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
 
-generate_initial_output = true     -- -- save initial galaxy state to initial.out before evolution                        -- --
+generateInitialOutput = true     -- -- save initial dwarf galaxy state to initial.out before evolution                        -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
 
@@ -262,6 +262,7 @@ function makeContext()
       PMCorrect     = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
+      InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
@@ -352,7 +353,7 @@ function makeBodies(ctx, potential)
         }
         
     elseif(ModelComponents == 1) then
-        firstModel = predefinedModels.plummer{
+        firstModel = predefinedModels.plummer{  -- Dwarf Options: plummer, nfw, hernq, isotropic
             nbody       = totalBodies,
             prng        = prng,
             position    = finalPosition,

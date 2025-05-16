@@ -956,7 +956,7 @@ int main() {
     const char* dwarf_models[] = {
         "plummer_plummer.lua",
         "plummer_nfw.lua",
-        //"cored_cored.lua" 
+        "cored_cored.lua" 
     };
 
     // Number of models to test
