@@ -144,7 +144,7 @@ static real series_approx(real a, real x)
         sum += del;
         if (mw_fabs(del) < mw_fabs(sum) * 1.0e-15) 
         {
-            return sum * exp(-x + a * log(x));
+            return sum * mw_exp(-x + a * mw_log(x));
         }
     }
     

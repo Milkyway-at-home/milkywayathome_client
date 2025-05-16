@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 2.6)
 project(boinc)
 
@@ -238,17 +237,6 @@ if(UNIX)
 endif()
 
 if(APPLE)
-  list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/procinfo_mac.cpp)
-endif()
-
-
-set(boinc_graphics_src ${BOINC_API_SRC_DIR}/graphics2.cpp
-                       ${BOINC_API_SRC_DIR}/graphics2_util.cpp)
-set(boinc_graphics_headers ${BOINC_API_SRC_DIR}/graphics2.h)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/boinc)
-
-if(APPLE)
   set(MAC_LIB_SRC_DIR ${BOINC_LIB_SRC_DIR}/mac)
   include_directories(${MAC_LIB_SRC_DIR})
   list(APPEND boinc_lib_src ${MAC_LIB_SRC_DIR}/mac_backtrace.cpp
@@ -257,7 +245,8 @@ if(APPLE)
                             ${MAC_LIB_SRC_DIR}/QMachOImage.c
                             ${MAC_LIB_SRC_DIR}/QMachOImageList.c
                             ${MAC_LIB_SRC_DIR}/QSymbols.c
-                            ${MAC_LIB_SRC_DIR}/QTaskMemory.c)
+                            ${MAC_LIB_SRC_DIR}/QTaskMemory.c
+                            ${MAC_LIB_SRC_DIR}/mac_spawn.cpp)
 
   list(APPEND boinc_lib_headers ${MAC_LIB_SRC_DIR}/dyld_gdb.h
                                 ${MAC_LIB_SRC_DIR}/mac_backtrace.h
@@ -266,18 +255,24 @@ if(APPLE)
                                 ${MAC_LIB_SRC_DIR}/QMachOImage.h
                                 ${MAC_LIB_SRC_DIR}/QMachOImageList.h
                                 ${MAC_LIB_SRC_DIR}/QSymbols.h
-                                ${MAC_LIB_SRC_DIR}/QTaskMemory.h)
+                                ${MAC_LIB_SRC_DIR}/QTaskMemory.h
+                                ${MAC_LIB_SRC_DIR}/mac_spawn.h)
 endif()
 
 add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
-add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
+set(boinc_graphics_src ${BOINC_API_SRC_DIR}/graphics2.cpp
+                       ${BOINC_API_SRC_DIR}/graphics2_util.cpp)
+set(boinc_graphics_headers ${BOINC_API_SRC_DIR}/graphics2.h)
 
 if(WIN32)
     target_link_libraries(boinc_api "${boinc_api_link_libs}")
 endif()
 
 maybe_disable_ssen(boinc_api boinc boinc_graphics2)
+
+add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
+set_target_properties(boinc_graphics2 PROPERTIES PUBLIC_HEADER "${boinc_graphics_headers}")
 
 
 

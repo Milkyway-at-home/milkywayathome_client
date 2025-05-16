@@ -193,7 +193,7 @@ real nbCalcChisq(const NBodyHistogram* data,        /* Data histogram */
                     simErr = nbNormalizedHistogramError(histogram->data[i].variable, effTotalNum, histogram->totalSimulated);
 
                     /* effective error = sqrt( (data error)^2 + (sim count error)^2 ) */
-                    err = sqrt(sqr(err) + sqr(simErr));
+                    err = mw_sqrt(sqr(err) + sqr(simErr));
                     tmp = (data->data[i].variable - (n / effTotalNum)) / err;
                     chiSq += sqr(tmp);
                     break;

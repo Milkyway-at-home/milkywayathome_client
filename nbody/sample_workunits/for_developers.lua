@@ -36,12 +36,12 @@ totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES             
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
 nbodyMinVersion       = "1.90"  -- -- MINIMUM APP VERSION                                                      -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
+run_null_potential    = true   -- -- NULL POTENTIAL SWITCH                                                    -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                                               -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
+LMC_body              = false    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
 LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
 preset_LMC_Mass       = 449865.888  -- -- SMU -- -- only if <12 params are used                                -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
@@ -103,7 +103,7 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 use_beta_comp        = true  -- calculate average beta, use in likelihood
 use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
 use_avg_dist         = true  -- calculate average distance, use in likelihood
-use_pm_comp          = true  -- calculate proper motion, use in likelihood
+use_pm_comp          = false  -- calculate proper motion, use in likelihood (will not be outputted if false)
 
 -- number of additional forward evolutions to do to calibrate the rotation of the bar
 -- numCalibrationRuns + 1 additional forward evolutions will be done
@@ -117,8 +117,8 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
 
-useMultiOutputs       = false      -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
+useMultiOutputs       = true      -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
+freqOfOutputs         = 10         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
 
 timestep_control      = false       -- -- control number of steps                                                          -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
@@ -321,8 +321,8 @@ function makeBodies(ctx, potential)
 
     if(ModelComponents == 2) then 
         -- Create components
-        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored        
-        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+        local comp1 = Dwarf.cored{mass = mass_l, scaleLength = rscale_l, r1 = rscale_l, rc = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored        
+        local comp2 = Dwarf.cored{mass = mass_d, scaleLength = rscale_d, r1 = rscale_d, rc = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
 
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,
