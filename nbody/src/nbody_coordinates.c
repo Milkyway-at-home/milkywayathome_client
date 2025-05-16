@@ -193,10 +193,10 @@ mwvector cartesianalign(mwvector v, real rNGPdec, real rNGPra, real rlNCP)
 {
     mwvector t = v;
 
-    real cl = mw_cos(rlNCP);
-    real sl = mw_sin(rlNCP);
-    real cd = mw_cos(rNGPdec);
-    real sd = mw_sin(rNGPdec);
+    real cl = mw_cos(d2r(180)-rlNCP);
+    real sl = mw_sin(d2r(180)-rlNCP);
+    real cd = mw_cos(d2r(90)-rNGPdec);
+    real sd = mw_sin(d2r(90)-rNGPdec);
     real ca = mw_cos(rNGPra);
     real sa = mw_sin(rNGPra);
 
@@ -215,17 +215,21 @@ mwvector cartesianalign(mwvector v, real rNGPdec, real rNGPra, real rlNCP)
     Y(v) = rot21 * X(t) + rot22 * Y(t) + rot23 * Z(t);
     Z(v) = rot31 * X(t) + rot32 * Y(t) + rot33 * Z(t);
 
+    //Inverse transform matrix from Johnson & Soderblom 1987
+    //X(v) = -0.37405302 * X(t) + 0.33428276 * Y(t) -0.93387626 * Z(t);
+    //Y(v) = -0.93941974 * X(t) -0.4847493 * Y(t) + -0.20276486 * Z(t);
+    //Z(v) = -0.32066472 * X(t) + 0.82863092 * Y(t) + 0.49535805 * Z(t);
+
     return v;
 }
 
 real nbVXVYVZtomuRA(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
-                                real sunGCDist, real NGPdec, real lNCP)
+                                real sunGCDist, real NGPdec, real NGPra, real lNCP)
 {
     mwvector xyz = xyzin;
     mwvector vxvyvz = vxvyvzin;
 
     real mura;
-    real NGPra = d2r(192);
 
     X(xyz) += sunGCDist;
     X(vxvyvz) -= sunVelx;
@@ -248,17 +252,16 @@ real nbVXVYVZtomuRA(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVel
     mura = mura*3600;
     mura = mura/(mw_pow(10,6));
     
-    return -1 * mura;
+    return mura;
 }
 
 real nbVXVYVZtomuDec(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
-                                real sunGCDist, real NGPdec, real lNCP)
+                                real sunGCDist, real NGPdec, real NGPra, real lNCP)
 {
     mwvector xyz = xyzin;
     mwvector vxvyvz = vxvyvzin;
 
     real mudec;
-    real NGPra = d2r(192);
 
     X(xyz) += sunGCDist;
     X(vxvyvz) -= sunVelx;
@@ -281,5 +284,5 @@ real nbVXVYVZtomuDec(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVe
     mudec = mudec*3600;
     mudec = mudec/(mw_pow(10,6));
     
-    return -1 * mudec;
+    return mudec;
 }

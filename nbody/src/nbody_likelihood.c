@@ -86,12 +86,12 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
         
         if(use_betadisp)
         {
-            beta_disp = nbLikelihood(dat->histograms[1], match->histograms[1]);
+            beta_disp = nbLikelihood(dat->histograms[1], match->histograms[1], dat->histograms[0]->betaDispBins);
             likelihood += beta_disp;
         }
         if(use_veldisp)
         {
-            vel_disp = nbLikelihood(dat->histograms[2], match->histograms[2]);
+            vel_disp = nbLikelihood(dat->histograms[2], match->histograms[2], 1);
             likelihood += vel_disp;
         }
         if(use_betacomp)
@@ -101,7 +101,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for average beta\n");
                 return NAN;
             }
-            beta_component = nbLikelihood(dat->histograms[3], match->histograms[3]);
+            beta_component = nbLikelihood(dat->histograms[4], match->histograms[4], 1);
             likelihood += beta_component;
         }
         if(use_vlos)
@@ -111,7 +111,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for average vlos\n");
                 return NAN;
             }
-            LOS_velocity_component = nbLikelihood(dat->histograms[4], match->histograms[4]);
+            LOS_velocity_component = nbLikelihood(dat->histograms[3], match->histograms[3], 1);
             likelihood += LOS_velocity_component;
         }
         if(use_dist)
@@ -121,7 +121,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for average distance\n");
                 return NAN;
             }
-            distance_component = nbLikelihood(dat->histograms[5], match->histograms[5]);
+            distance_component = nbLikelihood(dat->histograms[5], match->histograms[5], 1);
             likelihood += distance_component;
         }
         if(use_pm)
@@ -131,7 +131,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for the declination component of proper motion\n");
                 return NAN;
             }
-            dec_pm_component = nbLikelihood(dat->histograms[6], match->histograms[6]);
+            dec_pm_component = nbLikelihood(dat->histograms[6], match->histograms[6], 1);
             likelihood += dec_pm_component;
 
             if(!dat->usage[7] || !match->usage[7])
@@ -139,7 +139,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
                 mw_printf("One of these files does not contain any info for the declination component of proper motion\n");
                 return NAN;
             }
-            ra_pm_component = nbLikelihood(dat->histograms[7], match->histograms[7]);
+            ra_pm_component = nbLikelihood(dat->histograms[7], match->histograms[7], 1);
             likelihood += ra_pm_component;
         }
         
@@ -252,12 +252,12 @@ real * nbSystemLikelihood(const NBodyState* st,
     /* likelihood due to the vel dispersion per bin of the two hist */
     if(st->useBetaDisp)
     {
-        beta_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1]);
+        beta_dispersion_component = nbLikelihood(data->histograms[1], histogram->histograms[1], data->histograms[0]->betaDispBins);
         likelihood += beta_dispersion_component;
     }
     if(st->useVelDisp)
     {
-        velocity_dispersion_component = nbLikelihood(data->histograms[2], histogram->histograms[2]);
+        velocity_dispersion_component = nbLikelihood(data->histograms[2], histogram->histograms[2], 1);
         likelihood += velocity_dispersion_component;
     }
     if(st->useVlos)
@@ -267,7 +267,7 @@ real * nbSystemLikelihood(const NBodyState* st,
             mw_printf("One of these files does not contain any info for average velocity\n");
             return NANArray;
         }  
-        LOS_velocity_component = nbLikelihood(data->histograms[3], histogram->histograms[3]);
+        LOS_velocity_component = nbLikelihood(data->histograms[3], histogram->histograms[3], 1);
         likelihood += LOS_velocity_component;
     }
     if(st->useBetaComp)
@@ -277,7 +277,7 @@ real * nbSystemLikelihood(const NBodyState* st,
             mw_printf("One of these files does not contain any info for average beta\n");
             return NANArray;
         }  
-        beta_component = nbLikelihood(data->histograms[4], histogram->histograms[4]);
+        beta_component = nbLikelihood(data->histograms[4], histogram->histograms[4], 1);
         likelihood += beta_component;
     }
     if(st->useDist)
@@ -287,7 +287,7 @@ real * nbSystemLikelihood(const NBodyState* st,
             mw_printf("One of these files does not contain any info for average distance\n");
             return NANArray;
         }  
-        distance_component = nbLikelihood(data->histograms[5], histogram->histograms[5]);
+        distance_component = nbLikelihood(data->histograms[5], histogram->histograms[5], 1);
         likelihood += distance_component;
     }
     if(st->usePropMot)
@@ -297,14 +297,14 @@ real * nbSystemLikelihood(const NBodyState* st,
             mw_printf("One of these files does not contain any info for declination proper motion\n");
             return NANArray;
         }
-        dec_pm_component = nbLikelihood(data->histograms[6],histogram->histograms[6]);
+        dec_pm_component = nbLikelihood(data->histograms[6],histogram->histograms[6], 1);
         likelihood += dec_pm_component;
         if(!data->usage[7] || !histogram->usage[7])
         {
             mw_printf("One of these files does not contain any info for declination proper motion\n");
             return NANArray;
         }
-        ra_pm_component = nbLikelihood(data->histograms[7],histogram->histograms[7]);
+        ra_pm_component = nbLikelihood(data->histograms[7],histogram->histograms[7], 1);
         likelihood += ra_pm_component;
 
     }

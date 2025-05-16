@@ -392,7 +392,7 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
 
 /* for use with velocity dispersion, beta dispersion, average vlos,
 average beta, and average distance likelihood component calculations */
-real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
+real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram, int avgBins)
 {
     unsigned int lambdaBins = data->lambdaBins;
     unsigned int betaBins = data->betaBins;
@@ -406,14 +406,51 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
     {
         if (data->data[i].useBin)
         {
-            err_data = data->data[i].err;
-            err_hist = histogram->data[i].err;
-
+            if (avgBins>1) /*calculate average of bins used for beta dispersion calculation, can only average over an odd number of bins*/
+            {
+                if (avgBins%2 == 0)
+                {
+                    printf("\tAveraging over an even number of bins is not currently supported, setting number to one less (%2d) \n", avgBins-1);
+                    avgBins -= 1;
+                }  
+                unsigned int n = avgBins; /*number of bins used in average*/
+                real varSum = 0.0;
+                real valSum = 0.0; 
+                for (unsigned int k = 0; k < avgBins; ++k)
+                {
+                    int index = i - (avgBins-1)/2 + k;
+                    if (index<0 || index>=nbins) /*do not try to use bins that are off the range of the histogram*/
+                    {
+                        n -= 1;
+                    }
+                    else if (histogram->data[index].err<=0) /*do not try to use bins that have no data*/
+                    {
+                        n -= 1;
+                    }
+                    
+                    else
+                    {
+                        varSum += sqr(histogram->data[index].err);
+                        valSum += histogram->data[index].variable;
+                    }
+                }
+                err_hist = mw_sqrt(varSum)/n; /*variance of the average is the sum of the variances/n^2 */ 
+                err_data = data->data[i].err;
+                Hist = valSum/n; /*average value across bins used */ 
+                Data = data->data[i].variable;
+            }
+            else
+            {
+                err_data = data->data[i].err;
+                err_hist = histogram->data[i].err;
+            }
             if(err_data > 0)
             {
-                Data = data->data[i].variable;
-                Hist = histogram->data[i].variable;
-
+                if (avgBins<=1) 
+                {
+                    Data = data->data[i].variable;
+                    Hist = histogram->data[i].variable;
+                }
                 if(err_hist > 0)
                 {
                     Nsigma_sq += sqr( Data - Hist ) / ( sqr(err_data) + sqr(err_hist) );
@@ -426,7 +463,7 @@ real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram)
         }
 
     }
-        probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
+    probability = (Nsigma_sq) / 2.0; //should be negative, but we return the negative of it anyway
     
     return probability;
 }

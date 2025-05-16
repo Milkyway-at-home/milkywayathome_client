@@ -54,9 +54,9 @@ mwvector findLatUnitVec(mwvector xyz);
 mwvector findLongUnitVec(mwvector xyz);
 mwvector cartesianalign(mwvector v, real NGPdec, real NGPra, real lNCP);
 real nbVXVYVZtomuRA(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
-                                real sunGCDist, real NGPdec, real lNCP);
+                                real sunGCDist, real NGPdec, real NGPra, real lNCP);
 real nbVXVYVZtomuDec(mwvector xyzin, mwvector vxvyvzin, real sunVelx, real sunVely, real sunVelz,
-                                real sunGCDist, real NGPdec, real lNCP);
+                                real sunGCDist, real NGPdec, real NGPra, real lNCP);
 #ifdef __cplusplus
 }
 #endif

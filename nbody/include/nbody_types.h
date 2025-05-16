@@ -330,6 +330,7 @@ typedef struct
     int hasRawCounts;
     HistogramParams params;
     real massPerParticle;
+    unsigned int betaDispBins;
 
     /* This is used as a variable length struct. Do not add any fields
      * after data. */
@@ -428,12 +429,12 @@ typedef struct MW_ALIGN_TYPE
 
 #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL,            \
                            NULL, ZERO_VECTOR, ZERO_VECTOR,                                  \
-                           NULL, 0,                                                        \
+                           NULL, 0,                                                         \
                            0, 0, 0,                                                         \
-                           0, 0, 0, 0, 0, 0,                                                  \
-                           0, 0,                                                             \
+                           0, 0, 0, 0, 0, 0,                                                \
+                           0, 0,                                                            \
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FALSE, FALSE, FALSE, FALSE, FALSE, \
-                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,       \
+                           FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0,\
                            NULL, NULL, NULL, NULL}
 
 
@@ -455,6 +456,7 @@ typedef struct MW_ALIGN_TYPE
     real sunVely;
     real sunVelz;
     real NGPdec;
+    real NGPra;
     real lNCP;
 
     real b;     /* orbital parameters */
@@ -487,7 +489,7 @@ typedef struct MW_ALIGN_TYPE
     real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
     real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
     real DistSigma;           /* sigma cutoff for the outlier rejection for the bin dists dispersions */
-    real PMSigma;             /* sigma cutoff for the proper motion */ 
+    real PMSigma;             /* sigma cutoff for the proper motion */
     real IterMax;             /* number of times to apply outlier rejection with sigma cutoff */ 
     real BetaCorrect;         /* correction factor for correcting the distribution after outlier rejection */
     real VelCorrect;          /* correction factor for correcting the distribution after outlier rejection */
@@ -513,13 +515,13 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                            \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,               \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
-                         FALSE, FALSE, FALSE, FALSE, FALSE,                                                   \
+                         FALSE, FALSE, FALSE, FALSE, FALSE,                                             \
                          0, 0,                                                                          \
-                         0, 0, 0, 0, 0, 0, 0, 0, 0,                                                          \
+                         0, 0, 0, 0, 0, 0, 0, 0, 0,                                                     \
                          FALSE,                                                                         \
                          0, 0, FALSE, 0,                                                                \
                          0,                                                                             \
@@ -632,4 +634,3 @@ int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2)
 
 
 #endif /* _NBODY_TYPES_H_ */
-
