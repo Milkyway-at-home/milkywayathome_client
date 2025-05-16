@@ -44,5 +44,24 @@ int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlag
     return rc;
 }
 
+int dev_write_initial_output(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
+{
+
+    int rc = 0;
+    FILE* f;
+    f = mwOpenResolved("initial.out", "w+");
+    if (!f)
+    {
+        mw_printf("Error opening 'initial.out' for writing\n");
+        return 1;
+    }
+    
+    rc = nbOutputBodies(f, ctx, st, nbf);
+    fclose(f);
+    
+    mw_printf("Initial body data written to 'initial.out'\n");
+    return rc;
+}
+
 
 

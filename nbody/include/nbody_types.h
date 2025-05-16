@@ -477,6 +477,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool useDist;           /* use the average distance comparison calc */
     mwbool usePropMot;        /* use the proper motion comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
+    mwbool InitialOutput;     /* whether to generate initial output */
 
     mwbool OutputLB;          /* Puts LB information in output file '-o' */
     mwbool useQuad;           /* use quadrupole corrections */
@@ -515,11 +516,12 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,               \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                  \
+                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
-                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,                        \
-                         FALSE, FALSE, FALSE, FALSE, FALSE,                                             \
+                         FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,          \
+                         FALSE, FALSE, FALSE, FALSE,                                                    \
                          0, 0,                                                                          \
                          0, 0, 0, 0, 0, 0, 0, 0, 0,                                                     \
                          FALSE,                                                                         \

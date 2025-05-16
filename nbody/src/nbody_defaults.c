@@ -57,6 +57,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .useDist         */  DEFAULT_USE_DIST, 
     /* .usePropMot      */  DEFAULT_USE_PROP_MOT,
     /* .MultiOutput     */  FALSE,
+    /* .InitialOutput   */  FALSE,
 
     /* .OutputLB        */  FALSE,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
