@@ -269,12 +269,10 @@ if(WIN32)
     target_link_libraries(boinc_api "${boinc_api_link_libs}")
 endif()
 
-maybe_disable_ssen(boinc_api boinc boinc_graphics2)
-
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
 set_target_properties(boinc_graphics2 PROPERTIES PUBLIC_HEADER "${boinc_graphics_headers}")
 
-
+maybe_disable_ssen(boinc_api boinc boinc_graphics2)
 
 # install(TARGETS boinc boinc_api boinc_graphics2
 #         ARCHIVE       DESTINATION lib

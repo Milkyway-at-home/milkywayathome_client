@@ -76,7 +76,7 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
+Output_LB_coord = true    -- include Lambda-Beta coordinates in output file
 
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
@@ -322,8 +322,8 @@ function makeBodies(ctx, potential)
 
     if(ModelComponents == 2) then 
         -- Create components
-        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored        
-        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+        local comp1 = Dwarf.cored{mass = mass_l, scaleLength = rscale_l, r1 = rscale_l, rc = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored        
+        local comp2 = Dwarf.cored{mass = mass_d, scaleLength = rscale_d, r1 = rscale_d, rc = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
 
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,
