@@ -50,7 +50,7 @@ Step 0.  Ensure proper packages are installed
     (NCurses)    sudo apt-get install libncurses5-dev libncursesw5-dev
     (OpenSSL)    sudo apt-get install libssl-dev
 
-Step 1.  Download all necessary files
+Step 1.  Download all necessary files (This step can be skipped for standalone simulations)
 ```
 git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
 cd milkywayathome_client
@@ -70,6 +70,23 @@ Step 3.  Run a Nbody Simulation
 ```
 ./run_nbody
 ```
+
+run_nbody.sh options
+-------------------------------------------------------------------------------------------------
+-f    -> path to input lua file
+-o    -> path to bodies output file
+-z    -> path to histogram output file
+-h    -> path to histogram input file
+-e    -> seed 
+-n    -> number of cores to use for simulation
+-p    -> if 6 arguments: [1]Foward Time, [2]Time Ratio, [3]Baryon Scale Radius, [4]Radius Ratio, [5]Baryon Mass, [6]Mass Ratio
+      -> if 7 arguments: if manual_bodies = true: [7]Manual Bodies Input File 
+                         else: [7]LMC_mass
+      -> if 8 arguments: [7]LMC Mass [8]Manual Bodies Input File
+      -> if 12 arguments: [7]l [8]b [9]r [10]vx [11]vy [12]vz
+      -> if 13 arguments: if manual_bodies = true: [13]Manual Bodies Input File 
+                         else: [13]LMC_mass
+      -> if 14 arguments: [13]LMC Mass [14]Manual Bodies Input File
 
 Tests
 -----------------
