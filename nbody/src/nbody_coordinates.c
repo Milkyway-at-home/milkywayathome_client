@@ -193,10 +193,10 @@ mwvector cartesianalign(mwvector v, real rNGPdec, real rNGPra, real rlNCP)
 {
     mwvector t = v;
 
-    real cl = mw_cos(d2r(180)-rlNCP);
-    real sl = mw_sin(d2r(180)-rlNCP);
-    real cd = mw_cos(d2r(90)-rNGPdec);
-    real sd = mw_sin(d2r(90)-rNGPdec);
+    real cl = mw_cos(M_PI-rlNCP);
+    real sl = mw_sin(M_PI-rlNCP);
+    real cd = mw_cos((M_PI_2)-rNGPdec);
+    real sd = mw_sin((M_PI_2)-rNGPdec);
     real ca = mw_cos(rNGPra);
     real sa = mw_sin(rNGPra);
 

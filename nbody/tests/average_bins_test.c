@@ -33,9 +33,9 @@ int main()
     histogram2->histograms[1]->data[0].variable= 10;  
     histogram2->histograms[1]->data[1].variable= 22;
     histogram2->histograms[1]->data[2].variable= 10;
-    histogram2->histograms[1]->data[0].err= 3*sqrt(5);      
-    histogram2->histograms[1]->data[1].err= 3*sqrt(15); 
-    histogram2->histograms[1]->data[2].err= 3*sqrt(5); 
+    histogram2->histograms[1]->data[0].err= 3*mw_sqrt(5.0);      
+    histogram2->histograms[1]->data[1].err= 3*mw_sqrt(15.0); 
+    histogram2->histograms[1]->data[2].err= 3*mw_sqrt(5.0); 
 
     histogram3->histograms[1]->lambdaBins = 3;
     histogram3->histograms[1]->betaBins = 1;

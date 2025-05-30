@@ -710,7 +710,10 @@ static inline void set_vars(Dwarf* comp)
 		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc)));
 
 		p0 = mass/(4*M_PI*(D1*D2+D3));
+        //p0 = 315.0;
+        mw_printf("p0: %f\n", p0);
 		comp->ps = p0*D1;
+        mw_printf("ps: %f\n", comp->ps);
 	}
 	else
 	{

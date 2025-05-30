@@ -36,7 +36,9 @@ int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlag
         sprintf(output_file_name, "%d", st->step);
         
         f = mwOpenResolved(output_file_name, "w+");
+        mw_boinc_print(f, "<bodies>\n");
         rc = nbOutputBodies(f, ctx, st, nbf);
+        mw_boinc_print(f, "</bodies>\n");
         fclose(f);
         
     }
@@ -55,8 +57,11 @@ int dev_write_initial_output(const NBodyCtx* ctx, const NBodyState* st, const NB
         mw_printf("Error opening 'initial.out' for writing\n");
         return 1;
     }
-    
+
+    mw_boinc_print(f, "<bodies>\n");
     rc = nbOutputBodies(f, ctx, st, nbf);
+    mw_boinc_print(f, "</bodies>\n");
+
     fclose(f);
     
     mw_printf("Initial body data written to 'initial.out'\n");

@@ -124,13 +124,13 @@ static real cored_den(const Dwarf* model, real r)                               
 	real rscale;																									     //
 	if(r <= r1)																											 //
 	{																													 //
-		p = model->p0;																									 //
+		p = model->p0;																								 //
 		rscale = model->rc;	       																						 //
 		return p/(1 + sqr(r/rscale));																					 //
 	}																													 //
 	else																												 //
 	{																													 //
-		p = model->ps;																									 //
+		p = model->ps;																								 //
 		rscale = model->scaleLength;																					 //
 		return p/((r/rscale) * sqr(1 + r/rscale));																		 //
 	}																													 //

@@ -39,7 +39,9 @@ Nbody
 
 - **Bar code currently does not pass all tests**
 
+
 Instructions for Compiling Nbody (With BOINC on)
+NOTE: CMAKE version 4.0 and later are not currently supported 
 ---------------------------------------------------------------------------------------------------
 Step 0.  Ensure proper packages are installed
 

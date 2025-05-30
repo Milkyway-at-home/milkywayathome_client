@@ -480,6 +480,7 @@ typedef struct MW_ALIGN_TYPE
     mwbool InitialOutput;     /* whether to generate initial output */
 
     mwbool OutputLB;          /* Puts LB information in output file '-o' */
+    mwbool SimpleOutput;      /* Simple output only x,y,z,vx,vy,vz,mass */
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
