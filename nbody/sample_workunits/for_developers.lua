@@ -77,7 +77,6 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 
 -- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- --
 Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
-Simple_Output = true    -- output only x,y,z,vx,vy,vz,mass
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
 
