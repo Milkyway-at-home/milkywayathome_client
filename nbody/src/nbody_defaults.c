@@ -60,7 +60,6 @@ const NBodyCtx defaultNBodyCtx =
     /* .InitialOutput   */  FALSE,
 
     /* .OutputLB        */  FALSE,
-    /* .SimpleOutput    */  FALSE,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,
