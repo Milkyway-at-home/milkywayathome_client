@@ -228,7 +228,6 @@ function makeContext()
       sunVelz     = SunVelz,
       criterion   = criterion,
       OutputLB    = Output_LB_coord,
-      SimpleOutput = Simple_Output,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
