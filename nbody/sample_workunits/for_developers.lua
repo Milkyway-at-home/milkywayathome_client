@@ -43,14 +43,14 @@ print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                  
 
 LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
 LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
-preset_LMC_Mass       = 449865.888  -- -- SMU -- -- only if <12 params are used                                -- --
+preset_LMC_Mass       = 449865.888  -- -- SMU (used unless specified in arguments)                             -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
-SunVelx               = 10.1      -- -- Sun's x-velocity  (Hogg et al. (2005))                                 -- --
-SunVely               = 224.0     -- -- Sun's y-velocity                                                       -- --
-SunVelz               = 6.7       -- -- Sun's z-velocity                                                       -- --
+SunVelx               = 10.3      -- -- Sun's x-velocity (kpc/Gyr) (Hogg et al. (2005))                        -- --
+SunVely               = 229.2     -- -- Sun's y-velocity (kpc/Gyr)                                             -- --
+SunVelz               = 6.9       -- -- Sun's z-velocity (kpc/Gyr)                                             -- --
 
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -77,7 +77,7 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 
 -- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- --
 Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
--- Simple_Output = true    -- output only x,y,z,vx,vy,vz,mass
+Simple_Output = true    -- output only x,y,z,vx,vy,vz,mass
 
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -129,13 +129,9 @@ Ntime_steps           = 3000        -- -- number of timesteps to run            
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
 max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
 
-generateInitialOutput = true       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
+generateInitialOutput = false       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
-
-
-
-
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
@@ -233,6 +229,7 @@ function makeContext()
       sunVelz     = SunVelz,
       criterion   = criterion,
       OutputLB    = Output_LB_coord,
+      SimpleOutput = Simple_Output,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
@@ -340,14 +337,14 @@ function makeBodies(ctx, potential)
         }
         
     elseif(ModelComponents == 1) then
-        firstModel = predefinedModels.plummer{  -- Dwarf Options: plummer, nfw, hernq, isotropic
+        firstModel = predefinedModels.plummer{  -- Dwarf Options: plummer, nfw, hernq
             nbody       = totalBodies,
-            prng        = prng,
-            position    = finalPosition,
-            velocity    = finalVelocity,
             mass        = mass_l,
             scaleRadius = rscale_l,
-            ignore      = false
+            position    = finalPosition,
+            velocity    = finalVelocity,
+            ignore      = false,
+            prng        = prng
         }
   
     end

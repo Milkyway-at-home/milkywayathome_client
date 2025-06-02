@@ -108,6 +108,7 @@ static int createNBodyCtx(lua_State* luaSt)
             
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName             },
             { "OutputLB",      LUA_TBOOLEAN, NULL, FALSE, &ctx.OutputLB              },
+            { "SimpleOutput",  LUA_TBOOLEAN, NULL, FALSE, &ctx.SimpleOutput          },
             { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad               },
             { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest           },
             { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors           },

@@ -1,13 +1,26 @@
-Linux: [![Linux Build](https://travis-ci.org/Milkyway-at-home/milkywayathome_client.svg?branch=master)](https://travis-ci.org/Milkyway-at-home/milkywayathome_client)
-MinGW: [![MinGW Build](https://travis-ci.org/Milkyway-at-home/milkywayathome_client.svg?branch=travis-xcompile)](https://travis-ci.org/Milkyway-at-home/milkywayathome_client)
+# Milkyway@Home Client
 
-Separation
---------------------------------------------------------------------------------
-- separation will do a separation after the integration if given an
-  output file. There is also an argument to set the random number seed.
+[![Linux Build](https://travis-ci.org/Milkyway-at-home/milkywayathome_client.svg?branch=master)](https://travis-ci.org/Milkyway-at-home/milkywayathome_client)
+[![MinGW Build](https://travis-ci.org/Milkyway-at-home/milkywayathome_client.svg?branch=travis-xcompile)](https://travis-ci.org/Milkyway-at-home/milkywayathome_client)
+
+> **Note:** CMake version 4.0 and later are **not currently supported**.
+
+---
+
+## Table of Contents
+
+- [Nbody](#nbody)
+- [Compiling Nbody](#instructions-for-compiling-nbody)
+- [Running Nbody](#running-nbody-options)
+- [Input Lua File Dwarf Model Options](#input-lua-file-dwarf-model-options)
+- [N-Body CMAKE Flags](#n-body-cmake-flags)
+- [Tests](#tests)
+- [Separation](#separation)
+- [TAO](#tao)
+- [Random Notes](#random-notes)
 
 Nbody
---------------------------------------------------------------------------------
+---
 - Simulations are described with Lua input files which can be used
   to produce an arbitrary initial configuration of particles. 
 
@@ -40,9 +53,8 @@ Nbody
 - **Bar code currently does not pass all tests**
 
 
-Instructions for Compiling Nbody (With BOINC on)
-NOTE: CMAKE version 4.0 and later are not currently supported 
----------------------------------------------------------------------------------------------------
+Instructions for Compiling Nbody
+---
 Step 0.  Ensure proper packages are installed
 
     (For Ubuntu) sudo apt-get install mingw-w64 cmake
@@ -50,7 +62,7 @@ Step 0.  Ensure proper packages are installed
     (NCurses)    sudo apt-get install libncurses5-dev libncursesw5-dev
     (OpenSSL)    sudo apt-get install libssl-dev
 
-Step 1.  Download all necessary files (This step can be skipped for standalone simulations)
+Step 1.  Download all necessary files (Only need to git submodule if cross compiling with BOINC)
 ```
 git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
 cd milkywayathome_client
@@ -71,25 +83,86 @@ Step 3.  Run a Nbody Simulation
 ./run_nbody
 ```
 
-run_nbody.sh options
--------------------------------------------------------------------------------------------------
--f    -> path to input lua file
--o    -> path to bodies output file
--z    -> path to histogram output file
--h    -> path to histogram input file
--e    -> seed 
--n    -> number of cores to use for simulation
--p    -> if 6 arguments: [1]Foward Time, [2]Time Ratio, [3]Baryon Scale Radius, [4]Radius Ratio, [5]Baryon Mass, [6]Mass Ratio
-      -> if 7 arguments: if manual_bodies = true: [7]Manual Bodies Input File 
-                         else: [7]LMC_mass
-      -> if 8 arguments: [7]LMC Mass [8]Manual Bodies Input File
-      -> if 12 arguments: [7]l [8]b [9]r [10]vx [11]vy [12]vz
-      -> if 13 arguments: if manual_bodies = true: [13]Manual Bodies Input File 
-                         else: [13]LMC_mass
-      -> if 14 arguments: [13]LMC Mass [14]Manual Bodies Input File
+Running N-Body Options
+---
+The type of run is set by setting one of the following flags to `true`:  
+`run`, `run_compare`, `compare_only`, or `get_flag_list`.
+
+### Command-Line Options
+
+| Option | Description |
+|--------|-------------|
+| `-f`   | Path to input LUA file |
+| `-o`   | Path to bodies output file |
+| `-z`   | Path to histogram output file |
+| `-h`   | Path to histogram input file (used with `run_compare` only) |
+| `-e`   | Seed |
+| `-n`   | Number of threads to use for simulation |
+| `-P`   | Print the percentage of progress of the simulation to standard output |
+| `-u`   | Runs the visualizer (may require additional packages and compilation with OpenGL) |
+| `-p`   | Simulation paramters list (6, 7, 8, 12, 13 or 14 arguments)
+
+#### `-p` Options
+
+- **Required 6 arguments:**  
+  `[1] Forward Time, [2] Time Ratio, [3] Baryon Scale Radius, [4] Radius Ratio, [5] Baryon Mass, [6] Mass Ratio`
+- **If 7 arguments:**  
+  - If `manual_bodies = true`: `[7] Manual Bodies Input File`  
+  - Else: `[7] LMC_mass`
+- **If 8 arguments:**  
+  `[7] LMC Mass, [8] Manual Bodies Input File`
+- **If 12 arguments:**  
+  `[7] l, [8] b, [9] r, [10] vx, [11] vy, [12] vz`
+- **If 13 arguments:**  
+  - If `manual_bodies = true`: `[13] Manual Bodies Input File`  
+  - Else: `[13] LMC_mass`
+- **If 14 arguments:**  
+  `[13] LMC Mass, [14] Manual Bodies Input File`
+
+#### Likelihood Comparison Flags
+
+| Flag | Description |
+|------|-------------|
+| `-s` | Compare using only EMD and cost component |
+| `-S` | Use EMD, cost, beta dispersion |
+| `-V` | Use EMD, cost, velocity dispersion |
+| `-D` | Use EMD, cost, beta dispersion and velocity dispersion |
+| `-A` | Compare all components of the likelihood |
+
+---
+
+## Input Lua File Dwarf Model Options
+
+### Double Component Model
+
+- **Plummer:** `{mass, scaleLength}`
+- **NFW:** `{mass, scaleLength}`
+- **General Hernquist:** `{mass, scaleLength}`
+- **Cored:** `{mass, scaleLength, r1, rc}`  _***Not fully tested***_
+
+### Single Component Model
+
+- **Plummer:** `{nbody, mass, scaleRadius, position, velocity, ignore, prng}`
+- **NFW:** `{nbody, mass, rho_0, scaleRadius, position, velocity, ignore, prng}`
+- **Hernquist:** `{nbody, mass, radius, a, position, velocity, ignore, prng}`
+
+---
+
+## N-Body CMAKE Flags
+
+| Flag | Values | Description |
+|------|--------|-------------|
+| `DCMAKE_BUILD_TYPE`      | Debug, Release, RelWithDebInfo, MinSizeRel | Set to `Release` for a normal build. Other options include debugging information. |
+| `DNBODY_DEV_OPTIONS`     | ON, OFF | Set to `ON` for developer options. `OFF` to use client-side parameter files. |
+| `DNBODY_GL`              | ON, OFF | Builds the visualizer. Requires additional OpenGL packages. |
+| `DBOINC_APPLICATION`     | ON, OFF | Cross-compile with BOINC. |
+| `DSEPARATION`            | ON, OFF | Option for building the Separation code. Defaults to `OFF`. |
+| `DDOUBLEPREC`            | ON, OFF | Enable double-precision floating point calculation. |
+| `DNBODY_OPENMP`          | ON, OFF | Build the algorithm single-threaded (`OFF`) or multithreaded (`ON`). |
+| `DNBODY_OPENCL`          | ON, OFF | Build with OpenCL libraries to support running N-Body on GPUs. |
 
 Tests
------------------
+---
   Tests can be run by running:
   ```
   $ make test
@@ -116,8 +189,13 @@ Tests
   ```
   If only 25 tests are running instead of 88 tests, you are missing libraries (check Step 0 for compiling N-body)
 
+Separation
+---
+- separation will do a separation after the integration if given an
+  output file. There is also an argument to set the random number seed.
+
 TAO
---------------------------------------------------------------------------------
+---
 TODO: update for latest tao version
 
 - Maximum Likelihood Evaluation Code for running milkyway separation program
@@ -207,9 +285,8 @@ To run call:
         --rand <double>     (randomizes the search parameters by +- the given percent)
 ```
 
----------------------------------------------------------------------------------------------------
-
 Random notes:
+---
 
  - All give usage with --help/-? arguments
 
@@ -218,35 +295,3 @@ tarballs if git and xz are installed and found.
 
 - Make sure when building with MSVC to set built to use Multithreaded
   (/MT) for the builds of the various libraries
-
-Instructions for Cross Compiling (With BOINC on)
----------------------------------------------------------------------------------------------------
-Step 0.  Ensure proper packages are installed
-    (For Ubuntu) `sudo apt-get install mingw-w64 cmake`
-
-Step 1.  Download all necessary files.
-```
-git clone https://github.com/Milkyway-at-home/milkywayathome_client.git
-cd milkywayathome_client
-git submodule init
-git submodule update --recursive
-```
-NOTE: If you are running on WSL (Windows Subsystem Linux), you may need to run the following commands
-```
-git submodule sync
-git submodule init
-git submodule update
-```
-Step 2.  Set up build directory
-```
-cd ../
-mkdir build
-cd build
-```
-Step 3.  Set up build files with CMake and Compile
-(Only Confirmed to work with Separation)
-```
-cmake -DCMAKE_TOOLCHAIN_FILE="../milkywayathome_client/cmake_modules/MinGW32-Cross-Toolchain.cmake" -DBUILD_32=<ON/OFF> -       DSEPARATION_OPENCL=<ON/OFF> -DSEPARATION_STATIC=ON -DOPENCL_LIBRARIES=<Path to OpenCL.lib for 32 or 64 bit depending on build> -DOPENCL_INCLUDE_DIRS=<Path to OpenCL "include" files> ../milkywayathome_client/
-make
-```
-* These instructions may need to be updated as BOINC updates their software.
