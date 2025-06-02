@@ -113,7 +113,6 @@ static int createEinastoDwarf(lua_State* luaSt)
 
 static int createCoredDwarf(lua_State* luaSt)
 {
-	//mw_printf("createSIDMDwarf\n");
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {

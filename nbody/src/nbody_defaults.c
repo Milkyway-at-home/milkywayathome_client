@@ -36,6 +36,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .sunVely         */  DEFAULT_SUN_VEL_Y,
     /* .sunVelz         */  DEFAULT_SUN_VEL_Z,
     /* .NGPdec          */  DEFAULT_NGP_DEC,
+    /* .NGPra           */  DEFAULT_NGP_RA,
     /* .lNCP            */  DEFAULT_L_NCP,
 
     /* .b               */  DEFAULT_B_START_COORD,
@@ -56,6 +57,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .useDist         */  DEFAULT_USE_DIST, 
     /* .usePropMot      */  DEFAULT_USE_PROP_MOT,
     /* .MultiOutput     */  FALSE,
+    /* .InitialOutput   */  FALSE,
 
     /* .OutputLB        */  FALSE,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,

@@ -620,6 +620,14 @@ int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     rc = nbEvaluateInitialNBodyState(luaSt, ctx, st);
     lua_close(luaSt);
 
+    // Generate initial output if requested
+    #ifdef NBODY_DEV_OPTIONS
+        if (ctx->InitialOutput)
+        {
+            dev_write_initial_output(ctx, st, nbf);
+        }
+    #endif
+
     return rc;
 }
 

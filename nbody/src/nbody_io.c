@@ -120,6 +120,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     HistogramParams hp;
     NBHistTrig histTrig;
     mwbool LambdaBetaAvailable = ctx->OutputLB;
+    mwbool SimpleOutputAvailable = ctx->SimpleOutput;
     if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
     {
         mw_printf("Failed to get Histogram Parameters. Not including Lambda-Beta in Output file.\n");
@@ -153,8 +154,8 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         {
             lbr = cartesianToLbr(Pos(p), ctx->sunGCDist);
             vLOS = calc_vLOS(Vel(p), Pos(p), ctx->sunGCDist);
-            mu_dec = nbVXVYVZtomuDec(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP);
-            mu_ra = nbVXVYVZtomuRA(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec,ctx->lNCP);
+            mu_dec = nbVXVYVZtomuDec(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec, ctx->NGPra, ctx->lNCP);
+            mu_ra = nbVXVYVZtomuRA(Pos(p),Vel(p),ctx->sunVelx,ctx->sunVely,ctx->sunVelz,ctx->sunGCDist,ctx->NGPdec, ctx->NGPra, ctx->lNCP);
             fprintf(f,
                     " %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f, %22.15f",
                     X(Pos(p)), Y(Pos(p)), Z(Pos(p)),

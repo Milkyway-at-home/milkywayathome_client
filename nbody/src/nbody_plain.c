@@ -420,7 +420,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
          */    
         #ifdef NBODY_DEV_OPTIONS
             if(ctx->MultiOutput)
-            {
+            {   
                 dev_write_outputs(ctx, st, nbf, ctx->OutputFreq);
             }
                 
