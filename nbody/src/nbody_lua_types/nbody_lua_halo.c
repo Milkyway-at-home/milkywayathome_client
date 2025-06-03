@@ -40,6 +40,7 @@ int pushHalo(lua_State* luaSt, const Halo* p)
 static const MWEnumAssociation haloOptions[] =
 {
     { "logarithmic",        LogarithmicHalo        },
+    { "sphericalnfwerkal",  SphericalNFWerkalHalo  },
     { "nfw",                NFWHalo,               },
     { "triaxial",           TriaxialHalo,          },
     { "caustic",            CausticHalo,           },
@@ -75,6 +76,20 @@ static int createLogarithmicHalo(lua_State* luaSt)
         };
 
     h.type = LogarithmicHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createSphericalNFWerkalHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass        },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = SphericalNFWerkalHalo;
     return createHalo(luaSt, argTable, &h);
 }
 
@@ -262,6 +277,7 @@ static const luaL_reg metaMethodsHalo[] =
 static const luaL_reg methodsHalo[] =
 {
     { "logarithmic",        createLogarithmicHalo        },
+    { "sphericalnfwerkal",  createSphericalNFWerkalHalo  },
     { "nfw",                createNFWHalo                },
     { "triaxial",           createTriaxialHalo           },
     { "caustic",            createCausticHalo            },
@@ -332,6 +348,7 @@ int registerHaloKinds(lua_State* luaSt)
     table = lua_gettop(luaSt);
 
     setModelTableItem(luaSt, table, createLogarithmicHalo, "logarithmic");
+    setModelTableItem(luaSt, table, createSphericalNFWerkalHalo, "sphericalnfwerkal");
     setModelTableItem(luaSt, table, createNFWHalo, "nfw");
     setModelTableItem(luaSt, table, createTriaxialHalo, "triaxial");
     setModelTableItem(luaSt, table, createCausticHalo, "caustic");

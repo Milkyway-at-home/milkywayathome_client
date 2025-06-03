@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time);
-mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvector pos1, const real mass, const real scale);
+mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2);
 //mwvector pointLmcAccel(const mwvector pos, const mwvector pos1, const real mass);
 //mwvector plummerLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale);
 //mwvector hernquistLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale);

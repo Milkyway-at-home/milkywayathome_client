@@ -488,6 +488,7 @@ typedef struct MW_ALIGN_TYPE
 
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
+    real LMCscale2;            /* Cutoff radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
     real coulomb_log;          /* Coulomb Logarithm used in dynamical friction */
 

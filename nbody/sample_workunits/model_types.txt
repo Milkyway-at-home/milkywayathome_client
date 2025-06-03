@@ -16,6 +16,7 @@ Disk:
 
 Halo:
       Halo.logarithmic{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenZ = <q> }
+      Halo.sphericalnfwerkal{ scaleLength = <kpc>, mass = <structure mass units> }
       Halo.nfw{ vhalo = <kpc/Gyr>, scaleLength = <kpc> }
       Halo.triaxial{ vhalo = <kpc/Gyr>, scaleLength = <kpc>, flattenX = <q>, flattenY = <q>, flattenZ = <q>, triaxAngle = <q> }   /** sqrt(F_x^2/(F_x^2+1)) < F_z < 1/F_x^e + 1, and F_y = 1 **/
       Halo.caustic{}??? (Don't use this one.)

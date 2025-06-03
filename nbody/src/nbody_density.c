@@ -105,6 +105,19 @@ static inline real logarithmicHaloDensity(const Halo* h, mwvector pos) /** flatt
     return v*v*numer/2.0/pi/denom;
 }
 
+static inline real SphericalNFWerkalHaloDensity(const Halo* h, real r)
+{
+    const real a = h->scaleLength;
+    const real M = h->mass;
+
+    const real c = mw_log(1.0 + 15.3) - (15.3/(1.0 + 15.3));
+
+    if(r == 0) return 0;
+
+    return M / (c*r*(a+r)*(a+r)*4.0*pi);
+
+}
+
 static inline real NFWHaloDensity(const Halo* h,  real r)
 {
     const real a = h->scaleLength;
@@ -324,6 +337,9 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
         case LogarithmicHalo:
             density += logarithmicHaloDensity(&(pot->halo), pos);
             break;
+	case SphericalNFWerkalHalo:
+	    density += SphericalNFWerkalHaloDensity(&(pot->halo), r);
+	    break;
         case NFWHalo:
             density += NFWHaloDensity(&(pot->halo), r);
             break;

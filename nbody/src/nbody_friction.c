@@ -82,7 +82,7 @@ static inline real getHaloScaleLength(const Halo* halo){
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric, real time, real coulomb_log){
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, real scaleLength2_LMC, mwbool dynaFric, real time, real coulomb_log){
     mwvector result = mw_vec(0.0,0.0,0.0);        //Vector with acceleration due to DF
     if (!dynaFric) {
         return result;

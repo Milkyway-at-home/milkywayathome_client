@@ -71,6 +71,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .LMCfunction     */  1,
     /* .LMCmass         */  0.0,
     /* .LMCscale        */  0.0,
+    /* .LMCscale2       */  0.0,
     /* .LMCDynaFric     */  FALSE,
     /* .coulomb_log     */  0.0,
 
