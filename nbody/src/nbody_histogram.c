@@ -1538,8 +1538,8 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     if(readEMDRange) /*Set EMD range to what is given in histogram*/
     {
         int index = 0;
-        char *delim[] = "{},";
-        char *token[];
+        char delim[] = "{},";
+        char *token;
         char *end = NULL;
         all->histograms[0]->params.nRange = 0;
         token = strtok(rangeString, delim);
