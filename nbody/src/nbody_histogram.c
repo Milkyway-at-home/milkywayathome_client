@@ -31,6 +31,8 @@
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
 #include "nbody_show.h"
+#include <string.h>
+#include <stdlib.h>
 
 /*Calculates the center of two numbers */
 static real nbHistogramCenter(real start, real end)
@@ -1150,6 +1152,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     mwbool readMass = FALSE; /*Read the mass per particle for the histogram*/
     mwbool readLambdaBins = FALSE; /* Read the number of bins in the lambda direction */
     mwbool readBetaBins = FALSE; /* Read the number of bins the beta direction */
+    mwbool readEMDRange = FALSE; /* Read the ranges in Lambda over which to calculate EMD*/
     mwbool readBetaDispBins = FALSE; /*Read the number of beta dispersion bins to average over*/
     mwbool readHasPM = FALSE; /*Read if histogram contains proper motion bins*/
     mwbool readOpeningTag = FALSE; /* Read the <histogram> tag */
@@ -1159,6 +1162,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     unsigned int totalSim = 0;  /*Total number of simulated particles read from the histogram */
     unsigned int lambdaBins = 0; /* Number of bins in lambda direction */
     unsigned int betaBins = 0; /* Number of bins in beta direction */
+    char rangeString[1024]; /* String containing ranges to be used for EMD calculation*/
     unsigned int betaDispBins = 0; /*Number of beta dispersion bins to average over*/
     mwbool usedOrbitParams = FALSE;  /* indicates whether or not to expect extra histogram parameters for orbit fitting */
     unsigned int hasPM = FALSE; /* Indicates whether or not to expect histogram bins for proper motions*/
@@ -1279,6 +1283,16 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             if(rc == 1)
             {
                 readBetaBins = TRUE;
+                continue;
+            }
+        }
+
+        if (!readEMDRange)
+        {
+            rc = sscanf(lineBuf, " EMDRange = {%s} \n", &rangeString);
+            if(rc == 1)
+            {
+                readEMDRange = TRUE;
                 continue;
             }
         }
@@ -1519,6 +1533,29 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             all->histograms[i]->massPerParticle = mass;
             all->histograms[i]->betaDispBins = betaDispBins;
         }
+    }
+
+    if(readEMDRange) /*Set EMD range to what is given in histogram*/
+    {
+        int index = 0;
+        char *delim[] = "{},";
+        char *token[];
+        char *end = NULL;
+        all->histograms[0]->params.nRange = 0;
+        token = strtok(rangeString, delim);
+        while(token != NULL)
+        {
+            all->histograms[0]->params.EMDRange[index] = strtof(token, &end);
+            index = index + 1;
+            token = strtok(NULL, delim);
+        }
+        all->histograms[0]->params.nRange = index;
+    }
+    else /*If not given, default to lambda start/end */
+    {
+        all->histograms[0]->params.EMDRange[0] = 0;/*all->histograms[0]->params.lambdaStart;*/
+        all->histograms[0]->params.EMDRange[1] = 1;/*all->histograms[0]->params.lambdaEnd;*/
+        all->histograms[0]->params.nRange = 2;
     }
     
     return all;
