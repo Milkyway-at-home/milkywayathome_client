@@ -30,8 +30,8 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 2872607   -- -- NUMBER OF TOTAL BODIES                                                   -- --
-totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
+totalBodies           = 20000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
+totalLightBodies      = 0   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
 nbodyMinVersion       = "1.90"  -- -- MINIMUM APP VERSION                                                      -- --
@@ -120,7 +120,7 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
 
 useMultiOutputs       = true      -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
+freqOfOutputs         = 787         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
 
 timestep_control      = false       -- -- control number of steps                                                          -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
@@ -128,7 +128,7 @@ Ntime_steps           = 3000        -- -- number of timesteps to run            
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
 max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
 
-generateInitialOutput = true       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
+generateInitialOutput = false       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
@@ -216,7 +216,7 @@ function makeContext()
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = get_soft_par(),
+      eps2        = 1e-15, 
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
