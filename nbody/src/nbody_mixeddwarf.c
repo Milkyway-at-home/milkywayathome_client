@@ -699,24 +699,33 @@ static inline void set_vars(Dwarf* comp)
     real mass = comp->mass; 
     real rscale = comp->scaleLength;
     real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
+    mw_printf("r200: %f\n", r200);
 	real p0;
 	if(comp->type == Cored)
 	{
 		real r1 = comp->r1;
+        mw_printf("r1: %f\n", r1);
 		real rc = comp->rc;
+        mw_printf("rc: %f\n", rc);
 
 		real D1 = r1*sqr(1+r1/rscale)/(rscale+rscale*sqr(r1/rc));
 		real D2 = cube(rscale)*(mw_log(1+r200/rscale)-mw_log(1+r1/rscale)-r200/(rscale+r200)+r1/(rscale+r1));
 		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc)));
 
 		p0 = mass/(4*M_PI*(D1*D2+D3));
+        mw_printf("p0: %f\n", p0);
 		comp->ps = p0*D1;
+        mw_printf("D1: %f\n", D1);
+        mw_printf("D2: %f\n", D2);
+        mw_printf("D3: %f\n", D3);
+        mw_printf("ps: %f\n", comp->ps);
 	}
 	else
 	{
 		real c = r200 / rscale; //halo concentration
 		real term = mw_log(1.0 + c) - c / (1.0 + c);
 		p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
+        mw_printf("p0: %f\n", p0);
 	}
     comp->r200 = r200;
     comp->p0 = p0;
@@ -779,7 +788,9 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
         set_vars(comp1);
+        mw_printf("Comp1\n");
         set_vars(comp2);
+        mw_printf("Comp2\n");
         real bound1 ;
         real bound2 ;
         
