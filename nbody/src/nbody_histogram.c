@@ -1538,8 +1538,8 @@ MainStruct* nbReadHistogram(const char* histogramFile)
     if(readEMDRange) /*Set EMD range to what is given in histogram*/
     {
         int index = 0;
-        char *delim[] = "{},";
-        char *token[];
+        char delim[] = "{}()[], ";
+        char *token;
         char *end = NULL;
         all->histograms[0]->params.nRange = 0;
         token = strtok(rangeString, delim);
@@ -1551,12 +1551,14 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         }
         all->histograms[0]->params.nRange = index;
     }
-    else /*If not given, default to lambda start/end */
+    else /*If not given, default to the full histogram */
     {
-        all->histograms[0]->params.EMDRange[0] = 0;/*all->histograms[0]->params.lambdaStart;*/
-        all->histograms[0]->params.EMDRange[1] = 1;/*all->histograms[0]->params.lambdaEnd;*/
+        all->histograms[0]->params.EMDRange[0] = all->histograms[0]->data[0].lambda - ((all->histograms[0]->data[1].lambda - all->histograms[0]->data[0].lambda)/2);
+        all->histograms[0]->params.EMDRange[1] = all->histograms[0]->data[lambdaBins-1].lambda + ((all->histograms[0]->data[1].lambda - all->histograms[0]->data[0].lambda)/2);
         all->histograms[0]->params.nRange = 2;
+        mw_printf("No EMD Range given in input hist '%s', setting range as {%f,%f} \n", histogramFile, all->histograms[0]->params.EMDRange[0], all->histograms[0]->params.EMDRange[1]);
     }
+    
     
     return all;
 }

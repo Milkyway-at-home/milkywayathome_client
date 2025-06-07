@@ -1291,21 +1291,28 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     real histMass = first_hist->massPerParticle;
     real dataMass = first_data->massPerParticle;
     unsigned int i;
+    unsigned int j;
     unsigned int rawCount;
     WeightPos* hist;
     WeightPos* dat;
+    real EMDStart;
+    real EMDEnd;
+    unsigned int rangeCount;
+    unsigned int rangeBins;
+    unsigned int totalRangeCount; // Total counts in all EMD Ranges, used weighting the EMD
     real emd;
     real likelihood;
 
-    /* Remove all simulated bodies in unused bins for renormalization after skipping bins */
-    for (i = 0; i < bins; ++i)
-    {
-        if(!first_data->data[i].useBin)
-        {
-            rawCount = mw_round(first_hist->data[i].variable * nSim_uncut);
-            nSim -= rawCount;
-        }
-    }
+    /*Old code, this is now done for each EMD range*/
+    ///* Remove all simulated bodies in unused bins for renormalization after skipping bins */
+    //for (i = 0; i < bins; ++i)
+    //{
+    //    if(!first_data->data[i].useBin)
+    //    {
+    //        rawCount = mw_round(first_hist->data[i].variable * nSim_uncut);
+    //        nSim -= rawCount;
+    //    }
+    //}
 
     if (first_data->lambdaBins != first_hist->lambdaBins || first_data->betaBins != first_hist->betaBins)
     {
@@ -1326,39 +1333,119 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         /*In order to calculate likelihood the masses are necessary*/
         return NAN;
     }
-    
-    /* This creates histograms that emdCalc can use */
-    hist = mwCalloc(bins, sizeof(WeightPos));
-    dat = mwCalloc(bins, sizeof(WeightPos));
-    
-    for(unsigned int i = 0; i < bins; i++)
+
+    if (first_data->params.nRange%2 != 0)
     {
-        if(first_data->data[i].useBin)
-        {
-            {
-                // counts is stored in "variable" of the 0 histogram in MainStruct
-                dat[i].weight = (real) first_data->data[i].variable;
-                hist[i].weight = (real) first_hist->data[i].variable * nSim_uncut / (1.0*nSim);
-            }
-
-            hist[i].lambda = (real) first_hist->data[i].lambda;
-            dat[i].lambda = (real) first_data->data[i].lambda;
-          
-            hist[i].beta = (real) first_hist->data[i].beta;
-            dat[i].beta = (real) first_data->data[i].beta;
-        }
+        mw_printf("Error reading EMD calculation ranges: odd number of lambda values recieved \n");
+        return NAN;
     }
+    
+    /*Old code from before using multiple EMD Ranges*/
+    ///* This creates histograms that emdCalc can use */
+    //hist = mwCalloc(bins, sizeof(WeightPos));
+    //dat = mwCalloc(bins, sizeof(WeightPos));
+    //
+    //for(unsigned int i = 0; i < bins; i++)
+    //{
+    //    if(first_data->data[i].useBin)
+    //    {
+    //        {
+    //            // counts is stored in "variable" of the 0 histogram in MainStruct
+    //            dat[i].weight = (real) first_data->data[i].variable;
+    //            hist[i].weight = (real) first_hist->data[i].variable * nSim_uncut / (1.0*nSim);
+    //        }
 
-    emd = emdCalc((const real*) dat, (const real*) hist, bins, bins, NULL);
+    //        hist[i].lambda = (real) first_hist->data[i].lambda;
+    //        dat[i].lambda = (real) first_data->data[i].lambda;
+    //      
+    //        hist[i].beta = (real) first_hist->data[i].beta;
+    //        dat[i].beta = (real) first_data->data[i].beta;
+    //    }
+    //}
 
+    emd = 0;
+    totalRangeCount = 0;
+    if(first_data->params.nRange == 0)
+    {
+        mw_printf("No EMD Ranges defined, using full histogram\n");
+        first_data->params.nRange = 2;
+        first_data->params.EMDRange[0] = first_data->data[0].lambda;
+        first_data->params.EMDRange[1] = first_data->data[bins - 1].lambda;
+    }
+    for(i = 0; i < first_data->params.nRange; i = i + 2)
+    {
+        /*Renormalize simulated hist to given EMD Range*/
+        EMDStart = first_data->params.EMDRange[i];
+        EMDEnd = first_data->params.EMDRange[i+1];
+        mw_printf("Using EMD Range: {%f,%f}\n", EMDStart, EMDEnd);
+        if(EMDStart > EMDEnd)
+        {
+            mw_printf("Error reading EMD calculation ranges: EMDStart > EMDEnd \n");
+            return NAN;
+        }
+        rangeCount = 0;
+        rangeBins = 0;
+        for(j = 0; j < bins; j++) /*Sum up total counts of bins in emd range*/
+        {
+            if(first_hist->data[j].lambda >= EMDStart && first_hist->data[j].lambda <= EMDEnd && first_data->data[j].useBin)
+            {
+                rangeCount += mw_round(first_hist->data[j].variable * nSim_uncut);
+                rangeBins += 1;
+            }
+        }
+        hist = mwCalloc(rangeBins, sizeof(WeightPos)); /*Create histogram emdCalc can use*/
+        rangeBins = 0;
+        for(j = 0; j < bins; j++)
+        {
+            if(first_hist->data[j].lambda >= EMDStart && first_hist->data[j].lambda <= EMDEnd && first_data->data[j].useBin)
+            {
+                hist[rangeBins].weight = (real) first_hist->data[j].variable * nSim_uncut / (1.0*rangeCount);
+                hist[rangeBins].lambda = (real) first_hist->data[j].lambda;
+                hist[rangeBins].beta = (real) first_hist->data[j].beta;
+                rangeBins += 1;
+            }
+        }
+
+        /*Repeat for the input data hist*/
+        rangeCount = 0;
+        rangeBins = 0;
+        for(j = 0; j < bins; j++) /*Sum up total counts of bins in emd range*/
+        {
+            if(first_data->data[j].lambda >= EMDStart && first_data->data[j].lambda <= EMDEnd && first_data->data[j].useBin)
+            {
+                rangeCount += mw_round(first_data->data[j].variable * nData);
+                rangeBins += 1;
+            }
+        }
+        dat = mwCalloc(rangeBins, sizeof(WeightPos)); /*Create histogram emdCalc can use*/
+        totalRangeCount += rangeCount;
+        rangeBins = 0;
+        for(j = 0; j < bins; j++)
+        {
+            if(first_data->data[j].lambda >= EMDStart && first_data->data[j].lambda <= EMDEnd && first_data->data[j].useBin)
+            {
+                dat[rangeBins].weight = (real) first_data->data[j].variable * nData / (1.0*rangeCount);
+                dat[rangeBins].lambda = (real) first_data->data[j].lambda;
+                dat[rangeBins].beta = (real) first_data->data[j].beta;
+                rangeBins += 1;
+            }
+        }
+
+        /*Calculate EMD, each range is weighted by the % of counts in that range in data hist*/
+        emd += emdCalc((const real*) dat, (const real*) hist, rangeBins, rangeBins, NULL) * (rangeCount/(1.0*nData));  //temporary weighting by total counts
+        free(hist);
+        free(dat);
+    }     
+
+    emd = emd * (nData / totalRangeCount); //correct weighting to only consider counts in EMD ranges
     emd *= 1.0e9;
     emd = mw_round(emd);
     emd *= 1.0e-9;
     
     if (emd > 50.0)
     {
-        free(hist);
-        free(dat);
+        //free(hist);
+        //free(dat);
         /* emd's max value is 50 */
         return NAN;
     }
@@ -1369,12 +1456,12 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
 
     real EMDComponent = 1.0 - emd / 50.0;
     
-    
+
     /* the 300 is there to add weight to the EMD component */
     likelihood = 300.0 * mw_log(EMDComponent);
 
-    free(hist);
-    free(dat);
+//    free(hist);
+//    free(dat);
 //     mw_printf("l = %.15f\n", likelihood);
     
     /* the emd is a negative. returning a positive value */
