@@ -120,6 +120,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
     HistogramParams hp;
     NBHistTrig histTrig;
     mwbool LambdaBetaAvailable = ctx->OutputLB;
+    mwbool SimpleOutputAvailable = ctx->SimpleOutput;
     if (nbGetLikelihoodInfo(nbf, &hp, &method) || method == NBODY_INVALID_METHOD)
     {
         mw_printf("Failed to get Histogram Parameters. Not including Lambda-Beta in Output file.\n");

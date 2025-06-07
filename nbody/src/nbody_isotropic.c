@@ -888,7 +888,7 @@ int nbGenerateIsotropic(lua_State* luaSt)
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "nbody_baryon",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf      },
+            { "nbody_baryon",         LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf     },
             { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
             { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
             { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
