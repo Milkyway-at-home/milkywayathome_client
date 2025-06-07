@@ -1299,20 +1299,9 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     real EMDEnd;
     unsigned int rangeCount;
     unsigned int rangeBins;
-    unsigned int totalRangeCount; // Total counts in all EMD Ranges, used weighting the EMD
+    unsigned int totalRangeCount; // Total counts in all EMD Ranges, used for weighting the EMD
     real emd;
     real likelihood;
-
-    /*Old code, this is now done for each EMD range*/
-    ///* Remove all simulated bodies in unused bins for renormalization after skipping bins */
-    //for (i = 0; i < bins; ++i)
-    //{
-    //    if(!first_data->data[i].useBin)
-    //    {
-    //        rawCount = mw_round(first_hist->data[i].variable * nSim_uncut);
-    //        nSim -= rawCount;
-    //    }
-    //}
 
     if (first_data->lambdaBins != first_hist->lambdaBins || first_data->betaBins != first_hist->betaBins)
     {
@@ -1339,29 +1328,6 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         mw_printf("Error reading EMD calculation ranges: odd number of lambda values recieved \n");
         return NAN;
     }
-    
-    /*Old code from before using multiple EMD Ranges*/
-    ///* This creates histograms that emdCalc can use */
-    //hist = mwCalloc(bins, sizeof(WeightPos));
-    //dat = mwCalloc(bins, sizeof(WeightPos));
-    //
-    //for(unsigned int i = 0; i < bins; i++)
-    //{
-    //    if(first_data->data[i].useBin)
-    //    {
-    //        {
-    //            // counts is stored in "variable" of the 0 histogram in MainStruct
-    //            dat[i].weight = (real) first_data->data[i].variable;
-    //            hist[i].weight = (real) first_hist->data[i].variable * nSim_uncut / (1.0*nSim);
-    //        }
-
-    //        hist[i].lambda = (real) first_hist->data[i].lambda;
-    //        dat[i].lambda = (real) first_data->data[i].lambda;
-    //      
-    //        hist[i].beta = (real) first_hist->data[i].beta;
-    //        dat[i].beta = (real) first_data->data[i].beta;
-    //    }
-    //}
 
     emd = 0;
     totalRangeCount = 0;
@@ -1444,25 +1410,17 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     
     if (emd > 50.0)
     {
-        //free(hist);
-        //free(dat);
         /* emd's max value is 50 */
         return NAN;
     }
 
-    
     /* This calculates the likelihood as the combination of the
     * probability distribution and (1.0 - emd / max_dist) */
 
     real EMDComponent = 1.0 - emd / 50.0;
     
-
     /* the 300 is there to add weight to the EMD component */
     likelihood = 300.0 * mw_log(EMDComponent);
-
-//    free(hist);
-//    free(dat);
-//     mw_printf("l = %.15f\n", likelihood);
     
     /* the emd is a negative. returning a positive value */
     return -likelihood;
