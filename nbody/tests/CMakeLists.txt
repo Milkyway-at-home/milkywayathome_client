@@ -63,6 +63,10 @@ add_executable(propermotion_test propermotion_test.c)
 
 set(propermotion_test_link_libs "${nbody_exe_link_libs}")
 
+add_executable(EMD_Range_test EMD_Range_test.c)
+
+set(EMD_Range_test_link_libs "${nbody_exe_link_libs}")
+
 add_executable(dwarf_generation_test dwarf_generation_test.c test_env_util.c)
 
 set(dwarf_generation_test_link_libs "${nbody_exe_link_libs}")
@@ -74,6 +78,7 @@ if(NBODY_CRLIBM)
     list(APPEND virial_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND average_bins_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND propermotion_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND EMD_Range_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND dwarf_generation_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
@@ -83,6 +88,7 @@ milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_
 milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_link_libs}")
 milkyway_link(average_bins_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${average_bins_test_link_libs}")
 milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermotion_test_link_libs}")
+milkyway_link(EMD_Range_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${EMD_Range_test_link_libs}")
 milkyway_link(dwarf_generation_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${dwarf_generation_test_link_libs}")
 
 if(BOINC_APPLICATION)
@@ -109,9 +115,11 @@ add_test(NAME poisson_test COMMAND poisson_test)
 
 add_test(NAME virial_test COMMAND virial_test)
 
-add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests" COMMAND average_bins_test)
+add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND average_bins_test)
 
 add_test(NAME propermotion_test COMMAND propermotion_test)
+
+add_test(NAME EMD_Range_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND EMD_Range_test)
 
 add_test(NAME dwarf_generation_test COMMAND dwarf_generation_test)
 

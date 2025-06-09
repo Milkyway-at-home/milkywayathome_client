@@ -42,6 +42,7 @@ fi
 #-V -> use emd, cost, velocity dispersion
 #-D -> use emd, cost, beta dispersion and velocity dispersion
 #-A -> compare all components of the likelihood 
+#Values input through the histogram, such as EMDRange, will be read from the input histogram given with -h
 if $compare_only 
 then
     ./milkyway_nbody \
