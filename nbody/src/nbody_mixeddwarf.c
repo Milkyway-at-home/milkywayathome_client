@@ -588,7 +588,6 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, mwboo
     real dist_max = max_finder(dist_fun, r, comp1, comp2, isDark, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     while(1)
     {
-        r = 1;
         v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
 

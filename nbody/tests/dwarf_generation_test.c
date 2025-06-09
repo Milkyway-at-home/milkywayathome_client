@@ -32,9 +32,10 @@
 #include "nbody_mixeddwarf.h"
 #include "nbody_particle_data.h"
 #include "test_env_util.h"
+#include "nbody_potential_types.h"
 
 /* Dwarf galaxy parameters */
-#define EVOLUTION_TIME "4.0"                  /* Evolution time in Gyr */
+#define EVOLUTION_TIME "2.0"                  /* Evolution time in Gyr */
 #define EVOLUTION_RATIO "0.0"                 /* Evolution time ratio */
 #define BARYON_SCALE_RADIUS "0.181216"        /* Baryon Scale radius in kpc */
 #define SCALE_RADIUS_RATIO "0.182799"         /* Scale radius ratio */
@@ -154,9 +155,11 @@ int test_stability(TestContext* tctx) {
     tctx->mass_per_particle_dark = tctx->comp2->mass / tctx->nbody_dark;
     // Calculate the bin width
     tctx->bin_width = mw_fmin(tctx->comp1->scaleLength, tctx->comp2->scaleLength) / 5.0;
-    // Calculate the number of bins for each component
-    tctx->num_bins_baryon = (int)((4.0 * tctx->comp1->scaleLength - 0.2 * tctx->comp1->scaleLength) / tctx->bin_width) + 1;
-    tctx->num_bins_dark = (int)((4.0 * tctx->comp2->scaleLength - 0.2 * tctx->comp2->scaleLength) / tctx->bin_width) + 1;
+    // Calculate the number of bins for each component depending on the model type
+    real baryon_range_multiplier = (tctx->comp1->type == NFW || tctx->comp1->type == Cored) ? 40.0 : 4.0;
+    real dark_range_multiplier = (tctx->comp2->type == NFW || tctx->comp2->type == Cored) ? 40.0 : 4.0;
+    tctx->num_bins_baryon = (int)((baryon_range_multiplier * tctx->comp1->scaleLength - 0.2 * tctx->comp1->scaleLength) / tctx->bin_width) + 1;
+    tctx->num_bins_dark = (int)((dark_range_multiplier * tctx->comp2->scaleLength - 0.2 * tctx->comp2->scaleLength) / tctx->bin_width) + 1;
     printf("mass_per_particle_baryon: %f\n", tctx->mass_per_particle_baryon);
     printf("mass_per_particle_dark: %f\n", tctx->mass_per_particle_dark);
     printf("Bin width: %f\n", tctx->bin_width);
