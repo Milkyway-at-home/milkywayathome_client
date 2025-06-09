@@ -17,8 +17,8 @@ then
     -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
     -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
     -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
-    -n 32 -b -w 1 -P -e 54231651 \
-    -i 2.0 1.0 0.5 0.125 4.5 0.000136 \
+    -n 8 -b -w 1 -P -e 54231651 \
+    -i 4.0 1.0 0.2 0.2 12.0 0.2 \
     
 fi
 

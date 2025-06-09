@@ -588,7 +588,7 @@ static inline real vel_mag(real r, const Dwarf* comp1, const Dwarf* comp2, mwboo
     real dist_max = max_finder(dist_fun, r, comp1, comp2, isDark, 0.0, 0.5 * v_esc, v_esc, 10, 1.0e-2);
     while(1)
     {
-
+        r = 1;
         v = (real)mwXrandom(dsfmtState, 0.0, 1.0) * v_esc;
         u = (real)mwXrandom(dsfmtState, 0.0, 1.0);
 
@@ -699,33 +699,24 @@ static inline void set_vars(Dwarf* comp)
     real mass = comp->mass; 
     real rscale = comp->scaleLength;
     real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
-    mw_printf("r200: %f\n", r200);
 	real p0;
 	if(comp->type == Cored)
 	{
 		real r1 = comp->r1;
-        mw_printf("r1: %f\n", r1);
 		real rc = comp->rc;
-        mw_printf("rc: %f\n", rc);
 
-		real D1 = r1*sqr(1+r1/rscale)/(rscale+rscale*sqr(r1/rc));
-		real D2 = cube(rscale)*(mw_log(1+r200/rscale)-mw_log(1+r1/rscale)-r200/(rscale+r200)+r1/(rscale+r1));
-		real D3 = sqr(rc)*(r1/(1+sqr(rc/r1))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc)));
+		real D1 = r1 * sqr(1.0 + r1 / rscale) / (rscale + rscale * sqr(r1 / rc));
+		real D2 = cube(rscale) * (mw_log(1.0 + r200 / rscale) - mw_log(1.0 + r1 / rscale) - r200 / (rscale + r200) + r1 / (rscale + r1));
+		real D3 = sqr(rc) * (r1 - rc * mw_atan(r1 / rc));
 
-		p0 = mass/(4*M_PI*(D1*D2+D3));
-        mw_printf("p0: %f\n", p0);
-		comp->ps = p0*D1;
-        mw_printf("D1: %f\n", D1);
-        mw_printf("D2: %f\n", D2);
-        mw_printf("D3: %f\n", D3);
-        mw_printf("ps: %f\n", comp->ps);
+		p0 = mass / (4.0 * M_PI * (D1 * D2 + D3));
+		comp->ps = p0 * D1;
 	}
 	else
 	{
 		real c = r200 / rscale; //halo concentration
 		real term = mw_log(1.0 + c) - c / (1.0 + c);
 		p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
-        mw_printf("p0: %f\n", p0);
 	}
     comp->r200 = r200;
     comp->p0 = p0;
@@ -746,12 +737,19 @@ static inline void get_extra_nfw_mass(Dwarf* comp, real bound)
 		const real rc = comp->rc;
 		const real ps = comp->ps;
 		const real C1 = 0;
-		const real C3 = C1 + 4*M_PI*(p0*sqr(rc)*(cube(r1)/(sqr(r1)+sqr(rc))-rc*mw_atan(r1/rc)+r1/(1+sqr(r1/rc))) - ps*cube(rs)*(mw_log(1+r1/rs)-r1/(rs+r1)));
+		const real C3 = C1 + 4 * M_PI * (
+            ps * cube(rs) * (
+                mw_log((1 + r1 / rs)) - r1 / (rs + r1)
+            )
+            - p0 * sqr(rc) * (
+                r1 - rc * mw_atan(r1 / rc)
+            )
+        );
 
 		if(r <= r1)
-			m = 4.0*M_PI*p0*sqr(rc)*(r/(1+sqr(rc/r)) - rc*mw_atan(r/rc) + r/(1+sqr(r/rc))) - C1;
+			m = 4.0 * M_PI * p0 * sqr(rc) * (r - rc * mw_atan(r / rc)) - C1;
 		else
-			m = 4.0 *M_PI*cube(rs)*ps*(mw_log(1+r/rs) - r/(rs+r)) - C3;  																	
+			m = 4.0 * M_PI * ps * cube(rs) * (mw_log( (rs + r) / rs) - r / (rs + r)) - C3;  																	
 	}
 	else
 	{
@@ -788,9 +786,7 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
         set_vars(comp1);
-        mw_printf("Comp1\n");
         set_vars(comp2);
-        mw_printf("Comp2\n");
         real bound1 ;
         real bound2 ;
         
@@ -831,7 +827,6 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                 break;
         }
         
-        
         real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
         real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
         real dwarf_mass = mass_l + mass_d;
@@ -839,8 +834,19 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
 
     //---------------------------------------------------------------------------------------------------    
         unsigned int nbody_dark = nbody - nbody_baryon;
-        real mass_light_particle = mass_l / ((real) nbody_baryon);//half the particles are light matter unless specified 
-        real mass_dark_particle = mass_d / ((real) nbody_dark);
+        real mass_light_particle;
+        real mass_dark_particle;
+        
+        if (nbody_baryon == 0) {
+            mass_light_particle = 0;
+        } else {
+            mass_light_particle = mass_l / ((real) nbody_baryon);
+        }
+        if (nbody_dark == 0) {
+            mass_dark_particle = 0;
+        } else {
+            mass_dark_particle = mass_d / ((real) nbody_dark);
+        }
     //----------------------------------------------------------------------------------------------------
 
 	
@@ -931,7 +937,6 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                 
             }while (1);
             
-//             mw_printf("\rvelocity of particle %i", i + 1);
             counter = 0;
             do
             {
