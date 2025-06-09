@@ -170,7 +170,7 @@ static real cored_pot(const Dwarf* model, real r)                               
 	}                                                                                                                    //
 	else                                                                                                                 //
 	{                                                                                                                    //
-		return  -4.0 * M_PI * ps * cube(rs) / r * mw_log(1 + r / rs) + C3 / r + C4;                                      // 
+		return  -4.0 * M_PI * ps * cube(rs) / r * mw_log(1.0 + r / rs) + C3 / r + C4;                                    // 
 	}																													 //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
