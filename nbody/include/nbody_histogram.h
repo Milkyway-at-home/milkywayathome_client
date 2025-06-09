@@ -25,6 +25,8 @@
 
 #include "nbody_types.h"
 #include "nbody.h"
+#include <string.h>
+#include <stdlib.h>
 
 
 #ifdef __cplusplus

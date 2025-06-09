@@ -316,6 +316,9 @@ typedef struct
     real betaEnd;
     unsigned int betaBins;
 
+    unsigned int nRange; /*Number of elements in EMDRange*/
+    real EMDRange[1024];
+
 } HistogramParams;
 
 #define EMPTY_HISTOGRAM_PARAMS { 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 0 }

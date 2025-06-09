@@ -1,5 +1,5 @@
 /*This program tests the likelihood calculation of the beta dispersion when more than one Lambda bin is considered.
-It only applies to an odd number of bins centered on the comparison bin, and also tests that it defaults to the single bin comparison if an even number of bins is input*/
+It only applies to an odd number of bins centered on the comparison bin, and will reduce an even input to the next lowest odd number*/
 
 #include "nbody_mass.h"
 #include "nbody_histogram.h"
