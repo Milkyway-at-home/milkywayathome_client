@@ -275,18 +275,6 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
       #endif
 
         {
-            "output-cartesian", 'x',
-            POPT_ARG_NONE, &nbf.outputCartesian,
-            0, "Output Cartesian coordinates instead of lbR", NULL
-        },
-        
-        {
-            "output-lbrcartesian", 'b',
-            POPT_ARG_NONE, &nbf.outputlbrCartesian,
-            0, "Output both lbr and Cartesian coordinates", NULL
-        },
-
-        {
             "timing", 't',
             POPT_ARG_NONE, &nbf.printTiming,
             0, "Print timing of actual run", NULL

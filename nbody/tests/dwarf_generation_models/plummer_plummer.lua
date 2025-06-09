@@ -2,7 +2,7 @@
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- Test Environment Lua File 
--- Plummer-NFW Dwarf model 
+-- Plummer-Plummer Dwarf model 
 -- Total number of bodies are meant to be run with Eric's Parameters 
 -- baryon scale radius = 0.181216 kpc
 -- radius ratio = 0.182799
@@ -85,9 +85,11 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 -- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
--- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
+-- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- --
+generateSimpleOutput = true       -- Simple output file includes: x, y, z, vx, vy, vz, mass
+-- Full output file includes: x, y, z, l, b, r, lambda, beta, vx, vy, vz, vlos, pmra, pmdec, mass
 
+-- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
 lda_upper_range = 150     -- upepr range for lamdba
@@ -239,7 +241,6 @@ function makeContext()
       sunVely     = SunVely,
       sunVelz     = SunVelz,
       criterion   = criterion,
-      OutputLB    = Output_LB_coord,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
@@ -260,6 +261,7 @@ function makeContext()
       VelCorrect    = Correction,
       DistCorrect   = Correction,
       PMCorrect     = Correction,
+      SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       InitialOutput = generateInitialOutput,
@@ -333,7 +335,7 @@ function makeBodies(ctx, potential)
     if(ModelComponents == 2) then 
         -- Create components
         local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored
-        local comp2 = Dwarf.nfw{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
         
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,

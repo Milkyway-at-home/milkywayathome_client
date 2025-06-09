@@ -238,7 +238,6 @@ function makeContext()
       vy            = orbit_parameter_vy,
       vz            = orbit_parameter_vz,
       criterion     = criterion,
-      OutputLB      = false,
       useQuad       = true,
       useBestLike   = false,
       BestLikeStart = 0.98,
