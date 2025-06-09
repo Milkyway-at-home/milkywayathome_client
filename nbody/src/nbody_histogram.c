@@ -1290,6 +1290,12 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         if (!readEMDRange)
         {
             rc = sscanf(lineBuf, " EMDRange = {%s} \n", &rangeString);
+            if (strlen(rangeString) + 1 >= sizeof(rangeString))
+        {
+            mw_printf("Error reading EMDRange: string is too large");
+            error = TRUE;
+            break;
+        }
             if(rc == 1)
             {
                 readEMDRange = TRUE;
