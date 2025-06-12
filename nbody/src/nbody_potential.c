@@ -808,6 +808,7 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
     return acc;
 }
 
+
 mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2)
 {
     mwvector lmcAcc;
@@ -823,10 +824,11 @@ mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvect
 	case 3:
 	    lmcAcc = cutoffhernquistLmcAccel(pos, pos1, mass, scale, scale2);
 	    break;
-        default:
+       default:
 	    mw_printf("LMCfunction = %d\n", LMCfunction); /*for debug*/
             mw_fail("Invalid LMC type in external acceleration\n");
     }
     return lmcAcc;
 }
+
 

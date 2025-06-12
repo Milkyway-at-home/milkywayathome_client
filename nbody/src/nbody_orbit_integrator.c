@@ -105,6 +105,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
                     real coulomb_log
                     )
 {	
+    int lmcfunction = round(LMCfunction);
     unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
     unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
@@ -120,7 +121,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     real t;
     real dt_half = dt / 2.0;
 
-    mw_printf("Reading LMC function from orbit_integrator = %f\n", LMCfunction); /*for debug*/
+    mw_printf("Reading LMC function from orbit_integrator = %d\n", LMCfunction); /*for debug*/
 
     // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
     if (ftime > tstop) {
@@ -135,7 +136,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_acc = LMCAcceleration(LMCfunction, mw_x, LMCx, LMCmass, LMCscale, LMCscale2);
         LMC_acc = mw_addv(nbExtAcceleration(pot, LMCx, 0), dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, LMCscale2, LMCDynaFric, 0, coulomb_log));
         acc = nbExtAcceleration(pot, x, 0);
-        tmp = LMCAcceleration(LMCfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
+        tmp = LMCAcceleration(lmcfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
         mw_incaddv(acc, tmp);
 
         // Shift the body
@@ -161,7 +162,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
             mw_acc = LMCAcceleration(LMCfunction, mw_x, LMCx, LMCmass, LMCscale, LMCscale2);
             LMC_acc = mw_addv(nbExtAcceleration(pot, LMCx, t), dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, LMCscale2, LMCDynaFric, t, coulomb_log));
             acc = nbExtAcceleration(pot, x, t);
-            tmp = LMCAcceleration(LMCfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
+            tmp = LMCAcceleration(lmcfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
     	    mw_incaddv(acc, tmp);
 
     	    // Shift the body
@@ -194,7 +195,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv(LMC_acc, DF_acc)
      }
     acc = nbExtAcceleration(pot, x, 0);
-    tmp = LMCAcceleration(LMCfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
+    tmp = LMCAcceleration(lmcfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
     mw_incaddv(acc, tmp);
 
     // Shift the body
@@ -220,7 +221,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         mw_incaddv_s(LMCx, LMCv, dt);
         
         // Compute the new acceleration
-        mw_acc = LMCAcceleration(LMCfunction, mw_x, LMCx, LMCmass, LMCscale, LMCscale2);
+        mw_acc = LMCAcceleration(lmcfunction, mw_x, LMCx, LMCmass, LMCscale, LMCscale2);
         LMC_acc = nbExtAcceleration(pot, LMCx, negT);
         if (LMCDynaFric) {
             DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, LMCscale2, TRUE, negT, coulomb_log);
@@ -229,7 +230,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
             mw_incaddv(LMC_acc, DF_acc)
         }
         acc = nbExtAcceleration(pot, x, negT);
-        tmp = LMCAcceleration(LMCfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
+        tmp = LMCAcceleration(lmcfunction, x, LMCx, LMCmass, LMCscale, LMCscale2);
     	mw_incaddv(acc, tmp);
 
     	// Shift the body
@@ -282,10 +283,9 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     mw_printf("Dwarf Initial Velocity: [%.15f,%.15f,%.15f]\n", X(v), Y(v), Z(v));
     mw_printf("Initial LMC position: [%.15f,%.15f,%.15f]\n",X(LMCx),Y(LMCx),Z(LMCx));
     mw_printf("Initial LMC velocity: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
-    mw_printf("LMC model: Hernquist\n"); /* for testing */
     mw_printf("Initial LMC mass: %f\n", LMCmass); /* for debug */
     mw_printf("Initial LMC scale: %f\n", LMCscale); /* for debug */
-    mw_printf("Initial LMC function: %f\n", LMCfunction); /* for debug */
+    mw_printf("Initial LMC function: %d\n", lmcfunction); /* for debug */
 
     //Store LMC position and velocity
     LMCpos = LMCx;

@@ -131,7 +131,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     mwvector a, externAcc;
     const Body* b;
     real lmcmass, lmcscale, lmcscale2;
-    real lmcfunction;
+    int lmcfunction;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
@@ -142,12 +142,12 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
     real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
-	lmcfunction = ctx->LMCfunction;
+	lmcfunction = round(ctx->LMCfunction);
         LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
 	lmcscale2 = ctx->LMCscale2;
-	mw_printf("Reading LMC function from lua = %f\n", lmcfunction); /*for debug*/
+	mw_printf("Reading LMC function from lua = %d\n", lmcfunction); /*for debug*/
 	mw_printf("Reading LMC scale from lua = %f\n", lmcscale); /*for debug*/
 	mw_printf("Reading LMC mass from lua = %f\n", lmcmass); /*for debug*/
     }
@@ -255,7 +255,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
 	lmcscale2 = ctx->LMCscale2;
-	lmcfunction = ctx->LMCfunction;
+        lmcfunction = round(ctx->LMCfunction);
     }
     else {
         SET_VECTOR(LMCx,0.0,0.0,0.0);
