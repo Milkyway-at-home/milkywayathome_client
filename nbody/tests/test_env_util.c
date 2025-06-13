@@ -44,13 +44,14 @@ char* find_lua_file(const char* filename) {
         return NULL;
     }
     
+    printf("Current working directory: %s\n", cwd);
+    fflush(stdout);
+    
     // Try common relative paths for different possible execution locations
     const char* relative_paths[] = {
-        "../../../nbody/sample_workunits/test_env_lua",
-        "/../nbody/sample_workunits/test_env_lua",
-        "../nbody/sample_workunits/test_env_lua",
-        "../sample_workunits/test_env_lua",
-        "../test_env_lua"
+        "../../../nbody/tests/dwarf_generation_models",
+        "../nbody/tests/dwarf_generation_models",  
+        "../../nbody/tests/dwarf_generation_models" 
     };
     
     size_t num_paths = sizeof(relative_paths) / sizeof(relative_paths[0]);
@@ -199,7 +200,7 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
              "-f \"%s\" "
              "-o \"%s/output.out\" "
              "-z \"%s/output.hist\" "
-             "-n 8 -b -w 1 -P -e 54231651 "
+             "-n 8 -w 1 -P -e 54231651 "
              "-i %s %s %s %s %s %s",
              bin_path, lua_file, cwd, cwd,
              dwarf_params[0], dwarf_params[1], dwarf_params[2], 

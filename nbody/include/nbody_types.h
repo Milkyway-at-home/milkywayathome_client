@@ -481,9 +481,8 @@ typedef struct MW_ALIGN_TYPE
     mwbool usePropMot;        /* use the proper motion comparison calc */
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
     mwbool InitialOutput;     /* whether to generate initial output */
-
-    mwbool OutputLB;          /* Puts LB information in output file '-o' */
     mwbool SimpleOutput;      /* Simple output only x,y,z,vx,vy,vz,mass */
+    
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;

@@ -5,8 +5,7 @@
 
 // Structure to hold header information
 typedef struct {
-    int cartesian;
-    int lbr_xyz;
+    int simple_output;  
     int has_milkyway;     
     real com_x, com_y, com_z; 
     real cmom_x, cmom_y, cmom_z;
@@ -27,6 +26,10 @@ typedef struct {
     real vz;         // Column 10 
     real mass;       // Column 11 
     real v_los;      // Column 12
+    real pm_ra;      // Column 13
+    real pm_dec;     // Column 14
+    real lambda;     // Column 15
+    real beta;       // Column 16
 } ParticleData;
 
 // Structure to manage a dynamic collection of particles AND header info
