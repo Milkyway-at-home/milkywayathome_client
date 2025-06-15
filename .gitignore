@@ -102,3 +102,8 @@ build_iphone
 *.mp4
 *.avi
 /include
+input/*
+output/*
+test_env
+run_nbody.sh
+build_client.sh 

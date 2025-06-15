@@ -21,40 +21,42 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- --        
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-totalBodies           = 40000   -- -- NUMBER OF BODIES                                  -- --
-nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.85"  -- -- MINIMUM APP VERSION                               -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+totalBodies           = 50000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
+totalLightBodies      = 10000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                        -- --
-print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                          -- --
+nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
+nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                                                      -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC                                   -- --
-LMC_scaleRadius       = 15
-LMC_Mass              = 449865.888
-LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) -- --
-CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION -- --
+run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
+use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
+print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                                               -- --
+print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
-SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center -- --
+LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
+LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
+LMC_Mass              = 449865.888  -- -- SMU                                                                  -- --
+LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
+CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
 
-UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
+
+UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- ModelComponent Options: 
--- --       2 - TWO COMPONENT MODEL     -- -- -- -- -- -- -- -- -- -- 
--- --       1 - SINGLE COMPONENT MODEL  -- -- -- -- -- -- -- -- -- -- 
--- --       0 - NO DWARF MODEL          -- -- -- -- -- -- -- -- -- -- 
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH      -- --
-manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- --
+-- --       ModelComponent Options:    -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
+-- --       1 - SINGLE COMPONENT MODEL  -- -- -- - -- -- -- -- -- -- -- -- -- 
+-- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
+ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH   -- -- -- -- -- --
+manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -103,7 +105,7 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
-useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS       -- --
+useMultiOutputs       = false      -- -- WRITE MULTIPLE OUTPUTS       -- --
 freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 timestep_control      = false       -- -- control number of steps      -- --
@@ -300,6 +302,7 @@ function makeBodies(ctx, potential)
     if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
             nbody       = totalBodies,
+            nbody_light = totalLightBodies,
             prng        = prng,
             position    = finalPosition,
             velocity    = finalVelocity,
