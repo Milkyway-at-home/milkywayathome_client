@@ -121,8 +121,6 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     real t;
     real dt_half = dt / 2.0;
 
-    mw_printf("Reading LMC function from orbit_integrator = %d\n", LMCfunction); /*for debug*/
-
     // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
     if (ftime > tstop) {
 
@@ -283,9 +281,6 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     mw_printf("Dwarf Initial Velocity: [%.15f,%.15f,%.15f]\n", X(v), Y(v), Z(v));
     mw_printf("Initial LMC position: [%.15f,%.15f,%.15f]\n",X(LMCx),Y(LMCx),Z(LMCx));
     mw_printf("Initial LMC velocity: [%.15f,%.15f,%.15f]\n",X(LMCv),Y(LMCv),Z(LMCv));
-    mw_printf("Initial LMC mass: %f\n", LMCmass); /* for debug */
-    mw_printf("Initial LMC scale: %f\n", LMCscale); /* for debug */
-    mw_printf("Initial LMC function: %d\n", lmcfunction); /* for debug */
 
     //Store LMC position and velocity
     LMCpos = LMCx;

@@ -147,9 +147,6 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
 	lmcscale2 = ctx->LMCscale2;
-	mw_printf("Reading LMC function from lua = %d\n", lmcfunction); /*for debug*/
-	mw_printf("Reading LMC scale from lua = %f\n", lmcscale); /*for debug*/
-	mw_printf("Reading LMC mass from lua = %f\n", lmcmass); /*for debug*/
     }
     else {
         SET_VECTOR(LMCx,0.0,0.0,0.0);

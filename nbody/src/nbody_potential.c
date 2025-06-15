@@ -812,8 +812,8 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2)
 {
     mwvector lmcAcc;
-    /*Calculate the LMC Accelerations*/
-    switch (LMCfunction) /* +1 for debug (printing values from lua)*/
+    
+    switch (LMCfunction) 
     {
         case 1:
             lmcAcc = plummerLmcAccel(pos, pos1, mass, scale);
@@ -825,7 +825,6 @@ mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvect
 	    lmcAcc = cutoffhernquistLmcAccel(pos, pos1, mass, scale, scale2);
 	    break;
        default:
-	    mw_printf("LMCfunction = %d\n", LMCfunction); /*for debug*/
             mw_fail("Invalid LMC type in external acceleration\n");
     }
     return lmcAcc;
