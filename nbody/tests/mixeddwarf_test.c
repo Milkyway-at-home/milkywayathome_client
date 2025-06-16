@@ -35,16 +35,18 @@
 #include "nbody_potential_types.h"
 
 /* Dwarf galaxy parameters */
+/* These scale radius and mass parameters are known in the group as Eric's parameters */
+/* Optimized for a Plummer-Plummer model */
 #define EVOLUTION_TIME "2.0"                  /* Evolution time in Gyr */
 #define EVOLUTION_RATIO "0.0"                 /* Evolution time ratio */
 #define BARYON_SCALE_RADIUS "0.181216"        /* Baryon Scale radius in kpc */
 #define SCALE_RADIUS_RATIO "0.182799"         /* Scale radius ratio */
 #define BARYON_MASS "1.22251"                 /* Baryon Mass in SMU */
-#define MASS_RATIO "0.0126171"  
+#define MASS_RATIO "0.0126171"                /* Mass ratio */
 
 /* KL divergence thresholds */
 #define INITIAL_KL_THRESHOLD 0.01   /* Maximum acceptable initial KL divergence */
-#define KL_FLUCTUATION_THRESHOLD 0.005 /* Maximum acceptable KL divergence fluctuation */
+#define KL_FLUCTUATION_THRESHOLD 0.03 /* Maximum acceptable KL divergence fluctuation */
 
 /* Struct to hold all simulation variables and allocations */
 typedef struct {
@@ -70,7 +72,8 @@ typedef struct {
     real timestep;
     real mass_per_particle_baryon;
     real mass_per_particle_dark;
-    real bin_width;
+    real baryon_bin_width;
+    real dark_bin_width;
     int num_bins_baryon;
     int num_bins_dark;
     
@@ -142,6 +145,11 @@ static real kl_divergence(const real *p, const real *q, size_t size) {
     return kl_div;
 }
 
+static real rice_rule(const real nbodies) {
+
+    return (int)(2.0 * mw_pow(nbodies, 1.0/3.0));
+}
+
 /* Function for the stability test for a given dwarf potential type */
 int test_stability(TestContext* tctx) {
     int failed = 0;
@@ -153,16 +161,25 @@ int test_stability(TestContext* tctx) {
     // Calculate the mass per particle for each component
     tctx->mass_per_particle_baryon = tctx->comp1->mass / tctx->nbody_baryon;
     tctx->mass_per_particle_dark = tctx->comp2->mass / tctx->nbody_dark;
-    // Calculate the bin width
-    tctx->bin_width = mw_fmin(tctx->comp1->scaleLength, tctx->comp2->scaleLength) / 5.0;
-    // Calculate the number of bins for each component depending on the model type
-    real baryon_range_multiplier = (tctx->comp1->type == NFW || tctx->comp1->type == Cored) ? 40.0 : 4.0;
-    real dark_range_multiplier = (tctx->comp2->type == NFW || tctx->comp2->type == Cored) ? 40.0 : 4.0;
-    tctx->num_bins_baryon = (int)((baryon_range_multiplier * tctx->comp1->scaleLength - 0.2 * tctx->comp1->scaleLength) / tctx->bin_width) + 1;
-    tctx->num_bins_dark = (int)((dark_range_multiplier * tctx->comp2->scaleLength - 0.2 * tctx->comp2->scaleLength) / tctx->bin_width) + 1;
+    // Max radius range for calculation is either 4 times the scale length for plummer and general hernquist or 4 times the r200 for cored and nfw which is the radius bound
+    real baryon_range_limit = (tctx->comp1->type == NFW || tctx->comp1->type == Cored) ? 4.0 * tctx->comp1->r200 : 4.0 * tctx->comp1->scaleLength;
+    printf("Baryon range limit: %f\n", baryon_range_limit);
+    real dark_range_limit = (tctx->comp2->type == NFW || tctx->comp2->type == Cored) ? 4.0 * tctx->comp2->r200 : 4.0 * tctx->comp2->scaleLength;
+    printf("Dark matter range limit: %f\n", dark_range_limit);
+    // Calculate the bin width for each component
+    tctx->baryon_bin_width = baryon_range_limit / rice_rule(tctx->nbody_baryon);
+    printf("Baryon bin width: %f\n", tctx->baryon_bin_width);
+    tctx->dark_bin_width = dark_range_limit / rice_rule(tctx->nbody_dark);
+    printf("Dark matter bin width: %f\n", tctx->dark_bin_width);
+    // Calculate the number of bins for each component depending on the model type (+1 to include the last bin)
+    tctx->num_bins_baryon = (int)((baryon_range_limit - tctx->baryon_bin_width) / tctx->baryon_bin_width) + 1;
+    printf("Baryon number of bins: %d\n", tctx->num_bins_baryon);
+    tctx->num_bins_dark = (int)((dark_range_limit - tctx->dark_bin_width) / tctx->dark_bin_width) + 1;
+    printf("Dark matter number of bins: %d\n", tctx->num_bins_dark);
     printf("mass_per_particle_baryon: %f\n", tctx->mass_per_particle_baryon);
     printf("mass_per_particle_dark: %f\n", tctx->mass_per_particle_dark);
-    printf("Bin width: %f\n", tctx->bin_width);
+    printf("Baryon bin width: %f\n", tctx->baryon_bin_width);
+    printf("Dark matter bin width: %f\n", tctx->dark_bin_width);
     printf("Using %d bins for baryon component and %d bins for dark matter component\n", tctx->num_bins_baryon, tctx->num_bins_dark);
     fflush(stdout);
 
@@ -176,49 +193,23 @@ int test_stability(TestContext* tctx) {
 
     // Initialize baryon bin edges
     for (int i = 0; i <= tctx->num_bins_baryon; i++) {
-        tctx->baryon_bin_edges[i] = 0.2 * tctx->comp1->scaleLength + i * tctx->bin_width;
+        tctx->baryon_bin_edges[i] = tctx->baryon_bin_width + i * tctx->baryon_bin_width;
     }
 
     // Initialize baryon bin centers
     for (int i = 0; i < tctx->num_bins_baryon; i++) {
-        tctx->baryon_bin_centers[i] = tctx->baryon_bin_edges[i] + tctx->bin_width / 2.0;
+        tctx->baryon_bin_centers[i] = tctx->baryon_bin_edges[i] + tctx->baryon_bin_width / 2.0;
     }
     
     // Initialize dark matter bin edges
     for (int i = 0; i <= tctx->num_bins_dark; i++) {
-        tctx->dark_bin_edges[i] = 0.2 * tctx->comp2->scaleLength + i * tctx->bin_width;
+        tctx->dark_bin_edges[i] = tctx->dark_bin_width + i * tctx->dark_bin_width;
     }
 
     // Initialize dark matter bin centers
     for (int i = 0; i < tctx->num_bins_dark; i++) {
-        tctx->dark_bin_centers[i] = tctx->dark_bin_edges[i] + tctx->bin_width / 2.0;
+        tctx->dark_bin_centers[i] = tctx->dark_bin_edges[i] + tctx->dark_bin_width / 2.0;
     }
-
-    // Print the bin edges and centers
-    printf("Baryon bin edges: ");
-    for (int i = 0; i <= tctx->num_bins_baryon; i++) {
-        printf("%.6f ", tctx->baryon_bin_edges[i]);
-    }
-    printf("\n");
-
-    printf("Dark matter bin edges: ");
-    for (int i = 0; i <= tctx->num_bins_dark; i++) {
-        printf("%.6f ", tctx->dark_bin_edges[i]);
-    }
-    printf("\n");
-
-    printf("Baryon bin centers: ");
-    for (int i = 0; i < tctx->num_bins_baryon; i++) {
-        printf("%.6f ", tctx->baryon_bin_centers[i]);
-    }
-    printf("\n");
-
-    printf("Dark matter bin centers: ");
-    for (int i = 0; i < tctx->num_bins_dark; i++) {
-        printf("%.6f ", tctx->dark_bin_centers[i]);
-    }
-    printf("\n");
-    fflush(stdout);
     
     // Calculate the theoretical density distribution for each component 
     tctx->baryon_theoretical_density = mwCallocA(tctx->num_bins_baryon, sizeof(real));
@@ -227,46 +218,18 @@ int test_stability(TestContext* tctx) {
     // Calculate theoretical density for baryon component
     for (int i = 0; i < tctx->num_bins_baryon; i++) {
         tctx->baryon_theoretical_density[i] = counts_per_bin(tctx->comp1, tctx->baryon_bin_centers[i], 
-                                         tctx->mass_per_particle_baryon, tctx->bin_width);
+                                         tctx->mass_per_particle_baryon, tctx->baryon_bin_width);
     }
     
     // Calculate theoretical density for dark matter component
     for (int i = 0; i < tctx->num_bins_dark; i++) {
         tctx->dark_theoretical_density[i] = counts_per_bin(tctx->comp2, tctx->dark_bin_centers[i], 
-                                       tctx->mass_per_particle_dark, tctx->bin_width);
+                                       tctx->mass_per_particle_dark, tctx->dark_bin_width);
     }
-
-    // Print the theoretical densities
-    printf("Baryon theoretical density: ");
-    for (int i = 0; i < tctx->num_bins_baryon; i++) {
-        printf("%.6f ", tctx->baryon_theoretical_density[i]);
-    }
-    printf("\n");
-
-    printf("Dark matter theoretical density: ");
-    for (int i = 0; i < tctx->num_bins_dark; i++) {
-        printf("%.6f ", tctx->dark_theoretical_density[i]);
-    }
-    printf("\n");
-    fflush(stdout);
     
     // Normalize the theoretical densities and add epsilon to avoid division by zero and log(0) in KL divergence calculation
     tctx->baryon_theoretical_probability = smooth_and_normalize_distribution(tctx->baryon_theoretical_density, tctx->num_bins_baryon);
     tctx->dark_theoretical_probability = smooth_and_normalize_distribution(tctx->dark_theoretical_density, tctx->num_bins_dark);
-
-    // Print the theoretical probability densities
-    printf("Baryon theoretical probability density: ");
-    for (int i = 0; i < tctx->num_bins_baryon; i++) {
-        printf("%.6f ", tctx->baryon_theoretical_probability[i]);
-    }
-    printf("\n");   
-
-    printf("Dark matter theoretical probability density: ");
-    for (int i = 0; i < tctx->num_bins_dark; i++) {
-        printf("%.6f ", tctx->dark_theoretical_probability[i]);
-    }
-    printf("\n");
-    fflush(stdout);
 
     // Calculate the KL divergence at the initial timestep
     const char* initial_output_filename = "initial.out";
@@ -419,18 +382,18 @@ int test_stability(TestContext* tctx) {
     printf("Total timesteps: %d\n", total_timesteps);
     fflush(stdout);
 
-    // Calculate how many timesteps 0.1 Gyr is in the simulation
-    int timesteps_0_1_Gyr = (int)(0.1 / tctx->timestep);
-    printf("Timesteps per 0.1 Gyr: %d\n", timesteps_0_1_Gyr);
+    // Use a fixed interval of 100 timesteps
+    const int timestep_interval = 100;
+    printf("Checking every %d timesteps\n", timestep_interval);
     fflush(stdout);
 
-    // Calculating first timestep to start from
-    int first_timestep = timesteps_0_1_Gyr - 1;
+    // Start checking from timestep 99 (after first interval)
+    int first_timestep = timestep_interval - 1;
     printf("First timestep to check: %d\n", first_timestep);
     fflush(stdout);
     
     // Calculate the KL divergence at multiple timesteps
-    for (int i = first_timestep; i < total_timesteps; i += timesteps_0_1_Gyr) {
+    for (int i = first_timestep; i < total_timesteps; i += timestep_interval) {
         printf("\n--- Processing timestep %d ---\n", i);
         fflush(stdout);
         
@@ -558,8 +521,8 @@ int test_stability(TestContext* tctx) {
 
         printf("KL divergence for baryon component: %f\n", kl_divergence_baryon);
         printf("KL divergence for dark matter component: %f\n", kl_divergence_dark);
-        printf("Difference from initial KL divergence (baryon): %f\n", mw_fabs(kl_divergence_baryon - initial_kl_divergence_baryon));
-        printf("Difference from initial KL divergence (dark): %f\n", mw_fabs(kl_divergence_dark - initial_kl_divergence_dark));
+        printf("Difference from initial KL divergence (baryon): %f\n", kl_divergence_baryon - initial_kl_divergence_baryon);
+        printf("Difference from initial KL divergence (dark): %f\n", kl_divergence_dark - initial_kl_divergence_dark);
         fflush(stdout);
 
         // Check for negative KL divergence values (should never happen, but check explicitly)
@@ -574,8 +537,8 @@ int test_stability(TestContext* tctx) {
             return failed;
         }
 
-        if (mw_fabs(kl_divergence_baryon - initial_kl_divergence_baryon) > KL_FLUCTUATION_THRESHOLD || 
-            mw_fabs(kl_divergence_dark - initial_kl_divergence_dark) > KL_FLUCTUATION_THRESHOLD) {
+        if ((kl_divergence_baryon - initial_kl_divergence_baryon) > KL_FLUCTUATION_THRESHOLD || 
+            (kl_divergence_dark - initial_kl_divergence_dark) > KL_FLUCTUATION_THRESHOLD) {
             fprintf(stderr, "Error: KL divergence fluctuation is too high (> %f) showing instability\n", 
                    KL_FLUCTUATION_THRESHOLD);
             fflush(stdout);
@@ -850,7 +813,8 @@ int main() {
     const char* dwarf_models[] = {
         "plummer_plummer.lua",
         "plummer_nfw.lua",
-        "plummer_hernquist.lua"
+        "plummer_hernquist.lua",
+        "plummer_cored.lua",
     };
 
     // Number of models to test

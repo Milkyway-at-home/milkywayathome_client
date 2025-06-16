@@ -64,7 +64,7 @@ fi
   make average_bins_test
   make propermotion_test
   make EMD_Range_test
-  make dwarf_generation_test
+  make mixeddwarf_test
   
   make all
 

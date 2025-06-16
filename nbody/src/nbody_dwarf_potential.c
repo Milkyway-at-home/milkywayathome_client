@@ -142,10 +142,8 @@ static real cored_pot(const Dwarf* model, real r)                               
 	const real p0 = model->p0;                                                                                           //
 	const real rc = model->rc;                                                                                           //
 	const real ps = model->ps;                                                                                           //
-	const real rs = model->scaleLength;                                                                                  //
-	const real C4 = 0;                                                                                                   //
-	const real C1 = 0;                                                                                                   //
-	const real C3 = C1 + 4.0 * M_PI * (                                                                                  //                     
+	const real rs = model->scaleLength;                                                                                  //                                                                                                  //
+	const real C3 = 4.0 * M_PI * (                                                                                       //                     
             ps * cube(rs) * (                                                                                            //
                 mw_log((1.0 + r1 / rs)) - r1 / (rs + r1)                                                                 //
             )                                                                                                            //
@@ -156,21 +154,21 @@ static real cored_pot(const Dwarf* model, real r)                               
                                                                                                                          //
 	if(r <= r1)                                                                                                          //
 	{                                                                                                                    //
-		const real C2 = (C3 - C1) / r1 + C4 - (4.0 * M_PI) / r1 * (                                                      //
+		const real C2 = C3 / r1 - (4.0 * M_PI) / r1 * (                                                                  //
             ps * cube(rs) * mw_log(1 + r1 / rs) +                                                                        //
             p0 * (                                                                                                       //
                 (sqr(rc) * r1) / 2.0 * mw_log(sqr(r1) + sqr(rc)) +                                                       //
                 cube(rc) * mw_atan(r1 / rc)                                                                              //
             )                                                                                                            // 
         );                                                                                                               //
-		return 4.0 * M_PI * p0 * (                                                                                       //
+		return -1.0 * (4.0 * M_PI * p0 * (                                                                               //
             sqr(rc) / 2.0 * mw_log(sqr(r) + sqr(rc)) +                                                                   //
             cube(rc) / r * mw_atan(r / rc)                                                                               //
-        ) + C1 / r + C2;                                                                                                 // 
+        ) + C2);                                                                                                         // 
 	}                                                                                                                    //
 	else                                                                                                                 //
 	{                                                                                                                    //
-		return  -4.0 * M_PI * ps * cube(rs) / r * mw_log(1.0 + r / rs) + C3 / r + C4;                                    // 
+		return  -1.0 * (-4.0 * M_PI * ps * cube(rs) / r * mw_log(1.0 + r / rs) + C3 / r);                                // 
 	}																													 //
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

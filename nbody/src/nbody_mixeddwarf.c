@@ -492,8 +492,12 @@ static inline real dist_fun(real v, real r, const Dwarf* comp1, const Dwarf* com
     /*energy as defined in binney*/
     energy = potential(r, comp1, comp2) - 0.5 * v * v; 
     
-    /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates*/
-    search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
+    /*this starting point is 20 times where the dark matter component is equal to the energy, since the dark matter dominates unless there is no dark matter component*/
+    if (mass_d == 0) {
+        search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_l / energy) - sqr(rscale_l) ));
+    } else {
+        search_range = 20.0 * mw_sqrt( mw_fabs( sqr(mass_d / energy) - sqr(rscale_d) ));
+    }
     
     /*dynamic search range*/
     /* This is done this way because we are searching for the r' where:
