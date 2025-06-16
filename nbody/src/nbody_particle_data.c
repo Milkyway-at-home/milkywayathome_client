@@ -160,101 +160,162 @@ ParticleCollection* read_particle_file(const char *filename) {
         }
         first_data_line_needs_processing = 0;
 
+        // Skip empty lines and comments
+        char *start = line_buffer;
+        while (*start == ' ' || *start == '\t') start++;
+        if (*start == '\0' || *start == '\n' || *start == '\r' || *start == '#') {
+            continue;
+        }
+
         ParticleData current_particle = {0}; // Initialize all fields to 0
-        char *token;
-        char *rest = line_buffer;
-        char *endptr;
         int col = 0;
         int parse_error = 0;
         long temp_long;
         double temp_double;
-        int has_lambda_beta = 0; // Flag to track if lambda/beta columns are present
+        int has_lambda_beta = 0;
 
-        while (*rest == ' ' || *rest == '\t') rest++;
-        char *line_end = rest + strlen(rest) - 1;
-        while (line_end > rest && (*line_end == ' ' || *line_end == '\t' || *line_end == '\n' || *line_end == '\r')) *line_end-- = '\0';
-
-        // First pass: count columns to determine if lambda/beta are present
-        char *count_rest = line_buffer;
+        // Process each field in the CSV line
+        char *line = line_buffer;
+        char *field_start = line;
+        char *field_end;
+        
+        // First pass: count actual columns
         int total_cols = 0;
-        while (strtok_r(count_rest, ",", &count_rest)) {
-            total_cols++;
+        char *count_line = line_buffer;
+        char *count_start = count_line;
+        char *count_end;
+        
+        while (*count_line) {
+            while (*count_start == ' ' || *count_start == '\t') count_start++;
+            if (*count_start == '\0' || *count_start == '\n' || *count_start == '\r') break;
+            
+            count_end = count_start;
+            while (*count_end && *count_end != ',' && *count_end != '\n' && *count_end != '\r') count_end++;
+            
+            char *trim_end = count_end - 1;
+            while (trim_end > count_start && (*trim_end == ' ' || *trim_end == '\t')) trim_end--;
+            
+            if (count_start != count_end) total_cols++;
+            
+            count_line = count_end + 1;
+            count_start = count_line;
         }
 
-        // Reset for actual parsing
-        rest = line_buffer;
-        while ((token = strtok_r(rest, ",", &rest)) != NULL) {
-            while (*token == ' ' || *token == '\t') token++;
-            char *end_token = token + strlen(token) - 1;
-            while (end_token > token && (*end_token == ' ' || *end_token == '\t')) *end_token-- = '\0';
+        // Determine format based on column count and simple_output flag
+        int is_full_format = !simple_output && total_cols >= 17;
+        int is_partial_format = !simple_output && total_cols >= 15 && total_cols < 17;
+        int is_simple_format = simple_output && total_cols == 9;
 
-            if (*token == '\0') continue;
+        // Reset for actual parsing
+        while (*line) {
+            // Find the start of the field (skip leading whitespace)
+            while (*field_start == ' ' || *field_start == '\t') field_start++;
+            if (*field_start == '\0' || *field_start == '\n' || *field_start == '\r') break;
+            
+            // Find the end of the field (either comma or end of line)
+            field_end = field_start;
+            while (*field_end && *field_end != ',' && *field_end != '\n' && *field_end != '\r') field_end++;
+            
+            // Trim trailing whitespace
+            char *trim_end = field_end - 1;
+            while (trim_end > field_start && (*trim_end == ' ' || *trim_end == '\t')) trim_end--;
+            *(trim_end + 1) = '\0';
+            
+            // Skip empty fields
+            if (field_start == field_end) {
+                line = field_end + 1;
+                field_start = line;
+                continue;
+            }
 
             errno = 0;
-
             if (col == 0 || col == 1) {
-                temp_long = strtol(token, &endptr, 10);
-                if (errno != 0 || endptr == token || *endptr != '\0' || temp_long > INT_MAX || temp_long < INT_MIN) {
+                temp_long = strtol(field_start, &field_end, 10);
+                if (errno != 0 || field_end != trim_end + 1 || temp_long > INT_MAX || temp_long < INT_MIN) {
                     parse_error = 1;
-                } else {
-                    if (col == 0) current_particle.type = (int)temp_long;
-                    else current_particle.id = (int)temp_long;
+                    break;
                 }
+                if (col == 0) current_particle.type = (int)temp_long;
+                else current_particle.id = (int)temp_long;
             } else {
-                temp_double = strtod(token, &endptr);
-                if (errno != 0 || endptr == token || *endptr != '\0') {
+                temp_double = strtod(field_start, &field_end);
+                if (errno != 0 || field_end != trim_end + 1) {
                     parse_error = 1;
-                } else {
-                    if (simple_output) {
-                        // Simple output format: x,y,z,vx,vy,vz,mass
-                        switch (col) {
-                            case 2: current_particle.x = (real)temp_double; break;
-                            case 3: current_particle.y = (real)temp_double; break;
-                            case 4: current_particle.z = (real)temp_double; break;
-                            case 5: current_particle.vx = (real)temp_double; break;
-                            case 6: current_particle.vy = (real)temp_double; break;
-                            case 7: current_particle.vz = (real)temp_double; break;
-                            case 8: current_particle.mass = (real)temp_double; break;
-                        }
-                    } else {
-                        // Non-simple output format: x,y,z,l,b,r,vx,vy,vz,mass,v_los,pmra,pmdec[,lambda,beta]
-                        switch (col) {
-                            case 2: current_particle.x = (real)temp_double; break;
-                            case 3: current_particle.y = (real)temp_double; break;
-                            case 4: current_particle.z = (real)temp_double; break;
-                            case 5: current_particle.l = (real)temp_double; break;
-                            case 6: current_particle.b = (real)temp_double; break;
-                            case 7: current_particle.r = (real)temp_double; break;
-                            case 8: current_particle.vx = (real)temp_double; break;
-                            case 9: current_particle.vy = (real)temp_double; break;
-                            case 10: current_particle.vz = (real)temp_double; break;
-                            case 11: current_particle.mass = (real)temp_double; break;
-                            case 12: current_particle.v_los = (real)temp_double; break;
-                            case 13: current_particle.pm_ra = (real)temp_double; break;
-                            case 14: current_particle.pm_dec = (real)temp_double; break;
-                            case 15: 
-                                if (total_cols >= 16) { // Only parse lambda if we have enough columns
-                                    current_particle.lambda = (real)temp_double;
-                                    has_lambda_beta = 1;
-                                }
-                                break;
-                            case 16: 
-                                if (has_lambda_beta) { // Only parse beta if we found lambda
-                                    current_particle.beta = (real)temp_double;
-                                }
-                                break;
-                        }
+                    break;
+                }
+                if (is_simple_format) {
+                    // Simple output format: x,y,z,vx,vy,vz,mass
+                    switch (col) {
+                        case 2: current_particle.x = (real)temp_double; break;
+                        case 3: current_particle.y = (real)temp_double; break;
+                        case 4: current_particle.z = (real)temp_double; break;
+                        case 5: current_particle.vx = (real)temp_double; break;
+                        case 6: current_particle.vy = (real)temp_double; break;
+                        case 7: current_particle.vz = (real)temp_double; break;
+                        case 8: current_particle.mass = (real)temp_double; break;
+                    }
+                } else if (is_partial_format) {
+                    // Partial format: x,y,z,l,b,r,vx,vy,vz,mass,v_los,pmra,pmdec
+                    switch (col) {
+                        case 2: current_particle.x = (real)temp_double; break;
+                        case 3: current_particle.y = (real)temp_double; break;
+                        case 4: current_particle.z = (real)temp_double; break;
+                        case 5: current_particle.l = (real)temp_double; break;
+                        case 6: current_particle.b = (real)temp_double; break;
+                        case 7: current_particle.r = (real)temp_double; break;
+                        case 8: current_particle.vx = (real)temp_double; break;
+                        case 9: current_particle.vy = (real)temp_double; break;
+                        case 10: current_particle.vz = (real)temp_double; break;
+                        case 11: current_particle.mass = (real)temp_double; break;
+                        case 12: current_particle.v_los = (real)temp_double; break;
+                        case 13: current_particle.pm_ra = (real)temp_double; break;
+                        case 14: current_particle.pm_dec = (real)temp_double; break;
+                    }
+                } else if (is_full_format) {
+                    // Full format: x,y,z,l,b,r,vx,vy,vz,mass,v_los,pmra,pmdec,lambda,beta
+                    switch (col) {
+                        case 2: current_particle.x = (real)temp_double; break;
+                        case 3: current_particle.y = (real)temp_double; break;
+                        case 4: current_particle.z = (real)temp_double; break;
+                        case 5: current_particle.l = (real)temp_double; break;
+                        case 6: current_particle.b = (real)temp_double; break;
+                        case 7: current_particle.r = (real)temp_double; break;
+                        case 8: current_particle.vx = (real)temp_double; break;
+                        case 9: current_particle.vy = (real)temp_double; break;
+                        case 10: current_particle.vz = (real)temp_double; break;
+                        case 11: current_particle.mass = (real)temp_double; break;
+                        case 12: current_particle.v_los = (real)temp_double; break;
+                        case 13: current_particle.pm_ra = (real)temp_double; break;
+                        case 14: current_particle.pm_dec = (real)temp_double; break;
+                        case 15: current_particle.lambda = (real)temp_double; break;
+                        case 16: current_particle.beta = (real)temp_double; break;
                     }
                 }
             }
 
-            if (parse_error) break;
             col++;
+            line = field_end + 1;
+            field_start = line;
         }
 
-        // Check if we have enough columns for the format
-        int min_required_cols = simple_output ? 9 : 13; // 9 for simple (ignore,id,x,y,z,vx,vy,vz,mass), 13 for non-simple
-        int max_expected_cols = simple_output ? 9 : (has_lambda_beta ? 16 : 14); // Account for optional lambda/beta
+        // Validate format and column count
+        int min_required_cols, max_expected_cols;
+        const char* format_name;
+        
+        if (is_simple_format) {
+            min_required_cols = max_expected_cols = 9;
+            format_name = "simple";
+        } else if (is_partial_format) {
+            min_required_cols = max_expected_cols = 15;
+            format_name = "partial";
+        } else if (is_full_format) {
+            min_required_cols = max_expected_cols = 17;
+            format_name = "full";
+        } else {
+            fprintf(stderr, "Warning: Line %ld has %d columns, which doesn't match any known format\n", 
+                    line_number, total_cols);
+            continue;
+        }
         
         if (!parse_error && col >= min_required_cols && col <= max_expected_cols) {
             if (!add_particle(collection, current_particle)) {
@@ -262,8 +323,8 @@ ParticleCollection* read_particle_file(const char *filename) {
                 return NULL;
             }
         } else if (!parse_error) {
-            fprintf(stderr, "Warning: Line %ld has %d columns, expected %d-%d columns\n", 
-                    line_number, col, min_required_cols, max_expected_cols);
+            fprintf(stderr, "Warning: Line %ld has %d columns, expected %d-%d columns for %s format\n", 
+                    line_number, col, min_required_cols, max_expected_cols, format_name);
         }
     } while (1);
 

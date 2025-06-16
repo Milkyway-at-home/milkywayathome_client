@@ -49,9 +49,9 @@ char* find_lua_file(const char* filename) {
     
     // Try common relative paths for different possible execution locations
     const char* relative_paths[] = {
-        "../../../nbody/tests/dwarf_generation_models",
-        "../nbody/tests/dwarf_generation_models",  
-        "../../nbody/tests/dwarf_generation_models" 
+        "../../../nbody/tests/mixeddwarf_models",
+        "../nbody/tests/mixeddwarf_models",  
+        "../../nbody/tests/mixeddwarf_models" 
     };
     
     size_t num_paths = sizeof(relative_paths) / sizeof(relative_paths[0]);
