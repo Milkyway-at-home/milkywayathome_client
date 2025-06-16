@@ -33,6 +33,7 @@
 #include "milkyway_lua.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
+#include "nbody_devoptions.h"
 
 static int getNBodyCtxFunc(lua_State* luaSt)
 {
