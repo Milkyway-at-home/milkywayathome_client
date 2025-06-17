@@ -9,9 +9,9 @@
 
 ## Table of Contents
 
-- [Nbody](#nbody)
-- [Compiling Nbody](#instructions-for-compiling-nbody)
-- [Running Nbody](#running-n-body-options)
+- [N-body](#n-body)
+- [Compiling N-body](#instructions-for-compiling-nbody)
+- [Running N-body](#running-n-body-options)
 - [Input Lua File Dwarf Model Options](#input-lua-file-dwarf-model-options)
 - [N-Body CMAKE Flags](#n-body-cmake-flags)
 - [Tests](#tests)
@@ -19,7 +19,7 @@
 - [TAO](#tao)
 - [Random Notes](#random-notes)
 
-Nbody
+N-body
 ---
 - Simulations are described with Lua input files which can be used
   to produce an arbitrary initial configuration of particles. 
