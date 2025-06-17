@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, real freq);
+int dev_write_initial_output(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf);
 
     
     

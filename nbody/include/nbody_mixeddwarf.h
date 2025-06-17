@@ -31,9 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-int nbGenerateMixedDwarfCore_TESTVER(mwvector* pos, mwvector* vel, real* bodyMasses, dsfmt_t* prng, unsigned int nbody, 
-                                     unsigned int nbody_baryon, Dwarf* dwarf, Dwarf* light, mwvector rshift, mwvector vshift);
-
 int nbGenerateMixedDwarf(lua_State* luaSt);
 void registerGenerateMixedDwarf(lua_State* luaSt);
 
