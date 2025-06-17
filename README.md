@@ -11,7 +11,7 @@
 
 - [Nbody](#nbody)
 - [Compiling Nbody](#instructions-for-compiling-nbody)
-- [Running Nbody](#running-nbody-options)
+- [Running Nbody](#running-n-body-options)
 - [Input Lua File Dwarf Model Options](#input-lua-file-dwarf-model-options)
 - [N-Body CMAKE Flags](#n-body-cmake-flags)
 - [Tests](#tests)
@@ -138,13 +138,19 @@ The type of run is set by setting one of the following flags to `true`:
 - **Plummer:** `{mass, scaleLength}`
 - **NFW:** `{mass, scaleLength}`
 - **General Hernquist:** `{mass, scaleLength}`
-- **Cored:** `{mass, scaleLength, r1, rc}`  _***Not fully tested***_
+- **Cored:** `{mass, scaleLength, r1, rc}`
+
+The double component mixed dwarf code can be used as a single component dwarf generator. 
+Set the number of baryons equal to the total number of particles and set the mass ratio to 1.0.
+The parameters used will be that of the baryons. 
 
 ### Single Component Model
 
 - **Plummer:** `{nbody, mass, scaleRadius, position, velocity, ignore, prng}`
 - **NFW:** `{nbody, mass, rho_0, scaleRadius, position, velocity, ignore, prng}`
 - **Hernquist:** `{nbody, mass, radius, a, position, velocity, ignore, prng}`
+
+Only the plummer model is really useful since it can be calculated analytically. 
 
 ---
 
