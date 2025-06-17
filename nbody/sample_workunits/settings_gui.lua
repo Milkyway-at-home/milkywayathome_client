@@ -48,7 +48,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.90"   -- IGNORE
+nbodyMinVersion       = "1.91"   -- IGNORE
 
 run_null_potential    = false    -- NULL POTENTIAL SWITCH $ button | 0 ^ 1 * 0
 use_tree_code         = true     -- USE TREE CODE (NOT EXACT) $ button | 1 ^ 1 * 0

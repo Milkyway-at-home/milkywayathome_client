@@ -1333,7 +1333,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     totalRangeCount = 0;
     if(first_data->params.nRange == 0)
     {
-        mw_printf("No EMD Ranges defined, using full histogram\n");
+        // mw_printf("No EMD Ranges defined, using full histogram\n");
         first_data->params.nRange = 2;
         first_data->params.EMDRange[0] = first_data->data[0].lambda;
         first_data->params.EMDRange[1] = first_data->data[bins - 1].lambda;
@@ -1343,7 +1343,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         /*Renormalize simulated hist to given EMD Range*/
         EMDStart = first_data->params.EMDRange[i];
         EMDEnd = first_data->params.EMDRange[i+1];
-        mw_printf("Using EMD Range: {%f,%f}\n", EMDStart, EMDEnd);
+        // mw_printf("Using EMD Range: {%f,%f}\n", EMDStart, EMDEnd);
         if(EMDStart > EMDEnd)
         {
             mw_printf("Error reading EMD calculation ranges: EMDStart > EMDEnd \n");
