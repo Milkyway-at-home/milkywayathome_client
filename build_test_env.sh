@@ -62,5 +62,6 @@ fi
   make virial_test
   make mixeddwarf_test
   make nbody_test_driver
+  make LMC_accel_test
   make all
 
