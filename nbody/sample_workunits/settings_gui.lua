@@ -48,7 +48,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.84"   -- IGNORE
+nbodyMinVersion       = "1.91"   -- IGNORE
 
 run_null_potential    = false    -- NULL POTENTIAL SWITCH $ button | 0 ^ 1 * 0
 use_tree_code         = true     -- USE TREE CODE (NOT EXACT) $ button | 1 ^ 1 * 0
@@ -64,6 +64,9 @@ print_out_parameters  = false    -- PRINT OUT ALL PARAMETERS $ button | 0 ^ 1 * 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 SunGCDist             = 8.0         -- Distance between Sun and Galactic Center (kpc) $ entry | 8.0 ^ 0 * 0
+SunVelx               = 10.3        -- Sun's x-velocity (kpc/Gyr) (Hogg et al. (2005)) $ entry | 10.3 ^ 0 * 0
+SunVely               = 229.2       -- Sun's y-velocity (kpc/Gyr) $ entry | 229.2 ^ 0 * 0
+SunVelz               = 6.9         -- Sun's z-velocity (kpc/Gyr) $ entry | 6.9 ^ 0 * 0
 LeftHandedCoords      = false       -- If true, work in left-handed galactocentric cartesian coordinates $ button | 0 ^ 0 * 0
                                     -- (e.g. the Sun is located at positive X) 
 
@@ -115,6 +118,16 @@ orbit_parameter_vy = 54.7       -- NO COMMENT $ entry | 54.7 ^ 0 * 0
 orbit_parameter_vz = 147.4      -- NO COMMENT $ entry | 147.4 ^ 0 * 0
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil. $ l-q-entry | manual_bodies_example.in ^ 0 * 0
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
+-- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- 
+generateInitialOutput = false     -- Outputs the initial bodies file right after dwarf generation $ button | 0 ^ 1 * 0
+
+generateSimpleOutput = true       -- Simple output file includes: x, y, z, vx, vy, vz, mass $ button | 1 ^ 1 * 0
+-- Full output file includes: x, y, z, l, b, r, vx, vy, vz, mass, vlos, pmra, pmdec, [lambda, beta]
+-- NOTE: Lambda and Beta are optional and will only be included if the histogram parameters are set in makeHistogram()
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
 
@@ -264,7 +277,6 @@ function makeContext()
       vy            = orbit_parameter_vy,
       vz            = orbit_parameter_vz,
       criterion     = criterion,
-      OutputLB      = false,
       useQuad       = true,
       useBestLike   = false,
       BestLikeStart = 0.98,
@@ -278,15 +290,19 @@ function makeContext()
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
+      PMSigma       = 2.5,
       IterMax       = 6,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
+      PMCorrect     = 1.111,
       leftHanded    = LeftHandedCoords,
       useContBins   = false,
       bleedInRange  = 1,
+      SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
+      InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,

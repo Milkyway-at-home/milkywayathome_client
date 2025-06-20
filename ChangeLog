@@ -1,3 +1,16 @@
+-nbody 1.91
+	- Cored profile added to dwarf potentials 
+	- Proper Motions can now be calculated for every particle at every timestep 
+	- Added option to average over data in a number of bins in the simulated histogram for likelihood calculation
+	- Mass of the LMC is now a optimizable paramter 
+	- Output format is either Simple Format or the Full Format 
+	- Initial bodies file can now be outputed  
+
+nbody 1.90
+	- Velocity distribution function now separate for baryons and dark matter
+	- Number of baryons can be set directly now and not automatically set as half the total number of bodies (set to half automatically if not specified in lua file) 
+	- Added new stability test that uses  Kullback–Leibler (KL) divergence to compare the simulation probability density distribution to the theoretical probability distribution function
+
 nbody 1.85:
 	- now declares binary version being used at runtime in terminal
 	- all workunits have timesteps corrected, not just those with

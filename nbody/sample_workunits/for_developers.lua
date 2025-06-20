@@ -1,6 +1,6 @@
 -- /* Copyright (c) 2016-2018 Siddhartha Shelton */
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- DEAR LUA USER:
 -- This is the developer version of the lua parameter file. 
 -- It gives all the options you can have. 
@@ -12,36 +12,45 @@
 -- matter component parameters. meaning you input should look like
 -- ft, time_ratio, rscale_baryon, radius_ratio, baryon mass, mass ratio
 -- typical parameters: 4.0, 1.0, 0.2, 0.2, 12, 0.2 (52.5, 28.6, -156, 79, 107)
+-- 222288.47 solar masses = 1 Structure Mass Unit (SMU)
 
 -- available option: using a user inputted list of bodies. Sent in as an 
 -- optional arguement after dwarf parameter list
 -- MUST still include dwarf parameter list
 -- can control what model to use below
 -- simulation time still taken as the first parameter in the list
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+-- IMPORTANT -- IMPORTANT -- IMPORTANT -- IMPORTANT -- IMPORTANT -- 
+-- Structural changes to this file also need to be changed in the 
+-- lua files in the test_env_lua directory (nbody/sample_workunits/test_env_lua/)
+-- especially if the changes are not backwards compatible with the previous format
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
         
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 50000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
-totalLightBodies      = 10000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
+totalBodies           = 40000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
+totalLightBodies      = 20000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
-nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                                                      -- --
+nbodyMinVersion       = "1.91"  -- -- MINIMUM APP VERSION                                                      -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                                               -- --
+print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)                  -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
 LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
 LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
-LMC_Mass              = 449865.888  -- -- SMU                                                                  -- --
+preset_LMC_Mass       = 449865.888  -- -- SMU (used unless specified in arguments)                             -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
+SunVelx               = 10.3      -- -- Sun's x-velocity (kpc/Gyr) (Hogg et al. (2005))                        -- --
+SunVely               = 229.2     -- -- Sun's y-velocity (kpc/Gyr)                                             -- --
+SunVelz               = 6.9       -- -- Sun's z-velocity (kpc/Gyr)                                             -- --
 
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -66,8 +75,12 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 -- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+-- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- --
+generateSimpleOutput = true       -- Simple output file includes: x, y, z, vx, vy, vz, mass
+-- Full output file includes: x, y, z, l, b, r, vx, vy, vz, mass, vlos, pmra, pmdec, [lambda, beta]
+-- NOTE: Lambda and Beta are optional and will only be included if the histogram parameters are set in makeHistogram()
+
 -- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-Output_LB_coord = false    -- include Lambda-Beta coordinates in output file
 
 lda_bins        = 50      -- number of bins in lamdba direction
 lda_lower_range = -150    -- lower range for lambda
@@ -94,31 +107,32 @@ use_vel_disps        = false    -- use velocity dispersions in likelihood
 use_beta_comp        = true  -- calculate average beta, use in likelihood
 use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
 use_avg_dist         = true  -- calculate average distance, use in likelihood
+use_pm_comp          = true  -- calculate proper motion, use in likelihood
 
 -- number of additional forward evolutions to do to calibrate the rotation of the bar
 -- numCalibrationRuns + 1 additional forward evolutions will be done
 -- if no bar potential is being used, this variable will be ignored
 numCalibrationRuns = 0
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- --        
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- These options only work if you compile nbody with  -- -- --
--- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-useMultiOutputs       = false      -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- These options only work if you compile nbody with  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
 
-timestep_control      = false       -- -- control number of steps      -- --
-Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
+useMultiOutputs       = false     -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
+freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
 
-use_max_soft_par      = false       -- -- limit the softening parameter value to a max value
-max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+timestep_control      = false       -- -- control number of steps                                                          -- --
+Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
+
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
+
+generateInitialOutput = false       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
-
-
-
-
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
@@ -204,15 +218,17 @@ function makeContext()
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = get_soft_par(),
+      eps2        = get_soft_par(), 
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
       sunGCDist   = SunGCDist,
+      sunVelx     = SunVelx,
+      sunVely     = SunVely,
+      sunVelz     = SunVelz,
       criterion   = criterion,
-      OutputLB    = Output_LB_coord,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
@@ -221,17 +237,22 @@ function makeContext()
       useBetaComp   = use_beta_comp,
       useVlos       = use_vlos_comp,
       useDist       = use_avg_dist,
+      usePropMot    = use_pm_comp,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
       DistSigma     = SigmaCutoff,
+      PMSigma       = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
+      PMCorrect     = Correction,
+      SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
+      InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
@@ -300,26 +321,30 @@ function makeBodies(ctx, potential)
 
 
     if(ModelComponents == 2) then 
+        -- Create components
+        local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored        
+        local comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+
         firstModel = predefinedModels.mixeddwarf{
-            nbody       = totalBodies,
-            nbody_light = totalLightBodies,
-            prng        = prng,
-            position    = finalPosition,
-            velocity    = finalVelocity,
-            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
-            ignore      = true
+            nbody         = totalBodies,
+            nbody_baryon  = totalLightBodies,
+            prng          = prng,
+            position      = finalPosition,
+            velocity      = finalVelocity,
+            comp1         = comp1,
+            comp2         = comp2,
+            ignore        = true
         }
         
     elseif(ModelComponents == 1) then
-        firstModel = predefinedModels.plummer{
+        firstModel = predefinedModels.plummer{ 
             nbody       = totalBodies,
-            prng        = prng,
-            position    = finalPosition,
-            velocity    = finalVelocity,
             mass        = mass_l,
             scaleRadius = rscale_l,
-            ignore      = false
+            position    = finalPosition,
+            velocity    = finalVelocity,
+            ignore      = false,
+            prng        = prng
         }
   
     end
@@ -363,7 +388,7 @@ end
 
 
 arg = { ... } -- -- TAKING USER INPUT
-assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
+assert((#arg == 6 or #arg == 7 or #arg == 8 or #arg == 12 or #arg == 13 or #arg == 14), "Expects either 6, 7, 8, 12, 13, or 14 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 --argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
@@ -383,22 +408,52 @@ rscale_l         = round( tonumber(arg[3]), dec )    -- Baryonic Radius (kpc)
 light_r_ratio    = round( tonumber(arg[4]), dec )    -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
 mass_l           = round( tonumber(arg[5]), dec )    -- Baryonic Mass (Structure Mass Units)
 light_mass_ratio = round( tonumber(arg[6]), dec )    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-if (#arg >= 12) then
-  orbit_parameter_l   = round( tonumber(arg[7]), dec )
-  orbit_parameter_b   = round( tonumber(arg[8]), dec )
-  orbit_parameter_r   = round( tonumber(arg[9]), dec )
-  orbit_parameter_vx  = round( tonumber(arg[10]), dec )
-  orbit_parameter_vy  = round( tonumber(arg[11]), dec )
-  orbit_parameter_vz  = round( tonumber(arg[12]), dec )
-  manual_body_file = arg[13]
+if (#arg == 7) then
+    if manual_bodies then
+        manual_body_file = arg[7]
+    else 
+        LMC_Mass = round( tonumber(arg[7]), dec )
+    end
+elseif (#arg == 8) then
+    LMC_Mass = round( tonumber(arg[7]), dec )
+    manual_body_file = arg[8]
+elseif (#arg == 12) then
+    orbit_parameter_l   = round( tonumber(arg[7]), dec )
+    orbit_parameter_b   = round( tonumber(arg[8]), dec )
+    orbit_parameter_r   = round( tonumber(arg[9]), dec )
+    orbit_parameter_vx  = round( tonumber(arg[10]), dec )
+    orbit_parameter_vy  = round( tonumber(arg[11]), dec )
+    orbit_parameter_vz  = round( tonumber(arg[12]), dec )
+elseif (#arg == 13) then
+    orbit_parameter_l   = round( tonumber(arg[7]), dec )
+    orbit_parameter_b   = round( tonumber(arg[8]), dec )
+    orbit_parameter_r   = round( tonumber(arg[9]), dec )
+    orbit_parameter_vx  = round( tonumber(arg[10]), dec )
+    orbit_parameter_vy  = round( tonumber(arg[11]), dec )
+    orbit_parameter_vz  = round( tonumber(arg[12]), dec )
+    if manual_bodies then
+        manual_body_file = arg[13]
+    else
+        LMC_Mass = round( tonumber(arg[13]), dec )
+    end
+elseif (#arg == 14) then
+    orbit_parameter_l   = round( tonumber(arg[7]), dec )
+    orbit_parameter_b   = round( tonumber(arg[8]), dec )
+    orbit_parameter_r   = round( tonumber(arg[9]), dec )
+    orbit_parameter_vx  = round( tonumber(arg[10]), dec )
+    orbit_parameter_vy  = round( tonumber(arg[11]), dec )
+    orbit_parameter_vz  = round( tonumber(arg[12]), dec )
+    LMC_Mass = round( tonumber(arg[13]), dec )
+    manual_body_file = arg[14]
 else
-  orbit_parameter_l   = preset_orbit_parameter_l
-  orbit_parameter_b   = preset_orbit_parameter_b
-  orbit_parameter_r   = preset_orbit_parameter_r
-  orbit_parameter_vx  = preset_orbit_parameter_vx
-  orbit_parameter_vy  = preset_orbit_parameter_vy
-  orbit_parameter_vz  = preset_orbit_parameter_vz
-  manual_body_file = arg[7] -- File with Individual Particles (.out file)
+    -- fallback to preset orbit parameters and LMC mass if not enough args
+    orbit_parameter_l   = preset_orbit_parameter_l
+    orbit_parameter_b   = preset_orbit_parameter_b
+    orbit_parameter_r   = preset_orbit_parameter_r
+    orbit_parameter_vx  = preset_orbit_parameter_vx
+    orbit_parameter_vy  = preset_orbit_parameter_vy
+    orbit_parameter_vz  = preset_orbit_parameter_vz
+    LMC_Mass = preset_LMC_Mass
 end
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --

@@ -55,7 +55,19 @@ add_executable(virial_test virial_test.c)
 set(virial_test_link_libs nbody
                           milkyway)
 
-add_executable(mixeddwarf_test mixeddwarf_test.c)
+add_executable(average_bins_test average_bins_test.c)
+
+set(average_bins_test_link_libs "${nbody_exe_link_libs}")
+
+add_executable(propermotion_test propermotion_test.c)
+
+set(propermotion_test_link_libs "${nbody_exe_link_libs}")
+
+add_executable(EMD_Range_test EMD_Range_test.c)
+
+set(EMD_Range_test_link_libs "${nbody_exe_link_libs}")
+
+add_executable(mixeddwarf_test mixeddwarf_test.c test_env_util.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
@@ -68,6 +80,9 @@ if(NBODY_CRLIBM)
     list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND poisson_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND virial_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND average_bins_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND propermotion_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND EMD_Range_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND LMC_accel_test_link_libs ${CRLIBM_LIBRARY})
 endif()
@@ -76,6 +91,9 @@ milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_lib
 milkyway_link(bessel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${bessel_test_link_libs}")
 milkyway_link(poisson_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${poisson_test_link_libs}")
 milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_link_libs}")
+milkyway_link(average_bins_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${average_bins_test_link_libs}")
+milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermotion_test_link_libs}")
+milkyway_link(EMD_Range_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${EMD_Range_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 milkyway_link(LMC_accel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${LMC_accel_test_link_libs}")
 
@@ -102,6 +120,12 @@ add_test(NAME bessel_test COMMAND bessel_test)
 add_test(NAME poisson_test COMMAND poisson_test)
 
 add_test(NAME virial_test COMMAND virial_test)
+
+add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND average_bins_test)
+
+add_test(NAME propermotion_test COMMAND propermotion_test)
+
+add_test(NAME EMD_Range_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND EMD_Range_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 

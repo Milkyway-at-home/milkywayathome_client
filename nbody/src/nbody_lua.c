@@ -33,6 +33,7 @@
 #include "milkyway_lua.h"
 #include "nbody_check_params.h"
 #include "nbody_defaults.h"
+#include "nbody_devoptions.h"
 
 static int getNBodyCtxFunc(lua_State* luaSt)
 {
@@ -619,6 +620,14 @@ int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 
     rc = nbEvaluateInitialNBodyState(luaSt, ctx, st);
     lua_close(luaSt);
+
+    // Generate initial output if requested
+    #ifdef NBODY_DEV_OPTIONS
+        if (ctx->InitialOutput)
+        {
+            dev_write_initial_output(ctx, st, nbf);
+        }
+    #endif
 
     return rc;
 }

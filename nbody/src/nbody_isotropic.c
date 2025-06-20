@@ -707,7 +707,7 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 }
 
 /*      DWARF GENERATION        */
-static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_light, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
+static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
@@ -740,8 +740,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
 
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
-        unsigned int nbody_dark = nbody - nbody_light;
-        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody_light);//half the particles are light matter
+        unsigned int nbody_dark = nbody - nbody_baryon;
+        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody_baryon);//half the particles are light matter
         real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody_dark);
     //----------------------------------------------------------------------------------------------------
 
@@ -774,12 +774,12 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             do
             {
                 
-                if(i < nbody_light)
+                if(i < nbody_baryon)
                 {
                     r = r_mag(prng, parameters_light, rho_max_light, bound);
                     masses[i] = mass_light_particle;
                 }
-                else if(i >= nbody_light)
+                else if(i >= nbody_baryon)
                 {
                     r = r_mag(prng, parameters_dark, rho_max_dark, bound);
                     masses[i] = mass_dark_particle;
@@ -837,11 +837,11 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         for (i = 0; i < nbody; i++)
         {
             b.bodynode.id = i + 1;
-            if(i < nbody_light)
+            if(i < nbody_baryon)
             {
                 b.bodynode.type = BODY(islight);
             }
-            else if(i >= nbody_light)
+            else if(i >= nbody_baryon)
             {
                 b.bodynode.type = BODY(isdark);
             }
@@ -882,13 +882,13 @@ int nbGenerateIsotropic(lua_State* luaSt)
         static const mwvector* position = NULL;
         static const mwvector* velocity = NULL;
         static mwbool ignore;
-        static real mass1 = 0.0, nbodyf = 0.0, nbody_lightf = -1.0, radiusScale1 = 0.0;
+        static real mass1 = 0.0, nbodyf = 0.0, nbody_baryonf = -1.0, radiusScale1 = 0.0;
         static real mass2 = 0.0, radiusScale2 = 0.0;
 
         static const MWNamedArg argTable[] =
         {
             { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "nbody_light",          LUA_TNUMBER,     NULL,                    FALSE,   &nbody_lightf      },
+            { "nbody_baryon",         LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf     },
             { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
             { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
             { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
@@ -906,11 +906,11 @@ int nbGenerateIsotropic(lua_State* luaSt)
         
         handleNamedArgumentTable(luaSt, argTable, 1);
 
-        if (nbody_lightf < 0) {
-            nbody_lightf = nbodyf / 2;
+        if (nbody_baryonf < 0) {
+            nbody_baryonf = nbodyf / 2;
         }
         
-        return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_lightf, mass1, mass2, ignore,
+        return nbGenerateIsotropicCore(luaSt, prng, (unsigned int) nbodyf, (unsigned int) nbody_baryonf, mass1, mass2, ignore,
                                                                  *position, *velocity, radiusScale1, radiusScale2);
 }
 

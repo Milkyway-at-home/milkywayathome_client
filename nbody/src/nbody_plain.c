@@ -84,6 +84,8 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     real likelihood_BetaAvg = NAN;
     real likelihood_VelAvg = NAN;
     real likelihood_Dist = NAN;
+    real likelihood_PM_dec = NAN;
+    real likelihood_PM_ra = NAN;
 
     real *likelihoodArray;
 
@@ -138,6 +140,8 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         likelihood_BetaAvg = likelihoodArray[5];
         likelihood_VelAvg  = likelihoodArray[6];
         likelihood_Dist    = likelihoodArray[7];
+        likelihood_PM_dec  = likelihoodArray[8];
+        likelihood_PM_ra   = likelihoodArray[9];
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
@@ -196,7 +200,18 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
                 st->bestLikelihood_Dist = likelihood_Dist;
             }
             else st->bestLikelihood_Dist = 0.0;
-            
+
+            if (st->usePropMot)
+            {
+                st->bestLikelihood_PM_dec = likelihood_PM_dec;
+                st->bestLikelihood_PM_ra  = likelihood_PM_ra;
+            }
+            else 
+            {
+                st->bestLikelihood_PM_dec = 0.0;
+                st->bestLikelihood_PM_ra  = 0.0;
+            }
+
             /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
             
@@ -219,7 +234,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     
     if(data != NULL)
     {
-        for(int i = 0; i < 6; i++)
+        for(int i = 0; i < 8; i++)
         {
             free(histogram->histograms[i]);
             free(data->histograms[i]);
@@ -405,7 +420,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
          */    
         #ifdef NBODY_DEV_OPTIONS
             if(ctx->MultiOutput)
-            {
+            {   
                 dev_write_outputs(ctx, st, nbf, ctx->OutputFreq);
             }
                 

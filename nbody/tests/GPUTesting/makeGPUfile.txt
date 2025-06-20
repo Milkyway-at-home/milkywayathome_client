@@ -126,6 +126,7 @@ add_test(NAME virial_test COMMAND virial_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
+
 add_test(NAME gpu_sanity
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
           COMMAND gpu_sanity "gpuTest.lua")
@@ -139,6 +140,7 @@ add_test(NAME gpu_basicModelsPart1 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test
 add_test(NAME gpu_basicModelsPart2 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests" COMMAND gpu_basicModelsPart2)
 
 add_test(NAME gpu_advanceModels WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests" COMMAND gpu_advanceModels)
+
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")

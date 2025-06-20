@@ -17,7 +17,7 @@ then
     -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
     -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
     -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
-    -n 8 -b -w 1 -P -e 54231651 \
+    -n 8 -w 1 -P -e 54231651 \
     -i 4.0 1.0 0.2 0.2 12.0 0.2 \
     
 fi
@@ -29,7 +29,7 @@ then
     -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
     -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
     -h $PathToMilkyWayAtHomeClientDirectory/input/input.hist \
-    -n 8 -b -w 1 -P -e 54231651 \
+    -n 8 -w 1 -P -e 54231651 \
     -p 4.0 1.0 0.2 0.2 12.0 0.2 \
 
 fi
@@ -41,6 +41,8 @@ fi
 #-S -> use emd, cost, beta dispersion
 #-V -> use emd, cost, velocity dispersion
 #-D -> use emd, cost, beta dispersion and velocity dispersion
+#-A -> compare all components of the likelihood 
+#Values input through the histogram, such as EMDRange, will be read from the input histogram given with -h
 if $compare_only 
 then
     ./milkyway_nbody \

@@ -11,6 +11,9 @@
 -- The second half of the file is code that generates the initial 
 -- conditions of the simulation, and is not something that
 -- the typical end user will need to change. 
+
+-- NOTE --
+-- 1 Structure Mass Unit (SMU) = 222288.47 solar masses
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
         
@@ -18,7 +21,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.86"      -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.91"      -- -- MINIMUM APP VERSION
 
 run_null_potential    = false       -- -- NULL POTENTIAL SWITCH
 use_tree_code         = true        -- -- USE TREE CODE (NOT EXACT)
@@ -34,6 +37,9 @@ print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 SunGCDist             = 8.0         -- -- Distance between Sun and Galactic Center (kpc) 
+SunVelx               = 10.3        -- -- Sun's x-velocity (kpc/Gyr) (Hogg et al. (2005))
+SunVely               = 229.2       -- -- Sun's y-velocity (kpc/Gyr)
+SunVelz               = 6.9         -- -- Sun's z-velocity (kpc/Gyr)
 LeftHandedCoords      = false       -- -- If true, work in left-handed galactocentric cartesian coordinates
                                     -- -- (e.g. the Sun is located at positive X)
                                     
@@ -71,6 +77,7 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST
 -- -- -- -- -- for the generation of the dwarf bodies -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies      = 40000        -- -- Number of Bodies
+totalLightBodies = 20000        -- -- Number of Baryons
 evolveTime       = 3.0          -- -- Forward Time (Gyr)
 revOrbTime       = 3.0          -- -- Reverse Orbit Time (Gyr)
 rscale_l         = 0.3          -- -- Baryonic Radius (kpc)
@@ -84,6 +91,16 @@ orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocitie
 orbit_parameter_vy = 54.7
 orbit_parameter_vz = 147.4
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil.
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
+
+-- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- 
+generateInitialOutput = false     -- Outputs the initial bodies file right after dwarf generation
+
+generateSimpleOutput = true       -- Simple output file includes: x, y, z, vx, vy, vz, mass
+-- Full output file includes: x, y, z, l, b, r, vx, vy, vz, mass, vlos, pmra, pmdec, [lambda, beta]
+-- NOTE: Lambda and Beta are optional and will only be included if the histogram parameters are set in makeHistogram()
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 
@@ -234,7 +251,6 @@ function makeContext()
       vy            = orbit_parameter_vy,
       vz            = orbit_parameter_vz,
       criterion     = criterion,
-      OutputLB      = false,
       useQuad       = true,
       useBestLike   = false,
       BestLikeStart = 0.98,
@@ -248,12 +264,16 @@ function makeContext()
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
+      PMSigma       = 2.5,
       IterMax       = 6,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
+      PMCorrect     = 1.111,
+      SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
+      InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
@@ -340,13 +360,14 @@ function makeBodies(ctx, potential)
 
     if(ModelComponents == 2) then 
         firstModel = predefinedModels.mixeddwarf{
-            nbody       = totalBodies,
-            prng        = prng,
-            position    = finalPosition,
-            velocity    = finalVelocity,
-            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
-            ignore      = true
+            nbody        = totalBodies,
+            nbody_baryon = totalLightBodies,
+            prng         = prng,
+            position     = finalPosition,
+            velocity     = finalVelocity,
+            comp1        = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp2        = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            ignore       = true
         }
         
     elseif(ModelComponents == 1) then

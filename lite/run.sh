@@ -18,5 +18,5 @@ cd ./bin
 ./milkyway_nbody \
 -f ./settings.lua \
 -o output.out \
--n 8 -b -P \
+-n 8 -P \
 
