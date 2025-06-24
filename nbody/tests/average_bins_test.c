@@ -20,7 +20,7 @@ int main()
     histogram4 = nbReadHistogram("./average_bins_test.hist");
     histogram5 = nbReadHistogram("./average_bins_test.hist");
 
-    //if getting segFault, ensure that test hist is in /nbody/tests
+    //if getting segFault, ensure that test hist is in /nbody/tests/test_hists
 
     histogram2->histograms[1]->lambdaBins = 3;
     histogram2->histograms[1]->betaBins = 1;

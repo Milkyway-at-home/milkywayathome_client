@@ -118,5 +118,34 @@ int main() {
     free(g);
     free(LMC);
 
+    //Test that proper motion columns are correctly read in from input histogram and that likelihoods are calculated correctly
+
+    MainStruct* histogram; //input histogram
+    MainStruct* histogram2; //edited histogram for comparison
+
+    histogram = nbReadHistogram("./propermotion_test.hist");
+    histogram2 = nbReadHistogram("./propermotion_test.hist");
+
+    //if getting segFault, ensure that test hist is in /nbody/tests/test_hists
+
+    //change values for proper motion likelihood calculation. pm dec should contribute 2 to likelihood while pm ra should contribute .5. All other variables should contribute 0
+    histogram2->histograms[6]->data[2].variable= 12; 
+    histogram2->histograms[6]->data[2].err= 4;
+    histogram2->histograms[7]->data[2].variable= 11;
+    histogram2->histograms[7]->data[2].err= 12;
+
+    real pmDecLikelihood = nbLikelihood(histogram->histograms[6], histogram2->histograms[6], 1);
+    real pmRALikelihood = nbLikelihood(histogram->histograms[7], histogram2->histograms[7], 1);
+
+    if (pmDecLikelihood < 1.99 || pmDecLikelihood > 2.01) {
+        mw_printf("Proper Motion Dec Likelihood Test Failed: Expected 2, got %f\n", pmDecLikelihood);
+        failed = 1;
+    } else if (pmRALikelihood < 0.49 || pmRALikelihood > 0.51) {
+        mw_printf("Proper Motion RA Likelihood Test Failed: Expected 0.5, got %f\n", pmRALikelihood);
+        failed = 1;
+    } else {
+        mw_printf("Proper Motion Likelihood Tests Passed, Data Successfully Read from Histogram\n");
+    }   
+
     return failed;
 }
