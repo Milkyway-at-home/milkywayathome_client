@@ -703,7 +703,7 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     unsigned int body_count = 0;
     unsigned int ub_counter = 0;
     
-    MainStruct* all = mwCalloc(7*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char)); 
+    MainStruct* all = mwCalloc(8*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char)); 
 
     real Nbodies = st->nbody;
     mwbool islight = FALSE;//is it light matter?
@@ -829,8 +829,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
     real * use_velbody   = mwCalloc(body_count, sizeof(real));
     real * use_betabody  = mwCalloc(body_count, sizeof(real));
     real * use_distbody  = mwCalloc(body_count, sizeof(real));
-    real * use_murabody = mwCalloc(body_count, sizeof(real));
     real * use_mudecbody = mwCalloc(body_count, sizeof(real));
+    real * use_murabody = mwCalloc(body_count, sizeof(real));
 
     real * vlos      = mwCalloc(body_count, sizeof(real));       
     real * betas     = mwCalloc(body_count, sizeof(real));
@@ -872,8 +872,8 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             use_betabody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             use_velbody[ub_counter] = DEFAULT_NOT_USE;//defaulted to not use body
             use_distbody[ub_counter] = DEFAULT_NOT_USE;
-            use_murabody[ub_counter] = DEFAULT_NOT_USE;
             use_mudecbody[ub_counter] = DEFAULT_NOT_USE;
+            use_murabody[ub_counter] = DEFAULT_NOT_USE;
             
             vlos[ub_counter]     = DEFAULT_NOT_USE;//default vlos
             betas[ub_counter]    = DEFAULT_NOT_USE;
@@ -1326,7 +1326,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         if(readBetaBins && !buildHist) // only build the histogram once
         {
             unsigned int nBin = lambdaBins * betaBins;
-            all = mwCalloc(6*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
+            all = mwCalloc(8*(sizeof(NBodyHistogram) + nBin * sizeof(HistData)), sizeof(char));
 
             NBodyHistogram* hist0 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
             all->usage[0] = TRUE;
@@ -1340,7 +1340,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             all->usage[2] = TRUE;
             all->histograms[2] = hist2;
 
-            if(usedOrbitParams)
+            if(usedOrbitParams && hasPM == 1)
             {
                 NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
                 all->usage[3] = TRUE;
@@ -1377,8 +1377,8 @@ MainStruct* nbReadHistogram(const char* histogramFile)
         unsigned int useBin = 0;
         double lambda = 0;
         double beta = 0;
-        double variable[7];
-        double errors[7];
+        double variable[8] = {0};  
+        double errors[8] = {0};   
 
         if(usedOrbitParams) // new histogram output, there are more parameters to read in
         {
