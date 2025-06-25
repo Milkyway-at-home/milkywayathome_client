@@ -1,3 +1,6 @@
+-nbody 1.92
+	- Fixed likelihood calculation to correctly calculate with pmra
+
 -nbody 1.91
 	- Cored profile added to dwarf potentials 
 	- Proper Motions can now be calculated for every particle at every timestep 
