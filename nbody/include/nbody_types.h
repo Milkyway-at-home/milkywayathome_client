@@ -350,8 +350,10 @@ typedef struct
     // 3: vlos avg
     // 4: beta avg
     // 5: dist avg
-    mwbool usage[7];
-    NBodyHistogram* histograms[7]; 
+    // 6: mu_dec
+    // 7: mu_ra
+    mwbool usage[8];
+    NBodyHistogram* histograms[8]; 
 } MainStruct;
 
 /* Mutable state used during an evaluation */
