@@ -193,7 +193,7 @@ Tests
   ```
   $ ctest -R <Test_Name> -VV
   ```
-  If only 25 tests are running instead of 88 tests, you are missing libraries (check Step 0 for compiling N-body)
+  If only 25 tests are running instead of 91 tests, you are missing libraries (check Step 0 for compiling N-body)
 
 Separation
 ---
