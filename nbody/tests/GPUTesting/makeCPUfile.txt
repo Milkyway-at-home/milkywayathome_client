@@ -117,7 +117,7 @@ add_test(NAME virial_test COMMAND virial_test)
 
 add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND average_bins_test)
 
-add_test(NAME propermotion_test COMMAND propermotion_test)
+add_test(NAME propermotion_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND propermotion_test)
 
 add_test(NAME EMD_Range_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND EMD_Range_test)
 
