@@ -301,7 +301,7 @@ real * nbSystemLikelihood(const NBodyState* st,
         likelihood += dec_pm_component;
         if(!data->usage[7] || !histogram->usage[7])
         {
-            mw_printf("One of these files does not contain any info for declination proper motion\n");
+            mw_printf("One of these files does not contain any info for right ascension proper motion\n");
             return NANArray;
         }
         ra_pm_component = nbLikelihood(data->histograms[7],histogram->histograms[7], 1);
