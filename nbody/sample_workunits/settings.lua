@@ -21,7 +21,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.91"      -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.92"      -- -- MINIMUM APP VERSION
 
 run_null_potential    = false       -- -- NULL POTENTIAL SWITCH
 use_tree_code         = true        -- -- USE TREE CODE (NOT EXACT)
