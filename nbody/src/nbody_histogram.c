@@ -1340,7 +1340,7 @@ MainStruct* nbReadHistogram(const char* histogramFile)
             all->usage[2] = TRUE;
             all->histograms[2] = hist2;
 
-            if(usedOrbitParams && hasPM == 1)
+            if(usedOrbitParams)
             {
                 NBodyHistogram* hist3 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
                 all->usage[3] = TRUE;
@@ -1354,13 +1354,16 @@ MainStruct* nbReadHistogram(const char* histogramFile)
                 all->usage[5] = TRUE;
                 all->histograms[5] = hist5;
 
-                NBodyHistogram* hist6 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-                all->usage[6] = TRUE;
-                all->histograms[6] = hist6;
+                if(hasPM == 1)
+                {
+                    NBodyHistogram* hist6 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                    all->usage[6] = TRUE;
+                    all->histograms[6] = hist6;
 
-                NBodyHistogram* hist7 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
-                all->usage[7] = TRUE;
-                all->histograms[7] = hist7;
+                    NBodyHistogram* hist7 = mwCalloc(sizeof(NBodyHistogram) + nBin * sizeof(HistData), sizeof(char));
+                    all->usage[7] = TRUE;
+                    all->histograms[7] = hist7;
+                }
             }
             else
             {
