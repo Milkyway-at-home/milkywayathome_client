@@ -41,8 +41,10 @@ use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                   
 print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)                  -- --
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
-LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
-LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
+LMC_body              = true    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL) 
+LMC_function          = 1       -- -- 1: Plummer 2: Henrquist 3: Hernquist with cutoff
+LMC_scaleRadius       = 15      -- --  kpc
+LMC_cutoff            = 16      -- --  kpc  This is used only for Hernquist with cutoff
 preset_LMC_Mass       = 449865.888  -- -- SMU (used unless specified in arguments)                             -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
@@ -255,8 +257,10 @@ function makeContext()
       InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
+      LMCfunction   = LMC_function,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
+      LMCscale2     = LMC_cutoff,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
       calibrationRuns = numCalibrationRuns
@@ -285,9 +289,11 @@ function makeBodies(ctx, potential)
 	            position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	            LMCvelocity = Vector.create(-57, -226, 221), 
+	            LMCvelocity = Vector.create(-57, -226, 221),
+		    LMCfunction = LMC_function,,
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
+		    LMCscale2   = LMC_cutoff,
                     LMCDynaFric = LMC_DynamicalFriction,
                     coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
