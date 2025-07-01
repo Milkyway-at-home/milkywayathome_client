@@ -13,6 +13,8 @@ dwarfMass = 16
 dwarfRadius = 0.2
 LMCMASS = 449865.888
 LMCSCALE = 15.0
+LMCFUNCTION = 1
+LMCCUTOFF = 16.6
 
 function makePotential()
    return Potential.create{
@@ -42,8 +44,10 @@ function makeContext()
       PMCorrect     = 1.111,
       IterMax       = 6,
       LMC           = true,
+      LMCfunction   = LMCFUNCTION,
       LMCmass       = LMCMASS,
       LMCscale      = LMCSCALE,
+      LMCscale2     = LMCCUTOFF,
       LMCDynaFric   = true
    }
 end
@@ -55,8 +59,10 @@ function makeBodies(ctx, potential)
       velocity    = Vector.create(-170, 94, 108),
       LMCposition = Vector.create(-1.1, -41.1, -27.9),
       LMCvelocity = Vector.create(-57, -226, 221), 
+      LMCfunction = LMCFUNCTION,
       LMCmass     = LMCMASS,
       LMCscale    = LMCSCALE,
+      LMCscale2   = LMCCUTOFF,
       LMCDynaFric = true,
       coulomb_log = 0.470003629,
       ftime       = 4.5,

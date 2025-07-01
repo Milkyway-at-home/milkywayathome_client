@@ -77,8 +77,10 @@ function randomNBodyCtx(prng)
       allowIncest   = true,
       quietErrors   = true,
       LMC           = prng:randomBool(),
+      LMCfunction   = 1,
       LMCmass       = prng:random(1.0e5,1.0e6),
       LMCscale      = prng:random(1.0,20.0),
+      LMCscale2     = prng:random(1.0,20.0),
       LMCDynaFric   = prng:randomBool()
    }
 end

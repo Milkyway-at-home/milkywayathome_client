@@ -58,8 +58,10 @@ function getTestNBodyState(t)
       allowIncest = t.allowIncest,
       quietErrors = true,
       LMC         = t.LMC,
+      LMCfunction = 1,
       LMCmass     = 449865.888,
       LMCscale    = 15.0,
+      LMCscale2   = 16.6,
       LMCDynaFric = t.LMCDynaFric
    }
    --Add potential to context

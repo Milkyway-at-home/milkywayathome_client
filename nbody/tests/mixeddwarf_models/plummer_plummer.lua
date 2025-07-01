@@ -52,7 +52,9 @@ print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
 LMC_body              = false    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
+LMC_function          = 1
 LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
+LMC_cutoff            = 16.6
 preset_LMC_Mass       = 449865.888  -- -- SMU -- -- only if <12 params are used                                -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
@@ -268,7 +270,9 @@ function makeContext()
       theta         = 1.0,
       LMC           = LMC_body,
       LMCmass       = LMC_Mass,
+      LMCfunction   = LMC_function,
       LMCscale      = LMC_scaleRadius,
+      LMCscale2     = LMC_cutoff,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
       calibrationRuns = numCalibrationRuns
@@ -299,7 +303,9 @@ function makeBodies(ctx, potential)
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
                     LMCmass     = LMC_Mass,
+		    LMCfuction  = LMC_function,
                     LMCscale    = LMC_scaleRadius,
+		    LMCscale2   = LMC_cutoff,
                     LMCDynaFric = LMC_DynamicalFriction,
                     coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
