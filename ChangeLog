@@ -1,3 +1,6 @@
+-nbody 1.93
+	- Temporary fix for compiling windows binary with OpenCL(works for milkyway-old but might not work for all linux manchines)
+
 -nbody 1.92
 	- Fixed likelihood calculation to correctly calculate with pmra
 
