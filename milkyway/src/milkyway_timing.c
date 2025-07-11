@@ -21,6 +21,8 @@
 #include "milkyway_timing.h"
 #include "milkyway_util.h"
 
+#include "milkyway_config.h" // For HAVE_* macros
+
 
 #ifdef _WIN32
   #include <windows.h>

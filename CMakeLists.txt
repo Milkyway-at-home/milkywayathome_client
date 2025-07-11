@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.5)
 project(milkywayathome_client)
 enable_testing()
 
@@ -473,6 +473,9 @@ if(NBODY)
     set(CRLIBM_LIBRARY crlibm)
   endif()
   add_subdirectory(nbody)
+
+  # add Expanse
+  add_subdirectory(third_party)
 endif()
 
 if(${CMAKE_VERSION} VERSION_GREATER "2.8.0" OR ${CMAKE_VERSION} VERSION_EQUAL "2.8.0")

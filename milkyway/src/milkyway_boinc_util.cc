@@ -19,6 +19,7 @@
  */
 
 #include "milkyway_config.h"
+#include <sys/stat.h> // For the stat() function
 
 #if BOINC_APPLICATION
   #include <graphics2.h>
