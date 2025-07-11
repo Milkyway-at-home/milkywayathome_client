@@ -54,9 +54,6 @@ include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 include_directories(${DSFMT_INCLUDE_DIR})
 
-# Expanse
-add_subdirectory(../third_party)
-
 if(ENABLE_CURSES)
   include_directories(${CURSES_INCLUDE_DIR})
 endif()

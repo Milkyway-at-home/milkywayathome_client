@@ -1,0 +1,16 @@
+# Compiled object files
+*.o
+
+# Executables and libraries
+Expanse
+*.out
+*.exe
+*.dylib
+*.dSYM/
+*.so
+
+# Build directory
+build/
+
+# OS-specific files
+.DS_Store

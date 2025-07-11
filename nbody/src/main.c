@@ -468,6 +468,7 @@ static mwbool nbReadParameters(const int argc, const char* argv[], NBodyFlags* n
         exit(EXIT_SUCCESS);
     }
 
+    // debug 
     if (!nbf.inputFile && !nbf.checkpointFileName && !nbf.matchHistogram && !nbf.matchHistBetaDisp && !nbf.matchHistVelDisp
                        && !nbf.matchHistBetaVelDisp && !nbf.matchHistBetaVlosDist && !nbf.matchHistAll)
     {

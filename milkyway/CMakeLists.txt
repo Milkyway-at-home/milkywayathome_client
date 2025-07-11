@@ -180,6 +180,13 @@ set_target_properties(milkyway_lua PROPERTIES
 target_link_libraries(milkyway_lua milkyway dsfmt)
 
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
+
+# necessary
+target_include_directories(milkyway
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
 target_link_libraries(milkyway dsfmt)
 if(BOINC_APPLICATION)
   target_link_libraries(milkyway ${BOINC_LIBRARIES})
