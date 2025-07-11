@@ -20,6 +20,9 @@
 
 #include "milkyway_util.h"
 #include "milkyway_boinc_util.h"
+#include <float.h>       // For FLT_EPSILON
+#include <sys/types.h>   // For kill()
+#include <signal.h>      // For kill()
 
 #if HAVE_SYS_WAIT_H
   #include <sys/wait.h>

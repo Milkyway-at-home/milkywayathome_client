@@ -21,6 +21,8 @@
 #ifndef _MILKYWAY_TIMING_H_
 #define _MILKYWAY_TIMING_H_
 
+#include <stdint.h> // For uint64_t
+
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 
