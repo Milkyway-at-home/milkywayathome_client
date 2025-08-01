@@ -38,6 +38,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .NGPdec          */  DEFAULT_NGP_DEC,
     /* .NGPra           */  DEFAULT_NGP_RA,
     /* .lNCP            */  DEFAULT_L_NCP,
+    /* .dwarfn          */  1,
 
     /* .b               */  DEFAULT_B_START_COORD,
     /* .r               */  DEFAULT_R_START_COORD,

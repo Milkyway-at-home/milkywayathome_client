@@ -65,6 +65,37 @@ static int luaLbrToCartesian(lua_State* luaSt)
     return 1;
 }
 
+static int luaLbrToCartesianTable(lua_State* luaSt) // Lack of LbrToCartesian_rad function
+{
+    mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
+    real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
+    const NBodyCtx* ctx = NULL;
+
+    ctx = checkNBodyCtx(luaSt, 1);
+    if (!lua_istable(luaSt, 2))
+    {
+        return luaL_argerror(luaSt, 2, "Expected a table of mwvectors");
+    }
+    ;
+    int i, len;
+    len = lua_objlen(luaSt, 2);
+
+    lua_newtable(luaSt); 
+
+    for (i = 1; i <= len; ++i)
+    {
+        lua_rawgeti(luaSt, 2, i);
+        
+        mwvector lbr = *(mwvector*) checkVector(luaSt, -1);
+        lua_pop(luaSt, 1); 
+        mwvector cart = lbrToCartesian(lbr, sunGCDist); 
+
+        pushVector(luaSt, cart); 
+        lua_rawseti(luaSt, -2, i);
+    }
+
+    return 1; 
+}
 
 static const real solarMassesPerMassUnit = 222288.47;
 
@@ -157,6 +188,7 @@ static int luaCorrectTimestep(lua_State* luaSt)
 void nbRegisterUtilityFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "lbrToCartesian", luaLbrToCartesian);
+    lua_register(luaSt, "lbrToCartesianTable", luaLbrToCartesianTable);
     lua_register(luaSt, "correctTimestep", luaCorrectTimestep);
 
     /* Unit conversions */

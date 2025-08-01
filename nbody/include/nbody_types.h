@@ -353,7 +353,7 @@ typedef struct
     // 6: mu_dec
     // 7: mu_ra
     mwbool usage[8];
-    NBodyHistogram* histograms[8]; 
+    NBodyHistogram* histograms[8];
 } MainStruct;
 
 /* Mutable state used during an evaluation */
@@ -464,11 +464,13 @@ typedef struct MW_ALIGN_TYPE
     real NGPra;
     real lNCP;
 
-    real b;     /* orbital parameters */
-    real r;
-    real vx;
-    real vy;
-    real vz;
+    real dwarfn;  /* Number of dwarfs input */
+
+    real b[2];     /* orbital parameters */
+    real r[2];
+    real vx[2];
+    real vy[2];
+    real vz[2];
 
     criterion_t criterion;
     ExternalPotentialType potentialType;
@@ -484,14 +486,14 @@ typedef struct MW_ALIGN_TYPE
     mwbool MultiOutput;       /* whether to have algorithm put out multiple outputs */
     mwbool InitialOutput;     /* whether to generate initial output */
     mwbool SimpleOutput;      /* Simple output only x,y,z,vx,vy,vz,mass */
-    
+
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool quietErrors;
     
     real BestLikeStart;       /* after what portion of the sim should the calc start */
     real OutputFreq;          /* frequency of writing outputs */
-    
+
     real BetaSigma;           /* sigma cutoff for the outlier rejection for the bin beta dispersions */ 
     real VelSigma;            /* sigma cutoff for the outlier rejection for the bin vel dispersions */ 
     real DistSigma;           /* sigma cutoff for the outlier rejection for the bin dists dispersions */
@@ -521,9 +523,9 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                  \
-                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
-                         0.0, 0.0, 0.0, 0.0, 0.0,                                                       \
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
+                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                  \
+                         {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0},                    \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,          \
                          FALSE, FALSE, FALSE, FALSE,                                                    \

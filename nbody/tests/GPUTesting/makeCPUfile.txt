@@ -71,6 +71,10 @@ add_executable(mixeddwarf_test mixeddwarf_test.c test_env_util.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 
+add_executable(momentum_offset_test momentum_offset_test.c)
+
+set(momentum_offset_test_link_libs "${nbody_exe_link_libs}")
+
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND bessel_test_link_libs ${CRLIBM_LIBRARY})
@@ -80,6 +84,7 @@ if(NBODY_CRLIBM)
     list(APPEND propermotion_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND EMD_Range_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND momentum_offset_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
@@ -90,6 +95,7 @@ milkyway_link(average_bins_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${average_
 milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermotion_test_link_libs}")
 milkyway_link(EMD_Range_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${EMD_Range_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
+milkyway_link(momentum_offset_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${momentum_offset_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -105,6 +111,10 @@ add_test(NAME checkpoint_test
 add_test(NAME custom_arg_test
            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
            COMMAND nbody_test_driver "RunArgumentTests.lua" $<TARGET_FILE:milkyway_nbody>)
+
+add_test(NAME multidwarf_generation_test
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "md_generationTest.lua")
 
 
 add_test(NAME emd_test COMMAND emd_test)

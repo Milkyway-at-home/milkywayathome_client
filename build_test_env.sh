@@ -60,11 +60,12 @@ fi
   make bessel_test
   make poisson_test
   make virial_test
+  make momentum_offset_test
   make nbody_test_driver
   make average_bins_test
   make propermotion_test
   make EMD_Range_test
   make mixeddwarf_test
-  
+
   make all
 

@@ -105,7 +105,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "vx",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vx  },
             { "vy",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vy  },
             { "vz",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vz  },
-            
+
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName             },
             { "SimpleOutput",  LUA_TBOOLEAN, NULL, FALSE, &ctx.SimpleOutput          },
             { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad               },
@@ -120,7 +120,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "useDist",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useDist               },
             { "usePropMot",    LUA_TBOOLEAN, NULL, FALSE, &ctx.usePropMot            },
             { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps               },
-            { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control         }, 
+            { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control         },
             { "MultiOutput",   LUA_TBOOLEAN, NULL, FALSE, &ctx.MultiOutput           },
             { "InitialOutput", LUA_TBOOLEAN, NULL, FALSE, &ctx.InitialOutput         },
             { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq            },
@@ -176,9 +176,9 @@ static int createNBodyCtx(lua_State* luaSt)
                    nStepf,
                    ctx.timeEvolve, ctx.timestep);
     }
-    
+
     ctx.nStep = (unsigned int) nStepf;
-    
+
     #ifdef NBODY_DEV_OPTIONS
         if(ctx.Nstep_control)
         {
@@ -186,7 +186,7 @@ static int createNBodyCtx(lua_State* luaSt)
             ctx.nStep = (int) ctx.Ntsteps;
         }
     #endif
-    
+
     /*
     This looks really old and I don't think we have to check for WUs with version < 0.9 anymore.
     I'm going to remove it (otherwise nbody lite prints two version statements due to the nbReadMinVersion
@@ -212,7 +212,147 @@ static int createNBodyCtx(lua_State* luaSt)
         //     mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
         // }
     // }
-    
+
+    //instead, just put this here -Tom
+    ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
+
+    pushNBodyCtx(luaSt, &ctx);
+    return 1;
+}
+
+static int createSNBodyCtx(lua_State* luaSt)
+{
+    static NBodyCtx ctx;
+    static const char* criterionName = NULL;
+    real nStepf = 0.0;
+
+    static const MWNamedArg argTable[] =
+        {
+            { "dwarfn",        LUA_TNUMBER,  NULL, TRUE,  &ctx.dwarfn        },
+            { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
+            { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
+            { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },
+            { "theta",         LUA_TNUMBER,  NULL, FALSE, &ctx.theta         },
+            { "eps2",          LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2          },
+            { "treeRSize",     LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize     },
+            { "sunGCDist",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist     },
+            { "sunVelx",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVelx     },
+            { "sunVely",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVely     },
+            { "sunVelz",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVelz     },
+
+            { "b",             LUA_TTABLE,  NULL, FALSE,  &ctx.b   },
+            { "r",             LUA_TTABLE,  NULL, FALSE,  &ctx.r   },
+            { "vx",            LUA_TTABLE,  NULL, FALSE,  &ctx.vx  },
+            { "vy",            LUA_TTABLE,  NULL, FALSE,  &ctx.vy  },
+            { "vz",            LUA_TTABLE,  NULL, FALSE,  &ctx.vz  },
+
+            { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName             },
+            { "SimpleOutput",  LUA_TBOOLEAN, NULL, FALSE, &ctx.SimpleOutput          },
+            { "useQuad",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad               },
+            { "allowIncest",   LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest           },
+            { "quietErrors",   LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors           },
+            { "useBestLike",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBestLike           },
+            { "BestLikeStart", LUA_TNUMBER,  NULL, FALSE, &ctx.BestLikeStart         },
+            { "useVelDisp",    LUA_TBOOLEAN, NULL, FALSE, &ctx.useVelDisp            },
+            { "useBetaDisp",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBetaDisp           },
+            { "useBetaComp",   LUA_TBOOLEAN, NULL, FALSE, &ctx.useBetaComp           },
+            { "useVlos",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useVlos               },
+            { "useDist",       LUA_TBOOLEAN, NULL, FALSE, &ctx.useDist               },
+            { "usePropMot",    LUA_TBOOLEAN, NULL, FALSE, &ctx.usePropMot            },
+            { "Ntsteps",       LUA_TNUMBER,  NULL, FALSE, &ctx.Ntsteps               },
+            { "Nstep_control", LUA_TBOOLEAN, NULL, FALSE, &ctx.Nstep_control         },
+            { "MultiOutput",   LUA_TBOOLEAN, NULL, FALSE, &ctx.MultiOutput           },
+            { "InitialOutput", LUA_TBOOLEAN, NULL, FALSE, &ctx.InitialOutput         },
+            { "OutputFreq",    LUA_TNUMBER,  NULL, FALSE, &ctx.OutputFreq            },
+            { "BetaSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaSigma             },
+            { "VelSigma",      LUA_TNUMBER,  NULL, TRUE,  &ctx.VelSigma              },
+            { "DistSigma",     LUA_TNUMBER,  NULL, TRUE,  &ctx.DistSigma             },
+            { "PMSigma",       LUA_TNUMBER,  NULL, TRUE,  &ctx.PMSigma               },
+            { "IterMax",       LUA_TNUMBER,  NULL, FALSE, &ctx.IterMax               },
+            { "BetaCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.BetaCorrect           },
+            { "VelCorrect",    LUA_TNUMBER,  NULL, TRUE,  &ctx.VelCorrect            },
+            { "DistCorrect",   LUA_TNUMBER,  NULL, TRUE,  &ctx.DistCorrect           },
+            { "PMCorrect",     LUA_TNUMBER,  NULL, TRUE,  &ctx.PMCorrect             },
+            { "LMC",           LUA_TBOOLEAN, NULL, FALSE, &ctx.LMC                   },
+            { "LMCmass",       LUA_TNUMBER,  NULL, FALSE, &ctx.LMCmass               },
+            { "LMCscale",      LUA_TNUMBER,  NULL, FALSE, &ctx.LMCscale              },
+            { "LMCDynaFric",   LUA_TBOOLEAN, NULL, FALSE, &ctx.LMCDynaFric           },
+            { "coulomb_log",   LUA_TNUMBER,  NULL, FALSE, &ctx.coulomb_log           },
+            { "calibrationRuns", LUA_TNUMBER, "UINT", FALSE, &ctx.calibrationRuns    },
+            END_MW_NAMED_ARG
+        };
+
+    criterionName = NULL;
+    ctx = defaultNBodyCtx;
+
+    if (lua_gettop(luaSt) != 1)
+        return luaL_argerror(luaSt, 1, "Expected named argument table");
+
+    handleNamedArgumentTable(luaSt, argTable, 1);
+
+    /* FIXME: Hacky handling of enum. Will result in not good error
+     * messages as well as not fitting in. */
+    if (criterionName) /* Not required */
+    {
+        ctx.criterion = readCriterion(luaSt, criterionName);
+    }
+
+    if ((ctx.criterion != Exact) && (ctx.theta < 0.0))
+    {
+        return luaL_argerror(luaSt, 1, "Theta argument required for criterion != 'Exact'");
+    }
+    else if (ctx.criterion == Exact)
+    {
+        /* These don't mean anything here */
+        ctx.theta = 0.0;
+        ctx.useQuad = FALSE;
+    }
+
+    nStepf = mw_ceil(ctx.timeEvolve / ctx.timestep);
+    if (nStepf >= (real) UINT_MAX)
+    {
+        luaL_error(luaSt,
+                   "Number of timesteps exceeds UINT_MAX: %f timesteps (%f / %f)\n",
+                   nStepf,
+                   ctx.timeEvolve, ctx.timestep);
+    }
+
+    ctx.nStep = (unsigned int) nStepf;
+
+    #ifdef NBODY_DEV_OPTIONS
+        if(ctx.Nstep_control)
+        {
+            mw_printf("BE WARNED: manually controlling time is unnatural and should be used with the utmost caution.\n");
+            ctx.nStep = (int) ctx.Ntsteps;
+        }
+    #endif
+
+    /*
+    This looks really old and I don't think we have to check for WUs with version < 0.9 anymore.
+    I'm going to remove it (otherwise nbody lite prints two version statements due to the nbReadMinVersion
+    call here) and if it ends up breaking something, put it back later */
+    // {
+        // int major = 0, minor = 0;
+
+        /* Automatically correct the timestep size so an integer
+         * number of timesteps covers the evolution time.
+         *
+         * Only do this if we require a minimum version of 0.90 to
+         * avoid not validating against currently existing workunits
+         */
+
+        // if (  !nbReadMinVersion(luaSt, &major, &minor)    /* If we fail to read version */
+        //     || (major > 0 || (major == 0 && minor >= 90)) /* Version required >= 0.90 */
+        //     || (major == 0 && minor == 0))                /* Min version not set */
+        // {
+        //     ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
+        // }
+        // else
+        // {
+        //     mw_printf("Warning: not applying timestep correction for workunit with min version %d.%d\n", major, minor);
+        // }
+    // }
+
     //instead, just put this here -Tom
     ctx.timestep = nbCorrectTimestep(ctx.timeEvolve, ctx.timestep);
 
@@ -254,12 +394,14 @@ static const luaL_reg metaMethodsNBodyCtx[] =
 static const luaL_reg methodsNBodyCtx[] =
 {
     { "create", createNBodyCtx },
+    { "createS", createSNBodyCtx },
     { "addPotential", addPotential },
     { NULL, NULL }
 };
 
 static const Xet_reg_pre gettersNBodyCtx[] =
 {
+    { "dwarfn",          getNumber,     offsetof(NBodyCtx, dwarfn)        },
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)      },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)    },
     { "timeBack",        getNumber,     offsetof(NBodyCtx, timeBack)      },
@@ -308,6 +450,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 
 static const Xet_reg_pre settersNBodyCtx[] =
 {
+    { "dwarfn",          setNumber,     offsetof(NBodyCtx, dwarfn)        },
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)      },
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)    },
     { "timeBack",        setNumber,     offsetof(NBodyCtx, timeBack)      },

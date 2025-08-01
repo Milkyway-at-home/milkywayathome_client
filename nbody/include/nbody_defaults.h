@@ -34,7 +34,7 @@ extern "C" {
 
 /* 15 minutes */
 #define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
-
+  
 
 #define DEFAULT_SUN_GC_DISTANCE ((real) 8.0)
 #define DEFAULT_SUN_VEL_Y ((real) 229.2)
@@ -46,11 +46,11 @@ extern "C" {
 #define DEFAULT_CRITERION TreeCode
 #define DEFAULT_TREE_ROOT_SIZE ((real) 4.0)
 
-#define DEFAULT_B_START_COORD ((real) 53.5)
-#define DEFAULT_R_START_COORD ((real) 28.6)
-#define DEFAULT_VX_START_COORD ((real) -156)
-#define DEFAULT_VY_START_COORD ((real) 79)
-#define DEFAULT_VZ_START_COORD ((real) 107)
+#define DEFAULT_B_START_COORD ((real[2]){53.5, 53.5})
+#define DEFAULT_R_START_COORD ((real[2]){28.6, 28.6})
+#define DEFAULT_VX_START_COORD ((real[2]){-156, -156})
+#define DEFAULT_VY_START_COORD ((real[2]){79, 79})
+#define DEFAULT_VZ_START_COORD ((real[2]){107, 107})
 
 #define DEFAULT_USE_QUADRUPOLE_MOMENTS TRUE
 #define DEFAULT_ALLOW_INCEST FALSE
