@@ -89,6 +89,7 @@ static int createNBodyCtx(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
+            { "dwarfn",     LUA_TNUMBER,  NULL, FALSE, &ctx.dwarfn       },
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
             { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },
@@ -100,11 +101,11 @@ static int createNBodyCtx(lua_State* luaSt)
             { "sunVely",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVely     },
             { "sunVelz",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVelz     },
 
-            { "b",             LUA_TNUMBER,  NULL, FALSE,  &ctx.b   },
-            { "r",             LUA_TNUMBER,  NULL, FALSE,  &ctx.r   },
-            { "vx",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vx  },
-            { "vy",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vy  },
-            { "vz",            LUA_TNUMBER,  NULL, FALSE,  &ctx.vz  },
+            { "b",             LUA_TTABLE,  NULL, FALSE,  &ctx.b   },
+            { "r",             LUA_TTABLE,  NULL, FALSE,  &ctx.r   },
+            { "vx",            LUA_TTABLE,  NULL, FALSE,  &ctx.vx  },
+            { "vy",            LUA_TTABLE,  NULL, FALSE,  &ctx.vy  },
+            { "vz",            LUA_TTABLE,  NULL, FALSE,  &ctx.vz  },
 
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName             },
             { "SimpleOutput",  LUA_TBOOLEAN, NULL, FALSE, &ctx.SimpleOutput          },
