@@ -542,7 +542,6 @@ static int nbSetNumThreads(int numThreads)
   #ifdef _OPENMP
     int nProc = omp_get_num_procs();
     int nBoinc = mwGetBoincNumCPU();
-
     if (nProc <= 0) /* It's happened before... */
     {
         mw_printf("Number of processors %d is crazy\n", nProc);
@@ -715,7 +714,6 @@ int main(int argc, const char* argv[])
     {
         rc = nbMain(&nbf);
         rc = nbStatusToRC(rc);
-
         //mw_printf("Before noCleanCheckpoint\n");
 
         if (!nbf.noCleanCheckpoint)

@@ -42,7 +42,6 @@
 int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelihoodMethod* method)
 {
     lua_State* luaSt = NULL;
-
     luaSt = nbOpenLuaStateWithScript(nbf, NULL);
     if (!luaSt)
     {

@@ -455,7 +455,7 @@ typedef struct MW_ALIGN_TYPE
     real timeEvolve;
     real timeBack;
     real treeRSize;
-
+  
     real sunGCDist; /* constants */
     real sunVelx;
     real sunVely;

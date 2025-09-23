@@ -125,6 +125,9 @@ add_test(NAME poisson_test COMMAND poisson_test)
 
 add_test(NAME virial_test COMMAND virial_test)
 
+
+add_test(NAME momentum_offset_test COMMAND momentum_offset_test)
+
 add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND average_bins_test)
 
 add_test(NAME propermotion_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND propermotion_test)
@@ -132,6 +135,7 @@ add_test(NAME propermotion_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/t
 add_test(NAME EMD_Range_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND EMD_Range_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
+
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")

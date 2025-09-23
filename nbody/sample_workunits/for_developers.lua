@@ -104,7 +104,8 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
 useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 30         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+freqOfOutputs         = 15         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+
 
 timestep_control      = true       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
@@ -115,7 +116,8 @@ max_soft_par          = 1.5         -- -- kpc, if switch above is turned on, use
         
 
 -- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
-n=4
+
+n=11
 
 arg = { ... } -- -- TAKING USER INPUT
 assert(#arg >= 6, "Expects either 6 or 12 arguments, and optional manual body list")
@@ -132,7 +134,9 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
-evolveTime       = round( 0.00001, dec )    -- Forward Time (Gyrs)
+
+evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
+
 time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
 
 manual_body_file = "/home/kyatte/milkywayathome_client/nbody/sample_workunits/manual_bodies/r50.in" -- change root folder to user root
@@ -141,35 +145,22 @@ manual_body_file = "/home/kyatte/milkywayathome_client/nbody/sample_workunits/ma
 
 -- -- -- -- -- -- DWARF PARAMETER INPUTS - MAKE SURE ARRAYS ARE OF LENGTH n (line 118) -- -- -- -- -- --
 -- note for SINGLE COMPONENT: light mass and scale radius is used DIRECTLY -- 
-rscale_l            = {round( 2.9,dec),round( 1.53,dec),round( 1.425,dec),round( 0.725,dec)}
-light_r_ratio       = {round( 0.5,dec),round( 0.5,dec),round( 0.5,dec),round( 0.5,dec)}
-mass_l              = {round( 29241.283,dec),round( 1799.464,dec),round( 562.332,dec),round( 139.458,dec)}
-light_mass_ratio    = {round( 0.5,dec),round( 0.5,dec),round( 0.5,dec),round( 0.5,dec)}
-orbit_parameter_l   = {round( 302.801,dec),round( 5.569,dec),round( 237.104,dec),round( 287.535,dec)}
-orbit_parameter_b   = {round( -44.328,dec),round( -14.166,dec),round( -65.651,dec),round( -83.157,dec)}
-orbit_parameter_r   = {round( 62.4,dec),round( 25.0,dec),round( 143.0,dec),round( 88.91,dec)}
-orbit_parameter_vx  = {round( 21.99,dec),round( 223.97,dec),round( -27.04,dec),round( -22.11,dec)}
-orbit_parameter_vy  = {round( -201.36,dec),round( -5.34,dec),round( -172.14,dec),round( 197.28,dec)}
-orbit_parameter_vz  = {round( 171.25,dec),round( 185.78,dec),round( 101.21,dec),round( -102.1,dec)}
+rscale_l            = {round( 2.9, dec ),round( 1.53, dec ),round( 1.425,dec),round( 0.43,dec),round( 0.725,dec),round( 0.96,dec),round( 1.25,dec),round( 0.465,dec),round( 0.59,dec),round( 0.42,dec),round( 0.505,dec)}                       -- Baryonic Radius (kpc)
+light_r_ratio       = {round( 0.2, dec ),round( 0.2, dec ),round(  0.2,dec),round(  0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec)}                                   -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l              = {round( 2429.198, dec ),round( 107.041, dec ),round( 80.159,dec),round( 20.968,dec),round( 9.384,dec),round( 2.918,dec),round( 1.892,dec),round( 1.647,dec),round( 1.134,dec),round( 0.899,dec),round( 1.061,dec)}        -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio    = {round( 0.0830, dec ),round( 0.0594, dec ),round( 0.1429,dec),round( 0.0067,dec),round( 0.0674,dec),round( 0.0240,dec),round( 0.0100,dec),round( 0.0159,dec),round( 0.0115,dec),round( 0.0038,dec),round( 0.0087,dec)}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec ),round( 237.104,dec),round( 225.985,dec),round( 287.535,dec),round( 220.164,dec),round( 243.498,dec),round( 260.112,dec),round( 86.368,dec),round( 104.9,dec),round( 74.305,dec)}
+orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec ),round( -65.651,dec),round( 49.112,dec),round( -83.157,dec),round( 67.229,dec),round( 42.272,dec),round( -22.223,dec),round( 34.722,dec),round( 44.8,dec),round( 79.823,dec)}
+orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec ),round( 143,dec),round( 250,dec),round( 88.91,dec),round( 220,dec),round( 90,dec),round( 100,dec),round( 80,dec),round( 60,dec),round( 220,dec)}
+orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec ),round( -27.04,dec),round( 48.17,dec),round( -22.11,dec),round( 94.87,dec),round( -194.39,dec),round( -28.48,dec),round( -59.22,dec),round( 19.12,dec),round( 23.95,dec)}
+orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec ),round( -172.14,dec),round( -16.36,dec),round( 197.28,dec),round( 209.73,dec),round( 30.33,dec),round( -79.13,dec),round( 60.33,dec),round( 38.13,dec),round( 47.45,dec)}
+orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec ),round( 101.21,dec),round( 254.15,dec),round( -102.1,dec),round( 114.61,dec),round( 49.13,dec),round( 164.44,dec),round( -263.33,dec),round( -160.51,dec),round( 68.05,dec)}
 
--- rscale_l            = {round( 2.9, dec ),round( 1.53, dec ),round( 1.425,dec),round( 0.43,dec),round( 0.725,dec),round( 0.96,dec),round( 1.25,dec),round( 0.465,dec),round( 0.59,dec),round( 0.42,dec),round( 0.505,dec)}                       -- Baryonic Radius (kpc)
--- light_r_ratio       = {round( 0.2, dec ),round( 0.2, dec ),round(  0.2,dec),round(  0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec),round( 0.2,dec)}                                   -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
--- mass_l              = {round( 2429.198, dec ),round( 107.041, dec ),round( 80.159,dec),round( 20.968,dec),round( 9.384,dec),round( 2.918,dec),round( 1.892,dec),round( 1.647,dec),round( 1.134,dec),round( 0.899,dec),round( 1.061,dec)}        -- Baryonic Mass (Structure Mass Units)
--- light_mass_ratio    = {round( 0.0830, dec ),round( 0.0594, dec ),round( 0.1429,dec),round( 0.0067,dec),round( 0.0674,dec),round( 0.0240,dec),round( 0.0100,dec),round( 0.0159,dec),round( 0.0115,dec),round( 0.0038,dec),round( 0.0087,dec)}    -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
--- orbit_parameter_l   = {round( 302.801, dec ),round( 5.569, dec ),round( 237.104,dec),round( 225.985,dec),round( 287.535,dec),round( 220.164,dec),round( 243.498,dec),round( 260.112,dec),round( 86.368,dec),round( 104.9,dec),round( 74.305,dec)}
--- orbit_parameter_b   = {round( -44.328, dec ),round( -14.166, dec ),round( -65.651,dec),round( 49.112,dec),round( -83.157,dec),round( 67.229,dec),round( 42.272,dec),round( -22.223,dec),round( 34.722,dec),round( 44.8,dec),round( 79.823,dec)}
--- orbit_parameter_r   = {round( 62.4, dec ),round( 25, dec ),round( 143,dec),round( 250,dec),round( 88.91,dec),round( 220,dec),round( 90,dec),round( 100,dec),round( 80,dec),round( 60,dec),round( 220,dec)}
--- orbit_parameter_vx  = {round( 21.99, dec ),round( 223.97, dec ),round( -27.04,dec),round( 48.17,dec),round( -22.11,dec),round( 94.87,dec),round( -194.39,dec),round( -28.48,dec),round( -59.22,dec),round( 19.12,dec),round( 23.95,dec)}
--- orbit_parameter_vy  = {round( -201.36, dec ),round( -5.34, dec ),round( -172.14,dec),round( -16.36,dec),round( 197.28,dec),round( 209.73,dec),round( 30.33,dec),round( -79.13,dec),round( 60.33,dec),round( 38.13,dec),round( 47.45,dec)}
--- orbit_parameter_vz  = {round( 171.25, dec ),round( 185.78, dec ),round( 101.21,dec),round( 254.15,dec),round( -102.1,dec),round( 114.61,dec),round( 49.13,dec),round( 164.44,dec),round( -263.33,dec),round( -160.51,dec),round( 68.05,dec)}
-
+-- print(table.getn(rscale_l))
 -- -- -- parameter verification -- -- --
-if (n ~= table.getn(rscale_l)) then
-    print(string.format("WARNING: n (%d) does not match number of inputs (%d)", n, table.getn(rscale_l)))
-end
 --all_parameters = {rscale_l, light_r_ratio, mass_l, light_mass_ratio, orbit_parameter_l, orbit_parameter_b, orbit_parameter_r, orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz}
 --for i=1, 10 do
---    if(table.getn(all_parameters[i]) ~= n) then
+--    if(table.getn(all_parameters[i]) != n) then
 --        print("Check that n matches parameter array lengths.")
 --    end
 --end
@@ -209,10 +200,12 @@ end
 function get_timestep()
     if(timestep_control) then
         t = (evolveTime) / (Ntime_steps)
-    elseif(ModelComponents == 2) then--disable now for multidwarfs
+    elseif(ModelComponents == 2) then --disable now for multidwarfs (?) < figure out soon.
+
         print("try enabling timestep control TwT")
-        -- --Mass of a single dark matter sphere enclosed within light rscale
-        -- mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
+        --Mass of a single dark matter sphere enclosed within light rscale
+        mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
+
 
         -- --Mass of a single light matter sphere enclosed within dark rscale
         -- mass_enc_l = mass_l * (rscale_d)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
@@ -247,11 +240,13 @@ function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
 
+    --should probably change this out at some point vv
     if (ModelComponents == 1) then --plugs in two-comp. analog for single-comp. run so i don't have to edit the eps2 function
         sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1]/2, mass_d[1]/2, UseOldSofteningLength)
     else
         sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1], UseOldSofteningLength)
     end
+
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
@@ -434,7 +429,8 @@ function makeBodies(ctx, potential)
                 }
             for _, row in ipairs(Model) do
                 table.insert(firstModel, row)
-                print(row)
+                -- print(row)  -- < is this a debug function? double check...
+
             end
             print(string.format("Dwarf %d bodies generation finished", i))
         end
@@ -506,6 +502,8 @@ if(ModelComponents == 1) then
     for i = 1, n do
         dwarfMass[i]  = mass_l[i]
         rscale_t[i]   = rscale_l[i]
+    
+    -- probably change this with the softening at some point vv
         rscale_d[i]  = rscale_l[i] --used in GenerateEps2
         mass_d[i]     = mass_l[i] --used in GenerateEps2
     end

@@ -88,8 +88,10 @@ static int createNBodyCtx(lua_State* luaSt)
     real nStepf = 0.0;
 
     static const MWNamedArg argTable[] =
-        {
-            { "dwarfn",     LUA_TNUMBER,  NULL, FALSE, &ctx.dwarfn       },
+
+        {   
+            { "dwarfn",        LUA_TNUMBER,  NULL, TRUE,  &ctx.dwarfn        },
+
             { "timestep",      LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep      },
             { "timeEvolve",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve    },
             { "timeBack",      LUA_TNUMBER,  NULL, FALSE, &ctx.timeBack      },

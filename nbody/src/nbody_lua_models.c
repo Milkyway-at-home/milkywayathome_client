@@ -292,8 +292,8 @@ static int luaReverseOrbit(lua_State* luaSt)
     static const MWNamedArg argTable[] =
         {
             { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
-            { "position",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos           },
-            { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel           },
+            { "position",   LUA_TTABLE,    NULL,           TRUE, &pos           },
+            { "velocity",   LUA_TTABLE,    NULL,           TRUE, &vel           },
             { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
             { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
             END_MW_NAMED_ARG

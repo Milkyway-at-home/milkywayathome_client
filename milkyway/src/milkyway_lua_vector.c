@@ -55,11 +55,11 @@ int pushVector(lua_State* luaSt, mwvector vIn)
 
 int pushVectorTable(lua_State* luaSt, mwvector* vecArray, size_t len)
 {
-    lua_newtable(luaSt);
+    lua_newtable(luaSt); 
 
     for (size_t i = 0; i < len; ++i)
     {
-        pushVector(luaSt, vecArray[i]);
+        pushVector(luaSt, vecArray[i]); 
         lua_rawseti(luaSt, -2, i + 1);
     }
 
@@ -131,9 +131,9 @@ static int createsVector(lua_State* luaSt)
         return luaL_argerror(luaSt, 1, "Expected 3 tables to create vector table");
     }
 
-    size_t len1 = lua_objlen(luaSt, 1);
-    size_t len2 = lua_objlen(luaSt, 2);
-    size_t len3 = lua_objlen(luaSt, 3);  //Length Index for three tables
+    size_t len1 = lua_objlen(luaSt, 1); 
+    size_t len2 = lua_objlen(luaSt, 2); 
+    size_t len3 = lua_objlen(luaSt, 3);  //Length Index for three tables  
     //Use luaL_len for 5.2 or higher version
 
     if (len1 != len2 || len1 != len3 || len2 != len3) {

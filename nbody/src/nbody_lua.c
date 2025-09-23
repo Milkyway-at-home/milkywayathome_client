@@ -190,7 +190,6 @@ static int bindVersionNumber(lua_State* luaSt)
 static int nbCheckMinVersionRequired(lua_State* luaSt)
 {
     int major = 0, minor = 0;
-
     if (!nbReadMinVersion(luaSt, &major, &minor))
     {
         return FALSE;
@@ -244,7 +243,7 @@ lua_State* nbLuaOpen(mwbool debug)
  * If given NULL state, no device information will be given
  */
 lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf, NBodyState* st)
-{
+{   
     char* script;
     lua_State* luaSt;
     int execFailed;
@@ -560,12 +559,12 @@ int nbHistogramParamsCheck(const NBodyFlags* nbf, HistogramParams* hp)
 }
 
 static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
-{
+{   
     int level, nResults;
 
     level = lua_gettop(luaSt);
     if (getBodiesFunc(luaSt))
-    {
+    {   
         return NULL;
     }
 
