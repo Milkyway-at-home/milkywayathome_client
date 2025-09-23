@@ -226,6 +226,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     real likelihood_VelAvg = NAN;
     real likelihood_BetaAvg = NAN;
     real likelihood_Dist = NAN;
+    real likelihood_PM_dec = NAN;
+    real likelihood_PM_ra = NAN;
     NBodyLikelihoodMethod method;
 
     real *likelihoodArray;
@@ -290,6 +292,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         likelihood_BetaAvg = likelihoodArray[5];
         likelihood_VelAvg  = likelihoodArray[6];
         likelihood_Dist    = likelihoodArray[7];
+        likelihood_PM_dec  = likelihoodArray[8];
+        likelihood_PM_ra   = likelihoodArray[9];
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
@@ -327,6 +331,8 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             likelihood_VelAvg  = st->bestLikelihood_VelAvg;
             likelihood_BetaAvg = st->bestLikelihood_BetaAvg;
             likelihood_Dist    = st->bestLikelihood_Dist;
+            likelihood_PM_dec  = st->bestLikelihood_PM_dec;
+            likelihood_PM_ra   = st->bestLikelihood_PM_ra;
         }
         else
         {
@@ -378,6 +384,11 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
        if (st->useDist)
        {
            mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
+       }
+       if (st->usePropMot)
+       {
+        mw_printf("<search_likelihood_PM_dec>%.15f</search_likelihood_PM_dec>\n", -likelihood_PM_dec);
+        mw_printf("<search_likelihood_PM_ra>%.15f</search_likelihood_PM_ra>\n", -likelihood_PM_ra);
        }
     }
 
@@ -476,6 +487,7 @@ int nbMain(const NBodyFlags* nbf)
         st->useBetaComp = ctx->useBetaComp;
         st->useVlos = ctx->useVlos;
         st->useDist = ctx->useDist;
+        st->usePropMot = ctx->usePropMot;
 
         //save the state if about to start first calibration run
         if(ctx->calibrationRuns > 0 && i == 0){

@@ -113,7 +113,8 @@ function soft()
 end
 
 
-ctx = NBodyCtx.create{
+
+ctx = NBodyCtx.createS{
     dwarfn        = ndwarfs,
     timestep      = round(dt, 3),
     timeEvolve    = round(dt, 3),
@@ -132,9 +133,11 @@ ctx = NBodyCtx.create{
     BetaSigma     = sigma,
     VelSigma      = sigma,
     DistSigma     = sigma,
+    PMSigma       = sigma,
     BetaCorrect   = correct,
     VelCorrect    = correct,
     DistCorrect   = correct,
+    PMCorrect     = correct,
     IterMax       = sigmaIter,
     allowIncest   = true,
     quietErrors   = true,

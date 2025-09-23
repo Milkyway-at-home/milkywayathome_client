@@ -26,7 +26,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 totalBodies           = 5000  -- -- NUMBER OF BODIES                                  -- --
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                               -- --
-nbodyMinVersion       = "1.86"  -- -- MINIMUM APP VERSION                               -- --
+nbodyMinVersion       = "1.93"  -- -- MINIMUM APP VERSION                               -- --
 
 run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                             -- --
 use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                           -- --
@@ -106,6 +106,7 @@ numCalibrationRuns = 0
 useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
 freqOfOutputs         = 15         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
+
 timestep_control      = true       -- -- control number of steps      -- --
 Ntime_steps           = 3000        -- -- number of timesteps to run   -- --
 
@@ -115,6 +116,7 @@ max_soft_par          = 1.5         -- -- kpc, if switch above is turned on, use
         
 
 -- -- -- -- MULTIPLE INPUT SWITCH -- -- -- --
+
 n=11
 
 arg = { ... } -- -- TAKING USER INPUT
@@ -132,7 +134,9 @@ end
 
 -- -- -- -- -- -- ROUNDING TO AVOID DIFFERENT COMPUTER TERMINAL PRECISION -- -- -- -- -- --
 dec = 9.0
+
 evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
+
 time_ratio       = round( 1, dec )    -- Forward Time / Backward Time
 
 manual_body_file = "/home/kyatte/milkywayathome_client/nbody/sample_workunits/manual_bodies/r50.in" -- change root folder to user root
@@ -196,26 +200,28 @@ end
 function get_timestep()
     if(timestep_control) then
         t = (evolveTime) / (Ntime_steps)
-    elseif(ModelComponents == 2) then--disable now for multidwarfs
+    elseif(ModelComponents == 2) then --disable now for multidwarfs (?) < figure out soon.
 
+        print("try enabling timestep control TwT")
         --Mass of a single dark matter sphere enclosed within light rscale
         mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
 
-        --Mass of a single light matter sphere enclosed within dark rscale
-        mass_enc_l = mass_l * (rscale_d)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
 
-        s1 = (rscale_l)^3 / (mass_enc_d + mass_l)
-        s2 = (rscale_d)^3 / (mass_enc_l + mass_d)
+        -- --Mass of a single light matter sphere enclosed within dark rscale
+        -- mass_enc_l = mass_l * (rscale_d)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
+
+        -- s1 = (rscale_l)^3 / (mass_enc_d + mass_l)
+        -- s2 = (rscale_d)^3 / (mass_enc_l + mass_d)
         
-        --return the smaller time step
-        if(s1 < s2) then
-            s = s1
-        else
-            s = s2
-        end
+        -- --return the smaller time step
+        -- if(s1 < s2) then
+        --     s = s1
+        -- else
+        --     s = s2
+        -- end
         
-        -- I did it this way so there was only one place to change the time step. 
-        t = (1.0 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
+        -- -- I did it this way so there was only one place to change the time step. 
+        -- t = (1.0 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
         
     else 
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
@@ -233,7 +239,14 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1], UseOldSofteningLength)
+
+    --should probably change this out at some point vv
+    if (ModelComponents == 1) then --plugs in two-comp. analog for single-comp. run so i don't have to edit the eps2 function
+        sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1]/2, mass_d[1]/2, UseOldSofteningLength)
+    else
+        sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1], UseOldSofteningLength)
+    end
+
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
@@ -257,8 +270,10 @@ function makeContext()
       vy          = orbit_parameter_vy,
       vz          = orbit_parameter_vz,
       sunGCDist   = SunGCDist,
+      sunVelx     = SunVelx,
+      sunVely     = SunVely,
+      sunVelz     = SunVelz,
       criterion   = criterion,
-      OutputLB    = Output_LB_coord,
       useQuad     = true,
       useBestLike   = use_best_likelihood,
       BestLikeStart = eff_best_like_start,
@@ -272,10 +287,12 @@ function makeContext()
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
       DistSigma     = SigmaCutoff,
+      PMSigma       = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
+      PMCorrect     = Correction,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       theta         = 1.0,
@@ -412,6 +429,8 @@ function makeBodies(ctx, potential)
                 }
             for _, row in ipairs(Model) do
                 table.insert(firstModel, row)
+                -- print(row)  -- < is this a debug function? double check...
+
             end
             print(string.format("Dwarf %d bodies generation finished", i))
         end
@@ -483,8 +502,10 @@ if(ModelComponents == 1) then
     for i = 1, n do
         dwarfMass[i]  = mass_l[i]
         rscale_t[i]   = rscale_l[i]
-        rscale_d[i]  = 0.0
-        mass_d[i]     = 0.0
+    
+    -- probably change this with the softening at some point vv
+        rscale_d[i]  = rscale_l[i] --used in GenerateEps2
+        mass_d[i]     = mass_l[i] --used in GenerateEps2
     end
 else    
     for i = 1, n do

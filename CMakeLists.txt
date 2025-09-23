@@ -108,7 +108,7 @@ if(MSVC)
 endif()
 
 # Project build selection
-option(SEPARATION "Build separation" ON)
+option(SEPARATION "Build separation" OFF)
 option(NBODY "Build nbody" ON)
 
 # Normal options

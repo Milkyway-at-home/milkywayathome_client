@@ -140,13 +140,15 @@ typedef struct MW_ALIGN_TYPE
 #define _NFW_DWARF 1
 #define _GEN_HERN_DWARF 2
 #define _EINASTO_DWARF 3
+#define _CORED_DWARF 4
 typedef enum
 {
     InvalidDwarf       = InvalidEnum,
     Plummer            = _PLUMMER_DWARF,
     NFW                = _NFW_DWARF,
     General_Hernquist  = _GEN_HERN_DWARF,
-    Einasto            = _EINASTO_DWARF
+    Einasto            = _EINASTO_DWARF,
+    Cored              = _CORED_DWARF
 } dwarf_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -155,8 +157,9 @@ typedef struct MW_ALIGN_TYPE
     real mass;        
     real scaleLength;   
     real n; //used by einasto
-    real p0; //used by nfw
+    real p0; //used by nfw and cored
     real r200; // virial radius
+    real ps, r1, rc; //used by cored
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"

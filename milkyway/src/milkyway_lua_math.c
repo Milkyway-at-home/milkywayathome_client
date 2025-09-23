@@ -79,7 +79,8 @@ DEFINE_LUA_MW_FUNC_1(mw_cos, cos)
 DEFINE_LUA_MW_FUNC_1(mw_tan, tan)
 
 DEFINE_LUA_MW_FUNC_1(mw_asin, asin)
-DEFINE_LUA_MW_FUNC_1(mw_acos, atan)
+DEFINE_LUA_MW_FUNC_1(mw_acos, acos)
+DEFINE_LUA_MW_FUNC_1(mw_atan, atan)
 DEFINE_LUA_MW_FUNC_1(mw_log, log)
 DEFINE_LUA_MW_FUNC_1(mw_exp, exp)
 
@@ -192,6 +193,7 @@ void registerMilkywayMath(lua_State* luaSt)
     register_lua_mw_tan(luaSt);
     register_lua_mw_asin(luaSt);
     register_lua_mw_acos(luaSt);
+    register_lua_mw_atan(luaSt);
     register_lua_mw_log(luaSt);
     register_lua_mw_exp(luaSt);
 

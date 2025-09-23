@@ -203,6 +203,7 @@ int nbReadMinVersion(lua_State* luaSt, int* major, int* minor)
 {
     const char* version;
     int rc;
+    static mwbool printed = FALSE;  
 
     lua_getglobal(luaSt, "nbodyMinVersion");
     version = luaL_optstring(luaSt, -1, "0.0");
@@ -215,7 +216,10 @@ int nbReadMinVersion(lua_State* luaSt, int* major, int* minor)
         return FALSE;
     }
     
-    mw_printf("Running MilkyWay@home Nbody v%s\n", version);
+    if (!printed) {  
+        mw_printf("Running MilkyWay@home Nbody v%s\n", version);
+        printed = TRUE;  
+    }
     return TRUE;
 }
 

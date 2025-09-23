@@ -67,8 +67,6 @@ typedef struct
     /* These all must be int since that's the type popt expects them to be */
     int visualizer;
     int debugBOINC;
-    int outputCartesian;
-    int outputlbrCartesian;
     int printTiming;
     int verifyOnly;
     int printHistogram;  /* Print histogram at end */

@@ -204,7 +204,7 @@ int nbGenerateNFW(lua_State* luaSt)
             { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf   },
             { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass     },
             { "rho_0",        LUA_TNUMBER,   NULL,          TRUE,  &rho_0    },
-            { "scaledRadius", LUA_TNUMBER,   NULL,          TRUE,  &R_S      },
+            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &R_S      },
             { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position },
             { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity },
             { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore   },

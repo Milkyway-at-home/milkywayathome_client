@@ -31,6 +31,8 @@ further options are available in the dev lua:
 - whether to use the tree code for the force calculations (default on client side) or to use the exact calculation.
 - whether to print out the reverse orbit coordinates to a file (be careful using this)
 - print out the input parameters. masses are output in both sim units and solar masses.
+- save the initial state of the generated dwarf galaxy before evolution by setting 'generate_initial_output = true'
+  in the Lua file. This creates a file named 'initial.out' with the same format as the standard output files.
 
 
 
