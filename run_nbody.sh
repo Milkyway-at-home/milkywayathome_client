@@ -6,7 +6,7 @@ compare_only=false
 get_flag_list=false
 
 cd "$(dirname "$0")"
-PathToMilkyWayAtHomeClientDirectory="/mnt/b/milkywayathome_client"
+PathToMilkyWayAtHomeClientDirectory="$(pwd)"
 echo "Path to milkywayathome_client directory: $PathToMilkyWayAtHomeClientDirectory"
 
 cd build/bin

@@ -104,7 +104,7 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on                  -- -- --   
 
 useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS       -- --
-freqOfOutputs         = 15         -- -- FREQUENCY OF WRITING OUTPUTS -- --
+freqOfOutputs         = 30         -- -- FREQUENCY OF WRITING OUTPUTS -- --
 
 
 timestep_control      = true       -- -- control number of steps      -- --
