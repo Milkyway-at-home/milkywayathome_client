@@ -9,14 +9,15 @@ cd "$(dirname "$0")"
 PathToMilkyWayAtHomeClientDirectory="$(pwd)"
 echo "Path to milkywayathome_client directory: $PathToMilkyWayAtHomeClientDirectory"
 
+timestamp=$(date +%Y%m%d_%H%M%S)
 cd build/bin
 
 if $run 
 then
     ./milkyway_nbody \
     -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
-    -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
-    -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
+    -o $PathToMilkyWayAtHomeClientDirectory/output/output_${timestamp}.out \
+    -z $PathToMilkyWayAtHomeClientDirectory/output/output_${timestamp}.hist \
     -n 8 -w 1 -P -e 54231651 \
     -i 4.0 1.0 0.2 0.2 12.0 0.2 \
     
@@ -26,8 +27,8 @@ if $run_compare
 then
     ./milkyway_nbody \
     -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
-    -o $PathToMilkyWayAtHomeClientDirectory/output/output.out \
-    -z $PathToMilkyWayAtHomeClientDirectory/output/output.hist \
+    -o $PathToMilkyWayAtHomeClientDirectory/output/output_${timestamp}.out \
+    -z $PathToMilkyWayAtHomeClientDirectory/output/output_${timestamp}.hist \
     -h $PathToMilkyWayAtHomeClientDirectory/input/input.hist \
     -n 8 -w 1 -P -e 54231651 \
     -p 4.0 1.0 0.2 0.2 12.0 0.2 \
