@@ -125,7 +125,6 @@ add_test(NAME poisson_test COMMAND poisson_test)
 
 add_test(NAME virial_test COMMAND virial_test)
 
-
 add_test(NAME momentum_offset_test COMMAND momentum_offset_test)
 
 add_test(NAME average_bins_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND average_bins_test)
