@@ -527,9 +527,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                  \
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
                          0,                                                                             \
-                         (real*)calloc(1, sizeof(real)), (real*)calloc(1, sizeof(real)),                \
-                         (real*)calloc(1, sizeof(real)), (real*)calloc(1, sizeof(real)),                \
-                         (real*)calloc(1, sizeof(real)),                                                \
+                         NULL, NULL, NULL, NULL, NULL,                                                  \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,   \
                          FALSE, FALSE, FALSE,                                                           \
