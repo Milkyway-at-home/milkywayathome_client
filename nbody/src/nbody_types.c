@@ -812,3 +812,16 @@ int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
         && feqWithNan(ctx1->calibrationRuns, ctx2->calibrationRuns);
 }
 
+void destroyNBodyCtx(NBodyCtx *ctx)
+{
+    if(ctx == NULL) return;
+
+    free(ctx->b);
+    free(ctx->r);
+    free(ctx->vx);
+    free(ctx->vy);
+    free(ctx->vz);
+
+    ctx->b = ctx->r = ctx->vx = ctx->vy = ctx->vz = NULL;
+}
+

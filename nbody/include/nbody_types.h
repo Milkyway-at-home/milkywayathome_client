@@ -466,11 +466,11 @@ typedef struct MW_ALIGN_TYPE
 
     real dwarfn;  /* Number of dwarfs input */
 
-    real b[2];     /* orbital parameters */
-    real r[2];
-    real vx[2];
-    real vy[2];
-    real vz[2];
+    real* b;     /* orbital parameters */
+    real* r;
+    real* vx;
+    real* vy;
+    real* vz;
 
     criterion_t criterion;
     ExternalPotentialType potentialType;
@@ -527,7 +527,9 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                  \
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
                          0,                                                                             \
-                         {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0},                    \
+                         (real*)calloc(1, sizeof(real)), (real*)calloc(1, sizeof(real)),                \
+                         (real*)calloc(1, sizeof(real)), (real*)calloc(1, sizeof(real)),                \
+                         (real*)calloc(1, sizeof(real)),                                                \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,   \
                          FALSE, FALSE, FALSE,                                                           \
@@ -640,6 +642,7 @@ int equalDisk(const Disk* d1, const Disk* d2);
 int equalPotential(const Potential* p1, const Potential* p2);
 
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2);
+void destroyNBodyCtx(NBodyCtx* ctx);
 
 int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2);
 

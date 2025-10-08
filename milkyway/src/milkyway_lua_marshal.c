@@ -544,12 +544,13 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
         {
             int len = lua_objlen(luaSt, idx); // Get length of table
             /*int len = luaL_len(luaSt, idx);*/ //For 5.2 and newer
-            double* arr = (double*) v;      // Set the c type as double
+            double** arr = (double**) v;      // Set the c type as double
+            *arr = (double*)calloc(len, sizeof(double));
 
             for (int i = 1; i <= len; i++)
             {
                 lua_rawgeti(luaSt, idx, i);
-                arr[i - 1] = lua_tonumber(luaSt, -1);
+                (*arr)[i - 1] = lua_tonumber(luaSt, -1);
                 lua_pop(luaSt, 1);          // Delete the read data
             }
             break;

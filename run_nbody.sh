@@ -1,12 +1,16 @@
 #!/bin/bash
 
+# CHANGE THESE TO RUN A BASIC SIMULATION
+# - Path to client (line 13)
+# - Lua configuration file, Input/Output files (created or overwritten) (lines 21-23)
+
 run=true
 run_compare=false
 compare_only=false
 get_flag_list=false
 
 cd "$(dirname "$0")"
-PathToMilkyWayAtHomeClientDirectory="/mnt/b/milkywayathome_client"
+PathToMilkyWayAtHomeClientDirectory="/home/ghostlemur/milkywayathome_client" # replace with your local client
 echo "Path to milkywayathome_client directory: $PathToMilkyWayAtHomeClientDirectory"
 
 cd build/bin
