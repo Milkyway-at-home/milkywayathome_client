@@ -88,7 +88,6 @@ static int createNBodyCtx(lua_State* luaSt)
     real nStepf = 0.0;
 
     static const MWNamedArg argTable[] =
-
         {   
             { "dwarfn",        LUA_TNUMBER,  NULL, TRUE,  &ctx.dwarfn        },
 
@@ -389,6 +388,7 @@ static int addPotential(lua_State* luaSt)
 
 static const luaL_reg metaMethodsNBodyCtx[] =
 {
+    { "__gc", gcNBodyCtx             },
     { "__tostring", toStringNBodyCtx },
     { "__eq",       eqNBodyCtx       },
     { NULL, NULL }
