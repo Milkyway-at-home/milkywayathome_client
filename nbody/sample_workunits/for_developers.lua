@@ -171,11 +171,12 @@ orbit_parameter_vx  = {round( 21.99,   dec),round( 223.97,  dec),round( -27.04, 
 orbit_parameter_vy  = {round( -201.36, dec),round( -5.34,   dec),round( -172.14, dec),round( -16.36,  dec),round( 197.28,  dec),round( 209.73,  dec),round( 30.33,   dec),round( -79.13,  dec),round( 60.33,   dec),round( 38.13,   dec),round( 47.45,   dec)}  -- Galactocentric vy
 orbit_parameter_vz  = {round( 171.25,  dec),round( 185.78,  dec),round( 101.21,  dec),round( 254.15,  dec),round( -102.1,  dec),round( 114.61,  dec),round( 49.13,   dec),round( 164.44,  dec),round( -263.33, dec),round( -160.51, dec),round( 68.05,   dec)}  -- Galactocentric vz
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- --  MANUAL INPUT CODE  -- -- -- -- -- -- -- -- --
 -- -- -- requires more work to make operational with multidwarfs -- -- --
 -- -- -- line-by-line prompt??  -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- make use as need be o7 -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
@@ -298,19 +299,9 @@ end
 
 
 function get_soft_par()
-    -- searches for and uses parameters of dwarf with smallest scale radius to minimize error from softening --
-    local min_rsc = 100  -- arbitrary inital value for search... should be (much) larger than largest scale radius in simulation
-    local imin = nil
-    for i, rsc in ipairs(rscale_l) do
-        if rsc < min_rsc then
-            min_rsc = rsc
-            imin = i
-        end
-    end
-
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l[imin], rscale_d[imin], mass_l[imin], mass_d[imin], UseOldSofteningLength)
+    sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1], UseOldSofteningLength)
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")

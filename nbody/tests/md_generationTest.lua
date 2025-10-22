@@ -33,14 +33,17 @@ end
 argSeed = 34086709
 prng = DSFMT.create(argSeed)
 
-modelComponents = 1     --
+modelComponents = 2     --
 SunGCDist = 8.0
-sigma = 2.5
+SunVelx   = 10.3 
+SunVely   = 229.2   
+SunVelz   = 6.9  
+sigma     = 2.5
 sigmaIter = 6
-correct = 1.111
+correct   = 1.111
 
 ndwarfs = 4             --
-nbodies = 4000000      --
+nbodies = 5000      --
 dt = 0.001      --
 
 LMC_presence = false
@@ -54,21 +57,21 @@ LMC_dynafric = true
 
 -- maybe there's a way to initialize all these arrays more efficiently? idrk
 -- currently uses real values for SMC/Sagittarius/Fornax/Sculptor Dwarfs
+orbit_l = {round(302.8, dec), round(5.57, dec), round(237.1, dec), round(287.54, dec)}
 orbit_b = {round(-44.33, dec), round(-14.17, dec), round(-65.65, dec), round(-83.16, dec)}
 orbit_r = {round(62.4, dec), round(25, dec), round(143, dec), round(88.91, dec)}
 orbit_vx = {round(21.99, dec), round(223.97, dec), round(-27.04, dec), round(-22.11, dec)}
 orbit_vy = {round(-201.36, dec), round(-5.34, dec), round(-172.14, dec), round(197.28, dec)}
 orbit_vz = {round(171.25, dec), round(185.78, dec), round(101.21, dec), round(-102.1, dec)}
 
-orbit_l = {round(302.8, dec), round(5.57, dec), round(237.1, dec), round(287.54, dec)}
 -- vv for 1-comp mode vv --
-dwarf_mass_l = {round(29241.283, dec), round(1799.464, dec), round(562.332, dec), round(139.458, dec)}
-dwarf_rscale_l = {round(2.9, dec), round(1.53, dec), round(1.425, dec), round(0.725, dec)}
--- vv for 2-comp mode vv --
--- dwarf_mass_l = {round(2429.198, dec), round(107.041, dec), round(80.159, dec), round(9.384, dec)}
--- dwarf_lm_ratio = {round(0.08307, dec), round(0.05949, dec), round(0.14255, dec), round(0.06729, dec)}
+-- dwarf_mass_l = {round(29241.283, dec), round(1799.464, dec), round(562.332, dec), round(139.458, dec)}
 -- dwarf_rscale_l = {round(2.9, dec), round(1.53, dec), round(1.425, dec), round(0.725, dec)}
--- dwarf_lr_ratio = {round(0.2, dec), round(0.2, dec), round(0.2, dec), round(0.2, dec)}
+-- vv for 2-comp mode vv --
+dwarf_mass_l = {round(2429.198, dec), round(107.041, dec), round(80.159, dec), round(9.384, dec)}
+dwarf_lm_ratio = {round(0.08307, dec), round(0.05949, dec), round(0.14255, dec), round(0.06729, dec)}
+dwarf_rscale_l = {round(2.9, dec), round(1.53, dec), round(1.425, dec), round(0.725, dec)}
+dwarf_lr_ratio = {round(0.2, dec), round(0.2, dec), round(0.2, dec), round(0.2, dec)}
 
 dwarf_mass_d = {}
 dwarf_rscale_d = {}
@@ -127,6 +130,9 @@ ctx = NBodyCtx.createS{
     vy            = orbit_vy,
     vz            = orbit_vz,
     sunGCDist     = SunGCDist,
+    sunVelx       = SunVelx,
+    sunVely       = SunVely,
+    sunVelz       = SunVelz,
     criterion     = "TreeCode",
     useQuad       = true,
     useBestLike   = false,
@@ -228,17 +234,18 @@ pos_avg = {}
 rscale_med = {}
 L_tot = {}
 
-for d = 1, ndwarfs do
-    local firstParticleIndex = ((d-1)*nbodies)+1
-    local finalParticleIndex = d*nbodies
+-- separately calulates values for light/dark matter
+for d = 1, 2*ndwarfs do
+    local firstParticleIndex = ((d-1)*nbodies/2)+1
+    local finalParticleIndex = d*nbodies/2
 
     local m = 0
     local part_pos = {x={}, y={}, z={}}
     local avg_pos = {x=0, y=0, z=0}
     local p = {x={}, y={}, z={}}
     local tot_L = 0
-    for i = 1, nbodies do
-        particleIndex = i + (d-1)*nbodies
+    for i = 1, nbodies/2 do
+        particleIndex = i + (d-1)*nbodies/2
         local particle = st[particleIndex]
         m = m + particle.mass
         avg_pos.x = avg_pos.x + particle.position.x
@@ -250,10 +257,10 @@ for d = 1, ndwarfs do
         part_pos.x[i] = particle.position.x
         part_pos.y[i] = particle.position.y
         part_pos.z[i] = particle.position.z
-        if(i==nbodies) then
-            avg_pos.x = avg_pos.x/nbodies
-            avg_pos.y = avg_pos.y/nbodies
-            avg_pos.z = avg_pos.z/nbodies
+        if(i==nbodies/2) then
+            avg_pos.x = avg_pos.x/(nbodies/2)
+            avg_pos.y = avg_pos.y/(nbodies/2)
+            avg_pos.z = avg_pos.z/(nbodies/2)
         end
     end
     mass_tot[d] = m
@@ -262,7 +269,7 @@ for d = 1, ndwarfs do
     --print(part_pos.x[1], part_pos.y[1], part_pos.z[1])
 
     local part_r = {}
-    for i = 1, nbodies do
+    for i = 1, nbodies/2 do
         part_r[i] = ((part_pos.x[i]-avg_pos.x)^2+(part_pos.y[i]-avg_pos.y)^2+(part_pos.z[i]-avg_pos.z)^2)^0.5
         --local L_vec = {x=1,y=1,z=1}
         local L_vec = cross(part_pos.x[i], part_pos.y[i], part_pos.z[i], p.x[i], p.y[i], p.z[i])
@@ -272,10 +279,10 @@ for d = 1, ndwarfs do
     L_tot[d] = tot_L
     table.sort(part_r)
 
-    if(nbodies %2 == 0) then
-        rscale_med[d] = (part_r[nbodies/2]+part_r[nbodies/2+1])/2
+    if(nbodies/2 %2 == 0) then
+        rscale_med[d] = (part_r[nbodies/4]+part_r[nbodies/4+1])/2
     else
-        rscale_med[d] = part_r[floor(nbodies/2)+1]
+        rscale_med[d] = part_r[floor(nbodies/4)+1]
     end
 end
 
@@ -285,56 +292,86 @@ end
 -- print(L_tot[1], L_tot[2], L_tot[3], L_tot[4])
 -- print(rscale_med[1], rscale_med[2], rscale_med[3], rscale_med[4])
 
--- expected values --
-mass_exp = {29241.283, 1799.464, 562.332, 139.458}
+-- expected values - note: baryon + dark for each dwarf in order--
+mass_exp = {2429.198, 26812.085, 107.041, 1692.422, 80.159, 482.174, 9.384, 130.074}
 pos_exp = {
-    x = {15.9462, 15.9872, -40.4811, -5.1567},
-    y = {-37.5198, 2.3527, -49.5040, -10.0965},
-    z = {-43.6455, -6.1609, -130.1761, -88.2643}
+    x = { 16.17990514, 16.12489199,  -40.48107629, -5.156738226},
+    y = {-37.51986835,  2.35271379,  -49.50398925, -10.09648849},
+    z = {-43.60449135, -6.11999380, -130.17614123, -88.26428595}
 }
-rscale_exp = {2.9, 1.53, 1.425, 0.725}
+rscale_exp = {2.9, 2.9*4, 1.53, 1.53*4 ,1.425, 1.425*4, 0.725, 0.725*4}
 halfmass_rad_factor = 1.304766  -- conversion factor between half-mass* radius and scale radius (look it up)
                                 -- *median (effectively)
-L_exp = {463056766, 7938148.46, 16312544.4, 2585580.04}
+L_exp = {38829350.5319, 467934549.076, 486704.418863, 9516231.97656, 2325613.33839, 14064939.1581, 174025.069524, 2421377.77492}
 
-dmass_threshold     = 1.0   --%
-dpos_threshold      = 0.5   --kpc
-drscale_threshold   = 1.0   --%
-dL_threshold        = 1.0   --%
+dmass_threshold     = 0.05   --%
+dpos_threshold      = 0.05   --kpc
+drscale_threshold   = 0.05   --%
+dL_threshold        = 0.05   --%
 
 errstr = ""
 for d=1, ndwarfs do
-    print(string.format("Dwarf %d:", d)) --Δ
-    delta_mass = 100*(mass_tot[d]/mass_exp[d]-1)    -- in percent
-    print(string.format("Δmass:\t\t%3f%%", delta_mass))
-    delta_x = pos_avg[d].x - pos_exp.x[d]           -- in kpc
-    delta_y = pos_avg[d].y - pos_exp.y[d]           -- in kpc
-    delta_z = pos_avg[d].z - pos_exp.z[d]           -- in kpc
-    print(string.format("(Δx, Δy, Δz):\t(%f, %f, %f)", delta_x, delta_y, delta_z))
-    delta_rscale = 100*(rscale_med[d]/halfmass_rad_factor/rscale_exp[d]-1)  -- in percent
-    print(string.format("Δa (scale radius):\t%3f%% ", delta_rscale))
-    print(string.format("L:\t\t\t%3f", L_tot[d]))
-    delta_L = 100*(L_tot[d]/L_exp[d]-1)             -- in percent
-    print(string.format("ΔL:\t\t\t%3f%%", delta_L))
+    print(string.format("Dwarf %d:", d, "(light / dark)"))      --Δ
 
+    delta_mass_l = 100*(mass_tot[2*d-1]/mass_exp[2*d-1]-1)    -- in percent
+    delta_mass_d = 100*(mass_tot[2*d]/mass_exp[2*d]-1)        -- in percent
+    print(string.format("Δmass:\t\t%3f%%\t/\t%3f%%", delta_mass_l, delta_mass_d))
+
+    delta_x_l = pos_avg[2*d-1].x - pos_exp.x[d]           -- in kpc
+    delta_y_l = pos_avg[2*d-1].y - pos_exp.y[d]           -- in kpc
+    delta_z_l = pos_avg[2*d-1].z - pos_exp.z[d]           -- in kpc
+    delta_x_d = pos_avg[2*d].x - pos_exp.x[d]               -- in kpc
+    delta_y_d = pos_avg[2*d].y - pos_exp.y[d]               -- in kpc
+    delta_z_d = pos_avg[2*d].z - pos_exp.z[d]               -- in kpc
+    print(string.format("Δx, Δy, Δz (light):\t%f, %f, %f", delta_x_l, delta_y_l, delta_z_l))
+    print(string.format("Δx, Δy, Δz (dark):\t%f, %f, %f", delta_x_d, delta_y_d, delta_z_d))
+
+    delta_rscale_l = 100*(rscale_med[2*d-1]/halfmass_rad_factor/rscale_exp[2*d-1]-1)  -- in percent
+    delta_rscale_d = 100*(rscale_med[2*d]/halfmass_rad_factor/rscale_exp[2*d]-1)      -- in percent
+    print(string.format("Δa (scale radius):\t%3f%%\t/\t%3f%%", delta_rscale_l, delta_rscale_d))
+
+    delta_L_l = 100*(L_tot[2*d-1]/L_exp[2*d-1]-1)             -- in percent
+    delta_L_d = 100*(L_tot[2*d]/L_exp[2*d]-1)                 -- in percent
+    print(string.format("L, ΔL (light):\t%3f \t(%3f%%)", L_tot[2*d-1], delta_L_l))
+    print(string.format("L, ΔL (dark): \t%3f \t(%3f%%)", L_tot[2*d], delta_L_d))
+
+    -- this is so inefficient LOL 
     local dwarf_errstr = ""
-    if(abs(delta_mass) > dmass_threshold) then
-        dwarf_errstr = dwarf_errstr .. string.format("|Δm| = %f%% > %f%%\n", abs(delta_mass), dmass_threshold)
+    if(abs(delta_mass_l) > dmass_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δm_l| = %f%% > %f%%\n", abs(delta_mass_l), dmass_threshold)
     end
-    if(abs(delta_x) > dpos_threshold) then
-        dwarf_errstr = dwarf_errstr .. string.format("|Δx| = %fkpc > %fkpc\n", abs(delta_x), dpos_threshold)
+    if(abs(delta_mass_d) > dmass_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δm_d| = %f%% > %f%%\n", abs(delta_mass_d), dmass_threshold)
     end
-    if(abs(delta_y) > dpos_threshold) then
-        dwarf_errstr = dwarf_errstr .. string.format("|Δy| = %fkpc > %fkpc\n", abs(delta_y), dpos_threshold)
+    if(abs(delta_x_l) > dpos_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δx_l| = %fkpc > %fkpc\n", abs(delta_x_l), dpos_threshold)
     end
-    if(abs(delta_z) > dpos_threshold) then
-        dwarf_errstr = dwarf_errstr .. string.format("|Δz| = %fkpc > %fkpc\n", abs(delta_z), dpos_threshold)
+    if(abs(delta_x_d) > dpos_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δx_d| = %fkpc > %fkpc\n", abs(delta_x_d), dpos_threshold)
     end
-    if(abs(delta_rscale) > drscale_threshold) then
-        dwarf_errstr = dwarf_errstr .. string.format("|Δa| = %f%% > %f%%\n", abs(delta_rscale), drscale_threshold)
+    if(abs(delta_y_l) > dpos_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δy_l| = %fkpc > %fkpc\n", abs(delta_y_l), dpos_threshold)
     end
-    if(abs(delta_L) > dL_threshold) then
-        dwarf_errstr = dwarf_errstr .. string.format("|ΔL| = %f%% > %f%%\n", abs(delta_L), dL_threshold)
+    if(abs(delta_y_d) > dpos_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δy_d| = %fkpc > %fkpc\n", abs(delta_y_d), dpos_threshold)
+    end
+    if(abs(delta_z_l) > dpos_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δz_l| = %fkpc > %fkpc\n", abs(delta_z_l), dpos_threshold)
+    end
+    if(abs(delta_z_d) > dpos_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δz_d| = %fkpc > %fkpc\n", abs(delta_z_d), dpos_threshold)
+    end
+    if(abs(delta_rscale_l) > drscale_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δa_l| = %f%% > %f%%\n", abs(delta_rscale_l), drscale_threshold)
+    end
+    if(abs(delta_rscale_d) > drscale_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|Δa_d| = %f%% > %f%%\n", abs(delta_rscale_d), drscale_threshold)
+    end
+    if(abs(delta_L_l) > dL_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|ΔL_l| = %f%% > %f%%\n", abs(delta_L_l), dL_threshold)
+    end
+    if(abs(delta_L_d) > dL_threshold) then
+        dwarf_errstr = dwarf_errstr .. string.format("|ΔL_d| = %f%% > %f%%\n", abs(delta_L_d), dL_threshold)
     end
     if (dwarf_errstr~="") then
         errstr = errstr..string.format("Dwarf %d:\n", d)..dwarf_errstr
