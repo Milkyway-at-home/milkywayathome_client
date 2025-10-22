@@ -81,6 +81,12 @@ criterion_t readCriterion(lua_State* luaSt, const char* name)
     return (criterion_t) readEnum(luaSt, criterionOptions, name);
 }
 
+static int gcNBodyCtx(lua_State* luaSt)
+{
+    destroyNBodyCtx(checkNBodyCtx(luaSt, 1));
+    return 0;
+}
+
 static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
