@@ -66,6 +66,8 @@ fi
   make average_bins_test
   make propermotion_test
   make EMD_Range_test
+  make mixeddwarf_test
+  make test_defaults
 
   make all
 
