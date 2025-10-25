@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # CHANGE THESE TO RUN A BASIC SIMULATION
-# - Path to client (line 13)
-# - Lua configuration file, Input/Output files (created or overwritten) (lines 21-23)
+# - Lua configuration file, Input files, Output files (lines 26-28, e.g.)
+
+# RUN WITH DEBUG OPTIONS (stack trace with line numbers)
+# - add "gdb --args " before your ./milkyway_nbody call (below)
+# - when (gdb) pops up in terminal, type "run", then "y" when prompted
+# - to trace your error, type "bt" after the program fails
 
 run=true
 run_compare=false

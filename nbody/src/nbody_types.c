@@ -518,6 +518,21 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
     return TRUE;
 }
 
+void cloneNBodyCtx(NBodyCtx* ctx, const NBodyCtx* oldCtx)
+{
+    *ctx = *oldCtx;
+    ctx->b  = mwCallocA(ctx->dwarfn, sizeof(double));
+    ctx->r  = mwCallocA(ctx->dwarfn, sizeof(double));
+    ctx->vx = mwCallocA(ctx->dwarfn, sizeof(double));
+    ctx->vy = mwCallocA(ctx->dwarfn, sizeof(double));
+    ctx->vz = mwCallocA(ctx->dwarfn, sizeof(double));
+    memcpy(ctx->b, oldCtx->b, ctx->dwarfn * sizeof(double));
+    memcpy(ctx->r, oldCtx->r, ctx->dwarfn * sizeof(double));
+    memcpy(ctx->vx, oldCtx->vx, ctx->dwarfn * sizeof(double));
+    memcpy(ctx->vy, oldCtx->vy, ctx->dwarfn * sizeof(double));
+    memcpy(ctx->vz, oldCtx->vz, ctx->dwarfn * sizeof(double));
+}
+
 /* TODO: Doesn't clone tree or CL stuffs */
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
@@ -816,11 +831,11 @@ void destroyNBodyCtx(NBodyCtx *ctx)
 {
     if(ctx == NULL) return;
 
-    free(ctx->b);
-    free(ctx->r);
-    free(ctx->vx);
-    free(ctx->vy);
-    free(ctx->vz);
+    mwFreeA(ctx->b);
+    mwFreeA(ctx->r);
+    mwFreeA(ctx->vx);
+    mwFreeA(ctx->vy);
+    mwFreeA(ctx->vz);
 
     ctx->b = ctx->r = ctx->vx = ctx->vy = ctx->vz = NULL;
 }

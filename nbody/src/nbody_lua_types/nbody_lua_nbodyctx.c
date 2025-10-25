@@ -373,6 +373,17 @@ static int toStringNBodyCtx(lua_State* luaSt)
     return toStringType(luaSt, (StructShowFunc) showNBodyCtx, (LuaTypeCheckFunc) checkNBodyCtx);
 }
 
+static int luaCloneNBodyCtx(lua_State* luaSt)
+{
+    const NBodyCtx* oldCtx;
+    NBodyCtx newCtx = EMPTY_NBODYCTX;
+
+    oldCtx = checkNBodyCtx(luaSt, 1);
+    cloneNBodyCtx(&newCtx, oldCtx);
+    pushNBodyState(luaSt, &newCtx);
+    return 1;
+}
+
 static int eqNBodyCtx(lua_State* luaSt)
 {
     lua_pushboolean(luaSt, equalNBodyCtx(checkNBodyCtx(luaSt, 1), checkNBodyCtx(luaSt, 2)));
@@ -404,6 +415,7 @@ static const luaL_reg methodsNBodyCtx[] =
 {
     { "create", createNBodyCtx },
     { "createS", createSNBodyCtx },
+    { "clone", luaCloneNBodyCtx },
     { "addPotential", addPotential },
     { NULL, NULL }
 };

@@ -568,7 +568,9 @@ static Body* nbEvaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
         return NULL;
     }
 
-    pushNBodyCtx(luaSt, ctx);
+    NBodyCtx ctx_ = EMPTY_NBODYCTX;
+    cloneNBodyCtx(&ctx_, ctx);
+    pushNBodyCtx(luaSt, &ctx_);
 
     if (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT)
         pushPotential(luaSt, &ctx->pot);
