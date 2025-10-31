@@ -50,10 +50,10 @@ void nbReverseOrbit(mwvector* finalPos,
                     real tstop,
                     real dt)
 {
-    mwvector acc, v, x;
+    mwvector acc = ZERO_VECTOR, v = ZERO_VECTOR, x = ZERO_VECTOR;
     real t;
     real dt_half = dt / 2.0;
-    int initialLArrayIndex = tstop/dt;
+    int initialLArrayIndex __attribute__((unused)) = tstop/dt;
 
     // Set the initial conditions
     x = pos;
@@ -412,7 +412,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
     unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
     unsigned int i = 0, j = 0, k = 0;
-    mwvector acc, v, x, mw_acc, LMC_acc, DF_acc, LMCv, LMCx, tmp;
+    mwvector acc = ZERO_VECTOR, v = ZERO_VECTOR, x = ZERO_VECTOR, mw_acc = ZERO_VECTOR, LMC_acc = ZERO_VECTOR, DF_acc = ZERO_VECTOR, LMCv = ZERO_VECTOR, LMCx = ZERO_VECTOR, tmp = ZERO_VECTOR;
     mwvector mw_x = mw_vec(0, 0, 0);
     mwvector* bacArray = NULL;
     mwvector* forArray = NULL;
@@ -448,7 +448,10 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
         for (t = 0; t <= (ftime-tstop); t += dt)
         {   
     	    exSteps = t/dt;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     	    if ((exSteps % 10 == 0)&&(t!=0)) { 
+#pragma GCC diagnostic pop
     	        forArray[k] = mw_acc;
                 k++;
     	    }
@@ -613,9 +616,9 @@ void nbPrintReverseOrbit(mwvector* finalPos,
                          real tstopforward,
                          real dt)
 {
-    mwvector acc, v, x;
-    mwvector v_for, x_for;
-    mwvector lbr;
+    mwvector acc = ZERO_VECTOR, v = ZERO_VECTOR, x = ZERO_VECTOR;
+    mwvector v_for = ZERO_VECTOR, x_for = ZERO_VECTOR;
+    mwvector lbr = ZERO_VECTOR;
     real t;
     real dt_half = dt / 2.0;
 

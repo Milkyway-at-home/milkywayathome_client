@@ -1572,8 +1572,8 @@ static NBodyStatus nbCheckpointCL(const NBodyCtx* ctx, NBodyState* st)
 static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
 {
     real dtHalf = 0.5 * dt;
-    mwvector dr;
-    mwvector dv;
+    mwvector dr = ZERO_VECTOR;
+    mwvector dv = ZERO_VECTOR;
 
     dr = mw_mulvs(st->LMCvel,dt);
     mw_incaddv(st->LMCpos,dr);
@@ -1586,7 +1586,7 @@ static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvect
 static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
 {
     real dtHalf = 0.5 * dt;
-    mwvector dv;
+    mwvector dv = ZERO_VECTOR;
     mwvector acc_total = mw_addv(acc, acc_i);
     dv = mw_mulvs(acc_total, dtHalf);
     mw_incaddv(st->LMCvel,dv);
@@ -1749,7 +1749,7 @@ NBodyStatus nbStepSystemCL_LMC(const NBodyCtx* ctx, NBodyState* st, const mwvect
     NBodyWorkSizes* ws = st->workSizes;
 
     NBodyStatus rc;
-    mwvector acc_LMC;
+    mwvector acc_LMC = ZERO_VECTOR;
     const real dt = ctx->timestep;
     real barTime = st->step * dt - st->previousForwardTime;
     nbRunIntegrationKernel(ctx, st, acc_i, acc_i, ctx->LMCmass);
@@ -1876,8 +1876,8 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         if (!st->shiftByLMC) {
             mwvector* shiftLMC;
             size_t sizeLMC;
-            mwvector LMCx;
-            mwvector LMCv;
+            mwvector LMCx = ZERO_VECTOR;
+            mwvector LMCv = ZERO_VECTOR;
 
             getLMCArray(&shiftLMC, &sizeLMC);
             setLMCShiftArray(st, shiftLMC, sizeLMC);
@@ -1895,9 +1895,9 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
     }
     #ifdef NBODY_BLENDER_OUTPUT
         deleteOldFiles(st);
-        mwvector startCmPos;
-        mwvector perpendicularCmPos;
-        mwvector nextCmPos;
+        mwvector startCmPos = ZERO_VECTOR;
+        mwvector perpendicularCmPos = ZERO_VECTOR;
+        mwvector nextCmPos = ZERO_VECTOR;
         nbFindCenterOfMass(&startCmPos, st);
         perpendicularCmPos=startCmPos;
         printf("*Total frames: %d\n", kept_frames);
@@ -1943,7 +1943,7 @@ static NBodyStatus nbMainLoopCL(const NBodyCtx* ctx, NBodyState* st)
         #endif
     }
     #ifdef NBODY_BLENDER_OUTPUT
-        mwvector finalcmPos;
+        mwvector finalcmPos = ZERO_VECTOR;
         blenderPrintMisc(st, ctx, startCmPos, perpendicularCmPos);
     #endif
 
@@ -2457,9 +2457,9 @@ static cl_int nbPrintQuadMomentDifferences(const NBodyCtx* ctx, NBodyState* st)
 static cl_int nbPrintSummarizationDifferences(NBodyState* st)
 {
     cl_int err;
-    mwvector cm, cmRef;
-    mwvector dcm;
-    mwvector dcmRel;
+    mwvector cm = ZERO_VECTOR, cmRef = ZERO_VECTOR;
+    mwvector dcm = ZERO_VECTOR;
+    mwvector dcmRel = ZERO_VECTOR;
 
   #if DOUBLEPREC
     const real threshold = 1.0e-9;

@@ -34,6 +34,7 @@ extern "C" {
 
 real get_potential(const Dwarf* args, real r);
 real get_density(const Dwarf* args, real r);
+real get_vel_disp(const Dwarf* model);
 
 #ifdef __cplusplus
 }

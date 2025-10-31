@@ -63,6 +63,7 @@ extern "C" {
 #define DEFAULT_USE_VLOS FALSE
 #define DEFAULT_USE_DIST FALSE
 #define DEFAULT_USE_PROP_MOT FALSE
+#define DEFAULT_USE_MOMENTUM FALSE
 
 #define DEFAULT_BEST_LIKELIHOOD_START ((real) 0.95)
 #define DEFAULT_OUTPUT_FREQUENCY ((int) 1000)
@@ -89,6 +90,10 @@ extern "C" {
 #define histogrambetaStart ((real) -25.0)
 #define histogrambetaEnd ((real) 25.0)
 #define histogrambetaBins ((unsigned int) 10)
+#define histogramL ((mwvector) ZERO_VECTOR)
+#define histogramLErr ((mwvector) ZERO_VECTOR)
+#define histogramnRange ((unsigned int) 0)
+#define histogramEMDRange (0.0)
 
 
 extern const NBodyCtx defaultNBodyCtx;

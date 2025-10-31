@@ -62,7 +62,7 @@ double zero ;
 /* Return 'sizeof(int)' random bits    */
 int rand_int(){
   int val;
-  int i;
+  unsigned int i;
   val = (random() & 0x000000ff);
   for(i=0; i<(sizeof(int)); i++){
     val = val << 8;
@@ -476,6 +476,8 @@ int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
 
   /* Test for exact cases */
   mpfr_mul_2exp(mpr, mpx, 1, GMP_RNDN); 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   if(mpfr_integer_p(mpr)) { /* Exact cases */ 
     mpfr_div_2exp(mpr, mpx, 1, GMP_RNDN); 
     mpfr_frac(mpr, mpr, GMP_RNDN);
@@ -486,6 +488,7 @@ int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
     else                { mpfr_set_si(mpr, -1, rnd); } 
     return 0; 
   }
+#pragma GCC diagnostic pop
   
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
@@ -502,6 +505,8 @@ int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
 
   /* Test for exact cases */
   mpfr_mul_2exp(mpr, mpx, 1, GMP_RNDN); 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   if(mpfr_integer_p(mpr)) { /* Exact cases */ 
     mpfr_div_2exp(mpr, mpx, 1, GMP_RNDN); 
     mpfr_frac(mpr, mpr, GMP_RNDN);
@@ -512,6 +517,7 @@ int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
     else                { mpfr_set_si(mpr, 0, rnd); } 
     return 0; 
   }
+#pragma GCC diagnostic pop
 
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
@@ -528,6 +534,8 @@ int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
 
   /* Test for exact cases */
   mpfr_mul_2exp(mpr, mpx, 2, GMP_RNDN); 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   if(mpfr_integer_p(mpr)) { /* Exact cases */ 
     mpfr_frac(mpr, mpx, GMP_RNDN); 
     double d = mpfr_get_d(mpr, GMP_RNDN); /* -1/4, 0, 1/4, 1/2 */
@@ -537,6 +545,7 @@ int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
     else                { mpfr_set_si(mpr, -1, rnd); } 
     return 0; 
   }
+#pragma GCC diagnostic pop
   
   /* Otherwise */
   mpfr_const_pi(pi,  GMP_RNDN);
@@ -614,8 +623,8 @@ void test_init(/* pointers to returned value */
 	       double (**randfun_soaktest)(), 
 	       double (**testfun_crlibm)(), 
 	       int    (**testfun_mpfr)  (),
-	       double (**testfun_libultim)   (),
-	       double (**testfun_libmcr)  (),
+	       double (**testfun_libultim)() __attribute__((unused)),
+	       double (**testfun_libmcr)() __attribute__((unused)),
 	       double (**testfun_libm)  (),
 	       double* worst_case,
 	       /* arguments */
@@ -1059,7 +1068,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = acos_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_libultim  = uacos;  
+      *testfun_libultim  = uacos;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = NULL;   /* TODO */

@@ -59,8 +59,8 @@ static int createPlummerDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
-            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass,        1 },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength, 1 },
             END_MW_NAMED_ARG
         };
 
@@ -73,8 +73,8 @@ static int createNFWDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
-            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass,        1 },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength, 1 },
             END_MW_NAMED_ARG
         };
 
@@ -87,8 +87,8 @@ static int createGen_HernDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
-            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass,        1 },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength, 1 },
             END_MW_NAMED_ARG
         };
 
@@ -101,9 +101,9 @@ static int createEinastoDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass        },
-            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
-            { "n"          , LUA_TNUMBER, NULL, TRUE, &h.n           }, 
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass,        1 },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength, 1 },
+            { "n"          , LUA_TNUMBER, NULL, TRUE, &h.n,           1 }, 
             END_MW_NAMED_ARG
         };
 
@@ -116,10 +116,10 @@ static int createCoredDwarf(lua_State* luaSt)
     static Dwarf h = EMPTY_DWARF;
     static const MWNamedArg argTable[] =
         {
-            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass       },
-            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
-			{ "r1", 		 LUA_TNUMBER, NULL, TRUE, &h.r1 },
-			{ "rc", 		 LUA_TNUMBER, NULL, TRUE, &h.rc },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass,        1 },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength, 1 },
+			{ "r1", 		 LUA_TNUMBER, NULL, TRUE, &h.r1,          1 },
+			{ "rc", 		 LUA_TNUMBER, NULL, TRUE, &h.rc,          1 },
             END_MW_NAMED_ARG
         };
 

@@ -73,7 +73,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
                     real dr5inv, drQdr, phiQ;
-                    mwvector Qdr;
+                    mwvector Qdr = ZERO_VECTOR;
 
                     /* form Q * dr */
                     Qdr.x = Quad(q).xx * dr.x + Quad(q).xy * dr.y + Quad(q).xz * dr.z;
@@ -127,15 +127,15 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-    mwvector LMCx;
-    mwvector a, externAcc;
+    mwvector LMCx = ZERO_VECTOR;
+    mwvector a = ZERO_VECTOR, externAcc = ZERO_VECTOR;
     const Body* b;
     real lmcmass, lmcscale;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
-    real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
+    real timeFromStart __attribute__((unused)) = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
 
     //use previous calibration run to shift time and calibrate the bar
     real barTime = st->step * ctx->timestep - st->previousForwardTime;
@@ -230,15 +230,15 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-    mwvector LMCx;
-    mwvector a, externAcc;
+    mwvector LMCx = ZERO_VECTOR;
+    mwvector a = ZERO_VECTOR, externAcc = ZERO_VECTOR;
     const Body* b;
     real lmcmass, lmcscale;
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
-    real timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
+    real timeFromStart __attribute__((unused)) = -ctx->Ntsteps*ctx->timestep + curTime;
     real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {

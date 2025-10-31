@@ -12,6 +12,8 @@ prng = DSFMT.create(seed)
 dwarfMass = 12
 dwarfRadius = 0.2
 
+dwarf = Dwarf.plummer{mass = dwarfMass, scaleLength = dwarfRadius}
+
 function makePotential()
    return Potential.create{
       spherical = Spherical.plummer{ mass = 152954.402000, scale = 0.7 },
@@ -25,7 +27,7 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius,0),
+      eps2       = calculateEps2Dwarf(dwarf, nbody),
       b           = 53.6,
       r           = 28.5,
       vx          = -154,
@@ -39,10 +41,12 @@ function makeContext()
       VelSigma      = 2.5,
       DistSigma     = 2.5,
       PMSigma       = 2.5,
+      MomentumSigma = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
       PMCorrect     = 1.111,
+      MomentumCorrect = 1.111,
       useBetaComp   =true,
       useVlos       =true,
       useDist       =true,

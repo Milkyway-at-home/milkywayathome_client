@@ -9,10 +9,13 @@
 #include <stdio.h>
 
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
     OPA_int_t a, b;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
     int c;
+#pragma GCC diagnostic pop
 #if defined(OPA_USE_LOCK_BASED_PRIMITIVES)
     OPA_emulation_ipl_t shm_lock;
     OPA_Interprocess_lock_init(&shm_lock, 1/*isLeader*/);
@@ -32,4 +35,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

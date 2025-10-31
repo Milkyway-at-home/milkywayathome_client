@@ -25,13 +25,14 @@
 -- lua files in the test_env_lua directory (nbody/sample_workunits/test_env_lua/)
 -- especially if the changes are not backwards compatible with the previous format
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-        
+
+
         
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
+-- -- -- -- -- -- -- -- --  BASIC  SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 totalBodies           = 5000   -- -- NUMBER OF BODIES PER DWARF                                                -- --
--- totalLightBodies      = 2500   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
+totalLightBodies      = 2500   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
 nbodyMinVersion       = "1.93"  -- -- MINIMUM APP VERSION                                                      -- --
@@ -55,84 +56,6 @@ SunVelz               = 6.9       -- -- Sun's z-velocity (kpc/Gyr)              
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- --       ModelComponent Options:    -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
--- --       1 - SINGLE COMPONENT MODEL  -- -- -- - -- -- -- -- -- -- -- -- -- 
--- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH   -- -- -- -- -- --
-manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
-
-
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
--- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- --
-generateSimpleOutput = true       -- Simple output file includes: x, y, z, vx, vy, vz, mass
--- Full output file includes: x, y, z, l, b, r, vx, vy, vz, mass, vlos, pmra, pmdec, [lambda, beta]
--- NOTE: Lambda and Beta are optional and will only be included if the histogram parameters are set in makeHistogram()
-
--- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
-
-lda_bins        = 50      -- number of bins in lamdba direction
-lda_lower_range = -150    -- lower range for lambda
-lda_upper_range = 150     -- upepr range for lamdba
-
-bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
-bta_lower_range = -15     -- lower range for beta
-bta_upper_range = 15      -- upper range for beta
-
-SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
-SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
-Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
--- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
-use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
-best_like_start      = 0.98    -- what percent of sim to start
-
-use_beta_disps       = true    -- use beta dispersions in likelihood
-use_vel_disps        = false    -- use velocity dispersions in likelihood
-
--- if one of these is true, will get output for all 3 of the new histograms
--- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = true  -- calculate average beta, use in likelihood
-use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
-use_avg_dist         = true  -- calculate average distance, use in likelihood
-use_pm_comp          = true  -- calculate proper motion, use in likelihood
-
--- number of additional forward evolutions to do to calibrate the rotation of the bar
--- numCalibrationRuns + 1 additional forward evolutions will be done
--- if no bar potential is being used, this variable will be ignored
-numCalibrationRuns = 0
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- These options only work if you compile nbody with  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
--- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
-
-useMultiOutputs       = true     -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
-freqOfOutputs         = 30         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
-
-timestep_control      = true       -- -- control number of steps                                                          -- --
-Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
-
-use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
-max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
-
-generateInitialOutput = true       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
 -- -- -- -- NOTE: USER INPUT AT RUNTIME IS CURRENTLY NOT FUNCTIONAL -- -- -- --
 arg = { ... } -- -- TAKING USER INPUT
 assert((#arg == 6 or #arg == 7 or #arg == 8 or #arg == 12 or #arg == 13 or #arg == 14), "Expects either 6, 7, 8, 12, 13, or 14 arguments")
@@ -149,7 +72,7 @@ end
 
 dec = 9.0   -- -- number of decimals to round to (default: 9.0)
 
--- -- -- -- GENERAL INPUTS -- -- -- --
+-- -- -- -- MISC. INPUTS -- -- -- --
 
 n = 11                                  -- number of simulated dwarfs
 evolveTime       = round( 3.0, dec )    -- Forward Time (Gyrs)
@@ -171,21 +94,24 @@ orbit_parameter_vx  = {round( 21.99,   dec),round( 223.97,  dec),round( -27.04, 
 orbit_parameter_vy  = {round( -201.36, dec),round( -5.34,   dec),round( -172.14, dec),round( -16.36,  dec),round( 197.28,  dec),round( 209.73,  dec),round( 30.33,   dec),round( -79.13,  dec),round( 60.33,   dec),round( 38.13,   dec),round( 47.45,   dec)}  -- Galactocentric vy
 orbit_parameter_vz  = {round( 171.25,  dec),round( 185.78,  dec),round( 101.21,  dec),round( 254.15,  dec),round( -102.1,  dec),round( 114.61,  dec),round( 49.13,   dec),round( 164.44,  dec),round( -263.33, dec),round( -160.51, dec),round( 68.05,   dec)}  -- Galactocentric vz
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- MODEL SETTINGS -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- --       ModelComponent Options:    -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
+-- --       1 - SINGLE COMPONENT MODEL  -- -- -- - -- -- -- -- -- -- -- -- -- 
+-- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
+ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH   -- -- -- -- -- --
+manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+
 
 -- -- -- -- -- -- -- -- --  MANUAL INPUT CODE  -- -- -- -- -- -- -- -- --
 -- -- -- requires more work to make operational with multidwarfs -- -- --
 -- -- -- line-by-line prompt??  -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- make use as need be o7 -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
--- these only get used if only 6 parameters are input from shell script
--- otherwise they get reset later with the inputs (if 11 given)
--- preset_orbit_parameter_l  = 258
--- preset_orbit_parameter_b  = 45.8
--- preset_orbit_parameter_r  = 21.5
--- preset_orbit_parameter_vx = -185.5
--- preset_orbit_parameter_vy = 54.7
--- preset_orbit_parameter_vz = 147.4
 
 -- evolveTime       = round( tonumber(arg[1]), dec )    -- Forward Time (Gyrs)
 -- time_ratio       = round( tonumber(arg[2]), dec )    -- Forward Time / Backward Time
@@ -228,7 +154,7 @@ orbit_parameter_vz  = {round( 171.25,  dec),round( 185.78,  dec),round( 101.21, 
 --     orbit_parameter_vx  = round( tonumber(arg[10]), dec )
 --     orbit_parameter_vy  = round( tonumber(arg[11]), dec )
 --     orbit_parameter_vz  = round( tonumber(arg[12]), dec )
---     LMC_Mass            = round( tonumber(arg[13]), dec )
+--     LMC_Mass = round( tonumber(arg[13]), dec )
 --     manual_body_file = arg[14]
 -- else
 --     -- fallback to preset orbit parameters and LMC mass if not enough args
@@ -242,6 +168,74 @@ orbit_parameter_vz  = {round( 171.25,  dec),round( 185.78,  dec),round( 101.21, 
 -- end
 
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- -- -- -- -- -- -- -- -- PARAMETER SETTINGS   -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+-- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- --
+generateSimpleOutput = true       -- Simple output file includes: x, y, z, vx, vy, vz, mass
+-- Full output file includes: x, y, z, l, b, r, vx, vy, vz, mass, vlos, pmra, pmdec, [lambda, beta]
+-- NOTE: Lambda and Beta are optional and will only be included if the histogram parameters are set in makeHistogram()
+
+-- -- -- -- -- -- -- -- -- HISTOGRAM   -- -- -- -- -- -- -- -- -- -- -- -- --
+
+lda_bins        = 50      -- number of bins in lamdba direction
+lda_lower_range = -150    -- lower range for lambda
+lda_upper_range = 150     -- upepr range for lamdba
+
+bta_bins        = 1       -- number of beta bins. normally use 1 for 1D hist
+bta_lower_range = -15     -- lower range for beta
+bta_upper_range = 15      -- upper range for beta
+
+SigmaCutoff          = 2.5     -- -- sigma cutoff for outlier rejection DO NOT CHANGE -- --
+SigmaIter            = 6       -- -- number of times to apply outlier rejection DO NOT CHANGE -- --
+Correction           = 1.111   -- -- correction for outlier rejection   DO NOT CHANGE -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+
+-- -- -- -- -- -- -- -- -- AlGORITHM OPTIONS -- -- -- -- -- -- -- --
+use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
+best_like_start      = 0.98    -- what percent of sim to start
+
+use_beta_disps       = true    -- use beta dispersions in likelihood
+use_vel_disps        = false    -- use velocity dispersions in likelihood
+
+-- if one of these is true, will get output for all 3 of the new histograms
+-- if not computing likelihood scores, still need one of these to be true if want them computed/output
+use_beta_comp        = true  -- calculate average beta, use in likelihood
+use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
+use_avg_dist         = true  -- calculate average distance, use in likelihood
+use_pm_comp          = true  -- calculate proper motion, use in likelihood
+
+-- if using momentum likelihood, include momentum information in the parameters of the input
+-- histogram (after <histogram> )with the following lines:
+    -- L = {Lx, Ly, Lz} (angular momentum vector)
+    -- LErr = {Err_Lx, Err_Ly, Err_Lz} (uncertainty in angular momentum vector)
+-- These are in units of kpc^2/Gyr (no mass included)
+use_momentum         = true  -- calculate angular momentum, use in likelihood
+
+-- number of additional forward evolutions to do to calibrate the rotation of the bar
+-- numCalibrationRuns + 1 additional forward evolutions will be done
+-- if no bar potential is being used, this variable will be ignored
+numCalibrationRuns = 0
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- ADVANCED DEVELOPER OPTIONS -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- These options only work if you compile nbody with  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
+
+useMultiOutputs       = true     -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
+freqOfOutputs         = 30         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
+
+timestep_control      = true       -- -- control number of steps                                                          -- --
+Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
+
+use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
+max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
+
+generateInitialOutput = true       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
 TooManyTimesteps = 0
@@ -301,8 +295,11 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1], UseOldSofteningLength)
-
+    if (UseOldSofteningLength == 1) then
+        sp = calculateEps2(totalBodies, rscale_l[i], rscale_d[i], mass_l[i], mass_d[i])
+    else
+        sp = calculateEps2Dwarf(Dwarf.plummer{mass = mass_l[i], scaleLength = rscale_l[i]}, totalLightBodies)
+    end
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
         return max_soft_par^2
@@ -338,17 +335,20 @@ function makeContext()
       useVlos       = use_vlos_comp,
       useDist       = use_avg_dist,
       usePropMot    = use_pm_comp,
+      useMomentum   = use_momentum,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = SigmaCutoff,
       VelSigma      = SigmaCutoff,
       DistSigma     = SigmaCutoff,
       PMSigma       = SigmaCutoff,
+      MomentumSigma = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
       PMCorrect     = Correction,
+      MomentumCorrect = Correction,
       SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
@@ -460,6 +460,7 @@ function makeBodies(ctx, potential)
         for i = 1, n do
             local Model = predefinedModels.mixeddwarf{
                 nbody       = totalBodies,
+                nbody_baryon  = totalLightBodies,
                 prng        = prng,
                 position    = finalPosition[i],
                 velocity    = finalVelocity[i],
@@ -536,9 +537,17 @@ function makeHistogram()
      
      betaStart = bta_lower_range,
      betaEnd   = bta_upper_range,
-     betaBins  = bta_bins
+     betaBins  = bta_bins,
+
+     -- Optional params
+     L = {0.0, 0.0, 0.0}, --If any L components are nonzero, will use this L and LErr for momentum likelihood
+     LErr = {0.0, 0.0, 0.0}, --This will overwrite any momentum values passed in through histogram. Input these as lua tables
+
+     nRange = 0, --If non-zero, will use EMDRange values below. Overwrites values given in input histogram
+     EMDRange = {} --Make sure this has an even number of elements and matches nRange. Input as a lua table
 }
 end
+
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
 revOrbTime = evolveTime / time_ratio
@@ -558,10 +567,6 @@ if(ModelComponents == 1) then
     for i = 1, n do
         dwarfMass[i]  = mass_l[i]
         rscale_t[i]   = rscale_l[i]
-    
-    -- probably change this with the softening at some point vv
-        rscale_d[i]  = rscale_l[i] --used in GenerateEps2
-        mass_d[i]     = mass_l[i] --used in GenerateEps2
     end
 else    
     for i = 1, n do

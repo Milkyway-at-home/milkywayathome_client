@@ -66,7 +66,7 @@ void *OPA_Shm_rel_to_abs(OPA_Shm_rel_addr_t r)
 }
 
 /* converts an absolute pointer to a relative pointer */
-static _opa_inline
+static
 OPA_Shm_rel_addr_t OPA_Shm_abs_to_rel(void *a)
 {
     OPA_Shm_rel_addr_t ret;
@@ -158,7 +158,7 @@ void OPA_Queue_init(OPA_Queue_info_t *qhead);
 /* Used to initialize a queue element header. */
 void OPA_Queue_header_init(OPA_Queue_element_hdr_t *hdr);
 
-static _opa_inline
+static
 int OPA_Queue_is_empty(OPA_Queue_info_t *qhead)
 {
     int __ret = 0;
@@ -188,7 +188,7 @@ int OPA_Queue_is_empty(OPA_Queue_info_t *qhead)
    This operation is effectively the same as the dequeue operation (insofar as
    it shares the same calling restrictions) but it does not disturb the actual
    contents of the queue. */
-static _opa_inline
+static
 void *OPA_Queue_peek_head(OPA_Queue_info_t *qhead_ptr)
 {
     OPA_assert(qhead_ptr != NULL);
