@@ -243,7 +243,7 @@ static int luaCalculateEps2_OLD(lua_State* luaSt) //read in params from lua to c
     return 1;
 }
 
-<<<<<<< HEAD
+
 static int luaReverseOrbitS(lua_State* luaSt)
 {       
     size_t lenPos = lua_objlen(luaSt, 2); 
@@ -300,8 +300,7 @@ static int luaReverseOrbitS(lua_State* luaSt)
 
     return 2;
 }
-=======
->>>>>>> dev
+
 
 static int luaReverseOrbit(lua_State* luaSt)
 {
@@ -314,19 +313,11 @@ static int luaReverseOrbit(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-<<<<<<< HEAD
-            { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot           },
-            { "position",   LUA_TTABLE,    NULL,           TRUE, &pos           },
-            { "velocity",   LUA_TTABLE,    NULL,           TRUE, &vel           },
-            { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop         },
-            { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt            },
-=======
             { "potential",  LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot,           1 },
             { "position",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos,           1 },
             { "velocity",   LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel,           1 },
             { "tstop",      LUA_TNUMBER,   NULL,           TRUE, &tstop,         1 },
             { "dt",         LUA_TNUMBER,   NULL,           TRUE, &dt,            1 },
->>>>>>> dev
             END_MW_NAMED_ARG
         };
 
