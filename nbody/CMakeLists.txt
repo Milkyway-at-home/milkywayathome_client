@@ -129,6 +129,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_tree.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
                   ${NBODY_SRC_DIR}/nbody_potential.c
+                  ${NBODY_SRC_DIR}/nbody_bfe_potential.cpp
                   ${NBODY_SRC_DIR}/nbody_bessel.c
                   ${NBODY_SRC_DIR}/nbody_virial.c
                   ${NBODY_SRC_DIR}/nbody_density.c
@@ -166,6 +167,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_tree.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h
+                      ${NBODY_INCLUDE_DIR}/nbody_bfe_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_bessel.h
                       ${NBODY_INCLUDE_DIR}/nbody_virial.h
                       ${NBODY_INCLUDE_DIR}/nbody_density.h
@@ -197,7 +199,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_caustic.h
                       ${NBODY_INCLUDE_DIR}/nbody_particle_data.h
                       ${NBODY_INCLUDE_DIR}/blender_visualizer.h)
-                      
+
 
 
 if(NBODY_OPENCL)
@@ -531,4 +533,3 @@ endif()
 
 
 add_subdirectory(doc EXCLUDE_FROM_ALL)
-

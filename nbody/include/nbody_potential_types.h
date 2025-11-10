@@ -25,6 +25,7 @@
 #include "nbody_config.h"
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
+#include "nbody_bfe_potential.h"
 
 #define _NO_SPHERICAL 0
 #define _HERN_SPHERICAL 1
@@ -137,6 +138,23 @@ typedef struct MW_ALIGN_TYPE
 
 #define HALO_TYPE "Halo"
 
+ /* Supported Basis Function Expansion models */
+#define _NO_BFE 0
+#define _EXP_BFE 1
+
+typedef enum
+{
+    InvalidBFE         = InvalidEnum,
+    NoBFE              = _NO_BFE,
+    EXPBFE             = _EXP_BFE,
+} bfe_t;
+
+typedef struct MW_ALIGN_TYPE
+{
+    bfe_t type;
+    exp_bfe_t *exp_bfe;  /* C++ object that EXP uses */
+} BFE;
+
  /* Supported Dwarf Galaxy models */
 #define _PLUMMER_DWARF 0
 #define _NFW_DWARF 1
@@ -156,8 +174,8 @@ typedef enum
 typedef struct MW_ALIGN_TYPE
 {
     dwarf_t type;
-    real mass;        
-    real scaleLength;   
+    real mass;
+    real scaleLength;
     real n; //used by einasto
     real p0; //used by nfw and cored
     real r200; // virial radius
@@ -174,6 +192,7 @@ typedef struct MW_ALIGN_TYPE
     Disk disk2;
     Halo halo;
     void* rings;       /* currently unused */
+    BFE bfe;
 } Potential;
 
 #define POTENTIAL_TYPE "Potential"
@@ -184,7 +203,6 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
+#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL, EMPTY_BFE }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
-
