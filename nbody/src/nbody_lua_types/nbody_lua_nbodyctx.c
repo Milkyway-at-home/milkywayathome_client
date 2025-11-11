@@ -108,11 +108,11 @@ static int createNBodyCtx(lua_State* luaSt)
             { "sunVely",         LUA_TNUMBER, NULL,      FALSE, &ctx.sunVely,          1 },
             { "sunVelz",         LUA_TNUMBER, NULL,      FALSE, &ctx.sunVelz,          1 },
 
-            { "b",               LUA_TNUMBER, NULL,      FALSE, &ctx.b,                1 },
-            { "r",               LUA_TNUMBER, NULL,      FALSE, &ctx.r,                1 },
-            { "vx",              LUA_TNUMBER, NULL,      FALSE, &ctx.vx,               1 },
-            { "vy",              LUA_TNUMBER, NULL,      FALSE, &ctx.vy,               1 },
-            { "vz",              LUA_TNUMBER, NULL,      FALSE, &ctx.vz,               1 },
+            { "b",               LUA_TTABLE, REAL_TYPE,  FALSE, &ctx.b,                1 },
+            { "r",               LUA_TTABLE, REAL_TYPE,  FALSE, &ctx.r,                1 },
+            { "vx",              LUA_TTABLE, REAL_TYPE,  FALSE, &ctx.vx,               1 },
+            { "vy",              LUA_TTABLE, REAL_TYPE,  FALSE, &ctx.vy,               1 },
+            { "vz",              LUA_TTABLE, REAL_TYPE,  FALSE, &ctx.vz,               1 },
 
             { "criterion",       LUA_TSTRING, NULL,      FALSE, &criterionName,         1 },
             { "SimpleOutput",    LUA_TBOOLEAN,NULL,      FALSE, &ctx.SimpleOutput,      1 },
@@ -251,11 +251,11 @@ static int createSNBodyCtx(lua_State* luaSt)
             { "sunVely",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVely,   1 },
             { "sunVelz",     LUA_TNUMBER,  NULL, FALSE, &ctx.sunVelz,   1 },
 
-            { "b",             LUA_TTABLE,  NULL, FALSE,  &ctx.b,   1 },
-            { "r",             LUA_TTABLE,  NULL, FALSE,  &ctx.r,   1 },
-            { "vx",            LUA_TTABLE,  NULL, FALSE,  &ctx.vx,  1 },
-            { "vy",            LUA_TTABLE,  NULL, FALSE,  &ctx.vy,  1 },
-            { "vz",            LUA_TTABLE,  NULL, FALSE,  &ctx.vz,  1 },
+            { "b",             LUA_TTABLE,  REAL_TYPE, FALSE,  &ctx.b,   1 },
+            { "r",             LUA_TTABLE,  REAL_TYPE, FALSE,  &ctx.r,   1 },
+            { "vx",            LUA_TTABLE,  REAL_TYPE, FALSE,  &ctx.vx,  1 },
+            { "vy",            LUA_TTABLE,  REAL_TYPE, FALSE,  &ctx.vy,  1 },
+            { "vz",            LUA_TTABLE,  REAL_TYPE, FALSE,  &ctx.vz,  1 },
 
             { "criterion",     LUA_TSTRING,  NULL, FALSE, &criterionName,           1 },
             { "SimpleOutput",  LUA_TBOOLEAN, NULL, FALSE, &ctx.SimpleOutput,        1 },

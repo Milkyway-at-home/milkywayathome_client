@@ -296,9 +296,9 @@ function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
     if (UseOldSofteningLength == 1) then
-        sp = calculateEps2(totalBodies, rscale_l[i], rscale_d[i], mass_l[i], mass_d[i])
+        sp = calculateEps2(totalBodies, rscale_l[1], rscale_d[1], mass_l[1], mass_d[1])
     else
-        sp = calculateEps2Dwarf(Dwarf.plummer{mass = mass_l[i], scaleLength = rscale_l[i]}, totalLightBodies)
+        sp = calculateEps2Dwarf(Dwarf.plummer{mass = mass_l[1], scaleLength = rscale_l[1]}, totalLightBodies)
     end
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
