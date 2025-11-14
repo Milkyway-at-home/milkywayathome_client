@@ -78,6 +78,8 @@ SunVely               = 229.2     -- -- Sun's y-velocity (kpc/Gyr)              
 SunVelz               = 6.9       -- -- Sun's z-velocity (kpc/Gyr)                                             -- --
 
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
+
+Use_BFE_Potential     = false     -- -- Flag for using Basis Function Expansion for calculating potential      -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 arg = { ... } -- -- TAKING USER INPUT
