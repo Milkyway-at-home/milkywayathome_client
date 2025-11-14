@@ -628,6 +628,12 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 {
     mwvector acc, acctmp;
     real limit = mw_pow(2.0,-8.0);
+    
+    if (pot->bfe)
+    {
+        acc = exp_bfe_get_acceleration(&pot->bfe->exp_bfe, pos, time);
+        return acc;
+    }
 
     /* Change r if less than limit. Done this way to pipeline this step*/
     real r = (mw_absv(pos) <= limit)*limit + (mw_absv(pos) > limit)*mw_absv(pos);
