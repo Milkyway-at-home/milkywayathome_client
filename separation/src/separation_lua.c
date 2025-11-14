@@ -160,17 +160,17 @@ static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
     static real nuStepsf, muStepsf, rStepsf;
     static const MWNamedArg iaArgTable[] =
         {
-            { "nu_min",   LUA_TNUMBER, NULL, TRUE, &ia.nu_min },
-            { "nu_max",   LUA_TNUMBER, NULL, TRUE, &ia.nu_max },
-            { "nu_steps", LUA_TNUMBER, NULL, TRUE, &nuStepsf  },
+            { "nu_min",   LUA_TNUMBER, NULL, TRUE, &ia.nu_min, 1 },
+            { "nu_max",   LUA_TNUMBER, NULL, TRUE, &ia.nu_max, 1 },
+            { "nu_steps", LUA_TNUMBER, NULL, TRUE, &nuStepsf,  1 },
 
-            { "mu_min",   LUA_TNUMBER, NULL, TRUE, &ia.mu_min },
-            { "mu_max",   LUA_TNUMBER, NULL, TRUE, &ia.mu_max },
-            { "mu_steps", LUA_TNUMBER, NULL, TRUE, &muStepsf  },
+            { "mu_min",   LUA_TNUMBER, NULL, TRUE, &ia.mu_min, 1 },
+            { "mu_max",   LUA_TNUMBER, NULL, TRUE, &ia.mu_max, 1 },
+            { "mu_steps", LUA_TNUMBER, NULL, TRUE, &muStepsf,  1 },
 
-            { "r_min",    LUA_TNUMBER, NULL, TRUE, &ia.r_min  },
-            { "r_max",    LUA_TNUMBER, NULL, TRUE, &ia.r_max  },
-            { "r_steps",  LUA_TNUMBER, NULL, TRUE, &rStepsf   },
+            { "r_min",    LUA_TNUMBER, NULL, TRUE, &ia.r_min,  1 },
+            { "r_max",    LUA_TNUMBER, NULL, TRUE, &ia.r_max,  1 },
+            { "r_steps",  LUA_TNUMBER, NULL, TRUE, &rStepsf,   1 },
             END_MW_NAMED_ARG
         };
 
@@ -209,12 +209,12 @@ static int readStreamTable(lua_State* luaSt, StreamParameters* spOut, int table)
     static StreamParameters sp;
     static const MWNamedArg streamArgTable[] =
         {
-            { "epsilon", LUA_TNUMBER, NULL, TRUE, &sp.epsilon },
-            { "mu",      LUA_TNUMBER, NULL, TRUE, &sp.mu      },
-            { "r",       LUA_TNUMBER, NULL, TRUE, &sp.r       },
-            { "theta",   LUA_TNUMBER, NULL, TRUE, &sp.theta   },
-            { "phi",     LUA_TNUMBER, NULL, TRUE, &sp.phi     },
-            { "sigma",   LUA_TNUMBER, NULL, TRUE, &sp.sigma   },
+            { "epsilon", LUA_TNUMBER, NULL, TRUE, &sp.epsilon, 1 },
+            { "mu",      LUA_TNUMBER, NULL, TRUE, &sp.mu,      1 },
+            { "r",       LUA_TNUMBER, NULL, TRUE, &sp.r,       1 },
+            { "theta",   LUA_TNUMBER, NULL, TRUE, &sp.theta,   1 },
+            { "phi",     LUA_TNUMBER, NULL, TRUE, &sp.phi,     1 },
+            { "sigma",   LUA_TNUMBER, NULL, TRUE, &sp.sigma,   1 },
             END_MW_NAMED_ARG
         };
 
@@ -329,16 +329,16 @@ static int evaluateBackground(lua_State* luaSt)
     static BackgroundParameters bg = EMPTY_BACKGROUND_PARAMETERS;
     static const MWNamedArg bgArgTable[] =
         {
-            { "innerPower", LUA_TNUMBER, NULL, FALSE, &bg.innerPower    },
-            { "r0",         LUA_TNUMBER, NULL, FALSE,  &bg.r0            },
-            { "q",          LUA_TNUMBER, NULL, TRUE,  &bg.q             },
-            { "outerPower", LUA_TNUMBER, NULL, FALSE, &bg.outerPower    },
+            { "innerPower", LUA_TNUMBER, NULL, FALSE, &bg.innerPower,    1 },
+            { "r0",         LUA_TNUMBER, NULL, FALSE, &bg.r0,            1 },
+            { "q",          LUA_TNUMBER, NULL, TRUE,  &bg.q,             1 },
+            { "outerPower", LUA_TNUMBER, NULL, FALSE, &bg.outerPower,    1 },
 
-            { "epsilon",    LUA_TNUMBER, NULL, TRUE, &bg.epsilon       },
+            { "epsilon",    LUA_TNUMBER, NULL, TRUE,  &bg.epsilon,       1 },
 
-            { "a",          LUA_TNUMBER, NULL, FALSE, &bg.a             },
-            { "b",          LUA_TNUMBER, NULL, FALSE, &bg.b             },
-            { "c",          LUA_TNUMBER, NULL, FALSE, &bg.c             },
+            { "a",          LUA_TNUMBER, NULL, FALSE, &bg.a,             1 },
+            { "b",          LUA_TNUMBER, NULL, FALSE, &bg.b,             1 },
+            { "c",          LUA_TNUMBER, NULL, FALSE, &bg.c,             1 },
             END_MW_NAMED_ARG
         };
 

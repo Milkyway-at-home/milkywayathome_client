@@ -14,6 +14,8 @@ dwarfRadius = 0.2
 LMCMASS = 449865.888
 LMCSCALE = 15.0
 
+dwarf = Dwarf.plummer{mass = dwarfMass, scaleLength = dwarfRadius}
+
 function makePotential()
    return Potential.create{
       spherical = Spherical.hernquist{ mass = 67479.9, scale = 0.6 },
@@ -30,7 +32,7 @@ function makeContext()
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
       timeBack = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius,0),
+      eps2       = calculateEps2Dwarf(dwarf, nbody),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
@@ -38,10 +40,12 @@ function makeContext()
       VelSigma      = 2.5,
       DistSigma     = 2.5,
       PMSigma       = 2.5,
+      MomentumSigma = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
       PMCorrect     = 1.111,
+      MomentumCorrect = 1.111,
       IterMax       = 6,
       LMC           = true,
       LMCmass       = LMCMASS,

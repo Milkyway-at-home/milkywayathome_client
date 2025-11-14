@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
 {
     real rsq, rsc;
-    mwvector vec;
+    mwvector vec = ZERO_VECTOR;
 
     do                      /* pick point in NDIM-space */
     {
@@ -81,7 +81,7 @@ static inline real plummerRandomV(dsfmt_t* dsfmtState, real r)
 
 static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
 {
-    mwvector pos;
+    mwvector pos = ZERO_VECTOR;
 
     pos = pickShell(dsfmtState, rsc * r);  /* pick scaled position */
     mw_incaddv(pos, rshift);               /* move the position */
@@ -91,7 +91,7 @@ static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector rshift,
 
 static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real vsc, real r)
 {
-    mwvector vel;
+    mwvector vel = ZERO_VECTOR;
     real v;
 
     v = plummerRandomV(dsfmtState, r);
@@ -167,13 +167,13 @@ int nbGeneratePlummer(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
-            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
-            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale },
-            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
-            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity    },
-            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore      },
-            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng        },
+            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf,      1 },
+            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass,        1 },
+            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale, 1 },
+            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position,    1 },
+            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity,    1 },
+            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore,      1 },
+            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng,        1 },
             END_MW_NAMED_ARG
         };
 

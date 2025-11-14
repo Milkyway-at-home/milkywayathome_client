@@ -40,7 +40,7 @@ static int luaLbrToCartesian(lua_State* luaSt)
     mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
     real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
     const NBodyCtx* ctx = NULL;
-    mwvector v;
+    mwvector v = ZERO_VECTOR;
 
     if (lua_gettop(luaSt) > 4)
         luaL_argerror(luaSt, 4, "Expected 1, 2, 3 or 4 arguments");

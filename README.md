@@ -123,11 +123,13 @@ The type of run is set by setting one of the following flags to `true`:
 
 | Flag | Description |
 |------|-------------|
-| `-s` | Compare using only EMD and cost component |
-| `-S` | Use EMD, cost, beta dispersion |
-| `-V` | Use EMD, cost, velocity dispersion |
-| `-D` | Use EMD, cost, beta dispersion and velocity dispersion |
-| `-A` | Compare all components of the likelihood |
+| `-s` | Histogram to input for comparison. Will compare with EMD and cost components by default |
+| `-S` | Adds beta dispersion to comparison |
+| `-V` | Adds velocity dispersion to comparison |
+| `-B` | Adds beta average to comparison |
+| `-Q` | Adds line of sight velocity to comparison |
+| `-U` | Adds proper motions to comparsion |
+| `-L` | Adds momentum to comparison |
 
 ---
 

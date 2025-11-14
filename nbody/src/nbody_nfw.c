@@ -57,7 +57,7 @@ static real nfwNextRadius(real start_radius, real goal_mass, real rho_0, real R_
 static mwvector nfwPickShell(dsfmt_t* dsfmtState, real rad)
 {
     real rsq, rsc;
-    mwvector vec;
+    mwvector vec = ZERO_VECTOR;
 
     do                      /* pick point in NDIM-space */
     {
@@ -83,6 +83,8 @@ static real nfwRandomR(dsfmt_t* dsfmtState, real startradius, real endradius)
     return (endradius - startradius) * rnd + startradius;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 static real nfwSelectFromG(dsfmt_t* dsfmtState)
 {
     real x, y;
@@ -96,6 +98,7 @@ static real nfwSelectFromG(dsfmt_t* dsfmtState)
 
     return x;
 }
+#pragma GCC diagnostic pop
 
 static real nfwCalculateV(real r, real rho_0, real R_S)
 {
@@ -108,7 +111,7 @@ static real nfwCalculateV(real r, real rho_0, real R_S)
 
 static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
 {
-    mwvector pos;
+    mwvector pos = ZERO_VECTOR;
 
     pos = nfwPickShell(dsfmtState, rsc * r);  /* pick scaled position */
     mw_incaddv(pos, rshift);               /* move the position */
@@ -118,7 +121,7 @@ static mwvector nfwBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, 
 
 static mwvector nfwBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real r, real rho_0, real R_S)
 {
-    mwvector vel;
+    mwvector vel = ZERO_VECTOR;
     real v;
 
     v = nfwCalculateV(r, rho_0, R_S);
@@ -201,14 +204,14 @@ int nbGenerateNFW(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf   },
-            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass     },
-            { "rho_0",        LUA_TNUMBER,   NULL,          TRUE,  &rho_0    },
-            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &R_S      },
-            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position },
-            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity },
-            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore   },
-            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng     },
+            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf,   1 },
+            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass,     1 },
+            { "rho_0",        LUA_TNUMBER,   NULL,          TRUE,  &rho_0,    1 },
+            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &R_S,      1 },
+            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position, 1 },
+            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity, 1 },
+            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore,   1 },
+            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng,     1 },
             END_MW_NAMED_ARG
         };
 

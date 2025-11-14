@@ -61,10 +61,13 @@ static inline real leg_pol(real x, int l)
     {
         sum += mw_pow(-1, m)*mw_pow(x, l-2*m)/mw_pow(2,l)*binom(l,m)*binom(2*(l-m),l);
     }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if (x == 0.0)
     {
         if (l*1.0/2.0 == mw_ceil(l*1.0/2.0))
         {
+#pragma GCC diagnostic pop
             sum = mw_pow(-1,l/2)*mw_exp(lnfact(l)-2*lnfact(l/2) - l*mw_log(2));
         }
         else
@@ -172,7 +175,7 @@ static inline mwvector plummerSphericalAccel(const Spherical* sph, mwvector pos,
 
 static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r)
 {
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
     const real a   = disk->scaleLength;
     const real b   = disk->scaleHeight;
     const real zp  = mw_pow(mw_pow(Z(pos),2.0) + mw_pow(b,2.0), 0.5);
@@ -194,9 +197,9 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, re
 }
 
 /*WARNING: This potential uses incomplete gamma functions and the generalized exponential integral function. This potential will take longer than other potentials to run.*/
-static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)     /*From Freeman 1970*/
+static mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r)     /*From Freeman 1970*/
 {
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
     /*Reset acc vector*/
     X(acc) = 0.0;
     Y(acc) = 0.0;
@@ -205,7 +208,7 @@ static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r) 
     const mwvector r_hat = mw_mulvs(pos, 1.0/r);
     const real r_proj = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
 
-    mwvector theta_hat;
+    mwvector theta_hat = ZERO_VECTOR;
     X(theta_hat) = X(pos)*Z(pos)/r/r_proj;
     Y(theta_hat) = Y(pos)*Z(pos)/r/r_proj;
     Z(theta_hat) = -r_proj/r;
@@ -262,19 +265,19 @@ static inline mwvector freemanDiskAccel(const Disk* disk, mwvector pos, real r) 
 }
 
 /*WARNING: This potential can take a while to integrate if any part of the orbit extends past 100 times the scaleLength*/
-static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos, real r)
+static mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos, real r)
 {
     //mw_printf("Calculating Acceleration\n");
     //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
 
     const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
-    mwvector R_hat;
+    mwvector R_hat = ZERO_VECTOR;
     X(R_hat) = X(pos) / R;
     Y(R_hat) = Y(pos) / R;
     Z(R_hat) = 0.0;
 
-    mwvector Z_hat;
+    mwvector Z_hat = ZERO_VECTOR;
     X(Z_hat) = 0.0;
     Y(Z_hat) = 0.0;
     Z(Z_hat) = Z(pos) / mw_abs(Z(pos));
@@ -340,7 +343,7 @@ static inline mwvector doubleExponentialDiskAccel(const Disk* disk, mwvector pos
     Y(acc) = Y(R_comp) + Y(Z_comp);
     Z(acc) = Z(R_comp) + Z(Z_comp);
 
-    real magnitude = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
+    real magnitude __attribute__((unused)) = mw_sqrt(sqr(X(acc))+sqr(Y(acc))+sqr(Z(acc)));
     //mw_printf("Acceleration[AX,AY,AZ] = [%.15f,%.15f,%.15f]   Magnitude = %.15f\n",X(acc),Y(acc),Z(acc),magnitude);
     return acc;
 }
@@ -350,15 +353,15 @@ static inline mwvector sech2ExponentialDiskAccel(const Disk* disk, mwvector pos,
 {
     //mw_printf("Calculating Acceleration\n");
     //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
 
     const real R = mw_sqrt(sqr(X(pos)) + sqr(Y(pos)));
-    mwvector R_hat;
+    mwvector R_hat = ZERO_VECTOR;
     X(R_hat) = X(pos)/R;
     Y(R_hat) = Y(pos)/R;
     Z(R_hat) = 0.0;
 
-    mwvector Z_hat;
+    mwvector Z_hat = ZERO_VECTOR;
     X(Z_hat) = 0.0;
     Y(Z_hat) = 0.0;
     Z(Z_hat) = 1.0;
@@ -431,13 +434,13 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     real Tp = mw_sqrt(mw_pow(a + x,2) + secondpart);
     real Tm = mw_sqrt(mw_pow(a - x,2) + secondpart);
 
-    mwvector force;
+    mwvector force = ZERO_VECTOR;
     force.x = -2.*x/Tp/Tm/(Tp+Tm);
     force.y = -y/2./Tp/Tm*(Tp+Tm-4.*mw_pow(x,2.)/(Tp+Tm))/(mw_pow(y,2.)+mw_pow(b+mw_sqrt(mw_pow(z,2.)+mw_pow(c,2)),2.));
     force.z = force.y*z/y*(b+mw_sqrt(mw_pow(z,2)+mw_pow(c,2)))/mw_sqrt(mw_pow(z,2)+mw_pow(c,2));
     
     //undo the pos rotation and calculate acceleration from the force vector we got
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
     real cp = cos (curAngle);
     real sp = sin (curAngle);
     acc.x=cp*force.x-sp*force.y;
@@ -462,7 +465,7 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
     //mw_printf("[X,Y,Z] = [%.15f,%.15f,%.15f]\n",X(pos),Y(pos),Z(pos));
     //mw_printf("r = %.15f\n", r);
 
-    mwvector pointPos;
+    mwvector pointPos = ZERO_VECTOR;
     pointPos.z = 0;
     real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
     curAngle = curAngle - M_PI;//this is because the sun is negative in our coordinate system
@@ -487,7 +490,7 @@ static inline mwvector orbitingBarAccel(const Disk* disk, mwvector pos, real r, 
 
 static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
 {
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
 
     const real v0 = halo->vhalo;
     const real q  = halo->flattenZ;
@@ -517,7 +520,7 @@ static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
 static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)  /** Triaxial Logarithmic **/
 {
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
 
     /* TODO: More things here can be cached */
     const real qzs      = sqr(h->flattenZ);
@@ -626,7 +629,7 @@ static inline mwvector ninkovicHaloAccel(const Halo* h, mwvector pos, real r)   
 
 mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 {
-    mwvector acc, acctmp;
+    mwvector acc = ZERO_VECTOR, acctmp = ZERO_VECTOR;
     real limit = mw_pow(2.0,-8.0);
 
     /* Change r if less than limit. Done this way to pipeline this step*/
