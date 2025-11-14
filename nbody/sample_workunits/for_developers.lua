@@ -265,7 +265,7 @@ function makePotential()
    elseif(Use_BFE_Potential == true) then
 	print("running with bfe potential")
 	return Potential.create{
-		bfe = nil
+		bfe = nil --look through nbody_potential_types.h later to see how to implement this
 	}-- future implementation for bfe component needed
    else
 	--NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
