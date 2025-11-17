@@ -110,7 +110,7 @@ function soft()
     if (modelComponents == 1) then --plugs in two-comp. analog for single-comp. run so i don't have to edit the eps2 function
         sp = calculateEps2(nbodies, dwarf_rscale_l[1], dwarf_rscale_l[1], dwarf_mass_l[1]/2, dwarf_mass_l[1]/2, 0)
     else
-        sp = calculateEps2(nbodies, dwarf_rscale_l[1], dwarf_rscale_d[1], dwarf_mass_l[1], dwarf_mass_d[1], 0)
+        sp = calculateEps2(nbodies, dwarf_rscale_l[1], dwarf_rscale_d[1], dwarf_mass_l[1], dwarf_mass_d[1])
     end
     return sp
 end
@@ -231,6 +231,7 @@ st = makeDwarfs(ctx, potential)
 
 mass_tot = {}
 pos_avg = {}
+dwarf_p = {}
 rscale_med = {}
 L_tot = {}
 
@@ -242,6 +243,7 @@ for d = 1, 2*ndwarfs do
     local m = 0
     local part_pos = {x={}, y={}, z={}}
     local avg_pos = {x=0, y=0, z=0}
+    local p_total = {x=0, y=0, z=0}
     local p = {x={}, y={}, z={}}
     local tot_L = 0
     for i = 1, nbodies/2 do
@@ -254,6 +256,9 @@ for d = 1, 2*ndwarfs do
         p.x[i] = particle.velocity.x*particle.mass
         p.y[i] = particle.velocity.y*particle.mass
         p.z[i] = particle.velocity.z*particle.mass
+        p_total.x = p_total.x + p.x[i]
+        p_total.y = p_total.y + p.y[i]
+        p_total.z = p_total.z + p.z[i]
         part_pos.x[i] = particle.position.x
         part_pos.y[i] = particle.position.y
         part_pos.z[i] = particle.position.z
@@ -265,6 +270,7 @@ for d = 1, 2*ndwarfs do
     end
     mass_tot[d] = m
     pos_avg[d] = avg_pos
+    dwarf_p[d] = p_total
 
     --print(part_pos.x[1], part_pos.y[1], part_pos.z[1])
 
@@ -276,7 +282,7 @@ for d = 1, 2*ndwarfs do
         tot_L = tot_L + ((L_vec.x)^2+(L_vec.y)^2+(L_vec.z)^2)^0.5
     end
 
-    L_tot[d] = tot_L
+    --L_tot[d] = tot_L
     table.sort(part_r)
 
     if(nbodies/2 %2 == 0) then
@@ -284,6 +290,14 @@ for d = 1, 2*ndwarfs do
     else
         rscale_med[d] = part_r[floor(nbodies/4)+1]
     end
+
+    -- this is like the clunkiest thing i've ever written i'm sorry ;-;
+    -- tl;dr f(a, r, v, m, k)                          
+    -- likely needs more work..
+    Lmultiplier = velocityAdjust_Plummer(rscale_med[d], Vector.create(pos_avg[d].x, pos_avg[d].y, pos_avg[d].z), Vector.create(dwarf_p[d].x, dwarf_p[d].y, dwarf_p[d].z), mass_tot[d], 1.5)
+    L_tot[d] = tot_L*Lmultiplier
+    --assert(false, L_tot[d])
+    --Ltot[d] = tot_L*Lmultiplier
 end
 
 -- print(mass_tot[1],mass_tot[2],mass_tot[3],mass_tot[4])
@@ -306,8 +320,8 @@ L_exp = {38829350.5319, 467934549.076, 486704.418863, 9516231.97656, 2325613.338
 
 dmass_threshold     = 0.05   --%
 dpos_threshold      = 0.05   --kpc
-drscale_threshold   = 0.05   --%
-dL_threshold        = 0.05   --%
+drscale_threshold   = 0.5    --%
+dL_threshold        = 0.1    --%
 
 errstr = ""
 for d=1, ndwarfs do
