@@ -69,17 +69,22 @@ function randomNBodyCtx(prng)
       VelSigma      = sigma,
       DistSigma     = sigma,
       PMSigma       = sigma,
+      MomentumSigma = sigma,
       BetaCorrect   = correct,
       VelCorrect    = correct,
       DistCorrect   = correct,
       PMCorrect     = correct,
+      MomentumCorrect = correct,
       IterMax       = prng:randomListItem({ 2, 3, 4, 5 }),
       allowIncest   = true,
       quietErrors   = true,
       LMC           = prng:randomBool(),
+      LMCfunction   = 1,
       LMCmass       = prng:random(1.0e5,1.0e6),
       LMCscale      = prng:random(1.0,20.0),
-      LMCDynaFric   = prng:randomBool()
+      LMCscale2     = prng:random(1.0,20.0),
+      LMCDynaFric   = prng:randomBool(),
+      coulomb_log   = 15
    }
 end
 
@@ -111,12 +116,12 @@ end
 
 
 local nTests = 20
+local prng = DSFMT.create(20251003)
 
 for i = 1, nTests do
    local testSteps, st, stCopy
    local ctx, m
    local lmcpos, lmcvel
-   local prng = DSFMT.create()
 
    m = SM.randomPlummer(prng, 500)
    ctx = randomNBodyCtx(prng)

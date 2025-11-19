@@ -61,7 +61,7 @@ int main() {
     mwvector* LMC = createTestObj(-1.1,-41.1,-27.9,-57,-226,221); //Test LMC to compare with proper motions from Piatek et al 2008
 
     mw_printf("Rotation matrix test. Should rotate a length 1 vector into a length 1 vector.");
-    mwvector test_vec;
+    mwvector test_vec = ZERO_VECTOR;
     X(test_vec) = 1;
     Y(test_vec) = 0;
     Z(test_vec) = 0;

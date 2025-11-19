@@ -21,7 +21,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.93"      -- -- MINIMUM APP VERSION
+nbodyMinVersion       = "1.94"      -- -- MINIMUM APP VERSION
 
 run_null_potential    = false       -- -- NULL POTENTIAL SWITCH
 use_tree_code         = true        -- -- USE TREE CODE (NOT EXACT)
@@ -51,7 +51,9 @@ LeftHandedCoords      = false       -- -- If true, work in left-handed galactoce
 -- -- -- -- -- -- -- -- -- -- -- -- -- LMC  SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 LMC_body              = true     -- -- RUN WITH LMC 
-LMC_scaleRadius       = 15       
+LMC_function          = 1
+LMC_scaleRadius       = 15  
+LMC_cutoff            = 16     
 LMC_Mass              = 449865.888
 LMC_DynamicalFriction = true     -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC) 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -87,11 +89,28 @@ light_mass_ratio = 0.1          -- -- Baryonic Mass / (Baryonic Mass + Dark Matt
 orbit_parameter_l  = 258        -- -- Galactic coordinates of dwarf position (deg)
 orbit_parameter_b  = 45.8
 orbit_parameter_r  = 21.5       -- -- Distance from Sun to dwarf (kpc)
-orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocities of dwarf (km/s)
+orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocities of dwarf (kpc/Gyr)
 orbit_parameter_vy = 54.7
 orbit_parameter_vz = 147.4
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil.
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- Do not edit, calculation of dark matter parameters
+if(ModelComponents == 1) then
+   dwarfMass = mass_l
+   rscale_t  = rscale_l
+   rscale_d  = 1.0
+   mass_d    = 0.0
+else
+   dwarfMass = mass_l / light_mass_ratio
+   rscale_t  = rscale_l / light_r_ratio
+   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+end
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+--component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
+--calculate dwarf-based softening length
+comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
 
 
 
@@ -225,7 +244,12 @@ end
 function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
-    sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d, UseOldSofteningLength)
+    if (UseOldSofteningLength == 1) then
+        sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+    else
+        sp = calculateEps2Dwarf(comp1, totalLightBodies)
+    end
+    
 
     if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with s.p. squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
@@ -259,25 +283,31 @@ function makeContext()
       useBetaComp   = false,
       useVlos       = false,
       useDist       = false,
+      usePropMot    = false,
+      useMomentum   = false,
       Nstep_control = timestep_control,
       Ntsteps       = Ntime_steps,
       BetaSigma     = 2.5,
       VelSigma      = 2.5,
       DistSigma     = 2.5,
       PMSigma       = 2.5,
+      MomentumSigma = 2.5,
       IterMax       = 6,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
       PMCorrect     = 1.111,
+      MomentumCorrect= 1.111,
       SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
+      LMCfunction   = LMC_function,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
+      LMCscale2     = LMC_cutoff,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
       calibrationRuns = 0
@@ -307,8 +337,10 @@ function makeBodies(ctx, potential)
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
 	            LMCvelocity = Vector.create(-57, -226, 221), 
+                    LMCfunction = LMC_function,
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
+                    LMCscale2   = LMC_cutoff,
                     LMCDynaFric = LMC_DynamicalFriction,
                     coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
@@ -335,8 +367,8 @@ function makeBodies(ctx, potential)
                 potential = potential,
                 position  = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
                 velocity  = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	        LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	        LMCvelocity = Vector.create(-57, -226, 221), 
+	        LMCposition = Vector.create(-0.52, -40.8, -26.5),
+	        LMCvelocity = Vector.create(-58.2, -231, 226), 
                 LMCmass     = LMC_Mass,
                 LMCscale    = LMC_scaleRadius,
                 LMCDynaFric = LMC_DynamicalFriction,
@@ -365,8 +397,8 @@ function makeBodies(ctx, potential)
             prng         = prng,
             position     = finalPosition,
             velocity     = finalVelocity,
-            comp1        = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2        = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp1        = comp1,
+            comp2        = comp2,
             ignore       = true
         }
         
@@ -426,17 +458,6 @@ argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
 
-if(ModelComponents == 1) then
-   dwarfMass = mass_l
-   rscale_t  = rscale_l
-   rscale_d  = 1.0
-   mass_d    = 0.0
-else
-   dwarfMass = mass_l / light_mass_ratio
-   rscale_t  = rscale_l / light_r_ratio
-   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
-end
    
 
 if(manual_bodies and manual_body_file == nil) then 

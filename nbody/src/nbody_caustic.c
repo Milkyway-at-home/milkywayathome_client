@@ -161,7 +161,7 @@ static void gfield_close(double rho, double z, int n, double *rfield, double *zf
     //outside the caustic there should be two real roots and two complex roots
     //the vector intlimits hold the limits of integration; for the first case, intlimits is of length four; second, length two
 
-    double im[4] = {cabs(cimag(T1(x,z))), cabs(cimag(T2(x,z))), cabs(cimag(T3(x,z))), cabs(cimag(T4(x,z)))};
+    double im[4] = {fabs(cimag(T1(x,z))), fabs(cimag(T2(x,z))), fabs(cimag(T3(x,z))), fabs(cimag(T4(x,z)))};
     double re[4] = {creal(T1(x,z)), creal(T2(x,z)), creal(T3(x,z)), creal(T4(x,z))};
 
     int count=0, i=0, j=0;
@@ -247,15 +247,15 @@ static void gfield_close(double rho, double z, int n, double *rfield, double *zf
     }  
 }
  
-mwvector causticHaloAccel(const Halo* h, mwvector pos, real r)
+mwvector causticHaloAccel(const Halo* h __attribute__((unused)), mwvector pos, real r __attribute__((unused)))
 {
 
-    mwvector accel;
+    mwvector accel = ZERO_VECTOR;
 
 /* 20070507 bwillett used hypot from math.h */
 
 
-    real rho=0.0, z=0.0, rfield, zfield;
+    real rho=0.0, z __attribute__((unused)) =0.0, rfield, zfield;
     real R, l, tr, tl;
     int n;
 

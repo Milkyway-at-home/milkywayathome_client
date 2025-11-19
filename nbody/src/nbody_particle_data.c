@@ -35,6 +35,7 @@ ParticleCollection* create_particle_collection(size_t initial_capacity) {
 void free_particle_collection(ParticleCollection *collection) {
     if (!collection) return;
     free(collection->particles);
+    collection->particles = NULL;
     free(collection);
 }
 
@@ -172,7 +173,7 @@ ParticleCollection* read_particle_file(const char *filename) {
         int parse_error = 0;
         long temp_long;
         double temp_double;
-        int has_lambda_beta = 0;
+        int has_lambda_beta __attribute__((unused)) = 0;
 
         // Process each field in the CSV line
         char *line = line_buffer;
@@ -253,6 +254,7 @@ ParticleCollection* read_particle_file(const char *filename) {
                         case 6: current_particle.vy = (real)temp_double; break;
                         case 7: current_particle.vz = (real)temp_double; break;
                         case 8: current_particle.mass = (real)temp_double; break;
+		        default: break;
                     }
                 } else if (is_partial_format) {
                     // Partial format: x,y,z,l,b,r,vx,vy,vz,mass,v_los,pmra,pmdec
@@ -270,6 +272,7 @@ ParticleCollection* read_particle_file(const char *filename) {
                         case 12: current_particle.v_los = (real)temp_double; break;
                         case 13: current_particle.pm_ra = (real)temp_double; break;
                         case 14: current_particle.pm_dec = (real)temp_double; break;
+		        default: break;
                     }
                 } else if (is_full_format) {
                     // Full format: x,y,z,l,b,r,vx,vy,vz,mass,v_los,pmra,pmdec,lambda,beta
@@ -289,6 +292,7 @@ ParticleCollection* read_particle_file(const char *filename) {
                         case 14: current_particle.pm_dec = (real)temp_double; break;
                         case 15: current_particle.lambda = (real)temp_double; break;
                         case 16: current_particle.beta = (real)temp_double; break;
+		        default: break;
                     }
                 }
             }

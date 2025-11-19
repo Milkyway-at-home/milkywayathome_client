@@ -48,7 +48,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.93"   -- IGNORE
+nbodyMinVersion       = "1.94"   -- IGNORE
 
 run_null_potential    = false    -- NULL POTENTIAL SWITCH $ button | 0 ^ 1 * 0
 use_tree_code         = true     -- USE TREE CODE (NOT EXACT) $ button | 1 ^ 1 * 0
@@ -113,7 +113,7 @@ light_mass_ratio = 0.1          -- Baryonic Mass / (Baryonic Mass + Dark Matter 
 orbit_parameter_l  = 258        -- Galactic coordinates of dwarf position (deg) $ entry | 258 ^ 0 * 0
 orbit_parameter_b  = 45.8       -- NO COMMENT $ entry | 45.8 ^ 0 * 0
 orbit_parameter_r  = 21.5       -- Distance from Sun to dwarf (kpc) $ entry | 21.5 ^ 0 * 0
-orbit_parameter_vx = -185.5     -- Galactocentric (no Solar motion) velocities of dwarf (km/s) $ entry | -185.5 ^ 0 * 0
+orbit_parameter_vx = -185.5     -- Galactocentric (no Solar motion) velocities of dwarf (kpc/Gyr) $ entry | -185.5 ^ 0 * 0
 orbit_parameter_vy = 54.7       -- NO COMMENT $ entry | 54.7 ^ 0 * 0
 orbit_parameter_vz = 147.4      -- NO COMMENT $ entry | 147.4 ^ 0 * 0
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil. $ l-q-entry | manual_bodies_example.in ^ 0 * 0
@@ -240,6 +240,8 @@ function get_timestep()
     end
 
     if ((evolveTime/t > 150000 or t ~= t) and not timestep_control) then
+        -- We could throw an error here, but instead let it run fast and return a poor likelihood
+        -- This way users won't see errors in their workunit logs
         TooManyTimesteps = 1
         t = evolveTime/4.0
     end
@@ -319,7 +321,9 @@ function makeBodies(ctx, potential)
   local firstModel
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
     if TooManyTimesteps == 1 then
+        -- Setting bodies to 1 ensures worst case likelihood
         totalBodies = 1
+        totalLightBodies = 1
     end
 
     if(run_null_potential == true and manual_bodies == true) then

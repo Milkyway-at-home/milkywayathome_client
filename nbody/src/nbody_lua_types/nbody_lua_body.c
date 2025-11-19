@@ -57,8 +57,7 @@ int pushBody(lua_State* luaSt, const Body* p)
     return pushType(luaSt, BODY_TYPE, sizeof(Body), (void*) p);
 }
 
-static const Body _emptyBody = EMPTY_BODY;
-
+static const Body _emptyBody __attribute__((unused)) = EMPTY_BODY;
 
 static int createBody(lua_State* luaSt)
 {
@@ -68,10 +67,10 @@ static int createBody(lua_State* luaSt)
     static mwbool ignore = FALSE;
     static const MWNamedArg argTable[] =
         {
-            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &b.bodynode.mass },
-            { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x               },
-            { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v               },
-            { "ignore",   LUA_TBOOLEAN,  NULL,          FALSE, &ignore          },
+            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &b.bodynode.mass, 1 },
+            { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x,               1 },
+            { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v,               1 },
+            { "ignore",   LUA_TBOOLEAN,  NULL,          FALSE, &ignore,          1 },
             END_MW_NAMED_ARG
         };
 

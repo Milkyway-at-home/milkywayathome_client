@@ -164,7 +164,7 @@ static int bindDeviceInformation(lua_State* luaSt, NBodyState* st)
 
 #else
 
-static int bindDeviceInformation(lua_State* luaSt, NBodyState* st)
+static int bindDeviceInformation(lua_State* luaSt, NBodyState* st __attribute__((unused)))
 {
     lua_pushnil(luaSt);
     lua_setglobal(luaSt, "deviceInfo");
@@ -386,7 +386,7 @@ void nbEvalPotentialClosure(NBodyState* st, mwvector pos, mwvector* aOut)
   #endif
 
     int top;
-    mwvector a;
+    mwvector a = ZERO_VECTOR;
     static const mwvector badVector = mw_vec(REAL_MAX, REAL_MAX, REAL_MAX);
 
     mw_printf("Printing potEvalStates...\n");

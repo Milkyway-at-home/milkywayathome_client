@@ -13,6 +13,8 @@ dwarfMass = 16
 dwarfRadius = 0.2
 LMCMASS = 449865.888
 LMCSCALE = 15.0
+LMCFUNCTION = 1
+LMCCUTOFF = 16.6
 
 function makePotential()
    return Potential.create{
@@ -27,7 +29,7 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius,1),
+      eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
@@ -36,15 +38,20 @@ function makeContext()
       VelSigma      = 2.5,
       DistSigma     = 2.5,
       PMSigma       = 2.5,
+      MomentumSigma = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
       PMCorrect     = 1.111,
+      MomentumCorrect = 1.111,
       IterMax       = 6,
       LMC           = true,
+      LMCfunction   = LMCFUNCTION,
       LMCmass       = LMCMASS,
       LMCscale      = LMCSCALE,
-      LMCDynaFric   = true
+      LMCscale2     = LMCCUTOFF,
+      LMCDynaFric   = true,
+      coulomb_log   = 15
    }
 end
 
@@ -55,8 +62,10 @@ function makeBodies(ctx, potential)
       velocity    = Vector.create(-170, 94, 108),
       LMCposition = Vector.create(-1.1, -41.1, -27.9),
       LMCvelocity = Vector.create(-57, -226, 221), 
+      LMCfunction = LMCFUNCTION,
       LMCmass     = LMCMASS,
       LMCscale    = LMCSCALE,
+      LMCscale2   = LMCCUTOFF,
       LMCDynaFric = true,
       coulomb_log = 0.470003629,
       ftime       = 4.5,

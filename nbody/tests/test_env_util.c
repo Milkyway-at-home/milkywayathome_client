@@ -60,11 +60,14 @@ char* find_lua_file(const char* filename) {
     for (size_t i = 0; i < num_paths && i < MAX_SEARCH_PATHS; i++) {
         if (strlen(relative_paths[i]) == 0) {
             // Current directory
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
             snprintf(result, MAX_PATH_LENGTH, "%s/%s", cwd, filename);
         } else {
             snprintf(result, MAX_PATH_LENGTH, "%s%s/%s", 
                     (relative_paths[i][0] == '/') ? cwd : "", 
                     relative_paths[i], filename);
+#pragma GCC diagnostic pop
         }
         
         printf("Trying path: %s\n", result);
@@ -115,11 +118,16 @@ char* find_milkyway_nbody() {
     
     // Try each relative path
     for (size_t i = 0; i < num_paths && i < MAX_SEARCH_PATHS; i++) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
         snprintf(result, MAX_PATH_LENGTH, "%s/%s/milkyway_nbody", cwd, relative_paths[i]);
-        
+#pragma GCC diagnostic pop
         // For the current directory option, don't add an extra slash
         if (strcmp(relative_paths[i], ".") == 0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
             snprintf(result, MAX_PATH_LENGTH, "%s/milkyway_nbody", cwd);
+#pragma GCC diagnostic pop
         }
         
         printf("Trying executable path: %s\n", result);
@@ -195,6 +203,8 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
     }
     
     // Build the command with proper escaping
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
     snprintf(command, sizeof(command), 
              "%s "
              "-f \"%s\" "
@@ -205,6 +215,7 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
              bin_path, lua_file, cwd, cwd,
              dwarf_params[0], dwarf_params[1], dwarf_params[2], 
              dwarf_params[3], dwarf_params[4], dwarf_params[5]);
+#pragma GCC diagnostic pop
     
     printf("Running command: %s\n", command);
     fflush(stdout);
@@ -406,8 +417,10 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
     printf("nbody_baryon: %f\n", *nbody_baryon);
     printf("comp1 mass: %f\n", (*comp1)->mass);
     printf("comp1 scale length: %f\n", (*comp1)->scaleLength);
+    printf("comp1 type: %d\n", (*comp1)->type);
     printf("comp2 mass: %f\n", (*comp2)->mass);
     printf("comp2 scale length: %f\n", (*comp2)->scaleLength);
+    printf("comp2 type: %d\n", (*comp2)->type);
     printf("timestep: %f\n", *timestep);
     fflush(stdout);
 
@@ -424,6 +437,7 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
     if (lua_state_out) {
         *lua_state_out = L;
     } else {
+        // TODO: Worry that this might deallocate some of the other values that we are returning.
         lua_close(L);
     }
     

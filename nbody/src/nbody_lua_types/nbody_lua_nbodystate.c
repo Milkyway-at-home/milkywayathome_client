@@ -84,8 +84,8 @@ static int stepNBodyState(lua_State* luaSt)
 
 static int luaRunSystem(lua_State* luaSt)
 {
-    NBodyStatus rc;
-    NBodyState* st;
+    NBodyStatus rc __attribute__((unused));
+    NBodyState* st __attribute__((unused));
     NBodyCtx ctx;
     
     if (lua_gettop(luaSt) != 3)
@@ -107,7 +107,7 @@ static int luaRunSystem(lua_State* luaSt)
          */
 //     rc = nbRunSystem(&ctx, st);
 
-    lua_pushstring(luaSt, showNBodyStatus(rc));
+//    lua_pushstring(luaSt, showNBodyStatus(rc));
 
     return 1;
 }
@@ -153,7 +153,6 @@ static int createRandomLMCNBodyState(lua_State* luaSt)       /** Only used to cr
     int nbody;
     size_t nShift;
     dsfmt_t* dsfmtState;
-    real r;
     NBodyState st = EMPTY_NBODYSTATE;
 
     ctx = *checkNBodyCtx(luaSt, 1);
@@ -287,11 +286,11 @@ static void readCLRequestFromTable(lua_State* luaSt, CLRequest* clr, int table)
 
     static const MWNamedArg argTable[] =
         {
-            { "preferredPlatformVendor", LUA_TSTRING,  NULL, FALSE, &prefVendor      },
-            { "platform",                LUA_TNUMBER,  NULL, FALSE, &platformf       },
-            { "device",                  LUA_TNUMBER,  NULL, FALSE, &devicef         },
-            { "nonResponsive",           LUA_TBOOLEAN, NULL, FALSE, &nonResponsive   },
-            { "enableProfiling",         LUA_TBOOLEAN, NULL, FALSE, &enableProfiling },
+            { "preferredPlatformVendor", LUA_TSTRING,  NULL, FALSE, &prefVendor,      1 },
+            { "platform",                LUA_TNUMBER,  NULL, FALSE, &platformf,       1 },
+            { "device",                  LUA_TNUMBER,  NULL, FALSE, &devicef,         1 },
+            { "nonResponsive",           LUA_TBOOLEAN, NULL, FALSE, &nonResponsive,   1 },
+            { "enableProfiling",         LUA_TBOOLEAN, NULL, FALSE, &enableProfiling, 1 },
             END_MW_NAMED_ARG
         };
 

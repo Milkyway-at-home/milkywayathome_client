@@ -61,7 +61,7 @@ int nbGetLikelihoodInfo(const NBodyFlags* nbf, HistogramParams* hp, NBodyLikelih
     return FALSE;
 }
 
-real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp, mwbool use_betadisp, mwbool use_betacomp, mwbool use_vlos, mwbool use_dist, mwbool use_pm)
+real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool use_veldisp, mwbool use_betadisp, mwbool use_betacomp, mwbool use_vlos, mwbool use_dist, mwbool use_pm, mwbool use_momentum)
 {
     MainStruct* dat;
     MainStruct* match;
@@ -74,6 +74,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
     real distance_component = NAN;
     real dec_pm_component = NAN;
     real ra_pm_component = NAN;
+    real momentum_component = NAN;
     real likelihood = NAN;
     dat = nbReadHistogram(datHist);
     match = nbReadHistogram(matchHist);
@@ -142,6 +143,11 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
             ra_pm_component = nbLikelihood(dat->histograms[7], match->histograms[7], 1);
             likelihood += ra_pm_component;
         }
+        if(use_momentum)
+        {
+            momentum_component = nbMomentumLikelihood(dat->histograms[0], match->histograms[0]);
+            likelihood += momentum_component;
+        }
         
     }
 
@@ -153,6 +159,7 @@ real nbMatchHistogramFiles(const char* datHist, const char* matchHist, mwbool us
 
 /* Calculate the likelihood from the final state of the simulation */
 real * nbSystemLikelihood(const NBodyState* st,
+                     const NBodyCtx* ctx,
                      const MainStruct* data,
                      const MainStruct* histogram,
                      NBodyLikelihoodMethod method)
@@ -167,11 +174,12 @@ real * nbSystemLikelihood(const NBodyState* st,
     real distance_component = NAN;
     real dec_pm_component = NAN;
     real ra_pm_component = NAN;
+    real momentum_component = NAN;
     real likelihood = NAN;
 
-    static real likelihoodArray[10];
+    static real likelihoodArray[11];
 
-    static real NANArray[10]; /*This array contains NANs for each element so that it may be properly passed from this function*/
+    static real NANArray[11]; /*This array contains NANs for each element so that it may be properly passed from this function*/
     NANArray[0] = NAN;
     NANArray[1] = NAN;
     NANArray[2] = NAN;
@@ -182,6 +190,7 @@ real * nbSystemLikelihood(const NBodyState* st,
     NANArray[7] = NAN;
     NANArray[8] = NAN;
     NANArray[9] = NAN;
+    NANArray[10] = NAN;
     
     if (data->histograms[0]->lambdaBins != histogram->histograms[0]->lambdaBins)
     {
@@ -209,9 +218,9 @@ real * nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody)
+        if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody) //TODO: Check against only light bodies, then raise threshold
         {
-            static real worstEMD_Array[10];
+            static real worstEMD_Array[11];
             real worstEMD;
 
             mw_printf("Number of particles in bins is very small compared to total. "
@@ -231,6 +240,7 @@ real * nbSystemLikelihood(const NBodyState* st,
             worstEMD_Array[7] = 0.0;
             worstEMD_Array[8] = 0.0;
             worstEMD_Array[9] = 0.0;
+            worstEMD_Array[10] = 0.0;
             //return 2.0 * worstEMD;
             return worstEMD_Array; //Changed.  See above comment.
         }
@@ -308,6 +318,12 @@ real * nbSystemLikelihood(const NBodyState* st,
         likelihood += ra_pm_component;
 
     }
+    if(st->useMomentum)
+    {
+        nbCalcMomentum(st, ctx, data->histograms[0], histogram->histograms[0]);
+        momentum_component = nbMomentumLikelihood(data->histograms[0], histogram->histograms[0]);
+        likelihood += momentum_component;
+    }
 
     likelihoodArray[0]=likelihood;
     likelihoodArray[1]=geometry_component;
@@ -319,6 +335,7 @@ real * nbSystemLikelihood(const NBodyState* st,
     likelihoodArray[7]=distance_component;
     likelihoodArray[8]=dec_pm_component;
     likelihoodArray[9]=ra_pm_component;
+    likelihoodArray[10]=momentum_component;
 
     return likelihoodArray; 
 }
