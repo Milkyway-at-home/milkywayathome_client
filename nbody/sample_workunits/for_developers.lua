@@ -385,6 +385,7 @@ function makeContext()
       LMCscale2     = LMC_cutoff,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
+      bfe_input_pointer = 0,
       calibrationRuns = numCalibrationRuns
    }
 end

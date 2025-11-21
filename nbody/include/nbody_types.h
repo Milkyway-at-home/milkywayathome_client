@@ -527,7 +527,7 @@ typedef struct MW_ALIGN_TYPE
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
     
-    char* yaml_bfe_filename; /* filename for Basis Function Expansions*/
+    void* bfe_input_pointer; /* voidstar pointer for Basis Function Expansions*/
 
     Potential pot;
 
@@ -547,6 +547,7 @@ typedef struct MW_ALIGN_TYPE
                          0, 0, 0, FALSE, 0,                                                                   \
                          0,                                                                                   \
                          0, 0, 0,                                                                             \
+                         0,                                                                                   \
                          EMPTY_POTENTIAL}
 
 /* Negative codes can be nonfatal but useful return statuses.
