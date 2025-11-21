@@ -301,7 +301,7 @@ static int test_queue_threaded_dequeue(void *_udata)
     /* Sanity checking that expect_sn is consistent if no errors */
     if(!nerrors)
         for(i=0; i<nenqueuers; i++)
-            assert(expect_sn[i] == THREADED_NITER / iter_reduction[curr_test]);
+            assert(expect_sn[i] == (int)(THREADED_NITER / iter_reduction[curr_test]));
 
     /* Free expect_sn */
     free(expect_sn);
@@ -343,13 +343,16 @@ static int test_queue_threaded(threaded_mode_t mode)
 
     switch(mode) {
         case THREADED_MODE_DEFAULT:
-            TESTING("multithreaded queue", nthreads);
+            TESTING("multithreaded queue (default)", nthreads);
             break;
         case THREADED_MODE_EMPTY:
             TESTING("multithreaded queue (empty queue)", nthreads);
             break;
         case THREADED_MODE_FULL:
             TESTING("multithreaded queue (full queue)", nthreads);
+            break;
+        case THREADED_MODE_NMODES:
+            TESTING("multithreaded queue (nmodes)", nthreads);
             break;
         default:
             FAIL_OP_ERROR(printf("    Unknown mode\n"));
@@ -371,14 +374,14 @@ static int test_queue_threaded(threaded_mode_t mode)
     OPA_Queue_init(&qhead);
 
     /* Initialize thread data structs */
-    for(i=0; i<nthreads; i++) {
+    for(i=0; i<(int)nthreads; i++) {
         thread_data[i].qhead = &qhead;
         thread_data[i].threadno = i;
         thread_data[i].mode = mode;
     } /* end for */
 
     /* Create the threads. */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<(int)nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, test_queue_threaded_enqueue,
                 &thread_data[i])) TEST_ERROR;
     nerrors = test_queue_threaded_dequeue(&thread_data[i]);
@@ -387,7 +390,7 @@ static int test_queue_threaded(threaded_mode_t mode)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++) {
+    for (i=0; i+1<(int)nthreads; i++) {
         if(pthread_join(threads[i], &ret)) TEST_ERROR;
         if(ret)
             nerrors++;
@@ -437,7 +440,7 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-int main(int argc, char **argv)
+int main(int, char **)
 {
     threaded_mode_t mode;       /* Mode for threaded test */
     unsigned nerrors = 0;

@@ -1,3 +1,24 @@
+-nbody 1.94
+	- Fixed bugs in for_developers.lua so that preset parameters are set if not specified when using manual bodies
+	- Changing set_vars in nbody_mixeddwarf.c so that the NFW portion of the cored profile is the same as the NFW profile
+	- Changing KL divergence in mixeddwarf_test.c for correct distribution comparison
+	- Changing parameter set for mixeddwarf_test.c to reduce the number of particles needed for stable dwarf
+	- Updated LMC dynamical friction
+	- Added support for different LMC models
+	- Added SphericalNFWerkalHalo halo type
+	- Fixed mass calculation in nbody_isotropic.c
+	- Added momentum information to HistogramParams, updated nbody_histogram.c to read in and print momentum info
+	- Some information passed through HistogramParams (momentum, EMD range) can now be passed through lua
+	- New Likelihood compoenent for momentum
+	- Fixed a bug where checkpoints would not store best likelihood info
+	- Updated nbody flags for easier control of which likelihood components to use in compare only
+	- Reduced the chance that randomPotential will create a negative density, leading to crash (this is why checkpoint test sometimes fail)
+	- Softening length calculation updated to be based off dwarf model
+	- Added tests for new features, updated model tests to work for new versions and test new softening length, reduced number of model tests
+	- Removed unused library: libelf
+	- Fixed an issue that would cause segfaults on some runs with a specified baryon number
+	- Fixed or suppressed various compiler warnings
+
 -nbody 1.93
 	- Temporary fix for compiling windows binary with OpenCL(works for milkyway-old but might not work for all linux manchines)
 

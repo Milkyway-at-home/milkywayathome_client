@@ -40,7 +40,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 88257   -- -- NUMBER OF TOTAL BODIES                                                   -- --
+totalBodies           = 40000   -- -- NUMBER OF TOTAL BODIES                                                   -- --
 totalLightBodies      = 10000   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
 nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
@@ -52,7 +52,9 @@ print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH                
 print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
 
 LMC_body              = false    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
-LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
+LMC_function          = 1
+LMC_scaleRadius       = 15      -- --  kpc
+LMC_cutoff            = 16.6
 preset_LMC_Mass       = 449865.888  -- -- SMU -- -- only if <12 params are used                                -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
 CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
@@ -256,19 +258,23 @@ function makeContext()
       VelSigma      = SigmaCutoff,
       DistSigma     = SigmaCutoff,
       PMSigma       = SigmaCutoff,
+      MomentumSigma = SigmaCutoff,
       IterMax       = SigmaIter,
       BetaCorrect   = Correction,
       VelCorrect    = Correction,
       DistCorrect   = Correction,
       PMCorrect     = Correction,
+      MomentumCorrect = Correction,
       SimpleOutput  = generateSimpleOutput,
       MultiOutput   = useMultiOutputs,
       OutputFreq    = freqOfOutputs,
       InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
+      LMCfunction   = LMC_function,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
+      LMCscale2     = LMC_cutoff,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
       calibrationRuns = numCalibrationRuns
@@ -297,9 +303,11 @@ function makeBodies(ctx, potential)
 	            position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
 	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	            LMCvelocity = Vector.create(-57, -226, 221), 
-                    LMCmass     = LMC_Mass,
+	            LMCvelocity = Vector.create(-57, -226, 221),
+		            LMCfunction = LMC_fucntion,
+                    LMCmass     = LMC_mass,
                     LMCscale    = LMC_scaleRadius,
+		            LMCscale2   = LMC_cutoff,
                     LMCDynaFric = LMC_DynamicalFriction,
                     coulomb_log = CoulombLogarithm,
                     ftime       = evolveTime,
@@ -335,7 +343,7 @@ function makeBodies(ctx, potential)
     if(ModelComponents == 2) then 
         -- Create components
         local comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored
-        local comp2 = Dwarf.cored{mass = mass_d, scaleLength = rscale_d, r1 = 0.7, rc = 0.6} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+        local comp2 = Dwarf.cored{mass = mass_d, scaleLength = rscale_d, r1 = 0.2, rc = 0.1} -- Dwarf Options: plummer, nfw, general_hernquist, cored
         
         firstModel = predefinedModels.mixeddwarf{
             nbody         = totalBodies,

@@ -39,7 +39,7 @@ their copyright to their programs which execute similar algorithms.
 
 
 /*      MODEL SPECIFIC FUNCTIONS       */
-static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
+static inline real potential( real r, real * args, dsfmt_t* dsfmtState __attribute__((unused)))
 {
     /*Be Careful! this function returns the negative of the potential! this is the value of interest, psi*/
     //-------------------------------
@@ -55,7 +55,7 @@ static inline real potential( real r, real * args, dsfmt_t* dsfmtState)
     return (-potential_result);
 }
 
-static inline real density( real r, real * args, dsfmt_t* dsfmtState)
+static inline real density( real r, real * args, dsfmt_t* dsfmtState __attribute__((unused)))
 {
     /*this is the density distribution function. Returns the density at a given radius.*/
     //-------------------------------
@@ -133,7 +133,7 @@ static real gauss_quad(real (*func)(real, real *, dsfmt_t*), real lower, real up
     real intv = 0.0;//initial value of integral
     real coef1, coef2;//parameters for gaussian quad
     real c1, c2, c3;
-    real x1, x2, x3;
+    real x1, x2 __attribute__((unused)), x3;
     real x1n, x2n, x3n;
     real a, b;
     real benchmark;
@@ -433,8 +433,11 @@ real fun(real ri, real * args, dsfmt_t* dsfmtState)
     
     
     /*just in case*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(first_deriv_psi == 0.0)
     {
+#pragma GCC diagnostic pop
         first_deriv_psi = 1.0e-6;//this should be small enough
     }
     
@@ -443,8 +446,11 @@ real fun(real ri, real * args, dsfmt_t* dsfmtState)
     
     
     /*we don't want to have a 0 in the demon*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(diff != 0.0)
     {
+#pragma GCC diagnostic pop
         denominator = minushalf( mw_fabs(energy - potential(ri, args, dsfmtState) ) );
     }
     else
@@ -475,7 +481,13 @@ static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * args, real ener
     {
         upperlimit_r = root_finder(potential, args, energy, 0.0, search_range, dsfmtState); 
 
-        if(isinf(upperlimit_r) == FALSE && upperlimit_r != 0.0 && isnan(upperlimit_r) == FALSE){break;}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        if(isinf(upperlimit_r) == FALSE && upperlimit_r != 0.0 && isnan(upperlimit_r) == FALSE)
+        {
+#pragma GCC diagnostic pop
+            break;
+        }
         
         counter++;
         
@@ -490,7 +502,7 @@ static inline real find_upperlimit_r(dsfmt_t* dsfmtState, real * args, real ener
     return mw_fabs(upperlimit_r);
 }
  
-static inline real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
+static real dist_fun(real v, real * args, dsfmt_t* dsfmtState)
 {
     /*This returns the value of the distribution function*/
     
@@ -634,15 +646,13 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
         }
     }
     
-
-//     v *= 0.977813107;//changing from kpc/gy to km/s
-    return v; //km/s
+    return v; //kpc/Gyr
 }
 
 static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)
 {
     /* assigns angles. Allows for non-circular orbits.*/
-    mwvector vec;
+    mwvector vec = ZERO_VECTOR;
     real phi, theta;
     
     /*defining some angles*/
@@ -707,7 +717,7 @@ static int cm_correction(real * x, real * y, real * z, real * vx, real * vy, rea
 }
 
 /*      DWARF GENERATION        */
-static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon, real mass1, real mass2, mwbool ignore, mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
+static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody, unsigned int nbody_baryon, real mass1, real mass2, mwbool ignore __attribute__((unused)), mwvector rShift, mwvector vShift, real radiusScale1, real radiusScale2)
 {
     /* generatePlummer: generate Plummer model initial conditions for test
     * runs, scaled to units such that M = -4E = G = 1 (Henon, Heggie,
@@ -727,7 +737,7 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
         real * vz = mwCalloc(nbody, sizeof(real));
         real * masses = mwCalloc(nbody, sizeof(real));
         
-        mwvector vec;
+        mwvector vec = ZERO_VECTOR;
         real dwarf_mass = mass1 + mass2;
         
         
@@ -741,8 +751,8 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
     //---------------------------------------------------------------------------------------------------        
         /*for normal*/
         unsigned int nbody_dark = nbody - nbody_baryon;
-        real mass_light_particle = mass_l / (real)(0.5 * (real) nbody_baryon);//half the particles are light matter
-        real mass_dark_particle = mass_d / (real)(0.5 * (real) nbody_dark);
+        real mass_light_particle = mass_l / (real) nbody_baryon;
+        real mass_dark_particle = mass_d / (real) nbody_dark;
     //----------------------------------------------------------------------------------------------------
 
         /*dark matter type is TRUE or 1. Light matter type is False, or 0*/
@@ -785,7 +795,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
                     masses[i] = mass_dark_particle;
                 }
                 /*to ensure that r is finite and nonzero*/
-                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE){break;}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(isinf(r) == FALSE && r != 0.0 && isnan(r) == FALSE)
+                {
+#pragma GCC diagnostic pop
+                    break;
+                }
                 
                 if(counter > 1000)
                 {
@@ -805,7 +821,13 @@ static int nbGenerateIsotropicCore(lua_State* luaSt, dsfmt_t* prng, unsigned int
             do
             {
                 v = vel_mag(prng, r, args);
-                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE){break;}
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(isinf(v) == FALSE && v != 0.0 && isnan(v) == FALSE)
+                {
+#pragma GCC diagnostic pop
+                    break;
+                }
                 
                 if(counter > 1000)
                 {
@@ -887,16 +909,16 @@ int nbGenerateIsotropic(lua_State* luaSt)
 
         static const MWNamedArg argTable[] =
         {
-            { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf            },
-            { "nbody_baryon",         LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf     },
-            { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1             },
-            { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2             },
-            { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1      },
-            { "scaleRadius2",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2      },
-            { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position          },
-            { "velocity",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &velocity          },
-            { "ignore",               LUA_TBOOLEAN,    NULL,                    FALSE,   &ignore            },
-            { "prng",                 LUA_TUSERDATA,   DSFMT_TYPE,              TRUE,    &prng              },
+            { "nbody",                LUA_TNUMBER,     NULL,                    TRUE,    &nbodyf,           1 },
+            { "nbody_baryon",         LUA_TNUMBER,     NULL,                    FALSE,   &nbody_baryonf,    1 },
+            { "mass1",                LUA_TNUMBER,     NULL,                    TRUE,    &mass1,            1 },
+            { "mass2",                LUA_TNUMBER,     NULL,                    TRUE,    &mass2,            1 },
+            { "scaleRadius1",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale1,     1 },
+            { "scaleRadius2",         LUA_TNUMBER,     NULL,                    TRUE,    &radiusScale2,     1 },
+            { "position",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &position,         1 },
+            { "velocity",             LUA_TUSERDATA,   MWVECTOR_TYPE,           TRUE,    &velocity,         1 },
+            { "ignore",               LUA_TBOOLEAN,    NULL,                    FALSE,   &ignore,           1 },
+            { "prng",                 LUA_TUSERDATA,   DSFMT_TYPE,              TRUE,    &prng,             1 },
             END_MW_NAMED_ARG
             
         };

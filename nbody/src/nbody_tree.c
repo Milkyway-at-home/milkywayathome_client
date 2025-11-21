@@ -72,7 +72,7 @@ static void hackQuad(NBodyCell* p)
     unsigned int ndesc, i;
     NBodyNode* desc[NSUB];
     NBodyNode* q;
-    mwvector dr;
+    mwvector dr = ZERO_VECTOR;
     real drsq;
     NBodyQuadMatrix quad = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
@@ -466,7 +466,7 @@ static int luaFindRCrit(lua_State* luaSt)
     const NBodyCtx* ctx;
     NBodyCell p;  /* Test cell, just need a set position */
     real rSize, pSize;
-    mwvector cmPos;
+    mwvector cmPos = ZERO_VECTOR;
 
     ctx = checkNBodyCtx(luaSt, 1);
     Pos(&p) = *checkVector(luaSt, 2);

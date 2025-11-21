@@ -496,7 +496,7 @@ static void *threaded_loadstore_ptr_helper(void *_udata)
 {
     loadstore_ptr_t     *udata = (loadstore_ptr_t *)_udata;
     unsigned long       loaded_val;
-    int                 niter = LOADSTORE_PTR_NITER;
+    unsigned            niter = LOADSTORE_PTR_NITER;
     unsigned            i;
 
     /* Main loop */
@@ -782,7 +782,7 @@ static int test_threaded_add(void)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != ADD_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)ADD_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), ADD_EXPECTED));
 
@@ -953,7 +953,7 @@ static int test_threaded_incr_decr(void)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != INCR_DECR_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)INCR_DECR_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), INCR_DECR_EXPECTED));
 
@@ -1376,7 +1376,7 @@ static int test_threaded_faa(void)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != ADD_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)ADD_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), ADD_EXPECTED));
 
@@ -1533,7 +1533,7 @@ static int test_threaded_faa_ret(void)
                 n1));
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != FAA_RET_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)FAA_RET_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), FAA_RET_EXPECTED));
 
@@ -1684,7 +1684,7 @@ static int test_threaded_fai_fad(void)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != INCR_DECR_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)INCR_DECR_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), INCR_DECR_EXPECTED));
 
@@ -1839,7 +1839,7 @@ static int test_threaded_fai_ret(void)
                 n1));
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != FAI_RET_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)FAI_RET_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), FAI_RET_EXPECTED));
 
@@ -1997,7 +1997,7 @@ static int test_threaded_fad_ret(void)
                 n1));
 
     /* Verify that the shared value contains the expected result (0) */
-    if(OPA_load_int(&shared_val) != FAA_RET_EXPECTED)
+    if(OPA_load_int(&shared_val) != (int)FAA_RET_EXPECTED)
         FAIL_OP_ERROR(printf("    Unexpected result: %d expected: %d\n",
                 OPA_load_int(&shared_val), FAA_RET_EXPECTED));
 
@@ -2182,7 +2182,7 @@ static int test_threaded_cas_int(void)
     cas_int_t           *thread_data = NULL; /* User data structs for threads */
     OPA_int_t           shared_val;     /* Integer shared between threads */
     unsigned            nthreads = num_threads[curr_test];
-    unsigned            i;
+    int                 i;
 
     TESTING("integer compare-and-swap", nthreads);
 
@@ -2196,7 +2196,7 @@ static int test_threaded_cas_int(void)
 
     /* Initialize thread data structs */
     OPA_store_int(&shared_val, 0);
-    for(i=0; i<nthreads; i++) {
+    for(i=0; i<(int)nthreads; i++) {
         thread_data[i].shared_val = &shared_val;
         thread_data[i].threadno = i;
     } /* end for */
@@ -2207,7 +2207,7 @@ static int test_threaded_cas_int(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<(int)nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, threaded_cas_int_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)threaded_cas_int_helper(&thread_data[i]);
@@ -2216,7 +2216,7 @@ static int test_threaded_cas_int(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<(int)nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Verify that cas succeeded at least once */
@@ -2227,7 +2227,7 @@ static int test_threaded_cas_int(void)
      * thread number, and also that the shared value's final value is consistent
      * with the numbers of successes */
     if(nthreads > 1)
-        for(i=1; i<nthreads; i++) {
+        for(i=1; i<(int)nthreads; i++) {
             if(thread_data[i].nsuccess > thread_data[i-1].nsuccess)
                 FAIL_OP_ERROR(printf("    Thread %d succeeded more times than thread %d\n",
                         i, i-1));
@@ -2366,7 +2366,7 @@ static int test_threaded_cas_ptr(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, threaded_cas_ptr_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)threaded_cas_ptr_helper(&thread_data[i]);
@@ -2375,7 +2375,7 @@ static int test_threaded_cas_ptr(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Verify that cas succeeded at least once */
@@ -2497,7 +2497,7 @@ static int test_grouped_cas_int(void)
     int                 threads_per_group; /* Threads per group */
     int                 *group_success = NULL; /* Number of successes for each group */
     unsigned            nthreads = num_threads[curr_test];
-    unsigned            i;
+    int                 i;
 
     TESTING("grouped integer compare-and-swap", nthreads);
 
@@ -2519,7 +2519,7 @@ static int test_grouped_cas_int(void)
 
     /* Initialize thread data structs */
     OPA_store_int(&shared_val, 0);
-    for(i=0; i<nthreads; i++) {
+    for(i=0; i<(int)nthreads; i++) {
         thread_data[i].shared_val = &shared_val;
         thread_data[i].groupno = i / threads_per_group;
         thread_data[i].ngroups = ngroups;
@@ -2531,7 +2531,7 @@ static int test_grouped_cas_int(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<(int)nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, grouped_cas_int_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)grouped_cas_int_helper(&thread_data[i]);
@@ -2540,13 +2540,13 @@ static int test_grouped_cas_int(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<(int)nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Calculate the total number of successes for each group */
     if(NULL == (group_success = (int *) calloc(ngroups, sizeof(int))))
         TEST_ERROR;
-    for(i=0; i<nthreads; i++)
+    for(i=0; i<(int)nthreads; i++)
         group_success[thread_data[i].groupno] += thread_data[i].nsuccess;
 
     /* Verify that cas succeeded at least once */
@@ -2674,7 +2674,7 @@ static int test_grouped_cas_ptr(void)
     int                 threads_per_group; /* Threads per group */
     int                 *group_success = NULL; /* Number of successes for each group */
     unsigned            nthreads = num_threads[curr_test];
-    unsigned            i;
+    int                 i;
 
     TESTING("grouped pointer compare-and-swap", nthreads);
 
@@ -2696,12 +2696,12 @@ static int test_grouped_cas_ptr(void)
 
     /* Initialize thread data structs */
     OPA_store_ptr(&shared_val, (void *) 0);
-    for(i=0; i<nthreads; i++) {
+    for(i=0; i<(int)nthreads; i++) {
         thread_data[i].shared_val = &shared_val;
         thread_data[i].groupno = (int *) 0 + (i / threads_per_group);
     } /* end for */
     thread_data[nthreads-1].master_thread = 1;
-    for(i=0; i<nthreads; i++)
+    for(i=0; i<(int)nthreads; i++)
         thread_data[i].max_groupno = thread_data[nthreads-1].groupno;
 
     /* Set threads to be joinable */
@@ -2709,7 +2709,7 @@ static int test_grouped_cas_ptr(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<(int)nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, grouped_cas_ptr_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)grouped_cas_ptr_helper(&thread_data[i]);
@@ -2718,13 +2718,13 @@ static int test_grouped_cas_ptr(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<(int)nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Calculate the total number of successes for each group */
     if(NULL == (group_success = (int *) calloc(ngroups, sizeof(int))))
         TEST_ERROR;
-    for(i=0; i<nthreads; i++)
+    for(i=0; i<(int)nthreads; i++)
         group_success[(int) (thread_data[i].groupno - (int *) 0)] +=
                 thread_data[i].nsuccess;
 
@@ -2909,7 +2909,7 @@ static int test_threaded_cas_int_fairness(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, threaded_cas_int_fairness_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)threaded_cas_int_fairness_helper(&thread_data[i]);
@@ -2918,7 +2918,7 @@ static int test_threaded_cas_int_fairness(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Check if any errors were reported by the threads */
@@ -3095,7 +3095,7 @@ static int test_threaded_cas_ptr_fairness(void)
     OPA_store_int(&successful_threads, 0);
     for(i=0; i<nthreads; i++) {
         thread_data[i].shared_val = &shared_val;
-        thread_data[i].threadno = (void *) 0 + i + 1;
+        thread_data[i].threadno = (int *) 0 + i + 1;
         thread_data[i].nthreads = (int) nthreads;
         thread_data[i].successful_threads = &successful_threads;
     } /* end for */
@@ -3106,7 +3106,7 @@ static int test_threaded_cas_ptr_fairness(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, threaded_cas_ptr_fairness_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)threaded_cas_ptr_fairness_helper(&thread_data[i]);
@@ -3115,7 +3115,7 @@ static int test_threaded_cas_ptr_fairness(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Check if any errors were reported by the threads */
@@ -3357,7 +3357,7 @@ static int test_threaded_swap_int(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, threaded_swap_int_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)threaded_swap_int_helper(&thread_data[i]);
@@ -3366,7 +3366,7 @@ static int test_threaded_swap_int(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Allocate the array of local values found.  These number 0 to nthreads
@@ -3379,7 +3379,7 @@ static int test_threaded_swap_int(void)
     for(i=0; i<nthreads; i++) {
         /* Verify that the value is in range */
         if((thread_data[i].local_val < 0)
-                || (thread_data[i].local_val > nthreads))
+                || (thread_data[i].local_val > (int)nthreads))
             FAIL_OP_ERROR(printf("    Local value for thread %u is out of range: %d\n",
                     i, thread_data[i].local_val));
 
@@ -3387,7 +3387,7 @@ static int test_threaded_swap_int(void)
         vals[thread_data[i].local_val]++;
     } /* end for */
     if((OPA_load_int(&shared_val) < 0)
-            || (OPA_load_int(&shared_val) > nthreads))
+            || (OPA_load_int(&shared_val) > (int)nthreads))
         FAIL_OP_ERROR(printf("    Shared value is out of range: %d\n",
                 OPA_load_int(&shared_val)));
     vals[OPA_load_int(&shared_val)]++;
@@ -3514,7 +3514,7 @@ static int test_threaded_swap_ptr(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++)
+    for(i=0; i+1<nthreads; i++)
         if(pthread_create(&threads[i], &ptattr, threaded_swap_ptr_helper,
                 &thread_data[i])) TEST_ERROR;
     (void)threaded_swap_ptr_helper(&thread_data[i]);
@@ -3523,7 +3523,7 @@ static int test_threaded_swap_ptr(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Allocate the array of local values found.  These number 0 to nthreads
@@ -4408,7 +4408,7 @@ static int test_threaded_llsc_int_stack(void)
     /* Initialize thread data structs */
     OPA_store_int(&head, -1);
     OPA_store_int(&failed, 0);
-    for(i=0; i<nthreads; i++) {
+    for(i=0; i<(int)nthreads; i++) {
         thread_data[i].head = &head;
         thread_data[i].objs = objs;
         thread_data[i].obj = (i / threads_per_group) - 1;
@@ -4422,7 +4422,7 @@ static int test_threaded_llsc_int_stack(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++) {
+    for(i=0; i+1<(int)nthreads; i++) {
         if(i < threads_per_group) {
             if(pthread_create(&threads[i], &ptattr, threaded_llsc_int_stack_pop,
                     &thread_data[i])) TEST_ERROR;
@@ -4436,11 +4436,11 @@ static int test_threaded_llsc_int_stack(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<(int)nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Check for any errors returned from any threads */
-    for(i=0; i<nthreads; i++)
+    for(i=0; i<(int)nthreads; i++)
         nerrors += thread_data[i].nerrors;
     if(nerrors)
         FAIL_OP_ERROR(printf("    %d error%s encountered in thread routines\n", nerrors,
@@ -4478,7 +4478,7 @@ static int test_threaded_llsc_int_stack(void)
      * of pushes */
     for(i=0; i<threads_per_group; i++)
         npops += thread_data[i].nsuccess;
-    for(i=threads_per_group; i<nthreads; i++)
+    for(i=threads_per_group; i<(int)nthreads; i++)
         npushes += thread_data[i].nsuccess;
     if(npops != npushes - non_stack)
         FAIL_OP_ERROR(printf("    Unexpected number of pops: %d Expected: %d\n",
@@ -4745,7 +4745,7 @@ static int test_threaded_llsc_ptr_stack(void)
     /* Initialize thread data structs */
     OPA_store_ptr(&head, NULL);
     OPA_store_int(&failed, 0);
-    for(i=0; i<nthreads; i++) {
+    for(i=0; i<(int)nthreads; i++) {
         thread_data[i].head = &head;
         if(i >= threads_per_group)
             thread_data[i].obj = objs[(i / threads_per_group) - 1];
@@ -4759,7 +4759,7 @@ static int test_threaded_llsc_ptr_stack(void)
     pthread_attr_setdetachstate(&ptattr, PTHREAD_CREATE_JOINABLE);
 
     /* Create the threads */
-    for(i=0; i<(nthreads - 1); i++) {
+    for(i=0; i+1<(int)nthreads; i++) {
         if(i < threads_per_group) {
             if(pthread_create(&threads[i], &ptattr, threaded_llsc_ptr_stack_pop,
                     &thread_data[i])) TEST_ERROR;
@@ -4773,11 +4773,11 @@ static int test_threaded_llsc_ptr_stack(void)
     if(pthread_attr_destroy(&ptattr)) TEST_ERROR;
 
     /* Join the threads */
-    for (i=0; i<(nthreads - 1); i++)
+    for (i=0; i+1<(int)nthreads; i++)
         if(pthread_join(threads[i], NULL)) TEST_ERROR;
 
     /* Check for any errors returned from any threads */
-    for(i=0; i<nthreads; i++)
+    for(i=0; i<(int)nthreads; i++)
         nerrors += thread_data[i].nerrors;
     if(nerrors)
         FAIL_OP_ERROR(printf("    %d error%s encountered in thread routines\n", nerrors,
@@ -4811,7 +4811,7 @@ static int test_threaded_llsc_ptr_stack(void)
      * of pushes */
     for(i=0; i<threads_per_group; i++)
         npops += thread_data[i].nsuccess;
-    for(i=threads_per_group; i<nthreads; i++)
+    for(i=threads_per_group; i<(int)nthreads; i++)
         npushes += thread_data[i].nsuccess;
     if(npops != npushes - non_stack)
         FAIL_OP_ERROR(printf("    Unexpected number of pops: %d Expected: %d\n",
@@ -4879,7 +4879,7 @@ error:
  *
  *-------------------------------------------------------------------------
  */
-int main(int argc, char **argv)
+int main(int, char **)
 {
     unsigned nerrors = 0;
 #if defined(OPA_USE_LOCK_BASED_PRIMITIVES)

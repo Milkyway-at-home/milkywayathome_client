@@ -13,29 +13,50 @@ int main()
     MainStruct* histogram_2;
     real scoreWithRange;
     real scoreWithoutRange;
+    real scoreWithRange2;
 
     histogram_1 = nbReadHistogram("./EMD_range_1.hist"); // Has a lambda range defined that should be used 
     histogram_2 = nbReadHistogram("./EMD_range_2.hist"); // Has no lambda range defined and should default to using all bins
 
+    if(histogram_1 == NULL || histogram_2 == NULL)
+    {
+        printf("Error reading in histograms \n");
+        return 1;
+    }
+
+    mw_printf("Histogram 1 has nRange %u and EMDRange of {%f, %f, %f, %f}\n", histogram_1->histograms[0]->params.nRange, histogram_1->histograms[0]->params.EMDRange[0], histogram_1->histograms[0]->params.EMDRange[1], histogram_1->histograms[0]->params.EMDRange[2], histogram_1->histograms[0]->params.EMDRange[3]);
+    mw_printf("Histogram 2 has nRange %u and EMDRange of {%f, %f, %f, %f}\n", histogram_2->histograms[0]->params.nRange, histogram_2->histograms[0]->params.EMDRange[0], histogram_2->histograms[0]->params.EMDRange[1], histogram_2->histograms[0]->params.EMDRange[2], histogram_2->histograms[0]->params.EMDRange[3]);
     scoreWithRange = nbMatchEMD(histogram_1, histogram_2); // With given range, should be an exact match for EMD
+    scoreWithRange2 = nbMatchEMD(histogram_2, histogram_1); // Should also be an exact match, testing if it correctly reads params from simulation hist given through lua
+    histogram_1->histograms[0]->params.nRange = 0; // Reset range to 0
+    histogram_2->histograms[0]->params.nRange = 0;
     scoreWithoutRange = nbMatchEMD(histogram_2, histogram_1); // Should do a normal comparison and give the likelihood found before EMD range was added
 
     mw_printf("Score with range: %f\n", scoreWithRange);
+    mw_printf("Score with range 2: %f\n", scoreWithRange2);
     mw_printf("Score without range: %f\n", scoreWithoutRange);
+    
 
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wfloat-equal"
     if(scoreWithRange != 0)
     {
         printf("EMD calculated with given ranges not correct, gave %f should be 0 \n", scoreWithRange);
         return 1;
     }
-
     if(scoreWithoutRange < 5.449190 || scoreWithoutRange > 5.449192) // should expect score of -5.449191188301354
     {
         printf("EMD calculated with whole histogram is not correct; either the function could not default to normal behavior or the EMD likelihood calculation has been changed. Got %1.15f, expected 5.449191188301354 \n", scoreWithoutRange);
         return 1;
     }
-    else //both cases return expected likelihood
+    if(scoreWithRange2 != 0)
     {
-        return 0;
+        printf("EMD calculated with given ranges from simulation histogram not correct, gave %f should be 0 \n", scoreWithRange2);
+        return 1;
     }
+    
+    //both cases return expected likelihood
+    #pragma GCC diagnostic pop
+    return 0;
+    
 }

@@ -27,7 +27,10 @@
 int dev_write_outputs(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, real freq)
 {
     int rc = 0;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     freq = (freq == 0.0)*1.0 + freq;
+#pragma GCC diagnostic pop
     if((st->step + 1) % (int) freq == 0)
     {
         

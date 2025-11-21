@@ -52,7 +52,7 @@ typedef struct
     mwbool allowIncest;
 } NBodyCtxTest;
 
-#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE, FALSE }
+#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE, FALSE, FALSE }
 
 typedef struct
 {
@@ -83,7 +83,7 @@ static void showHash(char* buf, const MWHash* hash)
 }
 
 #if USE_SSL_TESTS
-static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
+__attribute__((unused)) static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
 {
     int rc = 1;
     real n;
@@ -205,24 +205,24 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
     static const char* resultName = NULL;
     static const MWNamedArg argTable[] =
         {
-            { "potential",   LUA_TSTRING,  NULL, TRUE,  &test.potentialName   },
-            { "model",       LUA_TSTRING,  NULL, TRUE,  &test.modelName       },
-            { "nbody",       LUA_TNUMBER,  NULL, TRUE,  &nbodyf               },
-            { "nSteps",      LUA_TNUMBER,  NULL, TRUE,  &nStepsf              },
-            { "seed",        LUA_TNUMBER,  NULL, TRUE,  &seedf                },
-            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &test.ctx.theta       },
-            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE,  &test.ctx.treeRSize   },
-            { "criterion",   LUA_TSTRING,  NULL, TRUE,  &criterionName        },
-            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
-            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
-            { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
-            { "LMC",         LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMC         },
-            { "LMCDynaFric", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMCDynaFric },
+            { "potential",   LUA_TSTRING,  NULL, TRUE,  &test.potentialName,    1 },
+            { "model",       LUA_TSTRING,  NULL, TRUE,  &test.modelName,        1 },
+            { "nbody",       LUA_TNUMBER,  NULL, TRUE,  &nbodyf,                1 },
+            { "nSteps",      LUA_TNUMBER,  NULL, TRUE,  &nStepsf,               1 },
+            { "seed",        LUA_TNUMBER,  NULL, TRUE,  &seedf,                 1 },
+            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &test.ctx.theta,        1 },
+            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE,  &test.ctx.treeRSize,    1 },
+            { "criterion",   LUA_TSTRING,  NULL, TRUE,  &criterionName,         1 },
+            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad,      1 },
+            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest,  1 },
+            { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec,       1 },
+            { "LMC",         LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMC,          1 },
+            { "LMCDynaFric", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.LMCDynaFric,  1 },
 
             /* Unused in hash; these ones may or may not exist, just don't error if there */
-            { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
-            { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName          },
-            { "failed",     LUA_TBOOLEAN,  NULL,  FALSE, &failed              },
+            { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash,           1 },
+            { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName,           1 },
+            { "failed",     LUA_TBOOLEAN,  NULL,  FALSE, &failed,               1 },
             END_MW_NAMED_ARG
         };
 
@@ -413,7 +413,7 @@ MWHash* getMWHash(const NBodyState* st, unsigned int nbody)
     return bodyHash;
 }
 
-static int compareHash(const MWHash* a, const MWHash* b)
+__attribute__((unused)) static int compareHash(const MWHash* a, const MWHash* b)
 {
     return memcmp(a, b, sizeof(MWHash));
 }
