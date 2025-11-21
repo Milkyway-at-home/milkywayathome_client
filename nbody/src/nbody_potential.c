@@ -676,9 +676,10 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
     mwvector acc = ZERO_VECTOR, acctmp = ZERO_VECTOR;
     real limit = mw_pow(2.0,-8.0);
     
-    if (pot->bfe)
+    /*Calculate Acceleration using Basis Function Expansion Method */
+    if (pot->bfe.type)
     {
-        acc = exp_bfe_get_acceleration(&pot->bfe->exp_bfe, pos, time);
+        acc = exp_bfe_get_acceleration(&pot->bfe, pos, time);
         return acc;
     }
 

@@ -526,6 +526,8 @@ typedef struct MW_ALIGN_TYPE
     real Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
+    
+    char* yaml_bfe_filename; /* filename for Basis Function Expansions*/
 
     Potential pot;
 
