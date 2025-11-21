@@ -79,7 +79,7 @@ SunVelz               = 6.9       -- -- Sun's z-velocity (kpc/Gyr)              
 
 UseOldSofteningLength = 0         -- -- Uses old softening length formula from v1.76 and eariler               -- --
 
-Use_BFE_Potential     = false     -- -- Flag for using Basis Function Expansion for calculating potential      -- --
+Use_BFE_Potential     = false      -- -- Flag for using Basis Function Expansion for calculating potential     -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 arg = { ... } -- -- TAKING USER INPUT
@@ -265,7 +265,7 @@ function makePotential()
    elseif(Use_BFE_Potential == true) then
 	print("running with bfe potential")
 	return Potential.create{
-		bfe = nil --look through nbody_potential_types.h later to see how to implement this
+		bfe = EMPTY_BFE --look through nbody_potential_types.h later to see how to implement this
 	}-- future implementation for bfe component needed
    else
 	--NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
