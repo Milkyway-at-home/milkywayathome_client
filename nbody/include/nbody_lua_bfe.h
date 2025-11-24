@@ -27,5 +27,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
+BFE* checkBFE(lua_State* luaSt, int idx);
+int pushBFE(lua_State* luaSt, const BFE* d);
+int registerBFE(lua_State* luaSt);
+
+int setBFE(lua_State* luaSt, void* v);
+int getBFE(lua_State* luaSt, void* v);
+
+int registerBFEKinds(lua_State* luaSt);
+
 #endif /* _NBODY_LUA_BFE_H_ */
 

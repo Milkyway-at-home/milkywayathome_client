@@ -26,3 +26,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_check_params.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
+
+static const MWEnumAssociation bfeOptions[] =
+{
+    { "exp",    EXPBFE },
+    { "none",   NoBFE  },
+    END_MW_ENUM_ASSOCIATION
+};
+
+
