@@ -27,6 +27,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 
+BFE* checkBFE(lua_State* luaSt, int idx)
+{
+    return (BFE*) mw_checknamedudata(luaSt, idx, BFE_TYPE);
+}
+
+
+
 static const MWEnumAssociation bfeOptions[] =
 {
     { "exp",    EXPBFE },
