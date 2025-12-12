@@ -32,7 +32,11 @@ BFE* checkBFE(lua_State* luaSt, int idx)
     return (BFE*) mw_checknamedudata(luaSt, idx, BFE_TYPE);
 }
 
-
+int pushBFE(lua_state* luaSt, const BFE* p)
+{
+    return pushType(luaSt, BFE_TYPE, sizeof(BFE), (void*) p);
+    
+}
 
 static const MWEnumAssociation bfeOptions[] =
 {
@@ -41,4 +45,24 @@ static const MWEnumAssociation bfeOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
+/*
+static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* s)
+{
+    oneTableArgument(luaSt, argTable);
+    // further implementation needed
+}
 
+static int createEXP_BFE(lua_state* luaSt)
+{
+    static BFE* s = EMPTY_BFE;
+    static const MWNamedArg argTable[] =
+        {
+            // inputs for EXP BFE go here
+            // yaml file?
+        };
+    
+    s.type = EXPBFE;
+    return createBFE(luaSt, argTable, &s);
+}
+
+*/
