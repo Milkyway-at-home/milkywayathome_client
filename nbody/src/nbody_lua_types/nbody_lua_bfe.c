@@ -45,7 +45,6 @@ static const MWEnumAssociation bfeOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
-
 static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
 {
     oneTableArgument(luaSt, argTable);
@@ -56,18 +55,21 @@ static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
     return 1;
 }
 
-/*
 static int createEXP_BFE(lua_state* luaSt)
 {
-    static BFE* s = EMPTY_BFE;
+    static BFE* b = EMPTY_BFE;
     static const MWNamedArg argTable[] =
         {
-            // inputs for EXP BFE go here
-            // yaml file?
+            { "type", LUA_TNUMBER, NULL, TRUE, &b.type, 1},
+            { "exp_bfe", LUA_TNUMBER, NULL, TRUE, &b.exp_bfe, 1},
+            END_MW_NAMED_ARG
+            // not necessarily sure about the notation in line 64
+            // pointer to a pointer?
+            // will be sorted out later
         };
     
-    s.type = EXPBFE;
-    return createBFE(luaSt, argTable, &s);
+    b.type = EXPBFE;
+    return createBFE(luaSt, argTable, &b);
 }
 
-*/
+
