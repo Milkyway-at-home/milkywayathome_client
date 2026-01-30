@@ -122,6 +122,8 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     real t;
     real dt_half = dt / 2.0;
 
+    unsigned int forloop=0;
+    unsigned int bacloop=0;
     // Check if forward time is larger than backward time. We will need to manually compute additional LMC accelerations in that case.
     if (ftime > tstop) {
 
@@ -145,10 +147,9 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 
         for (t = 0; t <= (ftime-tstop); t += dt)
         {   
-    	    exSteps = t/dt;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-    	    if ((exSteps % 10 == 0)&&(t!=0)) { 
+    	    if ((forloop % 10 == 0)&&(t!=0)) { 
 #pragma GCC diagnostic pop
     	        forArray[k] = mw_acc;
                 k++;
@@ -175,6 +176,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
             mw_incaddv_s(v, acc, dt_half);
             mw_incaddv_s(LMCv, LMC_acc, dt_half);
 
+            forloop++;
         }
         forArray[k] = mw_acc; //set the last index after the loop ends
     }
@@ -212,8 +214,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
     {   
         //negate this time for use in time-dependent potentials
         negT = t*-1;
-    	steps = t/dt;
-    	if( steps % 10 == 0){ 
+    	if( bacloop % 10 == 0){ 
     		bacArray[i] = mw_acc;
         	i++;
     	}
@@ -251,6 +252,7 @@ void nbReverseOrbit_LMC(mwvector* finalPos,
 	    lbr = cartesianToLbr(x, DEFAULT_SUN_GC_DISTANCE);
         //fprintf(fp, "%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n", X(x), Y(x), Z(x), X(lbr), Y(lbr), Z(lbr), X(v), Y(v), Z(v));
 
+        bacloop++;
     }
     bacArray[i] = mw_acc; //set the last index after the loop ends
     
