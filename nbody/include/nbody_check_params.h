@@ -30,6 +30,7 @@ extern "C" {
 mwbool checkHaloConstants(Halo* h);
 mwbool checkSphericalConstants(Spherical* s);
 mwbool checkDiskConstants(Disk* d);
+mwbool checkBFEConstants(BFE* b);
 mwbool checkPotentialConstants(Potential* p);
 
 mwbool checkNBodyCtxConstants(const NBodyCtx* ctx);

@@ -30,7 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 BFE* checkBFE(lua_State* luaSt, int idx)
 {
     return (BFE*) mw_checknamedudata(luaSt, idx, BFE_TYPE);
-}
+
 
 int pushBFE(lua_state* luaSt, const BFE* p)
 {
@@ -45,13 +45,18 @@ static const MWEnumAssociation bfeOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
-/*
-static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* s)
+
+static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
 {
     oneTableArgument(luaSt, argTable);
-    // further implementation needed
+    if (checkBFEConstants(b))
+        luaL_error(luaSt, "Invalid BFE encountered.");
+    
+    pushBFE(luaSt, b);
+    return 1;
 }
 
+/*
 static int createEXP_BFE(lua_state* luaSt)
 {
     static BFE* s = EMPTY_BFE;

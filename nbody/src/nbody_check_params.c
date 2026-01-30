@@ -271,6 +271,12 @@ mwbool checkHaloConstants(Halo* h)
     return FALSE;
 }
 
+mwbool checkBFEConstants(BFE* b){
+    
+    // will be implemented for usage in nbody_lua_bfe.c
+    
+}
+
 mwbool checkPotentialConstants(Potential* p)
 {
     return checkSphericalConstants(&p->sphere[0]) || checkDiskConstants(&p->disk) || checkHaloConstants(&p->halo);
