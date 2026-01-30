@@ -30,13 +30,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 BFE* checkBFE(lua_State* luaSt, int idx)
 {
     return (BFE*) mw_checknamedudata(luaSt, idx, BFE_TYPE);
-
+};
 
 int pushBFE(lua_state* luaSt, const BFE* p)
 {
     return pushType(luaSt, BFE_TYPE, sizeof(BFE), (void*) p);
     
-}
+};
 
 static const MWEnumAssociation bfeOptions[] =
 {
@@ -53,7 +53,7 @@ static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
     
     pushBFE(luaSt, b);
     return 1;
-}
+};
 
 static int createEXP_BFE(lua_state* luaSt)
 {
@@ -70,7 +70,7 @@ static int createEXP_BFE(lua_state* luaSt)
     
     b.type = EXPBFE;
     return createBFE(luaSt, argTable, &b);
-}
+};
     
 static int createNo_BFE(lua_state* luaSt)
 {
@@ -83,8 +83,25 @@ static int createNo_BFE(lua_state* luaSt)
     
     b.type = NoBFE;
     return createBFE(luaSt, argTable, &b);
-}
-    
+};
+
+// just implementing the headers here for now, need to understand these functions better
+/*
+int getSphericalT(lua_state* luaSt, void* v)
+{
+    return pushEnum(luaSt, bfeOptions, *(int*) v);
+};
+
+static int toStringBFE(lua_State* luaSt){
+    // need to understand how this function works before implementing
+};
+
+
+static int eqBFE(lua_State* luaSt);
+
+*/
+
+//int getBFE(lua_State*
 
 
 
