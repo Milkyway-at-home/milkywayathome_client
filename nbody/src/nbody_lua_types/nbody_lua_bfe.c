@@ -57,7 +57,7 @@ static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
 
 static int createEXP_BFE(lua_state* luaSt)
 {
-    static BFE* b = EMPTY_BFE;
+    static BFE b = EMPTY_BFE;
     static const MWNamedArg argTable[] =
         {
             { "type", LUA_TNUMBER, NULL, TRUE, &b.type, 1},
@@ -71,5 +71,20 @@ static int createEXP_BFE(lua_state* luaSt)
     b.type = EXPBFE;
     return createBFE(luaSt, argTable, &b);
 }
+    
+static int createNo_BFE(lua_state* luaSt)
+{
+    static BFE b = EMPTY_BFE;
+    static const MWNamedArg argTable[] =
+        {
+            { "type", LUA_TNUMBER, NULL, TRUE, &b.type, 1},
+            END_MW_NAMED_ARG
+        };
+    
+    b.type = NoBFE;
+    return createBFE(luaSt, argTable, &b);
+}
+    
+
 
 
