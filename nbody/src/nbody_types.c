@@ -616,7 +616,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 void clonePartialNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
-    unsigned int nbody = oldSt->nbody;
+    unsigned int nbody __attribute__((unused)) = oldSt->nbody;
     st->tree = emptyTree;
     st->tree.rsize = oldSt->tree.rsize;
     st->freeCell = NULL;

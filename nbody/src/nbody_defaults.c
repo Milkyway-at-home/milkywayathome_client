@@ -58,6 +58,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .useVlos         */  DEFAULT_USE_VLOS,
     /* .useDist         */  DEFAULT_USE_DIST, 
     /* .usePropMot      */  DEFAULT_USE_PROP_MOT,
+    /* .useMomentum     */  DEFAULT_USE_MOMENTUM,
     /* .MultiOutput     */  FALSE,
     /* .InitialOutput   */  FALSE,
     /* .SimpleOutput    */  TRUE,
@@ -73,11 +74,13 @@ const NBodyCtx defaultNBodyCtx =
     /* .VelSigma        */  DEFAULT_SIGMA_CUTOFF,
     /* .DistSigma       */  DEFAULT_SIGMA_CUTOFF,
     /* .PMSigma         */  DEFAULT_SIGMA_CUTOFF,
+    /* .MomentumSigma   */  DEFAULT_SIGMA_CUTOFF,
     /* .IterMax         */  DEFAULT_SIGMA_ITER,
     /* .BetaCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .VelCorrect      */  DEFAULT_DISP_CORRECTION,
     /* .DistCorrect     */  DEFAULT_DISP_CORRECTION,
     /* .PMCorrect       */  DEFAULT_DISP_CORRECTION,
+    /* .MomentumCorrect */  DEFAULT_DISP_CORRECTION,
 
     /* .LMC             */  FALSE,
     /* .LMCmass         */  0.0,
@@ -102,10 +105,15 @@ const HistogramParams defaultHistogramParams =
     /* .lambdaStart */  histogramlambdaStart,
     /* .lambdaEnd   */  histogramlambdaEnd,
     /* .lambdaBins  */  histogramlambdaBins,
-    /* .lambdaStart */  histogrambetaStart,
-    /* .lambdaEnd   */  histogrambetaEnd,
-    /* .lambdaBins  */  histogrambetaBins
+    /* .betaStart   */  histogrambetaStart,
+    /* .betaEnd     */  histogrambetaEnd,
+    /* .betaBins    */  histogrambetaBins,
+    /* .L           */  histogramL,
+    /* .LErr        */  histogramLErr,
+    /* .nRange      */  histogramnRange,
+    /* .EMDRange    */  {histogramEMDRange}
 };
+
 
 
 

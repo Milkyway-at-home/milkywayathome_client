@@ -35,7 +35,7 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
     /** Use 5-point Gaussian Quadrature to calculate the RADIAL (1-dimensional) velocity dispersion integral **/
     int i,j;
     real a,b,integral,r;
-    mwvector input_vec;
+    mwvector input_vec = ZERO_VECTOR;
     real weights[5];
     weights[0] = 0.2369268850561891;
     weights[1] = 0.4786286704993665;
@@ -54,8 +54,11 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
     int nDivs = 10;
     real width = (upperlimit - dist)/(nDivs*1.0);
     real rho0 = nbExtDensity(pot,pos, time);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if ((width <= 0)||(rho0 == 0.0)) /** To avoid divide by zero later **/
     {
+#pragma GCC diagnostic pop
         return -1;       /** Want to ignore any contribution more than 50 scale radii from galactic center. Chose this value because dispersion is never negative. **/
     }
     integral = 0.0;
@@ -74,21 +77,24 @@ static inline real velDispersion(const Potential* pot, const mwvector pos, real 
 
 static inline real getHaloScaleLength(const Halo* halo){
     real scale = halo->scaleLength;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if (scale == 0.0)
     {
+#pragma GCC diagnostic pop
         scale = 1.0;    /** This is the case when there is no halo **/
     }
     return scale;
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC, mwbool dynaFric, real time, real coulomb_log){
-    mwvector result = mw_vec(0.0,0.0,0.0);        //Vector with acceleration due to DF
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC __attribute__((unused)), mwbool dynaFric, real time, real coulomb_log){
+    mwvector result = mw_vec(0.0,0.0,0.0);  // Vector with acceleration due to DF
     if (!dynaFric) {
         return result;
     }
     real X;
-    Halo *mw_halo;
+    const Halo* mw_halo;
 
     const real G_CONST = 1; //(Time: Gyrs, Distance: kpc, Mass: SMU = 222288.47 solar masses)
     const real thresh = mw_pow(2,-8);

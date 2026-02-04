@@ -75,9 +75,12 @@ real nbCalculateVirial(real a_b, real a_d, real M_b, real M_d) /** General doubl
     else if ((M_b < 0.0)||(M_d < 0.0))
     {
         mw_fail("Negative mass detected!");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     }
     else if ((M_b == 0.0)&&(M_d == 0.0))
     {
+#pragma GCC diagnostic pop
         mw_fail("No dwarf masses detected!");
     }
     else

@@ -86,6 +86,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
     real likelihood_Dist = NAN;
     real likelihood_PM_dec = NAN;
     real likelihood_PM_ra = NAN;
+    real likelihood_Momentum = NAN;
 
     real *likelihoodArray;
 
@@ -131,7 +132,14 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
              */
             return 0;
         }
-        likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
+        /* If momentum information is passed in through lua, use that instead*/
+        if (histogram->histograms[0]->params.L.x > 0.00001 || histogram->histograms[0]->params.L.y > 0.00001 || histogram->histograms[0]->params.L.z > 0.00001 ||
+            histogram->histograms[0]->params.L.x < -0.00001 || histogram->histograms[0]->params.L.y < -0.00001 || histogram->histograms[0]->params.L.z < -0.00001)
+        {
+            data->histograms[0]->params.L = histogram->histograms[0]->params.L;
+            data->histograms[0]->params.LErr = histogram->histograms[0]->params.LErr;
+        }
+        likelihoodArray = nbSystemLikelihood(st, ctx, data, histogram, method);
         likelihood         = likelihoodArray[0];
         likelihood_EMD     = likelihoodArray[1];
         likelihood_Mass    = likelihoodArray[2];
@@ -142,6 +150,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         likelihood_Dist    = likelihoodArray[7];
         likelihood_PM_dec  = likelihoodArray[8];
         likelihood_PM_ra   = likelihoodArray[9];
+        likelihood_Momentum  = likelihoodArray[10];
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
@@ -156,9 +165,12 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
         if (likelihood > DEFAULT_WORST_CASE || likelihood < (-1 * DEFAULT_WORST_CASE) || isnan(likelihood))
         {
             likelihood = DEFAULT_WORST_CASE;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
         }
         else if(likelihood == 0.0)
         {
+#pragma GCC diagnostic pop
             likelihood = DEFAULT_BEST_CASE;
         }
 
@@ -212,6 +224,15 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
                 st->bestLikelihood_PM_ra  = 0.0;
             }
 
+            if (st->useMomentum)
+            {
+                st->bestLikelihood_Momentum = likelihood_Momentum;
+            }
+            else
+            {
+                st->bestLikelihood_Momentum = 0.0;
+            }
+
             /* Calculating the time that the best likelihood occurred */
             st->bestLikelihood_time = ((real) st->step / (real) ctx->nStep) * ctx->timeEvolve;
             
@@ -250,7 +271,7 @@ static inline int get_likelihood(const NBodyCtx* ctx, NBodyState* st, const NBod
 /* Advance velocity by half a timestep */
 static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 {
-    mwvector dv;
+    mwvector dv = ZERO_VECTOR;
 
     dv = mw_mulvs(a, dtHalf);   /* get velocity increment */
     mw_incaddv(Vel(p), dv);     /* advance v by 1/2 step */
@@ -259,7 +280,7 @@ static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 /* Advance body position by 1 timestep */
 static inline void bodyAdvancePos(Body* p, const real dt)
 {
-    mwvector dr;
+    mwvector dr = ZERO_VECTOR;
     
     dr = mw_mulvs(Vel(p), dt);  /* get position increment */
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
@@ -286,8 +307,8 @@ static inline void advancePosVel(NBodyState* st, const int nbody, const real dt,
 static inline void advancePosVel_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
 {
     real dtHalf = 0.5 * dt;
-    mwvector dr;
-    mwvector dv;
+    mwvector dr = ZERO_VECTOR;
+    mwvector dv = ZERO_VECTOR;
 
     dr = mw_mulvs(st->LMCvel,dt);
     mw_incaddv(st->LMCpos,dr);
@@ -317,7 +338,7 @@ static inline void advanceVelocities(NBodyState* st, const int nbody, const real
 static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mwvector acc, const mwvector acc_i)
 {
     real dtHalf = 0.5 * dt;
-    mwvector dv;
+    mwvector dv = ZERO_VECTOR;
 
     mwvector acc_total = mw_addv(acc, acc_i);
     dv = mw_mulvs(acc_total, dtHalf);
@@ -329,7 +350,7 @@ static inline void advanceVelocities_LMC(NBodyState* st, const real dt, const mw
 NBodyStatus nbStepSystemPlain(const NBodyCtx* ctx, NBodyState* st, const mwvector acc_i, const mwvector acc_i1)
 {
     NBodyStatus rc;
-    mwvector acc_LMC;
+    mwvector acc_LMC = ZERO_VECTOR;
     
     const real dt = ctx->timestep;
     
@@ -374,8 +395,8 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         if (!st->shiftByLMC) {
             mwvector* shiftLMC;
             size_t sizeLMC;
-            mwvector LMCx;
-            mwvector LMCv;
+            mwvector LMCx = ZERO_VECTOR;
+            mwvector LMCv = ZERO_VECTOR;
 
             getLMCArray(&shiftLMC, &sizeLMC);
             setLMCShiftArray(st, shiftLMC, sizeLMC);
@@ -395,9 +416,9 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
           return NBODY_ERROR;
         }
         deleteOldFiles(st);
-        mwvector startCmPos;
-        mwvector perpendicularCmPos;
-        mwvector nextCmPos;
+        mwvector startCmPos = ZERO_VECTOR;
+        mwvector perpendicularCmPos = ZERO_VECTOR;
+        mwvector nextCmPos = ZERO_VECTOR;
         nbFindCenterOfMass(&startCmPos, st);
         perpendicularCmPos=startCmPos;
     #endif
@@ -405,8 +426,13 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
     real curStep = st->step;
     real Nstep = ctx->nStep;
     
-    st->bestLikelihood = DEFAULT_WORST_CASE; //initializing it.
-
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wfloat-equal"
+    if(st->bestLikelihood == 0.0)
+    {
+        st->bestLikelihood = DEFAULT_WORST_CASE; //initializing it.
+    }
+    #pragma GCC diagnostic pop
     while (st->step < ctx->nStep)
     {
         #ifdef NBODY_BLENDER_OUTPUT
@@ -426,7 +452,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
                 
         #endif
         if(!ctx->LMC) {
-            mwvector zero;
+            mwvector zero = ZERO_VECTOR;
             SET_VECTOR(zero,0,0,0);
             rc |= nbStepSystemPlain(ctx, st, zero, zero); 
         } else {

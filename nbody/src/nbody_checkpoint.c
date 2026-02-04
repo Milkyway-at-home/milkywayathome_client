@@ -206,11 +206,10 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
         mw_printf("Checkpoint '%s' is not a file\n", filename);
         return TRUE;
     }
-
     if (writing)
     {
-                   /*Header Size +     Total Body Size        +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector) + sizeof(*st) + sizeof(size_t);
+                   /*Header Size +     Total Body Size        +      Best Likelihood Info       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = hdrSize + 2*st->nbody * sizeof(Body) + 12 * sizeof(real) + sizeof(int) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector) + sizeof(*st) + sizeof(size_t);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -313,11 +312,10 @@ static int nbOpenCheckpointHandle(const NBodyState* st,
         mwPerrorW32("Failed to open checkpoint file '%s'\n", filename);
         return TRUE;
     }
-
     if (writing)
     {
-                            /*Header Size +      Total Body Size       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
-        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector) + sizeof(*st) + sizeof(size_t));
+                            /*Header Size +      Total Body Size       +      Best Likelihood Info       +         Total Orbit Size           +           Shift Array Size       + LMC Coord Size*/
+        cp->cpFileSize = (DWORD) (hdrSize + 2*st->nbody * sizeof(Body) + 12 * sizeof(real) + sizeof(int) + st->nOrbitTrace * sizeof(mwvector) + st->nShiftLMC * sizeof(mwvector) + 2*sizeof(mwvector) + sizeof(*st) + sizeof(size_t));
     }
     else
     {
@@ -395,7 +393,7 @@ static int nbCloseCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    size_t bodySize, traceSize, ShiftLMCSize, LMCPosVelSize, supposedCheckpointSize;
+    size_t bodySize, likelihoodSize, traceSize, ShiftLMCSize, LMCPosVelSize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
     char* p = cp->mptr;
 
@@ -407,6 +405,7 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     assert(cp->cpFileSize != 0);
     bodySize = st->nbody * sizeof(Body);
+    likelihoodSize = 12 * sizeof(real) + sizeof(int);
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
     LMCPosVelSize = 2*sizeof(mwvector);
@@ -435,6 +434,24 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     memcpy(st->bestLikelihoodBodyTab, p, bodySize);
     p += bodySize;
 
+    /* Set Best Likelihood Information*/
+    /* If adding more here, be sure to change sizes for cp->cpFileSize and likelihoodSize*/
+    st->bestLikelihood = extractedSt->bestLikelihood;
+    st->bestLikelihood_EMD = extractedSt->bestLikelihood_EMD;
+    st->bestLikelihood_Mass = extractedSt->bestLikelihood_Mass;
+    st->bestLikelihood_Beta = extractedSt->bestLikelihood_Beta;
+    st->bestLikelihood_Vel = extractedSt->bestLikelihood_Vel;
+    st->bestLikelihood_BetaAvg = extractedSt->bestLikelihood_BetaAvg;
+    st->bestLikelihood_VelAvg = extractedSt->bestLikelihood_VelAvg;
+    st->bestLikelihood_Dist = extractedSt->bestLikelihood_Dist;
+    st->bestLikelihood_PM_dec = extractedSt->bestLikelihood_PM_dec;
+    st->bestLikelihood_PM_ra  = extractedSt->bestLikelihood_PM_ra;
+    st->bestLikelihood_Momentum = extractedSt->bestLikelihood_Momentum;
+    st->bestLikelihood_time = extractedSt->bestLikelihood_time;
+    st->bestLikelihood_count = extractedSt->bestLikelihood_count;
+    p += likelihoodSize;
+
+
     if (traceSize != 0)
     {
         st->nOrbitTrace = cpHdr.nOrbitTrace;
@@ -455,14 +472,12 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
         p += sizeof(mwvector);
         //mw_printf("Read LMC position: [%.15f,%.15f,%.15f]\n",X(st->LMCpos[0]),Y(st->LMCpos[0]),Z(st->LMCpos[0]));
     }
-    
-    supposedCheckpointSize = hdrSize + 2*bodySize + traceSize + ShiftLMCSize + LMCPosVelSize + *sizeOfData + sizeof(size_t);
+    supposedCheckpointSize = hdrSize + 2*bodySize + likelihoodSize + traceSize + ShiftLMCSize + LMCPosVelSize + *sizeOfData + sizeof(size_t);
 
     if (nbVerifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize))
     {
         return TRUE;
     }
-
 
     if (strncmp(p, tail, sizeof(tail)))
     {
@@ -514,6 +529,35 @@ static void nbFreezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointH
     
     memcpy(p, st->bestLikelihoodBodyTab, bodySize);
     p += bodySize;
+
+    /* Best Likelihood Information*/
+    /* If adding more here, be sure to change sizes for cp->cpFileSize and likelihoodSize*/
+    memcpy(p, &st->bestLikelihood, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_EMD, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_Mass, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_Beta, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_Vel, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_BetaAvg, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_VelAvg, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_Dist, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_PM_dec, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_PM_ra, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_Momentum, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_time, sizeof(real));
+    p += sizeof(real);
+    memcpy(p, &st->bestLikelihood_count, sizeof(int));
+    p += sizeof(int);
 
     if (st->orbitTrace)
     {

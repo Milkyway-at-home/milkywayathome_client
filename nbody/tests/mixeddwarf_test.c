@@ -67,8 +67,8 @@ typedef struct {
     real nbody;
     real nbody_baryon;
     real nbody_dark;
-    Dwarf *comp1;
-    Dwarf *comp2;
+    Dwarf* comp1;
+    Dwarf* comp2;
     real timestep;
     real mass_per_particle_baryon;
     real mass_per_particle_dark;
@@ -76,72 +76,71 @@ typedef struct {
     real dark_bin_width;
     int num_bins_baryon;
     int num_bins_dark;
-    
+
 } TestContext;
 
 /* Clean all memory allocated by the program */
 static void cleanup_all_memory(TestContext* tctx) {
     if (!tctx) return;
-    if (tctx->input_lua_file) free(tctx->input_lua_file);
-    if (tctx->baryon_bin_centers) free(tctx->baryon_bin_centers);
-    if (tctx->dark_bin_centers) free(tctx->dark_bin_centers);
-    if (tctx->baryon_bin_edges) free(tctx->baryon_bin_edges);
-    if (tctx->dark_bin_edges) free(tctx->dark_bin_edges);
-    if (tctx->baryon_theoretical_density) free(tctx->baryon_theoretical_density);
-    if (tctx->dark_theoretical_density) free(tctx->dark_theoretical_density);
-    if (tctx->baryon_theoretical_probability) free(tctx->baryon_theoretical_probability);
-    if (tctx->dark_theoretical_probability) free(tctx->dark_theoretical_probability);
-    if (tctx->baryon_simulation_density) free(tctx->baryon_simulation_density);
-    if (tctx->dark_simulation_density) free(tctx->dark_simulation_density);
-    if (tctx->baryon_simulation_probability) free(tctx->baryon_simulation_probability);
-    if (tctx->dark_simulation_probability) free(tctx->dark_simulation_probability);
+    free(tctx->input_lua_file);
+    free(tctx->baryon_bin_centers);
+    free(tctx->dark_bin_centers);
+    free(tctx->baryon_bin_edges);
+    free(tctx->dark_bin_edges);
+    free(tctx->baryon_theoretical_density);
+    free(tctx->dark_theoretical_density);
+    free(tctx->baryon_theoretical_probability);
+    free(tctx->dark_theoretical_probability);
+    free(tctx->baryon_simulation_density);
+    free(tctx->dark_simulation_density);
+    free(tctx->baryon_simulation_probability);
+    free(tctx->dark_simulation_probability);
     if (tctx->particle_data) {
-        free_particle_collection(tctx->particle_data);
-        tctx->particle_data = NULL;
+	free_particle_collection(tctx->particle_data);
     }
     // Zero out pointers for safety
     memset(tctx, 0, sizeof(TestContext));
 }
 
 /* Calculate the mass enclosed within a given radius for a dwarf component */
-static real mass_enclosed_function(const Dwarf *comp, real radius) {
+static real mass_enclosed_function(const Dwarf* comp, real radius) {
     return 4.0 * M_PI * sqr(radius) * get_density(comp, radius);
 }
 
 /* Calculate the expected counts per bin for a given radius */
-static real counts_per_bin(const Dwarf *comp, real radius, real mass_per_particle, real bin_width) {
+static real counts_per_bin(const Dwarf* comp, real radius, real mass_per_particle, real bin_width) {
     return mass_enclosed_function(comp, radius) * (1.0 / mass_per_particle) * bin_width;
 }
 
 /* Smooth and normalize a density distribution into a probability distribution */
 static real* smooth_and_normalize_distribution(real* counts, size_t size) {   
-    
+
     real epsilon = 1e-10;
     real sum = 0.0;
     real* normalized_counts = mwCallocA(size, sizeof(real));  
 
     // Add epsilon and calculate sum
     for (size_t i = 0; i < size; i++) {
-        counts[i] += epsilon;
-        sum += counts[i];
+	normalized_counts[i] = counts[i] + epsilon;
+	sum += normalized_counts[i];
     }
-        
+	
     // Normalize the counts
     for (size_t i = 0; i < size; i++) {
-        normalized_counts[i] = counts[i] / sum;
+	normalized_counts[i] /= sum;
     }
     return normalized_counts;
 }
 
 /* Calculate the Kullback-Leibler divergence between two probability distributions */
 static real kl_divergence(const real *p, const real *q, size_t size) {
-    
+
     real kl_div = 0.0;
-    
+
     for (size_t i = 0; i < size; i++) {
         kl_div += p[i] * mw_log(p[i] / q[i]);
     }
-    
+
     return kl_div;
 }
 
@@ -164,16 +163,21 @@ int test_stability(TestContext* tctx) {
     // Max radius range for calculation is either 4 times the scale length for plummer and general hernquist or 4 times the r200 for cored and nfw which is the radius bound
     real baryon_range_limit = (tctx->comp1->type == NFW || tctx->comp1->type == Cored) ? 4.0 * tctx->comp1->r200 : 4.0 * tctx->comp1->scaleLength;
     printf("Baryon range limit: %f\n", baryon_range_limit);
+    fflush(stdout);
     real dark_range_limit = (tctx->comp2->type == NFW || tctx->comp2->type == Cored) ? 4.0 * tctx->comp2->r200 : 4.0 * tctx->comp2->scaleLength;
     printf("Dark matter range limit: %f\n", dark_range_limit);
+    fflush(stdout);
     // Calculate the bin width for each component
     tctx->baryon_bin_width = baryon_range_limit / rice_rule(tctx->nbody_baryon);
     printf("Baryon bin width: %f\n", tctx->baryon_bin_width);
+    fflush(stdout);
     tctx->dark_bin_width = dark_range_limit / rice_rule(tctx->nbody_dark);
     printf("Dark matter bin width: %f\n", tctx->dark_bin_width);
+    fflush(stdout);
     // Calculate the number of bins for each component depending on the model type (+1 to include the last bin)
     tctx->num_bins_baryon = (int)((baryon_range_limit - tctx->baryon_bin_width) / tctx->baryon_bin_width) + 1;
     printf("Baryon number of bins: %d\n", tctx->num_bins_baryon);
+    fflush(stdout);
     tctx->num_bins_dark = (int)((dark_range_limit - tctx->dark_bin_width) / tctx->dark_bin_width) + 1;
     printf("Dark matter number of bins: %d\n", tctx->num_bins_dark);
     printf("mass_per_particle_baryon: %f\n", tctx->mass_per_particle_baryon);
@@ -200,7 +204,7 @@ int test_stability(TestContext* tctx) {
     for (int i = 0; i < tctx->num_bins_baryon; i++) {
         tctx->baryon_bin_centers[i] = tctx->baryon_bin_edges[i] + tctx->baryon_bin_width / 2.0;
     }
-    
+
     // Initialize dark matter bin edges
     for (int i = 0; i <= tctx->num_bins_dark; i++) {
         tctx->dark_bin_edges[i] = tctx->dark_bin_width + i * tctx->dark_bin_width;
@@ -208,27 +212,29 @@ int test_stability(TestContext* tctx) {
 
     // Initialize dark matter bin centers
     for (int i = 0; i < tctx->num_bins_dark; i++) {
-        tctx->dark_bin_centers[i] = tctx->dark_bin_edges[i] + tctx->dark_bin_width / 2.0;
+	tctx->dark_bin_centers[i] = tctx->dark_bin_edges[i] + tctx->dark_bin_width / 2.0;
     }
-    
-    // Calculate the theoretical density distribution for each component 
+
+    // Calculate the theoretical density distribution for each component
     tctx->baryon_theoretical_density = mwCallocA(tctx->num_bins_baryon, sizeof(real));
     tctx->dark_theoretical_density = mwCallocA(tctx->num_bins_dark, sizeof(real));
 
     // Calculate theoretical density for baryon component
     for (int i = 0; i < tctx->num_bins_baryon; i++) {
-        tctx->baryon_theoretical_density[i] = counts_per_bin(tctx->comp1, tctx->baryon_bin_centers[i], 
-                                         tctx->mass_per_particle_baryon, tctx->baryon_bin_width);
+	tctx->baryon_theoretical_density[i] = counts_per_bin(tctx->comp1, tctx->baryon_bin_centers[i],
+							     tctx->mass_per_particle_baryon, tctx->baryon_bin_width);
     }
-    
+
     // Calculate theoretical density for dark matter component
     for (int i = 0; i < tctx->num_bins_dark; i++) {
-        tctx->dark_theoretical_density[i] = counts_per_bin(tctx->comp2, tctx->dark_bin_centers[i], 
-                                       tctx->mass_per_particle_dark, tctx->dark_bin_width);
+	tctx->dark_theoretical_density[i] = counts_per_bin(tctx->comp2, tctx->dark_bin_centers[i],
+							   tctx->mass_per_particle_dark, tctx->dark_bin_width);
     }
-    
+
     // Normalize the theoretical densities and add epsilon to avoid division by zero and log(0) in KL divergence calculation
+    free(tctx->baryon_theoretical_probability);
     tctx->baryon_theoretical_probability = smooth_and_normalize_distribution(tctx->baryon_theoretical_density, tctx->num_bins_baryon);
+    free(tctx->dark_theoretical_probability);
     tctx->dark_theoretical_probability = smooth_and_normalize_distribution(tctx->dark_theoretical_density, tctx->num_bins_dark);
 
     // Calculate the KL divergence at the initial timestep
@@ -238,31 +244,31 @@ int test_stability(TestContext* tctx) {
 
     // Check if the initial output file exists
     if (access(initial_output_filename, F_OK) == -1) {
-        fprintf(stderr, "Error: Initial output file '%s' does not exist\n", initial_output_filename);
-        fflush(stdout);
-        failed = 1;
-        return failed;
+	fprintf(stderr, "Error: Initial output file '%s' does not exist\n", initial_output_filename);
+	fflush(stderr);
+	failed = 1;
+	return failed;
     }
 
     // Read the initial output file
     tctx->particle_data = read_particle_file(initial_output_filename);
     if (!tctx->particle_data) {
-        fprintf(stderr, "Error: Failed to read initial output file '%s'\n", initial_output_filename);
-        fflush(stdout);
-        failed = 1;
-        return failed;
+	fprintf(stderr, "Error: Failed to read initial output file '%s'\n", initial_output_filename);
+	fflush(stderr);
+	failed = 1;
+	return failed;
     }
 
     printf("Successfully read %zu particles from initial file\n", tctx->particle_data->count);
     fflush(stdout);
-    
+
     // Validate particle count
     if (tctx->particle_data->count != (size_t)tctx->nbody) {
-        fprintf(stderr, "Error: Expected %f particles but got %zu particles\n", 
-               tctx->nbody, tctx->particle_data->count);
-        free_particle_collection(tctx->particle_data);
-        failed = 1;
-        return failed;
+	fprintf(stderr, "Error: Expected %f particles but got %zu particles\n",
+		tctx->nbody, tctx->particle_data->count);
+	free_particle_collection(tctx->particle_data);
+	failed = 1;
+	return failed;
     }
 
     // Calculate the initial density distribution for each component
@@ -280,40 +286,40 @@ int test_stability(TestContext* tctx) {
     // Calculate initial densities using histogram binning
     printf("Calculating initial densities for baryon particles...\n");
     fflush(stdout);
-    
-    for (int i = 0; i < (int)tctx->nbody_baryon && i < (int)tctx->particle_data->count; i++) {
-        real radius = mw_sqrt(
-            tctx->particle_data->particles[i].x * tctx->particle_data->particles[i].x + 
-            tctx->particle_data->particles[i].y * tctx->particle_data->particles[i].y + 
-            tctx->particle_data->particles[i].z * tctx->particle_data->particles[i].z
-        );
 
-        // Find the bin for this radius
-        for (int bin = 0; bin < tctx->num_bins_baryon; bin++) {
-            if (radius >= tctx->baryon_bin_edges[bin] && radius < tctx->baryon_bin_edges[bin + 1]) {
-                tctx->baryon_simulation_density[bin] += 1.0;
-                break;
-            }
-        }
+    for (int i = 0; i < (int)tctx->nbody_baryon && i < (int)tctx->particle_data->count; i++) {
+	real radius = mw_sqrt(
+	    tctx->particle_data->particles[i].x * tctx->particle_data->particles[i].x +
+	    tctx->particle_data->particles[i].y * tctx->particle_data->particles[i].y +
+	    tctx->particle_data->particles[i].z * tctx->particle_data->particles[i].z
+	);
+
+	// Find the bin for this radius
+	for (int bin = 0; bin < tctx->num_bins_baryon; bin++) {
+	    if (radius >= tctx->baryon_bin_edges[bin] && radius < tctx->baryon_bin_edges[bin + 1]) {
+		tctx->baryon_simulation_density[bin] += 1.0;
+		break;
+	    }
+	}
     }
 
     printf("Calculating initial densities for dark matter particles...\n");
     fflush(stdout);
-    
-    for (int i = (int)tctx->nbody_baryon; i < (int)tctx->nbody && i < (int)tctx->particle_data->count; i++) {
-        real radius = mw_sqrt(
-            tctx->particle_data->particles[i].x * tctx->particle_data->particles[i].x + 
-            tctx->particle_data->particles[i].y * tctx->particle_data->particles[i].y + 
-            tctx->particle_data->particles[i].z * tctx->particle_data->particles[i].z
-        );
 
-        // Find the bin for this radius
-        for (int bin = 0; bin < tctx->num_bins_dark; bin++) {
-            if (radius >= tctx->dark_bin_edges[bin] && radius < tctx->dark_bin_edges[bin + 1]) {
-                tctx->dark_simulation_density[bin] += 1.0;
-                break;
-            }
-        }
+    for (int i = (int)tctx->nbody_baryon; i < (int)tctx->nbody && i < (int)tctx->particle_data->count; i++) {
+	real radius = mw_sqrt(
+	    tctx->particle_data->particles[i].x * tctx->particle_data->particles[i].x +
+	    tctx->particle_data->particles[i].y * tctx->particle_data->particles[i].y +
+	    tctx->particle_data->particles[i].z * tctx->particle_data->particles[i].z
+	);
+
+	// Find the bin for this radius
+	for (int bin = 0; bin < tctx->num_bins_dark; bin++) {
+	    if (radius >= tctx->dark_bin_edges[bin] && radius < tctx->dark_bin_edges[bin + 1]) {
+		tctx->dark_simulation_density[bin] += 1.0;
+		break;
+	    }
+	}
     }
 
     // Print sample of initial densities
@@ -322,7 +328,7 @@ int test_stability(TestContext* tctx) {
         printf("%.6f ", tctx->baryon_simulation_density[i]);
     }
     printf("...\n");
-    
+
     printf("Initial dark matter density distribution (first 5 values): ");
     for (int i = 0; i < tctx->num_bins_dark && i < 5; i++) {
         printf("%.6f ", tctx->dark_simulation_density[i]);
@@ -331,7 +337,10 @@ int test_stability(TestContext* tctx) {
     fflush(stdout);
 
     // Normalize the initial densities and add epsilon to avoid division by zero and log(0) in KL divergence calculation
+    free(tctx->baryon_simulation_probability);
     tctx->baryon_simulation_probability = smooth_and_normalize_distribution(tctx->baryon_simulation_density, tctx->num_bins_baryon);
+
+    free(tctx->dark_simulation_probability);
     tctx->dark_simulation_probability = smooth_and_normalize_distribution(tctx->dark_simulation_density, tctx->num_bins_dark);
 
     // Print sample of normalized initial densities
@@ -340,7 +349,7 @@ int test_stability(TestContext* tctx) {
         printf("%.6f ", tctx->baryon_simulation_probability[i]);
     }
     printf("...\n");
-    
+
     printf("Initial simulation dark matter probability density distribution (first 5 values): ");
     for (int i = 0; i < tctx->num_bins_dark && i < 5; i++) {
         printf("%.6f ", tctx->dark_simulation_probability[i]);
@@ -354,21 +363,21 @@ int test_stability(TestContext* tctx) {
     printf("Initial KL divergence for baryon component: %f\n", initial_kl_divergence_baryon);
     printf("Initial KL divergence for dark matter component: %f\n", initial_kl_divergence_dark);
     fflush(stdout);
-    
+
     // Check for negative KL divergence values (should never happen, but check explicitly)
     if (initial_kl_divergence_baryon < 0 || initial_kl_divergence_dark < 0) {
-        fprintf(stderr, "Error: Negative KL divergence indicates calculation error\n");
-        free_particle_collection(tctx->particle_data);
-        failed = 1;
-        return failed;
+	fprintf(stderr, "Error: Negative KL divergence indicates calculation error\n");
+	free_particle_collection(tctx->particle_data);
+	failed = 1;
+	return failed;
     }
 
-    if (initial_kl_divergence_baryon > INITIAL_KL_THRESHOLD || initial_kl_divergence_dark > INITIAL_KL_THRESHOLD) {
-        fprintf(stderr, "Error: Initial KL divergence is too high (> %f)\n", INITIAL_KL_THRESHOLD);
-        fflush(stdout);
-        free_particle_collection(tctx->particle_data);
-        failed = 1;
-        return failed;
+    if (!(initial_kl_divergence_baryon <= INITIAL_KL_THRESHOLD) || !(initial_kl_divergence_dark <= INITIAL_KL_THRESHOLD)) {
+	fprintf(stderr, "Error: Initial KL divergence is too high (> %f)\n", INITIAL_KL_THRESHOLD);
+	fflush(stderr);
+	free_particle_collection(tctx->particle_data);
+	failed = 1;
+	return failed;
     }
 
     // Free the particle collection
@@ -377,7 +386,7 @@ int test_stability(TestContext* tctx) {
     printf("Particle collection freed successfully\n");
     fflush(stdout);
 
-    // Calculate the total number of timesteps in the simulation 
+    // Calculate the total number of timesteps in the simulation
     int total_timesteps = (int)(atof(EVOLUTION_TIME) / tctx->timestep);
     printf("Total timesteps: %d\n", total_timesteps);
     fflush(stdout);
@@ -391,191 +400,190 @@ int test_stability(TestContext* tctx) {
     int first_timestep = timestep_interval - 1;
     printf("First timestep to check: %d\n", first_timestep);
     fflush(stdout);
-    
+
     // Calculate the KL divergence at multiple timesteps
     for (int i = first_timestep; i < total_timesteps; i += timestep_interval) {
-        printf("\n--- Processing timestep %d ---\n", i);
-        fflush(stdout);
-        
-        char output_filename[1024];
-        snprintf(output_filename, sizeof(output_filename), "%d", i);
-        printf("Checking for output file: %s\n", output_filename);
-        fflush(stdout);
-        
-        // Check if the output file exists
-        if (access(output_filename, F_OK) == -1) {
-            fprintf(stderr, "Error: Output file '%s' does not exist\n", output_filename);
-            fflush(stdout);
-            failed = 1;
-            return failed;
-        }
-        
-        printf("Output file exists, attempting to read...\n");
-        fflush(stdout);
-        
-        tctx->particle_data = read_particle_file(output_filename);
-        if (!tctx->particle_data) {
-            fprintf(stderr, "Error: Failed to read particle file '%s'\n", output_filename);
-            fflush(stdout);
-            failed = 1;
-            return failed;
-        }
+	printf("\n--- Processing timestep %d ---\n", i);
+	fflush(stdout);
+	
+	char output_filename[1024];
+	snprintf(output_filename, sizeof(output_filename), "%d", i);
+	printf("Checking for output file: %s\n", output_filename);
+	fflush(stdout);
+	
+	// Check if the output file exists
+	if (access(output_filename, F_OK) == -1) {
+	    fprintf(stderr, "Error: Output file '%s' does not exist\n", output_filename);
+	    fflush(stderr);
+	    failed = 1;
+	    return failed;
+	}
+	
+	printf("Output file exists, attempting to read...\n");
+	fflush(stdout);
+	
+	tctx->particle_data = read_particle_file(output_filename);
+	if (!tctx->particle_data) {
+	    fprintf(stderr, "Error: Failed to read particle file '%s'\n", output_filename);
+	    fflush(stderr);
+	    failed = 1;
+	    return failed;
+	}
 
-        printf("Successfully read %zu particles\n", tctx->particle_data->count);
-        fflush(stdout);
+	printf("Successfully read %zu particles\n", tctx->particle_data->count);
+	fflush(stdout);
 
-        // Calculate the simulation density distribution for each component
-        real* simulation_density_baryon = mwCallocA(tctx->num_bins_baryon, sizeof(real));
-        real* simulation_density_dark = mwCallocA(tctx->num_bins_dark, sizeof(real));
+	// Calculate the simulation density distribution for each component
+	real* simulation_density_baryon = mwCallocA(tctx->num_bins_baryon, sizeof(real));
+	real* simulation_density_dark = mwCallocA(tctx->num_bins_dark, sizeof(real));
 
-        // Initialize simulation densities to zero
-        for (int j = 0; j < tctx->num_bins_baryon; j++) {
-            simulation_density_baryon[j] = 0.0;
-        }
-        for (int j = 0; j < tctx->num_bins_dark; j++) {
-            simulation_density_dark[j] = 0.0;
-        }
+	// Initialize simulation densities to zero
+	for (int j = 0; j < tctx->num_bins_baryon; j++) {
+	    simulation_density_baryon[j] = 0.0;
+	}
+	for (int j = 0; j < tctx->num_bins_dark; j++) {
+	    simulation_density_dark[j] = 0.0;
+	}
 
-        // Calculate simulation densities using histogram binning
-        printf("Calculating simulation densities for baryon particles...\n");
-        fflush(stdout);
-        
-        int baryon_particles_counted = 0;
-        for (int j = 0; j < (int)tctx->nbody_baryon && j < (int)tctx->particle_data->count; j++) {
-            real radius = mw_sqrt(
-                tctx->particle_data->particles[j].x * tctx->particle_data->particles[j].x + 
-                tctx->particle_data->particles[j].y * tctx->particle_data->particles[j].y + 
-                tctx->particle_data->particles[j].z * tctx->particle_data->particles[j].z
-            );
+	// Calculate simulation densities using histogram binning
+	printf("Calculating simulation densities for baryon particles...\n");
+	fflush(stdout);
+	
+	int baryon_particles_counted = 0;
+	for (int j = 0; j < (int)tctx->nbody_baryon && j < (int)tctx->particle_data->count; j++) {
+	    real radius = mw_sqrt(
+		tctx->particle_data->particles[j].x * tctx->particle_data->particles[j].x +
+		tctx->particle_data->particles[j].y * tctx->particle_data->particles[j].y +
+		tctx->particle_data->particles[j].z * tctx->particle_data->particles[j].z
+	    );
 
-            // Find the bin for this radius
-            for (int bin = 0; bin < tctx->num_bins_baryon; bin++) {
-                if (radius >= tctx->baryon_bin_edges[bin] && radius < tctx->baryon_bin_edges[bin + 1]) {
-                    simulation_density_baryon[bin] += 1.0;
-                    baryon_particles_counted++;
-                    break;
-                }
-            }
-        }
+	    // Find the bin for this radius
+	    for (int bin = 0; bin < tctx->num_bins_baryon; bin++) {
+		if (radius >= tctx->baryon_bin_edges[bin] && radius < tctx->baryon_bin_edges[bin + 1]) {
+		    simulation_density_baryon[bin] += 1.0;
+		    baryon_particles_counted++;
+		    break;
+		}
+	    }
+	}
 
-        printf("Calculating simulation densities for dark matter particles...\n");
-        fflush(stdout);
-        
-        int dark_particles_counted = 0;
-        for (int j = (int)tctx->nbody_baryon; j < (int)tctx->nbody && j < (int)tctx->particle_data->count; j++) {
-            real radius = mw_sqrt(
-                tctx->particle_data->particles[j].x * tctx->particle_data->particles[j].x + 
-                tctx->particle_data->particles[j].y * tctx->particle_data->particles[j].y + 
-                tctx->particle_data->particles[j].z * tctx->particle_data->particles[j].z
-            );
+	printf("Calculating simulation densities for dark matter particles...\n");
+	fflush(stdout);
+	
+	int dark_particles_counted = 0;
+	for (int j = (int)tctx->nbody_baryon; j < (int)tctx->nbody && j < (int)tctx->particle_data->count; j++) {
+	    real radius = mw_sqrt(
+		tctx->particle_data->particles[j].x * tctx->particle_data->particles[j].x +
+		tctx->particle_data->particles[j].y * tctx->particle_data->particles[j].y +
+		tctx->particle_data->particles[j].z * tctx->particle_data->particles[j].z
+	    );
 
-            // Find the bin for this radius
-            for (int bin = 0; bin < tctx->num_bins_dark; bin++) {
-                if (radius >= tctx->dark_bin_edges[bin] && radius < tctx->dark_bin_edges[bin + 1]) {
-                    simulation_density_dark[bin] += 1.0;
-                    dark_particles_counted++;
-                    break;
-                }
-            }
-        }
-        
-        printf("Particles counted: %d baryon, %d dark matter\n", 
-               baryon_particles_counted, dark_particles_counted);
-        fflush(stdout);
+	    // Find the bin for this radius
+	    for (int bin = 0; bin < tctx->num_bins_dark; bin++) {
+		if (radius >= tctx->dark_bin_edges[bin] && radius < tctx->dark_bin_edges[bin + 1]) {
+		    simulation_density_dark[bin] += 1.0;
+		    dark_particles_counted++;
+		    break;
+		}
+	    }
+	}
+	
+	printf("Particles counted: %d baryon, %d dark matter\n",
+	       baryon_particles_counted, dark_particles_counted);
+	fflush(stdout);
 
-        // Print sample of simulation densities
-        printf("Simulation baryon density distribution (first 5 values): ");
-        for (int j = 0; j < tctx->num_bins_baryon && j < 5; j++) {
-            printf("%.6f ", simulation_density_baryon[j]);
-        }
-        printf("...\n");
-        
-        printf("Simulation dark matter density distribution (first 5 values): ");
-        for (int j = 0; j < tctx->num_bins_dark && j < 5; j++) {
-            printf("%.6f ", simulation_density_dark[j]);
-        }
-        printf("...\n");
-        fflush(stdout);
+	// Print sample of simulation densities
+	printf("Simulation baryon density distribution (first 5 values): ");
+	for (int j = 0; j < tctx->num_bins_baryon && j < 5; j++) {
+	    printf("%.6f ", simulation_density_baryon[j]);
+	}
+	printf("...\n");
+	
+	printf("Simulation dark matter density distribution (first 5 values): ");
+	for (int j = 0; j < tctx->num_bins_dark && j < 5; j++) {
+	    printf("%.6f ", simulation_density_dark[j]);
+	}
+	printf("...\n");
+	fflush(stdout);
 
-        // Normalize the simulation densities and add epsilon to avoid division by zero and log(0) in KL divergence calculation 
-        real* simulation_probability_density_baryon = smooth_and_normalize_distribution(simulation_density_baryon, tctx->num_bins_baryon);
-        real* simulation_probability_density_dark = smooth_and_normalize_distribution(simulation_density_dark, tctx->num_bins_dark);
+	// Normalize the simulation densities and add epsilon to avoid division by zero and log(0) in KL divergence calculation
+	real* simulation_probability_density_baryon = smooth_and_normalize_distribution(simulation_density_baryon, tctx->num_bins_baryon);
+	real* simulation_probability_density_dark = smooth_and_normalize_distribution(simulation_density_dark, tctx->num_bins_dark);
 
-        // Print sample of normalized simulation densities
-        printf("Simulation baryon probability density distribution (first 5 values): ");
-        for (int j = 0; j < tctx->num_bins_baryon && j < 5; j++) {
-            printf("%.6f ", simulation_probability_density_baryon[j]);
-        }
-        printf("...\n");
-        
-        printf("Simulation dark matter probability density distribution (first 5 values): ");
-        for (int j = 0; j < tctx->num_bins_dark && j < 5; j++) {
-            printf("%.6f ", simulation_probability_density_dark[j]);
-        }
-        printf("...\n");
-        fflush(stdout);
+	// Print sample of normalized simulation densities
+	printf("Simulation baryon probability density distribution (first 5 values): ");
+	for (int j = 0; j < tctx->num_bins_baryon && j < 5; j++) {
+	    printf("%.6f ", simulation_probability_density_baryon[j]);
+	}
+	printf("...\n");
+	
+	printf("Simulation dark matter probability density distribution (first 5 values): ");
+	for (int j = 0; j < tctx->num_bins_dark && j < 5; j++) {
+	    printf("%.6f ", simulation_probability_density_dark[j]);
+	}
+	printf("...\n");
+	fflush(stdout);
 
-        // Kullback-Leibler divergence for each component
-        real kl_divergence_baryon = kl_divergence(simulation_probability_density_baryon, tctx->baryon_theoretical_probability, tctx->num_bins_baryon);
-        real kl_divergence_dark = kl_divergence(simulation_probability_density_dark, tctx->dark_theoretical_probability, tctx->num_bins_dark);
+	// Kullback-Leibler divergence for each component
+	real kl_divergence_baryon = kl_divergence(simulation_probability_density_baryon, tctx->baryon_theoretical_probability, tctx->num_bins_baryon);
+	real kl_divergence_dark = kl_divergence(simulation_probability_density_dark, tctx->dark_theoretical_probability, tctx->num_bins_dark);
 
-        printf("KL divergence for baryon component: %f\n", kl_divergence_baryon);
-        printf("KL divergence for dark matter component: %f\n", kl_divergence_dark);
-        printf("Difference from initial KL divergence (baryon): %f\n", kl_divergence_baryon - initial_kl_divergence_baryon);
-        printf("Difference from initial KL divergence (dark): %f\n", kl_divergence_dark - initial_kl_divergence_dark);
-        fflush(stdout);
+	printf("KL divergence for baryon component: %f\n", kl_divergence_baryon);
+	printf("KL divergence for dark matter component: %f\n", kl_divergence_dark);
+	printf("Difference from initial KL divergence (baryon): %f\n", kl_divergence_baryon - initial_kl_divergence_baryon);
+	printf("Difference from initial KL divergence (dark): %f\n", kl_divergence_dark - initial_kl_divergence_dark);
+	fflush(stdout);
 
-        // Check for negative KL divergence values (should never happen, but check explicitly)
-        if (kl_divergence_baryon < 0 || kl_divergence_dark < 0) {
-            fprintf(stderr, "Error: Negative KL divergence indicates calculation error\n");
-            free(simulation_probability_density_baryon);
-            free(simulation_probability_density_dark);
-            free(simulation_density_baryon);
-            free(simulation_density_dark);
-            free_particle_collection(tctx->particle_data);
-            failed = 1;
-            return failed;
-        }
+	// Check for negative KL divergence values (should never happen, but check explicitly)
+	if (kl_divergence_baryon < 0 || kl_divergence_dark < 0) {
+	    fprintf(stderr, "Error: Negative KL divergence indicates calculation error\n");
+	    free(simulation_probability_density_baryon);
+	    free(simulation_probability_density_dark);
+	    free(simulation_density_baryon);
+	    free(simulation_density_dark);
+	    free_particle_collection(tctx->particle_data);
+	    failed = 1;
+	    return failed;
+	}
 
-        if ((kl_divergence_baryon - initial_kl_divergence_baryon) > KL_FLUCTUATION_THRESHOLD || 
-            (kl_divergence_dark - initial_kl_divergence_dark) > KL_FLUCTUATION_THRESHOLD) {
-            fprintf(stderr, "Error: KL divergence fluctuation is too high (> %f) showing instability\n", 
-                   KL_FLUCTUATION_THRESHOLD);
-            fflush(stdout);
-            
-            // Free allocated memory for this simulation iteration
-            free(simulation_probability_density_baryon);
-            free(simulation_probability_density_dark);
-            free(simulation_density_baryon);
-            free(simulation_density_dark);
-            free_particle_collection(tctx->particle_data);
-            failed = 1;
-            return failed;
-        }
+	if (!(kl_divergence_baryon - initial_kl_divergence_baryon <= KL_FLUCTUATION_THRESHOLD) ||
+	    !(kl_divergence_dark - initial_kl_divergence_dark <= KL_FLUCTUATION_THRESHOLD)) {
+	    fprintf(stderr, "Error: KL divergence fluctuation is too high (> %f) showing instability\n",
+		   KL_FLUCTUATION_THRESHOLD);
+	    fflush(stderr);
+	
+	    // Free allocated memory for this simulation iteration
+	    free(simulation_probability_density_baryon);
+	    free(simulation_probability_density_dark);
+	    free(simulation_density_baryon);
+	    free(simulation_density_dark);
+	    free_particle_collection(tctx->particle_data);
+	    failed = 1;
+	    return failed;
+	}
 
-        // Free allocated memory for this simulation iteration
-        free(simulation_probability_density_baryon);
-        free(simulation_probability_density_dark);
-        free(simulation_density_baryon);
-        free(simulation_density_dark);
-        
-        // Free data at the end of each iteration
-        free_particle_collection(tctx->particle_data);
-        tctx->particle_data = NULL;
-        printf("Particle collection freed successfully\n");
-        fflush(stdout);
+	// Free allocated memory for this simulation iteration
+	free(simulation_probability_density_baryon);
+	free(simulation_probability_density_dark);
+	free(simulation_density_baryon);
+	free(simulation_density_dark);
+	
+	// Free data at the end of each iteration
+	free_particle_collection(tctx->particle_data);
+	tctx->particle_data = NULL;
+	printf("Particle collection freed successfully\n");
+	fflush(stdout);
     }
-    
+
     // Free memory for probability densities
     free(tctx->baryon_simulation_probability);
     tctx->baryon_simulation_probability = NULL;
     free(tctx->dark_simulation_probability);
     tctx->dark_simulation_probability = NULL;
-    
+
     // If we get here, all KL divergence tests passed
     printf("Stability test passed successfully!\n");
     fflush(stdout);
-    
     return failed;
 }
 
@@ -584,7 +592,6 @@ int test_virial_ratio(TestContext* tctx)
 {
 	int failed = 0;
 	const real TOL = 0.05;
-
 	real T  = 0; //Kinetic energy
 	real U1 = 0; //Potential to be calculated using the dwarf's potential
 	real U2 = 0; //potential to be calculated using newtonian gravity
@@ -624,14 +631,14 @@ int test_virial_ratio(TestContext* tctx)
 	if (mw_fabs(1.0 - ratio_1) > TOL)
 	{
 		printf("\t Virial test 1 failed, unstable structure- T: %1f U1: %1f ratio_1: %1f\n", T, U1, ratio_1);
-        failed = 1;
-        return failed;
+		failed = 1;
+		return failed;
 	}
 	if (mw_fabs(1.0 - ratio_2) > TOL)
 	{
 		printf("\tVirial test 2 failed, gravitationally unstable- T: %1f U2: %1f ratio_2: %1f\n", T, U2, ratio_2);
-        failed = 1;
-        return failed;
+		failed = 1;
+		return failed;
 	}
 
     printf("\tPassed virial test\n");
@@ -649,24 +656,23 @@ int test_center_of_mass(TestContext* tctx)
 	//Note, this function relies on the fact that half the bodies are baryonic and half dark matter
 	int failed = 0;
 	const real TOL = 0.000001;
-
 	real totalMass_l = tctx->comp1->mass;
 	real totalMass_d = tctx->comp2->mass;
 	real totalMass = totalMass_l + totalMass_d;
 	
 	real cm_x_comp1  = 0.0;
-    real cm_y_comp1  = 0.0;
-    real cm_z_comp1  = 0.0;
-    real cm_vx_comp1 = 0.0;
-    real cm_vy_comp1 = 0.0;
-    real cm_vz_comp1 = 0.0;
+	real cm_y_comp1  = 0.0;
+	real cm_z_comp1  = 0.0;
+	real cm_vx_comp1 = 0.0;
+	real cm_vy_comp1 = 0.0;
+	real cm_vz_comp1 = 0.0;
 
 	real cm_x_comp2  = 0.0;
-    real cm_y_comp2  = 0.0;
-    real cm_z_comp2  = 0.0;
-    real cm_vx_comp2 = 0.0;
-    real cm_vy_comp2 = 0.0;
-    real cm_vz_comp2 = 0.0;
+	real cm_y_comp2  = 0.0;
+	real cm_z_comp2  = 0.0;
+	real cm_vx_comp2 = 0.0;
+	real cm_vy_comp2 = 0.0;
+	real cm_vz_comp2 = 0.0;
 
 	for(unsigned int i = 0; i < tctx->nbody_baryon; i++)
 	{
@@ -703,8 +709,8 @@ int test_center_of_mass(TestContext* tctx)
 	{
 		printf("\tFailed: Component 1 is off center, cm_x: %1f cm_y: %1f cm_z: %1f cm_vx: %1f cm_vy: %1f cm_z: %1f\n",
 		cm_x_comp1, cm_y_comp1, cm_z_comp1, cm_vx_comp1, cm_vy_comp1, cm_vz_comp1);
-        failed = 1;
-        return failed;
+		failed = 1;
+		return failed;
 	}
 
 	cm_x_comp2 /= totalMass_d;
@@ -720,8 +726,8 @@ int test_center_of_mass(TestContext* tctx)
 	{
 		printf("\tFailed: Component 2 is off center, cm_x: %1f cm_y: %1f cm_z: %1f cm_vx: %1f cm_vy: %1f cm_z: %1f\n",
 		cm_x_comp2, cm_y_comp2, cm_z_comp2, cm_vx_comp2, cm_vy_comp2, cm_vz_comp2);
-        failed = 1;
-        return failed;
+		failed = 1;
+		return failed;
 	}
 
 	real cm_x_total = (cm_x_comp1 + cm_x_comp2) / totalMass;
@@ -737,13 +743,13 @@ int test_center_of_mass(TestContext* tctx)
 	{
 		printf("\tFailed: Total Dwarf is off center, cm_x: %1f cm_y: %1f cm_z: %1f cm_vx: %1f cm_vy: %1f cm_z: %1f\n",
 		cm_x_total, cm_y_total, cm_z_total, cm_vx_total, cm_vy_total, cm_vz_total);
-        failed = 1;
-        return failed;
+		failed = 1;
+		return failed;
 	}
 
     printf("\tPassed center of mass test\n");
     fflush(stdout);
-	return failed;
+    return failed;
 }
 
 /* Run the nbody simulation for a given dwarf potential type */
@@ -785,20 +791,21 @@ int run_nbody_simulation(const char* dwarf_potential_type_lua, TestContext* tctx
     // Read the parameters from the Lua file
     printf("Reading Lua parameters...\n");
     fflush(stdout);
-    if (read_lua_parameters(tctx->input_lua_file, dwarf_params, &tctx->nbody, &tctx->nbody_baryon, &tctx->comp1, &tctx->comp2, &tctx->timestep, NULL) != 0) {
-        fprintf(stderr, "Error: Failed to read Lua parameters\n");
-        fflush(stdout);
-        failed = 1;
-        return failed;
+    lua_State* lua_state_out;  // Ask for state, so that it isn't closed / freed
+    if (read_lua_parameters(tctx->input_lua_file, dwarf_params, &tctx->nbody, &tctx->nbody_baryon, &tctx->comp1, &tctx->comp2, &tctx->timestep, &lua_state_out) != 0) {
+	fprintf(stderr, "Error: Failed to read Lua parameters\n");
+	fflush(stderr);
+	failed = 1;
+	return failed;
     }
     // Run a simulation
     printf("Running N-body simulation...\n");
     fflush(stdout);
     if (run_nbody(dwarf_params, tctx->input_lua_file) != 0) {
-        fprintf(stderr, "Error: N-body simulation failed\n");
-        fflush(stdout);
-        failed = 1;
-        return failed;
+	fprintf(stderr, "Error: N-body simulation failed\n");
+	fflush(stderr);
+	failed = 1;
+	return failed;
     }
     printf("N-body simulation completed successfully\n");
     fflush(stdout);
@@ -811,10 +818,10 @@ int main() {
 
     // List of dwarf models to test
     const char* dwarf_models[] = {
-        "plummer_plummer.lua",
-        "plummer_nfw.lua",
-        "plummer_hernquist.lua",
-        "plummer_cored.lua",
+	"plummer_plummer.lua",
+	"plummer_nfw.lua",
+	"plummer_hernquist.lua",
+	"plummer_cored.lua",
     };
 
     // Number of models to test
@@ -822,49 +829,59 @@ int main() {
 
     // Test each model
     for (int i = 0; i < num_models; i++) {
-        int failed = 0;
-        printf("\n=== Testing %s ===\n", dwarf_models[i]);
-        TestContext tctx;
-        memset(&tctx, 0, sizeof(TestContext)); 
-        // Run the N-body simulation and fill context
-        if (run_nbody_simulation(dwarf_models[i], &tctx) != 0) {
-            fprintf(stderr, "Error: N-body simulation failed\n");
-            fflush(stdout);
-            failed = 1;
-            cleanup_all_memory(&tctx);
-            return failed; 
-        }
-        failed += test_stability(&tctx);
-        // Reload particle data for subsequent tests
-        tctx.particle_data = read_particle_file("initial.out");
-        if (!tctx.particle_data) {
-            fprintf(stderr, "Error: Failed to read initial.out for further tests\n");
-            fflush(stdout);
-            failed = 1;
-            cleanup_all_memory(&tctx);
-            return failed;
-        }
-        failed += test_virial_ratio(&tctx);
-        failed += test_center_of_mass(&tctx);
-        free_particle_collection(tctx.particle_data);
-        tctx.particle_data = NULL;
-        if (failed == 0) {
-            printf("%s passed all tests!\n", dwarf_models[i]);
-        } else {
-            printf("%s failed %d tests!\n", dwarf_models[i], failed);
-            total_failed += failed;
-        }
-        cleanup_all_memory(&tctx);
+	int failed = 0;
+	printf("\n=== Testing %s ===\n", dwarf_models[i]);
+	TestContext tctx;
+	memset(&tctx, 0, sizeof(TestContext));
+	// Run the N-body simulation and fill context
+	if (run_nbody_simulation(dwarf_models[i], &tctx) != 0) {
+	    fprintf(stderr, "Error: N-body simulation failed\n");
+	    fflush(stderr);
+	    failed = 1;
+	    cleanup_all_memory(&tctx);
+	    return failed;
+	}
+	failed += test_stability(&tctx);
+	// Reload particle data for subsequent tests
+	tctx.particle_data = read_particle_file("initial.out");
+	if (!tctx.particle_data) {
+	    fprintf(stderr, "Error: Failed to read initial.out for further tests\n");
+	    fflush(stderr);
+	    failed = 1;
+	    cleanup_all_memory(&tctx);
+	    return failed;
+	}
+	printf("After read_particle_file, failed = %d\n", failed);
+	fflush(stdout);
+	failed += test_virial_ratio(&tctx);
+	printf("After test_virial_ratio, failed = %d\n", failed);
+	fflush(stdout);
+	failed += test_center_of_mass(&tctx);
+	printf("After test_center_of_mass, failed = %d\n", failed);
+	fflush(stdout);
+	free_particle_collection(tctx.particle_data);
+	printf("free_particle_collection is done.\n");
+	fflush(stdout);
+	tctx.particle_data = NULL;
+	if (failed == 0) {
+	    printf("%s passed all tests!\n", dwarf_models[i]);
+	} else {
+	    printf("%s failed %d tests!\n", dwarf_models[i], failed);
+	    total_failed += failed;
+	}
+	fflush(stdout);
+	cleanup_all_memory(&tctx);
     }
     if(total_failed == 0)
     {
-        printf("\n=== SUMMARY ===\n");
-        printf("All dwarf generation tests successful!\n");
+	printf("\n=== SUMMARY ===\n");
+	printf("All dwarf generation tests successful!\n");
     }
     else
     {
-        printf("\n=== SUMMARY ===\n");
-        printf("Failed %d tests across all models\n", total_failed);
+	printf("\n=== SUMMARY ===\n");
+	printf("Failed %d tests across all models\n", total_failed);
     }
+    fflush(stdout);
     return total_failed > 0 ? 1 : 0;
 }
