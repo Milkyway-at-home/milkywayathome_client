@@ -113,3 +113,44 @@ int setSpherical(lua_State* luaSt, void* v)
     // believe that number corresponds to number of types?
 }
 
+static const luaL_reg metaMethodsBFE[] =
+{
+    { "__tostring", toStringSpherical },
+    { "__eq",       eqSpherical       },
+    { NULL, NULL }
+};
+
+static const luaL_reg methodsBFE[] =
+{
+    { NULL, NULL }
+};
+
+static const Xet_reg_pre gettersBFE[] =
+{
+    { NULL, NULL, 0}
+};
+
+static const Xet_reg_pre settersBFE[] =
+{
+    { NULL, NULL, 0}
+};
+
+int registerBFE(lua_State* luaSt)
+{
+    return registerStruct(luaSt,
+                          BFE_TYPE,
+                          gettersBFE,
+                          settersBFE,
+                          metaMethodsBFE,
+                          methodsBFE);
+}
+
+int registerBFEKinds(lua_State* luaSt)
+{
+    int table;
+    
+    lua_newtable(luaSt);
+    table =  lua_gettop(luaSt);
+    
+    //setModelTableItem(luaSt, table, 
+}
