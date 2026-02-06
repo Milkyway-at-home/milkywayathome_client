@@ -130,6 +130,8 @@ static const luaL_reg methodsBFE[] =
 
 static const Xet_reg_pre gettersBFE[] =
 {
+    { "type", getBFE_T, offsetof(BFE, type) },
+    { "exp_bfe", getNumber, offsetof(BFE, exp_bfe)},
     { NULL, NULL, 0}
 };
 
