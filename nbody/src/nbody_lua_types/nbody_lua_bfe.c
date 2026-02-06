@@ -123,6 +123,8 @@ static const luaL_reg metaMethodsBFE[] =
 
 static const luaL_reg methodsBFE[] =
 {
+    { "EXP_BFE", createEXP_BFE},
+    { "none", createNo_BFE},
     { NULL, NULL }
 };
 
