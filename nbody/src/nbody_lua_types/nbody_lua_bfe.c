@@ -85,12 +85,23 @@ static int createNo_BFE(lua_state* luaSt)
     return createBFE(luaSt, argTable, &b);
 };
 
-// just implementing the headers here for now, need to understand these functions better
-/*
-int getSphericalT(lua_state* luaSt, void* v)
+int getBFE_T(lua_state* luaSt, void* v)
 {
     return pushEnum(luaSt, bfeOptions, *(int*) v);
 };
+
+static int toStringBFE(lua_State* luaSt)
+{
+    //return toStringType(luaSt, (StructShowFunc)
+}
+
+static int eqBFE(lua_State* luaSt)
+{
+    
+}
+
+// just implementing the headers here for now, need to understand these functions better
+/*
 
 static int toStringBFE(lua_State* luaSt){
     // need to understand how this function works before implementing
@@ -152,5 +163,5 @@ int registerBFEKinds(lua_State* luaSt)
     lua_newtable(luaSt);
     table =  lua_gettop(luaSt);
     
-    //setModelTableItem(luaSt, table, 
+    //setModelTableItem(luaSt, table,
 }

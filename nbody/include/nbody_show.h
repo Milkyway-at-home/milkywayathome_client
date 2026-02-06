@@ -30,6 +30,7 @@ const char* showCriterionT(criterion_t);
 const char* showSphericalT(spherical_t);
 const char* showDiskT(disk_t);
 const char* showHaloT(halo_t);
+const char* showBfeT(bfe_t);
 
 const char* showNBodyStatus(NBodyStatus);
 const char* showNBodyKernelError(NBodyKernelError);
@@ -40,6 +41,7 @@ char* showHalo(const Halo*);
 void printHalo(const Halo*);
 char* showDisk(const Disk*);
 void printDisk(const Disk*);
+char* showBFE(const BFE*);
 
 char* showPotential(const Potential*);
 void printPotential(const Potential*);

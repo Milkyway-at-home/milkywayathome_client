@@ -132,6 +132,20 @@ const char* showHaloT(halo_t x)
     }
 }
 
+const char* showBfeT(bfe_t x)
+{
+    switch (x)
+    {
+        case EXPBFE:
+            return "EXPBFE";
+        case NoBFE:
+            return "NoBFE";
+        case InvalidBFE:
+            return "InvalidBFE";
+        default:
+            return "Bad bfe_t";
+    }
+}
 
 const char* showNBodyStatus(NBodyStatus x)
 {
