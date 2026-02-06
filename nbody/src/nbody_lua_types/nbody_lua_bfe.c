@@ -32,7 +32,7 @@ BFE* checkBFE(lua_State* luaSt, int idx)
     return (BFE*) mw_checknamedudata(luaSt, idx, BFE_TYPE);
 };
 
-int pushBFE(lua_state* luaSt, const BFE* p)
+int pushBFE(lua_State* luaSt, const BFE* p)
 {
     return pushType(luaSt, BFE_TYPE, sizeof(BFE), (void*) p);
     
@@ -45,7 +45,7 @@ static const MWEnumAssociation bfeOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
-static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
+static int createBFE(lua_State* luaSt, const MWNamedArg* argTable, BFE* b)
 {
     oneTableArgument(luaSt, argTable);
     if (checkBFEConstants(b))
@@ -55,7 +55,7 @@ static int createBFE(lua_state* luaSt, const MWNamedArg* argTable, BFE* b)
     return 1;
 };
 
-static int createEXP_BFE(lua_state* luaSt)
+static int createEXP_BFE(lua_State* luaSt)
 {
     static BFE b = EMPTY_BFE;
     static const MWNamedArg argTable[] =
@@ -72,7 +72,7 @@ static int createEXP_BFE(lua_state* luaSt)
     return createBFE(luaSt, argTable, &b);
 };
     
-static int createNo_BFE(lua_state* luaSt)
+static int createNo_BFE(lua_State* luaSt)
 {
     static BFE b = EMPTY_BFE;
     static const MWNamedArg argTable[] =
@@ -85,7 +85,7 @@ static int createNo_BFE(lua_state* luaSt)
     return createBFE(luaSt, argTable, &b);
 };
 
-int getBFE_T(lua_state* luaSt, void* v)
+int getBFE_T(lua_State* luaSt, void* v)
 {
     return pushEnum(luaSt, bfeOptions, *(int*) v);
 };
@@ -116,8 +116,8 @@ int setSpherical(lua_State* luaSt, void* v)
 
 static const luaL_reg metaMethodsBFE[] =
 {
-    { "__tostring", toStringSpherical },
-    { "__eq",       eqSpherical       },
+    { "__tostring", toStringBFE },
+    { "__eq",       eqBFE       },
     { NULL, NULL }
 };
 
