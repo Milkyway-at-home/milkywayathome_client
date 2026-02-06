@@ -284,6 +284,25 @@ char* showSpherical(const Spherical* s)
     return buf;
 }
 
+char* showBFE(const BFE* b)
+{
+    char* buf;
+    
+    if (!b)
+        return NULL;
+    
+    if (0 > asprintf(&buf,
+                     "{\n}"
+                     "      type    = %s\n"
+                     "      exp_bfe = %g\n" // should this be a %g?
+                     "    };\n",
+                     showBfeT(b->type),
+                     b->exp_bfe))
+    {
+        mw_fail("asprintf() failed\n");
+    }
+}
+
 char* showHalo(const Halo* h)
 {
     char* buf;
