@@ -137,6 +137,7 @@ static const Xet_reg_pre gettersBFE[] =
 
 static const Xet_reg_pre settersBFE[] =
 {
+    { "exp_bfe", setNumber, offsetof(BFE, exp_bfe)},
     { NULL, NULL, 0}
 };
 
@@ -157,5 +158,10 @@ int registerBFEKinds(lua_State* luaSt)
     lua_newtable(luaSt);
     table =  lua_gettop(luaSt);
     
-    //setModelTableItem(luaSt, table,
+    setModelTableItem(luaSt, table, createEXP_BFE, "EXPBFE");
+    setModelTableItem(luaSt, table, createNo_BFE, "none");
+    
+    lua_setglobal(luaSt, "BFE_Models");
+    
+    return 0;
 }
