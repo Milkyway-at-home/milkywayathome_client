@@ -645,6 +645,7 @@ void sortBodies(Body* bodies, int nbody);
 int equalSpherical(const Spherical* s1, const Spherical* s2);
 int equalHalo(const Halo* h1, const Halo* h2);
 int equalDisk(const Disk* d1, const Disk* d2);
+int equalBFE(const BFE* b1, const BFE* b2);
 
 // int equalDwarf(const Dwarf* h1, const Dwarf* h2);
 

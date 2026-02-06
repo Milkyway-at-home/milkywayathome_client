@@ -294,7 +294,7 @@ char* showBFE(const BFE* b)
     if (0 > asprintf(&buf,
                      "{\n}"
                      "      type    = %s\n"
-                     "      exp_bfe = %g\n" // should this be a %g?
+                     "      exp_bfe = %g\n"
                      "    };\n",
                      showBfeT(b->type),
                      b->exp_bfe))

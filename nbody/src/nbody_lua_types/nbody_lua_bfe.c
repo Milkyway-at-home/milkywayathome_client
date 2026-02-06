@@ -92,25 +92,15 @@ int getBFE_T(lua_state* luaSt, void* v)
 
 static int toStringBFE(lua_State* luaSt)
 {
-    //return toStringType(luaSt, (StructShowFunc)
-}
+    return toStringType(luaSt, (StructShowFunc) showBFE, (LuaTypeCheckFunc) checkBFE);
+};
 
 static int eqBFE(lua_State* luaSt)
 {
-    
-}
-
-// just implementing the headers here for now, need to understand these functions better
-/*
-
-static int toStringBFE(lua_State* luaSt){
-    // need to understand how this function works before implementing
+    lua_pushboolean(luaSt, equalBFE(checkBFE(luaSt, 1),
+                                    checkBFE(luaSt, 2)));
+    return 1;
 };
-
-
-static int eqBFE(lua_State* luaSt);
-
-*/
 
 int getBFE(lua_State* luaSt, void* v)
 {

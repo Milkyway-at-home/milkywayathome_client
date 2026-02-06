@@ -736,6 +736,12 @@ int equalSpherical(const Spherical* s1, const Spherical* s2)
         && feqWithNan(s1->scale, s2->scale);
 }
 
+int equalBFE(const BFE* b1, const BFE* b2)
+{
+    return (b1->type == b2->type)
+        && feqWithNan(b1->exp_bfe, b2->exp_bfe);
+}
+
 int equalPotential(const Potential* p1, const Potential* p2)
 {
     return equalSpherical(&p1->sphere[0], &p2->sphere[0])
