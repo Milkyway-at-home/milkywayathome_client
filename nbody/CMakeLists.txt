@@ -224,6 +224,7 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
+		  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_bfe.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_dwarf.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
@@ -244,6 +245,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_halo.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
+		      ${NBODY_INCLUDE_DIR}/nbody_lua_bfe.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_dwarf.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
