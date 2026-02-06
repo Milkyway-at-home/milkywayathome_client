@@ -108,7 +108,7 @@ int getBFE(lua_State* luaSt, void* v)
     return 1;
 };
 
-int setSpherical(lua_State* luaSt, void* v)
+int setBFE(lua_State* luaSt, void* v)
 {
     *(BFE*) v = *checkBFE(luaSt, 2);
     // believe that number corresponds to number of types?
