@@ -738,8 +738,8 @@ int equalSpherical(const Spherical* s1, const Spherical* s2)
 
 int equalBFE(const BFE* b1, const BFE* b2)
 {
-    return (b1->type == b2->type)
-        && feqWithNan(b1->exp_bfe, b2->exp_bfe);
+    return (b1->type == b2->type);
+        //&& feqWithNan(b1->exp_bfe, b2->exp_bfe);
 }
 
 int equalPotential(const Potential* p1, const Potential* p2)
