@@ -23,7 +23,6 @@ function makePotential()
    }
 end
 
--- rdh edited
 dec = 9.0   -- -- number of decimals to round to (default: 9.0)
 function round(num, places)
     local mult = 10.0^(places)
@@ -32,7 +31,6 @@ function round(num, places)
 
 function makeContext()
    return NBodyCtx.create{
-      -- rdh edited
       dwarfn = 1,
       b           = {round( -44.328, dec)},
       r           = {round( 62.4,    dec)},

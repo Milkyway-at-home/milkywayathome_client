@@ -12,7 +12,6 @@ prng = DSFMT.create(seed)
 dwarfMass = 16
 dwarfRadius = 0.2
 
--- rdh edited
 dec = 9.0   -- -- number of decimals to round to (default: 9.0)
 function round(num, places)
     local mult = 10.0^(places)
@@ -42,7 +41,6 @@ end
 
 function makeContext()
    return NBodyCtx.create{
-      -- rdh edited
       dwarfn = 1,
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,

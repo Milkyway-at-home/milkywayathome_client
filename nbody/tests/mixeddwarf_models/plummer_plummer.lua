@@ -224,7 +224,6 @@ function get_soft_par()
     end
 end
 
--- rdh edited
 dec = 9.0   -- -- number of decimals to round to (default: 9.0)
 function round(num, places)
     local mult = 10.0^(places)
@@ -243,7 +242,7 @@ orbit_parameter_vz  = {round( 171.25,  dec)}  -- Galactocentric vz
 
 function makeContext()
    return NBodyCtx.create{
-      dwarfn = 1, -- rdh edited
+      dwarfn = 1,
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
