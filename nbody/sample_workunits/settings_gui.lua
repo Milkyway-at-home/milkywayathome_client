@@ -106,16 +106,17 @@ manual_bodies     = false     -- USE THE MANUAL BODY LIST $ button | 0 ^ 1 * 0
 totalBodies      = 40000        -- Number of Bodies $ entry | 40000 ^ 0 * 0
 evolveTime       = 3.0          -- Forward Time (Gyr) $ entry | 3.0 ^ 0 * 0
 revOrbTime       = 3.0          -- Reverse Orbit Time (Gyr) $ entry | 3.0 ^ 0 * 0
-rscale_l         = 0.3          -- Baryonic Radius (kpc) $ entry | 0.3 ^ 0 * 0
-light_r_ratio    = 0.2          -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius) $ entry | 0.2 ^ 0 * 0
-mass_l           = 45.0         -- Baryonic Mass (Structure Mass Units) $ entry | 45.0 ^ 0 * 0
-light_mass_ratio = 0.1          -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass) $ entry | 0.1 ^ 0 * 0
-orbit_parameter_l  = 258        -- Galactic coordinates of dwarf position (deg) $ entry | 258 ^ 0 * 0
-orbit_parameter_b  = 45.8       -- NO COMMENT $ entry | 45.8 ^ 0 * 0
-orbit_parameter_r  = 21.5       -- Distance from Sun to dwarf (kpc) $ entry | 21.5 ^ 0 * 0
-orbit_parameter_vx = -185.5     -- Galactocentric (no Solar motion) velocities of dwarf (km/s) $ entry | -185.5 ^ 0 * 0
-orbit_parameter_vy = 54.7       -- NO COMMENT $ entry | 54.7 ^ 0 * 0
-orbit_parameter_vz = 147.4      -- NO COMMENT $ entry | 147.4 ^ 0 * 0
+-- rdh edited
+rscale_l         = {0.3}          -- Baryonic Radius (kpc) $ entry | 0.3 ^ 0 * 0
+light_r_ratio    = {0.2}          -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius) $ entry | 0.2 ^ 0 * 0
+mass_l           = {45.0}         -- Baryonic Mass (Structure Mass Units) $ entry | 45.0 ^ 0 * 0
+light_mass_ratio = {0.1}          -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass) $ entry | 0.1 ^ 0 * 0
+orbit_parameter_l  = {258}        -- Galactic coordinates of dwarf position (deg) $ entry | 258 ^ 0 * 0
+orbit_parameter_b  = {45.8}       -- NO COMMENT $ entry | 45.8 ^ 0 * 0
+orbit_parameter_r  = {21.5}       -- Distance from Sun to dwarf (kpc) $ entry | 21.5 ^ 0 * 0
+orbit_parameter_vx = {-185.5}     -- Galactocentric (no Solar motion) velocities of dwarf (km/s) $ entry | -185.5 ^ 0 * 0
+orbit_parameter_vy = {54.7}       -- NO COMMENT $ entry | 54.7 ^ 0 * 0
+orbit_parameter_vz = {147.4}      -- NO COMMENT $ entry | 147.4 ^ 0 * 0
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil. $ l-q-entry | manual_bodies_example.in ^ 0 * 0
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

@@ -148,12 +148,12 @@ generateInitialOutput = true        -- -- save initial dwarf galaxy state to ini
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-preset_orbit_parameter_l  = 258
-preset_orbit_parameter_b  = 45.8
-preset_orbit_parameter_r  = 21.5
-preset_orbit_parameter_vx = -185.5
-preset_orbit_parameter_vy = 54.7
-preset_orbit_parameter_vz = 147.4
+preset_orbit_parameter_l  = {258}
+preset_orbit_parameter_b  = {45.8}
+preset_orbit_parameter_r  = {21.5}
+preset_orbit_parameter_vx = {-185.5}
+preset_orbit_parameter_vy = {54.7}
+preset_orbit_parameter_vz = {147.4}
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 

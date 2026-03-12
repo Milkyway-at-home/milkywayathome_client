@@ -224,9 +224,26 @@ function get_soft_par()
     end
 end
 
+-- rdh edited
+dec = 9.0   -- -- number of decimals to round to (default: 9.0)
+function round(num, places)
+    local mult = 10.0^(places)
+    return floor(num * mult + 0.5) / mult
+  end
+rscale_l            = {round( 2.9,     dec)}  -- Baryonic Radius (kpc)
+light_r_ratio       = {round( 0.2,     dec)}  -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l              = {round( 2429.198,dec)}  -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio    = {round( 0.0830,  dec)}  -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l   = {round( 302.801, dec)}  -- Galactocentric l
+orbit_parameter_b   = {round( -44.328, dec)}  -- Galactocentric b
+orbit_parameter_r   = {round( 62.4,    dec)}  -- Galactocentric r
+orbit_parameter_vx  = {round( 21.99,   dec)}  -- Galactocentric vx
+orbit_parameter_vy  = {round( -201.36, dec)}  -- Galactocentric vy
+orbit_parameter_vz  = {round( 171.25,  dec)}  -- Galactocentric vz
 
 function makeContext()
    return NBodyCtx.create{
+      dwarfn = 1, -- rdh edited
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),

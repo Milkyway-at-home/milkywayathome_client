@@ -23,8 +23,26 @@ function makePotential()
    }
 end
 
+-- rdh edited
+dec = 9.0   -- -- number of decimals to round to (default: 9.0)
+function round(num, places)
+    local mult = 10.0^(places)
+    return floor(num * mult + 0.5) / mult
+  end
+
 function makeContext()
    return NBodyCtx.create{
+      -- rdh edited
+      dwarfn = 1,
+      b           = {round( -44.328, dec)},
+      r           = {round( 62.4,    dec)},
+      vx          = {round( 21.99,   dec)},
+      vy          = {round( -201.36, dec)},
+      vz          = {round( 171.25,  dec)},
+      sunGCDist   = SunGCDist,
+      sunVelx     = SunVelx,
+      sunVely     = SunVely,
+      sunVelz     = SunVelz,
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
       eps2       = calculateEps2Dwarf(dwarf, nbody),
