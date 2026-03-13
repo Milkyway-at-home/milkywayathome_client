@@ -677,9 +677,12 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
     real limit = mw_pow(2.0,-8.0);
     
     /*Calculate Acceleration using Basis Function Expansion Method */
+    //printf("yes nbEXt");
     if (pot->bfe.type)
     {
-        acc = exp_bfe_get_acceleration(&pot->bfe, pos, time);
+        //printf("exp pot");
+        //if (pot->bfe.type != 1) printf("EXP Potential being used.");
+        //acc = exp_bfe_get_acceleration(&pot->bfe, pos, time);
         return acc;
     }
 
