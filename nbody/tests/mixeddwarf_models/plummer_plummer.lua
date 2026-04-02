@@ -148,12 +148,23 @@ generateInitialOutput = true        -- -- save initial dwarf galaxy state to ini
 -- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
 -- these only get used if only 6 parameters are input from shell script
 -- otherwise they get reset later with the inputs (if 11 given)
-preset_orbit_parameter_l  = 258
-preset_orbit_parameter_b  = 45.8
-preset_orbit_parameter_r  = 21.5
-preset_orbit_parameter_vx = -185.5
-preset_orbit_parameter_vy = 54.7
-preset_orbit_parameter_vz = 147.4
+dec = 9.0   -- -- number of decimals to round to (default: 9.0)
+function round(num, places)
+    local mult = 10.0^(places)
+    return floor(num * mult + 0.5) / mult
+  end
+preset_orbit_parameter_l   = {round( 302.801, dec)}  -- Galactocentric l
+preset_orbit_parameter_b   = {round( -44.328, dec)}  -- Galactocentric b
+preset_orbit_parameter_r   = {round( 62.4,    dec)}  -- Galactocentric r
+preset_orbit_parameter_vx  = {round( 21.99,   dec)}  -- Galactocentric vx
+preset_orbit_parameter_vy  = {round( -201.36, dec)}  -- Galactocentric vy
+preset_orbit_parameter_vz  = {round( 171.25,  dec)}  -- Galactocentric vz
+-- preset_orbit_parameter_l  = 258
+-- preset_orbit_parameter_b  = 45.8
+-- preset_orbit_parameter_r  = 21.5
+-- preset_orbit_parameter_vx = -185.5
+-- preset_orbit_parameter_vy = 54.7
+-- preset_orbit_parameter_vz = 147.4
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
