@@ -818,7 +818,7 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                 bound2 =  50.0 * (rscale_l + rscale_d);
                 break;
             case NFW:
-                bound2 = 5.0 * comp2->r200;
+                bound2 =  comp2->r200;
 		        get_extra_nfw_mass(comp2, bound2);
                 break;
             case General_Hernquist:

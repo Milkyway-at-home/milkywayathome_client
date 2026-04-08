@@ -6,11 +6,10 @@
 #include "nbody_priv.h"
 #include "nbody_potential.h"
 #include "nbody_density.h"
-#include "nbody_potential_types.h"
 #include "milkyway_util.h"
 #include "nbody_caustic.h"
 #include "nbody_bessel.h"
-#include "nbody_potential.h"
+#include "nbody_types.h"
 
 #include "nbody_friction.h"
 

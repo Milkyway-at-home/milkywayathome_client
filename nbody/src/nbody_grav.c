@@ -28,7 +28,6 @@
   #include <omp.h>
 #endif /* _OPENMP */
 
-
 /*
  * nbodyGravity: Walk the tree starting at the root to do force
  * calculations.
@@ -44,6 +43,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
     mwbool skipSelf = FALSE;
 
     mwvector pos0 = Pos(p);
+    mw_printf("%f %f %f\n",pos0.x,pos0.y,pos0.z);
     mwvector acc0 = ZERO_VECTOR;
 
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
@@ -69,7 +69,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 acc0.x += mor3 * dr.x;
                 acc0.y += mor3 * dr.y;
                 acc0.z += mor3 * dr.z;
-
+                //mw_printf("stuff\n");
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
                     real dr5inv, drQdr, phiQ;
@@ -164,6 +164,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
+		 //nbPrintNearestNeighbors(ctx, st, b, i);
                 a = nbGravity(ctx, st, b);
                 externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
                 /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
