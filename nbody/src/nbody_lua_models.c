@@ -41,6 +41,7 @@
 #include "nbody_potential_types.h"
 #include "nbody_lua_dwarf.h"
 #include "nbody_dwarf_potential.h"
+#include "nbody_plummer_momentum.h"
 
 static const real pi = 3.1415926535;
 
@@ -240,6 +241,27 @@ static int luaCalculateEps2_OLD(lua_State* luaSt) //read in params from lua to c
         return luaL_argerror(luaSt, 0, "Expected 2 or 5 arguments");
     }
     lua_pushnumber(luaSt, nbCalculateEps2_OLD((real) nbody, a_b, a_d, M_b, M_d));
+    return 1;
+}
+
+static int luaPlummerVelocityAdjust(lua_State* luaSt)
+{
+    real a, m, k;
+    mwvector pos, vel;
+    
+    if (lua_gettop(luaSt) == 5)
+    {
+        a = luaL_checknumber(luaSt, 1); 
+        pos = *checkVector(luaSt, 2);
+        vel = *checkVector(luaSt, 3);
+        m = luaL_checknumber(luaSt, 4);
+        k = luaL_checknumber(luaSt, 5);     //integration bound
+    }
+    else
+    {
+        return luaL_argerror(luaSt, 0, "Expected 5 arguments");
+    }
+    lua_pushnumber(luaSt, velocityAdj(a, pos, vel, m, k));
     return 1;
 }
 
@@ -556,6 +578,7 @@ void registerModelFunctions(lua_State* luaSt)
     lua_register(luaSt, "reverseOrbit", luaReverseOrbit);    
     lua_register(luaSt, "reverseOrbitS_LMC", luaReverseOrbitS_LMC);
     lua_register(luaSt, "reverseOrbit_LMC", luaReverseOrbit_LMC);
+    lua_register(luaSt, "velocityAdjust_Plummer", luaPlummerVelocityAdjust);
     lua_register(luaSt, "PrintReverseOrbit", luaPrintReverseOrbit);
     lua_register(luaSt, "calculateEps2", luaCalculateEps2_OLD);
     lua_register(luaSt, "calculateEps2Dwarf", luaCalculateEps2Dwarf);

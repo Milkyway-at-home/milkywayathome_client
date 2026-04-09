@@ -18,8 +18,20 @@ function makeHistogram()
    return HistogramParams.create()
 end
 
+dec = 9.0   -- -- number of decimals to round to (default: 9.0)
+function round(num, places)
+    local mult = 10.0^(places)
+    return floor(num * mult + 0.5) / mult
+  end
+
 function makeContext()
    return NBodyCtx.create{
+      dwarfn = 1,
+      b           = {round( -44.328, dec)},
+      r           = {round( 62.4,    dec)},
+      vx          = {round( 21.99,   dec)},
+      vy          = {round( -201.36, dec)},
+      vz          = {round( 171.25,  dec)},
       timestep      = 0.1,
       timeEvolve    = 1.0,
       theta         = 0.5,

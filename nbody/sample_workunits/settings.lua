@@ -80,16 +80,16 @@ totalBodies      = 40000        -- -- Number of Bodies
 totalLightBodies = 20000        -- -- Number of Baryons
 evolveTime       = 3.0          -- -- Forward Time (Gyr)
 revOrbTime       = 3.0          -- -- Reverse Orbit Time (Gyr)
-rscale_l         = 0.3          -- -- Baryonic Radius (kpc)
-light_r_ratio    = 0.2          -- -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l           = 45.0         -- -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio = 0.1          -- -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l  = 258        -- -- Galactic coordinates of dwarf position (deg)
-orbit_parameter_b  = 45.8
-orbit_parameter_r  = 21.5       -- -- Distance from Sun to dwarf (kpc)
-orbit_parameter_vx = -185.5     -- -- Galactocentric (no Solar motion) velocities of dwarf (km/s)
-orbit_parameter_vy = 54.7
-orbit_parameter_vz = 147.4
+rscale_l         = {0.3}          -- -- Baryonic Radius (kpc)
+light_r_ratio    = {0.2}          -- -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
+mass_l           = {45.0}         -- -- Baryonic Mass (Structure Mass Units)
+light_mass_ratio = {0.1}          -- -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
+orbit_parameter_l  = {258}        -- -- Galactic coordinates of dwarf position (deg)
+orbit_parameter_b  = {45.8}
+orbit_parameter_r  = {21.5}       -- -- Distance from Sun to dwarf (kpc)
+orbit_parameter_vx = {-185.5}     -- -- Galactocentric (no Solar motion) velocities of dwarf (km/s)
+orbit_parameter_vy = {54.7}
+orbit_parameter_vz = {147.4}
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil.
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 

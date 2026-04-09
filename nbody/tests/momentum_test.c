@@ -45,6 +45,11 @@ int main()
 
     st.bodytab = st.bestLikelihoodBodyTab; // use the best likelihood bodytab for the test, since this is the output we have
 
+    //initialize needed context values
+    ctx.sunGCDist = 8.0;
+    ctx.MomentumSigma = 2.5;
+    ctx.IterMax = 6;
+    ctx.MomentumCorrect = 1.111;
 
     /* Set desired parameters for test */
     data->histograms[0]->params.nRange = 0;
