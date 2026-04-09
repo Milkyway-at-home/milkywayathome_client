@@ -78,6 +78,9 @@ set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
 add_executable(momentum_offset_test momentum_offset_test.c)
 
 set(momentum_offset_test_link_libs "${nbody_exe_link_libs}")
+add_executable(LMC_accel_test LMC_accel_test.c)
+
+set(LMC_accel_test_link_libs "${nbody_exe_link_libs}")
 
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
@@ -90,6 +93,7 @@ if(NBODY_CRLIBM)
     list(APPEND momentum_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND momentum_offset_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND LMC_accel_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
@@ -102,6 +106,7 @@ milkyway_link(EMD_Range_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${EMD_Range_t
 milkyway_link(momentum_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${momentum_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 milkyway_link(momentum_offset_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${momentum_offset_test_link_libs}")
+milkyway_link(LMC_accel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${LMC_accel_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -143,6 +148,7 @@ add_test(NAME momentum_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 
+add_test(NAME LMC_accel_test COMMAND LMC_accel_test)
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")

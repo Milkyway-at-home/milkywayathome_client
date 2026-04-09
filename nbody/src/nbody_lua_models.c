@@ -163,7 +163,7 @@ static real nbCalculateEps2_NEW(const Dwarf* light_comp, unsigned int nbody) //n
 {
     // Average distance between stars
     real m = light_comp->mass / nbody;
-    real rho_0 = get_density(light_comp, 0.00001);
+    real rho_0 = get_density(light_comp, light_comp->scaleLength/10); //central density
     real d = 2* mw_pow(3*m/(4*pi*rho_0), 1.0/3.0);
 
     // Strong interaction radius
@@ -454,8 +454,10 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
     static real dt = 0.0;
     static real tstop = 0.0;
     static real ftime = 0.0;
+    static real LMCfunction = 1;
     static real LMCmass = 0.0;
     static real LMCscale = 0.0;
+    static real LMCscale2 = 0.0;
     static real coulomb_log = 0.0;
     static mwbool LMCDynaFric = FALSE;
     static Potential* pot = NULL;
@@ -471,8 +473,10 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             { "velocity",    LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel,         1 },
             { "LMCposition", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCpos,      1 },
             { "LMCvelocity", LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &LMCvel,      1 },
+	        { "LMCfunction", LUA_TNUMBER,   NULL,           TRUE, &LMCfunction, 1 },
             { "LMCmass",     LUA_TNUMBER,   NULL,           TRUE, &LMCmass,     1 },
             { "LMCscale",    LUA_TNUMBER,   NULL,           TRUE, &LMCscale,    1 },
+	        { "LMCscale2",   LUA_TNUMBER,   NULL,           TRUE, &LMCscale2,   1 },
             { "coulomb_log", LUA_TNUMBER,   NULL,           TRUE, &coulomb_log, 1 },
             { "LMCDynaFric", LUA_TBOOLEAN,  NULL,           TRUE, &LMCDynaFric, 1 },
             { "tstop",       LUA_TNUMBER,   NULL,           TRUE, &tstop,       1 },
@@ -487,30 +491,33 @@ static int luaReverseOrbit_LMC(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 12:
+        case 14:
             pot = checkPotential(luaSt, 1);
             pos = checkVector(luaSt, 2);
             vel = checkVector(luaSt, 3);
             LMCpos = checkVector(luaSt, 4);
             LMCvel = checkVector(luaSt, 5);
-            LMCmass = luaL_checknumber(luaSt, 6);
-            LMCscale = luaL_checknumber(luaSt, 7);
-            coulomb_log = luaL_checknumber(luaSt, 8);
-            LMCDynaFric = luaL_checknumber(luaSt, 9);
-            tstop = luaL_checknumber(luaSt, 10);
-            ftime = luaL_checknumber(luaSt, 11);
-            dt = luaL_checknumber(luaSt, 12);
+	        LMCfunction = luaL_checknumber(luaSt, 6);
+            LMCmass = luaL_checknumber(luaSt, 7);
+            LMCscale = luaL_checknumber(luaSt, 8);
+	        LMCscale2 = luaL_checknumber(luaSt, 9);
+            coulomb_log = luaL_checknumber(luaSt, 10);
+            LMCDynaFric = luaL_checknumber(luaSt, 11);
+            tstop = luaL_checknumber(luaSt, 12);
+            ftime = luaL_checknumber(luaSt, 13);
+            dt = luaL_checknumber(luaSt, 14);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 12 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 14 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale, coulomb_log);
+    int lmcfunction = round(LMCfunction);
+    nbReverseOrbit_LMC(&finalPos, &finalVel, &LMCfinalPos, &LMCfinalVel, pot, *pos, *vel, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, lmcfunction, LMCmass, LMCscale, LMCscale2, coulomb_log);
     pushVector(luaSt, finalPos);
     pushVector(luaSt, finalVel);
     pushVector(luaSt, LMCfinalPos);

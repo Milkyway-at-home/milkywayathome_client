@@ -49,6 +49,7 @@ static const MWEnumAssociation haloOptions[] =
     { "plummer",            PlummerHalo,           },
     { "hernquist",          HernquistHalo,         },
     { "ninkovic",           NinkovicHalo,          },
+    { "sphericalnfwerkal",  SphericalNFWerkalHalo  },
     { "none",               NoHalo,                },
     END_MW_ENUM_ASSOCIATION
 };
@@ -75,6 +76,20 @@ static int createLogarithmicHalo(lua_State* luaSt)
         };
 
     h.type = LogarithmicHalo;
+    return createHalo(luaSt, argTable, &h);
+}
+
+static int createSphericalNFWerkalHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength, 1 },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &h.mass,        1 },
+            END_MW_NAMED_ARG
+        };
+
+    h.type = SphericalNFWerkalHalo;
     return createHalo(luaSt, argTable, &h);
 }
 
@@ -271,6 +286,7 @@ static const luaL_reg methodsHalo[] =
     { "plummer",            createPlummerHalo            },
     { "hernquist",          createHernquistHalo          },
     { "ninkovic",           createNinkovicHalo           },
+    { "sphericalnfwerkal",  createSphericalNFWerkalHalo  },
     { "none",               createNoHalo                 },
     { NULL, NULL }
 };
@@ -341,6 +357,7 @@ int registerHaloKinds(lua_State* luaSt)
     setModelTableItem(luaSt, table, createPlummerHalo, "plummer");
     setModelTableItem(luaSt, table, createHernquistHalo, "hernquist");
     setModelTableItem(luaSt, table, createNinkovicHalo, "ninkovic");
+    setModelTableItem(luaSt, table, createSphericalNFWerkalHalo, "sphericalnfwerkal");
     setModelTableItem(luaSt, table, createNoHalo, "none");
 
     /* Getting the number of keys in a table is a pain */

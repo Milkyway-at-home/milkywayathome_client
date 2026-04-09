@@ -60,11 +60,24 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                            NFW                                                                                        */
 /* this density is taken from the 1997 paper by nfw. the potential is taken from binney 2nd ed                           */
+/* Cutoff for density is addapted from Zemp et al. 2008                                                                  */
  static real nfw_den(const Dwarf* model, real r)                                                                         //
 {                                                                                                                        //
     const real rscale = model->scaleLength;                                                                              //
     const real p0 = model->p0;                                                                                           //
+    const real rcut = model->rcut;                                                                                       //
     real R = r / rscale;                                                                                                 //
+    if (rcut != 0.0) {                                                                                                   //
+        const real rdecay = model->rdecay;                                                                               //
+        const real pcut = model->pcut;                                                                                   //
+        const real delta = model->delta;                                                                                 //
+        if (r > rcut) {                                                                                                  //
+            return pcut * mw_pow(r / rcut, delta) * mw_exp(-(r - rcut) / rdecay);                                        //
+        }                                                                                                                //
+        else {                                                                                                           //
+            return p0 * inv(R) * inv(sqr(1.0 + R));                                                                      //
+        }                                                                                                                //
+    }                                                                                                                    //
     /* at r = 0 the density goes to inf. however, the sampling is guarded against r = 0 anyway.*/                        //
     return p0 * inv(R) * inv(sqr(1.0 + R));                                                                              //
 }                                                                                                                        //
@@ -73,7 +86,28 @@
 {                                                                                                                        //
     const real rscale = model->scaleLength;                                                                              //
     const real p0 = model->p0;                                                                                           //
+    const real rcut = model->rcut;                                                                                       //
     real R = r / rscale;                                                                                                 //
+    if (rcut != 0.0) {                                                                                                   //
+        const real rdecay = model->rdecay;                                                                               //
+        const real pcut = model->pcut;                                                                                   //
+        const real delta = model->delta;                                                                                 //
+        const real m_nfw_cut = model->m_nfw_cut;                                                                         //
+        const real gamma1 = model->gamma1;                                                                               //
+        if (r > rcut) {                                                                                                  //
+            return (                                                                                                     //
+                4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3)             //
+                * (((gamma1 - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) / r)                                      //
+                + (UpperIncompleteGammaFunc(delta + 2, r / rdecay) / rdecay)) + m_nfw_cut / r                            //
+            );                                                                                                           //
+        } else {                                                                                                         //
+            const real psi_nfw_cut = model->psi_nfw_cut;                                                                 //
+            const real psi_cut_cut = model->psi_cut_cut;                                                                 //
+            const real m_nfw_cut = model->m_nfw_cut;                                                                     //
+            return (4.0 * M_PI * p0 * cube(rscale) * mw_log(1.0 + R) * inv(r)                                            //
+                - psi_nfw_cut + psi_cut_cut + m_nfw_cut / rcut);                                                         //
+        }                                                                                                                //
+    }                                                                                                                    //
     /* at r = 0 the pot goes to inf. however, the sampling is guarded against r = 0 anyway. */                           //
     return  4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                    //
 }                                                                                                                        //
@@ -112,7 +146,8 @@ static real gen_hern_vel_disp(const Dwarf* model, real r)                       
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             EINASTO                                                                                   */
 /* these are taken from the einasto paper. There are many problems with this, so it is currently unused.                 */
-static real einasto_den(const Dwarf* model, real r)                                                                      //                                                                     //
+/* Might be fixed now that gamma functions are now working correctly.                                                    */
+static real einasto_den(const Dwarf* model, real r)                                                                      //                                                                     
 {                                                                                                                        //
     const real mass __attribute__((unused)) = model->mass;                                                               //
     const real h = model->scaleLength;                                                                                   //
@@ -132,8 +167,8 @@ static real einasto_pot(const Dwarf* model, real r)                             
     real coeff = mass / (h * r);                                                                                         //
     real thing = mw_pow(r, 1.0 / n);                                                                                     //
                                                                                                                          //
-    real term1 = IncompleteGammaFunc(3.0 * n, thing);                                                                    //
-    real term2 = r * IncompleteGammaFunc(2.0 * n, thing);                                                                //
+    real term1 = UpperIncompleteGammaFunc(3.0 * n, thing);                                                               //
+    real term2 = r * UpperIncompleteGammaFunc(2.0 * n, thing);                                                           //
     real term = 1.0 - ( term1 + term2 ) / GammaFunc(3.0 * n);                                                            //
     return coeff * term;                                                                                                 //
 }                                                                                                                        //
@@ -147,23 +182,30 @@ static real einasto_vel_disp(const Dwarf* model, real r)                        
 }                                                                                                                        //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*                             CORED                                                                                     */
-/* this potential and density are cored profiles to be used with SIDM.                                                   */
+/* this potential and density are cored NFW profiles to be used with SIDM.                                               */
 static real cored_den(const Dwarf* model, real r)                                                                        //
 {                                                                                                                        //
     const real r1 = model->r1;                                                                                           //
-    real p = 0.0;                                                                                                        //
-    real rscale = 0.0;                                                                                                   //
-    if(r <= r1)                                                                                                          //
+    const real rcut = model->rcut;                                                                                       //
+                                                                                                                         //
+    if (rcut != 0.0 && r > rcut)                                                                                         //
     {                                                                                                                    //
-        p = model->p0;                                                                                                   //
-        rscale = model->rc;                                                                                              //
-        return p / (1.0 + sqr(r / rscale));                                                                              //
+        const real pcut = model->pcut;                                                                                   //
+        const real delta = model->delta;                                                                                 //
+        const real rdecay = model->rdecay;                                                                               //
+        return pcut * mw_pow(r / rcut, delta) * mw_exp(-(r - rcut) / rdecay);                                            //
+    }                                                                                                                    //
+    else if (r <= r1)                                                                                                    //
+    {                                                                                                                    //
+        const real p0 = model->p0;                                                                                       //
+        const real rc = model->rc;                                                                                       //
+        return p0 / (1.0 + sqr(r / rc));                                                                                 //
     }                                                                                                                    //
     else                                                                                                                 //
     {                                                                                                                    //
-        p = model->ps;                                                                                                   //
-        rscale = model->scaleLength;                                                                                     //
-        return p / ((r / rscale) * sqr(1.0 + r / rscale));                                                               //
+        const real ps = model->ps;                                                                                       //
+        const real rs = model->scaleLength;                                                                              //
+        return ps / ((r / rs) * sqr(1.0 + r / rs));                                                                      //
     }                                                                                                                    //
 }                                                                                                                        //
                                                                                                                          //
@@ -174,32 +216,57 @@ static real cored_pot(const Dwarf* model, real r)                               
     const real rc = model->rc;                                                                                           //
     const real ps = model->ps;                                                                                           //
     const real rs = model->scaleLength;                                                                                  //
-    const real C3 = 4.0 * M_PI * (                                                                                       //
-            ps * cube(rs) * (                                                                                            //
-                mw_log((1.0 + r1 / rs)) - r1 / (rs + r1)                                                                 //
-            )                                                                                                            //
-            - p0 * sqr(rc) * (                                                                                           //
-                r1 - rc * mw_atan(r1 / rc)                                                                               //
-            )                                                                                                            //
-        );                                                                                                               //
+    const real rcut = model->rcut;                                                                                       //
+    const real m_iso_r1 = model->m_iso_r1;                                                                               //
+    const real m_nfw_r1 = model->m_nfw_r1;                                                                               //
+    const real m_nfw_cut = model->m_nfw_cut;                                                                             //
                                                                                                                          //
-    if(r <= r1)                                                                                                          //
+    if (rcut != 0.0 && r > rcut)                                                                                         //
     {                                                                                                                    //
-            const real C2 = C3 / r1 - (4.0 * M_PI) / r1 * (                                                              //
-            ps * cube(rs) * mw_log(1 + r1 / rs) +                                                                        //
-            p0 * (                                                                                                       //
-                (sqr(rc) * r1) / 2.0 * mw_log(sqr(r1) + sqr(rc)) +                                                       //
-                cube(rc) * mw_atan(r1 / rc)                                                                              //
-            )                                                                                                            //
+        const real pcut = model->pcut;                                                                                   //
+        const real delta = model->delta;                                                                                 //
+        const real rdecay = model->rdecay;                                                                               //
+        const real gamma1 = model->gamma1;                                                                               //
+        return (                                                                                                         //
+            4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3)                 //
+            * (((gamma1 - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) * inv(r))                                     //
+            + (UpperIncompleteGammaFunc(delta + 2, r / rdecay) * inv(rdecay)))                                           //
+            + ((m_nfw_cut + m_iso_r1 - m_nfw_r1) * inv(r))                                                               //
         );                                                                                                               //
-        return -1.0 * (4.0 * M_PI * p0 * (                                                                               //
-            sqr(rc) / 2.0 * mw_log(sqr(r) + sqr(rc)) +                                                                   //
-            cube(rc) / r * mw_atan(r / rc)                                                                               //
-        ) + C2);                                                                                                         //
+    }                                                                                                                    //
+    else if (r <= r1)                                                                                                    //
+    {                                                                                                                    //
+        const real p0 = model->p0;                                                                                       //
+        const real rc = model->rc;                                                                                       //
+        const real psi_iso_r1 = model->psi_iso_r1;                                                                       //
+        const real psi_nfw_r1 = model->psi_nfw_r1;                                                                       //
+        real psi = (                                                                                                     //
+            -4.0 * M_PI * p0 * sqr(rc) * ((mw_log(sqr(rc) + sqr(r)) * inv(2.0)) + ((rc * mw_atan(r / rc) * inv(r))))     //
+            - psi_iso_r1 + psi_nfw_r1 + ((m_iso_r1 - m_nfw_r1) * inv(r1))                                                //
+        );                                                                                                               //
+        if (rcut != 0.0) {                                                                                               //
+            const real psi_nfw_cut = model->psi_nfw_cut;                                                                 //
+            const real psi_cut_cut = model->psi_cut_cut;                                                                 //
+            psi += -psi_nfw_cut - ((m_iso_r1 - m_nfw_r1) * inv(rcut))                                                    //
+                + psi_cut_cut + ((m_nfw_cut + m_iso_r1 - m_nfw_r1) * inv(rcut));                                         //
+        }                                                                                                                //
+        return psi;                                                                                                      //
     }                                                                                                                    //
     else                                                                                                                 //
     {                                                                                                                    //
-            return  -1.0 * (-4.0 * M_PI * ps * cube(rs) / r * mw_log(1.0 + r / rs) + C3 / r);                            //
+        const real ps = model->ps;                                                                                       //
+        const real rs = model->scaleLength;                                                                              //
+        real psi = (                                                                                                     //
+            4.0 * M_PI * ps * cube(rs) * inv(r) * mw_log(1.0 + r / rs) + ((m_iso_r1 - m_nfw_r1) * inv(r))                //
+        );                                                                                                               //
+        if (rcut != 0.0) {                                                                                               //
+            const real psi_nfw_cut = model->psi_nfw_cut;                                                                 //
+            const real psi_cut_cut = model->psi_cut_cut;                                                                 //
+            const real m_nfw_cut = model->m_nfw_cut;                                                                     //
+            psi += -psi_nfw_cut - ((m_iso_r1 - m_nfw_r1) * inv(rcut))                                                    //
+                + psi_cut_cut + ((m_nfw_cut + m_iso_r1 - m_nfw_r1) * inv(rcut));                                         //
+        }                                                                                                                //
+        return psi;                                                                                                      //
     }                                                                                                                    //
 }                                                                                                                        //
                                                                                                                          //

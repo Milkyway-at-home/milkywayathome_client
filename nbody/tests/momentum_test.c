@@ -7,6 +7,87 @@ the momentum likelihood calculation, and the reading of momentum data*/
 #include "nbody_checkpoint.h"
 #include "nbody.h"
 #include <stdio.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+//defined in nbody_checkpoint.c and not the header, so need to define it again here
+typedef struct
+{
+    char header[128];                     /* "mwnbody" */
+    uint32_t majorVersion, minorVersion;  /* Version check */
+    uint32_t nbody;
+    uint32_t step;
+    uint32_t realSize;                   /* Does the checkpoint use float or double */
+    uint32_t ptrSize;
+    uint32_t nOrbitTrace;
+    uint32_t nShiftLMC;
+    uint32_t treeIncest;
+    real rsize;
+    NBodyCtx ctx;
+} NBodyCheckpointHeader;
+
+//Function to read in bestlikelihood body state from checkpoint, so the same checkpoint can be used even as versions change
+int read_bestbodytab_from_checkpoint(const char* checkpointFile, Body** bodytab_out, int* nbody_out) {
+    int fd = open(checkpointFile, O_RDONLY);
+    if (fd == -1) {
+        perror("Failed to open checkpoint file");
+        return 1;
+    }
+
+    struct stat sb;
+    if (fstat(fd, &sb) == -1) {
+        perror("Failed to stat checkpoint file");
+        close(fd);
+        return 1;
+    }
+
+    char* mptr = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (mptr == MAP_FAILED) {
+        perror("Failed to mmap checkpoint file");
+        close(fd);
+        return 1;
+    }
+
+    // Read header
+    NBodyCheckpointHeader cpHdr;
+    memcpy(&cpHdr, mptr, 800); //size of header hardcoded in as it will change with updates
+    if (strncmp(cpHdr.header, "mwnbody", 7) != 0) {
+        fprintf(stderr, "Invalid checkpoint header\n");
+        munmap(mptr, sb.st_size);
+        close(fd);
+        return 1;
+    }
+
+    uint32_t nbody = cpHdr.nbody;
+
+    // Find offset to bestLikelihoodBodyTab
+    char* p = mptr + 800; //size of header hardcoded in as it will change with updates
+    size_t sizeOfData;
+    memcpy(&sizeOfData, p, sizeof(size_t));
+    p += sizeof(size_t);
+    p += sizeOfData; // skip extractedSt
+
+    p += nbody * sizeof(Body); // skip normal bodytab
+
+    // Now p points to best likelihood bodytab
+    Body* bestbodytab = (Body*)malloc(nbody * sizeof(Body));
+    if (!bestbodytab) {
+        fprintf(stderr, "Failed to allocate bodytab\n");
+        munmap(mptr, sb.st_size);
+        close(fd);
+        return 1;
+    }
+    memcpy(bestbodytab, p, nbody * sizeof(Body));
+
+    *bodytab_out = bestbodytab;
+    *nbody_out = nbody;
+
+    munmap(mptr, sb.st_size);
+    close(fd);
+    return 0;
+}
 
 int main()
 {
@@ -24,26 +105,15 @@ int main()
     NBodyFlags nbf;
     NBodyCtx ctx;
     NBodyState st;
-    //CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
     /* A known nbody state will be read in from a checkpoint file. Momentum values calculated 
     will be checked against those calculated from the corresponding output file in python*/
     nbf.checkpointFileName = "./momentum_test_checkpoint";
-    nbf.ignoreCheckpoint = 0;
-    st.usesCL = FALSE;
-
-    if (nbResolveCheckpoint(&st, nbf.checkpointFileName))
+    if(read_bestbodytab_from_checkpoint(nbf.checkpointFileName, &st.bodytab, &st.nbody))
     {
-        mw_printf("Failed to resolve checkpoint\n");
+        printf("\tFailed to read best likelihood bodystate from checkpoint file\n");
         return 1;
     }
-    if(nbReadCheckpoint(&ctx, &st))
-    {
-        mw_printf("Failed to read checkpoint\n");
-        return 1;
-    }
-
-    st.bodytab = st.bestLikelihoodBodyTab; // use the best likelihood bodytab for the test, since this is the output we have
 
     //initialize needed context values
     ctx.sunGCDist = 8.0;

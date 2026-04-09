@@ -409,7 +409,7 @@ static int nbThawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
     ShiftLMCSize = cpHdr.nShiftLMC * sizeof(mwvector);
     LMCPosVelSize = 2*sizeof(mwvector);
-    
+
     size_t* sizeOfData = (size_t*)mwMallocA(sizeof(size_t));
     memcpy(sizeOfData, p, sizeof(size_t));
     p += sizeof(size_t);

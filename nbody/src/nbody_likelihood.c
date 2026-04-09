@@ -217,7 +217,7 @@ real * nbSystemLikelihood(const NBodyState* st,
          * than infinity, so use something a bit worse than the case where
          * 100% is located in opposite bins.
          */
-        if (histogram->histograms[0]->totalNum < 0.01 * (real) st->nbody)
+        if (histogram->histograms[0]->totalNum < 0.0001 * (real) st->nbody) //TODO: Check against only light bodies, then raise threshold
         {
             static real worstEMD_Array[11];
             real worstEMD;

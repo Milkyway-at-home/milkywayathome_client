@@ -22,31 +22,32 @@
 
 -- IMPORTANT -- IMPORTANT -- IMPORTANT -- IMPORTANT -- IMPORTANT -- 
 -- Structural changes to this file also need to be changed in the 
--- lua files in the test_env_lua directory (nbody/sample_workunits/test_env_lua/)
+-- lua files in the tests directory (nbody/tests/mixeddwarf_models/) and (nbody/tests/orphan_models/)
 -- especially if the changes are not backwards compatible with the previous format
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-
-        
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- --  BASIC  SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 totalBodies           = 5000   -- -- NUMBER OF BODIES PER DWARF                                                -- --
 totalLightBodies      = 2500   -- -- NUMBER OF LIGHT MATTER BODIES                                            -- --
 
-nbodyLikelihoodMethod = "EMD"   -- -- HIST COMPARE METHOD                                                      -- --
-nbodyMinVersion       = "1.93"  -- -- MINIMUM APP VERSION                                                      -- --
+nbodyLikelihoodMethod = "EMD"       -- -- HIST COMPARE METHOD                                                  -- --
+nbodyMinVersion       = "1.95"      -- -- MINIMUM APP VERSION                                                  -- --
 
-run_null_potential    = false   -- -- NULL POTENTIAL SWITCH                                                    -- --
-use_tree_code         = true    -- -- USE TREE CODE NOT EXACT                                                  -- --
-print_reverse_orbit   = false   -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)                  -- --
-print_out_parameters  = false   -- -- PRINT OUT ALL PARAMETERS                                                 -- --
+run_null_potential    = false       -- -- NULL POTENTIAL SWITCH                                                -- --
+use_tree_code         = true        -- -- USE TREE CODE NOT EXACT                                              -- --
+print_reverse_orbit   = false       -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)              -- --
+print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS                                             -- --
 
-LMC_body              = false    -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                            -- --
-LMC_scaleRadius       = 15      -- --  kpc                                                                     -- --
+LMC_body              = true        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
+LMC_function          = 1           -- -- 1: Plummer 2: Henrquist 3: Hernquist with cutoff                     -- --
+LMC_scaleRadius       = 15          -- --  kpc                                                                 -- --
+LMC_cutoff            = 16          -- --  kpc  This is used only for Hernquist with cutoff                    -- --
 preset_LMC_Mass       = 449865.888  -- -- SMU (used unless specified in arguments)                             -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
-CoulombLogarithm      = 0.470003629 -- -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRACTION CALCULATION   -- --
+CoulombLogarithm      = 15      -- -- ln(r/1.22*CoulombLogarithm) (Patel et al. 2020) COULOMB LOGARITHM USED   -- --
+                                -- -- IN DYNAMICAL FRACTION CALCULATION                                        -- --
 
 SunGCDist             = 8.0       -- -- Distance between Sun and Galactic Center                               -- --
 SunVelx               = 10.3      -- -- Sun's x-velocity (kpc/Gyr) (Hogg et al. (2005))                        -- --
@@ -58,7 +59,7 @@ UseOldSofteningLength = 0         -- -- Uses old softening length formula from v
 
 -- -- -- -- NOTE: USER INPUT AT RUNTIME IS CURRENTLY NOT FUNCTIONAL -- -- -- --
 arg = { ... } -- -- TAKING USER INPUT
-assert((#arg == 6 or #arg == 7 or #arg == 8 or #arg == 12 or #arg == 13 or #arg == 14), "Expects either 6, 7, 8, 12, 13, or 14 arguments")
+assert((#arg == 6 or #arg == 7 or #arg == 8 or #arg == 11 or #arg == 12 or #arg == 13), "Expects either 6, 7, 8, 11, 12, or 13 arguments")
 assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE FUTURE
 argSeed = 34086709 -- -- SETTING SEED TO FIXED VALUE
 --argSeed = 34086710 -- -- SETTING SEED TO FIXED VALUE
@@ -248,11 +249,11 @@ function makePotential()
    else
         --NOTE: To exclude a component from the potential, set component to "<component_name>.none" and include only an arbitrary "mass" argument
         return  Potential.create{
-            spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
-            disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
-            disk2     = Disk.none{ mass = 3.0e5 },
-            halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12.0, flattenZ = 1.0 }
-        }--vhalo = 74.61 kpc/gy = 73 km/s
+            spherical = Spherical.hernquist{ mass  = 20243.9650, scale = 0.442 },
+            disk      = Disk.miyamotoNagai{ mass = 305908.804, scaleLength = 3.0, scaleHeight = 0.28 },
+            disk2     = Disk.none{ mass = 0.0 },
+            halo      = Halo.nfwmass{ scaleLength = 16.0, mass = 1.96591393e6 }
+        }
    end
 end
 
@@ -285,6 +286,8 @@ function get_timestep()
     end
 
     if ((evolveTime/t > 150000 or t ~= t) and not timestep_control) then
+        -- We could throw an error here, but instead let it run fast and return a poor likelihood
+        -- This way users won't see errors in their workunit logs
         TooManyTimesteps = 1
         t = evolveTime/4.0
     end
@@ -356,8 +359,10 @@ function makeContext()
       InitialOutput = generateInitialOutput,
       theta         = 1.0,
       LMC           = LMC_body,
+      LMCfunction   = LMC_function,
       LMCmass       = LMC_Mass,
       LMCscale      = LMC_scaleRadius,
+      LMCscale2     = LMC_cutoff,
       LMCDynaFric   = LMC_DynamicalFriction,
       coulomb_log   = CoulombLogarithm,
       calibrationRuns = numCalibrationRuns
@@ -370,7 +375,9 @@ function makeBodies(ctx, potential)
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = {}, {}
   --Setting finalPosition, finalVelocity as empty list, LMC value will be nil
     if TooManyTimesteps == 1 then
+        -- Setting bodies to 1 ensures worst case likelihood
         totalBodies = 1
+        totalLightBodies = 1
     end
 
     if(run_null_potential == true and manual_bodies == true) then

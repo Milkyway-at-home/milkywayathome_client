@@ -515,9 +515,11 @@ typedef struct MW_ALIGN_TYPE
     real MomentumCorrect;     /* correction factor for correcting the distribution after outlier rejection */
 
     mwbool LMC;
+    real LMCfunction;           /* LMC function switch */
 
     real LMCmass;              /* Mass of LMC */
     real LMCscale;             /* Scale radius of LMC */
+    real LMCscale2;            /* Cutoff radius of LMC */
     mwbool LMCDynaFric;        /* LMC Dynamical Friction switch */
     real coulomb_log;          /* Coulomb Logarithm used in dynamical friction */
 
@@ -536,8 +538,8 @@ typedef struct MW_ALIGN_TYPE
 #define NBODYCTX_TYPE "NBodyCtx"
 #define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                  \
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                             \
-                         0,                                                                             \
-                         NULL, NULL, NULL, NULL, NULL,                                                  \
+                         0,                                                                                       \
+                         0.0, 0.0, 0.0, 0.0, 0.0,                                                \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                  \
                          FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,   \
                          FALSE, FALSE, FALSE, FALSE,                                                    \

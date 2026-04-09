@@ -88,7 +88,7 @@ static inline real getHaloScaleLength(const Halo* halo){
 }
 
 /** Formula for Dynamical Friction using Chandrasekhar's formula and assuming an isotropic Maxwellian velocity distribution **/
-mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, real scaleLength_LMC __attribute__((unused)), mwbool dynaFric, real time, real coulomb_log){
+mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel, real mass_LMC, mwbool dynaFric, real time, real coulomb_log){
     mwvector result = mw_vec(0.0,0.0,0.0);  // Vector with acceleration due to DF
     if (!dynaFric) {
         return result;
@@ -107,7 +107,9 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     mw_halo = &(pot->halo);
     real scaleLength_halo = getHaloScaleLength(mw_halo);
     //mw_printf("a = %.15f\n", scaleLength_halo);
-    real ln_lambda = coulomb_log;
+    //coulomb log equation from Patel et al. 2020
+    real dist = mw_sqrt(sqr(pos.x) + sqr(pos.y) + sqr(pos.z));
+    const real ln_lambda = dist <= 1.22*coulomb_log ? 0.0 : mw_log(dist/(1.22*coulomb_log));
     //mw_printf("ln(L) = %.15f\n", ln_lambda);
 
     //Calculate densities from each individual component

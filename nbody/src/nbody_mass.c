@@ -82,7 +82,9 @@ real probability_match(int n, real ktmp, real pobs)
 }
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 // IMPLEMENTATION OF GAMMA FUNCTIONS. COMPLETE AND INCOMPLETE
-real GammaFunc(const real z) 
+// These functions are adapted from the Numerical Recipes in C 2nd ed except for gammln.
+/* Returns ln(Gamma(z)) via the Lanczos approximation (NR 3rd ed). */
+real gammln(const real z) 
 {
     //Alogrithm for the calculation of the Lanczos Approx of the complete Gamma function 
     //as implemented in Numerical Recipes 3rd ed, 2007.
@@ -108,67 +110,193 @@ real GammaFunc(const real z)
     //sqrt(2 * pi) = 2.5066282746310005
     tmp += mw_log(2.5066282746310005 * A_g / x);//returns the log of the gamma function
     
-    return mw_exp(tmp);
+    return tmp;
 }
 
-static real shift_factorial(real z, real n)
+/*
+ * Returns the incomplete gamma function P(a, x), evaluated by its
+ * series representation. Also returns ln(Gamma(a)) through gln.
+ */
+static real gser(const real a, const real x, real* gln)
 {
-    int counter;
-    real result = 0.0;
-    for(counter = n; counter >= 1; counter--)
-    {
-        result += mw_log(z + (real) counter);
-    }
-    return mw_exp(result);
-    
-    
-}
-
-
-static real series_approx(real a, real x)
-{
-
+    const int itmax = 100;
+    const real eps = (real) 3.0e-7;
     real sum, del, ap;
-    real pow_x = 1.0;
-//     ap = a;
-    ap = 0.0;
-    del = sum = 1.0 / a;//starting: gammma(a) / gamma(a+1) = 1/a
-    for (;;) 
-    {
-//         ++ap;
-        ++ap;
-//         del *= x / ap;
 
-        pow_x *= x;
-        del = pow_x / (a * shift_factorial(a, ap));
-        
+    *gln = gammln(a);
+    if (x <= 0.0)
+    {
+        return 0.0;
+    }
+
+    ap = a;
+    del = sum = 1.0 / a;
+    for (int n = 1; n <= itmax; ++n)
+    {
+        ap += 1.0;
+        del *= x / ap;
         sum += del;
-        if (mw_fabs(del) < mw_fabs(sum) * 1.0e-15) 
+        if (mw_fabs(del) < mw_fabs(sum) * eps)
         {
-            return sum * mw_exp(-x + a * mw_log(x));
+            return sum * mw_exp(-x + a * mw_log(x) - (*gln));
         }
     }
-    
+
+    mw_printf("WARNING: gser did not converge (a=%f, x=%f)\n", a, x);
+    return sum * mw_exp(-x + a * mw_log(x) - (*gln));
 }
-                            
-real IncompleteGammaFunc(real a, real x)
+
+/*
+ * Returns the incomplete gamma function Q(a, x), evaluated by its
+ * continued-fraction representation (modified Lentz method).
+ * Also returns ln(Gamma(a)) through gln.
+ */
+static real gcf(const real a, const real x, real* gln)
 {
-    //the series approx returns gamma from 0 to X but we want from X to INF
-    //Therefore, we subtract it from GammaFunc which is from 0 to INF
-    //The continued frac approx is already from X to INF
-    
-//     static const real max_a = 100;
-    real gamma = GammaFunc(a);
+    const int itmax = 100;
+    const real eps = (real) 3.0e-7;
+    const real fpmin = (real) 1.0e-30;
+    real an, b, c, d, del, h;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-    if (x == 0.0) return gamma;
-#pragma GCC diagnostic pop
-    // Use the series representation. 
-    return gamma - series_approx(a,x);
-    
+    *gln = gammln(a);
+    b = x + 1.0 - a;
+    if (mw_fabs(b) < fpmin)
+    {
+        b = fpmin;
+    }
+    c = 1.0 / fpmin;
+    d = 1.0 / b;
+    h = d;
 
-}    
+    for (int i = 1; i <= itmax; ++i)
+    {
+        an = -(real) i * ((real) i - a);
+        b += 2.0;
+        d = an * d + b;
+        if (mw_fabs(d) < fpmin)
+        {
+            d = fpmin;
+        }
+        c = b + an / c;
+        if (mw_fabs(c) < fpmin)
+        {
+            c = fpmin;
+        }
+        d = 1.0 / d;
+        del = d * c;
+        h *= del;
+        if (mw_fabs(del - 1.0) < eps)
+        {
+            return mw_exp(-x + a * mw_log(x) - (*gln)) * h;
+        }
+    }
+
+    mw_printf("WARNING: gcf did not converge (a=%f, x=%f)\n", a, x);
+    return mw_exp(-x + a * mw_log(x) - (*gln)) * h;
+}
+
+/*
+ * Returns the regularized lower incomplete gamma function:
+ * P(a, x) = gamma(a, x) / Gamma(a).
+ * Uses series for x < a + 1, otherwise returns 1 - Q(a, x).
+ */
+real gammp(const real a, const real x)
+{
+    real gln;
+
+    if (x < 0.0 || a <= 0.0)
+    {
+        mw_printf("WARNING: Invalid arguments in gammp (a=%f, x=%f)\n", a, x);
+        return NAN;
+    }
+
+    if (x < (a + 1.0))
+    {
+        return gser(a, x, &gln);
+    }
+    return 1.0 - gcf(a, x, &gln);
+}
+
+/*
+ * Returns the regularized upper incomplete gamma function:
+ * Q(a, x) = Gamma(a, x) / Gamma(a) = 1 - P(a, x).
+ * Uses series for x < a + 1, otherwise continued fraction.
+ */
+real gammq(const real a, const real x)
+{
+    real gln;
+
+    if (x < 0.0 || a <= 0.0)
+    {
+        mw_printf("WARNING: Invalid arguments in gammq (a=%f, x=%f)\n", a, x);
+        return NAN;
+    }
+
+    if (x < (a + 1.0))
+    {
+        return 1.0 - gser(a, x, &gln);
+    }
+    return gcf(a, x, &gln);
+}
+
+/* Returns the complete gamma function Gamma(z). */
+real GammaFunc(const real z)
+{
+    return mw_exp(gammln(z));
+}
+
+/* Returns the upper incomplete gamma function Gamma(a, x). */
+real UpperIncompleteGammaFunc(real a, real x)
+{
+    return GammaFunc(a) * gammq(a, x);
+}
+
+/* Returns the lower incomplete gamma function Gamma(a, x). */
+real LowerIncompleteGammaFunc(real a, real x)
+{
+    return GammaFunc(a) * gammp(a, x);
+}
+
+/*
+ * Numerical Recipes erff(x):
+ * returns erf(x) using the regularized incomplete gamma P(1/2, x^2).
+ */
+real ErrorFunc(real x)
+{
+    const real xsq = x * x;
+    return (x < 0.0) ? -gammp(0.5, xsq) : gammp(0.5, xsq);
+}
+
+/*
+ * Numerical Recipes erffc(x):
+ * returns erfc(x) using P(1/2, x^2) for x < 0 and Q(1/2, x^2) for x >= 0.
+ */
+real ComplementaryErrorFunc(real x)
+{
+    const real xsq = x * x;
+    return (x < 0.0) ? 1.0 + gammp(0.5, xsq) : gammq(0.5, xsq);
+}
+
+/*
+ * Numerical Recipes erfcc(x):
+ * fast erfc approximation with fractional error < 1.2e-7.
+ */
+real ComplementaryErrorFuncApprox(real x)
+{
+    real z = mw_fabs(x);
+    real t = 1.0 / (1.0 + 0.5 * z);
+    real ans = t * mw_exp(-z * z - 1.26551223
+                          + t * (1.00002368
+                          + t * (0.37409196
+                          + t * (0.09678418
+                          + t * (-0.18628806
+                          + t * (0.27886807
+                          + t * (-1.13520398
+                          + t * (1.48851587
+                          + t * (-0.82215223
+                          + t * 0.17087277)))))))));
+    return (x >= 0.0) ? ans : 2.0 - ans;
+}
 
 // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 

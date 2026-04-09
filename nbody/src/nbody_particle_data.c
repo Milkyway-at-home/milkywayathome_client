@@ -22,12 +22,19 @@ ParticleCollection* create_particle_collection(size_t initial_capacity) {
     // Initialize header fields
     collection->header.simple_output = 1;
     collection->header.has_milkyway = -1;
+    collection->header.has_lmc = -1;
     collection->header.com_x = (real)0.0; 
     collection->header.com_y = (real)0.0; 
     collection->header.com_z = (real)0.0;
     collection->header.cmom_x = (real)0.0; 
     collection->header.cmom_y = (real)0.0; 
     collection->header.cmom_z = (real)0.0;
+    collection->header.lmc_pos_x = (real)0.0;
+    collection->header.lmc_pos_y = (real)0.0;
+    collection->header.lmc_pos_z = (real)0.0;
+    collection->header.lmc_vel_x = (real)0.0;
+    collection->header.lmc_vel_y = (real)0.0;
+    collection->header.lmc_vel_z = (real)0.0;
 
     return collection;
 }
@@ -88,12 +95,32 @@ ParticleCollection* read_particle_file(const char *filename) {
         char *end = start + strlen(start) - 1;
         while (end > start && (*end == ' ' || *end == '\t' || *end == '\n' || *end == '\r')) *end-- = '\0';
 
-        // Parse header lines
-        if (strstr(start, "simple_output") == start) {
+        // Parse header lines (order: skip conditions, terminal condition, key=value parsers)
+        if (start[0] == '\0') {
+            /* Empty line - skip (backward compat with blank lines in header) */
+        } else if (start[0] == '#') {
+            if (strstr(start, "ignore") && strstr(start, "id")) {
+                in_header = 0;  /* Column header - end of header */
+            }
+            /* Other # lines - skip (backward compat) */
+        } else if (strstr(start, "simple_output") == start) {
             sscanf(start, "simple_output = %d", &simple_output);
             collection->header.simple_output = simple_output;
         } else if (strstr(start, "hasMilkyway") == start) {
             sscanf(start, "hasMilkyway = %d", &collection->header.has_milkyway);
+        } else if (strstr(start, "hasLMC") == start) {
+            sscanf(start, "hasLMC = %d", &collection->header.has_lmc);
+        } else if (strstr(start, "LMC position") == start) {
+            double lmc_px, lmc_py, lmc_pz, lmc_vx, lmc_vy, lmc_vz;
+            if (sscanf(start, "LMC position = %lf, %lf, %lf,   LMC velocity = %lf, %lf, %lf",
+                       &lmc_px, &lmc_py, &lmc_pz, &lmc_vx, &lmc_vy, &lmc_vz) == 6) {
+                collection->header.lmc_pos_x = (real)lmc_px;
+                collection->header.lmc_pos_y = (real)lmc_py;
+                collection->header.lmc_pos_z = (real)lmc_pz;
+                collection->header.lmc_vel_x = (real)lmc_vx;
+                collection->header.lmc_vel_y = (real)lmc_vy;
+                collection->header.lmc_vel_z = (real)lmc_vz;
+            }
         } else if (strstr(start, "centerOfMass") != NULL) {
             // Handle both combined and separate formats
             double com_x, com_y, com_z, cmom_x, cmom_y, cmom_z;
@@ -131,11 +158,8 @@ ParticleCollection* read_particle_file(const char *filename) {
                     }
                 }
             }
-        } else if (start[0] == '#') {
-            if (strstr(start, "ignore") && strstr(start, "id")) {
-                in_header = 0;
-            }
         } else {
+            /* Unknown line - end header (likely start of data) */
             in_header = 0;
         }
 

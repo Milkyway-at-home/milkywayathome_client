@@ -134,9 +134,9 @@ static inline real ZSechIntegrand (real k, real R, real Rd, real z, real zd)
     return val;
 }
 
-/**********************************************************************************************************************************************************************************************/
+/*LMC potentials*/
 
-mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
+static inline mwvector pointLmcAccel (const mwvector pos, const mwvector pos1, const real mass)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
@@ -145,12 +145,44 @@ mwvector pointAccel(const mwvector pos, const mwvector pos1, const real mass)
     return v;
 }
 
-mwvector plummerAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
+static inline mwvector plummerLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
 {
     mwvector v = mw_subv(pos1, pos);
     real dist = mw_distv(pos, pos1);
     real tmp = mw_sqrt(mw_pow(scale,2.0) + mw_pow(dist,2.0));
     mw_incmulvs(v, mass/mw_pow(tmp,3.0));
+    return v;
+}
+
+static inline mwvector hernquistLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale)
+{
+    mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+    real tmp = mw_pow((scale + dist), 2.0);
+    mw_incmulvs(v, mass/(tmp*dist));
+    return v;
+}
+
+static inline mwvector cutoffhernquistLmcAccel(const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2) /* Hwang et al. 2013 */
+{
+    mwvector v = mw_subv(pos1, pos);
+    real dist = mw_distv(pos, pos1);
+
+    if (dist <= scale2)
+    {
+        real tmp = mw_pow((scale + dist), 2.0);
+        mw_incmulvs(v, mass/(tmp*dist));
+    }
+    else
+    {
+	real tmp1 = (mass*mw_pow(scale2, 2.0))/mw_pow((scale + scale2), 2.0);
+	real tmp2 = (mass*scale*mw_pow(scale2, 2.0))/mw_pow((scale + scale2), 3.0);
+	real tmp3 = mw_exp(-2.0*dist/scale2) - mw_exp(-2.0);
+	real tmp4 = mw_pow(dist, -3.0);
+
+	mw_incmulvs(v, tmp4*(tmp1 - (tmp2*tmp3)));
+    }
+
     return v;
 }
 
@@ -506,6 +538,18 @@ static inline mwvector logHaloAccel(const Halo* halo, mwvector pos)
     return acc;
 }
 
+static inline mwvector SphericalNFWerkalHaloAccel(const Halo* halo, mwvector pos, real r)
+{
+    const real a = halo->scaleLength;
+    const real M  = halo->mass;
+
+    const real ar = a + r;
+    const real tmp = M/(mw_log(1.0 + 15.3) - (15.3/(1.0 + 15.3)));  //c = 15.3
+    const real c = tmp*(r - (ar*mw_log(1 + (r/a))))/(r*r*r*ar);							
+
+    return mw_mulvs(pos, c);
+}
+
 static inline mwvector nfwHaloAccel(const Halo* h, mwvector pos, real r)
 {
     const real a = h->scaleLength;
@@ -722,6 +766,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
         case NinkovicHalo:
             acctmp = ninkovicHaloAccel(&pot->halo, pos, r);
             break;
+        case SphericalNFWerkalHalo:
+	        acctmp = SphericalNFWerkalHaloAccel(&pot->halo, pos, r);
+            break;
         case NoHalo:
             X(acctmp) = 0.0;
             Y(acctmp) = 0.0;
@@ -765,8 +812,26 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
 }
 
 
-
-
-
+mwvector LMCAcceleration(const int LMCfunction, const mwvector pos, const mwvector pos1, const real mass, const real scale, const real scale2)
+{
+    mwvector lmcAcc;
+    
+    switch (LMCfunction) 
+    {
+        case 1:
+            lmcAcc = plummerLmcAccel(pos, pos1, mass, scale);
+            break;
+        case 2:
+            lmcAcc = hernquistLmcAccel(pos, pos1, mass, scale);
+            break;
+	    case 3:
+	        lmcAcc = cutoffhernquistLmcAccel(pos, pos1, mass, scale, scale2);
+	        break;
+        default:
+            mw_fail("Invalid LMC type in external acceleration\n");
+            break;
+    }
+    return lmcAcc;
+}
 
 

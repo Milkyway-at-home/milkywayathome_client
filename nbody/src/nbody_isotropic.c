@@ -646,9 +646,7 @@ static inline real vel_mag(dsfmt_t* dsfmtState, real r, real * args)
         }
     }
     
-
-//     v *= 0.977813107;//changing from kpc/gy to km/s
-    return v; //km/s
+    return v; //kpc/Gyr
 }
 
 static inline mwvector get_components(dsfmt_t* dsfmtState, real rad)

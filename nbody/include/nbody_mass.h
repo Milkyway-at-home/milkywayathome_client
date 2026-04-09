@@ -32,7 +32,11 @@ real probability_match(int n, real k, real pobs);
 
 real GammaFunc(const real z);
 
-real IncompleteGammaFunc(real a, real x);
+real UpperIncompleteGammaFunc(real a, real x);
+real LowerIncompleteGammaFunc(real a, real x);
+real ErrorFunc(real x);
+real ComplementaryErrorFunc(real x);
+real ComplementaryErrorFuncApprox(real x);
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
 

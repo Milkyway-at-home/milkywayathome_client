@@ -35,18 +35,18 @@
 #include "nbody_potential_types.h"
 
 /* Dwarf galaxy parameters */
-/* These scale radius and mass parameters are known in the group as Eric's parameters */
+/* These scale radius and mass parameters are known in the group as Sidd's parameters */
 /* Optimized for a Plummer-Plummer model */
 #define EVOLUTION_TIME "2.0"                  /* Evolution time in Gyr */
 #define EVOLUTION_RATIO "0.0"                 /* Evolution time ratio */
-#define BARYON_SCALE_RADIUS "0.181216"        /* Baryon Scale radius in kpc */
-#define SCALE_RADIUS_RATIO "0.182799"         /* Scale radius ratio */
-#define BARYON_MASS "1.22251"                 /* Baryon Mass in SMU */
-#define MASS_RATIO "0.0126171"                /* Mass ratio */
+#define BARYON_SCALE_RADIUS "0.2"             /* Baryon Scale radius in kpc */
+#define SCALE_RADIUS_RATIO "0.2"              /* Scale radius ratio */
+#define BARYON_MASS "12.0"                    /* Baryon Mass in SMU */
+#define MASS_RATIO "0.2"                      /* Mass ratio */ 
 
 /* KL divergence thresholds */
 #define INITIAL_KL_THRESHOLD 0.01   /* Maximum acceptable initial KL divergence */
-#define KL_FLUCTUATION_THRESHOLD 0.03 /* Maximum acceptable KL divergence fluctuation */
+#define KL_FLUCTUATION_FACTOR 3.0   /* Factor to multiply initial KL divergence for fluctuation threshold */
 
 /* Struct to hold all simulation variables and allocations */
 typedef struct {
@@ -133,7 +133,7 @@ static real* smooth_and_normalize_distribution(real* counts, size_t size) {
 }
 
 /* Calculate the Kullback-Leibler divergence between two probability distributions */
-static real kl_divergence(const real *p, const real *q, size_t size) {
+static real kl_divergence(const real *q, const real *p, size_t size) {
 
     real kl_div = 0.0;
 
@@ -149,6 +149,17 @@ static real rice_rule(const real nbodies) {
     return (int)(2.0 * mw_pow(nbodies, 1.0/3.0));
 }
 
+static real get_sampling_bound_for_component(const Dwarf* comp, const Dwarf* other_comp) {
+    
+    if (comp->type == NFW || comp->type == Cored) {
+		if (comp->rcut != 0.0) {
+			return comp->rcut + 10.0 * comp->rdecay;
+		}
+		return 5.0 * comp->r200;
+	}
+	return 5.0 * comp->scaleLength;
+}
+
 /* Function for the stability test for a given dwarf potential type */
 int test_stability(TestContext* tctx) {
     int failed = 0;
@@ -160,11 +171,11 @@ int test_stability(TestContext* tctx) {
     // Calculate the mass per particle for each component
     tctx->mass_per_particle_baryon = tctx->comp1->mass / tctx->nbody_baryon;
     tctx->mass_per_particle_dark = tctx->comp2->mass / tctx->nbody_dark;
-    // Max radius range for calculation is either 4 times the scale length for plummer and general hernquist or 4 times the r200 for cored and nfw which is the radius bound
-    real baryon_range_limit = (tctx->comp1->type == NFW || tctx->comp1->type == Cored) ? 4.0 * tctx->comp1->r200 : 4.0 * tctx->comp1->scaleLength;
+    // Set bounds for calulating KL divergence
+    real baryon_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp1, tctx->comp2);
     printf("Baryon range limit: %f\n", baryon_range_limit);
     fflush(stdout);
-    real dark_range_limit = (tctx->comp2->type == NFW || tctx->comp2->type == Cored) ? 4.0 * tctx->comp2->r200 : 4.0 * tctx->comp2->scaleLength;
+    real dark_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp2, tctx->comp1);
     printf("Dark matter range limit: %f\n", dark_range_limit);
     fflush(stdout);
     // Calculate the bin width for each component
@@ -380,6 +391,13 @@ int test_stability(TestContext* tctx) {
 	return failed;
     }
 
+    // Calculate dynamic fluctuation thresholds based on initial KL divergence
+    real fluctuation_threshold_baryon = initial_kl_divergence_baryon * KL_FLUCTUATION_FACTOR;
+    real fluctuation_threshold_dark = initial_kl_divergence_dark * KL_FLUCTUATION_FACTOR;
+    printf("Dynamic fluctuation threshold for baryon component: %f (initial KL * %f)\n", fluctuation_threshold_baryon, KL_FLUCTUATION_FACTOR);
+    printf("Dynamic fluctuation threshold for dark matter component: %f (initial KL * %f)\n", fluctuation_threshold_dark, KL_FLUCTUATION_FACTOR);
+    fflush(stdout);
+
     // Free the particle collection
     free_particle_collection(tctx->particle_data);
     tctx->particle_data = NULL;
@@ -546,10 +564,19 @@ int test_stability(TestContext* tctx) {
 	    return failed;
 	}
 
-	if (!(kl_divergence_baryon - initial_kl_divergence_baryon <= KL_FLUCTUATION_THRESHOLD) ||
-	    !(kl_divergence_dark - initial_kl_divergence_dark <= KL_FLUCTUATION_THRESHOLD)) {
-	    fprintf(stderr, "Error: KL divergence fluctuation is too high (> %f) showing instability\n",
-		   KL_FLUCTUATION_THRESHOLD);
+	if ((kl_divergence_baryon - initial_kl_divergence_baryon > fluctuation_threshold_baryon) ||
+	    (kl_divergence_dark - initial_kl_divergence_dark > fluctuation_threshold_dark)) {
+	    fprintf(stderr, "Error: KL divergence fluctuation is too high showing instability\n");
+		if (kl_divergence_baryon - initial_kl_divergence_baryon > fluctuation_threshold_baryon) {
+		    fprintf(stderr, "  Baryon: fluctuation %f exceeds threshold %f (initial KL %f * %f)\n",
+		    kl_divergence_baryon - initial_kl_divergence_baryon, fluctuation_threshold_baryon,
+		    initial_kl_divergence_baryon, KL_FLUCTUATION_FACTOR);
+		}
+		if (kl_divergence_dark - initial_kl_divergence_dark > fluctuation_threshold_dark) {
+		    fprintf(stderr, "  Dark matter: fluctuation %f exceeds threshold %f (initial KL %f * %f)\n",
+		    kl_divergence_dark - initial_kl_divergence_dark, fluctuation_threshold_dark,
+		    initial_kl_divergence_dark, KL_FLUCTUATION_FACTOR);
+		}
 	    fflush(stderr);
 	
 	    // Free allocated memory for this simulation iteration
@@ -816,12 +843,20 @@ int main() {
 
     int total_failed = 0;
 
+    // Arrays to store failed models and their failed tests
+    const char* failed_models[4];
+    const char* failed_tests[4][3];
+    int num_failed_tests[4];
+    int num_failures = 0;
+
     // List of dwarf models to test
     const char* dwarf_models[] = {
 	"plummer_plummer.lua",
-	"plummer_nfw.lua",
 	"plummer_hernquist.lua",
+	"plummer_nfw.lua",
 	"plummer_cored.lua",
+	"plummer_cutoff_cored.lua",
+	"plummer_cutoff_nfw.lua",
     };
 
     // Number of models to test
@@ -830,6 +865,8 @@ int main() {
     // Test each model
     for (int i = 0; i < num_models; i++) {
 	int failed = 0;
+	int test_idx = 0;
+	
 	printf("\n=== Testing %s ===\n", dwarf_models[i]);
 	TestContext tctx;
 	memset(&tctx, 0, sizeof(TestContext));
@@ -841,7 +878,10 @@ int main() {
 	    cleanup_all_memory(&tctx);
 	    return failed;
 	}
-	failed += test_stability(&tctx);
+	if (test_stability(&tctx) != 0) {
+	    failed = 1;
+	    failed_tests[num_failures][test_idx++] = "Stability test";
+	}
 	// Reload particle data for subsequent tests
 	tctx.particle_data = read_particle_file("initial.out");
 	if (!tctx.particle_data) {
@@ -853,10 +893,16 @@ int main() {
 	}
 	printf("After read_particle_file, failed = %d\n", failed);
 	fflush(stdout);
-	failed += test_virial_ratio(&tctx);
+	if (test_virial_ratio(&tctx) != 0) {
+	    failed = 1;
+	    failed_tests[num_failures][test_idx++] = "Virial ratio test";
+	}
 	printf("After test_virial_ratio, failed = %d\n", failed);
 	fflush(stdout);
-	failed += test_center_of_mass(&tctx);
+	if (test_center_of_mass(&tctx) != 0) {
+	    failed = 1;
+	    failed_tests[num_failures][test_idx++] = "Center of mass test";
+	}
 	printf("After test_center_of_mass, failed = %d\n", failed);
 	fflush(stdout);
 	free_particle_collection(tctx.particle_data);
@@ -867,6 +913,9 @@ int main() {
 	    printf("%s passed all tests!\n", dwarf_models[i]);
 	} else {
 	    printf("%s failed %d tests!\n", dwarf_models[i], failed);
+	    failed_models[num_failures] = dwarf_models[i];
+	    num_failed_tests[num_failures] = test_idx;
+	    num_failures++;
 	    total_failed += failed;
 	}
 	fflush(stdout);
@@ -881,6 +930,14 @@ int main() {
     {
 	printf("\n=== SUMMARY ===\n");
 	printf("Failed %d tests across all models\n", total_failed);
+	for (int i = 0; i < num_failures; i++)
+	{
+	    printf("%s failed the following tests:\n", failed_models[i]);
+	    for (int j = 0; j < num_failed_tests[i]; j++)
+	    {
+		printf("  - %s\n", failed_tests[i][j]);
+	    }
+	}
     }
     fflush(stdout);
     return total_failed > 0 ? 1 : 0;

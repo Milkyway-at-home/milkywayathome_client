@@ -82,9 +82,12 @@ function getTestNBodyState(t)
       allowIncest = t.allowIncest,
       quietErrors = true,
       LMC         = t.LMC,
+      LMCfunction = 1,
       LMCmass     = 449865.888,
       LMCscale    = 15.0,
-      LMCDynaFric = t.LMCDynaFric
+      LMCscale2   = 16.6,
+      LMCDynaFric = t.LMCDynaFric,
+      coulomb_log   = 15
    }
    --Add potential to context
    ctx:addPotential(pot)

@@ -489,6 +489,16 @@ static void nbPrintHistogramHeader(FILE* f,
                     p->halo.lambda);
             break;
 
+        case SphericalNFWerkalHalo:
+	        fprintf(f,
+	                "# Halo: SphericalNFWerkal\n"
+		            "#   a = %f\n"
+		            "#   mass = %f\n"
+                    "#\n",
+                    p->halo.scaleLength,
+                    p->halo.mass);
+            break;
+
         case NoHalo:
             fprintf(f,
                     "# Halo: None\n");

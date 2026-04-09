@@ -373,36 +373,53 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
         return 1;
     }
 
-    // Get the components from the model's table
-    lua_getfield(L, -1, "components");
-    if (!lua_istable(L, -1)) {
-        fprintf(stderr, "Error: components table not found in model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
+    /*
+     * Support both legacy and current Lua schemas:
+     * 1) legacy: makeBodies() returns model.components.comp1/comp2
+     * 2) current: comp1/comp2 are script globals used by makeBodies()
+     */
+    *comp1 = NULL;
+    *comp2 = NULL;
+
+    if (lua_istable(L, -1)) {
+        lua_getfield(L, -1, "components");
+        if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, "comp1");
+            if (lua_isuserdata(L, -1)) {
+                *comp1 = (Dwarf*)lua_touserdata(L, -1);
+            }
+            lua_pop(L, 1);
+
+            lua_getfield(L, -1, "comp2");
+            if (lua_isuserdata(L, -1)) {
+                *comp2 = (Dwarf*)lua_touserdata(L, -1);
+            }
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1); // pop components (table or nil)
     }
 
-    // Get comp1
-    lua_getfield(L, -1, "comp1");
-    if (!lua_isuserdata(L, -1)) {
-        fprintf(stderr, "Error: comp1 is not a userdata in Lua model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *comp1 = (Dwarf*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    if (!*comp1 || !*comp2) {
+        lua_getglobal(L, "comp1");
+        if (!lua_isuserdata(L, -1)) {
+            fprintf(stderr, "Error: comp1 is not a userdata in Lua model\n");
+            fflush(stdout);
+            lua_close(L);
+            return 1;
+        }
+        *comp1 = (Dwarf*)lua_touserdata(L, -1);
+        lua_pop(L, 1);
 
-    // Get comp2
-    lua_getfield(L, -1, "comp2");
-    if (!lua_isuserdata(L, -1)) {
-        fprintf(stderr, "Error: comp2 is not a userdata in Lua model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
+        lua_getglobal(L, "comp2");
+        if (!lua_isuserdata(L, -1)) {
+            fprintf(stderr, "Error: comp2 is not a userdata in Lua model\n");
+            fflush(stdout);
+            lua_close(L);
+            return 1;
+        }
+        *comp2 = (Dwarf*)lua_touserdata(L, -1);
+        lua_pop(L, 1);
     }
-    *comp2 = (Dwarf*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
 
     // Validate the components
     if (!*comp1 || !*comp2) {
