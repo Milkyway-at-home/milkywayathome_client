@@ -8,7 +8,6 @@ dwarfRadius = 0.2
 reverseTime = 4.0
 evolveTime = 3.945
 
-
 function makeHistogram()
    return HistogramParams.create()
 end
