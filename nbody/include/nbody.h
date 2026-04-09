@@ -38,19 +38,21 @@ extern "C" {
 /* Command line arguments */
 typedef struct
 {
-    char* inputFile;
-    char* outFileName;
-    char* checkpointFileName;
-    char* histogramFileName;
-    char* histoutFileName;
-    char* matchHistogram;   /* Just match this histogram to other histogram, no simulation */
-    char* matchHistVelDisp;   /* Just match this histogram to other histogram, no simulation -- with vel dispersion calc*/
-    char* matchHistBetaDisp;  /* Just match this histogram to other histogram, no simulation -- with beta dispersion calc*/
-    char* matchHistBetaVelDisp; /* Just match this histogram to other histogram, no simulation -- with beta and vel dispersion calc*/
-    char* matchHistBetaVlosDist; /* Just match this histogram to other histogram, no simulation -- with avg beta, avg vlos, dist calc*/
-    char* matchHistAll;          /* Match this histogram to other histogram, no simulation -- with veta and vel disp, avg beta/vlos/dist */
-    char* graphicsBin;
-    char* visArgs;
+    const char* inputFile;
+    const char* outFileName;
+    const char* checkpointFileName;
+    const char* histogramFileName;
+    const char* histoutFileName;
+    const char* matchHistogram;   /* Histogram to match */
+    const char* matchVelDisp;   /* Match Velocity Dispersion */
+    const char* matchBetaDisp;  /* Match Beta Disp */
+    const char* matchBetaAvg; /* Match Beta Average */
+    const char* matchVlos; /* Match Line of Sight Velocity */
+    const char* matchDist; /* Match Distance */
+    const char* matchPM; /* Match Proper Motion */
+    const char* matchMomentum; /* Match Momentum */
+    const char* graphicsBin;
+    const char* visArgs;
 
     const char** forwardedArgs;
     unsigned int numForwardedArgs;
@@ -82,14 +84,14 @@ typedef struct
     int verbose;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st);
 NBodyStatus nbRunSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 int nbVerifyFile(const NBodyFlags* nbf);
 int nbMain(const NBodyFlags* nbf);
-static NBodyCtx _ctx = EMPTY_NBODYCTX;
-static NBodyState _st = EMPTY_NBODYSTATE;
+static NBodyCtx _ctx __attribute__((unused)) = EMPTY_NBODYCTX;
+static NBodyState _st __attribute__((unused)) = EMPTY_NBODYSTATE;
 
 #ifdef _cplusplus
 }

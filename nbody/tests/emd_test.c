@@ -44,7 +44,7 @@ static inline float distMetric(WeightPos* RESTRICT arr1, WeightPos* RESTRICT arr
 /* Compare two floats using ZERO_THRESHOLD */            
 static inline int floatsDiffer(float value1, float value2)
 {
-    return (fabsf(value1 - value2) >= ZERO_THRESHOLD);
+    return !(fabsf(value1 - value2) < ZERO_THRESHOLD);
 }
 
 static void randomDist(WeightPos* RESTRICT arr, unsigned int n)
@@ -57,14 +57,14 @@ static void randomDist(WeightPos* RESTRICT arr, unsigned int n)
     for (i = 0; i < n; ++i)
     {
         rand = dsfmt_genrand_open_open(&_prng);
-        arr[i].weight = (float) rand;
+        arr[i].weight = (real) rand;
         total += rand;
     }
 
     /* Normalize it */
     for (i = 0; i < n; ++i) 
     {
-        arr[i].weight = arr[i].weight / (float) total;
+        arr[i].weight = arr[i].weight / (real) total;
     }
 
     /* Check what the total of all the bins is, should be 1 */
@@ -188,8 +188,8 @@ static int testConsistentEMD(unsigned int dim1, unsigned int dim2)
     randomDist(arr1, n);
     randomDist(arr2, n);
     
-    result1 = emdCalc((const float*) arr1, (const float*) arr2, n, n, NULL);
-    result2 = emdCalc((const float*) arr1, (const float*) arr2, n, n, NULL);
+    result1 = emdCalc((const real*)(void*) arr1, (const real*)(void*) arr2, n, n, NULL);
+    result2 = emdCalc((const real*)(void*) arr1, (const real*)(void*) arr2, n, n, NULL);
 
     differs = floatsDiffer(result1, result2);
 
@@ -228,7 +228,7 @@ static int testDistributionEMD(const char* distName, EMDTestDistribFunc distribf
     generatePositions(arr1, arr2, dim1, dim2);
 
     expected = distribf(arr1, arr2, n);
-    actual = emdCalc((const float*) arr1, (const float*) arr2, n, n, NULL);
+    actual = emdCalc((const real*)(void*) arr1, (const real*)(void*) arr2, n, n, NULL);
 
     free(arr1);
     free(arr2);
@@ -270,7 +270,7 @@ int runTestsEMD(unsigned int dim1, unsigned int dim2)
     return fails;
 }
 
-int main(int argc, const char* argv[])
+int main(int, const char*[])
 {
     int fails = 0;
 

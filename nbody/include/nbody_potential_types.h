@@ -96,20 +96,22 @@ typedef struct MW_ALIGN_TYPE
 #define _PLUMMER_HALO 8
 #define _HERNQUIST_HALO 9
 #define _NINKOVIC_HALO 10
+#define _SphericalNFWerkal_HALO 11
 typedef enum
 {
-    InvalidHalo        = InvalidEnum,
-    NoHalo             = _NO_HALO,
-    LogarithmicHalo    = _LOG_HALO,
-    NFWHalo            = _NFW_HALO,
-    TriaxialHalo       = _TRIAXIAL_HALO,
-    CausticHalo        = _CAUSTIC_HALO,
-    AllenSantillanHalo = _AS_HALO,
-    WilkinsonEvansHalo = _WE_HALO,
-    NFWMassHalo        = _NFWM_HALO,
-    PlummerHalo        = _PLUMMER_HALO,
-    HernquistHalo      = _HERNQUIST_HALO,
-    NinkovicHalo       = _NINKOVIC_HALO
+    InvalidHalo           = InvalidEnum,
+    NoHalo                = _NO_HALO,
+    LogarithmicHalo       = _LOG_HALO,
+    NFWHalo               = _NFW_HALO,
+    TriaxialHalo          = _TRIAXIAL_HALO,
+    CausticHalo           = _CAUSTIC_HALO,
+    AllenSantillanHalo    = _AS_HALO,
+    WilkinsonEvansHalo    = _WE_HALO,
+    NFWMassHalo           = _NFWM_HALO,
+    PlummerHalo           = _PLUMMER_HALO,
+    HernquistHalo         = _HERNQUIST_HALO,
+    NinkovicHalo          = _NINKOVIC_HALO,
+    SphericalNFWerkalHalo = _SphericalNFWerkal_HALO
 } halo_t;
 
 typedef struct MW_ALIGN_TYPE
@@ -160,6 +162,8 @@ typedef struct MW_ALIGN_TYPE
     real p0; //used by nfw and cored
     real r200; // virial radius
     real ps, r1, rc; //used by cored
+    real rcut, rdecay, pcut, delta, m_nfw_cut, gamma1, psi_nfw_cut, psi_cut_cut;   // NFW cutoff constants
+    real m_nfw_r1, m_iso_r1, psi_nfw_r1, psi_iso_r1; // extra constants for cutoff Cored profiles
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"
@@ -181,8 +185,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */
-

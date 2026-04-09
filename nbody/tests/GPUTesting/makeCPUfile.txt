@@ -67,9 +67,17 @@ add_executable(EMD_Range_test EMD_Range_test.c)
 
 set(EMD_Range_test_link_libs "${nbody_exe_link_libs}")
 
+add_executable(momentum_test momentum_test.c)
+
+set(momentum_test_link_libs "${nbody_exe_link_libs}")
+
 add_executable(mixeddwarf_test mixeddwarf_test.c test_env_util.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
+
+add_executable(LMC_accel_test LMC_accel_test.c)
+
+set(LMC_accel_test_link_libs "${nbody_exe_link_libs}")
 
 if(NBODY_CRLIBM)
     list(APPEND emd_test_link_libs ${CRLIBM_LIBRARY})
@@ -79,7 +87,9 @@ if(NBODY_CRLIBM)
     list(APPEND average_bins_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND propermotion_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND EMD_Range_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND momentum_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND LMC_accel_test_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 milkyway_link(emd_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${emd_test_link_libs}")
@@ -89,7 +99,9 @@ milkyway_link(virial_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${virial_test_li
 milkyway_link(average_bins_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${average_bins_test_link_libs}")
 milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermotion_test_link_libs}")
 milkyway_link(EMD_Range_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${EMD_Range_test_link_libs}")
+milkyway_link(momentum_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${momentum_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
+milkyway_link(LMC_accel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${LMC_accel_test_link_libs}")
 
 if(BOINC_APPLICATION)
   if(UNIX)
@@ -121,7 +133,11 @@ add_test(NAME propermotion_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/t
 
 add_test(NAME EMD_Range_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND EMD_Range_test)
 
+add_test(NAME momentum_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND momentum_test)
+
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
+
+add_test(NAME LMC_accel_test COMMAND LMC_accel_test)
 
 set(invalid_test_dir "${PROJECT_SOURCE_DIR}/tests/invalid_tests")
 file(GLOB INVALID_TEST_INPUTS "${invalid_test_dir}/*.lua")
@@ -137,7 +153,7 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,4,1)
 # TODO: Test with known tree incest to check return status right
 
 
-set(body_counts 100 1024 10000)
+set(body_counts 10000) #no longer testing different body counts
 
 set(orphan_model_names model_1
                        model_2

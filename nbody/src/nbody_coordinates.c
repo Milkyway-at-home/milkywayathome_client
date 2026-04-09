@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwvector cartesianToLbr_rad(mwvector r, real sunGCDist)
 {
-    mwvector lbR;
+    mwvector lbR = ZERO_VECTOR;
 
     const real xp = X(r) + sunGCDist;
 
@@ -40,7 +40,7 @@ mwvector cartesianToLbr_rad(mwvector r, real sunGCDist)
 
 mwvector cartesianToLbr(mwvector r, real sunGCDist)
 {
-    mwvector lbR;
+    mwvector lbR = ZERO_VECTOR;
     lbR = cartesianToLbr_rad(r, sunGCDist);
     L(lbR) = r2d(L(lbR));
     B(lbR) = r2d(B(lbR));
@@ -50,7 +50,7 @@ mwvector cartesianToLbr(mwvector r, real sunGCDist)
 
 static inline mwvector _lbrToCartesian(const real l, const real b, const real r, const real sun)
 {
-    mwvector cart;
+    mwvector cart = ZERO_VECTOR;
 
     X(cart) = r * mw_cos(l) * mw_cos(b) - sun;
     Y(cart) = r * mw_sin(l) * mw_cos(b);
@@ -88,7 +88,7 @@ real nbXYZToLambda(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
 {
     real bcos, bsin, lsin, lcos;
     real lambda;
-    mwvector lbr;
+    mwvector lbr = ZERO_VECTOR;
 
     real cosphi = ht->cosphi;
     real sinphi = ht->sinphi;
@@ -128,7 +128,7 @@ Adapted from http://www.astro.virginia.edu/~srm4n/Sgr/SgrCoord.h*/
 /* Still Needs to be tested!!! */
 mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)  
 {
-    mwvector lambdabetar;
+    mwvector lambdabetar = ZERO_VECTOR;
     real tempX, tempY, tempZ;
     real cosphi = ht->cosphi;
     real sinphi = ht->sinphi;
@@ -164,7 +164,7 @@ mwvector nbXYZToLambdaBeta(const NBHistTrig* ht, mwvector xyz, real sunGCDist)
 }
 
 mwvector findLatUnitVec(mwvector xyz) {
-    mwvector e_b;
+    mwvector e_b = ZERO_VECTOR;
 
     real l = L(xyz);
     real b = r2d(B(xyz));
@@ -178,7 +178,7 @@ mwvector findLatUnitVec(mwvector xyz) {
 }
 
 mwvector findLongUnitVec(mwvector xyz) {
-    mwvector e_l;
+    mwvector e_l = ZERO_VECTOR;
     
     real l = L(xyz);
 

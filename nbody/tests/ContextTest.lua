@@ -50,17 +50,22 @@ function getTestNBodyState(t)
       VelSigma      = 2.5,
       DistSigma     = 2.5,
       PMSigma       = 2.5,
+      MomentumSigma = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
       PMCorrect     = 1.111,
+      MomentumCorrect = 1.111,
       IterMax       = 6,
       allowIncest = t.allowIncest,
       quietErrors = true,
       LMC         = t.LMC,
+      LMCfunction = 1,
       LMCmass     = 449865.888,
       LMCscale    = 15.0,
-      LMCDynaFric = t.LMCDynaFric
+      LMCscale2   = 16.6,
+      LMCDynaFric = t.LMCDynaFric,
+      coulomb_log   = 15
    }
    --Add potential to context
    ctx:addPotential(pot)

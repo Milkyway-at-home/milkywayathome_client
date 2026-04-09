@@ -151,22 +151,21 @@ static size_t emdAllocateStateBuffer(EMDState* state, int size1, int size2, int 
     size_t bufferSize;
 
     /* calculate buffer size */
-    bufferSize = (size1 + 1) * (size2 + 1) * (sizeof(real) +   /* cost */
-                 sizeof(char) +       /* is_x */
-                 sizeof(real)) +     /* delta matrix */
-                 (size1 + size2 + 2) * (sizeof(EMDNode2D) +   /* _x */
-                                        sizeof(EMDNode2D*) +  /* cols_x & rows_x */
-                                        sizeof(EMDNode1D) +   /* u & v */
-                                        sizeof(real) +      /* s & d */
-                                        sizeof(int) + sizeof(EMDNode2D*)) +    /* idx1 & idx2 */
-                 (size1 + 1) * (sizeof(real*) + sizeof(char*) +     /* rows pointers for */
-                                sizeof(real*)) + 256;               /*  cost, is_x and delta */
-
-    if (bufferSize < dims * 2 * sizeof(real))
-    {
-        bufferSize = dims * 2 * sizeof(real);
-    }
-
+    bufferSize =
+        (size1 + 1) * (size2 + 1) * (sizeof(real) +  /* cost */
+				     sizeof(char) +  /* is_x */
+				     sizeof(real)) + /* delta matrix */
+        (size1 + size2 + 2) * (sizeof(EMDNode2D) +   /* _x */
+			       sizeof(EMDNode2D*) +  /* cols_x & rows_x */
+			       sizeof(EMDNode1D) +   /* u & v */
+			       sizeof(real) +        /* s & d */
+			       sizeof(int) +         /* idx1 & idx2 */
+			       sizeof(EMDNode2D*)) +
+        (size1 + 1) * (sizeof(real*) +               /* row pointers for cost */
+		       sizeof(char*) +               /* row pointers for is_x */
+		       sizeof(real*)) +              /* row pointers for delta matrix */
+        256 +
+        dims * 2 * sizeof(real);                     /* xs, xd */
 
     state->buffer = mwCalloc(bufferSize, sizeof(char));
 
@@ -185,7 +184,7 @@ static void emdReleaseEMD(EMDState* state)
 static real emdDistL1(const real* x, const real* y, void* user_param)
 {
     int i;
-    int dims = (int)(size_t)user_param;
+    int dims = *(int *)user_param;
     real s = 0.0;
 
     for (i = 0; i < dims; i++)
@@ -201,7 +200,7 @@ static real emdDistL1(const real* x, const real* y, void* user_param)
 static real emdDistL2(const real* x, const real* y, void* user_param)
 {
     int i;
-    int dims = (int)(size_t)user_param;
+    int dims = *(int *)user_param;
     real s = 0.0;
 
     for (i = 0; i < dims; i++)
@@ -217,7 +216,7 @@ static real emdDistL2(const real* x, const real* y, void* user_param)
 static real emdDistC(const real* x, const real* y, void* user_param)
 {
     int i;
-    int dims = (int)(size_t)user_param;
+    int dims = *(int *)user_param;
     real s = 0.0;
 
     for (i = 0; i < dims; i++)
@@ -400,8 +399,11 @@ static void emdAddBasicVariable(EMDState* state,
     state->end_x = end_x + 1;
 
     /* delete supply row only if the empty, and if not last row */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if (state->s[min_i] == 0.0 && u_head->next->next != NULL)
     {
+#pragma GCC diagnostic pop
         prev_u_min_i->next = prev_u_min_i->next->next;    /* remove row from list */
     }
     else
@@ -545,8 +547,11 @@ static void emdRussel(EMDState* state)
             {
                 j = (int)(cur_v - v);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
                 if (cur_v->val == cost[min_i][j])      /* column j needs updating */
                 {
+#pragma GCC diagnostic pop
                     real max_val = -EMD_INF;
 
                     /* find the new maximum value in the column */
@@ -580,8 +585,11 @@ static void emdRussel(EMDState* state)
             {
                 i = (int)(cur_u - u);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
                 if (cur_u->val == cost[i][min_j])      /* row i needs updating */
                 {
+#pragma GCC diagnostic pop
                     real max_val = -EMD_INF;
 
                     /* find the new maximum value in the row */
@@ -1103,8 +1111,11 @@ static int emdIterateSolution(EMDState* state)
                                      state->u, state->v,
                                      state->ssize, state->dsize, state->enter_x);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             if (min_delta == EMD_INF)
             {
+#pragma GCC diagnostic pop
                 mw_printf("Iteration didn't converge");
                 return 1;
             }
@@ -1219,7 +1230,7 @@ real emdCalc(const real* RESTRICT signature_arr1,
     const mwbool debugFlow = FALSE;
     real* flow = NULL;
     const int dims = 2; /* We have 2 dimensions, lambda and beta */
-    void* user_param = (void*) dims;
+    void* user_param = (void*) &dims;
 
     memset(&state, 0, sizeof(state));
 
@@ -1268,7 +1279,7 @@ real emdCalc(const real* RESTRICT signature_arr1,
 }
 
 
-real nbWorstCaseEMD(const NBodyHistogram* hist)
+real nbWorstCaseEMD(const NBodyHistogram* hist __attribute__((unused)))
 {
     //(This makes no sense to be defined this way now that histograms are not normalized.
     //  return fabs(hist->data[0].lambda - hist->data[hist->nBin - 1].lambda);
@@ -1292,7 +1303,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
     real dataMass = first_data->massPerParticle;
     unsigned int i;
     unsigned int j;
-    unsigned int rawCount;
+    unsigned int rawCount __attribute__((unused));
     WeightPos* hist;
     WeightPos* dat;
     real EMDStart;
@@ -1331,12 +1342,25 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
 
     emd = 0;
     totalRangeCount = 0;
-    if(first_data->params.nRange == 0)
+    if(first_data->params.nRange == 0 && first_hist->params.nRange < 2) // If no ranges are defined, use full histogram
     {
         // mw_printf("No EMD Ranges defined, using full histogram\n");
         first_data->params.nRange = 2;
         first_data->params.EMDRange[0] = first_data->data[0].lambda;
         first_data->params.EMDRange[1] = first_data->data[bins - 1].lambda;
+    }
+    else if(first_hist->params.nRange >= 2) // If values are given through lua, use those
+    {
+        first_data->params.nRange = first_hist->params.nRange;
+        for(i = 0; i < first_hist->params.nRange; i++)
+        {
+            first_data->params.EMDRange[i] = first_hist->params.EMDRange[i];
+        }
+    }
+
+    if(first_data->params.nRange % 2 != 0)
+    {
+        first_data->params.nRange -= 1; //Make sure nRange is even
     }
     for(i = 0; i < first_data->params.nRange; i = i + 2)
     {
@@ -1398,7 +1422,7 @@ real nbMatchEMD(const MainStruct* data, const MainStruct* histogram)
         }
 
         /*Calculate EMD, each range is weighted by the % of counts in that range in data hist*/
-        emd += emdCalc((const real*) dat, (const real*) hist, rangeBins, rangeBins, NULL) * (rangeCount/(1.0*nData));  //temporary weighting by total counts
+        emd += emdCalc((const real*)(void*) dat, (const real*)(void*) hist, rangeBins, rangeBins, NULL) * (rangeCount/(1.0*nData));  //temporary weighting by total counts
         free(hist);
         free(dat);
     }     

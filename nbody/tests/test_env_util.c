@@ -60,11 +60,14 @@ char* find_lua_file(const char* filename) {
     for (size_t i = 0; i < num_paths && i < MAX_SEARCH_PATHS; i++) {
         if (strlen(relative_paths[i]) == 0) {
             // Current directory
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
             snprintf(result, MAX_PATH_LENGTH, "%s/%s", cwd, filename);
         } else {
             snprintf(result, MAX_PATH_LENGTH, "%s%s/%s", 
                     (relative_paths[i][0] == '/') ? cwd : "", 
                     relative_paths[i], filename);
+#pragma GCC diagnostic pop
         }
         
         printf("Trying path: %s\n", result);
@@ -115,11 +118,16 @@ char* find_milkyway_nbody() {
     
     // Try each relative path
     for (size_t i = 0; i < num_paths && i < MAX_SEARCH_PATHS; i++) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
         snprintf(result, MAX_PATH_LENGTH, "%s/%s/milkyway_nbody", cwd, relative_paths[i]);
-        
+#pragma GCC diagnostic pop
         // For the current directory option, don't add an extra slash
         if (strcmp(relative_paths[i], ".") == 0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
             snprintf(result, MAX_PATH_LENGTH, "%s/milkyway_nbody", cwd);
+#pragma GCC diagnostic pop
         }
         
         printf("Trying executable path: %s\n", result);
@@ -195,6 +203,8 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
     }
     
     // Build the command with proper escaping
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
     snprintf(command, sizeof(command), 
              "%s "
              "-f \"%s\" "
@@ -205,6 +215,7 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
              bin_path, lua_file, cwd, cwd,
              dwarf_params[0], dwarf_params[1], dwarf_params[2], 
              dwarf_params[3], dwarf_params[4], dwarf_params[5]);
+#pragma GCC diagnostic pop
     
     printf("Running command: %s\n", command);
     fflush(stdout);
@@ -362,36 +373,53 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
         return 1;
     }
 
-    // Get the components from the model's table
-    lua_getfield(L, -1, "components");
-    if (!lua_istable(L, -1)) {
-        fprintf(stderr, "Error: components table not found in model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
+    /*
+     * Support both legacy and current Lua schemas:
+     * 1) legacy: makeBodies() returns model.components.comp1/comp2
+     * 2) current: comp1/comp2 are script globals used by makeBodies()
+     */
+    *comp1 = NULL;
+    *comp2 = NULL;
+
+    if (lua_istable(L, -1)) {
+        lua_getfield(L, -1, "components");
+        if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, "comp1");
+            if (lua_isuserdata(L, -1)) {
+                *comp1 = (Dwarf*)lua_touserdata(L, -1);
+            }
+            lua_pop(L, 1);
+
+            lua_getfield(L, -1, "comp2");
+            if (lua_isuserdata(L, -1)) {
+                *comp2 = (Dwarf*)lua_touserdata(L, -1);
+            }
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1); // pop components (table or nil)
     }
 
-    // Get comp1
-    lua_getfield(L, -1, "comp1");
-    if (!lua_isuserdata(L, -1)) {
-        fprintf(stderr, "Error: comp1 is not a userdata in Lua model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
-    }
-    *comp1 = (Dwarf*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
+    if (!*comp1 || !*comp2) {
+        lua_getglobal(L, "comp1");
+        if (!lua_isuserdata(L, -1)) {
+            fprintf(stderr, "Error: comp1 is not a userdata in Lua model\n");
+            fflush(stdout);
+            lua_close(L);
+            return 1;
+        }
+        *comp1 = (Dwarf*)lua_touserdata(L, -1);
+        lua_pop(L, 1);
 
-    // Get comp2
-    lua_getfield(L, -1, "comp2");
-    if (!lua_isuserdata(L, -1)) {
-        fprintf(stderr, "Error: comp2 is not a userdata in Lua model\n");
-        fflush(stdout);
-        lua_close(L);
-        return 1;
+        lua_getglobal(L, "comp2");
+        if (!lua_isuserdata(L, -1)) {
+            fprintf(stderr, "Error: comp2 is not a userdata in Lua model\n");
+            fflush(stdout);
+            lua_close(L);
+            return 1;
+        }
+        *comp2 = (Dwarf*)lua_touserdata(L, -1);
+        lua_pop(L, 1);
     }
-    *comp2 = (Dwarf*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
 
     // Validate the components
     if (!*comp1 || !*comp2) {
@@ -406,8 +434,10 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
     printf("nbody_baryon: %f\n", *nbody_baryon);
     printf("comp1 mass: %f\n", (*comp1)->mass);
     printf("comp1 scale length: %f\n", (*comp1)->scaleLength);
+    printf("comp1 type: %d\n", (*comp1)->type);
     printf("comp2 mass: %f\n", (*comp2)->mass);
     printf("comp2 scale length: %f\n", (*comp2)->scaleLength);
+    printf("comp2 type: %d\n", (*comp2)->type);
     printf("timestep: %f\n", *timestep);
     fflush(stdout);
 
@@ -424,6 +454,7 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
     if (lua_state_out) {
         *lua_state_out = L;
     } else {
+        // TODO: Worry that this might deallocate some of the other values that we are returning.
         lua_close(L);
     }
     

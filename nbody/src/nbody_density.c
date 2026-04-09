@@ -25,7 +25,10 @@ static inline real hernquistSphericalDensity(const Spherical* sph, real r)
     const real a = sph->scale;
 
     /*return 0 rather than get a divide by 0 error*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r*mw_pow(r+a, 3) == 0) {
+#pragma GCC diagnostic pop
         return 0;
     }
 
@@ -36,8 +39,10 @@ static inline real plummerSphericalDensity(const Spherical* sph, real r)
 {
     const real a = sph->scale;
     const real M = sph->mass;
-    if(a == 0)
-    {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    if(a == 0) {
+#pragma GCC diagnostic pop
         return 0;
     }
     real r_a = r/a;
@@ -60,7 +65,10 @@ static inline real miyamotoNagaiDiskDensity(const Disk* disk, mwvector pos)
     real numer = M*b*b*(a*R*R + (a + 3.0*zp) * mw_pow(azp, 2));
     real denom = 4.0*pi*mw_pow(R*R + azp*azp, 2.5)*mw_pow(zp, 3.0);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(denom == 0) return 0;
+#pragma GCC diagnostic pop
 
     return numer/denom;
 }
@@ -105,6 +113,22 @@ static inline real logarithmicHaloDensity(const Halo* h, mwvector pos) /** flatt
     return v*v*numer/2.0/pi/denom;
 }
 
+static inline real SphericalNFWerkalHaloDensity(const Halo* h, real r)
+{
+    const real a = h->scaleLength;
+    const real M = h->mass;
+
+    const real c = mw_log(1.0 + 15.3) - (15.3/(1.0 + 15.3));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    if(r == 0) return 0;
+#pragma GCC diagnostic pop
+
+    return M / (c*r*(a+r)*(a+r)*4.0*pi);
+
+}
+
 static inline real NFWHaloDensity(const Halo* h,  real r)
 {
     const real a = h->scaleLength;
@@ -112,7 +136,10 @@ static inline real NFWHaloDensity(const Halo* h,  real r)
 
     real rho = v*v/4.0/pi/a/a/0.2162165954;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r == 0) return 0;
+#pragma GCC diagnostic pop
     
     return rho / (r/a) / mw_pow(1.0+(r/a),2.0);
 
@@ -165,7 +192,10 @@ static inline real hernquistHaloDensity(const Halo* h,  real r)
 {
     const real a = h->scaleLength;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r*mw_pow(r+a, 3) == 0 || 2*pi*mw_pow(a, 3) == 0) return 0;
+#pragma GCC diagnostic pop
 
     return ((h->mass)/(2*pi*mw_pow(a, 3)))*mw_pow(a, 4)/(r*mw_pow(r+a, 3));
 }
@@ -174,8 +204,10 @@ static inline real plummerHaloDensity(const Halo* h, real r)
 {
     const real a = h->scaleLength;
     const real M = h->mass;
-    if(a == 0)
-    {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    if(a == 0) {
+#pragma GCC diagnostic pop
         return 0;
     }
     real r_a = r/a;
@@ -190,7 +222,10 @@ static inline real NFWMHaloDensity(const Halo* h,  real r)
     const real a = h->scaleLength;
     const real M = h->mass;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r == 0) return 0;
+#pragma GCC diagnostic pop
     
     return M / (r*(a+r)*(a+r)*4.0*pi);
 
@@ -207,7 +242,10 @@ static inline real allenSantillanHaloDensity(const Halo* h, real r)
     real numer = mw_pow(r/a,b)*(mw_pow(r/a,b) + b + 1.0);
     real denom = r*r*mw_pow(1.0 + mw_pow(r/a,b),2.0);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r==0.0) return 0.0;
+#pragma GCC diagnostic pop
 
     if(r > lam) return 0.0;
 
@@ -219,7 +257,10 @@ static inline real wilkinsonEvansHaloDensity(const Halo* h, real r)
     const real a = h->scaleLength;
     const real M = h->mass;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r==0.0) return 0.0;
+#pragma GCC diagnostic pop
 
     return (1/(4*pi)) * M*a*a/(r*r*mw_pow(r*r + a*a,1.5));
 
@@ -242,7 +283,10 @@ static inline real KVHalo(const Halo* h, real r) /*What is this one?*/
 {
     const real a = h->scaleLength;
     const real M = h->mass;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(r + a == 0) return 0;
+#pragma GCC diagnostic pop
 
     return (1/(4*pi)) * (M/(r*mw_pow(r+a, 2))) - ((2*M)/(mw_pow(r+a, 3)));
 }
@@ -287,12 +331,14 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
             break;
         case OrbitingBar:
             density += orbitingBarDensity(&(pot->disk), pos, time);
+            break;
         case NoDisk:
             density += 0.0;
             break;
         case InvalidDisk:
         default:
             mw_fail("Invalid primary disk type in density\n");
+            break;
     }
 
     switch (pot->disk2.type)
@@ -311,6 +357,7 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
             break;
         case OrbitingBar:
             density += orbitingBarDensity(&(pot->disk2), pos, time);
+            break;
         case NoDisk:
             density += 0.0;
             break;
@@ -338,7 +385,7 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
             break;
         case WilkinsonEvansHalo:
             density += wilkinsonEvansHaloDensity(&(pot->halo), r);
-	    break;
+	        break;
         case NFWMassHalo:
             density += NFWMHaloDensity(&(pot->halo), r);
             break;
@@ -351,6 +398,9 @@ real nbExtDensity(const Potential* pot, mwvector pos, real time)
         case NinkovicHalo:
             density += ninkovicHaloDensity(&(pot->halo), r);
             break;
+        case SphericalNFWerkalHalo:
+	        density += SphericalNFWerkalHaloDensity(&(pot->halo), r);
+	        break;
         case NoHalo:
             density += 0.0;
             break;

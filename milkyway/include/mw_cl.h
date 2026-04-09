@@ -34,6 +34,7 @@
   #include "/usr/include/CL/cl_ext.h"
 #else
 /* Linux and other Unix-like systems */
+  #define CL_TARGET_OPENCL_VERSION 300
   #include <CL/cl.h>
   #include <CL/cl_platform.h>
   #include <CL/cl_ext.h>
