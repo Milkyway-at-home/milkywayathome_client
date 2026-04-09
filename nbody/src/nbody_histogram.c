@@ -518,7 +518,7 @@ static void nbPrintHistogramHeader(FILE* f,
 /* Print the histogram without a header. */
 void nbPrintHistogram(FILE* f, const MainStruct* all)
 {
-    real output[16] = {0.0}; // for outputting the data
+    real output[16]; // for outputting the data
 
     unsigned int nBin;
     nBin = all->histograms[0]->lambdaBins * all->histograms[0]->betaBins;

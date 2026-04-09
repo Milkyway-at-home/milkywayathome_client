@@ -31,6 +31,7 @@ eff_best_like_start = best_like_start / (2.0 - best_like_start) --correct for ch
 
 function makeContext()
    return NBodyCtx.create{
+      dwarfn = 1,
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
       timeBack    = 3.945,
