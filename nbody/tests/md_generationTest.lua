@@ -23,6 +23,14 @@ function cross(x1, y1, z1, x2, y2, z2)
     return {x=x3, y=y3, z=z3}
 end
 
+function mag(x, y, z)
+    return (x^2+y^2+z^2)^0.5
+end
+
+function mag_v(vec)
+    return (vec.x^2+vec.y^2+vec.z^2)^0.5
+end
+
 function abs(x)
     if(x >= 0) then
         return x
@@ -292,10 +300,10 @@ for d = 1, 2*ndwarfs do
     end
 
     -- this is like the clunkiest thing i've ever written i'm sorry ;-;
-    -- tl;dr f(a, r, v, m, k)                          
+    -- tl;dr implements momentum offset feature as f(a, r, v, m, k)                          
     -- likely needs more work..
-    Lmultiplier = velocityAdjust_Plummer(rscale_med[d], Vector.create(pos_avg[d].x, pos_avg[d].y, pos_avg[d].z), Vector.create(dwarf_p[d].x, dwarf_p[d].y, dwarf_p[d].z), mass_tot[d], 1.5)
-    L_tot[d] = tot_L*Lmultiplier
+    -- Lmultiplier = velocityAdjust_Plummer(rscale_med[d], Vector.create(pos_avg[d].x, pos_avg[d].y, pos_avg[d].z), Vector.create(dwarf_p[d].x, dwarf_p[d].y, dwarf_p[d].z), mass_tot[d], 1.5)
+    L_tot[d] = tot_L
     --assert(false, L_tot[d])
     --Ltot[d] = tot_L*Lmultiplier
 end
@@ -313,11 +321,43 @@ pos_exp = {
     y = {-37.51986835,  2.35271379,  -49.5042104, -10.09661519},
     z = {-43.60449135, -6.11999380, -130.2792656, -88.27719237}
 }
+vel_exp = {
+    x = {  21.99, 223.97,  -27.04,  -22.11},
+    y = {-201.36,  -5.34, -172.14,  197.28},
+    z = { 171.25, 185.78,  101.21, -102.1 }
+}
 rscale_exp = {2.9, 2.9*4, 1.53, 1.53*4 ,1.425, 1.425*4, 0.725, 0.725*4}
 halfmass_rad_factor = 1.304766  -- conversion factor between half-mass* radius and scale radius (look it up)
                                 -- *median (effectively)
-L_exp = {38829350.5319, 467934549.076, 486704.418863, 9516231.97656, 2325613.33839, 14064939.1581, 174025.069524, 2421377.77492}
 
+Lscalefactor = {}
+L_exp = {}
+for d = 1, ndwarfs do
+    r0 = Vector.create(pos_exp.x[d], pos_exp.y[d], pos_exp.z[d])
+    v0 = Vector.create(vel_exp.x[d], vel_exp.y[d], vel_exp.z[d])
+    Lscalefactor[2*d-1] = velocityAdjust_Plummer(
+        rscale_exp[2*d-1],
+        r0,
+        v0,
+        mass_exp[2*d-1],
+        10 -- 2*mag_v(r0) / rscale_exp[2*d-1]
+    )
+    Lscalefactor[2*d] = velocityAdjust_Plummer(
+        rscale_exp[2*d],
+        r0,
+        v0,
+        mass_exp[2*d],
+        10 -- 2*mag_v(r0) / rscale_exp[2*d]
+    )
+    
+    L_exp[2*d-1] = Lscalefactor[2*d-1] * mass_exp[2*d-1] * mag_v(cross(r0.x, r0.y, r0.z, v0.x, v0.y, v0.z))    -- light comp
+    L_exp[2*d] = Lscalefactor[2*d] * mass_exp[2*d] * mag_v(cross(r0.x, r0.y, r0.z, v0.x, v0.y, v0.z))          -- dark comp
+    print(Lscalefactor[2*d-1], Lscalefactor[2*d])
+end
+
+
+-- L_exp = {38829350.5319, 467934549.076, 486704.418863, 9516231.97656, 2325613.33839, 14064939.1581, 174025.069524, 2421377.77492}
+--L_exp =    {38705762.3161, 442491639.376, 486704.418863, 9516231.97656, 2325613.33839, 14064939.1581, 174025.069524, 2421377.77492}
 dmass_threshold     = 0.05   --%
 dpos_threshold      = 0.05   --kpc
 drscale_threshold   = 0.5    --%
