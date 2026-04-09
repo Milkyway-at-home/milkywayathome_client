@@ -904,7 +904,7 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     bound2 = comp2->rcut + 15.0 * comp2->rdecay;
                 }
                 else {
-                    bound2 = 5.0 * comp2->r200;
+                    bound2 = comp2->r200;
                 }
                 recalculate_comp_mass(comp2, bound2);
                 break;

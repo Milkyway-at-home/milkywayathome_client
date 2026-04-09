@@ -52,8 +52,8 @@ manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 40000       -- -- NUMBER OF TOTAL BODIES                                               -- --
-totalLightBodies      = 20000       -- -- NUMBER OF LIGHT MATTER BODIES                                        -- --
+totalBodies           = 50000       -- -- NUMBER OF TOTAL BODIES                                               -- --
+totalLightBodies      = 0       -- -- NUMBER OF LIGHT MATTER BODIES                                        -- --
 
 nbodyLikelihoodMethod = "EMD"       -- -- HIST COMPARE METHOD                                                  -- --
 nbodyMinVersion       = "1.95"      -- -- MINIMUM APP VERSION                                                  -- --
@@ -63,7 +63,7 @@ use_tree_code         = true        -- -- USE TREE CODE NOT EXACT               
 print_reverse_orbit   = false       -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)              -- --
 print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS                                             -- --
 
-LMC_body              = true        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
+LMC_body              = false        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
 LMC_function          = 1           -- -- 1: Plummer 2: Henrquist 3: Hernquist with cutoff                     -- --
 LMC_scaleRadius       = 15          -- --  kpc                                                                 -- --
 LMC_cutoff            = 16          -- --  kpc  This is used only for Hernquist with cutoff                    -- --
@@ -178,7 +178,7 @@ end
 --component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
 --calculate dwarf-based softening length
 comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored
-comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
+comp2 = Dwarf.nfw{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
 
 
 
