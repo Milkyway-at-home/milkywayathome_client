@@ -25,6 +25,7 @@
 #include "milkyway_util.h"
 #include "nbody_caustic.h"
 #include "nbody_bessel.h"
+#include "nbody_bfe_potential.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -677,12 +678,12 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
     real limit = mw_pow(2.0,-8.0);
     
     /*Calculate Acceleration using Basis Function Expansion Method */
-    //printf("yes nbEXt");
-    if (pot->bfe.type)
+    //mw_printf("yes nbEXt");
+    if (pot->bfe.type > 0)
     {
-        //printf("exp pot");
+        //mw_printf("exp pot");
         //if (pot->bfe.type != 1) printf("EXP Potential being used.");
-        //acc = exp_bfe_get_acceleration(&pot->bfe, pos, time);
+        acc = exp_bfe_get_acceleration(pot->bfe.exp_bfe, pos, time);
         return acc;
     }
 

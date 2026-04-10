@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 #include "nbody_lua_bfe.h"
+#include "nbody_bfe_potential.h"
 #include "nbody_check_params.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
@@ -45,9 +46,10 @@ static const MWEnumAssociation bfeOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
-static int createBFE(lua_State* luaSt, const MWNamedArg* argTable, BFE* b)
+static int createBFE(lua_State* luaSt, const MWNamedArg* argTable, BFE* b, char** filename)
 {
     oneTableArgument(luaSt, argTable);
+    b->exp_bfe = exp_bfe_open(filename);
     if (checkBFEConstants(b))
         luaL_error(luaSt, "Invalid BFE encountered.");
     
@@ -58,31 +60,27 @@ static int createBFE(lua_State* luaSt, const MWNamedArg* argTable, BFE* b)
 static int createEXP_BFE(lua_State* luaSt)
 {
     static BFE b = EMPTY_BFE;
+    static char *filename;
     static const MWNamedArg argTable[] =
-        {
-            { "type", LUA_TNUMBER, NULL, TRUE, &b.type, 1},
-            { "exp_bfe", LUA_TNUMBER, NULL, TRUE, &b.exp_bfe, 1},
-            END_MW_NAMED_ARG
-            // not necessarily sure about the notation in line 64
-            // pointer to a pointer?
-            // will be sorted out later
-        };
-    
+      {
+        {"filename", LUA_TUSERDATA, NULL, TRUE, &filename, 1 },
+        END_MW_NAMED_ARG
+      };
     b.type = EXPBFE;
-    return createBFE(luaSt, argTable, &b);
+    return createBFE(luaSt, argTable, &b, &filename);
 };
     
 static int createNo_BFE(lua_State* luaSt)
 {
     static BFE b = EMPTY_BFE;
+    static char *filename;
     static const MWNamedArg argTable[] =
         {
-            { "type", LUA_TNUMBER, NULL, TRUE, &b.type, 1},
             END_MW_NAMED_ARG
         };
     
     b.type = NoBFE;
-    return createBFE(luaSt, argTable, &b);
+    return createBFE(luaSt, argTable, &b, &filename);
 };
 
 int getBFE_T(lua_State* luaSt, void* v)
