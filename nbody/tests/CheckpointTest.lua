@@ -45,22 +45,6 @@ function erf(x)       --Pulled from https://hewgill.com/picomath/lua/erf.lua.htm
     return sign*y
 end
 
-dec = 9.0   -- -- number of decimals to round to (default: 9.0)
-function round(num, places)
-    local mult = 10.0^(places)
-    return floor(num * mult + 0.5) / mult
-  end
-rscale_l            = {round( 2.9,     dec)}  -- Baryonic Radius (kpc)
-light_r_ratio       = {round( 0.2,     dec)}  -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l              = {round( 2429.198,dec)}  -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio    = {round( 0.0830,  dec)}  -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l   = {round( 302.801, dec)}  -- Galactocentric l
-orbit_parameter_b   = {round( -44.328, dec)}  -- Galactocentric b
-orbit_parameter_r   = {round( 62.4,    dec)}  -- Galactocentric r
-orbit_parameter_vx  = {round( 21.99,   dec)}  -- Galactocentric vx
-orbit_parameter_vy  = {round( -201.36, dec)}  -- Galactocentric vy
-orbit_parameter_vz  = {round( 171.25,  dec)}  -- Galactocentric vz
-
 function randomNBodyCtx(prng)
    if prng == nil then
       prng = DSFMT.create()
@@ -68,21 +52,15 @@ function randomNBodyCtx(prng)
    sigma = prng:random(1.5,3.0)
    correct = math.sqrt(2*3.1415926535)/(math.sqrt(2*3.1415926535)*erf(sigma/math.sqrt(2)) - 2*sigma*math.exp(-sigma*sigma/2))
    return NBodyCtx.create{
-      dwarfn = 1,
       timestep      = prng:random(1.0e-5, 1.0e-4),
       timeEvolve    = prng:random(0, 10),
       theta         = prng:random(0, 1),
       eps2          = prng:random(1.0e-9, 1.0e-3),
-      b           = orbit_parameter_b,
-      r           = orbit_parameter_r,
-      vx          = orbit_parameter_vx,
-      vy          = orbit_parameter_vy,
-      vz          = orbit_parameter_vz,
-      -- b             = prng:random(40.0,60.0),
-      -- r             = prng:random(10.0,30.0),
-      -- vx            = prng:random(-200.0,200.0),
-      -- vy            = prng:random(-200.0,200.0),
-      -- vz            = prng:random(-200.0,200.0),
+      b             = prng:random(40.0,60.0),
+      r             = prng:random(10.0,30.0),
+      vx            = prng:random(-200.0,200.0),
+      vy            = prng:random(-200.0,200.0),
+      vz            = prng:random(-200.0,200.0),
       treeRSize     = prng:randomListItem({ 4, 8, 2, 16 }),
       criterion     = prng:randomListItem({"TreeCode", "SW93", "BH86", "Exact"}),
       useQuad       = prng:randomBool(),
@@ -180,5 +158,4 @@ for i = 1, nTests do
                         tostring(ctx))
        )
 end
-
 
