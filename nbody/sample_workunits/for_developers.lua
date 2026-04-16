@@ -40,11 +40,11 @@ use_tree_code         = true        -- -- USE TREE CODE NOT EXACT               
 print_reverse_orbit   = false       -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)              -- --
 print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS                                             -- --
 
-LMC_body              = true        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
+LMC_body              = false        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
 LMC_function          = 1           -- -- 1: Plummer 2: Henrquist 3: Hernquist with cutoff                     -- --
 LMC_scaleRadius       = 15          -- --  kpc                                                                 -- --
 LMC_cutoff            = 16          -- --  kpc  This is used only for Hernquist with cutoff                    -- --
-preset_LMC_Mass       = 449865.888  -- -- SMU (used unless specified in arguments)                             -- --
+LMC_Mass       = 449865.888  -- -- SMU (used unless specified in arguments)                             -- --
 LMC_DynamicalFriction = true    -- -- LMC DYNAMICAL FRICTION SWITCH (IGNORED IF NO LMC)                        -- --
 CoulombLogarithm      = 15      -- -- ln(r/1.22*CoulombLogarithm) (Patel et al. 2020) COULOMB LOGARITHM USED   -- --
                                 -- -- IN DYNAMICAL FRACTION CALCULATION                                        -- --
@@ -416,6 +416,8 @@ function makeBodies(ctx, potential)
             local LMCvelocity = Vector.create(-57, -226, 221)
             local LMCmass = LMC_Mass
             local LMCscale = LMC_scaleRadius
+            local LMCscale2 = LMC_scaleRadius/4 -- << PLACEHOLDER VALUE, PLEASE UPDATE
+            local LMCfunction = 1   -- 1 = Plummer, 2 = hernquist 
             local LMCDynaFric = LMC_DynamicalFriction and 1 or 0
             local coulomb_log = CoulombLogarithm
             local ftime = evolveTime
@@ -424,7 +426,7 @@ function makeBodies(ctx, potential)
             local masses    = dwarfMass  
             local rscales = rscale_t
 
-            finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbitS_LMC(potential, position, velocity, LMCposition, LMCvelocity, LMCmass, LMCscale, LMCDynaFric, coulomb_log, ftime, tstop, dt, masses, rscales)      
+            finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity = reverseOrbitS_LMC(potential, position, velocity, LMCposition, LMCvelocity, LMCmass, LMCfunction, LMCscale, LMCscale2, LMCDynaFric, coulomb_log, ftime, tstop, dt, masses, rscales)      
 	    else
             local potential = potential
             local position  = lbrToCartesianTable(ctx, Vector.creates(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r))

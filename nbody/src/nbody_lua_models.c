@@ -387,13 +387,13 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
     mwvector* LMCvel;
     mwvector LMCfinalPos, LMCfinalVel;
     mwbool LMCDynaFric = FALSE;
-    real LMCmass, LMCscale, coulomb_log, tstop, dt, ftime;
+    real LMCfunction, LMCmass, LMCscale, LMCscale2, coulomb_log, tstop, dt, ftime;
     real masses[lenPos];
     real rscales[lenPos];
 
     arg_num = lua_gettop(luaSt);
 
-    if (arg_num != 14)
+    if (arg_num != 16)
     {
         return luaL_argerror(luaSt, 0, "Expected 14 arguments");
     }
@@ -418,6 +418,10 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
         lua_pop(luaSt, 1);
 
         lua_rawgeti(luaSt, 14, i);
+        masses[i-1] = luaL_checknumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+
+        lua_rawgeti(luaSt, 16, i);
         rscales[i-1] = luaL_checknumber(luaSt, -1);
         lua_pop(luaSt, 1);
         
@@ -427,19 +431,21 @@ static int luaReverseOrbitS_LMC(lua_State* luaSt)
     LMCpos = checkVector(luaSt, 4);
     LMCvel = checkVector(luaSt, 5);
     LMCmass = luaL_checknumber(luaSt, 6);
-    LMCscale = luaL_checknumber(luaSt, 7);
-    LMCDynaFric = luaL_checknumber(luaSt, 8);
-    coulomb_log = luaL_checknumber(luaSt, 9);
-    tstop = luaL_checknumber(luaSt, 10);
-    ftime = luaL_checknumber(luaSt, 11);
-    dt = luaL_checknumber(luaSt, 12);
+    LMCfunction = luaL_checknumber(luaSt, 7);
+    LMCscale = luaL_checknumber(luaSt, 8);
+    LMCscale2 = luaL_checknumber(luaSt, 9);
+    LMCDynaFric = luaL_checknumber(luaSt, 10);
+    coulomb_log = luaL_checknumber(luaSt, 11);
+    tstop = luaL_checknumber(luaSt, 12);
+    ftime = luaL_checknumber(luaSt, 13);
+    dt = luaL_checknumber(luaSt, 14);
 
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    nbReverseOrbitS_LMC(finalPos, finalVel, &LMCfinalPos, &LMCfinalVel, pot, pos, vel, lenPos, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCmass, LMCscale, coulomb_log, masses, rscales);
+    nbReverseOrbitS_LMC(finalPos, finalVel, &LMCfinalPos, &LMCfinalVel, pot, pos, vel, lenPos, *LMCpos, *LMCvel, LMCDynaFric, ftime, tstop, dt, LMCfunction, LMCmass, LMCscale, LMCscale2, coulomb_log, masses, rscales);
     pushVectorTable(luaSt, finalPos, lenPos);
     pushVectorTable(luaSt, finalVel, lenPos);
     pushVector(luaSt, LMCfinalPos);

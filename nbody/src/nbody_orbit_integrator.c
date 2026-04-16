@@ -168,13 +168,16 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
                     real ftime,
                     real tstop,
                     real dt,
+                    real LMCfunction,
                     real LMCmass,
                     real LMCscale,
+		            real LMCscale2,
                     real coulomb_log,
                     real* masses,
                     real* scales
                     )
 {	        
+    int lmcfunction = round(LMCfunction);
     unsigned int steps = mw_ceil((tstop)/(dt)) + 1;
     unsigned int exSteps = mw_abs(mw_ceil((ftime-tstop)/(dt)) + 1);
     unsigned int a = 0, b = 0, c = 0;
@@ -207,7 +210,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
     int step = 0;
     for (real t = 0; t >= tstop*(-1); t -= dt)
     {   
-        mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale); // Relative Accleration from Milkyway accleration from LMC
+        mw_acc = LMCAcceleration(lmcfunction, mw_x, LMCx, LMCmass, LMCscale, LMCscale2); // Relative Accleration from Milkyway accleration from LMC **UPDATED APR '26
         steps = t/dt;
 
         // Shift the body
@@ -221,7 +224,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
         LMC_acc = nbExtAcceleration(pot, LMCx, t);
         if (LMCDynaFric) 
         {
-            DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, TRUE, 0, coulomb_log);
+            DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, TRUE, 0, coulomb_log);
             mw_incnegv(DF_acc); /* Inverting drag force for reverse orbit */
             mw_incaddv(LMC_acc, DF_acc);
         }
@@ -234,8 +237,8 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
             // Get the Starting accelerations
             acc[i] = nbExtAcceleration(pot, x[i], t);
             mw_incaddv(acc[i], mw_acc);
-            mw_incaddv(acc[i], plummerAccel(x[i], LMCx, LMCmass, LMCscale));//Aceleration from LMC to dwarfs
-            LMC_acci = plummerAccel(LMCx, x[i], masses[i], scales[i]);//Acceleration from dwarfs to LMC
+            mw_incaddv(acc[i], LMCAcceleration(lmcfunction, x[i], LMCx, LMCmass, LMCscale, LMCscale2));//Aceleration from LMC to dwarfs
+            LMC_acci = LMCAcceleration(lmcfunction, LMCx, x[i], masses[i], scales[i], 1.0); //Acceleration from dwarfs to LMC (1.0 is possibly REALLY incorrect... i'm not too sure how this updated function works just yet..)
             //LMC_acci = pointAccel(LMCx, x[i], masses[i]);
             mw_incaddv(LMC_acc, LMC_acci);
             // if (step % 10 == 0 & step <= 500) {mw_printf("LMC_acc1 from Dwarfs %d = [%.15f,%.15f,%.15f] at t = %f\n", i+1 , X(LMC_acci), Y(LMC_acci), Z(LMC_acci), t);}
@@ -247,7 +250,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
             {
                 if (i != j)
                 {   
-                    mwvector accFromJ = plummerAccel(x[i], x[j], masses[j], scales[j]);
+                    mwvector accFromJ = LMCAcceleration(lmcfunction, x[i], x[j], masses[j], scales[j], 1.0);
                     //mwvector accFromJ = pointAccel(x[i], x[j], masses[j]);
                     acc[i] = mw_addv(acc[i], accFromJ);                   
                 }
@@ -283,13 +286,13 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
         }
 
         //** Get the Second Half acceleration    
-        mw_acc = plummerAccel(mw_x, LMCx, LMCmass, LMCscale); // Relative Accleration from Milkyway
+        mw_acc = LMCAcceleration(lmcfunction, mw_x, LMCx, LMCmass, LMCscale, LMCscale2); // Relative Accleration from Milkyway
         LMC_acc = nbExtAcceleration(pot, LMCx, t-dt_half);
         // Shift the body
         mw_incnegv(mw_acc);
         
         if (LMCDynaFric) {
-            DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, LMCscale, TRUE, 0, coulomb_log);
+            DF_acc = dynamicalFriction_LMC(pot, LMCx, LMCv, LMCmass, TRUE, 0, coulomb_log);
             mw_incnegv(DF_acc); /* Inverting drag force for reverse orbit */
             mw_incaddv(LMC_acc, DF_acc);
         }
@@ -302,9 +305,9 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
             //Get the second Starting accelerations
             acc[i] = nbExtAcceleration(pot, x[i], t-dt_half);
             mw_incaddv(acc[i], mw_acc);
-            mw_incaddv(acc[i], plummerAccel(x[i], LMCx, LMCmass, LMCscale));//Aceleration from LMC to dwarfs
+            mw_incaddv(acc[i], LMCAcceleration(lmcfunction, x[i], LMCx, LMCmass, LMCscale, LMCscale2));//Aceleration from LMC to dwarfs
 
-            LMC_acci = plummerAccel(LMCx, x[i], masses[i], scales[i]);
+            LMC_acci = LMCAcceleration(lmcfunction, LMCx, x[i], masses[i], scales[i], 1.0);
             //LMC_acci = pointAccel(LMCx, x[i], masses[i]);
             mw_incaddv(LMC_acc, LMC_acci);
 
@@ -312,7 +315,7 @@ void nbReverseOrbitS_LMC(mwvector* finalPos,
             {
                 if (i != j)
                 {
-                    mwvector accFromJ = plummerAccel(x[i], x[j], masses[j], scales[j]);
+                    mwvector accFromJ = LMCAcceleration(lmcfunction, x[i], x[j], masses[j], scales[j], 1.0);
                     //mwvector accFromJ = pointAccel(x[i], x[j], masses[j]);
                     acc[i]= mw_addv(acc[i], accFromJ);
                 }
