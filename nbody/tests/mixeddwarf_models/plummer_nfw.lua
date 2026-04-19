@@ -261,6 +261,20 @@ max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use
 generateInitialOutput = true       -- -- save initial dwarf galaxy state to initial.out before evolution                   -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
         
+
+
+
+
+-- -- -- -- -- -- -- -- -- DWARF STARTING LOCATION   -- -- -- -- -- -- -- --
+-- these only get used if only 6 parameters are input from shell script
+-- otherwise they get reset later with the inputs (if 11 given)
+preset_orbit_parameter_l  = {258}
+preset_orbit_parameter_b  = {45.8}
+preset_orbit_parameter_r  = {21.5}
+preset_orbit_parameter_vx = {-185.5}
+preset_orbit_parameter_vy = {54.7}
+preset_orbit_parameter_vz = {147.4}
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
         
 -- -- -- -- -- -- -- -- -- CHECK TIMESTEPS -- -- -- -- -- -- -- -- 
 TooManyTimesteps = 0
@@ -335,21 +349,6 @@ function get_soft_par()
     end
 end
 
-dec = 9.0   -- -- number of decimals to round to (default: 9.0)
-function round(num, places)
-    local mult = 10.0^(places)
-    return floor(num * mult + 0.5) / mult
-  end
-rscale_l            = {round( 2.9,     dec)}  -- Baryonic Radius (kpc)
-light_r_ratio       = {round( 0.2,     dec)}  -- Baryonic Radius / (Baryonic Radius + Dark Matter Radius)
-mass_l              = {round( 2429.198,dec)}  -- Baryonic Mass (Structure Mass Units)
-light_mass_ratio    = {round( 0.0830,  dec)}  -- Baryonic Mass / (Baryonic Mass + Dark Matter Mass)
-orbit_parameter_l   = {round( 302.801, dec)}  -- Galactocentric l
-orbit_parameter_b   = {round( -44.328, dec)}  -- Galactocentric b
-orbit_parameter_r   = {round( 62.4,    dec)}  -- Galactocentric r
-orbit_parameter_vx  = {round( 21.99,   dec)}  -- Galactocentric vx
-orbit_parameter_vy  = {round( -201.36, dec)}  -- Galactocentric vy
-orbit_parameter_vz  = {round( 171.25,  dec)}  -- Galactocentric vz
 
 function makeContext()
    return NBodyCtx.create{

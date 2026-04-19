@@ -32,11 +32,11 @@ function round(num, places)
 function makeContext()
    return NBodyCtx.create{
       dwarfn = 1,
-      b           = {round( -44.328, dec)},
-      r           = {round( 62.4,    dec)},
-      vx          = {round( 21.99,   dec)},
-      vy          = {round( -201.36, dec)},
-      vz          = {round( 171.25,  dec)},
+      b           = {-44.328},
+      r           = {62.4},
+      vx          = {21.99},
+      vy          = {-201.36},
+      vz          = {171.25},
       sunGCDist   = SunGCDist,
       sunVelx     = SunVelx,
       sunVely     = SunVely,
