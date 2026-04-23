@@ -52,15 +52,16 @@ function randomNBodyCtx(prng)
    sigma = prng:random(1.5,3.0)
    correct = math.sqrt(2*3.1415926535)/(math.sqrt(2*3.1415926535)*erf(sigma/math.sqrt(2)) - 2*sigma*math.exp(-sigma*sigma/2))
    return NBodyCtx.create{
+      dwarfn = 1;
       timestep      = prng:random(1.0e-5, 1.0e-4),
       timeEvolve    = prng:random(0, 10),
       theta         = prng:random(0, 1),
       eps2          = prng:random(1.0e-9, 1.0e-3),
-      b             = prng:random(40.0,60.0),
-      r             = prng:random(10.0,30.0),
-      vx            = prng:random(-200.0,200.0),
-      vy            = prng:random(-200.0,200.0),
-      vz            = prng:random(-200.0,200.0),
+      b             = {prng:random(40.0,60.0)},
+      r             = {prng:random(10.0,30.0)},
+      vx            = {prng:random(-200.0,200.0)},
+      vy            = {prng:random(-200.0,200.0)},
+      vz            = {prng:random(-200.0,200.0)},
       treeRSize     = prng:randomListItem({ 4, 8, 2, 16 }),
       criterion     = prng:randomListItem({"TreeCode", "SW93", "BH86", "Exact"}),
       useQuad       = prng:randomBool(),

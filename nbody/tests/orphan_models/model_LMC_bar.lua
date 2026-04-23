@@ -32,6 +32,11 @@ end
 function makeContext()
    return NBodyCtx.create{
       dwarfn = 1,
+      b           = {53.5},
+      r           = {28.6},
+      vx          = {-156},
+      vy          = {79.36},
+      vz          = {107.25},
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
       timeBack = 3.945,
