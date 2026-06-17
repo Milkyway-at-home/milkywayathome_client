@@ -635,8 +635,10 @@ void mwPerror(const char* fmt, ...)
 
 #if 1
 #define ERROR_MSG_LANG MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US)
+/* This will cause FormatMessage() to fail on Windows installations without an en-US MUI pack.
+   But that's probably better than trying to deal with an unknown language in an unknown 8-bit encoding */
 #else
-/* Default language */
+/* User default language */
 #define ERROR_MSG_LANG MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
 #endif
 
@@ -644,6 +646,7 @@ void mwPerror(const char* fmt, ...)
 void mwPerrorW32(const char* fmt, ...)
 {
     va_list argPtr;
+    DWORD err = GetLastError(); /* Capture this before calling another function that might overwrite it */
     LPSTR msgBuf;
     DWORD rc;
 
@@ -651,19 +654,26 @@ void mwPerrorW32(const char* fmt, ...)
                              | FORMAT_MESSAGE_FROM_SYSTEM
                              | FORMAT_MESSAGE_IGNORE_INSERTS;
 
-    rc = FormatMessage(flags,
-                       NULL,
-                       GetLastError(),
-                       ERROR_MSG_LANG,
-                       (LPTSTR) &msgBuf,
-                       0,
-                       NULL);
+    rc = FormatMessageA(flags,
+                        NULL,
+                        err,
+                        ERROR_MSG_LANG,
+                        (LPSTR) &msgBuf, /* Casting ** to * because of FORMAT_MESSAGE_ALLOCATE_BUFFER */
+                        0,
+                        NULL);
 
     va_start(argPtr, fmt);
     vfprintf(stderr, fmt, argPtr);
     va_end(argPtr);
 
-    fprintf(stderr, " (%ld): %s", GetLastError(), msgBuf);
+    if (rc)
+    {
+        fprintf(stderr, " (%lu): %s", err, msgBuf); /* Assume the system message ends with '\n' */
+    }
+    else
+    {
+        fprintf(stderr, " (%lu): (could not retrieve message from system: %lu)\n", err, GetLastError());
+    }
     LocalFree(msgBuf);
 }
 #endif /* _WIN32 */
