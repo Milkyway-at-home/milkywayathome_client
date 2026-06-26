@@ -71,7 +71,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 #include "milkyway_util.h"
-#include "nbody_graphics.h"
+//#include "nbody_graphics.h"
 #include "nbody_potential_types.h"
 
 #include <lua.h>
@@ -370,7 +370,7 @@ typedef struct MW_ALIGN_TYPE
     Body* bestLikelihoodBodyTab;     /* this one used for out file generation */
     mwvector* acctab;         /* Corresponding accelerations of bodies */
     mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
-    scene_t* scene;
+    //scene_t* scene;
 
     mwvector* shiftByLMC;      /* Accelerations on MW from LMC */
     mwvector LMCpos;        /* Position of LMC */
@@ -439,7 +439,7 @@ typedef struct MW_ALIGN_TYPE
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL,            \
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL,                  \
                            NULL, ZERO_VECTOR, ZERO_VECTOR,                                  \
                            NULL, 0,                                                         \
                            0, 0, 0,                                                         \
@@ -456,7 +456,7 @@ typedef struct MW_ALIGN_TYPE
  */
 typedef struct MW_ALIGN_TYPE
 {
-    real eps2;                /* (potential softening parameter)^2 */
+    real eps2[3];                /* (potential softening parameter)^2 */
     real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
@@ -533,7 +533,7 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                        \
+#define EMPTY_NBODYCTX { {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0, 0.0, 0.0,                                                      \
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                   \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                             \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                        \

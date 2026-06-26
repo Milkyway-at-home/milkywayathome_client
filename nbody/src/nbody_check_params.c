@@ -291,9 +291,16 @@ static int hasAcceptableTheta(const NBodyCtx* ctx)
 
 static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNumEps(ctx->eps2);
+    int rc = 0;
+    rc = mwCheckNormalPosNumEps(ctx->eps2[0]);
     if (rc)
-        mw_printf("Got an absurd eps2 (%.15f)\n", ctx->eps2);
+        mw_printf("Got an absurd eps2 (%.15f)\n", ctx->eps2[0]);
+    rc = mwCheckNormalPosNumEps(ctx->eps2[1]);
+    if (rc)
+        mw_printf("Got an absurd eps2 (%.15f)\n", ctx->eps2[1]);
+    rc = mwCheckNormalPosNumEps(ctx->eps2[2]);
+    if (rc)
+        mw_printf("Got an absurd eps2 (%.15f)\n", ctx->eps2[2]);
 
     return rc;
 }

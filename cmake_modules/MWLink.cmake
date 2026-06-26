@@ -74,6 +74,15 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
                              LINK_FLAGS "${strip_exe} ${link_flags}"
                              LINK_SEARCH_END_STATIC ${use_static})
 
-  target_link_libraries(${client_bin_name} ${link_libs})
+  if(UNIX)
+    # Wrap libraries in a linker group so circular static archive
+    # dependencies are resolved without duplicating entries.
+    set(_grouped_link_libs "-Wl,--start-group")
+    list(APPEND _grouped_link_libs ${link_libs})
+    list(APPEND _grouped_link_libs "-Wl,--end-group")
+    target_link_libraries(${client_bin_name} ${_grouped_link_libs})
+  else()
+    target_link_libraries(${client_bin_name} ${link_libs})
+  endif()
 endfunction()
 

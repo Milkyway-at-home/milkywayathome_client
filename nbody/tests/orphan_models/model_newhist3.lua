@@ -20,12 +20,13 @@ function makePotential()
       halo      = Halo.logarithmic{ vhalo = 74.61, scaleLength = 12, flattenZ = 1 }
    }
 end
+sp_l, sp_cross, sp_d = calculateEps2(nbody, dwarfRadius)
 
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = {sp_l, sp_cross, sp_d},
       b           = 53.8,
       r           = 28.9,
       vx          = -159,

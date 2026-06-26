@@ -65,7 +65,7 @@ totalBodies           = 40000     -- -- NUMBER OF TOTAL BODIES                  
 totalLightBodies      = 10000       -- -- NUMBER OF LIGHT MATTER BODIES                                        -- --
 
 nbodyLikelihoodMethod = "EMD"       -- -- HIST COMPARE METHOD                                                  -- --
-nbodyMinVersion       = "1.95"      -- -- MINIMUM APP VERSION                                                  -- --
+nbodyMinVersion       = "1.96"      -- -- MINIMUM APP VERSION                                                  -- --
 
 run_null_potential    = true       -- -- NULL POTENTIAL SWITCH                                                -- --
 use_tree_code         = true        -- -- USE TREE CODE NOT EXACT                                              -- --
@@ -323,15 +323,15 @@ function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
     if (UseOldSofteningLength == 1) then
-        sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+        sp_l, sp_cross, sp_d = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
     else
-        sp = calculateEps2Dwarf(comp1, totalLightBodies)
+        sp_l, sp_cross, sp_d = calculateEps2Dwarf(comp1, comp2, totalLightBodies, totalBodies)
     end
-    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
+    if ((manual_bodies or use_max_soft_par) and (sp_cross > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
         return max_soft_par^2
     else
-        return sp
+        return {sp_l, sp_cross, sp_d}
     end
 end
 

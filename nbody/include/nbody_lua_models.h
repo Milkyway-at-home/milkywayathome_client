@@ -26,6 +26,7 @@
 extern "C" {
 #endif
 
+real* nbCalculateEps2_NEW(const Dwarf* light_comp, const Dwarf* dark_comp, unsigned int lm_nbody, unsigned int nbody); 
 void registerPredefinedModelGenerators(lua_State* luaSt);
 void registerModelFunctions(lua_State* luaSt);
 

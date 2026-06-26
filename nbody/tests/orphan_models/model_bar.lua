@@ -29,12 +29,14 @@ best_like_start = 0.95
 evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve to end of best-likelihood window
 eff_best_like_start = best_like_start / (2.0 - best_like_start) --correct for changed evolve time
 
+sp_l, sp_cross, sp_d = calculateEps2Dwarf(dwarf, dwarf, nbody, nbody) --assuming this is a single component model, can't actually find what parameters are being used
+
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
       timeBack    = 3.945,
-      eps2       = calculateEps2Dwarf(dwarf, nbody),
+      eps2       = {sp_l, sp_cross, sp_d},
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,

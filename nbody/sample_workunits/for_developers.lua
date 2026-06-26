@@ -56,7 +56,7 @@ totalBodies           = 50000       -- -- NUMBER OF TOTAL BODIES                
 totalLightBodies      = 0       -- -- NUMBER OF LIGHT MATTER BODIES                                        -- --
 
 nbodyLikelihoodMethod = "EMD"       -- -- HIST COMPARE METHOD                                                  -- --
-nbodyMinVersion       = "1.95"      -- -- MINIMUM APP VERSION                                                  -- --
+nbodyMinVersion       = "1.96"      -- -- MINIMUM APP VERSION                                                  -- --
 
 run_null_potential    = false       -- -- NULL POTENTIAL SWITCH                                                -- --
 use_tree_code         = true        -- -- USE TREE CODE NOT EXACT                                              -- --
@@ -177,9 +177,8 @@ end
 
 --component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
 --calculate dwarf-based softening length
-comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored
-comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored
-
+comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king
+comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king
 
 
 
@@ -314,15 +313,15 @@ function get_soft_par()
     --softening parameter only calculated based on dwarf,
     --so if manual bodies is turned on the calculated s.p. may be too large
     if (UseOldSofteningLength == 1) then
-        sp = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
+        sp_l, sp_cross, sp_d = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
     else
-        sp = calculateEps2Dwarf(comp1, totalLightBodies)
+        sp_l, sp_cross, sp_d = calculateEps2Dwarf(comp1, comp2, totalLightBodies, totalBodies)
     end
-    if ((manual_bodies or use_max_soft_par) and (sp > max_soft_par^2)) then --dealing with softening parameter squared
+    if ((manual_bodies or use_max_soft_par) and (sp_cross > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
         return max_soft_par^2
     else
-        return sp
+        return {sp_l, sp_cross, sp_d}
     end
 end
 

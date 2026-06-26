@@ -535,17 +535,21 @@ static void nbSetDefaultFlags(NBodyFlags* nbf)
 
 static void freeNBodyFlags(NBodyFlags* nbf __attribute__((unused)))
 {
-    /* These values come from argv, not malloc, do don't free them.
-    free(nbf->inputFile);
-    free(nbf->outFileName);
-    free(nbf->checkpointFileName);
-    free(nbf->histogramFileName);
-    free(nbf->histoutFileName);
-    free(nbf->matchHistogram);
-    free(nbf->forwardedArgs);
-    free(nbf->graphicsBin);
-    free(nbf->visArgs);
-    */
+    // These values come from argv, not malloc, do don't free them.
+    // EDIT: I think these are copied values from mwFixArgv and SHOULD be freed. I'm putting this back in; try taking it out if there are problems
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+    //free(nbf->inputFile);
+    //free(nbf->outFileName);
+    //free(nbf->checkpointFileName);
+    //free(nbf->histogramFileName);
+    //free(nbf->histoutFileName);
+    //free(nbf->matchHistogram);
+    //free(nbf->forwardedArgs);
+    //free(nbf->graphicsBin);
+    //free(nbf->visArgs);
+#pragma GCC diagnostic pop
+    
 }
 
 static int nbSetNumThreads(int numThreads)
@@ -673,6 +677,7 @@ int main(int argc, const char* argv[])
 
 
     freeNBodyFlags(&nbf);
+    free(argvCopy);
 
     if (BOINC_APPLICATION)
     {

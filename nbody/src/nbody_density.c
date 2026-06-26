@@ -159,30 +159,56 @@ static inline real triaxialHaloDensity(const Halo* h, mwvector pos)
 
 static inline real orbitingBarDensity(const Disk* disk, mwvector pos, real time)
 {
-    real a = disk->scaleLength;// Bar half-length
-    real b = 1.4;//Triaxial softening length
-    real c = 1;//Prolate softening length
+    // Bar parameters
+    const real a = disk->scaleLength; // Bar half-length
+    const real b = 1.4;               // Triaxial softening length
+    const real c = 1.0;               // Prolate softening length
 
-    real curAngle = (disk->patternSpeed * time * -1)+disk->startAngle;
-    //first rotate pos curAngle * -1 radians to emulate the current angle of the bar
-    real Radi = mw_sqrt(pos.x*pos.x+pos.y*pos.y);
-    real Phi = mw_atan(pos.y/pos.x);
-    Phi -= curAngle;
-    if(pos.x < 0){
-        Radi = Radi * -1;
-    }
-    real x = Radi*cos(Phi);
-    real y = Radi*sin(Phi); 
-    real z = pos.z;
+    // Calculate current bar angle
+    const real curAngle = disk->startAngle - disk->patternSpeed * time;
 
-    real zc = mw_sqrt(mw_pow(z,2)+mw_pow(c,2));
-    real bzc2 = mw_pow(b+zc,2);
-    real bigA = b*mw_pow(y,2) + (b+3*zc)*bzc2;
-    real bigC = mw_pow(y,2)+bzc2;
-    real unscaledDens = mw_pow(c,2)/24/pi/a/mw_pow(bigC,2)/mw_pow(zc,3)*
-    ((x+a)*(3*bigA*bigC+(2*bigA+b*bigC)*mw_pow(x+a,2))/
-    mw_pow(bigC+mw_pow(x+a,2),1.5)-(x-a)*(3*bigA*bigC+(2*bigA+b*bigC)*
-    mw_pow(x-a,2))/mw_pow(bigC+mw_pow(x-a,2),1.5));
+    // Calculate cylindrical radius and angle using atan2 for robustness
+    const real px = pos.x;
+    const real py = pos.y;
+    const real pz = pos.z;
+    const real Radi = mw_sqrt(px * px + py * py);
+    const real Phi = mw_atan2(py, px) - curAngle;
+
+    // Rotate position into bar frame
+    const real x = Radi * mw_cos(Phi);
+    const real y = Radi * mw_sin(Phi);
+    const real z = pz;
+
+    // Intermediate calculations for density
+    const real z2 = z * z;
+    const real c2 = c * c;
+    const real zc = mw_sqrt(z2 + c2);
+    const real bzc = b + zc;
+    const real bzc2 = bzc * bzc;
+    const real y2 = y * y;
+    const real bigA = b * y2 + (b + 3.0 * zc) * bzc2;
+    const real bigC = y2 + bzc2;
+
+    // Precompute powers and denominators
+    const real bigC2 = bigC * bigC;
+    const real zc3 = zc * zc * zc;
+    const real denom = 24.0 * pi * a * bigC2 * zc3;
+    const real c2_over_denom = c2 / denom;
+
+    // Compute terms for (x+a) and (x-a)
+    const real xp = x + a;
+    const real xm = x - a;
+    const real xp2 = xp * xp;
+    const real xm2 = xm * xm;
+    const real bigCp = bigC + xp2;
+    const real bigCm = bigC + xm2;
+    const real bigCp15 = mw_pow(bigCp, 1.5);
+    const real bigCm15 = mw_pow(bigCm, 1.5);
+
+    const real termp = (xp * (3.0 * bigA * bigC + (2.0 * bigA + b * bigC) * xp2)) / bigCp15;
+    const real termm = (xm * (3.0 * bigA * bigC + (2.0 * bigA + b * bigC) * xm2)) / bigCm15;
+
+    const real unscaledDens = c2_over_denom * (termp - termm);
 
     return unscaledDens * disk->mass;
 }

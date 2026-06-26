@@ -1,5 +1,18 @@
+-nbody 1.96
+	- Added cutoff NFW and Cored profiles
+	- Added a single component King model
+	- Updated softening length to use different values depending on the types of the particles in the
+	interaction
+	- Added a fallback to checkpointing that will use standard input/output fuctions when memory mapping is not available
+	- Removed references to unused screensaver code
+	- Fixed a bug that would change behavior on ARM systems. Linux aarch64 is now officially supported
+	- Added softening length test
+	- Removed context test
+	- Updated tests for new code (bar tests fail)
+	- Various code cleanup/ fix compile warnings
+
 -nbody 1.95
-	-Fixed bug that would miscalculate forces on the MW from the LMC and sometimes result in memory leaks
+	- Fixed bug that would miscalculate forces on the MW from the LMC and sometimes result in memory leaks
 
 -nbody 1.94
 	- Fixed bugs in for_developers.lua so that preset parameters are set if not specified when using manual bodies

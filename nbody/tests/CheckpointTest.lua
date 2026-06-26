@@ -55,7 +55,7 @@ function randomNBodyCtx(prng)
       timestep      = prng:random(1.0e-5, 1.0e-4),
       timeEvolve    = prng:random(0, 10),
       theta         = prng:random(0, 1),
-      eps2          = prng:random(1.0e-9, 1.0e-3),
+      eps2          = {prng:random(1.0e-9, 1.0e-3), prng:random(1.0e-9, 1.0e-3), prng:random(1.0e-9, 1.0e-3)},
       b             = prng:random(40.0,60.0),
       r             = prng:random(10.0,30.0),
       vx            = prng:random(-200.0,200.0),
@@ -160,6 +160,24 @@ for i = 1, nTests do
                         tostring(stClone),
                         tostring(ctx))
        )
+
+   local checkpoint = os.tmpname()
+   st:writeCheckpointStandard(ctx, checkpoint)
+   local ctxStd, stStd = NBodyState.readCheckpointStandard(checkpoint)
+   os.remove(checkpoint)
+
+   assert(ctx == ctxStd,
+          string.format("Standard checkpointed context does not match:\nctx 1 = %s\nctx 2 = %s\n",
+                        tostring(ctx),
+                        tostring(ctxStd))
+   )
+
+   assert(st == stStd,
+          string.format("Standard checkpointed state does not match:\nstate 1 = %s\nstate 2 = %s\n%s",
+                        tostring(st),
+                        tostring(stStd),
+                        tostring(ctx))
+   )
 end
 
 

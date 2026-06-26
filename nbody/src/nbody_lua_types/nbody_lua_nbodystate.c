@@ -192,6 +192,20 @@ static int sortBodiesNBodyState(lua_State* luaSt)
     return 0;
 }
 
+// Write checkpoint using standard functions only
+static int luaWriteCheckpointStandard(lua_State* luaSt)
+{
+    NBodyState* st;
+    const NBodyCtx* ctx;
+    const char* filename;
+    int failed;
+    st = checkNBodyState(luaSt, 1);
+    ctx = checkNBodyCtx(luaSt, 2);
+    filename = luaL_checkstring(luaSt, 3);
+    failed = nbWriteCheckpointWithStandardFunctions(ctx, st, filename);
+    return failed ? luaL_error(luaSt, "Error writing checkpoint with standard functions") : 0;
+}
+
 static int luaWriteCheckpoint(lua_State* luaSt)
 {
     NBodyState* st;
@@ -254,6 +268,32 @@ static int luaReadCheckpoint(lua_State* luaSt)
     pushNBodyCtx(luaSt, &ctx);
     pushNBodyState(luaSt, &st);
 
+    return 2;
+}
+
+// Read checkpoint using standard functions only
+static int luaReadCheckpointStandard(lua_State* luaSt)
+{
+    NBodyCtx ctx = EMPTY_NBODYCTX;
+    NBodyState st = EMPTY_NBODYSTATE;
+    const char* filename;
+    int failed;
+
+    filename = luaL_checkstring(luaSt, 1);
+    failed = nbReadCheckpointWithStandardFunctions(&ctx, &st, filename);
+    if (failed) 
+    {
+        return luaL_error(luaSt, "Error reading checkpoint with standard functions '%s'", filename);
+    }
+
+    if (nbStatusIsFatal(nbGravMap(&ctx, &st)))
+    {
+        return luaL_error(luaSt, "Error running prestep from checkpoint");
+    }
+
+    pushNBodyCtx(luaSt, &ctx);
+    pushNBodyState(luaSt, &st);
+    
     return 2;
 }
 
@@ -353,16 +393,18 @@ static const luaL_reg metaMethodsNBodyState[] =
 
 static const luaL_reg methodsNBodyState[] =
 {
-    { "create",          createNBodyState          },
-    { "createRandomLMC", createRandomLMCNBodyState },     /** Only used in to create valid NBodyState for checkpoint test **/
-    { "step",            stepNBodyState            },
-    { "runSystem",       luaRunSystem              },
-    { "sortBodies",      sortBodiesNBodyState      },
-    { "clone",           luaCloneNBodyState        },
-    { "writeCheckpoint", luaWriteCheckpoint        },
-    { "readCheckpoint",  luaReadCheckpoint         },
-    { "initCL",          luaInitCL                 },
-    { "initCLState",     luaInitNBodyStateCL       },
+    { "create",                  createNBodyState           },
+    { "createRandomLMC",         createRandomLMCNBodyState  },  /** Only used in to create valid NBodyState for checkpoint test **/
+    { "step",                    stepNBodyState             },
+    { "runSystem",               luaRunSystem               },
+    { "sortBodies",              sortBodiesNBodyState       },
+    { "clone",                   luaCloneNBodyState         },
+    { "writeCheckpoint",         luaWriteCheckpoint         },
+    { "readCheckpoint",          luaReadCheckpoint          },
+    { "writeCheckpointStandard", luaWriteCheckpointStandard },  /** Only used for testing standard checkpoint write in checkpoint test **/
+    { "readCheckpointStandard",  luaReadCheckpointStandard  },   
+    { "initCL",                  luaInitCL                  },
+    { "initCLState",             luaInitNBodyStateCL        },
     { NULL, NULL }
 };
 

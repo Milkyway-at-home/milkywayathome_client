@@ -131,7 +131,8 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     /* pushing the bodies */
     for (int i = 0; i < (int) nbody; i++)
     {
-        b.bodynode.type = ty[i];
+        /* Input file: 0 = baryon, 1 = dark matter; tree uses 1 / -1 */
+        b.bodynode.type = BODY(ty[i]);
         b.bodynode.id = id[i];
         b.bodynode.mass = masses[i];
 

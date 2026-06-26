@@ -119,6 +119,8 @@ The type of run is set by setting one of the following flags to `true`:
 - **If 14 arguments:**  
   `[13] LMC Mass, [14] Manual Bodies Input File`
 
+For the ratio arguments `[4]` and `[6]`, ratios are `baryons/(baryons + dark matter)`.
+
 #### Likelihood Comparison Flags
 
 | Flag | Description |
@@ -138,13 +140,16 @@ The type of run is set by setting one of the following flags to `true`:
 ### Double Component Model
 
 - **Plummer:** `{mass, scaleLength}`
-- **NFW:** `{mass, scaleLength}`
+- **NFW:** `{mass, scaleLength[, rcut]}`  # rcut is an optional cutoff radius; ignored if not set
 - **General Hernquist:** `{mass, scaleLength}`
-- **Cored:** `{mass, scaleLength, r1, rc}`
+- **Cored:** `{mass, scaleLength, r1, rc[, rcut]}` # rcut is an optional cutoff radius; ignored if not set
+- **Single component King** `{mass, scaleLength, W0}` #scaleLength is the model's tidal radius (where density vanishes)
 
-The double component mixed dwarf code can be used as a single component dwarf generator. 
-Set the number of baryons equal to the total number of particles and set the mass ratio to 1.0.
+**The double component mixed dwarf code can be used as a single component dwarf generator.** 
+To do this set the number of baryons equal to the total number of particles in your `.lua`, set the mass ratio to 1.0 in `run_nbody.sh`, set radius ratio to any number between but not including 0.0 and 1.0.
 The parameters used will be that of the baryons. 
+
+King model only works as single component for now since the density and potentials must be solved numerically and the current methods are too computationally expensive to allow double component. A future update will allow double component functionality for this model after it is made more efficient.
 
 ### Single Component Model
 
@@ -186,6 +191,10 @@ Unit Conversions:
 
 Tests
 ---
+  After building the client run
+  ```
+  $ ./build_test_env
+  ```
   Tests can be run by running:
   ```
   $ make test
@@ -200,7 +209,7 @@ Tests
   ```
   $ make test_${n}
   ```
-  Currently n = 100, 1024, 10000 are available.
+  Currently n = 100, 1024, 10000 are available, but only n = 10000 are used.
 
   Single tests can be run with:
   ```
@@ -210,7 +219,11 @@ Tests
   ```
   $ ctest -R <Test_Name> -VV
   ```
-  If only 25 tests are running instead of 57 tests, you are missing libraries (check Step 0 for compiling N-body)
+  If only 21  tests are running instead of 53 tests, you are missing libraries (check Step 0 for compiling N-body)
+
+  **NOTE**: all `make` and `ctest` commands must be done under the `test_env` directory to work.
+
+  Test results can be seen either in the terminal or under `test_env/Testing/Temporary/LastTest.log`. A consise list of failed test names can be seen under `test_env/Testing/Temporary/LastTestsFailed.log`.
 
 Separation
 ---

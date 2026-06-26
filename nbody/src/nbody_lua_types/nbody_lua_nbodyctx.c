@@ -93,7 +93,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "timeEvolve",      LUA_TNUMBER, NULL,      TRUE,  &ctx.timeEvolve,        1 },
             { "timeBack",        LUA_TNUMBER, NULL,      FALSE, &ctx.timeBack,          1 },
             { "theta",           LUA_TNUMBER, NULL,      FALSE, &ctx.theta,             1 },
-            { "eps2",            LUA_TNUMBER, NULL,      TRUE,  &ctx.eps2,              1 },
+            { "eps2",            LUA_TTABLE,  REAL_TYPE, TRUE,  &ctx.eps2,              3 }, //set as real so the table can read, is there a reason this needs to be null?
             { "treeRSize",       LUA_TNUMBER, NULL,      FALSE, &ctx.treeRSize,         1 },
             { "sunGCDist",       LUA_TNUMBER, NULL,      FALSE, &ctx.sunGCDist,         1 },
             { "sunVelx",         LUA_TNUMBER, NULL,      FALSE, &ctx.sunVelx,           1 },

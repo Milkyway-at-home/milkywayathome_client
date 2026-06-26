@@ -259,6 +259,11 @@ set(gcc_extra_flags "-fno-common -funswitch-loops ")
 set(gcc_only_extra_flags "-freg-struct-return ")
 
 
+check_library_exists(dl dladdr "" HAVE_LIBDL)
+if (HAVE_LIBDL)
+  list(APPEND gcc_extra_flags "-ldl")
+endif()
+list(APPEND gcc_extra_flags "-ffp-contract=off")
 
 add_flag_if_supported("-maccumulate-outgoing-args")
 
@@ -398,7 +403,7 @@ add_subdirectory(lua)
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")
 
-add_subdirectory(openpa)
+#add_subdirectory(openpa)
 
 if(NBODY_GL)
   if(NOT APPLE)

@@ -20,7 +20,7 @@
  */
 #include "nbody.h"
 #include "nbody_plain.h"
-#include "nbody_shmem.h"
+//#include "nbody_shmem.h"
 #include "nbody_curses.h"
 #include "nbody_defaults.h"
 #include "nbody_util.h"
@@ -475,7 +475,7 @@ NBodyStatus nbRunSystemPlain(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         /* We report the progress at step + 1. 0 is the original
            center of mass. */
         nbReportProgress(ctx, st);
-        nbUpdateDisplayedBodies(ctx, st);
+        //nbUpdateDisplayedBodies(ctx, st);
     }
     
     #ifdef NBODY_BLENDER_OUTPUT

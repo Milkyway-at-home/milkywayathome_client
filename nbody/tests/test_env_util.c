@@ -442,8 +442,8 @@ int read_lua_parameters(const char* input_lua_file, const char** dwarf_params, r
     fflush(stdout);
 
     // Validate component parameters
-    if ((*comp1)->mass <= 0 || (*comp1)->scaleLength <= 0 || 
-        (*comp2)->mass <= 0 || (*comp2)->scaleLength <= 0) {
+    if ((*comp1)->mass < 0 || (*comp1)->scaleLength <= 0 || 
+        (*comp2)->mass < 0 || (*comp2)->scaleLength <= 0) {
         fprintf(stderr, "Error: Invalid component parameters\n");
         fflush(stdout);
         lua_close(L);

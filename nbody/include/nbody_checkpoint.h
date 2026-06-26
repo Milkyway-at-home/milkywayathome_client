@@ -31,6 +31,8 @@ int nbResolveCheckpoint(NBodyState* st, const char* checkpointFileName);
 int nbResolvedCheckpointExists(const NBodyState* st);
 int nbReadCheckpoint(NBodyCtx* ctx, NBodyState* st);
 int nbWriteCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
+int nbReadCheckpointWithStandardFunctions(NBodyCtx* ctx, NBodyState* st, const char* filename);
+int nbWriteCheckpointWithStandardFunctions(const NBodyCtx* ctx, const NBodyState* st, const char* filename);
 int nbWriteCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile);
 NBodyStatus nbWriteFinalCheckpoint(const NBodyCtx* ctx, NBodyState* st);
 int nbTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st);

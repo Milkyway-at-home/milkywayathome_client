@@ -694,6 +694,9 @@ mwvector nbExtAcceleration(const Potential* pot, mwvector pos, real time)
         case Sech2ExponentialDisk:
             acc = sech2ExponentialDiskAccel(&pot->disk, pos, r);
             break;
+        case OrbitingBar:
+            acc = orbitingBarAccel(&pot->disk, pos, r, time);
+            break;
         case NoDisk:
             X(acc) = 0.0;
             Y(acc) = 0.0;

@@ -167,7 +167,7 @@ static void nbPrintHistogramHeader(FILE* f,
             "# Criterion = %s\n"
             "# Theta = %f\n"
             "# Quadrupole Moments = %s\n"
-            "# Eps = %f\n"
+            "# Eps = {%f, %f, %f}\n"
             "# Bar Time Error = %f\n"
             "# Bar Angle Error = %f rad\n"
             "#\n",
@@ -180,7 +180,7 @@ static void nbPrintHistogramHeader(FILE* f,
             showCriterionT(ctx->criterion),
             ctx->theta,
             showBool(ctx->useQuad),
-            mw_sqrt(ctx->eps2),
+            mw_sqrt(ctx->eps2[0]), mw_sqrt(ctx->eps2[1]), mw_sqrt(ctx->eps2[2]),
             barTimeError,
             barAngleError
 
@@ -285,6 +285,20 @@ static void nbPrintHistogramHeader(FILE* f,
                     "#\n",
                     p->disk.mass,
                     p->disk.scaleLength);
+            break;
+
+        case OrbitingBar:
+            fprintf(f,
+                    "# Primary Disk: OrbitingBar\n"
+                    "#   mass = %f\n"
+                    "#   b = %f\n"
+                    "#   pattern speed = %f\n"
+                    "#   start angle = %f\n"
+                    "#\n",
+                    p->disk.mass,
+                    p->disk.scaleLength,
+                    p->disk.patternSpeed,
+                    p->disk.startAngle);
             break;
 
         case NoDisk:
@@ -915,12 +929,22 @@ MainStruct* nbCreateHistogram(const NBodyCtx* ctx,        /* Simulation context 
             mu_ras[ub_counter] = DEFAULT_NOT_USE;
             mu_decs[ub_counter] = DEFAULT_NOT_USE;
 
-            /* Find the indices */
-            lambdaIndex = (unsigned int) mw_floor((lambda - lambdaStart) / lambdaSize);
-            betaIndex = (unsigned int) mw_floor((beta - betaStart) / betaSize);
+
+            /* Find the indices. Casting a negative double to unsigned int is
+           * undefined behavior, and x86_64 vs aarch64 implement it
+           * differently: x86_64 wraps to a huge unsigned (correctly fails the
+           * < lambdaBins check), aarch64 saturates to 0 (incorrectly bins
+           * out-of-range particles into bin 0). Bound-check on the float
+           * first to keep behavior identical across architectures. */
+            real lambdaIdxF = mw_floor((lambda - lambdaStart) / lambdaSize);
+            real betaIdxF   = mw_floor((beta  - betaStart)  / betaSize);
+            mwbool inRange  = (lambdaIdxF >= 0.0 && lambdaIdxF < (real) lambdaBins
+                            && betaIdxF   >= 0.0 && betaIdxF   < (real) betaBins);
+            lambdaIndex = inRange ? (unsigned int) lambdaIdxF : lambdaBins;
+            betaIndex   = inRange ? (unsigned int) betaIdxF   : betaBins;
 
             /* Check if the position is within the bounds of the histogram */
-            if (lambdaIndex < lambdaBins && betaIndex < betaBins)   
+            if (inRange)
             {   
                 Histindex = lambdaIndex * betaBins + betaIndex;
                 use_betabody[ub_counter] = Histindex;//if body is in hist, mark which hist bin

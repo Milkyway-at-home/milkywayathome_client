@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 1
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 95
+set(nbody_VERSION_MINOR 96
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
@@ -147,7 +147,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_checkpoint.c
                   ${NBODY_SRC_DIR}/nbody_defaults.c
                   ${NBODY_SRC_DIR}/nbody_coordinates.c
-                  ${NBODY_SRC_DIR}/nbody_shmem.c
+                  #${NBODY_SRC_DIR}/nbody_shmem.c
                   ${NBODY_SRC_DIR}/nbody_util.c
                   ${NBODY_SRC_DIR}/nbody_emd.c
                   ${NBODY_SRC_DIR}/nbody_mass.c
@@ -156,7 +156,8 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_histogram.c
                   ${NBODY_SRC_DIR}/nbody_caustic.c
                   ${NBODY_SRC_DIR}/nbody_particle_data.c
-                  ${NBODY_SRC_DIR}/blender_visualizer.c)
+                  #${NBODY_SRC_DIR}/blender_visualizer.c
+                  ${NBODY_SRC_DIR}/nbody_king_model.c)
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
@@ -186,9 +187,9 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h
                       ${NBODY_INCLUDE_DIR}/nbody_defaults.h
                       ${NBODY_INCLUDE_DIR}/nbody_coordinates.h
-                      ${NBODY_INCLUDE_DIR}/nbody_shmem.h
+                      #${NBODY_INCLUDE_DIR}/nbody_shmem.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h
-                      ${NBODY_INCLUDE_DIR}/nbody_graphics.h
+                      #${NBODY_INCLUDE_DIR}/nbody_graphics.h
                       ${NBODY_INCLUDE_DIR}/nbody_emd.h
                       ${NBODY_INCLUDE_DIR}/nbody_mass.h
                       ${NBODY_INCLUDE_DIR}/nbody_devoptions.h
@@ -196,7 +197,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_histogram.h
                       ${NBODY_INCLUDE_DIR}/nbody_caustic.h
                       ${NBODY_INCLUDE_DIR}/nbody_particle_data.h
-                      ${NBODY_INCLUDE_DIR}/blender_visualizer.h)
+                      #${NBODY_INCLUDE_DIR}/blender_visualizer.h
+                      ${NBODY_INCLUDE_DIR}/nbody_king_model.h)
                       
 
 
@@ -342,9 +344,9 @@ endif()
 add_executable(milkyway_nbody ${NBODY_SRC_DIR}/main.c)
 milkyway_link(milkyway_nbody ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
 
-if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
-  message(FATAL "BOINC graphics library not found")
-endif()
+#if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
+#  message(FATAL "BOINC graphics library not found")
+#endif()
 
 # Add a vertex, fragment shader pair
 macro(add_inline_shader inline_src_list name type)
@@ -400,9 +402,9 @@ if(NBODY_GL)
   endif()
 
   set(vis_link_libs milkyway ${OPA_LIBRARY} ${POPT_LIBRARY} ${GLFW_LIBRARY} ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES})
-  if(BOINC_APPLICATION)
-    list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
-  endif()
+  #if(BOINC_APPLICATION)
+  #  list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY})
+  #endif()
 
   if(HAVE_LIBRT)
     list(APPEND vis_link_libs rt)
@@ -451,12 +453,12 @@ if(NBODY_GL)
 
   #add_executable(milkyway_nbody_graphics MACOSX_BUNDLE ${nbody_screensaver_src} ${nbody_screensaver_headers} )
 
-  if(WIN32)
-    list(APPEND nbody_screensaver_src ${NBODY_SRC_DIR}/graphics_main_win.c)
-  endif()
+  #if(WIN32)
+  #  list(APPEND nbody_screensaver_src ${NBODY_SRC_DIR}/graphics_main_win.c)
+  #endif()
 
-  add_executable(milkyway_nbody_graphics  ${nbody_screensaver_src} ${nbody_screensaver_headers} )
-  target_link_libraries(milkyway_nbody_graphics nbody_shaders milkyway_image ${vis_link_libs})
+  #add_executable(milkyway_nbody_graphics  ${nbody_screensaver_src} ${nbody_screensaver_headers} )
+  #target_link_libraries(milkyway_nbody_graphics nbody_shaders milkyway_image ${vis_link_libs})
 endif()
 
 

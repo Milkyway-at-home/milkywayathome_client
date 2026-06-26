@@ -26,7 +26,7 @@
 #include "nbody_show.h"
 #include "nbody_lua.h"
 #include "nbody_curses.h"
-#include "nbody_shmem.h"
+//#include "nbody_shmem.h"
 #include "nbody_defaults.h"
 #include "nbody_plain.h"
 #include "nbody_likelihood.h"
@@ -477,20 +477,21 @@ int nbMain(const NBodyFlags* nbf)
             }
         }
 
-        if (nbCreateSharedScene(st, ctx))
-        {
-            mw_printf("Failed to create shared scene\n");
-        }
+        //if (nbCreateSharedScene(st, ctx))
+        //{
+        //    mw_printf("Failed to create shared scene\n");
+        //}
 
-        if (nbf->visualizer && st->scene)
-        {
-            /* Make sure the first scene is available for the launched graphics */
-            nbForceUpdateDisplayedBodies(ctx, st);
-
-            /* Launch graphics and make sure we are sure the graphics is
-            * attached in case we are using blocking mode */
-            nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
-        }
+        //if (nbf->visualizer && st->scene)
+        //{
+        //    /* Make sure the first scene is available for the launched graphics */
+        //    nbForceUpdateDisplayedBodies(ctx, st);
+        //
+        //    /* Launch graphics and make sure we are sure the graphics is
+        //    * attached in case we are using blocking mode */
+        //    nbLaunchVisualizer(st, nbf->graphicsBin, nbf->visArgs);
+        //}
+        
 
         if (nbf->reportProgress)
         {
@@ -527,6 +528,7 @@ int nbMain(const NBodyFlags* nbf)
             //grab the best likelihood time
             real forwardTime = st->bestLikelihood_time;
             //reset the state for the next run
+            destroyNBodyState(st);
             *st = (NBodyState)EMPTY_NBODYSTATE;
             cloneNBodyState(st, &initialState);
             //set previous forward time for the next run
@@ -544,7 +546,7 @@ int nbMain(const NBodyFlags* nbf)
     }
     //mw_printf("After reportProgress\n");
 
-    nbReportSimulationComplete(st);
+    //nbReportSimulationComplete(st);
     //mw_printf("After nbReportSimulationComplete\n");
 
     if (nbStatusIsFatal(rc))

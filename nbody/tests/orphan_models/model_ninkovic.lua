@@ -22,12 +22,13 @@ function makePotential()
       halo      = Halo.ninkovic{ rho0 = 23.6, scaleLength = 17.0, lambda = 93.6 }
    }
 end
+sp_l, sp_cross, sp_d = calculateEps2Dwarf(dwarf, dwarf, nbody, nbody) --assuming this is a single component model, can't actually find what parameters are being used
 
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2Dwarf(dwarf, nbody),
+      eps2       = {sp_l, sp_cross, sp_d},
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,

@@ -20,12 +20,13 @@ function makePotential()
       halo      = Halo.wilkinsonEvans{ mass = 2570079.320803279, scaleLength = 64.3 }
    }
 end
+sp_l, sp_cross, sp_d = calculateEps2(nbody, dwarfRadius)
 
 function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = {sp_l, sp_cross, sp_d},
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
