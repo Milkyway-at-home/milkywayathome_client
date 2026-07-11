@@ -86,6 +86,12 @@ real probability_match(int n, real ktmp, real pobs)
 /* Returns ln(Gamma(z)) via the Lanczos approximation (NR 3rd ed). */
 real gammln(const real z) 
 {
+    /* exact memo: gammln is pure and phase-1 calls it millions of times
+     * with only a couple of distinct arguments (delta+2, delta+3). */
+    static __thread real gammln_last_z = -1.0e308;
+    static __thread real gammln_last_v = 0.0;
+    if (z == gammln_last_z) return gammln_last_v;
+
     //Alogrithm for the calculation of the Lanczos Approx of the complete Gamma function 
     //as implemented in Numerical Recipes 3rd ed, 2007.
     real g = 4.7421875; //g parameter for the gamma function

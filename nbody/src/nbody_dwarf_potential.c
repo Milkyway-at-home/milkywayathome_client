@@ -74,8 +74,8 @@ static real nfw_den(const Dwarf* model, real r)                                 
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     if (rcut != 0.0) {                                                                                                   //
 #pragma GCC diagnostic pop
-        const real rdecay = model->rdecay;                                                                               //
         const real pcut = model->pcut;                                                                                   //
+        const real rdecay = model->rdecay;                                                                               //
         const real delta = model->delta;                                                                                 //
         if (r > rcut) {                                                                                                  //
             return pcut * mw_pow(r / rcut, delta) * mw_exp(-(r - rcut) / rdecay);                                        //
@@ -99,13 +99,12 @@ static real nfw_pot(const Dwarf* model, real r)                                 
     if (rcut != 0.0) {                                                                                                   //
 #pragma GCC diagnostic pop
         const real rdecay = model->rdecay;                                                                               //
-        const real pcut = model->pcut;                                                                                   //
         const real delta = model->delta;                                                                                 //
         const real m_nfw_cut = model->m_nfw_cut;                                                                         //
         const real gamma1 = model->gamma1;                                                                               //
         if (r > rcut) {                                                                                                  //
             return (                                                                                                     //
-                4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3)             //
+                model->mcut_pref             //
                 * (((gamma1 - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) / r)                                      //
                 + (UpperIncompleteGammaFunc(delta + 2, r / rdecay) / rdecay)) + m_nfw_cut / r                            //
             );                                                                                                           //
@@ -223,12 +222,11 @@ static real cored_pot(const Dwarf* model, real r)                               
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     if (rcut != 0.0 && r > rcut)                                                                                         //
     {                                                                                                                    //
-        const real pcut = model->pcut;                                                                                   //
         const real delta = model->delta;                                                                                 //
         const real rdecay = model->rdecay;                                                                               //
         const real gamma1 = model->gamma1;                                                                               //
         return (                                                                                                         //
-            4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3)                 //
+            model->mcut_pref                 //
             * (((gamma1 - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) * inv(r))                                     //
             + (UpperIncompleteGammaFunc(delta + 2, r / rdecay) * inv(rdecay)))                                           //
             + ((m_nfw_cut + m_iso_r1 - m_nfw_r1) * inv(r))                                                               //
