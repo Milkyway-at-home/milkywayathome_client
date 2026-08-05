@@ -26,6 +26,7 @@
 #define _MILKYWAY_MATH_DOUBLE_H_
 
 #include "milkyway_extra.h"
+#include "coremath.h"   /* vendored CORE-MATH correctly-rounded cbrt/erf */
 
 #if !DOUBLEPREC
 #error Double not enabled for double math
@@ -85,14 +86,14 @@ typedef MW_ALIGN_TYPE_V(32) double double4[4];
 #define mw_atanh atanh
 #define mw_atanpi(x) (mw_atan(x) / M_PI)
 #define mw_atan2pi(x) (mw_atan2(x) / M_PI)
-#define mw_cbrt cbrt
+#define mw_cbrt cr_cbrt   /* CORE-MATH correctly-rounded */
 #define mw_ceil ceil
 #define mw_copysign copysign
 #define mw_cospi(x) mw_cos(M_PI * (x))
 #define mw_sinpi(x) mw_sin(M_PI * (x))
 #define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_erfc erfc
-#define mw_erf erf
+#define mw_erf cr_erf     /* CORE-MATH correctly-rounded */
 
 #if HAVE_EXP2
   #define mw_exp2 exp2
