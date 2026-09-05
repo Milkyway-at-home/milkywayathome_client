@@ -64,13 +64,13 @@ void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t s
 #endif /* DOUBLEPREC */
 
 /*Functions for reading parameters from files */
-real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut)
+real* fread_double_array(FILE* file, char* array_name, unsigned int* sizeOut)
 {
     unsigned int i, size;
     int rc;
     real* arr;
 
-    fscanf(file, array_name);
+    fscanf(file, "%s", array_name);
     fscanf(file, "[%u]: ", &size);
 
     arr = (real*) mwMalloc(sizeof(real) * size);
@@ -96,12 +96,12 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
     return arr;
 }
 
-int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
+int* fread_int_array(FILE *file, char *array_name, unsigned int* sizeOut)
 {
     unsigned int i, size;
     int* arr;
 
-    fscanf(file, array_name);
+    fscanf(file, "%s", array_name);
     fscanf(file, "[%u]: ", &size);
 
     arr = (int*) mwMalloc(sizeof(int) * size);

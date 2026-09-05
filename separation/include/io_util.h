@@ -30,8 +30,8 @@
 void fwrite_double_array(FILE* file, const char* array_name, real* array_t, size_t size);
 void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t size);
 
-real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut);
-int* fread_int_array(FILE* file, const char* array_name, unsigned int* sizeOut);
+real* fread_double_array(FILE* file, char* array_name, unsigned int* sizeOut);
+int* fread_int_array(FILE* file, char* array_name, unsigned int* sizeOut);
 
 void printIntegralArea(const IntegralArea* ia);
 void printAstronomyParameters(const AstronomyParameters* ap);
