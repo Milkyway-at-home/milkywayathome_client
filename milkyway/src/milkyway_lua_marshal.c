@@ -244,6 +244,18 @@ int setNumber(lua_State* luaSt, void* v)
     return 0;
 }
 
+int getSizeT(lua_State* luaSt, void* v)
+{
+    lua_pushnumber(luaSt, (lua_Number) *(size_t*) v);
+    return 1;
+}
+
+int setSizeT(lua_State* luaSt, void* v)
+{
+    *(size_t*) v = (size_t) luaL_checknumber(luaSt, 3);
+    return 0;
+}
+
 int getBool(lua_State* luaSt, void* v)
 {
     lua_pushboolean(luaSt, *(int*) v);
@@ -284,6 +296,33 @@ int setRealArray(lua_State* luaSt, void* v)
     for (size_t i = 0; i < len; ++i) {
         lua_rawgeti(luaSt, 3, i + 1);
         arr[i] = lua_tonumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+    return 0;
+}
+
+int getIntArray(lua_State* luaSt, void* v, size_t len) //needs a wrapper function to pass len
+{
+    lua_newtable(luaSt);
+    int* arr = (int*)v;
+    for (size_t i = 0; i < len; ++i) {
+        lua_pushinteger(luaSt, arr[i]);
+        lua_rawseti(luaSt, -2, i + 1);
+    }
+    return 1;
+}
+
+int setIntArray(lua_State* luaSt, void* v)
+{
+    if (!lua_istable(luaSt, 3))
+    {
+        return luaL_error(luaSt, "Expected table");
+    }
+    size_t len = luaL_getn(luaSt, 3);
+    int* arr = (int*)v;
+    for (size_t i = 0; i < len; ++i) {
+        lua_rawgeti(luaSt, 3, i + 1);
+        arr[i] = (int) lua_tointeger(luaSt, -1);
         lua_pop(luaSt, 1);
     }
     return 0;
@@ -535,6 +574,13 @@ static void setNumberFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             return;
         }
 
+        /* size_t (e.g. counts used to size other arrays, such as eps2_size) */
+        if(strcmp(SIZE_TYPE, userDataTypeName) == 0)
+        {
+            *(size_t*) v = (size_t) lua_tonumber(luaSt, idx);
+            return;
+        }
+
         mw_panic("Unknown userDataTypeName (%s) specified in MWNamedArg %s\n", userDataTypeName, p->name);
         
     }
@@ -572,10 +618,31 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             // Handle real arrays
             if (p->userDataTypeName && strcmp(p->userDataTypeName, REAL_TYPE) == 0)
             {
-                real* arr = (real*)v;
-                for (size_t i = 0; i < p->arrayLen; ++i) {
+                real** arr_ptr = (real**)v;
+                /* arrayLen == 0 means "variable length": size from the actual
+                 * Lua table instead of a fixed compile-time count (used for
+                 * eps2, whose length depends on how many structures/types the
+                 * workunit defines) */
+                size_t len = (p->arrayLen != 0) ? p->arrayLen : (size_t) luaL_getn(luaSt, idx);
+                *arr_ptr = (real*)calloc(len, sizeof(real));
+                for (size_t i = 0; i < len; ++i) {
                     lua_rawgeti(luaSt, idx, i + 1);
-                    arr[i] = (real)lua_tonumber(luaSt, -1);
+                    (*arr_ptr)[i] = (real)lua_tonumber(luaSt, -1);
+                    lua_pop(luaSt, 1);
+                }
+            }
+            else if (p->userDataTypeName && strcmp(p->userDataTypeName, INT_TYPE) == 0)
+            {
+                int** arr_ptr = (int**)v;
+                /* arrayLen == 0 means "variable length": size from the actual
+                 * Lua table instead of a fixed compile-time count (used for
+                 * eps2_index, whose length depends on how many structures/types
+                 * the workunit defines) */
+                size_t len = (p->arrayLen != 0) ? p->arrayLen : (size_t) luaL_getn(luaSt, idx);
+                *arr_ptr = (int*)calloc(len, sizeof(int));
+                for (size_t i = 0; i < len; ++i) {
+                    lua_rawgeti(luaSt, idx, i + 1);
+                    (*arr_ptr)[i] = (int)lua_tointeger(luaSt, -1);
                     lua_pop(luaSt, 1);
                 }
             }
@@ -844,6 +911,32 @@ real* popRealArray(lua_State* luaSt, int* outN)
         lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
         luaL_checktype(luaSt, -1, LUA_TNUMBER);
         arr[i] = lua_tonumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+
+    lua_pop(luaSt, 1);
+
+    if (outN)
+        *outN = n;
+
+    return arr;
+}
+
+int* popIntArray(lua_State* luaSt, int* outN)
+{
+    int* arr;
+    int i, n, table;
+
+    table = lua_gettop(luaSt);
+    luaL_checktype(luaSt, table, LUA_TTABLE);
+    n = luaL_getn(luaSt, table);  /* get size of table */
+
+    arr = (int*) mwMalloc(sizeof(int) * n);
+    for (i = 0; i < n; ++i)
+    {
+        lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
+        luaL_checktype(luaSt, -1, LUA_TNUMBER);
+        arr[i] = lua_tointeger(luaSt, -1);
         lua_pop(luaSt, 1);
     }
 

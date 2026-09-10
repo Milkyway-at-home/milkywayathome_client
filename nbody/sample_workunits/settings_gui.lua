@@ -260,10 +260,22 @@ function get_soft_par()
     end
     if ((manual_bodies or use_max_soft_par) and (sp_cross > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
-        return max_soft_par^2
+        return {max_soft_par^2, max_soft_par^2, max_soft_par^2}
     else
         return {sp_l, sp_cross, sp_d}
     end
+end
+
+function make_soft_par()
+    sp_output = get_soft_par()
+    soft_array =
+    {
+        sp_output[1], sp_output[2],
+        sp_output[2], sp_output[3]
+    }
+    -- Here the softening length array can be manually changed if necessary.
+    -- Just make sure the corresponding index array matches
+    return soft_array
 end
 -- A lot of this is hard-coded to the default values.
 -- This is because lite users don't need to optimize histograms, 
@@ -274,7 +286,9 @@ function makeContext()
       timeEvolve    = evolveTime,
       timeBack      = revOrbTime,
       timestep      = get_timestep(),
-      eps2          = get_soft_par(),
+      eps2          = make_soft_par(),
+      eps2_index    = {1, -1},
+      eps2_size     = 2,
       b             = orbit_parameter_b,
       r             = orbit_parameter_r,
       vx            = orbit_parameter_vx,

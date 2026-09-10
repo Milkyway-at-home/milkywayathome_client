@@ -51,11 +51,20 @@ function randomNBodyCtx(prng)
    end
    sigma = prng:random(1.5,3.0)
    correct = math.sqrt(2*3.1415926535)/(math.sqrt(2*3.1415926535)*erf(sigma/math.sqrt(2)) - 2*sigma*math.exp(-sigma*sigma/2))
+   -- Draw each distinct softening length once. eps2_cross is reused for both
+   -- off-diagonal entries of the flattened matrix (light-dark and dark-light
+   -- must be the same value) -- calling prng:random() separately for each
+   -- slot would draw two different numbers instead of reusing one.
+   eps2_l = prng:random(1.0e-9, 1.0e-3)
+   eps2_cross = prng:random(1.0e-9, 1.0e-3)
+   eps2_d = prng:random(1.0e-9, 1.0e-3)
    return NBodyCtx.create{
       timestep      = prng:random(1.0e-5, 1.0e-4),
       timeEvolve    = prng:random(0, 10),
       theta         = prng:random(0, 1),
-      eps2          = {prng:random(1.0e-9, 1.0e-3), prng:random(1.0e-9, 1.0e-3), prng:random(1.0e-9, 1.0e-3)},
+      eps2          = {eps2_l, eps2_cross, eps2_cross, eps2_d},
+      eps2_index    = {1, -1},
+      eps2_size     = 2,
       b             = prng:random(40.0,60.0),
       r             = prng:random(10.0,30.0),
       vx            = prng:random(-200.0,200.0),

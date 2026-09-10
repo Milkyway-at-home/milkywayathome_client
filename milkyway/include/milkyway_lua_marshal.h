@@ -37,6 +37,7 @@
 #define INT_TYPE "INT"
 #define UINT_TYPE "UINT"
 #define REAL_TYPE "REAL"
+#define SIZE_TYPE "SIZE"
 
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
@@ -95,6 +96,9 @@ int setBool(lua_State* luaSt, void* v);
 int getNumber(lua_State* luaSt, void* v);
 int setNumber(lua_State* luaSt, void* v);
 
+int getSizeT(lua_State* luaSt, void* v);
+int setSizeT(lua_State* luaSt, void* v);
+
 int getString(lua_State* luaSt, void* v);
 
 int getCClosure0(lua_State* luaSt, void* v);
@@ -108,6 +112,9 @@ int getLuaClosure(lua_State* luaSt, void* ref);
 
 int getRealArray(lua_State* luaSt, void* v, size_t len);
 int setRealArray(lua_State* luaSt, void* v);
+
+int getIntArray(lua_State* luaSt, void* v, size_t len);
+int setIntArray(lua_State* luaSt, void* v);
 
 void Xet_add(lua_State* luaSt, Xet_reg l);
 int Xet_call(lua_State* luaSt);
