@@ -283,8 +283,14 @@ maybe_disable_ssen(boinc_api boinc boinc_graphics2)
 
 if(OPENSSL_FOUND)
   include_directories(${OPENSSL_INCLUDE_DIR})
+  # Check for OpenSSL ENGINE header (may be missing on OpenSSL3-only systems)
+  include(CheckIncludeFiles)
+  check_include_files(openssl/engine.h HAVE_OPENSSL_ENGINE_H)
   add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DIR}/crypt.h)
   set_target_properties(boinc_crypt PROPERTIES PUBLIC_HEADER ${BOINC_LIB_SRC_DIR}/crypt.h)
+  if(HAVE_OPENSSL_ENGINE_H)
+    target_compile_definitions(boinc_crypt PRIVATE HAVE_OPENSSL_ENGINE_H)
+  endif()
   # install(TARGETS boinc_crypt
   #           ARCHIVE       DESTINATION lib
   #           PUBLIC_HEADER DESTINATION include/boinc)

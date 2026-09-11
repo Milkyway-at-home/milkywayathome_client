@@ -2,6 +2,21 @@
 #include <stdarg.h>
 #include "poptint.h"
 
+/* Ensure gettext symbols are declared when dcgettext/gettext support is detected.
+ * Some systems may have the functions available but not the header detected
+ * by the configure checks; provide fallbacks to avoid implicit declaration
+ * errors during compilation.
+ */
+#if defined(HAVE_DCGETTEXT) && !defined(__LCLINT__)
+# if defined(HAVE_LIBINTL_H)
+#  include <libintl.h>
+# else
+extern char *textdomain (const char *);
+extern char *bind_textdomain_codeset (const char *, const char *);
+extern char *dgettext (const char *, const char *);
+# endif
+#endif
+
 #if defined(HAVE_ASSERT_H)
 #include <assert.h>
 #else

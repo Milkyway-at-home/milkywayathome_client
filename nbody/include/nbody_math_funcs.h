@@ -5,8 +5,8 @@
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
 
-typedef real (*ODE2ndDeriv)(real, real, real, Dwarf *params);
-real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int returnXWhen0);
+typedef real (*ODE2ndDeriv)(real, real, real, const Dwarf *params);
+real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, const Dwarf* params, int returnXWhen0);
 
 real GammaFunc(const real z);
 
