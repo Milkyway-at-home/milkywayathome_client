@@ -1,3 +1,4 @@
+#include "nbody_config.h"
 #include "milkyway_util.h"
 #include "milkyway_math.h"
 #include "milkyway_lua.h"

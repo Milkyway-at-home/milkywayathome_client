@@ -1,6 +1,7 @@
 #ifndef _NBODY_MATH_FUNCS_H_
 #define _NBODY_MATH_FUNCS_H_
 
+#include "nbody_config.h"
 #include "milkyway_math.h"
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
