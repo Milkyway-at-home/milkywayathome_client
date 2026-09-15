@@ -464,7 +464,7 @@ endif()
 
 
 if(BOINC_RELEASE_NAMES)
-  if(NBODY_OPENMP)
+  if(OPENMP_FOUND AND NBODY_OPENMP)
     set(NBODY_PLAN "mt")
   else()
     if(HAVE_SSE2)
