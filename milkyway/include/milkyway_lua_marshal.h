@@ -39,6 +39,14 @@
 #define REAL_TYPE "REAL"
 #define SIZE_TYPE "SIZE"
 
+/* Sentinel for MWNamedArg.arrayLen meaning "this is a pointer-typed
+ * field (e.g. real* eps2) whose length is not known at compile time --
+ * size it from the actual Lua table and allocate a fresh buffer, rather
+ * than writing arrayLen elements directly into a fixed-size inline
+ * array (the meaning of any other arrayLen value, including 0, which
+ * remains a no-op for fields populated some other way). */
+#define MW_ARRAY_LEN_DYNAMIC ((unsigned int) -1)
+
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
 

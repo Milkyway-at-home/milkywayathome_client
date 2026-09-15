@@ -185,8 +185,8 @@ static int createNBodyCtx(lua_State* luaSt)
             { "timeEvolve",      LUA_TNUMBER, NULL,      TRUE,  &ctx.timeEvolve,        1 },
             { "timeBack",        LUA_TNUMBER, NULL,      FALSE, &ctx.timeBack,          1 },
             { "theta",           LUA_TNUMBER, NULL,      FALSE, &ctx.theta,             1 },
-            { "eps2",            LUA_TTABLE,  REAL_TYPE, TRUE,  &ctx.eps2,              0 }, //arrayLen 0 = variable length; sized from the actual Lua table (eps2_size^2 entries)
-            { "eps2_index",      LUA_TTABLE,  INT_TYPE,  TRUE,  &ctx.eps2_index,        0 }, //arrayLen 0 = variable length; sized from the actual Lua table (eps2_size entries)
+            { "eps2",            LUA_TTABLE,  REAL_TYPE, TRUE,  &ctx.eps2,              MW_ARRAY_LEN_DYNAMIC }, // dynamic length; sized from the actual Lua table (eps2_size^2 entries)
+            { "eps2_index",      LUA_TTABLE,  INT_TYPE,  TRUE,  &ctx.eps2_index,        MW_ARRAY_LEN_DYNAMIC }, // dynamic length; sized from the actual Lua table (eps2_size entries)
             { "eps2_size",       LUA_TNUMBER, SIZE_TYPE, TRUE,  &ctx.eps2_size,         1 },
             { "treeRSize",       LUA_TNUMBER, NULL,      FALSE, &ctx.treeRSize,         1 },
             { "sunGCDist",       LUA_TNUMBER, NULL,      FALSE, &ctx.sunGCDist,         1 },

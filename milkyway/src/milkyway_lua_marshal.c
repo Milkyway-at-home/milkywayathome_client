@@ -618,32 +618,62 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             // Handle real arrays
             if (p->userDataTypeName && strcmp(p->userDataTypeName, REAL_TYPE) == 0)
             {
-                real** arr_ptr = (real**)v;
-                /* arrayLen == 0 means "variable length": size from the actual
-                 * Lua table instead of a fixed compile-time count (used for
-                 * eps2, whose length depends on how many structures/types the
-                 * workunit defines) */
-                size_t len = (p->arrayLen != 0) ? p->arrayLen : (size_t) luaL_getn(luaSt, idx);
-                *arr_ptr = (real*)calloc(len, sizeof(real));
-                for (size_t i = 0; i < len; ++i) {
-                    lua_rawgeti(luaSt, idx, i + 1);
-                    (*arr_ptr)[i] = (real)lua_tonumber(luaSt, -1);
-                    lua_pop(luaSt, 1);
+                if (p->arrayLen == MW_ARRAY_LEN_DYNAMIC)
+                {
+                    /* Pointer-typed field (e.g. real* eps2) with a length not
+                     * known at compile time: size from the actual Lua table
+                     * and allocate a fresh buffer, storing its address
+                     * through v (which points at the real* field itself). */
+                    real** arr_ptr = (real**)v;
+                    size_t len = (size_t) luaL_getn(luaSt, idx);
+                    *arr_ptr = (real*)calloc(len, sizeof(real));
+                    for (size_t i = 0; i < len; ++i) {
+                        lua_rawgeti(luaSt, idx, i + 1);
+                        (*arr_ptr)[i] = (real)lua_tonumber(luaSt, -1);
+                        lua_pop(luaSt, 1);
+                    }
+                }
+                else
+                {
+                    /* Fixed-size inline array member (e.g. real foo[N]): v is
+                     * the array itself (decayed to a pointer to its first
+                     * element), not a real* variable to overwrite, so write
+                     * directly into it. arrayLen == 0 is a no-op here, which
+                     * some callers rely on for a field populated manually
+                     * elsewhere (e.g. HistogramParams' EMDRange). */
+                    real* arr = (real*)v;
+                    for (size_t i = 0; i < (size_t) p->arrayLen; ++i) {
+                        lua_rawgeti(luaSt, idx, i + 1);
+                        arr[i] = (real)lua_tonumber(luaSt, -1);
+                        lua_pop(luaSt, 1);
+                    }
                 }
             }
             else if (p->userDataTypeName && strcmp(p->userDataTypeName, INT_TYPE) == 0)
             {
-                int** arr_ptr = (int**)v;
-                /* arrayLen == 0 means "variable length": size from the actual
-                 * Lua table instead of a fixed compile-time count (used for
-                 * eps2_index, whose length depends on how many structures/types
-                 * the workunit defines) */
-                size_t len = (p->arrayLen != 0) ? p->arrayLen : (size_t) luaL_getn(luaSt, idx);
-                *arr_ptr = (int*)calloc(len, sizeof(int));
-                for (size_t i = 0; i < len; ++i) {
-                    lua_rawgeti(luaSt, idx, i + 1);
-                    (*arr_ptr)[i] = (int)lua_tointeger(luaSt, -1);
-                    lua_pop(luaSt, 1);
+                if (p->arrayLen == MW_ARRAY_LEN_DYNAMIC)
+                {
+                    /* Pointer-typed field (e.g. int* eps2_index); see the
+                     * REAL_TYPE case above. */
+                    int** arr_ptr = (int**)v;
+                    size_t len = (size_t) luaL_getn(luaSt, idx);
+                    *arr_ptr = (int*)calloc(len, sizeof(int));
+                    for (size_t i = 0; i < len; ++i) {
+                        lua_rawgeti(luaSt, idx, i + 1);
+                        (*arr_ptr)[i] = (int)lua_tointeger(luaSt, -1);
+                        lua_pop(luaSt, 1);
+                    }
+                }
+                else
+                {
+                    /* Fixed-size inline array member; see the REAL_TYPE case
+                     * above. */
+                    int* arr = (int*)v;
+                    for (size_t i = 0; i < (size_t) p->arrayLen; ++i) {
+                        lua_rawgeti(luaSt, idx, i + 1);
+                        arr[i] = (int)lua_tointeger(luaSt, -1);
+                        lua_pop(luaSt, 1);
+                    }
                 }
             }
             else
