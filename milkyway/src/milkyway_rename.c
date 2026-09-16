@@ -81,9 +81,20 @@ static void initW32TransactionalFunctions()
         return;
     }
 
-    __CreateTransaction = GetProcAddress(ktm32Lib, "CreateTransaction");
-    __CommitTransaction = GetProcAddress(ktm32Lib, "CommitTransaction");
-    __MoveFileTransacted = GetProcAddress(kernel32Lib, "MoveFileTransactedA");
+    __CreateTransaction = (HANDLE (WINAPI *)(LPSECURITY_ATTRIBUTES,
+                                             LPGUID,
+                                             DWORD,
+                                             DWORD,
+                                             DWORD,
+                                             DWORD,
+                                             LPWSTR)) GetProcAddress(ktm32Lib, "CreateTransaction");
+    __CommitTransaction = (BOOL (WINAPI *)(HANDLE)) GetProcAddress(ktm32Lib, "CommitTransaction");
+    __MoveFileTransacted = (BOOL (WINAPI *)(LPCTSTR,
+                                            LPCTSTR,
+                                            LPPROGRESS_ROUTINE,
+                                            LPVOID,
+                                            DWORD,
+                                            HANDLE)) GetProcAddress(kernel32Lib, "MoveFileTransactedA");
 
     transactionFuncsOK = (__CreateTransaction && __MoveFileTransacted && __CommitTransaction);
 

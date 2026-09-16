@@ -42,7 +42,26 @@
 
 #if MW_IS_X86
 
-#ifndef _WIN32
+/* Use MSVC intrinsics only when compiling with MSVC on Windows. For GCC/Clang
+   (including mingw-w64 cross-compiles) use the inline-asm implementation. */
+#if defined(_WIN32) && defined(_MSC_VER)
+
+void mw_cpuid(int abcd[4], int a, int c)
+{
+    abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
+    __cpuid(abcd, 0);
+    if (abcd[0] >= 1) /* Is this really necessary? */
+    {
+        __cpuid(abcd, a);
+    }
+    else
+    {
+        abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
+    }
+}
+
+#else /* not MSVC */
+
 void mw_cpuid(int abcd[4], int a, int c)
 {
     abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
@@ -66,22 +85,7 @@ void mw_cpuid(int abcd[4], int a, int c)
   #endif
 }
 
-#else /* _WIN32 */
-
-void mw_cpuid(int abcd[4], int a, int c)
-{
-    abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
-    __cpuid(abcd, 0);
-    if (abcd[0] >= 1) /* Is this really necessary? */
-    {
-        __cpuid(abcd, a);
-    }
-    else
-    {
-        abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
-    }
-}
-#endif /* _WIN32 */
+#endif /* defined(_WIN32) && defined(_MSC_VER) */
 
 #else /* !MW_IS_X86 */
 
@@ -119,10 +123,12 @@ int mwHasSSE2(const int abcd[4])
 #if defined(_WIN32)
 int mwOSHasAVXSupport(void)
 {
-    OSVERSIONINFOEX vInfo;
+    /* Use the ANSI versions of the structures/functions to avoid
+       mismatches with MinGW headers when cross-compiling. */
+    OSVERSIONINFOEXA vInfo;
 
-    vInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    if (!GetVersionEx(&vInfo))
+    vInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
+    if (!GetVersionExA((LPOSVERSIONINFOA)&vInfo))
     {
         mwPerrorW32("Error getting Windows version info");
         return FALSE;
