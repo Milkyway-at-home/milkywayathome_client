@@ -270,7 +270,7 @@ int runTestsEMD(unsigned int dim1, unsigned int dim2)
     return fails;
 }
 
-int main(int, const char*[])
+int main(int argc, const char* argv[])
 {
     int fails = 0;
 
