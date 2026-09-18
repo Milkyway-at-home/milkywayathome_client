@@ -67,7 +67,7 @@ __attribute__((unused)) static real plummer_vel_disp(const Dwarf* model, real r)
 static real nfw_den(const Dwarf* model, real r)                                                                          //
 {                                                                                                                        //
     const real rscale = model->scaleLength;                                                                              //
-    const real p0 = model->p0;                                                                                           //
+    const real ps = model->ps;                                                                                           //
     const real rcut = model->rcut;                                                                                       //
     real R = r / rscale;                                                                                                 //
 #pragma GCC diagnostic push                                                                                              //
@@ -81,17 +81,17 @@ static real nfw_den(const Dwarf* model, real r)                                 
             return pcut * mw_pow(r / rcut, delta) * mw_exp(-(r - rcut) / rdecay);                                        //
         }                                                                                                                //
         else {                                                                                                           //
-            return p0 * inv(R) * inv(sqr(1.0 + R));                                                                      //
+            return ps * inv(R) * inv(sqr(1.0 + R));                                                                      //
         }                                                                                                                //
     }                                                                                                                    //
     /* at r = 0 the density goes to inf. however, the sampling is guarded against r = 0 anyway.*/                        //
-    return p0 * inv(R) * inv(sqr(1.0 + R));                                                                              //
+    return ps * inv(R) * inv(sqr(1.0 + R));                                                                              //
 }                                                                                                                        //
                                                                                                                          //
 static real nfw_pot(const Dwarf* model, real r)                                                                          //
 {                                                                                                                        //
     const real rscale = model->scaleLength;                                                                              //
-    const real p0 = model->p0;                                                                                           //
+    const real ps = model->ps;                                                                                           //
     const real rcut = model->rcut;                                                                                       //
     real R = r / rscale;                                                                                                 //
 #pragma GCC diagnostic push                                                                                              //
@@ -113,12 +113,12 @@ static real nfw_pot(const Dwarf* model, real r)                                 
             const real psi_nfw_cut = model->psi_nfw_cut;                                                                 //
             const real psi_cut_cut = model->psi_cut_cut;                                                                 //
             const real m_nfw_cut = model->m_nfw_cut;                                                                     //
-            return (4.0 * M_PI * p0 * cube(rscale) * mw_log(1.0 + R) * inv(r)                                            //
+            return (4.0 * M_PI * ps * cube(rscale) * mw_log(1.0 + R) * inv(r)                                            //
                 - psi_nfw_cut + psi_cut_cut + m_nfw_cut / rcut);                                                         //
         }                                                                                                                //
     }                                                                                                                    //
     /* at r = 0 the pot goes to inf. however, the sampling is guarded against r = 0 anyway. */                           //
-    return  4.0 * M_PI * sqr(rscale) * p0 * inv(R) * mw_log(1.0 + R);                                                    //
+    return  4.0 * M_PI * sqr(rscale) * ps * inv(R) * mw_log(1.0 + R);                                                    //
 }                                                                                                                        //
                                                                                                                          //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -328,7 +328,7 @@ real get_potential(const Dwarf* model, real r)
         case NFW:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->p0 == 0.0) {
+            if (model->ps == 0.0) {
 #pragma GCC diagnostic pop
                 set_model_params(model);
             }
@@ -387,7 +387,7 @@ real get_density(const Dwarf* model, real r)
         case NFW:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->p0 == 0.0) {
+            if (model->ps == 0.0) {
 #pragma GCC diagnostic pop
                 set_model_params(model);
             }

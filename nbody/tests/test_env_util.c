@@ -210,7 +210,7 @@ int run_nbody(const char** dwarf_params, const char* lua_file) {
              "-f \"%s\" "
              "-o \"%s/output.out\" "
              "-z \"%s/output.hist\" "
-             "-n 8 -w 1 -P -e 54231651 "
+             "-n 64 -w 1 -P -e 54231651 "
              "-i %s %s %s %s %s %s",
              bin_path, lua_file, cwd, cwd,
              dwarf_params[0], dwarf_params[1], dwarf_params[2], 

@@ -149,23 +149,37 @@ static real rice_rule(const real nbodies) {
     return (int)(2.0 * mw_pow(nbodies, 1.0/3.0));
 }
 
-static real get_sampling_bound_for_component(const Dwarf* comp, const Dwarf* other_comp) {
-    
-    if (comp->type == NFW || comp->type == Cored) {
-		if (comp->rcut != 0.0) {
-			return comp->rcut + 10.0 * comp->rdecay;
+static real get_sampling_bound_for_component(const Dwarf* comp) {
+	/* Must match the default sampling bounds in nbGenerateMixedDwarfCore(). */
+	switch (comp->type)
+	{
+		case NFW:
+		case Cored:
+			if (comp->rcut != 0.0) {
+				return 1.0e-6 * comp->ps;
+			}
+			return 5.0 * comp->r200;
+		case Einasto:
+		{
+			/* matches einasto_sampling_bound() */
+			const real a = 3.0 * comp->n;
+			const real z999 = 3.0902323061678135;
+			real t = 1.0 - 1.0 / (9.0 * a) + z999 / (3.0 * mw_sqrt(a));
+			real x999 = a * cube(t);
+			return comp->scaleLength * mw_pow(x999 / comp->d, comp->n);
 		}
-		return 5.0 * comp->r200;
+		case Plummer:
+			/* 99.9% mass radius: r/a = sqrt(0.999^(2/3) / (1 - 0.999^(2/3))) */
+			return 38.71369177075375 * comp->scaleLength;
+		case General_Hernquist:
+			/* 99.9% mass radius: r/a = sqrt(0.999) / (1 - sqrt(0.999)) */
+			return 1998.4998749376305 * comp->scaleLength;
+		case King:
+			return comp->r_t;
+		case InvalidDwarf:
+		default:
+			return 0.0;
 	}
-	if (comp->type == Einasto) {
-		/* matches einasto_sampling_bound() */
-		const real a = 3.0 * comp->n;
-		const real z999 = 3.090232306167813; 
-		real t = 1.0 - 1.0 / (9.0 * a) + z999 / (3.0 * mw_sqrt(a));
-		real x999 = a * cube(t);
-		return comp->scaleLength * mw_pow(x999 / comp->d, comp->n);
-	}
-	return 5.0 * comp->scaleLength;
 }
 
 /* Function for the stability test for a given dwarf potential type */
@@ -180,13 +194,10 @@ int test_stability(TestContext* tctx) {
     tctx->mass_per_particle_baryon = tctx->comp1->mass / tctx->nbody_baryon;
     tctx->mass_per_particle_dark = (tctx->nbody_dark > 0.0) ? tctx->comp2->mass / tctx->nbody_dark : 0.0;
     // Set bounds for calulating KL divergence
-	real baryon_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp1, tctx->comp2);
-	if (tctx->comp1->type == King) {
-		baryon_range_limit = 0.8 * tctx->comp1->r_t;
-	}
+	real baryon_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp1);
 	printf("Baryon range limit: %f\n", baryon_range_limit);
     fflush(stdout);
-    real dark_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp2, tctx->comp1);
+    real dark_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp2);
     printf("Dark matter range limit: %f\n", dark_range_limit);
     fflush(stdout);
     // Calculate the bin width for each component

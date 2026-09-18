@@ -190,26 +190,7 @@ function get_timestep()
     if(timestep_control) then
       t = (evolveTime) / (Ntime_steps)
     elseif(ModelComponents == 2) then
-
-        --Mass of a single dark matter sphere enclosed within light rscale
-        mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
-
-        --Mass of a single light matter sphere enclosed within dark rscale
-        mass_enc_l = mass_l * (rscale_d)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
-
-        s1 = (rscale_l)^3 / (mass_enc_d + mass_l)
-        s2 = (rscale_d)^3 / (mass_enc_l + mass_d)
-        
-        --return the smaller time step
-        if(s1 < s2) then
-            s = s1
-        else
-            s = s2
-        end
-        
-        -- I did it this way so there was only one place to change the time step. 
-        t = (1.0 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
-        
+        t = calculateTimestepMixedDwarf(comp1, comp2)
     else 
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
@@ -342,8 +323,8 @@ function makeBodies(ctx, potential)
             prng        = prng,
             position    = finalPosition,
             velocity    = finalVelocity,
-            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp1       = comp1,
+            comp2       = comp2,
             ignore      = true
         }
         
@@ -403,7 +384,12 @@ else
    rscale_d  = rscale_t *  (1.0 - light_r_ratio)
    mass_d    = dwarfMass * (1.0 - light_mass_ratio)
 end
-   
+
+--component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
+--calculate dwarf-based softening length
+comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist
+comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist
+ 
 
 if(manual_bodies and manual_body_file == nil) then 
     print 'WARNING: No body list given. Manual body input turn off'

@@ -162,9 +162,9 @@ typedef struct MW_ALIGN_TYPE
     real mass;        
     real scaleLength;   
     real n, h, d; //used by einasto 
-    real p0; //used by nfw and cored
+    real p0; // cored isothermal central density only
     real r200; // virial radius
-    real ps, r1, rc; //used by cored
+    real ps, r1, rc; // ps: NFW characteristic density (NFW and cored NFW); r1, rc: cored NFW only
     real W0, r_t, r_0, mu, rho0, rho1, sigma, phi0; // used by king
     real rcut, rdecay, pcut, delta, m_nfw_cut, const_gamma_func, psi_nfw_cut, psi_cut_cut;   // NFW cutoff constants (const_gamma_func also used by einasto)
     real m_nfw_r1, m_iso_r1, psi_nfw_r1, psi_iso_r1; // extra constants for cutoff Cored profiles
