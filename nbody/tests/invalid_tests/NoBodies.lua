@@ -11,7 +11,9 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(16, 0.2),
       timeEvolve = 4.0,
-      eps2       = calculateEps2(4096, 0.2),
+      eps2       = {(calculateEps2(4096, 0.2))},
+      eps2_index = {1},
+      eps2_size  = 1,
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
