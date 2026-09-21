@@ -47,6 +47,7 @@
 /* KL divergence thresholds */
 #define INITIAL_KL_THRESHOLD 0.01   /* Maximum acceptable initial KL divergence */
 #define KL_FLUCTUATION_FACTOR 3.0   /* Factor to multiply initial KL divergence for fluctuation threshold */
+#define KL_MASS_FRACTION 0.9        /* Compare KL only inside this enclosed-mass radius, not the sampling tail */
 
 /* Struct to hold all simulation variables and allocations */
 typedef struct {
@@ -156,7 +157,8 @@ static real get_sampling_bound_for_component(const Dwarf* comp) {
 		case NFW:
 		case Cored:
 			if (comp->rcut != 0.0) {
-				return 1.0e-6 * comp->ps;
+				/* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+				return comp->rcut - mw_log(1.0e-7 * comp->ps / comp->pcut) * comp->rdecay;
 			}
 			return 5.0 * comp->r200;
 		case Einasto:
@@ -182,6 +184,34 @@ static real get_sampling_bound_for_component(const Dwarf* comp) {
 	}
 }
 
+/* Radius enclosing KL_MASS_FRACTION of the mass inside the sampling bound.
+ * Sampling goes out to ~99.9% mass; KL must not use those sparse outer bins. */
+static real get_kl_range_limit(const Dwarf* comp)
+{
+	real r_hi = get_sampling_bound_for_component(comp);
+	real m_tot;
+	real target;
+	real r_lo = 0.0;
+	int i;
+
+	if (r_hi <= 0.0)
+		return r_hi;
+
+	m_tot = enclosed_comp_mass(comp, r_hi);
+	if (m_tot <= 0.0)
+		return r_hi;
+
+	target = KL_MASS_FRACTION * m_tot;
+	for (i = 0; i < 60; i++) {
+		real r_mid = 0.5 * (r_lo + r_hi);
+		if (enclosed_comp_mass(comp, r_mid) < target)
+			r_lo = r_mid;
+		else
+			r_hi = r_mid;
+	}
+	return r_hi;
+}
+
 /* Function for the stability test for a given dwarf potential type */
 int test_stability(TestContext* tctx) {
     int failed = 0;
@@ -194,10 +224,10 @@ int test_stability(TestContext* tctx) {
     tctx->mass_per_particle_baryon = tctx->comp1->mass / tctx->nbody_baryon;
     tctx->mass_per_particle_dark = (tctx->nbody_dark > 0.0) ? tctx->comp2->mass / tctx->nbody_dark : 0.0;
     // Set bounds for calulating KL divergence
-	real baryon_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp1);
+	real baryon_range_limit = get_kl_range_limit(tctx->comp1);
 	printf("Baryon range limit: %f\n", baryon_range_limit);
     fflush(stdout);
-    real dark_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp2);
+    real dark_range_limit = get_kl_range_limit(tctx->comp2);
     printf("Dark matter range limit: %f\n", dark_range_limit);
     fflush(stdout);
     // Calculate the bin width for each component

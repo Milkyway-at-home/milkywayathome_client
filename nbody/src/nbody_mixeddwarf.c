@@ -1033,7 +1033,8 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     break;
                 case NFW:
                     if (comp1->rcut != 0.0) {
-                        bound1 = 1.0e-6 * comp1->ps;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound1 = comp1->rcut - mw_log(1.0e-7 * comp1->ps / comp1->pcut) * comp1->rdecay;
                     }
                     else {
                         bound1 = 5.0 * comp1->r200;
@@ -1045,7 +1046,8 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     break;
                 case Cored:
                     if (comp1->rcut != 0.0) {
-                        bound1 = 1.0e-6 * comp1->ps;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound1 = comp1->rcut - mw_log(1.0e-7 * comp1->ps / comp1->pcut) * comp1->rdecay;
                     }
                     else {
                         bound1 = 5.0 * comp1->r200;
@@ -1083,7 +1085,8 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
     #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if (comp2->rcut != 0.0) {
     #pragma GCC diagnostic pop
-                        bound2 = 1.0e-6 * comp2->ps;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound2 = comp2->rcut - mw_log(1.0e-7 * comp2->ps / comp2->pcut) * comp2->rdecay;
                     }
                     else {
                         bound2 = 5.0 * comp2->r200;
@@ -1098,7 +1101,8 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
     #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if (comp2->rcut != 0.0) {
     #pragma GCC diagnostic pop
-                        bound2 = 1.0e-6 * comp2->ps;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound2 = comp2->rcut - mw_log(1.0e-7 * comp2->ps / comp2->pcut) * comp2->rdecay;
                     }
                     else {
                         bound2 = 5.0 * comp2->r200;

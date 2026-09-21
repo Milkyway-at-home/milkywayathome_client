@@ -24,7 +24,6 @@
 #include "nbody_potential_types.h"
 #include "nbody_mass.h"
 #include "nbody_king_model.h"
-#include "nbody_mixeddwarf.h"
 
 /* NOTE
  * we want the term nu which is the density per mass unit. However, these return just normal density.
@@ -326,43 +325,18 @@ real get_potential(const Dwarf* model, real r)
             pot_temp = plummer_pot(model, r);
             break;
         case NFW:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->ps == 0.0) {
-#pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             pot_temp = nfw_pot(model, r );
             break;
         case General_Hernquist:
             pot_temp = gen_hern_pot(model, r );
             break;
         case Einasto:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->h == 0.0) {
-#pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             pot_temp = einasto_pot(model, r);
             break;
         case Cored:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->p0 == 0.0) {
-#pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             pot_temp = cored_pot(model, r);
             break;
         case King:
-            #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->r_0 == 0.0) {
-            #pragma GCC diagnostic pop
-                set_model_params(model);
-            }
-
             pot_temp = king_pot(model, r);
             break;
         case InvalidDwarf:
@@ -385,43 +359,18 @@ real get_density(const Dwarf* model, real r)
             den_temp = plummer_den(model, r);
             break;
         case NFW:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->ps == 0.0) {
-#pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             den_temp = nfw_den(model, r );
             break;
         case General_Hernquist:
             den_temp = gen_hern_den(model, r );
             break;
         case Einasto:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->h == 0.0) {
-#pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             den_temp = einasto_den(model, r);
             break;
         case Cored:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->p0 == 0.0) {
-#pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             den_temp = cored_den(model, r);
             break;
         case King:
-            #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->r_0 == 0.0) {
-            #pragma GCC diagnostic pop
-                set_model_params(model);
-            }
-            
             den_temp = king_den(model, r);
             break;
         case InvalidDwarf:
@@ -462,12 +411,6 @@ real get_vel_disp_radius(const Dwarf* model)
             break;
         case King:
         // This is the radius at half of the central surface brightness, aka the King/Core radius r0
-            #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if (model->r_0 == 0.0) {
-            #pragma GCC diagnostic pop
-                set_model_params(model);
-            }
             hmr_temp = model->r_0;
             break;
         case InvalidDwarf:

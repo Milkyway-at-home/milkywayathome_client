@@ -161,10 +161,22 @@ static real nbCalculateTimestepMixedDwarf(const Dwarf* comp1, const Dwarf* comp2
 {
     real a_1 = comp1->scaleLength;
     real a_2 = comp2->scaleLength;
-    real mass_enc_d = enclosed_comp_mass(comp2, a_1);  /* comp2 mass within a_1 */
-    real mass_enc_l = enclosed_comp_mass(comp1, a_2);  /* comp1 mass within a_2 */
-    real s1 = cube(a_1) / (mass_enc_d + comp1->mass);
-    real s2 = cube(a_2) / (mass_enc_l + comp2->mass);
+
+    /* Use densest structural scale: King r_0 (not tidal r_t), Cored rc (not NFW rs) */
+    if (comp1->type == King)
+        a_1 = comp1->r_0;
+    else if (comp1->type == Cored)
+        a_1 = comp1->rc;
+
+    if (comp2->type == King)
+        a_2 = comp2->r_0;
+    else if (comp2->type == Cored)
+        a_2 = comp2->rc;
+
+    real mass_enc_2 = enclosed_comp_mass(comp2, a_1);  /* comp2 mass within a_1 */
+    real mass_enc_1 = enclosed_comp_mass(comp1, a_2);  /* comp1 mass within a_2 */
+    real s1 = cube(a_1) / (mass_enc_2 + comp1->mass);
+    real s2 = cube(a_2) / (mass_enc_1 + comp2->mass);
     real s = (s1 < s2) ? s1 : s2;
     return (1.0 / 100.0) * mw_sqrt(PI_4_3 * s);
 }
