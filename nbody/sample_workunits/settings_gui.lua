@@ -118,8 +118,24 @@ orbit_parameter_vy = 54.7       -- NO COMMENT $ entry | 54.7 ^ 0 * 0
 orbit_parameter_vz = 147.4      -- NO COMMENT $ entry | 147.4 ^ 0 * 0
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil. $ l-q-entry | manual_bodies_example.in ^ 0 * 0
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-
+-- Do not edit, calculation of dark matter parameters
+if(ModelComponents == 1) then
+    dwarfMass = mass_l
+    rscale_t  = rscale_l
+    rscale_d  = 1.0
+    mass_d    = 0.0
+ else
+    dwarfMass = mass_l / light_mass_ratio
+    rscale_t  = rscale_l / light_r_ratio
+    rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+    mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+ end
+ 
+ --component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
+ --calculate dwarf-based softening length
+ comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist
+ comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist
+  
 
 -- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- 
 generateInitialOutput = false     -- Outputs the initial bodies file right after dwarf generation $ button | 0 ^ 1 * 0
@@ -423,24 +439,6 @@ assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE
 argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
-
-if(ModelComponents == 1) then
-   dwarfMass = mass_l
-   rscale_t  = rscale_l
-   rscale_d  = 1.0
-   mass_d    = 0.0
-else
-   dwarfMass = mass_l / light_mass_ratio
-   rscale_t  = rscale_l / light_r_ratio
-   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
-end
-
---component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
---calculate dwarf-based softening length
-comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist
-comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist
- 
 
 if(manual_bodies and manual_body_file == nil) then 
     print 'WARNING: No body list given. Manual body input turn off'

@@ -163,7 +163,7 @@ static real get_sampling_bound_for_component(const Dwarf* comp) {
 			return 5.0 * comp->r200;
 		case Einasto:
 		{
-			/* matches einasto_sampling_bound() */
+			/* 99.9% mass radius */
 			const real a = 3.0 * comp->n;
 			const real z999 = 3.0902323061678135;
 			real t = 1.0 - 1.0 / (9.0 * a) + z999 / (3.0 * mw_sqrt(a));
@@ -174,8 +174,8 @@ static real get_sampling_bound_for_component(const Dwarf* comp) {
 			/* 99.9% mass radius: r/a = sqrt(0.999^(2/3) / (1 - 0.999^(2/3))) */
 			return 38.71369177075375 * comp->scaleLength;
 		case General_Hernquist:
-			/* 99.9% mass radius: r/a = sqrt(0.999) / (1 - sqrt(0.999)) */
-			return 1998.4998749376305 * comp->scaleLength;
+			/* 99% mass radius: r/a = sqrt(0.99) / (1 - sqrt(0.99)) */
+			return 198.49874371066198 * comp->scaleLength;
 		case King:
 			return comp->r_t;
 		case InvalidDwarf:
@@ -184,8 +184,7 @@ static real get_sampling_bound_for_component(const Dwarf* comp) {
 	}
 }
 
-/* Radius enclosing KL_MASS_FRACTION of the mass inside the sampling bound.
- * Sampling goes out to ~99.9% mass; KL must not use those sparse outer bins. */
+/* Itterative bisection method to find the radius enclosing KL_MASS_FRACTION of the mass inside the sampling bound to avoid sparse outer bins. */
 static real get_kl_range_limit(const Dwarf* comp)
 {
 	real r_hi = get_sampling_bound_for_component(comp);

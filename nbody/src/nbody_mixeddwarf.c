@@ -740,16 +740,15 @@ void set_model_params(Dwarf* comp)
         case NFW:
         case Cored:
         {
-            /* ps is the NFW characteristic density (Navarro et al. 1997 / Binney rho_0).
+            /* ps is the NFW characteristic density (Navarro et al. 1997 / Binney p0).
              * p0 is only the cored isothermal central density. */
-            //the r200 is now used for all potentials to provide the bounds for density sampling
             real mass = comp->mass; 
             real rscale = comp->scaleLength;
             real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
             real c = r200 / rscale; //halo concentration
             real term = mw_log(1.0 + c) - c / (1.0 + c);
             real ps = 200.0 * cube(c) * pcrit / (3.0 * term); //NFW characteristic density
-            real p0 = 0.0;
+            real p0 = 0.0; //cored isothermal central density
             real rcut = comp->rcut;
             real rdecay = 0.0;
             real pcut = 0.0;
@@ -889,8 +888,8 @@ static inline real einasto_sampling_bound(const Dwarf* comp)
 
 real enclosed_comp_mass(const Dwarf* comp, real bound)
 {
-    /* Enclosed mass within the a radial bound. Used for mass-per-particle only;
-     * does not modify comp->mass  */
+    /* Enclosed mass within a radial bound. 
+     * Does not modify comp->mass  */
 
         real m = 0.0;
         real r = bound;
@@ -1127,7 +1126,6 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
             }
         }
 
-        printf("bound1: %f, bound2: %f\n", bound1, bound2);
         /* Particle masses use enclosed mass within the sampling bound; comp->mass is left unchanged. */
         real mass_l   = enclosed_comp_mass(comp1, bound1);
         real mass_d   = enclosed_comp_mass(comp2, bound2);
