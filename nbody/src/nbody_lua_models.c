@@ -41,6 +41,7 @@
 #include "nbody_potential_types.h"
 #include "nbody_lua_dwarf.h"
 #include "nbody_dwarf_potential.h"
+#include "nbody_math_funcs.h"
 
 static const real pi = 3.1415926535;
 

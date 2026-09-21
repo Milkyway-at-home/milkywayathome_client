@@ -168,6 +168,7 @@ typedef struct MW_ALIGN_TYPE
     real W0, r_t, r_0, mu, rho0, rho1, sigma, phi0; // used by king
     real rcut, rdecay, pcut, delta, m_nfw_cut, const_gamma_func, psi_nfw_cut, psi_cut_cut;   // NFW cutoff constants (const_gamma_func also used by einasto)
     real m_nfw_r1, m_iso_r1, psi_nfw_r1, psi_iso_r1; // extra constants for cutoff Cored profiles
+    real mcut_pref; // hoisted constant prefix 4*pi*pcut*rcut^-delta*e^(rcut/rdecay)*rdecay^(delta+3) (exact left-assoc product)
 } Dwarf;
 
 #define DWARF_TYPE "Dwarf"
@@ -189,7 +190,7 @@ typedef struct MW_ALIGN_TYPE
 #define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_DISK2 { InvalidDisk, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0, 0.0}
+#define EMPTY_DWARF { InvalidDwarf, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0, 0.0, 0.0}
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_DISK2, EMPTY_HALO, NULL }
 
 #endif /* _NBODY_POTENTIAL_TYPES_H_ */

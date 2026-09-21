@@ -333,7 +333,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
          * replace it with the best likelihood 
          */
         /* only do the comparison if we are using the best likelihood code */
-        if(mw_fabs(likelihood) > mw_fabs(st->bestLikelihood) && ctx->useBestLike)
+        if(!(mw_fabs(likelihood) <= mw_fabs(st->bestLikelihood)) && ctx->useBestLike)
         {
             likelihood         = st->bestLikelihood;
             likelihood_EMD     = st->bestLikelihood_EMD;

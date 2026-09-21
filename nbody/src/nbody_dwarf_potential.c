@@ -24,6 +24,7 @@
 #include "nbody_potential_types.h"
 #include "nbody_mass.h"
 #include "nbody_king_model.h"
+#include "nbody_math_funcs.h"
 
 /* NOTE
  * we want the term nu which is the density per mass unit. However, these return just normal density.
@@ -98,13 +99,12 @@ static real nfw_pot(const Dwarf* model, real r)                                 
     if (rcut != 0.0) {                                                                                                   //
 #pragma GCC diagnostic pop                                                                                               //
         const real rdecay = model->rdecay;                                                                               //
-        const real pcut = model->pcut;                                                                                   //
         const real delta = model->delta;                                                                                 //
         const real m_nfw_cut = model->m_nfw_cut;                                                                         //
         const real const_gamma_func = model->const_gamma_func; // UpperIncompleteGammaFunc(delta + 3, rcut / rdecay)     //
         if (r > rcut) {                                                                                                  //
             return (                                                                                                     //
-                4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3)             //
+                model->mcut_pref                                                                                         //
                 * (((const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) / r)                            //
                 + (UpperIncompleteGammaFunc(delta + 2, r / rdecay) / rdecay)) + m_nfw_cut / r                            //
             );                                                                                                           //
@@ -230,12 +230,11 @@ static real cored_pot(const Dwarf* model, real r)                               
 #pragma GCC diagnostic ignored "-Wfloat-equal"                                                                           //
     if (rcut != 0.0 && r > rcut)                                                                                         //
     {                                                                                                                    //
-        const real pcut = model->pcut;                                                                                   //
         const real delta = model->delta;                                                                                 //
         const real rdecay = model->rdecay;                                                                               //
         const real const_gamma_func = model->const_gamma_func; // UpperIncompleteGammaFunc(delta + 3, rcut / rdecay)     //
         return (                                                                                                         //
-            4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3)                 //
+            model->mcut_pref                                                                                             //
             * (((const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) * inv(r))                           //
             + (UpperIncompleteGammaFunc(delta + 2, r / rdecay) * inv(rdecay)))                                           //
             + ((m_nfw_cut + m_iso_r1 - m_nfw_r1) * inv(r))                                                               //

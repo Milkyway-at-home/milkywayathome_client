@@ -35,6 +35,7 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
 #include "nbody_io.h"
+#include "nbody_math_funcs.h"
 #include "nbody_king_model.h"
 
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
@@ -60,152 +61,6 @@ static inline real density( real r, const Dwarf* comp1, const Dwarf* comp2)
     real density_result = (density_light + density_dark );
 
     return density_result;
-}
-
-
-/*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-real first_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
-{
-    /* centered 5-point stencil when it stays in-domain; near the origin, switch to a forward stencil so probes never go negative.*/
-    const real h = 0.001;
-
-    if (x >= 2.0 * h)
-    {
-        real p1 =   1.0 * (*func)(comp1, (x - 2.0 * h));
-        real p2 = - 8.0 * (*func)(comp1, (x - h) );
-        real p3 = - 1.0 * (*func)(comp1, (x + 2.0 * h));
-        real p4 =   8.0 * (*func)(comp1, (x + h));
-        return (p1 + p2 + p3 + p4) * inv(12.0 * h);
-    }
-
-    /* Forward 5-point first derivative, O(h^4) */
-    real f0 = (*func)(comp1, x);
-    real f1 = (*func)(comp1, x + h);
-    real f2 = (*func)(comp1, x + 2.0 * h);
-    real f3 = (*func)(comp1, x + 3.0 * h);
-    real f4 = (*func)(comp1, x + 4.0 * h);
-    return (-25.0 * f0 + 48.0 * f1 - 36.0 * f2 + 16.0 * f3 - 3.0 * f4) * inv(12.0 * h);
-}
-
-static inline real second_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
-{
-    /* Same domain handling as first_derivative: centered away from 0, forward near 0. */
-    const real h = 0.001;
-
-    if (x >= 2.0 * h)
-    {
-        real p1 = - 1.0 * (*func)(comp1, (x + 2.0 * h));
-        real p2 =  16.0 * (*func)(comp1, (x + h));
-        real p3 = -30.0 * (*func)(comp1, (x));
-        real p4 =  16.0 * (*func)(comp1, (x - h));
-        real p5 = - 1.0 * (*func)(comp1, (x - 2.0 * h));
-        return (p1 + p2 + p3 + p4 + p5) * inv(12.0 * h * h);
-    }
-
-    /* Forward 5-point second derivative, O(h^3) */
-    real f0 = (*func)(comp1, x);
-    real f1 = (*func)(comp1, x + h);
-    real f2 = (*func)(comp1, x + 2.0 * h);
-    real f3 = (*func)(comp1, x + 3.0 * h);
-    real f4 = (*func)(comp1, x + 4.0 * h);
-    return (35.0 * f0 - 104.0 * f1 + 114.0 * f2 - 56.0 * f3 + 11.0 * f4) * inv(12.0 * h * h);
-}
-
-static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real, mwbool), real lower, real upper, const Dwarf* comp1, const Dwarf* comp2, real energy, mwbool isDark)
-{
-    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
-     * If switching the order of the limits was needed to do this then the negative of the integral is returned.
-     */
-    real intv = 0.0;//initial value of integral
-    real a = 0.0, b = 0.0;
-
-    if(lower > upper)
-    {
-        a = upper;
-        b = lower;
-    }
-    else
-    {
-        a = lower; 
-        b = upper;
-    }
-
-    real benchmark = 1.5 * a;
-    real Ng = 100.0;//integral resolution
-    real hg = (benchmark - a) / (Ng);
-    real lowerg = a;
-    real upperg = lowerg + hg;
-
-
-    real coef2 = (lowerg + upperg) / 2.0;//initializes the first coeff to change the function limits
-    real coef1 = (upperg - lowerg) / 2.0;//initializes the second coeff to change the function limits
-    const real c1 = 0.55555555555; //5.0 / 9.0;
-    const real c2 = 0.88888888888; //8.0 / 9.0;
-    const real c3 = 0.55555555555; //5.0 / 9.0;
-    const real x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
-    const real x2 __attribute__((unused)) = 0.00000000000;
-    const real x3 = 0.77459666924; //sqrt(3.0 / 5.0);
-    real x1n = (coef1 * x1 + coef2);
-    /*should be: x2n = (coef1 * x2 + coef2);*/
-    real x2n = (coef2);
-    real x3n = (coef1 * x3 + coef2);
-    int counter = 0;
-    while (1)
-    {
-                //gauss quad
-        intv = intv + c1 * (*func)(x1n, comp1, comp2, energy, isDark) * coef1 +
-                      c2 * (*func)(x2n, comp1, comp2, energy, isDark) * coef1 + 
-                      c3 * (*func)(x3n, comp1, comp2, energy, isDark) * coef1;
-
-        lowerg = upperg;
-        upperg = upperg + hg;
-        coef2 = (lowerg + upperg) / 2.0;//initializes the first coeff to change the function limits
-        coef1 = (upperg - lowerg) / 2.0;
-
-        x1n = ((coef1) * x1 + coef2);
-        /*should be: x2n = (coef1 * x2 + coef2);*/
-        x2n = (coef2);
-        x3n = ((coef1) * x3 + coef2);
-
-        if(lowerg > benchmark)
-        {
-            Ng = 10.0;//integral resolution
-            hg = (b - benchmark) / (Ng);
-        }
-
-        if(upper > lower)
-        {
-            if(lowerg >= upper)//loop termination clause
-            {
-                break;
-            }
-        }
-        else if(lower > upper)
-        {
-            if(lowerg >= lower)//loop termination clause
-            {
-                break;
-            }
-        }
-
-        if(counter > 100000)
-        {
-            break;
-        }
-        else
-        {
-            counter++;
-        }
-
-
-    }
-
-    if(lower > upper)
-    {
-        intv *= -1.0;
-    }
-
-    return intv;
 }
 
 static inline real max_finder(real (*profile)(real , real , const Dwarf*, const Dwarf*, mwbool), real r, const Dwarf* comp1, const Dwarf* comp2, mwbool isDark, real a, real b, real c, int limit, real tolerance)
@@ -757,6 +612,7 @@ void set_model_params(Dwarf* comp)
             real const_gamma_func = 0.0;
             real psi_nfw_cut = 0.0;
             real psi_cut_cut = 0.0; 
+            real mcut_pref = 0.0;
             real m_nfw_r1 = 0.0;
             real m_iso_r1 = 0.0;
             real psi_nfw_r1 = 0.0;
@@ -769,7 +625,8 @@ void set_model_params(Dwarf* comp)
                 m_nfw_cut = 4.0 * M_PI * ps * cube(rscale) * (mw_log((rscale + rcut) / rscale) - rcut / (rscale + rcut));
                 const_gamma_func = UpperIncompleteGammaFunc(delta + 3, rcut / rdecay);
                 psi_nfw_cut = 4.0 * M_PI * ps * cube(rscale) * mw_log(1.0 + rcut / rscale) * inv(rcut);
-                psi_cut_cut = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3) * (UpperIncompleteGammaFunc(delta + 2, rcut / rdecay) * inv(rdecay));
+                mcut_pref = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3);
+                psi_cut_cut = mcut_pref * (UpperIncompleteGammaFunc(delta + 2, rcut / rdecay) * inv(rdecay));
             }
             if(comp->type == Cored)
             {       
@@ -797,6 +654,7 @@ void set_model_params(Dwarf* comp)
             comp->const_gamma_func = const_gamma_func;
             comp->psi_nfw_cut = psi_nfw_cut;
             comp->psi_cut_cut = psi_cut_cut;
+            comp->mcut_pref = mcut_pref;
             comp->m_nfw_r1 = m_nfw_r1;
             comp->m_iso_r1 = m_iso_r1;
             comp->psi_nfw_r1 = psi_nfw_r1;
@@ -914,7 +772,7 @@ real enclosed_comp_mass(const Dwarf* comp, real bound)
                 const real m_nfw_r1 = comp->m_nfw_r1;
                 const real m_iso_r1 = comp->m_iso_r1;
                 const real m_nfw_cut = comp->m_nfw_cut;                                                                          
-                m = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3) * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) + m_nfw_cut + m_iso_r1 - m_nfw_r1;                                           
+                m = comp->mcut_pref * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) + m_nfw_cut + m_iso_r1 - m_nfw_r1;                                           
             }                                                                                                                    
             else if (r <= r1)                                                                                                    
             {                                                                                                                    
@@ -943,7 +801,7 @@ real enclosed_comp_mass(const Dwarf* comp, real bound)
                     const real pcut = comp->pcut;
                     const real const_gamma_func = comp->const_gamma_func;
                     const real m_nfw_cut = comp->m_nfw_cut;
-                    m = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3) * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) +  m_nfw_cut;
+                    m = comp->mcut_pref * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) +  m_nfw_cut;
                 }
                 else
                 {

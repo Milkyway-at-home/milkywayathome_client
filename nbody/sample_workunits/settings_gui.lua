@@ -176,7 +176,7 @@ max_soft_par          = 0.8         -- kpc, if switch above is turned on, use th
 UseOldSofteningLength = false       -- If true, uses old softening length formula from v1.76 and earlier $ button | 0 ^ 1 * 0
                                     -- (this is only useful to compare with/match simulations 
                                     --  that were run before v1.80)
-CoulombLogarithm      = 0.470003629 -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRICTION $ entry | 0.470003629 ^ 0 * 0
+CoulombLogarithm      = 15          -- ln(r/1.22*CoulombLogarithm) (Patel et al. 2020) COULOMB LOGARITHM USED IN DYNAMICAL FRICTION CALCULATION
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- END GUI
@@ -337,8 +337,8 @@ function makeBodies(ctx, potential)
 	            potential   = potential,
 	            position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	            LMCvelocity = Vector.create(-57, -226, 221), 
+	            LMCposition = Vector.create(-0.52, -40.8, -26.5),
+	            LMCvelocity = Vector.create(-58.2, -231, 226), 
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
                     LMCDynaFric = LMC_DynamicalFriction,

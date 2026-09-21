@@ -1,68 +1,11 @@
 #include "milkyway_util.h"
 #include "milkyway_math.h"
 #include "milkyway_lua.h"
+#include "nbody_math_funcs.h"
 #include "nbody_potential_types.h"
 #include "nbody_king_model.h"
 /*NOTE: These functions use mw_erf which needs further testing to determine whether there are differences between different OS.*/
-
-// Generic function that numerically solves 2nd order ODEs of the form y'' = f(x, y(x), y'(x)), where y' is dy/dx
-// Uses 4th order Runge-Kutta numerical method, function input is of the form of ODE2ndDeriv
-// The last parameter returnXWhen0 is a special case boolean where the function will instead return the x value where the otherwise positive y(x) function hits zero/negative
-real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int returnXWhen0) {
-    real nSteps = floor(stepsPerx * xEval);
-    real stepRes = stepsPerx*xEval - nSteps;
-    real deltax = xEval/nSteps;
-    
-    real y = yInit; // current value for y(x)
-    real z = yPrimeInit; // let z be y'(x)
-    real* yCurr = &y;
-    real* zCurr = &z;
-    real k1, k2, k3, k4, l1, l2, l3, l4;
-    real x = deltax;
-    // the the last loop needs to be one before the desired number of steps, since the end of a loop gives the values for the next step
-    for (int n = 1; n < nSteps + 1; n++) {
-        // l factors adjust z, k factors adjust y
-        x = n * deltax;
-
-        l1 = deltax * f(x, y, z, params);
-        k1 = deltax * z;
-
-        l2 = deltax * f(x + 0.5*deltax, y + 0.5*k1, z + 0.5*l1, params);
-        k2 = deltax * (z + 0.5*l1);
-
-        l3 = deltax * f(x + 0.5*deltax, y + 0.5*k2, z + 0.5*l2, params);
-        k3 = deltax * (z + 0.5*l2);
-
-        l4 = deltax * f(x + deltax, y + k3, z + l3, params);
-        k4 = deltax * (z + l3);
-
-        *yCurr = *yCurr + (1.0/6.0)*(k1 + 2.0*k2 + 2.0*k3 + k4);
-        *zCurr = *zCurr + (1.0/6.0)*(l1 + 2.0*l2 + 2.0*l3 + l4);
-
-        if ((*yCurr <= 0.0 || isnan(*yCurr) || !isfinite(*yCurr)) && returnXWhen0 == 1) {
-            stepRes = 0.0;
-            *yCurr = x;
-            break;
-        }
-
-    }
-
-    // run the iteration one more time if there is a fractional step at the end
-    if (stepRes > 0.0) {
-        deltax = stepRes/stepsPerx; // smaller than regular deltax
-        l1 = deltax * f(x, y, z, params);
-        k1 = deltax * z;
-        l2 = deltax * f(x + 0.5*deltax, y + 0.5*k1, z + 0.5*l1, params);
-        k2 = deltax * (z + 0.5*l1);
-        l3 = deltax * f(x + 0.5*deltax, y + 0.5*k2, z + 0.5*l2, params);
-        k3 = deltax * (z + 0.5*l2);
-        l4 = deltax * f(x + deltax, y + k3, z + l3, params);
-        k4 = deltax * (z + l3);
-        *yCurr = *yCurr + (1.0/6.0)*(k1 + 2.0*k2 + 2.0*k3 + k4);
-        *zCurr = *zCurr + (1.0/6.0)*(l1 + 2.0*l2 + 2.0*l3 + l4);
-    }
-    return *yCurr;
-}
+/*UPDATE: mw_erf uses the CORE-MATH function for consistent rounding from version 1.97 on. This should solve any issues*/
 
 
 real kingDimlessRho(real W, real W0) {
