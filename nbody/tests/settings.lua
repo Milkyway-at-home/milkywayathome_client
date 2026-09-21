@@ -71,7 +71,22 @@ orbit_parameter_vz = 147.4
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil.
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
-
+if(ModelComponents == 1) then
+    dwarfMass = mass_l
+    rscale_t  = rscale_l
+    rscale_d  = 1.0
+    mass_d    = 0.0
+ else
+    dwarfMass = mass_l / light_mass_ratio
+    rscale_t  = rscale_l / light_r_ratio
+    rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+    mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+ end
+ 
+ --component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
+ --calculate dwarf-based softening length
+ comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
+ comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 -- -- -- -- -- -- -- -- -- -- TIME CONTROL OPTIONS -- -- -- -- -- -- -- -- --   
@@ -371,24 +386,6 @@ if use_best_likelihood then
 else
     eff_best_like_start = best_like_start
 end
-
-
-if(ModelComponents == 1) then
-   dwarfMass = mass_l
-   rscale_t  = rscale_l
-   rscale_d  = 1.0
-   mass_d    = 0.0
-else
-   dwarfMass = mass_l / light_mass_ratio
-   rscale_t  = rscale_l / light_r_ratio
-   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
-end
-
---component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
---calculate dwarf-based softening length
-comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist
-comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist
  
 
 if(manual_bodies and manual_body_file == nil) then 
