@@ -36,6 +36,8 @@ void registerGenerateMixedDwarf(lua_State* luaSt);
 
 void set_model_params(Dwarf* comp);
 
+real enclosed_comp_mass(const Dwarf* comp, real bound);
+
 #ifdef __cplusplus
 }
 #endif

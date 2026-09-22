@@ -47,6 +47,7 @@
 /* KL divergence thresholds */
 #define INITIAL_KL_THRESHOLD 0.01   /* Maximum acceptable initial KL divergence */
 #define KL_FLUCTUATION_FACTOR 3.0   /* Factor to multiply initial KL divergence for fluctuation threshold */
+#define KL_MASS_FRACTION 0.9        /* Compare KL only inside this enclosed-mass radius, not the sampling tail */
 
 /* Struct to hold all simulation variables and allocations */
 typedef struct {
@@ -149,23 +150,65 @@ static real rice_rule(const real nbodies) {
     return (int)(2.0 * mw_pow(nbodies, 1.0/3.0));
 }
 
-static real get_sampling_bound_for_component(const Dwarf* comp, const Dwarf* other_comp) {
-    
-    if (comp->type == NFW || comp->type == Cored) {
-		if (comp->rcut != 0.0) {
-			return comp->rcut + 10.0 * comp->rdecay;
+static real get_sampling_bound_for_component(const Dwarf* comp) {
+	/* Must match the default sampling bounds in nbGenerateMixedDwarfCore(). */
+	switch (comp->type)
+	{
+		case NFW:
+		case Cored:
+			if (comp->rcut != 0.0) {
+				/* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+				return comp->rcut - mw_log(1.0e-7 * comp->ps / comp->pcut) * comp->rdecay;
+			}
+			return 5.0 * comp->r200;
+		case Einasto:
+		{
+			/* 99.9% mass radius */
+			const real a = 3.0 * comp->n;
+			const real z999 = 3.0902323061678135;
+			real t = 1.0 - 1.0 / (9.0 * a) + z999 / (3.0 * mw_sqrt(a));
+			real x999 = a * cube(t);
+			return comp->scaleLength * mw_pow(x999 / comp->d, comp->n);
 		}
-		return 5.0 * comp->r200;
+		case Plummer:
+			/* 99.9% mass radius: r/a = sqrt(0.999^(2/3) / (1 - 0.999^(2/3))) */
+			return 38.71369177075375 * comp->scaleLength;
+		case General_Hernquist:
+			/* 99% mass radius: r/a = sqrt(0.99) / (1 - sqrt(0.99)) */
+			return 198.49874371066198 * comp->scaleLength;
+		case King:
+			return comp->r_t;
+		case InvalidDwarf:
+		default:
+			return 0.0;
 	}
-	if (comp->type == Einasto) {
-		/* matches einasto_sampling_bound() */
-		const real a = 3.0 * comp->n;
-		const real z999 = 3.090232306167813; 
-		real t = 1.0 - 1.0 / (9.0 * a) + z999 / (3.0 * mw_sqrt(a));
-		real x999 = a * cube(t);
-		return comp->scaleLength * mw_pow(x999 / comp->d, comp->n);
+}
+
+/* Itterative bisection method to find the radius enclosing KL_MASS_FRACTION of the mass inside the sampling bound to avoid sparse outer bins. */
+static real get_kl_range_limit(const Dwarf* comp)
+{
+	real r_hi = get_sampling_bound_for_component(comp);
+	real m_tot;
+	real target;
+	real r_lo = 0.0;
+	int i;
+
+	if (r_hi <= 0.0)
+		return r_hi;
+
+	m_tot = enclosed_comp_mass(comp, r_hi);
+	if (m_tot <= 0.0)
+		return r_hi;
+
+	target = KL_MASS_FRACTION * m_tot;
+	for (i = 0; i < 60; i++) {
+		real r_mid = 0.5 * (r_lo + r_hi);
+		if (enclosed_comp_mass(comp, r_mid) < target)
+			r_lo = r_mid;
+		else
+			r_hi = r_mid;
 	}
-	return 5.0 * comp->scaleLength;
+	return r_hi;
 }
 
 /* Function for the stability test for a given dwarf potential type */
@@ -180,13 +223,10 @@ int test_stability(TestContext* tctx) {
     tctx->mass_per_particle_baryon = tctx->comp1->mass / tctx->nbody_baryon;
     tctx->mass_per_particle_dark = (tctx->nbody_dark > 0.0) ? tctx->comp2->mass / tctx->nbody_dark : 0.0;
     // Set bounds for calulating KL divergence
-	real baryon_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp1, tctx->comp2);
-	if (tctx->comp1->type == King) {
-		baryon_range_limit = 0.8 * tctx->comp1->r_t;
-	}
+	real baryon_range_limit = get_kl_range_limit(tctx->comp1);
 	printf("Baryon range limit: %f\n", baryon_range_limit);
     fflush(stdout);
-    real dark_range_limit = 0.8 * get_sampling_bound_for_component(tctx->comp2, tctx->comp1);
+    real dark_range_limit = get_kl_range_limit(tctx->comp2);
     printf("Dark matter range limit: %f\n", dark_range_limit);
     fflush(stdout);
     // Calculate the bin width for each component
