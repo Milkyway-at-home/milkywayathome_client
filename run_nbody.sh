@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CHANGE THESE TO RUN A BASIC SIMULATION
-# - Lua configuration file, Input files, Output files (lines 26-28, e.g.)
+# - Lua configuration file, Input files, Output files
 
 # RUN WITH DEBUG OPTIONS (stack trace with line numbers)
 # - add "gdb --args " before your ./milkyway_nbody call (below)
@@ -23,7 +23,7 @@ cd build/bin
 if $run 
 then
     ./milkyway_nbody \
-    -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/for_developers.lua \
+    -f $PathToMilkyWayAtHomeClientDirectory/nbody/sample_workunits/kyle.lua \
     -o $PathToMilkyWayAtHomeClientDirectory/output/output_${timestamp}.out \
     -z $PathToMilkyWayAtHomeClientDirectory/output/output_${timestamp}.hist \
     -n 8 -w 1 -P -e 54231651 \

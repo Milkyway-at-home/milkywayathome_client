@@ -107,3 +107,5 @@ output/*
 test_env
 run_nbody.sh
 build_client.sh 
+run_nbody.sh
+nbody/sample_workunits/kyle.lua
