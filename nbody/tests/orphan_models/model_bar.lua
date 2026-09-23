@@ -12,6 +12,8 @@ prng = DSFMT.create(seed)
 dwarfMass = 16
 dwarfRadius = 0.2
 
+dwarf = Dwarf.plummer{mass = dwarfMass, scaleLength = dwarfRadius}
+
 function makePotential()
    return Potential.create{
       spherical = Spherical.hernquist{ mass  = 1.52954402e5, scale = 0.7 },
@@ -29,10 +31,16 @@ eff_best_like_start = best_like_start / (2.0 - best_like_start) --correct for ch
 
 function makeContext()
    return NBodyCtx.create{
+      dwarfn = 1,
+      b           = {53.5},
+      r           = {28.6},
+      vx          = {-156},
+      vy          = {79.36},
+      vz          = {107.25},
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
       timeBack    = 3.945,
-      eps2       = calculateEps2(nbody, dwarfRadius,0),
+      eps2       = calculateEps2Dwarf(dwarf, nbody),
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
@@ -42,10 +50,12 @@ function makeContext()
       VelSigma      = 2.5,
       DistSigma     = 2.5,
       PMSigma       = 2.5,
+      MomentumSigma = 2.5,
       BetaCorrect   = 1.111,
       VelCorrect    = 1.111,
       DistCorrect   = 1.111,
       PMCorrect     = 1.111,
+      MomentumCorrect = 1.111,
       IterMax       = 6,
       calibrationRuns = 2
    }

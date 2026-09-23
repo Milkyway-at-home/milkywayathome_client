@@ -47,7 +47,7 @@ typedef struct MW_ALIGN_TYPE_V(4 * sizeof(real))
 
 #define mw_vec(x, y, z) { (x), (y), (z), 0.0 }
 
-#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); W(v) = 0.0; }
 
 
 #define NDIM 3

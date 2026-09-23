@@ -28,8 +28,8 @@ static inline real dist_density_distr(real r, real d, real a)
     return r * (plusR * mw_sqrt(plusR/denom) - minusR * mw_sqrt(minusR/denom));
 }
 
-/* does a numerical integration to some distance k*a from the dwarf CoM        *
-* accurate to ~4 decimal points with current delta r (upper bound ka / 50000) */
+/* does a (midpoint) numerical integration to some distance k*a from the dwarf CoM *
+* accurate to ~4 decimal points with current delta r (upper bound ka / 50000)     */
 static inline mwvector mass_dist_vec(real scaleRadius, 
                                      mwvector pos,
                                      real dwarfMass,
@@ -39,7 +39,7 @@ static inline mwvector mass_dist_vec(real scaleRadius,
     real delta = 0.00002 * upperBound;
     real dist = mw_length(pos);
     real mass_distr = 0;
-    for (real r = 0; r <= upperBound; r += delta)
+    for (real r = delta*0.5; r < upperBound; r += delta)
     {
         mass_distr += dist_density_distr(r, dist, scaleRadius) * delta;
     }

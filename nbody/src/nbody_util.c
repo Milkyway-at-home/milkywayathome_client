@@ -35,7 +35,7 @@ mwvector nbCenterOfMass(const NBodyState* st)
     const Body* b;
     int nbody = st->nbody;
     mwvector cm = ZERO_VECTOR;
-    mwvector tmp;
+    mwvector tmp = ZERO_VECTOR;
     Kahan mass;
     Kahan pos[3];
 
@@ -68,7 +68,7 @@ mwvector nbCenterOfMom(const NBodyState* st)
     const Body* b;
     int nbody = st->nbody;
     mwvector cm = ZERO_VECTOR;
-    mwvector tmp;
+    mwvector tmp = ZERO_VECTOR;
     Kahan mass;
     Kahan pos[3];
 

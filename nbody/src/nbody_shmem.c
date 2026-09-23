@@ -122,6 +122,8 @@ static scene_t* nbMapSharedSegment(const char* name, int shmId, size_t size)
     return (scene_t*) p;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 /* Resize a segment by destroying and recreating it to work around OS X */
 static int nbRecreateSegment(const char* name, int shmIdOld, int mode)
 {
@@ -151,6 +153,7 @@ static int nbRecreateSegment(const char* name, int shmIdOld, int mode)
 
     return shmId;
 }
+#pragma GCC diagnostic pop
 
 /* Try to open shared memory segment and resize it if it isn't owned
  * by a living process */
@@ -164,7 +167,7 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
     shmId = shm_open(name, O_CREAT | O_RDWR, mode);
     if (shmId < 0)
     {
-        mwPerror("Error opening shared memory '%s'", name);
+        mwPerror("Info: could not open shared memory segment '%s'", name);
         return NULL;
     }
 
@@ -195,9 +198,12 @@ static scene_t* nbOpenMappedSharedSegment(const char* name, size_t size)
     if (!scene)
     {
         shm_unlink(name);
+        close(shmId);
+        return NULL;
     }
 
     close(shmId);
+    mwPerror("Info: successfully opened shared memory segment '%s'", name);
     return scene;
 }
 
@@ -605,7 +611,7 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     int pid;
     int updatePeriod;
-    mwvector cmPos;
+    mwvector cmPos = ZERO_VECTOR;
     scene_t* scene = st->scene;
 
     if (!scene)
@@ -720,7 +726,7 @@ NBodyStatus nbUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 NBodyStatus nbForceUpdateDisplayedBodies(const NBodyCtx* ctx, NBodyState* st)
 {
     scene_t* scene = st->scene;
-    mwvector cmPos;
+    mwvector cmPos = ZERO_VECTOR;
 
     if (!scene)
     {

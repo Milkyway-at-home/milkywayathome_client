@@ -72,10 +72,10 @@ static int createPotential(lua_State* luaSt)
 
     const MWNamedArg argTable[] =
         {
-            { "spherical", LUA_TUSERDATA, SPHERICAL_TYPE, TRUE,  &s  },
-            { "halo",      LUA_TUSERDATA, HALO_TYPE,      TRUE,  &h  },
-            { "disk",      LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d  },
-            { "disk2",     LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d2 },
+            { "spherical", LUA_TUSERDATA, SPHERICAL_TYPE, TRUE,  &s,  1 },
+            { "halo",      LUA_TUSERDATA, HALO_TYPE,      TRUE,  &h,  1 },
+            { "disk",      LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d,  1 },
+            { "disk2",     LUA_TUSERDATA, DISK_TYPE,      TRUE,  &d2, 1 },
             END_MW_NAMED_ARG
         };
 

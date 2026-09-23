@@ -7,8 +7,11 @@
 typedef struct {
     int simple_output;  
     int has_milkyway;     
+    int has_lmc;
     real com_x, com_y, com_z; 
     real cmom_x, cmom_y, cmom_z;
+    real lmc_pos_x, lmc_pos_y, lmc_pos_z;
+    real lmc_vel_x, lmc_vel_y, lmc_vel_z;
 } ParticleHeader;
 
 // Structure to hold data for a single particle (one row)

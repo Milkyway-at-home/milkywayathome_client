@@ -73,31 +73,31 @@ int main()
         comp_i1 = mw_abs(i1_derv - besselI0(x) + besselI1(x)/x)/i1_derv;
         comp_k1 = -mw_abs(k1_derv + besselK0(x) + besselK1(x)/x)/k1_derv;
 
-        if(comp_wron > ZERO_THRESHOLD) {
+        if(!(comp_wron <= ZERO_THRESHOLD)) {
             fails += 1;
             wronsk_fails += 1;
             //mw_printf("Wronskian Error = %.15f\n",comp_wron);
         }
 
-        if(comp_i0 > ZERO_THRESHOLD) {
+        if(!(comp_i0 <= ZERO_THRESHOLD)) {
             fails += 1;
             i0_fails += 1;
             //mw_printf("I0 Dervivative Error = %.15f\n",comp_i0);
         }
 
-        if(comp_k0 > ZERO_THRESHOLD) {
+        if(!(comp_k0 <= ZERO_THRESHOLD)) {
             fails += 1;
             k0_fails += 1;
             //mw_printf("K0 Dervivative Error = %.15f\n",comp_k0);
         }
 
-        if(comp_i1 > ZERO_THRESHOLD) {
+        if(!(comp_i1 <= ZERO_THRESHOLD)) {
             fails += 1;
             i1_fails += 1;
             //mw_printf("I1 Dervivative Error = %.15f\n",comp_i1);
         }
 
-        if(comp_k1 > ZERO_THRESHOLD) {
+        if(!(comp_k1 <= ZERO_THRESHOLD)) {
             fails += 1;
             i1_fails += 1;
             //mw_printf("K1 Dervivative Error = %.15f\n",comp_k1);

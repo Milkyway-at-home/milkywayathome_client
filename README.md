@@ -50,7 +50,7 @@ N-body
 - Device information is exposed to the workunit through the
   deviceInfo table if it is used.
 
-- **Bar code currently does not pass all tests**
+- **Checkpoint test does not always pass. Do not be concerned with an occasional failure**
 
 
 Instructions for Compiling Nbody
@@ -123,11 +123,13 @@ The type of run is set by setting one of the following flags to `true`:
 
 | Flag | Description |
 |------|-------------|
-| `-s` | Compare using only EMD and cost component |
-| `-S` | Use EMD, cost, beta dispersion |
-| `-V` | Use EMD, cost, velocity dispersion |
-| `-D` | Use EMD, cost, beta dispersion and velocity dispersion |
-| `-A` | Compare all components of the likelihood |
+| `-s` | Histogram to input for comparison. Will compare with EMD and cost components by default |
+| `-S` | Adds beta dispersion to comparison |
+| `-V` | Adds velocity dispersion to comparison |
+| `-B` | Adds beta average to comparison |
+| `-Q` | Adds line of sight velocity to comparison |
+| `-U` | Adds proper motions to comparsion |
+| `-L` | Adds momentum to comparison |
 
 ---
 
@@ -167,6 +169,21 @@ Only the plummer model is really useful since it can be calculated analytically.
 | `DNBODY_OPENMP`          | ON, OFF | Build the algorithm single-threaded (`OFF`) or multithreaded (`ON`). |
 | `DNBODY_OPENCL`          | ON, OFF | Build with OpenCL libraries to support running N-Body on GPUs. |
 
+## N-Body Units 
+
+- Mass: Structure Mass Units (SMU)
+- Distance: kiloparsec (kpc) 
+- Time: Gigayear (Gyr)
+- Velocity: kpc/Gyr
+- Acceleration: kpc/Gyr<sup>2</sup>
+
+Units Choosen such that:
+- G = 1 kpc<sup>3</sup> · SMU<sup>-1</sup> · Gyr<sup>-2</sup>
+
+Unit Conversions:
+- 1 SMU = 222288.47 M<sub>☉</sub> 
+- 1 kpc/Gyr = 0.97789439 km/s
+
 Tests
 ---
   Tests can be run by running:
@@ -193,7 +210,7 @@ Tests
   ```
   $ ctest -R <Test_Name> -VV
   ```
-  If only 25 tests are running instead of 91 tests, you are missing libraries (check Step 0 for compiling N-body)
+  If only 25 tests are running instead of 57 tests, you are missing libraries (check Step 0 for compiling N-body)
 
 Separation
 ---

@@ -27,7 +27,7 @@ static int appendFileNum(char* prefix, const unsigned int filenumber)
     {
         zeros[0] = '\0';
     }
-    sprintf(prefix, "%s%s%u", prefix, zeros, filenumber);
+    sprintf(prefix+strlen(prefix), "%s%u", zeros, filenumber);
     return 1;
 }
 
@@ -90,7 +90,7 @@ NBodyStatus deleteOldFiles(const NBodyState* st)
 }
 
 /* Particle positions info */
-NBodyStatus blenderPrintBodies(const NBodyState* st, const NBodyCtx* ctx)
+NBodyStatus blenderPrintBodies(const NBodyState* st, const NBodyCtx* ctx __attribute__((unused)))
 {
     const Body* b;
     int nbody = st->nbody;
@@ -134,7 +134,7 @@ NBodyStatus blenderPrintBodies(const NBodyState* st, const NBodyCtx* ctx)
 /* Center of mass position info */
 NBodyStatus blenderPrintCOM(const NBodyState* st)
 {
-    mwvector cmPos;
+    mwvector cmPos = ZERO_VECTOR;
     scene_t* scene = st->scene;
 
     if (!scene)

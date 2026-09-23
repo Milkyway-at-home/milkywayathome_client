@@ -61,8 +61,8 @@ static int createHernquistSpherical(lua_State* luaSt)
     static Spherical s = EMPTY_SPHERICAL;
     static const MWNamedArg argTable[] =
         {
-            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
-            { "scale", LUA_TNUMBER,  NULL, TRUE, &s.scale },
+            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass,   1 },
+            { "scale", LUA_TNUMBER,  NULL, TRUE, &s.scale,  1 },
             END_MW_NAMED_ARG
         };
 
@@ -75,8 +75,8 @@ static int createPlummerSpherical(lua_State* luaSt)
     static Spherical s = EMPTY_SPHERICAL;
     static const MWNamedArg argTable[] =
         {
-            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
-            { "scale", LUA_TNUMBER,  NULL, TRUE, &s.scale },
+            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass,   1 },
+            { "scale", LUA_TNUMBER,  NULL, TRUE, &s.scale,  1 },
             END_MW_NAMED_ARG
         };
 
@@ -89,7 +89,7 @@ static int createNoSpherical(lua_State* luaSt)
     static Spherical s = EMPTY_SPHERICAL;
     static const MWNamedArg argTable[] =
         {
-            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
+            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass, 1 },
             END_MW_NAMED_ARG
         };
 

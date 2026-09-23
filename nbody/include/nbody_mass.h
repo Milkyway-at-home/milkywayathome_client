@@ -32,7 +32,11 @@ real probability_match(int n, real k, real pobs);
 
 real GammaFunc(const real z);
 
-real IncompleteGammaFunc(real a, real x);
+real UpperIncompleteGammaFunc(real a, real x);
+real LowerIncompleteGammaFunc(real a, real x);
+real ErrorFunc(real x);
+real ComplementaryErrorFunc(real x);
+real ComplementaryErrorFuncApprox(real x);
 
 real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
@@ -44,7 +48,13 @@ void nbCalcDisp(NBodyHistogram* histogram, mwbool initial, real correction_facto
 
 void nbRemoveOutliers(const NBodyState* st, NBodyHistogram* histogram, real * use_body, real * var, real sigma_cutoff, real sunGCdist, int histBins);
 
+void nbRemoveMomentumOutliers(const NBodyState* st, NBodyHistogram* histogram, int* in_hist, real sigma_cutoff, real IterMax, real correction_factor, real nbody, real counts);
+
 real nbLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram, int avgBins);
+
+void nbCalcMomentum(const NBodyState* st, const NBodyCtx* ctx, NBodyHistogram* data, NBodyHistogram* histogram);
+
+real nbMomentumLikelihood(const NBodyHistogram* data, const NBodyHistogram* histogram);
 
 #ifdef __cplusplus
 }

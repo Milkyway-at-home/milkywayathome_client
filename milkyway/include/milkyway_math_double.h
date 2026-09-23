@@ -78,7 +78,7 @@ typedef MW_ALIGN_TYPE_V(32) double double4[4];
 #define mw_abs   fabs
 
 #define mw_acosh acosh
-#define mw_acospi(x) (mw_acos(x) / M_PI))
+#define mw_acospi(x) (mw_acos(x) / M_PI)
 #define mw_asinh asinh
 #define mw_asinpi (mw_asin(x) / M_PI)
 #define mw_atan2 atan2

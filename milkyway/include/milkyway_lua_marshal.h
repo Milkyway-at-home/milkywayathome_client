@@ -71,9 +71,10 @@ typedef struct
     const char* userDataTypeName;
     mwbool required;
     void* value;
+    unsigned int arrayLen; // For arrays, specify the length
 } MWNamedArg;
 
-#define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL }
+#define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL, 0 }
 
 #define mw_lua_assert_top_type(luaSt, t) assert(lua_type((luaSt), -1) == (t))
 
@@ -105,7 +106,8 @@ int setCClosure(lua_State* luaSt, void* v);
 int setLuaClosure(lua_State* luaSt, void* v);
 int getLuaClosure(lua_State* luaSt, void* ref);
 
-
+int getRealArray(lua_State* luaSt, void* v, size_t len);
+int setRealArray(lua_State* luaSt, void* v);
 
 void Xet_add(lua_State* luaSt, Xet_reg l);
 int Xet_call(lua_State* luaSt);

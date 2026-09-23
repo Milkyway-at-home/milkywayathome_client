@@ -44,7 +44,10 @@ static void CL_CALLBACK contextCallback(const char* errInfo,
 static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useSecondaryQueue, cl_bool enableProfiling)
 {
     cl_int err = CL_SUCCESS;
-    cl_command_queue_properties props = enableProfiling ? CL_QUEUE_PROFILING_ENABLE : 0;
+
+    const cl_queue_properties propsEnabled[] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
+    const cl_queue_properties propsDisabled[] = {0};
+    const cl_queue_properties* const props = enableProfiling ? propsEnabled : propsDisabled;
 
     ci->clctx = clCreateContext(NULL, 1, &ci->dev, MW_CONTEXT_LOGGER, NULL, &err);
     if (err != CL_SUCCESS)
@@ -53,7 +56,7 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useSecondaryQueue, cl_bool en
         return err;
     }
 
-    ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, props, &err);
+    ci->queue = clCreateCommandQueueWithProperties(ci->clctx, ci->dev, props, &err);
     if (err != CL_SUCCESS)
     {
         mwPerrorCL(err, "Error creating command queue");
@@ -62,7 +65,7 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useSecondaryQueue, cl_bool en
 
     if (useSecondaryQueue)
     {
-        ci->queueSecondary = clCreateCommandQueue(ci->clctx, ci->dev, props, &err);
+        ci->queueSecondary = clCreateCommandQueueWithProperties(ci->clctx, ci->dev, props, &err);
         if (err != CL_SUCCESS)
         {
             mwPerrorCL(err, "Error creating secondary command queue");

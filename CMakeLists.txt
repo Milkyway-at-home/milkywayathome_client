@@ -398,10 +398,6 @@ add_subdirectory(lua)
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")
 
-if(SEPARATION_OPENCL)
-  add_subdirectory(libelf)
-endif()
-
 add_subdirectory(openpa)
 
 if(NBODY_GL)

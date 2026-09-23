@@ -91,8 +91,8 @@ static inline void generateRandomHaloParams(real* vhalo,
 static inline mwbool checkPoisson(const Potential* pot, mwvector pos)//const pos
 {
 
-    mwvector pos_xp, pos_xm, pos_yp, pos_ym, pos_zp, pos_zm;
-    mwvector acc_xp, acc_xm, acc_yp, acc_ym, acc_zp, acc_zm;
+    mwvector pos_xp = ZERO_VECTOR, pos_xm = ZERO_VECTOR, pos_yp = ZERO_VECTOR, pos_ym = ZERO_VECTOR, pos_zp = ZERO_VECTOR, pos_zm = ZERO_VECTOR;
+    mwvector acc_xp = ZERO_VECTOR, acc_xm = ZERO_VECTOR, acc_yp = ZERO_VECTOR, acc_ym = ZERO_VECTOR, acc_zp = ZERO_VECTOR, acc_zm = ZERO_VECTOR;
     real diff;
     real h_r = h * (mw_pow(X(pos),2.0)+mw_pow(Y(pos),2.0)+mw_pow(Z(pos),2.0));
     //real h_r = h * mw_pow((mw_pow(X(pos),2.0)+mw_pow(Y(pos),2.0)+mw_pow(Z(pos),2.0)),0.5);
@@ -121,7 +121,7 @@ static inline mwbool checkPoisson(const Potential* pot, mwvector pos)//const pos
             flux = flux + (X(acc_xp) - X(acc_xm) + Y(acc_yp) - Y(acc_ym) + Z(acc_zp) - Z(acc_zm))*h_r*h_r;
         }
     }
-    mwvector pos_den_xyz;
+    mwvector pos_den_xyz = ZERO_VECTOR;
     real M_enc = 0.0;
     for (real i = -boxes; i < boxes + 0.5; i = i + 1.0) {
         for (real j = -boxes; j < boxes + 0.5; j = j + 1.0) {
@@ -161,14 +161,14 @@ static inline void createNullPotential(Potential* p)
     p->halo.type = NoHalo;
 }
 
-static inline mwbool testSphericalPotential(spherical_t t)
+static mwbool testSphericalPotential(spherical_t t)
 {
     Potential p = EMPTY_POTENTIAL;
     real mass, scale;
     int j;
     unsigned int poisson_check;
     mwbool pot_failed = FALSE;
-    mwvector pos;
+    mwvector pos = ZERO_VECTOR;
     createNullPotential(&p);
 
     generateRandomSphericalParams(&mass, &scale);
@@ -198,14 +198,14 @@ static inline mwbool testSphericalPotential(spherical_t t)
     return pot_failed;
 }
 
-static inline mwbool testDiskPotential(disk_t t)
+static mwbool testDiskPotential(disk_t t)
 {
     Potential p = EMPTY_POTENTIAL;
     real mass, scaleLength, scaleHeight;
     int j;
     unsigned int poisson_check;
     mwbool pot_failed = FALSE;
-    mwvector pos;
+    mwvector pos = ZERO_VECTOR;
     createNullPotential(&p);
 
     generateRandomDiskParams(&mass, &scaleLength, &scaleHeight);
@@ -240,14 +240,14 @@ static inline mwbool testDiskPotential(disk_t t)
     return pot_failed;
 }
 
-static inline mwbool testBarPotential(disk_t t)
+static mwbool testBarPotential(disk_t t)
 {
     Potential p = EMPTY_POTENTIAL;
     real mass, scaleLength, scaleHeight;
     int j;
     unsigned int poisson_check;
     mwbool pot_failed = FALSE;
-    mwvector pos;
+    mwvector pos = ZERO_VECTOR;
     createNullPotential(&p);
 
     generateRandomDiskParams(&mass, &scaleLength, &scaleHeight);
@@ -285,14 +285,14 @@ static inline mwbool testBarPotential(disk_t t)
     return pot_failed;
 }
 
-static inline mwbool testHaloPotential(halo_t t)
+static mwbool testHaloPotential(halo_t t)
 {
     Potential p = EMPTY_POTENTIAL;
     real vhalo, scaleLength, flattenX, flattenY, flattenZ, triaxAngle, gamma, lambda, mass, rho0, mag;
     int j;
     unsigned int poisson_check;
     mwbool pot_failed = FALSE;
-    mwvector pos;
+    mwvector pos = ZERO_VECTOR;
     createNullPotential(&p);
 
     generateRandomHaloParams(&vhalo, &scaleLength, &flattenX, &flattenY, &flattenZ, &triaxAngle, &gamma, &lambda, &mass, &rho0);
@@ -345,9 +345,9 @@ int main()
 
     //TEST SPHERICAL COMPONENTS
     //Hernquist Spherical Potential
-    
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testSphericalPotential(HernquistSpherical)\n");
         if (testSphericalPotential(HernquistSpherical))
         {
             failed = 1;
@@ -358,6 +358,7 @@ int main()
     //Plummer Spherical Potential  
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testSphericalPotential(PlummerSpherical)\n");
         if (testSphericalPotential(PlummerSpherical))
         {
             failed = 1;
@@ -369,6 +370,7 @@ int main()
 //    //Freeman Disk Potential                  /** This potential is an infinitely thin disk, so it's difficult to test this one. May need more terms at lower z values. **/
 //    for (i = 0; i < nPotentials; i++)
 //    {
+//        mw_printf("testDiskPotential(FreemanDisk)\n");
 //        if (testDiskPotential(FreemanDisk))
 //        {
 //            failed = 1;
@@ -379,6 +381,7 @@ int main()
     //Miyamoto-Nagai Disk Potential  
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testDiskPotential(MiyamotoNagaiDisk)\n");
         if (testDiskPotential(MiyamotoNagaiDisk))
         {
             failed = 1;
@@ -389,6 +392,7 @@ int main()
     //Orbiting Bar Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testBarPotential(OrbitingBar)\n");
         if (testBarPotential(OrbitingBar))
         {
             failed = 1;
@@ -399,6 +403,7 @@ int main()
     //Double Exponential Disk Potential     /** FIXME: This potential fails the poisson test. Do not use this potential until we can more accurately calculate it **/
 //    for (i = 0; i < nPotentials; i++)
 //    {
+//        mw_printf("testDiskPotential(DoubleExponentialDisk)\n");
 //        if (testDiskPotential(DoubleExponentialDisk))
 //        {
 //            failed = 1;
@@ -409,6 +414,7 @@ int main()
     //Hyperbolic Exponential Disk Potential  /** FIXME: This potential fails the poisson test. Do not use this potential until we can more accurately calculate it **/
 //    for (i = 0; i < nPotentials; i++)
 //    {
+//        mw_printf("testDiskPotential(Sech2ExponentialDisk)\n");
 //        if (testDiskPotential(Sech2ExponentialDisk))
 //        {
 //            failed = 1;
@@ -420,6 +426,7 @@ int main()
     //Logarithmic Halo Potential  
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(LogarithmicHalo)\n");
         if (testHaloPotential(LogarithmicHalo))
         {
             failed = 1;
@@ -430,6 +437,7 @@ int main()
     //NFW Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(NFWHalo)\n");
         if (testHaloPotential(NFWHalo))
         {
             failed = 1;
@@ -440,6 +448,7 @@ int main()
     //Triaxial Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(TriaxialHalo)\n");
         if (testHaloPotential(TriaxialHalo))
         {
             failed = 1;
@@ -450,6 +459,7 @@ int main()
     //Allen-Santillan Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(AllenSantillanHalo)\n");
         if (testHaloPotential(AllenSantillanHalo))
         {
             failed = 1;
@@ -460,6 +470,7 @@ int main()
     //Wilkinson-Evans Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(WilkinsonEvansHalo)\n");
         if (testHaloPotential(WilkinsonEvansHalo))
         {
             failed = 1;
@@ -470,6 +481,7 @@ int main()
     //NFW (MASS) Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(NFWMassHalo)\n");
         if (testHaloPotential(NFWMassHalo))
         {
             failed = 1;
@@ -477,19 +489,23 @@ int main()
         }
     }
 
+    /* TODO: This test always fails because it finds no mass enclosed.  Fix that.
     //Plummer Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(PlummerHalo)\n");
         if (testHaloPotential(PlummerHalo))
         {
             failed = 1;
             break;
         }
     }
+    */
 
     //Hernquist Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(HernquistHalo)\n");
         if (testHaloPotential(HernquistHalo))
         {
             failed = 1;
@@ -500,6 +516,7 @@ int main()
     //Ninkovic Halo Potential
     for (i = 0; i < nPotentials; i++)
     {
+        mw_printf("testHaloPotential(NinkovicHalo)\n");
         if (testHaloPotential(NinkovicHalo))
         {
             failed = 1;

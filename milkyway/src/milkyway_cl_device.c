@@ -334,7 +334,7 @@ static cl_bool mwDeviceIsNonOutput(const DevInfo* di)
     return ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
 }
 
-static cl_bool mwDeviceHasGraphicsQOS(const DevInfo* di)
+static cl_bool mwDeviceHasGraphicsQOS(const DevInfo* di __attribute__((unused)))
 {
     /* Tahiti has the capability but it hasn't been enabled in current drivers yet */
     return CL_FALSE;

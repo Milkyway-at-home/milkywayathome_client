@@ -33,8 +33,8 @@
 
 static void nbPrintSimInfoHeader(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
-    mwvector cmPos;
-    mwvector cmVel;
+    mwvector cmPos = ZERO_VECTOR;
+    mwvector cmVel = ZERO_VECTOR;
     cmVel = nbCenterOfMom(st);
     if (st->tree.root)
     {
@@ -48,12 +48,23 @@ static void nbPrintSimInfoHeader(FILE* f, const NBodyCtx* ctx, const NBodyState*
     fprintf(f,
             "simple_output = %d\n"
             "hasMilkyway  = %d\n"
+            "hasLMC       = %d\n"
             "centerOfMass = %f, %f, %f,   centerOfMomentum = %f, %f, %f,\n",
             ctx->SimpleOutput,
             (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT),
+            ctx->LMC,
             X(cmPos), Y(cmPos), Z(cmPos),
             X(cmVel), Y(cmVel), Z(cmVel)
         );
+
+    if (ctx->LMC)
+    {
+        fprintf(f,
+             "LMC position = %f, %f, %f,   LMC velocity = %f, %f, %f, \n",
+             st->LMCpos.x, st->LMCpos.y, st->LMCpos.z,
+             st->LMCvel.x, st->LMCvel.y, st->LMCvel.z
+             );
+    }
 }
 
 static void nbPrintBodyOutputHeader(FILE* f, const NBodyCtx* ctx, mwbool LBavailable)
@@ -102,8 +113,8 @@ static void nbPrintBodyOutputHeader(FILE* f, const NBodyCtx* ctx, mwbool LBavail
 int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
     Body* p;
-    mwvector lbr;
-    mwvector lambdaBetaR;
+    mwvector lbr = ZERO_VECTOR;
+    mwvector lambdaBetaR = ZERO_VECTOR;
     
     real vLOS;
     real lambda_val;
@@ -126,9 +137,12 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
         nbGetHistTrig(&histTrig, &hp);
     }
 
-    mwbool isLight = FALSE;
+    mwbool isLight __attribute__((unused)) = FALSE;
     Body* outputTab = st->bestLikelihoodBodyTab;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(!ctx->useBestLike || st->bestLikelihood == DEFAULT_WORST_CASE){
+#pragma GCC diagnostic pop
         outputTab = st->bodytab;
     }
     const Body* endp = outputTab + st->nbody;

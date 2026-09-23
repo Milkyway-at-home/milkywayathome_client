@@ -34,6 +34,7 @@ HistogramParams* expectHistogramParams(lua_State* luaSt, int idx);
 int pushHistogramParams(lua_State* luaSt, const HistogramParams* d);
 int registerHistogramParams(lua_State* luaSt);
 
+int getEMDRange(lua_State* luaSt, void* v);
 int setHistogramParams(lua_State* luaSt, void* v);
 int getHistogramParams(lua_State* luaSt, void* v);
 

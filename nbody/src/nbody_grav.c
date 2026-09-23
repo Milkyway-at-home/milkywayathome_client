@@ -73,7 +73,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
                 {
                     real dr5inv, drQdr, phiQ;
-                    mwvector Qdr;
+                    mwvector Qdr = ZERO_VECTOR;
 
                     /* form Q * dr */
                     Qdr.x = Quad(q).xx * dr.x + Quad(q).xy * dr.y + Quad(q).xz * dr.z;
@@ -127,28 +127,33 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-    mwvector LMCx;
-    mwvector a, externAcc;
+    mwvector LMCx = ZERO_VECTOR;
+    mwvector a = ZERO_VECTOR, externAcc = ZERO_VECTOR;
     const Body* b;
-    real lmcmass, lmcscale;
+    real lmcmass, lmcscale, lmcscale2;
+    int lmcfunction;
 
     const Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
-    real timeFromStart = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
+    real timeFromStart __attribute__((unused)) = (-1)*ctx->Ntsteps*ctx->timestep + curTime;
 
     //use previous calibration run to shift time and calibrate the bar
     real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
+	    lmcfunction = round(ctx->LMCfunction);
         LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
+	    lmcscale2 = ctx->LMCscale2;
     }
     else {
         SET_VECTOR(LMCx,0.0,0.0,0.0);
+	    lmcfunction = 1;
         lmcmass = 0.0;
         lmcscale = 1.0;
+	    lmcscale2 = 1.0;
     }
 
   #ifdef _OPENMP
@@ -165,7 +170,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("DEFAULT POTENTIAL - TREE\n");
                 b = &bodies[i];
                 a = nbGravity(ctx, st, b);
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), LMCAcceleration(lmcfunction, Pos(b), LMCx, lmcmass, lmcscale, lmcscale2));
                 /** WARNING!: Adding any code to this section may cause the checkpointing to randomly bug out. I'm not
                     sure what causes this, but if you ever plan to add another gravity calculation outside of a new potential,
                     take the time to manually test the checkpointing. It drove me nuts when I was trying to add the LMC as a
@@ -190,7 +195,7 @@ static inline void nbMapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("CUSTOM POTENTIAL - TREE\n");
                 a = nbGravity(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
+                mw_incaddv(externAcc, LMCAcceleration(lmcfunction, Pos(&bodies[i]), LMCx, lmcmass, lmcscale, lmcscale2));
                 mw_incaddv(a, externAcc);
 
                 accels[i] = a;
@@ -230,26 +235,31 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const int nbody = st->nbody;  /* Prevent reload on each loop */
-    mwvector LMCx;
-    mwvector a, externAcc;
+    mwvector LMCx = ZERO_VECTOR;
+    mwvector a = ZERO_VECTOR, externAcc = ZERO_VECTOR;
     const Body* b;
-    real lmcmass, lmcscale;
+    real lmcmass, lmcscale, lmcscale2;
+    int lmcfunction;
 
     Body* bodies = mw_assume_aligned(st->bodytab, 16);
     mwvector* accels = mw_assume_aligned(st->acctab, 16);
     real curTime = st->step * ctx->timestep;
-    real timeFromStart = -ctx->Ntsteps*ctx->timestep + curTime;
+    real timeFromStart __attribute__((unused)) = -ctx->Ntsteps*ctx->timestep + curTime;
     real barTime = st->step * ctx->timestep - st->previousForwardTime;
 
     if (ctx->LMC) {
         LMCx = st->LMCpos;
         lmcmass = ctx->LMCmass;
         lmcscale = ctx->LMCscale;
+	    lmcscale2 = ctx->LMCscale2;
+        lmcfunction = round(ctx->LMCfunction);
     }
     else {
         SET_VECTOR(LMCx,0.0,0.0,0.0);
+	    lmcfunction = 1;
         lmcmass = 0.0;
         lmcscale = 1.0;
+	    lmcscale2 = 1.0;
     }
 
   #ifdef _OPENMP
@@ -265,7 +275,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 b = &bodies[i];
                 a = nbGravity_Exact(ctx, st, b);
                 //mw_incaddv(a, nbExtAcceleration(&ctx->pot, Pos(b), curTime - ctx->timeBack));
-                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), plummerAccel(Pos(b), LMCx, lmcmass, lmcscale));
+                externAcc = mw_addv(nbExtAcceleration(&ctx->pot, Pos(b), barTime), LMCAcceleration(lmcfunction, Pos(b), LMCx, lmcmass, lmcscale, lmcscale2));
                 mw_incaddv(a, externAcc);
                 
                 accels[i] = a;
@@ -280,7 +290,7 @@ static inline void nbMapForceBody_Exact(const NBodyCtx* ctx, NBodyState* st)
                 //mw_printf("CUSTOM POTENTIAL - EXACT\n");
                 a = nbGravity_Exact(ctx, st, &bodies[i]);
                 nbEvalPotentialClosure(st, Pos(&bodies[i]), &externAcc);
-                mw_incaddv(externAcc, plummerAccel(Pos(&bodies[i]), LMCx, lmcmass, lmcscale));
+                mw_incaddv(externAcc, LMCAcceleration(lmcfunction, Pos(&bodies[i]), LMCx, lmcmass, lmcscale, lmcscale2));
                 mw_incaddv(a, externAcc);
 
                 accels[i] = a;

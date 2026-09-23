@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 1
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 93
+set(nbody_VERSION_MINOR 95
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
@@ -176,8 +176,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_mixeddwarf.h
                       ${NBODY_INCLUDE_DIR}/nbody_manual_bodies.h
                       ${NBODY_INCLUDE_DIR}/nbody_dwarf_potential.h
-                      ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_plummer_momentum.h
+                      ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody_nfw.h
                       ${NBODY_INCLUDE_DIR}/nbody_hernq.h
                       ${NBODY_INCLUDE_DIR}/nbody.h

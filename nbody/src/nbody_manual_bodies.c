@@ -45,8 +45,8 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
 
     unsigned int lineNum = 0;
     char lineBuf[1024];
-    int rc = 0;
-    mwbool error = FALSE;
+    int rc __attribute__((unused)) = 0;
+    mwbool error __attribute__((unused)) = FALSE;
     
     
     body_inputs = mwOpenResolved(body_file, "r");
@@ -56,13 +56,13 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     if (body_inputs == NULL)//make sure the file is available
     {
         mw_printf("Error opening data file '%s'\n", body_file);
-        return NULL;
+        return 0;
     }
     
     if (fsize == 0)//if the file is empty then throw error
     {
         mw_printf("Data file line count = 0\n");
-        return NULL;
+        return 0;
     }
     
     while (fgets(lineBuf, (int) sizeof(lineBuf), body_inputs))
@@ -70,8 +70,10 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
 
         /* Skip comments and blank lines */
         if (lineBuf[0] == '#' || lineBuf[0] == '\n')
+        {
             fsize -= 1;//removing the commented and blank lines from the total line count
-            continue;
+        }
+        continue;
     }
     fclose(body_inputs);
     body_inputs = mwOpenResolved(body_file, "r");
@@ -127,7 +129,7 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     fclose(body_inputs);
 
     /* pushing the bodies */
-    for (int i = 0; i < nbody; i++)
+    for (int i = 0; i < (int) nbody; i++)
     {
         b.bodynode.type = ty[i];
         b.bodynode.id = id[i];
@@ -170,7 +172,7 @@ int nbGenerateManualBodies(lua_State* luaSt)
         static const char* body_file = NULL;
         static const MWNamedArg argTable[] =
         {
-            { "body_file",            LUA_TSTRING,     NULL,                    TRUE,    &body_file         },
+            { "body_file",            LUA_TSTRING,     NULL,                    TRUE,    &body_file,           1 },
             END_MW_NAMED_ARG
             
         };

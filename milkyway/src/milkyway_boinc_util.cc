@@ -42,7 +42,7 @@
 
 static const char* nvidiaPlatformVendorString = "NVIDIA Corporation";
 static const char* amdPlatformVendorString = "Advanced Micro Devices, Inc.";
-static const char* applePlatformVendorString = "Apple";
+static const char* applePlatformVendorString __attribute__((unused)) = "Apple";
 
 
 /* Work around areas broken in the BOINC libraries which make you use

@@ -130,8 +130,11 @@ int main (int argc, char *argv[])
 
     }
     /* The following tests is a little bit contrived because of NaN */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(    ((expected.d != expected.d) && (output.d == output.d)) /* expected NaN, got non-NaN */
         || ((expected.d == expected.d) && (output.l != expected.l))    ) { /* or expected non-NaN, got something different */
+#pragma GCC diagnostic pop
       failures ++;
       printf("ERROR for %s with rounding %s\n", function_name, rounding_mode);
       if (nbarg==2)

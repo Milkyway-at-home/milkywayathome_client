@@ -100,7 +100,7 @@ typedef MW_ALIGN_TYPE_V(16) float float4[4];
 #define mw_fmod fmodf
 
 /* CHECKME: mw_fract */
-#define mw_fract(x) mw_fmin((x) – mw_floor(x), 0x1.fffffep-1f)
+#define mw_fract(x) mw_fmin((x) - mw_floor(x), 0x1.fffffep-1f)
 
 #define mw_frexp frexpf
 #define mw_ilogb ilogbf

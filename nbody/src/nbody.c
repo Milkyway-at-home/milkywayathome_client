@@ -121,7 +121,7 @@ static void nbSetCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 /* Try to run a potential function and see if it fails. Return TRUE on failure. */
 static int nbVerifyPotentialFunction(const NBodyFlags* nbf, const NBodyCtx* ctx, NBodyState* st)
 {
-    mwvector acc;
+    mwvector acc = ZERO_VECTOR;
     mwvector pos = mw_vec(1.0, 1.0, 0.0);
 
     if (ctx->potentialType != EXTERNAL_POTENTIAL_CUSTOM_LUA)
@@ -189,7 +189,7 @@ NBodyStatus nbStepSystem(const NBodyCtx* ctx, NBodyState* st)
   #endif
     if(!ctx->LMC)
     {
-        mwvector zero;
+        mwvector zero = ZERO_VECTOR;
         SET_VECTOR(zero,0,0,0);
         return nbStepSystemPlain(ctx, st, zero, zero); 
     }
@@ -228,6 +228,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
     real likelihood_Dist = NAN;
     real likelihood_PM_dec = NAN;
     real likelihood_PM_ra = NAN;
+    real likelihood_Momentum = NAN;
     NBodyLikelihoodMethod method;
 
     real *likelihoodArray;
@@ -282,8 +283,15 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             return NBODY_LIKELIHOOD_ERROR;
         }
         
+        /* If momentum information is passed in through lua, use that instead*/
+        if (histogram->histograms[0]->params.L.x > 0.00001 || histogram->histograms[0]->params.L.y > 0.00001 || histogram->histograms[0]->params.L.z > 0.00001 ||
+            histogram->histograms[0]->params.L.x < -0.00001 || histogram->histograms[0]->params.L.y < -0.00001 || histogram->histograms[0]->params.L.z < -0.00001)
+        {
+            data->histograms[0]->params.L = histogram->histograms[0]->params.L;
+            data->histograms[0]->params.LErr = histogram->histograms[0]->params.LErr;
+        }
         
-        likelihoodArray = nbSystemLikelihood(st, data, histogram, method);
+        likelihoodArray = nbSystemLikelihood(st, ctx, data, histogram, method);
         likelihood         = likelihoodArray[0];
         likelihood_EMD     = likelihoodArray[1];
         likelihood_Mass    = likelihoodArray[2];
@@ -294,6 +302,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         likelihood_Dist    = likelihoodArray[7];
         likelihood_PM_dec  = likelihoodArray[8];
         likelihood_PM_ra   = likelihoodArray[9];
+        likelihood_Momentum = likelihoodArray[10];
 
         /*
           Used to fix Windows platform issues.  Windows' infinity is expressed as:
@@ -310,9 +319,12 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         {
             mw_printf("Poor likelihood.  Returning worst case.\n");
             likelihood = DEFAULT_WORST_CASE;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
         }
         else if(likelihood == 0.0)
         {
+#pragma GCC diagnostic pop
             likelihood = DEFAULT_BEST_CASE;
         }
         
@@ -333,6 +345,7 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
             likelihood_Dist    = st->bestLikelihood_Dist;
             likelihood_PM_dec  = st->bestLikelihood_PM_dec;
             likelihood_PM_ra   = st->bestLikelihood_PM_ra;
+            likelihood_Momentum = st->bestLikelihood_Momentum;
         }
         else
         {
@@ -365,31 +378,35 @@ static NBodyStatus nbReportResults(const NBodyCtx* ctx, const NBodyState* st, co
         mw_printf("<search_likelihood>%.15f</search_likelihood>\n", -likelihood);
         mw_printf("<search_likelihood_EMD>%.15f</search_likelihood_EMD>\n", -likelihood_EMD);
         mw_printf("<search_likelihood_Mass>%.15f</search_likelihood_Mass>\n", -likelihood_Mass);
-	if (st->useBetaDisp)
+	    if (st->useBetaDisp)
         {
             mw_printf("<search_likelihood_Beta>%.15f</search_likelihood_Beta>\n", -likelihood_Beta);
         }
-	if (st->useVelDisp)
+	    if (st->useVelDisp)
         {
             mw_printf("<search_likelihood_Vel>%.15f</search_likelihood_Vel>\n", -likelihood_Vel);
         }
-       if (st->useBetaComp)
-       {
-           mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -likelihood_BetaAvg);
-       }
-       if (st->useVlos)
-       {
-           mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_VelAvg);
-       }
-       if (st->useDist)
-       {
-           mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
-       }
-       if (st->usePropMot)
-       {
-        mw_printf("<search_likelihood_PM_dec>%.15f</search_likelihood_PM_dec>\n", -likelihood_PM_dec);
-        mw_printf("<search_likelihood_PM_ra>%.15f</search_likelihood_PM_ra>\n", -likelihood_PM_ra);
-       }
+        if (st->useBetaComp)
+        {
+            mw_printf("<search_likelihood_BetaAvg>%.15f</search_likelihood_BetaAvg>\n", -likelihood_BetaAvg);
+        }
+        if (st->useVlos)
+        {
+            mw_printf("<search_likelihood_VelAvg>%.15f</search_likelihood_VelAvg>\n", -likelihood_VelAvg);
+        }
+        if (st->useDist)
+        {
+            mw_printf("<search_likelihood_Dist>%.15f</search_likelihood_Dist>\n", -likelihood_Dist);
+        }
+        if (st->usePropMot)
+        {
+            mw_printf("<search_likelihood_PM_dec>%.15f</search_likelihood_PM_dec>\n", -likelihood_PM_dec);
+            mw_printf("<search_likelihood_PM_ra>%.15f</search_likelihood_PM_ra>\n", -likelihood_PM_ra);
+        }
+        if (st->useMomentum)
+        {
+            mw_printf("<search_likelihood_Momentum>%.15f</search_likelihood_Momentum>\n", -likelihood_Momentum);
+        }
     }
 
 
@@ -445,7 +462,7 @@ int nbMain(const NBodyFlags* nbf)
         ctx->calibrationRuns = 0;
     }
     //Run forward evolution calibrationRuns + 1 times
-    for(int i = 0; i <= ctx->calibrationRuns; i++){
+    for(unsigned i = 0; i <= ctx->calibrationRuns; ++i){
         //these for checkpointing
         nbSetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
         nbSetStateFromFlags(st, nbf); 
@@ -488,6 +505,7 @@ int nbMain(const NBodyFlags* nbf)
         st->useVlos = ctx->useVlos;
         st->useDist = ctx->useDist;
         st->usePropMot = ctx->usePropMot;
+        st->useMomentum = ctx->useMomentum;
 
         //save the state if about to start first calibration run
         if(ctx->calibrationRuns > 0 && i == 0){

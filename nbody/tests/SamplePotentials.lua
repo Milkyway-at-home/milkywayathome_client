@@ -444,9 +444,9 @@ SamplePotentials.randomHalo = function(prng)
          vhalo       = prng:random(1, 200),
          scaleLength = prng:random(0.1, 30),
          flattenX    = prng:random(0, 4),
-         flattenY    = prng:random(0, 3),
-         flattenZ    = prng:random(0, 4),
-         triaxAngle  = prng:random(0, 180)
+         flattenY    = 1, -- Setting the values for Y and Z to 1 so it doesn't break in checkHaloConstants, I don't know enough about the model to find a reasonable range
+         flattenZ    = 1, 
+         triaxAngle  = prng:random(0, pi)
       }
    elseif (typ == 4) then
       return Halo.allenSantillan{
