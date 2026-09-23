@@ -11,6 +11,7 @@
 #include "nbody_caustic.h"
 #include "nbody_bessel.h"
 #include "nbody_potential.h"
+#include "nbody_mass.h"
 
 #include "nbody_friction.h"
 
@@ -129,7 +130,7 @@ mwvector dynamicalFriction_LMC(const Potential* pot, mwvector pos, mwvector vel,
     }
 
     //Acceleration from DF
-    real acc = (-4 * pi * mw_pow(G_CONST, 2) * mass_LMC * ln_lambda * density / mw_pow(objectVel, 2)) * (erf(X) - 2*X/mw_pow(pi, 0.5)*exp(-1.0*mw_pow(X, 2)));
+    real acc = (-4 * pi * mw_pow(G_CONST, 2) * mass_LMC * ln_lambda * density / mw_pow(objectVel, 2)) * ((real) mw_erf(X) - 2*X/mw_pow(pi, 0.5)*mw_exp(-1.0*mw_pow(X, 2)));
     
     result.x = (acc * vel.x / objectVel);
     result.y = (acc * vel.y / objectVel);

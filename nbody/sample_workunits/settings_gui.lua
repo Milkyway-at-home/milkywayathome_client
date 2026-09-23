@@ -118,8 +118,24 @@ orbit_parameter_vy = 54.7       -- NO COMMENT $ entry | 54.7 ^ 0 * 0
 orbit_parameter_vz = 147.4      -- NO COMMENT $ entry | 147.4 ^ 0 * 0
 manual_body_file = "manual_bodies_example.in" -- (Optional) Manual bodies list. Can be nil. $ l-q-entry | manual_bodies_example.in ^ 0 * 0
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-
+-- Do not edit, calculation of dark matter parameters
+if(ModelComponents == 1) then
+    dwarfMass = mass_l
+    rscale_t  = rscale_l
+    rscale_d  = 1.0
+    mass_d    = 0.0
+ else
+    dwarfMass = mass_l / light_mass_ratio
+    rscale_t  = rscale_l / light_r_ratio
+    rscale_d  = rscale_t *  (1.0 - light_r_ratio)
+    mass_d    = dwarfMass * (1.0 - light_mass_ratio)
+ end
+ 
+ --component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
+ --calculate dwarf-based softening length
+ comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
+ comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
+  
 
 -- -- -- -- -- -- -- --  OUTPUT SETTINGS  -- -- -- -- -- -- -- -- -- -- -- -- 
 generateInitialOutput = false     -- Outputs the initial bodies file right after dwarf generation $ button | 0 ^ 1 * 0
@@ -160,7 +176,7 @@ max_soft_par          = 0.8         -- kpc, if switch above is turned on, use th
 UseOldSofteningLength = false       -- If true, uses old softening length formula from v1.76 and earlier $ button | 0 ^ 1 * 0
                                     -- (this is only useful to compare with/match simulations 
                                     --  that were run before v1.80)
-CoulombLogarithm      = 0.470003629 -- (ln(1.6)) COULOMB LOGARITHM USED IN DYNAMICAL FRICTION $ entry | 0.470003629 ^ 0 * 0
+CoulombLogarithm      = 15          -- ln(r/1.22*CoulombLogarithm) (Patel et al. 2020) COULOMB LOGARITHM USED IN DYNAMICAL FRICTION CALCULATION
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- END GUI
@@ -215,26 +231,7 @@ function get_timestep()
     if(timestep_control) then
       t = (evolveTime) / (Ntime_steps)
     elseif(ModelComponents == 2) then
-
-        --Mass of a single dark matter sphere enclosed within light rscale
-        mass_enc_d = mass_d * (rscale_l)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
-
-        --Mass of a single light matter sphere enclosed within dark rscale
-        mass_enc_l = mass_l * (rscale_d)^3 * ( (rscale_l)^2 + (rscale_d)^2  )^(-3.0/2.0)
-
-        s1 = (rscale_l)^3 / (mass_enc_d + mass_l)
-        s2 = (rscale_d)^3 / (mass_enc_l + mass_d)
-        
-        --return the smaller time step
-        if(s1 < s2) then
-            s = s1
-        else
-            s = s2
-        end
-        
-        -- I did it this way so there was only one place to change the time step. 
-        t = (1.0 / 100.0) * ( pi_4_3 * s)^(1.0/2.0)
-        
+        t = calculateTimestepMixedDwarf(comp1, comp2)
     else 
         t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
     end
@@ -354,8 +351,8 @@ function makeBodies(ctx, potential)
 	            potential   = potential,
 	            position    = lbrToCartesian(ctx, Vector.create(orbit_parameter_l, orbit_parameter_b, orbit_parameter_r)),
 	            velocity    = Vector.create(orbit_parameter_vx, orbit_parameter_vy, orbit_parameter_vz),
-	            LMCposition = Vector.create(-1.1, -41.1, -27.9),
-	            LMCvelocity = Vector.create(-57, -226, 221), 
+	            LMCposition = Vector.create(-0.52, -40.8, -26.5),
+	            LMCvelocity = Vector.create(-58.2, -231, 226), 
                     LMCmass     = LMC_Mass,
                     LMCscale    = LMC_scaleRadius,
                     LMCDynaFric = LMC_DynamicalFriction,
@@ -415,8 +412,8 @@ function makeBodies(ctx, potential)
             prng        = prng,
             position    = finalPosition,
             velocity    = finalVelocity,
-            comp1       = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l}, -- Dwarf Options: plummer, nfw, general_hernquist
-            comp2       = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d}, -- Dwarf Options: plummer, nfw, general_hernquist
+            comp1       = comp1,
+            comp2       = comp2,
             ignore      = true
         }
         
@@ -456,19 +453,6 @@ assert(argSeed ~= nil, "Expected seed") -- STILL EXPECTING SEED AS INPUT FOR THE
 argSeed = 7854614814 -- -- SETTING SEED TO FIXED VALUE
 prng = DSFMT.create(argSeed)
 
-
-if(ModelComponents == 1) then
-   dwarfMass = mass_l
-   rscale_t  = rscale_l
-   rscale_d  = 1.0
-   mass_d    = 0.0
-else
-   dwarfMass = mass_l / light_mass_ratio
-   rscale_t  = rscale_l / light_r_ratio
-   rscale_d  = rscale_t *  (1.0 - light_r_ratio)
-   mass_d    = dwarfMass * (1.0 - light_mass_ratio)
-end
-   
 
 if(manual_bodies and manual_body_file == nil) then 
     print 'WARNING: No body list given. Manual body input turn off'

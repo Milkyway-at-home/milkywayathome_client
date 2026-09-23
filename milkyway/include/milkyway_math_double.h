@@ -26,6 +26,7 @@
 #define _MILKYWAY_MATH_DOUBLE_H_
 
 #include "milkyway_extra.h"
+#include "milkyway_math_funcs.h"
 
 #if !DOUBLEPREC
 #error Double not enabled for double math
@@ -85,14 +86,14 @@ typedef MW_ALIGN_TYPE_V(32) double double4[4];
 #define mw_atanh atanh
 #define mw_atanpi(x) (mw_atan(x) / M_PI)
 #define mw_atan2pi(x) (mw_atan2(x) / M_PI)
-#define mw_cbrt cbrt
+#define mw_cbrt cr_cbrt
 #define mw_ceil ceil
 #define mw_copysign copysign
 #define mw_cospi(x) mw_cos(M_PI * (x))
 #define mw_sinpi(x) mw_sin(M_PI * (x))
 #define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_erfc erfc
-#define mw_erf erf
+#define mw_erf cr_erf
 
 #if HAVE_EXP2
   #define mw_exp2 exp2
@@ -119,9 +120,9 @@ typedef MW_ALIGN_TYPE_V(32) double double4[4];
 #define mw_hypot(x, y) mw_sqrt(sqr(x) + sqr(y))
 #define mw_ilogb ilogb
 #define mw_ldexp ldexp
-#define mw_tgamma tgamma
+#define mw_tgamma cr_tgamma
 #define mw_tgamma_r tgamma_r
-#define mw_lgamma lgamma
+#define mw_lgamma cr_lgamma
 #define mw_lgamma_r lgamma_r
 #define mw_log2 log2
 #define mw_logb logb
@@ -141,7 +142,6 @@ typedef MW_ALIGN_TYPE_V(32) double double4[4];
 #define mw_round round
 
 #define mw_sqrt sqrt
-#define mw_tgamma tgamma
 #define mw_trunc trunc
 
 

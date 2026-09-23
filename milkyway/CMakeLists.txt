@@ -114,7 +114,8 @@ set(mw_lib_src src/milkyway_util.c
                src/milkyway_boinc_util.cc
                src/milkyway_show.c
                src/milkyway_cpuid.c
-               src/milkyway_timing.c)
+               src/milkyway_timing.c
+               src/milkyway_math_funcs.c)
 
 
 set(milkyway_lua_src src/milkyway_lua_marshal.c

@@ -41,6 +41,7 @@
 #include "nbody_potential_types.h"
 #include "nbody_lua_dwarf.h"
 #include "nbody_dwarf_potential.h"
+#include "nbody_math_funcs.h"
 
 static const real pi = 3.1415926535;
 
@@ -154,6 +155,44 @@ static int luaCalculateTimestep(lua_State* luaSt)
     r0 = luaL_checknumber(luaSt, 2);
 
     lua_pushnumber(luaSt, nbCalculateTimestep(mass, r0));
+    return 1;
+}
+
+static real nbCalculateTimestepMixedDwarf(const Dwarf* comp1, const Dwarf* comp2)
+{
+    real a_1 = comp1->scaleLength;
+    real a_2 = comp2->scaleLength;
+
+    /* Use densest structural scale: King r_0 (not tidal r_t), Cored rc (not NFW rs) */
+    if (comp1->type == King)
+        a_1 = comp1->r_0;
+    else if (comp1->type == Cored)
+        a_1 = comp1->rc;
+
+    if (comp2->type == King)
+        a_2 = comp2->r_0;
+    else if (comp2->type == Cored)
+        a_2 = comp2->rc;
+
+    real mass_enc_2 = enclosed_comp_mass(comp2, a_1);  /* comp2 mass within a_1 */
+    real mass_enc_1 = enclosed_comp_mass(comp1, a_2);  /* comp1 mass within a_2 */
+    real s1 = cube(a_1) / (mass_enc_2 + comp1->mass);
+    real s2 = cube(a_2) / (mass_enc_1 + comp2->mass);
+    real s = (s1 < s2) ? s1 : s2;
+    return (1.0 / 100.0) * mw_sqrt(PI_4_3 * s);
+}
+
+static int luaCalculateTimestepMixedDwarf(lua_State* luaSt)
+{
+    const Dwarf* comp1;
+    const Dwarf* comp2;
+
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+
+    comp1 = checkDwarf(luaSt, 1);
+    comp2 = checkDwarf(luaSt, 2);
+    lua_pushnumber(luaSt, nbCalculateTimestepMixedDwarf(comp1, comp2));
     return 1;
 }
 
@@ -508,4 +547,5 @@ void registerModelFunctions(lua_State* luaSt)
     lua_register(luaSt, "calculateEps2", luaCalculateEps2_OLD);
     lua_register(luaSt, "calculateEps2Dwarf", luaCalculateEps2Dwarf);
     lua_register(luaSt, "calculateTimestep", luaCalculateTimestep);
+    lua_register(luaSt, "calculateTimestepMixedDwarf", luaCalculateTimestepMixedDwarf);
 }

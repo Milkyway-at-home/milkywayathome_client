@@ -35,6 +35,7 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_types.h"
 #include "nbody_potential_types.h"
 #include "nbody_io.h"
+#include "nbody_math_funcs.h"
 #include "nbody_king_model.h"
 
 /*Note: minusfivehalves(x) raises to x^-5/2 power and minushalf(x) is x^-1/2*/
@@ -60,152 +61,6 @@ static inline real density( real r, const Dwarf* comp1, const Dwarf* comp2)
     real density_result = (density_light + density_dark );
 
     return density_result;
-}
-
-
-/*      GENERAL PURPOSE DERIVATIVE, INTEGRATION, MAX FINDING, ROOT FINDING, AND ARRAY SHUFFLER FUNCTIONS        */
-real first_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
-{
-    /* centered 5-point stencil when it stays in-domain; near the origin, switch to a forward stencil so probes never go negative.*/
-    const real h = 0.001;
-
-    if (x >= 2.0 * h)
-    {
-        real p1 =   1.0 * (*func)(comp1, (x - 2.0 * h));
-        real p2 = - 8.0 * (*func)(comp1, (x - h) );
-        real p3 = - 1.0 * (*func)(comp1, (x + 2.0 * h));
-        real p4 =   8.0 * (*func)(comp1, (x + h));
-        return (p1 + p2 + p3 + p4) * inv(12.0 * h);
-    }
-
-    /* Forward 5-point first derivative, O(h^4) */
-    real f0 = (*func)(comp1, x);
-    real f1 = (*func)(comp1, x + h);
-    real f2 = (*func)(comp1, x + 2.0 * h);
-    real f3 = (*func)(comp1, x + 3.0 * h);
-    real f4 = (*func)(comp1, x + 4.0 * h);
-    return (-25.0 * f0 + 48.0 * f1 - 36.0 * f2 + 16.0 * f3 - 3.0 * f4) * inv(12.0 * h);
-}
-
-static inline real second_derivative(real (*func)(const Dwarf*, real), real x, const Dwarf* comp1)
-{
-    /* Same domain handling as first_derivative: centered away from 0, forward near 0. */
-    const real h = 0.001;
-
-    if (x >= 2.0 * h)
-    {
-        real p1 = - 1.0 * (*func)(comp1, (x + 2.0 * h));
-        real p2 =  16.0 * (*func)(comp1, (x + h));
-        real p3 = -30.0 * (*func)(comp1, (x));
-        real p4 =  16.0 * (*func)(comp1, (x - h));
-        real p5 = - 1.0 * (*func)(comp1, (x - 2.0 * h));
-        return (p1 + p2 + p3 + p4 + p5) * inv(12.0 * h * h);
-    }
-
-    /* Forward 5-point second derivative, O(h^3) */
-    real f0 = (*func)(comp1, x);
-    real f1 = (*func)(comp1, x + h);
-    real f2 = (*func)(comp1, x + 2.0 * h);
-    real f3 = (*func)(comp1, x + 3.0 * h);
-    real f4 = (*func)(comp1, x + 4.0 * h);
-    return (35.0 * f0 - 104.0 * f1 + 114.0 * f2 - 56.0 * f3 + 11.0 * f4) * inv(12.0 * h * h);
-}
-
-static real gauss_quad(real (*func)(real, const Dwarf*, const Dwarf*, real, mwbool), real lower, real upper, const Dwarf* comp1, const Dwarf* comp2, real energy, mwbool isDark)
-{
-    /*This is a guassian quadrature routine. It will test to always integrate from the lower to higher of the two limits.
-     * If switching the order of the limits was needed to do this then the negative of the integral is returned.
-     */
-    real intv = 0.0;//initial value of integral
-    real a = 0.0, b = 0.0;
-
-    if(lower > upper)
-    {
-        a = upper;
-        b = lower;
-    }
-    else
-    {
-        a = lower; 
-        b = upper;
-    }
-
-    real benchmark = 1.5 * a;
-    real Ng = 100.0;//integral resolution
-    real hg = (benchmark - a) / (Ng);
-    real lowerg = a;
-    real upperg = lowerg + hg;
-
-
-    real coef2 = (lowerg + upperg) / 2.0;//initializes the first coeff to change the function limits
-    real coef1 = (upperg - lowerg) / 2.0;//initializes the second coeff to change the function limits
-    const real c1 = 0.55555555555; //5.0 / 9.0;
-    const real c2 = 0.88888888888; //8.0 / 9.0;
-    const real c3 = 0.55555555555; //5.0 / 9.0;
-    const real x1 = -0.77459666924;//-sqrt(3.0 / 5.0);
-    const real x2 __attribute__((unused)) = 0.00000000000;
-    const real x3 = 0.77459666924; //sqrt(3.0 / 5.0);
-    real x1n = (coef1 * x1 + coef2);
-    /*should be: x2n = (coef1 * x2 + coef2);*/
-    real x2n = (coef2);
-    real x3n = (coef1 * x3 + coef2);
-    int counter = 0;
-    while (1)
-    {
-                //gauss quad
-        intv = intv + c1 * (*func)(x1n, comp1, comp2, energy, isDark) * coef1 +
-                      c2 * (*func)(x2n, comp1, comp2, energy, isDark) * coef1 + 
-                      c3 * (*func)(x3n, comp1, comp2, energy, isDark) * coef1;
-
-        lowerg = upperg;
-        upperg = upperg + hg;
-        coef2 = (lowerg + upperg) / 2.0;//initializes the first coeff to change the function limits
-        coef1 = (upperg - lowerg) / 2.0;
-
-        x1n = ((coef1) * x1 + coef2);
-        /*should be: x2n = (coef1 * x2 + coef2);*/
-        x2n = (coef2);
-        x3n = ((coef1) * x3 + coef2);
-
-        if(lowerg > benchmark)
-        {
-            Ng = 10.0;//integral resolution
-            hg = (b - benchmark) / (Ng);
-        }
-
-        if(upper > lower)
-        {
-            if(lowerg >= upper)//loop termination clause
-            {
-                break;
-            }
-        }
-        else if(lower > upper)
-        {
-            if(lowerg >= lower)//loop termination clause
-            {
-                break;
-            }
-        }
-
-        if(counter > 100000)
-        {
-            break;
-        }
-        else
-        {
-            counter++;
-        }
-
-
-    }
-
-    if(lower > upper)
-    {
-        intv *= -1.0;
-    }
-
-    return intv;
 }
 
 static inline real max_finder(real (*profile)(real , real , const Dwarf*, const Dwarf*, mwbool), real r, const Dwarf* comp1, const Dwarf* comp2, mwbool isDark, real a, real b, real c, int limit, real tolerance)
@@ -740,16 +595,15 @@ void set_model_params(Dwarf* comp)
         case NFW:
         case Cored:
         {
-            /* this is the pcrit * delta_crit from the nfw 1997 paper or just p0 from binney */
-            //as defined in Binney and Tremaine 2nd ed:
-            //the r200 is now used for all potentials to provide the bounds for density sampling
+            /* ps is the NFW characteristic density (Navarro et al. 1997 / Binney p0).
+             * p0 is only the cored isothermal central density. */
             real mass = comp->mass; 
             real rscale = comp->scaleLength;
             real r200 = mw_cbrt(mass / (vol_pcrit));//vol_pcrit = 200.0 * pcrit * PI_4_3
             real c = r200 / rscale; //halo concentration
             real term = mw_log(1.0 + c) - c / (1.0 + c);
-            real p0 = 200.0 * cube(c) * pcrit / (3.0 * term); //rho_0 as defined in Navarro et. al. 1997
-            real ps = 0.0;
+            real ps = 200.0 * cube(c) * pcrit / (3.0 * term); //NFW characteristic density
+            real p0 = 0.0; //cored isothermal central density
             real rcut = comp->rcut;
             real rdecay = 0.0;
             real pcut = 0.0;
@@ -758,6 +612,7 @@ void set_model_params(Dwarf* comp)
             real const_gamma_func = 0.0;
             real psi_nfw_cut = 0.0;
             real psi_cut_cut = 0.0; 
+            real mcut_pref = 0.0;
             real m_nfw_r1 = 0.0;
             real m_iso_r1 = 0.0;
             real psi_nfw_r1 = 0.0;
@@ -765,22 +620,22 @@ void set_model_params(Dwarf* comp)
 
             if (rcut != 0.0) {
                 rdecay = 0.3 * rcut;
-                pcut = p0 * inv(rcut / rscale) * inv(sqr(1.0 + rcut / rscale));
+                pcut = ps * inv(rcut / rscale) * inv(sqr(1.0 + rcut / rscale));
                 delta = (rcut / rdecay) - (1.0 + 3.0 * (rcut / rscale)) / (1.0 + (rcut / rscale));
-                m_nfw_cut = 4.0 * M_PI * p0 * cube(rscale) * (mw_log((rscale + rcut) / rscale) - rcut / (rscale + rcut));
+                m_nfw_cut = 4.0 * M_PI * ps * cube(rscale) * (mw_log((rscale + rcut) / rscale) - rcut / (rscale + rcut));
                 const_gamma_func = UpperIncompleteGammaFunc(delta + 3, rcut / rdecay);
-                psi_nfw_cut = 4.0 * M_PI * p0 * cube(rscale) * mw_log(1.0 + rcut / rscale) * inv(rcut);
-                psi_cut_cut = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3) * (UpperIncompleteGammaFunc(delta + 2, rcut / rdecay) * inv(rdecay));
+                psi_nfw_cut = 4.0 * M_PI * ps * cube(rscale) * mw_log(1.0 + rcut / rscale) * inv(rcut);
+                mcut_pref = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3);
+                psi_cut_cut = mcut_pref * (UpperIncompleteGammaFunc(delta + 2, rcut / rdecay) * inv(rdecay));
             }
             if(comp->type == Cored)
             {       
-                ps = p0; //characteristic density of the NFW portion of the cored profile 
                 real r1 = comp->r1;
                 real rc = comp->rc;
 
                 real p0_ps = (rscale + rscale * sqr(r1 / rc)) / (r1 * sqr(1.0 + r1 / rscale)); //Ratio of p0 to ps
 
-                p0 = ps * p0_ps; //central density of the cored profile
+                p0 = ps * p0_ps; //central density of the isothermal inner profile
 
                 m_nfw_r1 = 4.0 * M_PI * ps * cube(rscale) * (mw_log((rscale + r1) / rscale) - r1 / (rscale + r1));
                 m_iso_r1 = 4.0 * M_PI * p0 * sqr(rc) * (r1 - rc * mw_atan(r1 / rc));
@@ -799,6 +654,7 @@ void set_model_params(Dwarf* comp)
             comp->const_gamma_func = const_gamma_func;
             comp->psi_nfw_cut = psi_nfw_cut;
             comp->psi_cut_cut = psi_cut_cut;
+            comp->mcut_pref = mcut_pref;
             comp->m_nfw_r1 = m_nfw_r1;
             comp->m_iso_r1 = m_iso_r1;
             comp->psi_nfw_r1 = psi_nfw_r1;
@@ -888,10 +744,10 @@ static inline real einasto_sampling_bound(const Dwarf* comp)
     return comp->scaleLength * mw_pow(x999 / comp->d, comp->n);
 }
 
-static inline void recalculate_comp_mass(Dwarf* comp, real bound)
+real enclosed_comp_mass(const Dwarf* comp, real bound)
 {
-    /* This function recalculates the mass of the component if the sampling bound is changed */
-    /* Needed for Cored profile since inputted mass is the M200 if the profile was an NFW */
+    /* Enclosed mass within a radial bound. 
+     * Does not modify comp->mass  */
 
         real m = 0.0;
         real r = bound;
@@ -916,7 +772,7 @@ static inline void recalculate_comp_mass(Dwarf* comp, real bound)
                 const real m_nfw_r1 = comp->m_nfw_r1;
                 const real m_iso_r1 = comp->m_iso_r1;
                 const real m_nfw_cut = comp->m_nfw_cut;                                                                          
-                m = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3) * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) + m_nfw_cut + m_iso_r1 - m_nfw_r1;                                           
+                m = comp->mcut_pref * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) + m_nfw_cut + m_iso_r1 - m_nfw_r1;                                           
             }                                                                                                                    
             else if (r <= r1)                                                                                                    
             {                                                                                                                    
@@ -935,7 +791,7 @@ static inline void recalculate_comp_mass(Dwarf* comp, real bound)
         }
         else if(comp->type == NFW)
         {
-            const real p0 = comp->p0;
+            const real ps = comp->ps;
             const real rcut = comp->rcut;
             if (rcut != 0.0) {
                 if (r > rcut)
@@ -945,16 +801,16 @@ static inline void recalculate_comp_mass(Dwarf* comp, real bound)
                     const real pcut = comp->pcut;
                     const real const_gamma_func = comp->const_gamma_func;
                     const real m_nfw_cut = comp->m_nfw_cut;
-                    m = 4.0 * M_PI * pcut * mw_pow(rcut, -delta) * mw_exp(rcut / rdecay) * mw_pow(rdecay, delta + 3) * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) +  m_nfw_cut;
+                    m = comp->mcut_pref * (const_gamma_func - UpperIncompleteGammaFunc(delta + 3, r / rdecay)) +  m_nfw_cut;
                 }
                 else
                 {
-                    m = 4.0 * M_PI * p0 * cube(rs) * (mw_log((rs + r) / rs) - r / (rs + r));
+                    m = 4.0 * M_PI * ps * cube(rs) * (mw_log((rs + r) / rs) - r / (rs + r));
                 }
             }
             else
             {
-                m = 4.0 * M_PI * p0 * cube(rs) * (mw_log((rs + r) / rs) - r / (rs + r));
+                m = 4.0 * M_PI * ps * cube(rs) * (mw_log((rs + r) / rs) - r / (rs + r));
             }
         }
         else if (comp->type == Plummer)
@@ -986,8 +842,8 @@ static inline void recalculate_comp_mass(Dwarf* comp, real bound)
             real s_term = mw_pow(s, inv(n));
             m = M * (1 - (UpperIncompleteGammaFunc(3.0 * n, s_term) / const_gamma_func));
         }
-    comp->mass = m;
 #pragma GCC diagnostic pop
+    return m;
 }
 
 /*      DWARF GENERATION        */
@@ -1021,8 +877,6 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
 
         real rscale_l = comp1->scaleLength; //comp1[1]; /*scale radius of the light component*/
         real rscale_d = comp2->scaleLength; //comp2[1]; /*scale radius of the dark component*/
-        set_model_params(comp1);
-        set_model_params(comp2);
         real bound1 = sampling_bound1;
         real bound2 = sampling_bound2;
         
@@ -1031,28 +885,30 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
             switch(comp1->type)
             {
                 case Plummer:
-                    bound1 =  50.0 * (rscale_l + rscale_d);
+                    /* 99.9% mass radius: r/a = sqrt(0.999^(2/3) / (1 - 0.999^(2/3))) */
+                    bound1 = 38.71369177075227 * rscale_l;
                     break;
                 case NFW:
                     if (comp1->rcut != 0.0) {
-                        bound1 = comp1->rcut + 15.0 * comp1->rdecay;
-                        recalculate_comp_mass(comp1, bound1);
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound1 = comp1->rcut - mw_log(1.0e-7 * comp1->ps / comp1->pcut) * comp1->rdecay;
                     }
                     else {
                         bound1 = 5.0 * comp1->r200;
                     }
                     break;
                 case General_Hernquist:
-                    bound1 =  50.0 * (rscale_l + rscale_d);
+                    /* 99% mass radius: r/a = sqrt(0.99) / (1 - sqrt(0.99)) */
+                    bound1 = 198.49874371066198 * rscale_l;
                     break;
                 case Cored:
                     if (comp1->rcut != 0.0) {
-                        bound1 = comp1->rcut + 15.0 * comp1->rdecay;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound1 = comp1->rcut - mw_log(1.0e-7 * comp1->ps / comp1->pcut) * comp1->rdecay;
                     }
                     else {
                         bound1 = 5.0 * comp1->r200;
                     }
-                    recalculate_comp_mass(comp1, bound1);
                     break;
                 case King:
                     bound1 = comp1->r_t; // no mass past King model tidal radius
@@ -1063,7 +919,6 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     break;
                 case Einasto:
                     bound1 = einasto_sampling_bound(comp1);
-                    recalculate_comp_mass(comp1, bound1);
                     break;
                 case InvalidDwarf:
                     break;
@@ -1073,45 +928,42 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     break;
             }
         }
-        else
-        {   
-            // If bound is manually set, recalculate the component mass as enclosed mass within the bound
-            recalculate_comp_mass(comp1, bound1);
-        }
 
         // If bound is not manually set, calculate the default bound based on the model type 
         if (bound2 == 0.0) {
             switch(comp2->type)
             {
                 case Plummer:
-                    bound2 =  50.0 * (rscale_l + rscale_d);
+                    /* 99.9% mass radius: r/a = sqrt(0.999^(2/3) / (1 - 0.999^(2/3))) */
+                    bound2 = 38.71369177075227 * rscale_d;
                     break;
                 case NFW:
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if (comp2->rcut != 0.0) {
     #pragma GCC diagnostic pop
-                        bound2 = comp2->rcut + 15.0 * comp2->rdecay;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound2 = comp2->rcut - mw_log(1.0e-7 * comp2->ps / comp2->pcut) * comp2->rdecay;
                     }
                     else {
                         bound2 = 5.0 * comp2->r200;
                     }
-                    recalculate_comp_mass(comp2, bound2);
                     break;
                 case General_Hernquist:
-                    bound2 =  50.0 * (rscale_l + rscale_d);
+                    /* 99% mass radius: r/a = sqrt(0.99) / (1 - sqrt(0.99)) */
+                    bound2 = 198.49874371066198 * rscale_d;
                     break;
                 case Cored:
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wfloat-equal"
                     if (comp2->rcut != 0.0) {
     #pragma GCC diagnostic pop
-                        bound2 = comp2->rcut + 15.0 * comp2->rdecay;
+                        /* pcut * exp(-(r-rcut)/rdecay) = 1e-7 * ps */
+                        bound2 = comp2->rcut - mw_log(1.0e-7 * comp2->ps / comp2->pcut) * comp2->rdecay;
                     }
                     else {
                         bound2 = 5.0 * comp2->r200;
                     }
-                    recalculate_comp_mass(comp2, bound2);
                     break;
                 case King:
                     bound2 = comp2->r_t; // no mass past King model tidal radius
@@ -1122,7 +974,6 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     break;
                 case Einasto:
                     bound2 = einasto_sampling_bound(comp2);
-                    recalculate_comp_mass(comp2, bound2);
                     break;
                 case InvalidDwarf:
                     break;
@@ -1132,14 +983,10 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
                     break;
             }
         }
-        else 
-        {   
-            // If bound is manually set, recalculate the component mass as enclosed mass within the bound
-            recalculate_comp_mass(comp2, bound2);
-        }
 
-        real mass_l   = comp1->mass; //comp1[0]; /*mass of the light component*/
-        real mass_d   = comp2->mass; //comp2[0]; /*mass of the dark component*/
+        /* Particle masses use enclosed mass within the sampling bound; comp->mass is left unchanged. */
+        real mass_l   = enclosed_comp_mass(comp1, bound1);
+        real mass_d   = enclosed_comp_mass(comp2, bound2);
         real dwarf_mass __attribute__((unused)) = mass_l + mass_d;
 
 
