@@ -1,6 +1,7 @@
 //This file is for implementations of erf, cbrt, and gamma function from CORE-MATH which are used to ensure correct rounding.
 //Functions are copied directly from source files and are unedited with the exception of the following:
 //  repeat declarations from multiple source files are commented out
+//  added a check to not use builtin_roundeven with MINGW
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
