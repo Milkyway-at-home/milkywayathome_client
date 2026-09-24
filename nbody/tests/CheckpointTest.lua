@@ -52,9 +52,7 @@ function randomNBodyCtx(prng)
    sigma = prng:random(1.5,3.0)
    correct = math.sqrt(2*3.1415926535)/(math.sqrt(2*3.1415926535)*erf(sigma/math.sqrt(2)) - 2*sigma*math.exp(-sigma*sigma/2))
    -- Draw each distinct softening length once. eps2_cross is reused for both
-   -- off-diagonal entries of the flattened matrix (light-dark and dark-light
-   -- must be the same value) -- calling prng:random() separately for each
-   -- slot would draw two different numbers instead of reusing one.
+   -- off-diagonal entries so it is saved ahead of time to be used twice.
    eps2_l = prng:random(1.0e-9, 1.0e-3)
    eps2_cross = prng:random(1.0e-9, 1.0e-3)
    eps2_d = prng:random(1.0e-9, 1.0e-3)

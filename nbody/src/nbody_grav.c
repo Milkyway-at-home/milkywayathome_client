@@ -59,10 +59,10 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
     const real* eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
 
-    /* Cells that aggregate bodies of mixed type (and, defensively, any type
-     * that isn't in the table) are coded as type 0 and can't be resolved to
-     * a specific structure-pair softening length, so fall back to the
-     * smallest softening length in the table rather than an arbitrary entry. */
+    /* Tree cells (and any index that isn't in the table) are coded as type 0 
+     * and fall back to the smallest softening length in the table.
+     * This should not impact the force calculations since cells are 
+     * necessarily far from the starting particle. */
     real eps2_min = eps2_array[0];
     for (int i = 1; i < eps2_size * eps2_size; ++i)
     {
@@ -88,15 +88,12 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 /* Compute gravity */
                 if (q->type != 0 && p->bodynode.type != 0)
                 {
-                    /* Both nodes have a resolvable structure type: look up each
-                     * one's row/column in the eps2_size x eps2_size softening
-                     * table and combine them into a flattened index. */
                     int q_index = findIndex(ctx->eps2_index, eps2_size, q->type);
                     int p_index = findIndex(ctx->eps2_index, eps2_size, p->bodynode.type);
 
                     if (q_index >= 0 && p_index >= 0)
                     {
-                        int eps2_val = q_index * eps2_size + p_index; /* combined index into the flattened eps2 table */
+                        int eps2_val = q_index * eps2_size + p_index; /* swapping p and q yields the same value in eps2 */
                         drSq += eps2_array[eps2_val];   /* use defined softening for this type pair */
                     }
                     else
@@ -107,9 +104,8 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 }
                 else
                 {
-                    /* One (or both) of the nodes has type 0 (e.g. a tree cell
-                     * mixing multiple structures), so use the minimum softening
-                     * length rather than guessing a specific pair */
+                    /* One (or both) of the nodes has type 0 (for a tree cell),
+                    * so use the minimum softening length */
                     drSq += eps2_min;
                 }
                 drab = mw_sqrt(drSq);
@@ -266,10 +262,9 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     const real* eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
 
-    /* Every body here is a real particle with a resolvable structure type
-     * (there are no tree cells in this exact O(N^2) sum), but if a type is
-     * ever missing from eps2_index, fall back to the minimum softening
-     * length in the table rather than an out-of-bounds/garbage index. */
+    /* This function is simpler without the tree code.
+    * Give minimum softening length if the index is not
+    * found in the table (shouldn't ever happen). */
     real eps2_min = eps2_array[0];
     for (i = 1; i < eps2_size * eps2_size; ++i)
     {
@@ -291,7 +286,7 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
         real eps2_val;
         if (b_index >= 0 && p_index >= 0)
         {
-            eps2_val = eps2_array[b_index * eps2_size + p_index]; /* combined index into the flattened eps2 table */
+            eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
         }
         else
         {

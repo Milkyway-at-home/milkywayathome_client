@@ -56,14 +56,8 @@ static int setCriterionT(lua_State* luaSt, void* v)
     return 0;
 }
 
-/* eps2 is a flattened eps2_size x eps2_size table of softening lengths, and
- * eps2_index is a list of eps2_size type labels indexing into it. Both are
- * variable-length (sized by eps2_size), so unlike a fixed-length member the
- * generic offset-only getRealArray/setRealArray can't be used directly here:
- * they'd need to know the length, but only get a pointer to the member
- * itself. These wrappers recover the enclosing NBodyCtx via offsetof
- * arithmetic (the same struct these fields live in) so they can look up
- * ctx->eps2_size and use it as the length. */
+/* Wrapper functions for eps2 and eps2_index, which are pointers
+*  to variable length arrays of size (eps2_size)^2 and eps2_size */
 
 static int getEps2(lua_State* luaSt, void* v)
 {
@@ -137,8 +131,7 @@ static int setEps2Index(lua_State* luaSt, void* v)
 
 /* Length of the table stored under `key` in the named-argument table at
  * `table`'s stack index, without disturbing anything else on the stack.
- * Used to cross-check eps2/eps2_index against eps2_size right after they're
- * all read in by handleNamedArgumentTable(). */
+ * Used to make sure that eps2 and eps2_index match the size defined by eps2_size */
 static size_t luaNamedTableFieldLen(lua_State* luaSt, int table, const char* key)
 {
     size_t len;
@@ -250,14 +243,9 @@ static int createNBodyCtx(lua_State* luaSt)
 
     handleNamedArgumentTable(luaSt, argTable, 1);
 
-    /* eps2 must hold exactly eps2_size^2 entries (a flattened eps2_size x
-     * eps2_size table of pairwise softening lengths) and eps2_index must
-     * hold exactly eps2_size entries (the type label for each row/column).
-     * These are read in as separate named arguments above with independent,
-     * variable lengths taken from whatever tables the workunit provided, so
-     * nothing else guarantees they agree with eps2_size -- catch a mismatch
-     * here instead of letting nbGravity/nbGravity_Exact index out of bounds
-     * with it later. */
+    /* eps2 must hold exactly eps2_size^2 entries and eps2_index must
+     * hold exactly eps2_size entries. Here we check that the sizes
+     * match, and error out if they do not. */
     if (ctx.eps2_size == 0)
     {
         return luaL_argerror(luaSt, 1, "eps2_size must be at least 1");

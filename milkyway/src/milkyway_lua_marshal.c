@@ -574,7 +574,7 @@ static void setNumberFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             return;
         }
 
-        /* size_t (e.g. counts used to size other arrays, such as eps2_size) */
+        /* Size (counts used to size other arrays) */
         if(strcmp(SIZE_TYPE, userDataTypeName) == 0)
         {
             *(size_t*) v = (size_t) lua_tonumber(luaSt, idx);
@@ -620,10 +620,8 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             {
                 if (p->arrayLen == MW_ARRAY_LEN_DYNAMIC)
                 {
-                    /* Pointer-typed field (e.g. real* eps2) with a length not
-                     * known at compile time: size from the actual Lua table
-                     * and allocate a fresh buffer, storing its address
-                     * through v (which points at the real* field itself). */
+                    /* Dummy variable for variable length arrays. Pulls 
+                    * the size from the Lua table to allocate memory */
                     real** arr_ptr = (real**)v;
                     size_t len = (size_t) luaL_getn(luaSt, idx);
                     *arr_ptr = (real*)calloc(len, sizeof(real));
@@ -635,12 +633,7 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
                 }
                 else
                 {
-                    /* Fixed-size inline array member (e.g. real foo[N]): v is
-                     * the array itself (decayed to a pointer to its first
-                     * element), not a real* variable to overwrite, so write
-                     * directly into it. arrayLen == 0 is a no-op here, which
-                     * some callers rely on for a field populated manually
-                     * elsewhere (e.g. HistogramParams' EMDRange). */
+                    /* Fixed-size inline arrays */
                     real* arr = (real*)v;
                     for (size_t i = 0; i < (size_t) p->arrayLen; ++i) {
                         lua_rawgeti(luaSt, idx, i + 1);
@@ -653,8 +646,7 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
             {
                 if (p->arrayLen == MW_ARRAY_LEN_DYNAMIC)
                 {
-                    /* Pointer-typed field (e.g. int* eps2_index); see the
-                     * REAL_TYPE case above. */
+                    /* Also a dummy variable for variable length arrays */
                     int** arr_ptr = (int**)v;
                     size_t len = (size_t) luaL_getn(luaSt, idx);
                     *arr_ptr = (int*)calloc(len, sizeof(int));
@@ -666,8 +658,7 @@ static void setValueFromType(lua_State* luaSt, const MWNamedArg* p, int idx)
                 }
                 else
                 {
-                    /* Fixed-size inline array member; see the REAL_TYPE case
-                     * above. */
+                    /* Fixed-size inline arrays */
                     int* arr = (int*)v;
                     for (size_t i = 0; i < (size_t) p->arrayLen; ++i) {
                         lua_rawgeti(luaSt, idx, i + 1);
