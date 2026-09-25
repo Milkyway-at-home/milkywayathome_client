@@ -102,6 +102,12 @@ set_target_properties(popt PROPERTIES
                              PUBLIC_HEADER ${libpopt_public_headers}
                              COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 
+# Ensure GNU extensions are available so functions like glob_pattern_p
+# are declared on glibc systems.
+if (CMAKE_COMPILER_IS_GNUCC)
+  target_compile_definitions(popt PRIVATE _GNU_SOURCE)
+endif()
+
 
 ########### install files ###############
 

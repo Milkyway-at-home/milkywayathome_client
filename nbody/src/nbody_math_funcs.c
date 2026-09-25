@@ -6,7 +6,7 @@
 // Generic function that numerically solves 2nd order ODEs of the form y'' = f(x, y(x), y'(x)), where y' is dy/dx
 // Uses 4th order Runge-Kutta numerical method, function input is of the form of ODE2ndDeriv
 // The last parameter returnXWhen0 is a special case boolean where the function will instead return the x value where the otherwise positive y(x) function hits zero/negative
-real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int returnXWhen0) {
+real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, const Dwarf* params, int returnXWhen0) {
     real nSteps = floor(stepsPerx * xEval);
     real stepRes = stepsPerx*xEval - nSteps;
     real deltax = xEval/nSteps;

@@ -22,6 +22,17 @@ cmake_minimum_required(VERSION 2.6)
 project(milkywayathome_client)
 enable_testing()
 
+# Workaround: some CMake/GCC toolchains export implicit link library
+# names with an `_asneeded` suffix (e.g. `gcc_s_asneeded`) which causes
+# the linker to search for non-existent lib files. Strip that suffix if
+# present so link commands use the real library names.
+if(DEFINED CMAKE_C_IMPLICIT_LINK_LIBRARIES)
+  string(REPLACE "_asneeded" "" CMAKE_C_IMPLICIT_LINK_LIBRARIES "${CMAKE_C_IMPLICIT_LINK_LIBRARIES}")
+endif()
+if(DEFINED CMAKE_CXX_IMPLICIT_LINK_LIBRARIES)
+  string(REPLACE "_asneeded" "" CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES}")
+endif()
+
 if(NOT MSVC)
   # Use the separate generator for MSVC
   # FIXME: This doesn't really work. The tests that cmake runs before anything else will detect 64bitness

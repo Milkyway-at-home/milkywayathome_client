@@ -693,6 +693,7 @@ void set_model_params(Dwarf* comp)
         case General_Hernquist:
             break;
         case Einasto:
+        {
             real M = comp->mass;
             real rs = comp->scaleLength; // half mass radius
             real n = comp->n; // Einasto index
@@ -721,6 +722,7 @@ void set_model_params(Dwarf* comp)
             comp->d = d;
             comp->const_gamma_func = GammaFunc(3.0 * n);    
             break;
+        }
         default:
             break;
     }

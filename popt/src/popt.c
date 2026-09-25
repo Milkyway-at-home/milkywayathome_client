@@ -594,7 +594,7 @@ if (_popt_debug)
 #endif
 
 /*@-nullstate@*/
-    rc = execvp(argv[0], (char *const *)argv);
+	rc = execvp(argv[0], (const char * const *)argv);
 /*@=nullstate@*/
 
 exit:
