@@ -39,12 +39,38 @@
  *     mapForceBody(). Measurably better with the inline, but only
  *     slightly.
  */
+
+static inline int findIndex(int arr[], int size, int target) {
+    for (int i = 0; i < size; i++) {
+        if (arr[i] == target) {
+            return i; // Return the index of the first match
+        }
+    }
+    return -1; // Return -1 if the value is not in the list
+}
+
 static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     mwbool skipSelf = FALSE;
 
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
+
+    const real* eps2_array = ctx->eps2;
+    const int eps2_size = (int) ctx->eps2_size;
+
+    /* Tree cells (and any index that isn't in the table) are coded as type 0 
+     * and fall back to the smallest softening length in the table.
+     * This should not impact the force calculations since cells are 
+     * necessarily far from the starting particle. */
+    real eps2_min = eps2_array[0];
+    for (int i = 1; i < eps2_size * eps2_size; ++i)
+    {
+        if (eps2_array[i] < eps2_min)
+        {
+            eps2_min = eps2_array[i];
+        }
+    }
 
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
@@ -60,15 +86,28 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 real drab, phii, mor3;
 
                 /* Compute gravity */
-                real eps2_array[3] = {0.0, 0.0, 0.0};
-                eps2_array[0] = ctx->eps2[0];
-                eps2_array[1] = ctx->eps2[1];
-                eps2_array[2] = ctx->eps2[2];
-                int eps2_index = 1;   /* index for the cross softening length */
-                int eps2_val = q->type + p->bodynode.type; /* adds body type of each particle together */
-                if (eps2_val == -2){eps2_index = 2;} /* switches to DM-DM softening if both particles are DM */
-                if (eps2_val == 2){eps2_index = 0;} /* switches to LM-LM softening if both particles are Baryons */
-                drSq += eps2_array[eps2_index];   /* use defined softening */
+                if (q->type != 0 && p->bodynode.type != 0)
+                {
+                    int q_index = findIndex(ctx->eps2_index, eps2_size, q->type);
+                    int p_index = findIndex(ctx->eps2_index, eps2_size, p->bodynode.type);
+
+                    if (q_index >= 0 && p_index >= 0)
+                    {
+                        int eps2_val = q_index * eps2_size + p_index; /* swapping p and q yields the same value in eps2 */
+                        drSq += eps2_array[eps2_val];   /* use defined softening for this type pair */
+                    }
+                    else
+                    {
+                        /* Type not present in eps2_index; fall back to the minimum softening length */
+                        drSq += eps2_min;
+                    }
+                }
+                else
+                {
+                    /* One (or both) of the nodes has type 0 (for a tree cell),
+                    * so use the minimum softening length */
+                    drSq += eps2_min;
+                }
                 drab = mw_sqrt(drSq);
                 phii = Mass(q) / drab;
                 mor3 = phii / drSq;
@@ -219,18 +258,44 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     int i;
     const int nbody = st->nbody;
     mwvector a = ZERO_VECTOR;
-    real eps2_array[3] = {0.0, 0.0, 0.0};
-    eps2_array[0] = ctx->eps2[0];
-    eps2_array[1] = ctx->eps2[1];
-    eps2_array[2] = ctx->eps2[2];
+
+    const real* eps2_array = ctx->eps2;
+    const int eps2_size = (int) ctx->eps2_size;
+
+    /* This function is simpler without the tree code.
+    * Give minimum softening length if the index is not
+    * found in the table (shouldn't ever happen). */
+    real eps2_min = eps2_array[0];
+    for (i = 1; i < eps2_size * eps2_size; ++i)
+    {
+        if (eps2_array[i] < eps2_min)
+        {
+            eps2_min = eps2_array[i];
+        }
+    }
+
+    /* p is fixed for the whole call, so its row/column in the table only
+     * needs to be looked up once */
+    int p_index = findIndex(ctx->eps2_index, eps2_size, p->bodynode.type);
 
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
-        int eps2_index = b->bodynode.type + p->bodynode.type; /* finds the particle types of each body */
-        eps2_index = (eps2_index-2)/(-2); /* changes from particle type to index (0 for LM, 1 for cross, 2 for DM) */
+        int b_index = findIndex(ctx->eps2_index, eps2_size, b->bodynode.type);
+
+        real eps2_val;
+        if (b_index >= 0 && p_index >= 0)
+        {
+            eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
+        }
+        else
+        {
+            /* Type not present in eps2_index; fall back to the minimum softening length */
+            eps2_val = eps2_min;
+        }
+
         mwvector dr = mw_subv(Pos(b), Pos(p));
-        real drSq = mw_sqrv(dr) + eps2_array[eps2_index];
+        real drSq = mw_sqrv(dr) + eps2_val;
 
         real drab = mw_sqrt(drSq);
         real phii = Mass(b) / drab;

@@ -456,7 +456,9 @@ typedef struct MW_ALIGN_TYPE
  */
 typedef struct MW_ALIGN_TYPE
 {
-    real eps2[3];                /* (potential softening parameter)^2 */
+    real* eps2;                /* (potential softening parameters)^2 */
+    int* eps2_index;
+    size_t eps2_size;
     real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
@@ -535,7 +537,7 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0, 0.0, 0.0,                                                      \
+#define EMPTY_NBODYCTX { NULL, NULL, 0, 0.0, 0.0, 0.0, 0.0, 0.0,                                            \
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                   \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                             \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                        \

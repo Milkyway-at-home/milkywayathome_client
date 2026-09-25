@@ -31,7 +31,9 @@ function makeContext()
    return NBodyCtx.create{
       timeEvolve = 5.945,
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
-      eps2       = calculateEps2(totalBodies, r0),
+      eps2       = {(calculateEps2(totalBodies, r0))},
+      eps2_index = {1},
+      eps2_size  = 1,
       criterion  = "TreeCode",
       useQuad    = true,
       theta      = 1.0

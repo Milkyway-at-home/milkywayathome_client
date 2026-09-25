@@ -36,7 +36,9 @@ function getTestNBodyState(t)
       timestep    = dt,
       timeEvolve  = 42.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
       theta       = t.theta,
-      eps2        = {eps2, eps2, eps2},
+      eps2        = {eps2, eps2, eps2, eps2},
+      eps2_index  = {1, -1},
+      eps2_size   = 2,
       b           = 53.5,
       r           = 28.6,
       vx          = -156,

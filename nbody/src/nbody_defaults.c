@@ -24,7 +24,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 const NBodyCtx defaultNBodyCtx =
 {
     /* Grr lack of C99 named struct initializers in MSVC */
-    /* .eps2            */  {0.0, 0.0, 0.0},
+    /* .eps2            */  NULL,
+    /* .eps2_index      */  NULL,
+    /* .eps2_size       */  0,
     /* .theta           */  -1.0,  /* Invalid */
 
     /* .timestep        */  0.0,

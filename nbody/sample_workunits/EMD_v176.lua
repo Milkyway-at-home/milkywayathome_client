@@ -96,7 +96,9 @@ function makeContext()
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, soften_length ),
+      eps2       = {(calculateEps2(totalBodies, soften_length))},
+      eps2_index = {1},
+      eps2_size  = 1,
       criterion   = "TreeCode",
       useQuad     = true,
       useBestLike   = use_best_likelihood,
