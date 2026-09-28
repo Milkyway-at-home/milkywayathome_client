@@ -26,6 +26,7 @@
 #define _MILKYWAY_MATH_FLOAT_H_
 
 #include "milkyway_extra.h"
+#include "milkyway_math_funcs.h"
 
 #if DOUBLEPREC
 #error Double enabled with float math
@@ -72,14 +73,14 @@ typedef MW_ALIGN_TYPE_V(16) float float4[4];
 #define mw_atanh atanhf
 #define mw_atanpi(x) (mw_atan(x) / M_PI)
 #define mw_atan2pi(x) (mw_atan2(x) / M_PI)
-#define mw_cbrt cbrtf
+#define mw_cbrt(x) mw_pow((x), 1.0 / 3.0) // CORE-MATH function not included for single precision
 #define mw_ceil ceilf
 #define mw_copysign copysignf
 #define mw_cospi(x) mw_cos(M_PI * (x))
 #define mw_sinpi(x) mw_sin(M_PI * (x))
 #define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_erfc erfcf
-#define mw_erf erff
+#define mw_erf erff // We have not included the correct CORE-MATH function for single precision, so using default. May cause issues but I doubt we will ever use single precision anyway
 
 #if HAVE_EXP2
   #define mw_exp2 exp2f
@@ -127,7 +128,6 @@ typedef MW_ALIGN_TYPE_V(16) float float4[4];
 #define mw_round roundf
 
 #define mw_sqrt sqrtf
-#define mw_tgamma tgammaf
 #define mw_trunc truncf
 
 

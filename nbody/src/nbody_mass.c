@@ -23,10 +23,10 @@
 #include "milkyway_math.h"
 #include "nbody_types.h"
 #include "nbody_coordinates.h"
+#include "nbody_math_funcs.h"
 
 
-// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
-// There functions are involved in calculating a binomial distribution
+// These functions are involved in calculating a binomial distribution
 /*In order to decrease the size of the numbers
  * computed all these functions are
  * calculated in log space*/
@@ -80,225 +80,6 @@ real probability_match(int n, real ktmp, real pobs)
     
     return mw_exp(result);
 }
-// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
-// IMPLEMENTATION OF GAMMA FUNCTIONS. COMPLETE AND INCOMPLETE
-// These functions are adapted from the Numerical Recipes in C 2nd ed except for gammln.
-/* Returns ln(Gamma(z)) via the Lanczos approximation (NR 3rd ed). */
-real gammln(const real z) 
-{
-    //Alogrithm for the calculation of the Lanczos Approx of the complete Gamma function 
-    //as implemented in Numerical Recipes 3rd ed, 2007.
-    real g = 4.7421875; //g parameter for the gamma function
-    real x, tmp, y, A_g;
-    
-    //these are the cn's
-    static const real coeff[14] = {57.1562356658629235,-59.5979603554754912,
-                                14.1360979747417471,-0.491913816097620199,.339946499848118887e-4,
-                                .465236289270485756e-4,-.983744753048795646e-4,.158088703224912494e-3,
-                                -.210264441724104883e-3,.217439618115212643e-3,-.164318106536763890e-3,
-                                .844182239838527433e-4,-.261908384015814087e-4,.368991826595316234e-5};
-    y = x = z;
-    tmp = x + g + 0.5;
-    tmp = (x + 0.5) * mw_log(tmp) - tmp;
-    A_g = 0.999999999999997092; //this is c0
-    
-    for (int j = 0; j < 14; j++) 
-    {
-        A_g += coeff[j] / ++y;
-    } //calculates the series approx sum
-        
-    //sqrt(2 * pi) = 2.5066282746310005
-    tmp += mw_log(2.5066282746310005 * A_g / x);//returns the log of the gamma function
-    
-    return tmp;
-}
-
-/*
- * Returns the incomplete gamma function P(a, x), evaluated by its
- * series representation. Also returns ln(Gamma(a)) through gln.
- */
-static real gser(const real a, const real x, real* gln)
-{
-    const int itmax = 100;
-    const real eps = (real) 3.0e-7;
-    real sum, del, ap;
-
-    *gln = gammln(a);
-    if (x <= 0.0)
-    {
-        return 0.0;
-    }
-
-    ap = a;
-    del = sum = 1.0 / a;
-    for (int n = 1; n <= itmax; ++n)
-    {
-        ap += 1.0;
-        del *= x / ap;
-        sum += del;
-        if (mw_fabs(del) < mw_fabs(sum) * eps)
-        {
-            return sum * mw_exp(-x + a * mw_log(x) - (*gln));
-        }
-    }
-
-    mw_printf("WARNING: gser did not converge (a=%f, x=%f)\n", a, x);
-    return sum * mw_exp(-x + a * mw_log(x) - (*gln));
-}
-
-/*
- * Returns the incomplete gamma function Q(a, x), evaluated by its
- * continued-fraction representation (modified Lentz method).
- * Also returns ln(Gamma(a)) through gln.
- */
-static real gcf(const real a, const real x, real* gln)
-{
-    const int itmax = 100;
-    const real eps = (real) 3.0e-7;
-    const real fpmin = (real) 1.0e-30;
-    real an, b, c, d, del, h;
-
-    *gln = gammln(a);
-    b = x + 1.0 - a;
-    if (mw_fabs(b) < fpmin)
-    {
-        b = fpmin;
-    }
-    c = 1.0 / fpmin;
-    d = 1.0 / b;
-    h = d;
-
-    for (int i = 1; i <= itmax; ++i)
-    {
-        an = -(real) i * ((real) i - a);
-        b += 2.0;
-        d = an * d + b;
-        if (mw_fabs(d) < fpmin)
-        {
-            d = fpmin;
-        }
-        c = b + an / c;
-        if (mw_fabs(c) < fpmin)
-        {
-            c = fpmin;
-        }
-        d = 1.0 / d;
-        del = d * c;
-        h *= del;
-        if (mw_fabs(del - 1.0) < eps)
-        {
-            return mw_exp(-x + a * mw_log(x) - (*gln)) * h;
-        }
-    }
-
-    mw_printf("WARNING: gcf did not converge (a=%f, x=%f)\n", a, x);
-    return mw_exp(-x + a * mw_log(x) - (*gln)) * h;
-}
-
-/*
- * Returns the regularized lower incomplete gamma function:
- * P(a, x) = gamma(a, x) / Gamma(a).
- * Uses series for x < a + 1, otherwise returns 1 - Q(a, x).
- */
-real gammp(const real a, const real x)
-{
-    real gln;
-
-    if (x < 0.0 || a <= 0.0)
-    {
-        mw_printf("WARNING: Invalid arguments in gammp (a=%f, x=%f)\n", a, x);
-        return NAN;
-    }
-
-    if (x < (a + 1.0))
-    {
-        return gser(a, x, &gln);
-    }
-    return 1.0 - gcf(a, x, &gln);
-}
-
-/*
- * Returns the regularized upper incomplete gamma function:
- * Q(a, x) = Gamma(a, x) / Gamma(a) = 1 - P(a, x).
- * Uses series for x < a + 1, otherwise continued fraction.
- */
-real gammq(const real a, const real x)
-{
-    real gln;
-
-    if (x < 0.0 || a <= 0.0)
-    {
-        mw_printf("WARNING: Invalid arguments in gammq (a=%f, x=%f)\n", a, x);
-        return NAN;
-    }
-
-    if (x < (a + 1.0))
-    {
-        return 1.0 - gser(a, x, &gln);
-    }
-    return gcf(a, x, &gln);
-}
-
-/* Returns the complete gamma function Gamma(z). */
-real GammaFunc(const real z)
-{
-    return mw_exp(gammln(z));
-}
-
-/* Returns the upper incomplete gamma function Gamma(a, x). */
-real UpperIncompleteGammaFunc(real a, real x)
-{
-    return GammaFunc(a) * gammq(a, x);
-}
-
-/* Returns the lower incomplete gamma function Gamma(a, x). */
-real LowerIncompleteGammaFunc(real a, real x)
-{
-    return GammaFunc(a) * gammp(a, x);
-}
-
-/*
- * Numerical Recipes erff(x):
- * returns erf(x) using the regularized incomplete gamma P(1/2, x^2).
- */
-real ErrorFunc(real x)
-{
-    const real xsq = x * x;
-    return (x < 0.0) ? -gammp(0.5, xsq) : gammp(0.5, xsq);
-}
-
-/*
- * Numerical Recipes erffc(x):
- * returns erfc(x) using P(1/2, x^2) for x < 0 and Q(1/2, x^2) for x >= 0.
- */
-real ComplementaryErrorFunc(real x)
-{
-    const real xsq = x * x;
-    return (x < 0.0) ? 1.0 + gammp(0.5, xsq) : gammq(0.5, xsq);
-}
-
-/*
- * Numerical Recipes erfcc(x):
- * fast erfc approximation with fractional error < 1.2e-7.
- */
-real ComplementaryErrorFuncApprox(real x)
-{
-    real z = mw_fabs(x);
-    real t = 1.0 / (1.0 + 0.5 * z);
-    real ans = t * mw_exp(-z * z - 1.26551223
-                          + t * (1.00002368
-                          + t * (0.37409196
-                          + t * (0.09678418
-                          + t * (-0.18628806
-                          + t * (0.27886807
-                          + t * (-1.13520398
-                          + t * (1.48851587
-                          + t * (-0.82215223
-                          + t * 0.17087277)))))))));
-    return (x >= 0.0) ? ans : 2.0 - ans;
-}
-
-// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // 
 
 real calc_vLOS(const mwvector v, const mwvector p, real sunGCdist)
 {
@@ -545,15 +326,24 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
     unsigned int betaBins = data->betaBins;
     unsigned int nbins = lambdaBins * betaBins;
     real n = (real) histogram->totalSimulated;
-    real nSim_uncut = (real) histogram->totalNum;   /* Total simulated before dropping bins */
+    real nSim = (real) histogram->totalNum;   /* Total simulated before dropping bins */
     real nData = (real) data->totalNum;
     real nDataVariance = 0.0;
     real histMass = histogram->massPerParticle;
     real dataMass = data->massPerParticle;
     real p; /* probability of observing an event */
-    real rawCount;
-    real nSim = nSim_uncut;
-    
+    real num = 0.0;
+    real denom = 0.0;
+    real CostComponent = 0.0;
+    HistogramParams params = data->params; /* Use the data histogram params for EMD ranges */
+    real EMDStart = 0.0;
+    real EMDEnd = 0.0;
+    unsigned int simRangeCount = 0;
+    unsigned int dataRangeCount = 0;
+    unsigned int totalRangeCount = 0; // Total counts in all EMD Ranges, used for weighting the likelihood
+    unsigned int i = 0;
+    unsigned int j = 0;
+
     if (data->lambdaBins != histogram->lambdaBins || data->betaBins != histogram->betaBins)
     {
         return NAN;
@@ -573,44 +363,83 @@ real nbCostComponent(const NBodyHistogram* data, const NBodyHistogram* histogram
         /*In order to calculate likelihood the masses are necessary*/
         return NAN;
     }
-    
-    
-    /*
-     * Correcting for bins in the comparison histogram that are not 
-     * included in the comparison. Also calculating data errors.
-     */
-    for (unsigned int i = 0; i < nbins; ++i)
+
+    //Cost component is calculated over each range that we calculate EMD for. Each range is weighted by the % of counts in that range in the data histogram.
+    //This will ensure the mass is correct for each separate region, not just that the total mass matches.
+
+    if(params.nRange == 0 && histogram->params.nRange < 2) // If no ranges are defined, use full histogram
     {
-        if(!data->data[i].useBin)
+        // mw_printf("No EMD Ranges defined, using full histogram\n");
+        params.nRange = 2;
+        params.EMDRange[0] = data->data[0].lambda;
+        params.EMDRange[1] = data->data[nbins - 1].lambda;
+    }
+    else if(histogram->params.nRange >= 2) // If values are given through lua, use those
+    {
+        params.nRange = histogram->params.nRange;
+        for(i = 0; i < histogram->params.nRange; i++)
         {
-            rawCount = mw_round(histogram->data[i].variable * nSim_uncut);
-            nSim -= rawCount;
-        }
-        /*WARNING: These are NOT the errors in the normalized counts, but rather the errors in the
-          counts divided by the total number of bodies within the histogram. There IS a difference!*/
-        else
-        {
-            nDataVariance += sqr(data->data[i].err*nData);
+            params.EMDRange[i] = histogram->params.EMDRange[i];
         }
     }
-    
-    /* this is the newest version of the cost function
-     * it uses a combination of the binomial error for sim 
-     * and the poisson error for the data
-     */
-    p = ( nSim / n) ;
 
-    /*Print statements for debugging likelihood*/
-//    mw_printf("dataMass = %.15f\n",dataMass);
-//    mw_printf("nData    = %.15f\n",nData);
-//    mw_printf("histMass = %.15f\n",histMass);
-//    mw_printf("nSim     = %.15f\n",nSim);
-//    mw_printf("p        = %.15f\n",p);
-//    mw_printf("Sim_Mass = %.15f\n",histMass*nSim);
+    if(params.nRange % 2 != 0)
+    {
+        params.nRange -= 1; //Make sure nRange is even
+    }
 
-    real num = - sqr(dataMass * nData - histMass * nSim);
-    real denom = 2.0 * (sqr(dataMass) * nDataVariance + sqr(histMass) * nSim * p * (1.0 - p));
-    real CostComponent = num / denom; //this is the log of the cost component
+    for(i = 0; i < params.nRange; i = i + 2)
+    {
+        /*Renormalize simulated hist to given EMD Range*/
+        EMDStart = params.EMDRange[i];
+        EMDEnd = params.EMDRange[i+1];
+        // mw_printf("Using EMD Range: {%f,%f}\n", EMDStart, EMDEnd);
+        if(!(EMDStart <= EMDEnd))
+        {
+            mw_printf("Error reading EMD calculation ranges: EMDStart > EMDEnd \n");
+            return NAN;
+        }
+        simRangeCount = 0;
+        for(j = 0; j < nbins; j++) /*Sum up total counts of bins in emd range*/
+        {
+            if(histogram->data[j].lambda >= EMDStart && histogram->data[j].lambda <= EMDEnd && data->data[j].useBin)
+            {
+                simRangeCount += mw_round(histogram->data[j].variable * nSim);
+            }
+        }
+
+        /*Repeat for the input data hist*/
+        dataRangeCount = 0;
+        for(j = 0; j < nbins; j++) /*Sum up total counts of bins in emd range*/
+        {
+            if(data->data[j].lambda >= EMDStart && data->data[j].lambda <= EMDEnd && data->data[j].useBin)
+            {
+                dataRangeCount += mw_round(data->data[j].variable * nData);
+                /*WARNING: These are NOT the errors in the normalized counts, but rather the errors in the
+                counts divided by the total number of bodies within the histogram. There IS a difference!*/
+                nDataVariance += sqr(data->data[j].err*nData);
+            }
+        }
+        totalRangeCount += dataRangeCount;
+
+        /* this is the newest version of the cost function
+         * it uses a combination of the binomial error for sim 
+         * and the poisson error for the data
+         */
+        p = ( simRangeCount / n) ;
+
+        /*Print statements for debugging likelihood*/
+        //mw_printf("dataMass      = %.15f\n",dataMass);
+        //mw_printf("nData         = %.15f\n",nData);
+        //mw_printf("histMass      = %.15f\n",histMass);
+        //mw_printf("simRangeCount = %.15f\n",simRangeCount);
+        //mw_printf("p             = %.15f\n",p);
+        //mw_printf("Sim_Mass      = %.15f\n",histMass*simRangeCount);
+
+        num = - sqr(dataMass * dataRangeCount - histMass * simRangeCount);
+        denom = 2.0 * (sqr(dataMass) * nDataVariance + sqr(histMass) * simRangeCount * p * (1.0 - p));
+        CostComponent += num / denom; 
+    }
 
     /* the cost component is negative. Returning a postive value */
     return -CostComponent;

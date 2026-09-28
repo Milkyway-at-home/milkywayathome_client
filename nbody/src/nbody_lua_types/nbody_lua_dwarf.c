@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_lua_dwarf.h"
 #include "nbody_check_params.h"
+#include "nbody_mixeddwarf.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 
@@ -51,6 +52,7 @@ static const MWEnumAssociation dwarfOptions[] =
 static int createDwarf(lua_State* luaSt, const MWNamedArg* argTable, Dwarf* h)
 {
     oneTableArgument(luaSt, argTable);
+    set_model_params(h);
     pushDwarf(luaSt, h);
     return 1;
 }

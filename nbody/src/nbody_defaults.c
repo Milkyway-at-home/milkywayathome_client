@@ -88,11 +88,12 @@ const NBodyCtx defaultNBodyCtx =
     /* .LMCDynaFric     */  FALSE,
     /* .coulomb_log     */  0.0,
 
+    /* .calibrationRuns */   0,
+    /* .samplingBounds  */  {0.0, 0.0},
+
     /* .Ntsteps         */  0,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
     /* .nStep           */  0,
-
-    /* .calibrationRuns */   0,
 
     /* .pot             */  EMPTY_POTENTIAL
 };

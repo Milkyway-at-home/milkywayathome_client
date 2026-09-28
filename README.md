@@ -140,10 +140,11 @@ For the ratio arguments `[4]` and `[6]`, ratios are `baryons/(baryons + dark mat
 ### Double Component Model
 
 - **Plummer:** `{mass, scaleLength}`
-- **NFW:** `{mass, scaleLength[, rcut]}`  # rcut is an optional cutoff radius; ignored if not set
+- **NFW:** `{mass, scaleLength[, rcut]}`  - input mass is M200 | rcut is an optional cutoff radius; ignored if not set
 - **General Hernquist:** `{mass, scaleLength}`
-- **Cored:** `{mass, scaleLength, r1, rc[, rcut]}` # rcut is an optional cutoff radius; ignored if not set
-- **Single component King** `{mass, scaleLength, W0}` #scaleLength is the model's tidal radius (where density vanishes)
+- **Cored:** `{mass, scaleLength, r1, rc[, rcut]}` - input mass is M200 of NFW profile | scaleLength is rs of the NFW profile | rcut is an optional cutoff radius; ignored if not set
+- **Single component King** `{mass, scaleLength, W0}` - scaleLength is the model's tidal radius (where density vanishes)
+- **Einasto:** `{mass, scaleLength, n},` - n is the Einasto index 
 
 **The double component mixed dwarf code can be used as a single component dwarf generator.** 
 To do this set the number of baryons equal to the total number of particles in your `.lua`, set the mass ratio to 1.0 in `run_nbody.sh`, set radius ratio to any number between but not including 0.0 and 1.0.

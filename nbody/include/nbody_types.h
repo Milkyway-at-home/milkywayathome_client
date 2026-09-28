@@ -523,6 +523,8 @@ typedef struct MW_ALIGN_TYPE
 
     unsigned int calibrationRuns; //for calibrating time-dependent potentials
 
+    real samplingBounds[2];    /* radial sampling bounds for mixed dwarf components; 0 uses dynamic defaults */
+
     real Ntsteps;              /* number of time steps to run when manual control is on */
     time_t checkpointT;        /* Period to checkpoint when not using BOINC */
     unsigned int nStep;
@@ -544,6 +546,7 @@ typedef struct MW_ALIGN_TYPE
                          FALSE, 0,                                                                            \
                          0, 0, 0, FALSE, 0,                                                                   \
                          0,                                                                                   \
+                         {0.0, 0.0},                                                                          \
                          0, 0, 0,                                                                             \
                          EMPTY_POTENTIAL}
 

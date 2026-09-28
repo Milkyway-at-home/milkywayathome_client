@@ -144,6 +144,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "LMCDynaFric",     LUA_TBOOLEAN,NULL,      FALSE, &ctx.LMCDynaFric,       1 },
             { "coulomb_log",     LUA_TNUMBER, NULL,      FALSE, &ctx.coulomb_log,       1 },
             { "calibrationRuns", LUA_TNUMBER, UINT_TYPE, FALSE, &ctx.calibrationRuns,   1 },
+            { "samplingBounds",  LUA_TTABLE,  REAL_TYPE, FALSE, &ctx.samplingBounds,    2 },
             END_MW_NAMED_ARG
         };
 

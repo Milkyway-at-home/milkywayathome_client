@@ -157,7 +157,8 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_caustic.c
                   ${NBODY_SRC_DIR}/nbody_particle_data.c
                   #${NBODY_SRC_DIR}/blender_visualizer.c
-                  ${NBODY_SRC_DIR}/nbody_king_model.c)
+                  ${NBODY_SRC_DIR}/nbody_king_model.c
+                  ${NBODY_SRC_DIR}/nbody_math_funcs.c)
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
@@ -198,7 +199,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_caustic.h
                       ${NBODY_INCLUDE_DIR}/nbody_particle_data.h
                       #${NBODY_INCLUDE_DIR}/blender_visualizer.h
-                      ${NBODY_INCLUDE_DIR}/nbody_king_model.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_king_model.h
+                      ${NBODY_INCLUDE_DIR}/nbody_math_funcs.h)
                       
 
 

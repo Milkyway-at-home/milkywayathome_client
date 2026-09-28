@@ -6,6 +6,7 @@
 #include "test_env_util.h"
 #include "nbody_lua_models.h"
 #include "nbody_potential_types.h"
+#include "nbody_mixeddwarf.h"
 
 int check_result(real* eps_array, real eps[3]) {
     for (int i = 0; i < 3; i++) {
@@ -49,6 +50,8 @@ int main() {
 
     light_comp->type = 0;
     dark_comp->type = 0;
+    set_model_params(light_comp);
+    set_model_params(dark_comp);
 
     eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
 
@@ -72,6 +75,7 @@ int main() {
     eps[2] = eps_d;
 
     dark_comp->type = 2;
+    set_model_params(dark_comp);
 
     eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
 
@@ -95,6 +99,7 @@ int main() {
     eps[2] = eps_d;
 
     dark_comp->type = 1;
+    set_model_params(dark_comp);
 
     eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
 
@@ -109,9 +114,9 @@ int main() {
     }
 
     //Plummer-Cored
-    eps_l = 0.000002281581053752841276613221033198186660229112021625041961669921875;
-    eps_cross = 0.000008748023194028815212146266144799255926045589148998260498046875;
-    eps_d = 0.000035177338064575728606396542996748166842735372483730316162109375;
+    eps_l = 0.00000230689103823265558449785196659664876506212749518454074859619140625;
+    eps_cross = 0.00000339345634842016798151374291914184055940495454706251621246337890625;
+    eps_d = 0.000014903674987185920480813917932128020993332029320299625396728515625;
 
     eps[0] = eps_l;
     eps[1] = eps_cross;
@@ -120,6 +125,7 @@ int main() {
     dark_comp->type = 4;
     dark_comp->r1 = 0.7;
     dark_comp->rc = 0.6;
+    set_model_params(dark_comp);
 
     eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
 
@@ -134,15 +140,16 @@ int main() {
     }
 
     //Plummer-Cutoff-Cored
-    eps_l = 0.000002281581053752841276613221033198186660229112021625041961669921875;
-    eps_cross = 0.000008748023194028815212146266144799255926045589148998260498046875;
-    eps_d = 0.000035177338064575728606396542996748166842735372483730316162109375;
+    eps_l = 0.00000230689103823258231614791446961731935516581870615482330322265625;
+    eps_cross = 0.00000339345634842016798151374291914184055940495454706251621246337890625;
+    eps_d = 0.000014903674987185920480813917932128020993332029320299625396728515625;
 
     eps[0] = eps_l;
     eps[1] = eps_cross;
     eps[2] = eps_d;
 
     dark_comp->rcut = 4.5;
+    set_model_params(dark_comp);
 
     eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
 
@@ -168,6 +175,7 @@ int main() {
     dark_comp->type = 1;
     dark_comp->r1 = 0.0;
     dark_comp->rc = 0.0;
+    set_model_params(dark_comp);
 
     eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
 
@@ -181,6 +189,31 @@ int main() {
         mw_printf("Plummer-Cutoff-NFW model passed\n");
     }
 
+    //Plummer-Einasto
+    eps_l = 0.000001144057199827858496132544467716041225457956898026168346405029296875;
+    eps_cross = 0.00000201842458515988863913619665024778981887720874510705471038818359375;
+    eps_d = 0.00000201842458515988863913619665024778981887720874510705471038818359375;
+
+    eps[0] = eps_l;
+    eps[1] = eps_cross;
+    eps[2] = eps_d;
+
+    dark_comp->type = 3;
+    dark_comp->n = 6.0;
+    dark_comp->rcut = 0.0;
+    set_model_params(dark_comp);
+
+    eps_array = nbCalculateEps2_NEW(light_comp, dark_comp, lm_nbody, nbody); 
+
+    if (!check_result(eps_array, eps)) {
+        mw_printf("Test failed for Plummer-einasto model\n");
+        mw_printf("Expected: %.80f, %.80f, %.80f\n", eps[0], eps[1], eps[2]);
+        mw_printf("Got: %.80f, %.80f, %.80f\n", eps_array[0], eps_array[1], eps_array[2]);
+        failed = 1;
+    }
+    else {
+        mw_printf("Plummer-Einasto model passed\n");
+    }
+
     return failed;
 }
-
