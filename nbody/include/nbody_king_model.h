@@ -9,12 +9,18 @@
 
 typedef real (*ODE2ndDeriv)(real, real, real, Dwarf *params);
 
-real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int returnXWhen0);
+typedef struct {
+    real x;
+    real y;
+    real dydx;
+} ODE2ndOrderVals;
+
+ODE2ndOrderVals ODE2ndOrderSolver(real xEval, int stepsPerx, real xInit, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int stopWhenZero);
+real interpolateLinear(real x, real x0, real x1, real f0, real f1);
 real kingDimlessRho(real W, real W0);
 real kingDimless2ndDeriv(real R, real W, real dWdR, Dwarf *model);
 real kingDimlessMass(real R, Dwarf* model, Dwarf* unusedModel, real unusedEnergy, mwbool unusedIsDark);
-real kingDensityFromPsi(real psi, real sig, real rho1);
-real kingRelPot2ndDeriv(real r, real psi, real dPsidr, Dwarf *model);
+
 
 
 #endif

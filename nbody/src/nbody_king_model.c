@@ -8,10 +8,13 @@
 // Generic function that numerically solves 2nd order ODEs of the form y'' = f(x, y(x), y'(x)), where y' is dy/dx
 // Uses 4th order Runge-Kutta numerical method, function input is of the form of ODE2ndDeriv
 // The last parameter returnXWhen0 is a special case boolean where the function will instead return the x value where the otherwise positive y(x) function hits zero/negative
-real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int returnXWhen0) {
-    real nSteps = floor(stepsPerx * xEval);
-    real stepRes = stepsPerx*xEval - nSteps;
-    real deltax = xEval/nSteps;
+ODE2ndOrderVals ODE2ndOrderSolver(real xEval, int stepsPerx, real xInit, real yInit, real yPrimeInit, ODE2ndDeriv f, Dwarf* params, int stopWhenZero) {
+    ODE2ndOrderVals out;
+    real xDist = xEval-xInit;
+
+    real nSteps = mw_floor(stepsPerx * xDist);
+    real stepRes = stepsPerx*xDist - nSteps;
+    real deltax = xDist/nSteps;
     
     real y = yInit; // current value for y(x)
     real z = yPrimeInit; // let z be y'(x)
@@ -22,7 +25,7 @@ real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, O
     // the the last loop needs to be one before the desired number of steps, since the end of a loop gives the values for the next step
     for (int n = 1; n < nSteps + 1; n++) {
         // l factors adjust z, k factors adjust y
-        x = n * deltax;
+        x = (n * deltax + xInit);
 
         l1 = deltax * f(x, y, z, params);
         k1 = deltax * z;
@@ -39,9 +42,8 @@ real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, O
         *yCurr = *yCurr + (1.0/6.0)*(k1 + 2.0*k2 + 2.0*k3 + k4);
         *zCurr = *zCurr + (1.0/6.0)*(l1 + 2.0*l2 + 2.0*l3 + l4);
 
-        if ((*yCurr <= 0.0 || isnan(*yCurr) || !isfinite(*yCurr)) && returnXWhen0 == 1) {
+        if ((*yCurr <= 0.0 || isnan(*yCurr) || !isfinite(*yCurr)) && stopWhenZero == 1) {
             stepRes = 0.0;
-            *yCurr = x;
             break;
         }
 
@@ -61,9 +63,21 @@ real ODE2ndOrderSolver(real xEval, int stepsPerx, real yInit, real yPrimeInit, O
         *yCurr = *yCurr + (1.0/6.0)*(k1 + 2.0*k2 + 2.0*k3 + k4);
         *zCurr = *zCurr + (1.0/6.0)*(l1 + 2.0*l2 + 2.0*l3 + l4);
     }
-    return *yCurr;
+
+    out.x = x + deltax;
+    out.y = *yCurr;
+    out.dydx = *zCurr;
+
+    return out;
 }
 
+real interpolateLinear(real x, real x0, real x1, real f0, real f1) {
+    /* for a general function f(x'), linearly interpolate between f(x0) and f(x1) to 
+    get f(x) where x0 < x < x1
+    */
+   real slope = (f1-f0)/(x1-x0);
+   return (slope*x) + f0 - (x0*slope);
+}
 
 real kingDimlessRho(real W, real W0) {
     real rho = mw_exp(W)*mw_erf(mw_sqrt(W)) - mw_sqrt(4.0*W/M_PI)*(1.0 + (2.0/3.0)*W);
@@ -82,20 +96,6 @@ real kingDimless2ndDeriv(real R, real W, real dWdR, Dwarf *model) {
 // This function is formatted in such a way that gauss_quad() will accept it, the integrand for mu parameter
 // parameters are radius, Dwarf (used), Dwarf (unused), energy (unused), isDark (unused)
 real kingDimlessMass(real R, Dwarf* model, Dwarf* unusedModel, real unusedEnergy, mwbool unusedIsDark) {
-    real W_R = ODE2ndOrderSolver(R, 1000, model->W0, 0.0, kingDimless2ndDeriv, model, 0);
+    real W_R = ODE2ndOrderSolver(R, 1000, 0.0, model->W0, 0.0, kingDimless2ndDeriv, model, 0).y;
     return kingDimlessRho(W_R, model->W0) * 4.0 * M_PI * R * R;
-}
-
-// Equation 4.111 from Binney & Tremaine 2nd ed.
-real kingDensityFromPsi(real psi, real sig, real rho1) {
-    real erfTerm = mw_exp(psi/(sig*sig)) * mw_erf(mw_sqrt(psi/(sig*sig)));
-    return rho1 * (erfTerm - mw_sqrt(4.0*psi/(M_PI*sig*sig))*(1.0 + (2.0*psi)/(3.0*sig*sig)));
-}
-
-// Equation 4.112 from Binney & Tremaine 2nd ed.
-real kingRelPot2ndDeriv(real r, real psi, real dPsidr, Dwarf *model) {
-    real rho1 = model->rho1;
-    real sigma = model->sigma;
-    real rhs = -4.0*M_PI*kingDensityFromPsi(psi, sigma, rho1);
-    return rhs + (-2.0/r)*dPsidr;
 }

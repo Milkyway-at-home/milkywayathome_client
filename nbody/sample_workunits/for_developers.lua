@@ -44,16 +44,16 @@ preset_orbit_parameter_vz = 147.4   -- kpc/Gyr
 -- --       2 - TWO COMPONENT MODEL    -- -- -- -- -- -- -- -- -- -- -- -- --
 -- --       1 - SINGLE COMPONENT MODEL  -- -- -- - -- -- -- -- -- -- -- -- -- 
 -- --       0 - NO DWARF MODEL         -- -- -- -- -- -- -- -- -- -- -- -- --
-ModelComponents   = 2         -- -- TWO COMPONENTS SWITCH   -- -- -- -- -- --
-manual_bodies     = false     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
+ModelComponents   = 0         -- -- TWO COMPONENTS SWITCH   -- -- -- -- -- --
+manual_bodies     = true     -- -- USE THE MANUAL BODY LIST   -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
         
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- STANDARD  SETTINGS   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --      
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-totalBodies           = 40000       -- -- NUMBER OF TOTAL BODIES                                               -- --
-totalLightBodies      = 20000       -- -- NUMBER OF LIGHT MATTER BODIES                                        -- --
+totalBodies           = 10000       -- -- NUMBER OF TOTAL BODIES                                               -- --
+totalLightBodies      = 10000       -- -- NUMBER OF LIGHT MATTER BODIES                                        -- --
 
 nbodyLikelihoodMethod = "EMD"       -- -- HIST COMPARE METHOD                                                  -- --
 nbodyMinVersion       = "1.96"      -- -- MINIMUM APP VERSION                                                  -- --
@@ -63,7 +63,7 @@ use_tree_code         = true        -- -- USE TREE CODE NOT EXACT               
 print_reverse_orbit   = false       -- -- PRINT REVERSE ORBIT SWITCH (WORKS FOR LMC_body = false)              -- --
 print_out_parameters  = false       -- -- PRINT OUT ALL PARAMETERS                                             -- --
 
-LMC_body              = true        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
+LMC_body              = false        -- -- PRESENCE OF LMC (TURN OFF FOR NULL POTENTIAL)                        -- --
 LMC_function          = 1           -- -- 1: Plummer 2: Henrquist 3: Hernquist with cutoff                     -- --
 LMC_scaleRadius       = 15          -- --  kpc                                                                 -- --
 LMC_cutoff            = 16          -- --  kpc  This is used only for Hernquist with cutoff                    -- --
@@ -177,7 +177,7 @@ end
 
 --component 1 and 2 for 2 component model. comp 1 should always be updated even for 1 component, as it is used to 
 --calculate dwarf-based softening length
-comp1 = Dwarf.plummer{mass = mass_l, scaleLength = rscale_l} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
+comp1 = Dwarf.king{mass = mass_l, scaleLength = rscale_l, W0=12.0} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
 comp2 = Dwarf.plummer{mass = mass_d, scaleLength = rscale_d} -- Dwarf Options: plummer, nfw, general_hernquist, cored, king, einasto
 
 
@@ -210,22 +210,22 @@ Correction           = 1.111   -- -- correction for outlier rejection   DO NOT C
 use_best_likelihood  = false    -- use the best likelihood return code (ONLY SET TO TRUE FOR RUN-COMPARE)
 best_like_start      = 0.98    -- what percent of sim to start
 
-use_beta_disps       = true    -- use beta dispersions in likelihood
+use_beta_disps       = false    -- use beta dispersions in likelihood
 use_vel_disps        = false    -- use velocity dispersions in likelihood
 
 -- if one of these is true, will get output for all 3 of the new histograms
 -- if not computing likelihood scores, still need one of these to be true if want them computed/output
-use_beta_comp        = true  -- calculate average beta, use in likelihood
-use_vlos_comp        = true  -- calculate average los velocity, use in likelihood
-use_avg_dist         = true  -- calculate average distance, use in likelihood
-use_pm_comp          = true  -- calculate proper motion, use in likelihood
+use_beta_comp        = false  -- calculate average beta, use in likelihood
+use_vlos_comp        = false  -- calculate average los velocity, use in likelihood
+use_avg_dist         = false  -- calculate average distance, use in likelihood
+use_pm_comp          = false  -- calculate proper motion, use in likelihood
 
 -- if using momentum likelihood, include momentum information in the parameters of the input
 -- histogram (after <histogram> )with the following lines:
     -- L = {Lx, Ly, Lz} (angular momentum vector)
     -- LErr = {Err_Lx, Err_Ly, Err_Lz} (uncertainty in angular momentum vector)
 -- These are in units of kpc^2/Gyr (no mass included)
-use_momentum         = true  -- calculate angular momentum, use in likelihood
+use_momentum         = false  -- calculate angular momentum, use in likelihood
 
 -- number of additional forward evolutions to do to calibrate the rotation of the bar
 -- numCalibrationRuns + 1 additional forward evolutions will be done
@@ -239,16 +239,16 @@ numCalibrationRuns = 0
 -- -- -- -- -- -- These options only work if you compile nbody with  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- the -DNBODY_DEV_OPTIONS set to on -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- - -- -- -- -- -- -- --  
 
-useMultiOutputs       = false       -- -- WRITE MULTIPLE OUTPUTS                                                           -- --
-freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
+useMultiOutputs       = true       -- -- WRITE MULTIPLE OUTPUTS                                                           -- --
+freqOfOutputs         = 1000         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
 
-timestep_control      = false       -- -- control number of steps                                                          -- --
-Ntime_steps           = 3000        -- -- number of timesteps to run                                                       -- --
+timestep_control      = true       -- -- control number of steps                                                          -- --
+Ntime_steps           = 50000        -- -- number of timesteps to run                                                       -- --
 
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
 max_soft_par          = 0.8         -- -- kpc, if switch above is turned on, use this as the max softening parameter       -- --
 
-generateInitialOutput = false       -- -- save initial dwarf galaxy state to initial.out before evolution                  -- --
+generateInitialOutput = true       -- -- save initial dwarf galaxy state to initial.out before evolution                  -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 -- -- -- -- -- -- -- -- --  Manual Sampling Bounds -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -338,7 +338,7 @@ function makeContext()
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = get_soft_par(), 
+      eps2        = {4.0e-6, 1.21e-4, 4.0e-4}, 
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,
@@ -523,7 +523,7 @@ end
 
 
 -- -- -- -- -- -- -- -- -- DWARF PARAMETERS   -- -- -- -- -- -- -- --
-revOrbTime = evolveTime / time_ratio
+revOrbTime = 0.0--evolveTime / time_ratio
 if use_best_likelihood then
     evolveTime = (2.0 - best_like_start) * evolveTime --making it evolve slightly longer
     eff_best_like_start = best_like_start / (2.0 - best_like_start)

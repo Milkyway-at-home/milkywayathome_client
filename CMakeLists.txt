@@ -79,10 +79,10 @@ include(BOINCPaths)
 #These must be after CheckCFlags is included
 
 #TODO: Make sure to use Apple GCC for releases
-if(HAVE_FLAG_STATIC_LIBGCC AND NOT APPLE)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
-endif()
+#if(HAVE_FLAG_STATIC_LIBGCC AND NOT APPLE)
+#  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc")
+#endif()
 
 if(HAVE_FLAG_PTHREAD)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
@@ -254,8 +254,8 @@ add_flag_if_supported("-xc99")
 #                    #-Xanalyzer -analyzer-display-progress
 #                    -Xanalyzer -analyzer-no-purge-dead)
 
-
-set(gcc_extra_flags "-fno-common -funswitch-loops ")
+# -fsanitize=address -g -fno-omit-frame-pointer
+set(gcc_extra_flags "-fno-common -funswitch-loops")
 set(gcc_only_extra_flags "-freg-struct-return ")
 
 

@@ -285,32 +285,79 @@ static real cored_pot(const Dwarf* model, real r)                               
                                                                                                                          //
 static real king_pot(Dwarf* model, real r)                                                                               //
 {                                                                                                                        //
-    real W0 = model->W0;                                                                                                 //
-    real sigma = model->sigma;                                                                                           //
-    real truePot, relPot;                                                                                                //
-                                                                                                                         //
-    real stepsPerKpc = 100000; // resolution for the RK4 solver                                                          //
-                                                                                                                         //
-    if (r <= model->r_t) {                                                                                               //
-        relPot = ODE2ndOrderSolver(r, stepsPerKpc, W0*sigma*sigma, 0.0, kingRelPot2ndDeriv, model, 0);                   //
-        truePot = model->phi0 - relPot;                                                                                  //
-    } else {                                                                                                             //
-        truePot = -(model->mass)/r;                                                                                      //
-    }                                                                                                                    //
-                                                                                                                         //
-    return -truePot;                                                                                                     //
+    real r_t = model->r_t;
+    real r_0 = model->r_0;
+    real Rt = r_t/r_0;
+    real potential;
+
+    if (r <= model->r_t) {
+        // find the 'index' for r to get neighboring indices for R and W array
+        real i_ref = (r/r_0)*((real)model->king_steps)/Rt;
+        int i1 = mw_floor(i_ref);
+        int i2 = mw_ceil(i_ref);
+
+        // floor and ceil have weird behaviors if the value is an integer
+        if (i1 == i2) {
+            if (i1 != 0 && i2 != 0) {
+                i1 -= 1;
+            } else {
+                i1 = 0;
+                i2 = 1;
+            }
+        }
+        //printf("\n\tfor potential: i1=%d, i2=%d, r=%lf", i1, i2, r);
+        //fflush(stdout);
+        if (i1 < 0 || i2 < 0) {
+            printf("weird pot, i1=%d, i2=%d, r=%lf", i1, i2, r);
+        }
+        //interpolate between W(R[i1]) and W(R[i2]) to get W(R), solve for potential using this and other params
+        real W_R = interpolateLinear(r/r_0, model->king_R[i1], model->king_R[i2], model->king_W[i1], model->king_W[i2]);
+
+        potential = (model->sigma)*(model->sigma)*W_R - model->phi0;
+    } else {
+        potential = (model->mass)/r;
+    }
+
+    //printf("(i, i1, i2)=(%lf, %d, %d): R=%lf, W=%lf, potential=%lf\n", i_ref, i1, i2, r/r_0, W_R, potential);
+
+    return potential;                                                                                                      //
 }                                                                                                                        //
                                                                                                                          //
 static real king_den(Dwarf* model, real r)                                                                               //
 {                                                                                                                        //
-    real pot = -king_pot(model, r);                                                                                      //
-                                                                                                                         //
-    real Psi = model->phi0 - pot;                                                                                        //
-    real rhoOfPsi = kingDensityFromPsi(Psi, model->sigma, model->rho1);                                                  //
-    if (r >= model->r_t) {                                                                                               //
-        rhoOfPsi = 0.0; // no density past the tidal radius                                                              //
-    }                                                                                                                    //
-    return rhoOfPsi;                                                                                                     //
+    real r_t = model->r_t;
+    real r_0 = model->r_0;
+    real Rt = r_t/r_0;
+    real density;
+    if (r < model->r_t) {
+        // find the 'index' for r to get neighboring indices for R and W array
+        real i_ref = (r/r_0)*((real)model->king_steps)/Rt;
+        int i1 = mw_floor(i_ref);
+        int i2 = mw_ceil(i_ref);
+        
+        // floor and ceil have weird behaviors if the value is an integer
+        if (i1 == i2) {
+            if (i1 != 0 && i2 != 0) {
+                i1 -= 1;
+            } else {
+                i1 = 0;
+                i2 = 1;
+            }
+        }
+        if (i1 < 0 || i2 < 0) {
+            printf("weird dens, i1=%d, i2=%d", i1, i2);
+        }
+        //interpolate between W(R[i1]) and W(R[i2]) to get W(R), solve for density using this and rho(W) function
+        real W_R = interpolateLinear(r/r_0, model->king_R[i1], model->king_R[i2], model->king_W[i1], model->king_W[i2]);
+        real erfTerm = mw_exp(W_R) * mw_erf(mw_sqrt(W_R));
+
+        density = (model->rho1) * (erfTerm - mw_sqrt(4.0*W_R/(M_PI))*(1.0 + (2.0*W_R)/3.0));
+    } else {
+        density = 0.0;
+    }
+    //printf("\n\tdensity results: (i, i1, i2)=(%lf, %d, %d): r=%lf, R=%lf, W=%lf, density=%lf", i_ref, i1, i2, r, r/r_0, W_R, density);
+    
+    return density;                                                                                                     //
 }                                                                                                                        //
                                                                                                                          // 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
