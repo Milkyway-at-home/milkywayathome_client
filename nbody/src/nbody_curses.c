@@ -36,8 +36,22 @@ static mwbool cursesSetup = FALSE;
 
 int nbSetupCursesOutput(void)
 {
+    const char* term;
     int stderrTmp;
     int redirect; /* Will become stderr, let it "leak" */
+
+    if (!isatty(fileno(stdout)) || !isatty(fileno(stderr)))
+    {
+        mw_printf("Progress output requested, but stdout/stderr are not terminal devices; disabling curses output\n");
+        return 0;
+    }
+
+    term = getenv("TERM");
+    if (!term || strcmp(term, "dumb") == 0 || strcmp(term, "unknown") == 0)
+    {
+        mw_printf("Progress output requested, but TERM is unset or not interactive; disabling curses output\n");
+        return 0;
+    }
 
     /* Since we use stderr for everything, use stdout for curses stuff.
 

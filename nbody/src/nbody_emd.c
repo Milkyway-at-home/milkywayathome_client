@@ -75,10 +75,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "nbody_types.h"
 #include "milkyway_util.h"
 #include "nbody_emd.h"
 #include "nbody_defaults.h"
-#include "nbody_types.h"
 #include "nbody_mass.h"
 
 #define MAX_ITERATIONS 2500
