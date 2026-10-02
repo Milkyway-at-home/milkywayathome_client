@@ -110,14 +110,11 @@ end
 
 
 function makeContext()
-   local sp_l, sp_cross, sp_d = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = {sp_l, sp_cross, sp_cross, sp_d},
-      eps2_index  = {1, -1},
-      eps2_size   = 2,
+      eps2        = calculateEps2(totalBodies, rscale_l, rscale_d, mass_l, mass_d),
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,

@@ -40,15 +40,6 @@
  *     slightly.
  */
 
-static inline int findIndex(int arr[], int size, int target) {
-    for (int i = 0; i < size; i++) {
-        if (arr[i] == target) {
-            return i; // Return the index of the first match
-        }
-    }
-    return -1; // Return -1 if the value is not in the list
-}
-
 static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     mwbool skipSelf = FALSE;
@@ -58,19 +49,16 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
     const real* eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
-
-    /* Tree cells (and any index that isn't in the table) are coded as type 0 
-     * and fall back to the smallest softening length in the table.
-     * This should not impact the force calculations since cells are 
-     * necessarily far from the starting particle. */
-    real eps2_min = eps2_array[0];
-    for (int i = 1; i < eps2_size * eps2_size; ++i)
-    {
-        if (eps2_array[i] < eps2_min)
-        {
-            eps2_min = eps2_array[i];
-        }
-    }
+    const real eps2_min = ctx->eps2_min;         /* minimum softening length among
+                                                   * real particle types; cached once
+                                                   * at setup by nbCacheEps2Indices().
+                                                   * Tree cells are built by the tree
+                                                   * code itself, aren't real particles,
+                                                   * and have no eps2[] entry of their
+                                                   * own, so this is used for them
+                                                   * directly instead. */
+    const int p_index = p->eps2Index;            /* cached once at setup; p is
+                                                   * always a real body, never a cell */
 
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
@@ -85,28 +73,18 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
             {
                 real drab, phii, mor3;
 
-                /* Compute gravity */
-                if (q->type != 0 && p->bodynode.type != 0)
+                /* Compute gravity. A cell (isCell(q)) isn't a real particle
+                 * and has no eps2[] entry of its own, so it always uses the
+                 * cached minimum softening length; a body uses its and p's
+                 * cached row/column in eps2[] directly. */
+                if (isCell(q))
                 {
-                    int q_index = findIndex(ctx->eps2_index, eps2_size, q->type);
-                    int p_index = findIndex(ctx->eps2_index, eps2_size, p->bodynode.type);
-
-                    if (q_index >= 0 && p_index >= 0)
-                    {
-                        int eps2_val = q_index * eps2_size + p_index; /* swapping p and q yields the same value in eps2 */
-                        drSq += eps2_array[eps2_val];   /* use defined softening for this type pair */
-                    }
-                    else
-                    {
-                        /* Type not present in eps2_index; fall back to the minimum softening length */
-                        drSq += eps2_min;
-                    }
+                    drSq += eps2_min;
                 }
                 else
                 {
-                    /* One (or both) of the nodes has type 0 (for a tree cell),
-                    * so use the minimum softening length */
-                    drSq += eps2_min;
+                    int q_index = ((const Body*) q)->eps2Index;
+                    drSq += eps2_array[q_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
                 }
                 drab = mw_sqrt(drSq);
                 phii = Mass(q) / drab;
@@ -262,37 +240,18 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     const real* eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
 
-    /* This function is simpler without the tree code.
-    * Give minimum softening length if the index is not
-    * found in the table (shouldn't ever happen). */
-    real eps2_min = eps2_array[0];
-    for (i = 1; i < eps2_size * eps2_size; ++i)
-    {
-        if (eps2_array[i] < eps2_min)
-        {
-            eps2_min = eps2_array[i];
-        }
-    }
-
-    /* p is fixed for the whole call, so its row/column in the table only
-     * needs to be looked up once */
-    int p_index = findIndex(ctx->eps2_index, eps2_size, p->bodynode.type);
+    /* p is fixed for the whole call, and there are no tree cells in this
+     * exact (non-tree) gravity path, so both p's and every b's row/column
+     * are just their cached eps2Index -- no per-call search needed. */
+    const int p_index = p->eps2Index;
 
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
-        int b_index = findIndex(ctx->eps2_index, eps2_size, b->bodynode.type);
+        int b_index = b->eps2Index;
 
         real eps2_val;
-        if (b_index >= 0 && p_index >= 0)
-        {
-            eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
-        }
-        else
-        {
-            /* Type not present in eps2_index; fall back to the minimum softening length */
-            eps2_val = eps2_min;
-        }
+        eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
 
         mwvector dr = mw_subv(Pos(b), Pos(p));
         real drSq = mw_sqrv(dr) + eps2_val;

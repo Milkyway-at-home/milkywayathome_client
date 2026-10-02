@@ -316,15 +316,26 @@ end
 
 function make_soft_par()
     sp_output = get_soft_par()
-    soft_array = 
+
+    -- eps2_index maps each real dwarf-structure type to its row/column in
+    -- the eps2 matrix below. Tree cells aren't real particles and never
+    -- get an entry here -- nbGravity() uses the minimum softening length
+    -- among these components instead (computed on the C side, cached on
+    -- the context) for any interaction involving a cell.
+    -- To support more than two components, add the new structure's type
+    -- number here and a matching row/column below.
+    eps2_index = {1, -1}
+    eps2_size  = #eps2_index
+
+    soft_array =
     {
         sp_output[1], sp_output[2],
         sp_output[2], sp_output[3]
     }
     -- Here the softening length array can be manually changed if necessary.
-    -- Just make sure the corresponding index array matches
+    -- Just make sure eps2_index/eps2_size (above) still match its shape.
     return soft_array
-end 
+end
 
 function makeContext()
    return NBodyCtx.create{
@@ -332,8 +343,8 @@ function makeContext()
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
       eps2        = make_soft_par(),
-      eps2_index  = {1, -1},
-      eps2_size   = 2,
+      eps2_index  = eps2_index,
+      eps2_size   = eps2_size,
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,

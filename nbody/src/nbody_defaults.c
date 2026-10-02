@@ -27,6 +27,7 @@ const NBodyCtx defaultNBodyCtx =
     /* .eps2            */  NULL,
     /* .eps2_index      */  NULL,
     /* .eps2_size       */  0,
+    /* .eps2_min        */  0.0,
     /* .theta           */  -1.0,  /* Invalid */
 
     /* .timestep        */  0.0,
