@@ -20,7 +20,9 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = -1.0,
       timeEvolve = evolveTime,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = {(calculateEps2(nbody, dwarfRadius))},
+      eps2_index = {1},
+      eps2_size  = 1,
       criterion  = "sw93",
       useQuad    = true,
       theta      = 1.0,
