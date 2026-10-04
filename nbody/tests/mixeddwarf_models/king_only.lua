@@ -244,7 +244,7 @@ numCalibrationRuns = 0
 useMultiOutputs       = true     -- -- WRITE MULTIPLE OUTPUTS                                                            -- --
 freqOfOutputs         = 100         -- -- FREQUENCY OF WRITING OUTPUTS                                                     -- --
 
-timestep_control      = true       -- -- control number of steps                                                          -- --
+timestep_control      = false       -- -- control number of steps                                                          -- --
 Ntime_steps           = 5000        -- -- number of timesteps to run                                                       -- --
 
 use_max_soft_par      = false       -- -- limit the softening parameter value to a max value                               -- --
@@ -275,10 +275,10 @@ end
 function get_timestep()
     if(timestep_control) then
         t = (evolveTime) / (Ntime_steps)
-    elseif(ModelComponents == 2) then
+    elseif(ModelComponents >= 1) then
         t = calculateTimestepMixedDwarf(comp1, comp2)
     else 
-        t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
+        t = calculateTimestep(mass_l, rscale_l)
     end
 
     if ((evolveTime/t > 150000 or t ~= t) and not timestep_control) then
@@ -287,7 +287,6 @@ function get_timestep()
         TooManyTimesteps = 1
         t = evolveTime/4.0
     end
-
     return t
 end
 

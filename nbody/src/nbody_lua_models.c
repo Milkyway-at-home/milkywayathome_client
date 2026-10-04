@@ -166,20 +166,29 @@ static real nbCalculateTimestepMixedDwarf(const Dwarf* comp1, const Dwarf* comp2
     /* Use densest structural scale: King r_0 (not tidal r_t), Cored rc (not NFW rs) */
     if (comp1->type == King)
         a_1 = comp1->r_0;
-    else if (comp1->type == Cored)
-        a_1 = comp1->rc;
 
     if (comp2->type == King)
         a_2 = comp2->r_0;
-    else if (comp2->type == Cored)
-        a_2 = comp2->rc;
 
-    real mass_enc_2 = enclosed_comp_mass(comp2, a_1);  /* comp2 mass within a_1 */
-    real mass_enc_1 = enclosed_comp_mass(comp1, a_2);  /* comp1 mass within a_2 */
-    real s1 = cube(a_1) / (mass_enc_2 + comp1->mass);
-    real s2 = cube(a_2) / (mass_enc_1 + comp2->mass);
-    real s = (s1 < s2) ? s1 : s2;
-    return (1.0 / 100.0) * mw_sqrt(PI_4_3 * s);
+    real timestep;
+
+    if (comp2->mass <= 0.0) {
+        real mass_enc_1 = enclosed_comp_mass(comp1, a_1);
+        real s1 = cube(a_1) / (mass_enc_1);
+        timestep = (1.0 / 100.0) * mw_sqrt(PI_4_3 * s1);
+    } else if (comp1->mass <= 0.0) {
+        real mass_enc_2 = enclosed_comp_mass(comp2, a_2);
+        real s2 = cube(a_2) / (mass_enc_2);
+        timestep = (1.0 / 100.0) * mw_sqrt(PI_4_3 * s2);
+    } else {
+        real mass_enc_2 = enclosed_comp_mass(comp2, a_1);
+        real mass_enc_1 = enclosed_comp_mass(comp1, a_2);
+        real s1 = cube(a_1) / (mass_enc_2 + comp1->mass);
+        real s2 = cube(a_2) / (mass_enc_1 + comp2->mass);
+        real s = (s1 < s2) ? s1 : s2;
+        timestep = (1.0 / 100.0) * mw_sqrt(PI_4_3 * s);
+    }
+    return timestep;
 }
 
 static int luaCalculateTimestepMixedDwarf(lua_State* luaSt)
@@ -202,7 +211,7 @@ real* nbCalculateEps2_NEW(const Dwarf* light_comp, const Dwarf* dark_comp, unsig
     int dm_nbody = nbody - lm_nbody;
     if (dm_nbody == 0 || lm_nbody ==0)
         {
-        Dwarf* comp = NULL;
+        const Dwarf* comp = NULL;
         int bodies = 0;
         if (dm_nbody == 0) 
         {

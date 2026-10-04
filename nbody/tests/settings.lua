@@ -204,10 +204,10 @@ TooManyTimesteps = 0
 function get_timestep()
     if(timestep_control) then
       t = (evolveTime) / (Ntime_steps)
-    elseif(ModelComponents == 2) then
+    elseif(ModelComponents >= 1) then
         t = calculateTimestepMixedDwarf(comp1, comp2)
     else 
-        t = sqr(1.0 / 10.0) * sqrt((pi_4_3 * cube(rscale_l)) / (mass_l))
+        t = calculateTimestep(mass_l, rscale_l)
     end
 
     if ((evolveTime/t > 150000 or t ~= t) and not timestep_control) then
