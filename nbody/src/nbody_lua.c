@@ -72,7 +72,7 @@ static inline int findIndex(int arr[], int size, int target) {
     return -1; // Return -1 if the value is not in the list
 }
 
-static inline void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st)
+void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st)
 {
     int i;
     const real* eps2_array = ctx->eps2;

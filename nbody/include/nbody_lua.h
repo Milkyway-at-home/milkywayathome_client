@@ -38,6 +38,12 @@ lua_State* nbLuaOpen(mwbool debug);
 lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf, NBodyState* st);
 int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
+/* Match every body's type to its row/column in ctx->eps2[] (and cache the
+ * tree-cell/minimum softening length on ctx). Exposed (non-static) so tests
+ * can exercise it directly against a hand-built NBodyCtx/NBodyState without
+ * running a full simulation setup. */
+void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st);
+
 #ifdef __cplusplus
 }
 #endif

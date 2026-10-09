@@ -33,6 +33,7 @@ their copyright to their programs which execute similar algorithms.
 #include "nbody_types.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /*      DWARF GENERATION        */
 static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
@@ -65,8 +66,19 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
         return 0;
     }
     
+    char headerLine[sizeof(lineBuf)] = "";
+    mwbool sawFirstLine = FALSE;
+
     while (fgets(lineBuf, (int) sizeof(lineBuf), body_inputs))
     {
+        if (!sawFirstLine)
+        {
+            sawFirstLine = TRUE;
+            if (lineBuf[0] == '#')
+            {
+                strncpy(headerLine, lineBuf, sizeof(headerLine) - 1);
+            }
+        }
 
         /* Skip comments and blank lines */
         if (lineBuf[0] == '#' || lineBuf[0] == '\n')
@@ -77,6 +89,13 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     }
     fclose(body_inputs);
     body_inputs = mwOpenResolved(body_file, "r");
+
+    /* The column header comment line tells us which convention the file's
+     * first column uses: a "#type" header is the new format, where the
+     * column is the body's signed type directly (negative = dark matter,
+     * positive = light matter). Anything else (like "#ignore") is the legacy
+     * format, where the column is a boolean (0 = baryon, 1 = dark matter). */
+    mwbool newBodyTypeFormat = (strstr(headerLine, "type") != NULL);
    
     real * ty = mwCalloc(fsize, sizeof(real));
     real * id = mwCalloc(fsize, sizeof(real));
@@ -131,8 +150,25 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     /* pushing the bodies */
     for (int i = 0; i < (int) nbody; i++)
     {
-        /* Input file: 0 = baryon, 1 = dark matter; tree uses 1 / -1 */
-        b.bodynode.type = BODY(ty[i]);
+        if (newBodyTypeFormat)
+        {
+            /* New format: the column is the body's particle type.
+             * Light matter is positive and dark matter is negative.
+             * Bodies must never be 0 since the tree code uses type 0.*/
+            if (ty[i] == 0.0)
+            {
+                mw_fail("Body %d in manual bodies file has type 0, which is "
+                        "reserved for tree code; use a nonzero value "
+                        "(negative for dark matter, positive for light "
+                        "matter).\n", (int) id[i]);
+            }
+            b.bodynode.type = (body_t) ty[i];
+        }
+        else
+        {
+            /* Legacy format: 0 = baryon, 1 = dark matter; tree uses 1 / -1 */
+            b.bodynode.type = BODY(ty[i]);
+        }
         b.bodynode.id = id[i];
         b.bodynode.mass = masses[i];
 
