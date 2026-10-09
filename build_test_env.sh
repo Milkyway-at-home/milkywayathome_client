@@ -67,6 +67,7 @@ fi
   make EMD_Range_test
   make momentum_test
   make softening_length_test
+  make softening_length_multitype_test
   make mixeddwarf_test
   
   make all
