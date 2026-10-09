@@ -139,12 +139,12 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     lua_setglobal(luaSt, "predefinedModels");
 }
 
-static real nbCalculateTimestep(real mass, real r0)
+static real nbCalculateTimestepPlummerTest(real mass, real r0)
 {
     return sqr(1.0/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
 }
 
-static int luaCalculateTimestep(lua_State* luaSt)
+static int luaCalculateTimestepPlummerTest(lua_State* luaSt)
 {
     real mass, r0;
 
@@ -154,11 +154,11 @@ static int luaCalculateTimestep(lua_State* luaSt)
     mass = luaL_checknumber(luaSt, 1);
     r0 = luaL_checknumber(luaSt, 2);
 
-    lua_pushnumber(luaSt, nbCalculateTimestep(mass, r0));
+    lua_pushnumber(luaSt, nbCalculateTimestepPlummerTest(mass, r0));
     return 1;
 }
 
-static real nbCalculateTimestepMixedDwarf(const Dwarf* comp1, const Dwarf* comp2)
+static real nbCalculateTimestep(const Dwarf* comp1, const Dwarf* comp2)
 {
     real a_1 = comp1->scaleLength;
     real a_2 = comp2->scaleLength;
@@ -172,26 +172,24 @@ static real nbCalculateTimestepMixedDwarf(const Dwarf* comp1, const Dwarf* comp2
 
     real timestep;
 
-    if (comp2->mass <= 0.0) {
-        real mass_enc_1 = enclosed_comp_mass(comp1, a_1);
-        real s1 = cube(a_1) / (mass_enc_1);
-        timestep = (1.0 / 100.0) * mw_sqrt(PI_4_3 * s1);
-    } else if (comp1->mass <= 0.0) {
-        real mass_enc_2 = enclosed_comp_mass(comp2, a_2);
-        real s2 = cube(a_2) / (mass_enc_2);
-        timestep = (1.0 / 100.0) * mw_sqrt(PI_4_3 * s2);
+    if (comp2->mass == 0.0) {
+        real s = cube(a_1) / (comp1->mass);
+        timestep = mw_sqrt(PI_4_3 * s);
+    } else if (comp1->mass == 0.0) {
+        real s = cube(a_2) / (comp2->mass);
+        timestep = mw_sqrt(PI_4_3 * s);
     } else {
-        real mass_enc_2 = enclosed_comp_mass(comp2, a_1);
-        real mass_enc_1 = enclosed_comp_mass(comp1, a_2);
+        real mass_enc_2 = enclosed_comp_mass(comp2, a_1); // Comp2 mass enclosed within comp1 scale radius 
+        real mass_enc_1 = enclosed_comp_mass(comp1, a_2); // Comp1 mass enclosed within comp2 scale radius 
         real s1 = cube(a_1) / (mass_enc_2 + comp1->mass);
         real s2 = cube(a_2) / (mass_enc_1 + comp2->mass);
         real s = (s1 < s2) ? s1 : s2;
-        timestep = (1.0 / 100.0) * mw_sqrt(PI_4_3 * s);
+        timestep = mw_sqrt(PI_4_3 * s);
     }
-    return timestep;
+    return (1.0 / 100.0) * timestep; 
 }
 
-static int luaCalculateTimestepMixedDwarf(lua_State* luaSt)
+static int luaCalculateTimestep(lua_State* luaSt)
 {
     const Dwarf* comp1;
     const Dwarf* comp2;
@@ -201,7 +199,7 @@ static int luaCalculateTimestepMixedDwarf(lua_State* luaSt)
 
     comp1 = checkDwarf(luaSt, 1);
     comp2 = checkDwarf(luaSt, 2);
-    lua_pushnumber(luaSt, nbCalculateTimestepMixedDwarf(comp1, comp2));
+    lua_pushnumber(luaSt, nbCalculateTimestep(comp1, comp2));
     return 1;
 }
 
@@ -209,16 +207,16 @@ real* nbCalculateEps2_NEW(const Dwarf* light_comp, const Dwarf* dark_comp, unsig
 {
 
     int dm_nbody = nbody - lm_nbody;
-    if (dm_nbody == 0 || lm_nbody ==0)
+    if (dark_comp->mass == 0 || light_comp->mass == 0 || lm_nbody == 0 || dm_nbody == 0)
         {
         const Dwarf* comp = NULL;
         int bodies = 0;
-        if (dm_nbody == 0) 
+        if (dark_comp->mass == 0 || dm_nbody == 0) 
         {
             comp = light_comp;
             bodies = lm_nbody;
         }
-        if (lm_nbody == 0) 
+        if (light_comp->mass == 0 || lm_nbody == 0) 
         {
             comp = dark_comp;
             bodies = dm_nbody;
@@ -556,5 +554,5 @@ void registerModelFunctions(lua_State* luaSt)
     lua_register(luaSt, "calculateEps2", luaCalculateEps2_OLD);
     lua_register(luaSt, "calculateEps2Dwarf", luaCalculateEps2Dwarf);
     lua_register(luaSt, "calculateTimestep", luaCalculateTimestep);
-    lua_register(luaSt, "calculateTimestepMixedDwarf", luaCalculateTimestepMixedDwarf);
+    lua_register(luaSt, "calculateTimestepPlummerTest", luaCalculateTimestepPlummerTest);
 }

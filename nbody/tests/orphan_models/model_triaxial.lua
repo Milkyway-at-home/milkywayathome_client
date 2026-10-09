@@ -30,7 +30,7 @@ sp_l, sp_cross, sp_d = calculateEps2(nbody, dwarfRadius)
 
 function makeContext()
    return NBodyCtx.create{
-      timestep   = calculateTimestep(dwarfMass, dwarfRadius),
+      timestep   = calculateTimestepPlummerTest(dwarfMass, dwarfRadius),
       timeEvolve = 3.945,
       eps2       = {sp_l, sp_cross, sp_d},
       criterion  = "sw93",

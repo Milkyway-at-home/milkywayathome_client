@@ -38,7 +38,7 @@ SampleModels.sampleModels = {
             scaleRadius = r0
          }
 
-         return mod, calculateEps2(nbody, r0), calculateTimestep(mass, r0)
+         return mod, calculateEps2(nbody, r0), calculateTimestepPlummerTest(mass, r0)
       end,
 
    modelB =
@@ -71,7 +71,7 @@ SampleModels.sampleModels = {
          }
 
          eps2 = calculateEps2(nbody, smallR0)
-         dt   = calculateTimestep(smallMass + bigMass, smallR0)
+         dt   = calculateTimestepPlummerTest(smallMass + bigMass, smallR0)
          return mergeTables(m1, m2), eps2, dt
       end
 }

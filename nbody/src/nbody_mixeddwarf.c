@@ -863,6 +863,15 @@ int nbGenerateMixedDwarfCore(lua_State* luaSt, dsfmt_t* prng, unsigned int nbody
         Body b = EMPTY_BODY;
         real r = 0.0, v = 0.0;
 
+        // Check to make sure that if mass is 0 for a component, the number of bodies is also 0 for that component and vice versa
+        if ((comp2->mass == 0 && nbody_dark != 0) || (nbody_dark == 0 && comp2->mass != 0)) {
+            luaL_error(luaSt, "Mass and number of bodies for comp2 are not consistent.");
+        }
+
+        if ((comp1->mass == 0 && nbody_baryon != 0) || (nbody_baryon == 0 && comp1->mass != 0)) {
+            luaL_error(luaSt, "Mass and number of bodies for comp1 are not consistent.");
+        }
+
         real * x  = mwCalloc(nbody, sizeof(real));
         real * y  = mwCalloc(nbody, sizeof(real));
         real * z  = mwCalloc(nbody, sizeof(real));
