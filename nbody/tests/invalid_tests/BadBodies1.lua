@@ -9,7 +9,7 @@ end
 
 function makeContext()
    return NBodyCtx.create{
-      timestep      = calculateTimestep(16, 0.2),
+      timestep      = calculateTimestepPlummerTest(16, 0.2),
       timeEvolve    = 4.0,
       eps2       = {(calculateEps2(4096, 0.2))},
       eps2_index = {1},
