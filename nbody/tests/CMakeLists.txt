@@ -75,6 +75,10 @@ add_executable(softening_length_test softening_length_test.c)
 
 set(softening_length_test_link_libs "${nbody_exe_link_libs}")
 
+add_executable(softening_length_multitype_test softening_length_multitype_test.c)
+
+set(softening_length_multitype_test_link_libs "${nbody_exe_link_libs}")
+
 add_executable(mixeddwarf_test mixeddwarf_test.c test_env_util.c)
 
 set(mixeddwarf_test_link_libs "${nbody_exe_link_libs}")
@@ -93,6 +97,7 @@ if(NBODY_CRLIBM)
     list(APPEND EMD_Range_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND momentum_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND softening_length_test_link_libs ${CRLIBM_LIBRARY})
+    list(APPEND softening_length_multitype_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND mixeddwarf_test_link_libs ${CRLIBM_LIBRARY})
     list(APPEND LMC_accel_test_link_libs ${CRLIBM_LIBRARY})
 endif()
@@ -106,6 +111,7 @@ milkyway_link(propermotion_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${propermo
 milkyway_link(EMD_Range_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${EMD_Range_test_link_libs}")
 milkyway_link(momentum_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${momentum_test_link_libs}")
 milkyway_link(softening_length_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${softening_length_test_link_libs}")
+milkyway_link(softening_length_multitype_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${softening_length_multitype_test_link_libs}")
 milkyway_link(mixeddwarf_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${mixeddwarf_test_link_libs}")
 milkyway_link(LMC_accel_test ${BOINC_APPLICATION} ${NBODY_STATIC} "${LMC_accel_test_link_libs}")
 
@@ -142,6 +148,10 @@ add_test(NAME EMD_Range_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test
 add_test(NAME momentum_test WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/test_hists" COMMAND momentum_test)
 
 add_test(NAME softening_length_test COMMAND softening_length_test)
+
+add_test(NAME softening_length_multitype_test
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/softening_length_models"
+           COMMAND softening_length_multitype_test)
 
 add_test(NAME mixeddwarf_test COMMAND mixeddwarf_test)
 

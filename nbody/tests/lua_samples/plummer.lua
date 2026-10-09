@@ -107,7 +107,9 @@ function makeContext()
    useQuad = true,
    theta = 1.0,
    timeEvolve = evolveTime,
-    eps2 = eps * eps,
+    eps2 = {eps * eps},
+    eps2_index = {1},
+    eps2_size = 1,
    timestep = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / dwarfMass)
    }
 

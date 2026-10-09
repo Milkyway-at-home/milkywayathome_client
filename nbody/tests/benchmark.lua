@@ -43,7 +43,9 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = dt,
       timeEvolve = nTimestep * dt,
-      eps2       = calculateEps2(nbody, radius),
+      eps2       = {(calculateEps2(nbody, radius))},
+      eps2_index = {1},
+      eps2_size  = 1,
       criterion  = criterion,
       useQuad    = useQuad,
       theta      = theta

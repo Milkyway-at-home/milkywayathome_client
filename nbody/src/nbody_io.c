@@ -71,7 +71,7 @@ static void nbPrintBodyOutputHeader(FILE* f, const NBodyCtx* ctx, mwbool LBavail
 {
     if (!ctx->SimpleOutput)
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s",
+        fprintf(f, "# type \t id %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s %22s",
                 "x", 
                 "y",  
                 "z",  
@@ -97,7 +97,7 @@ static void nbPrintBodyOutputHeader(FILE* f, const NBodyCtx* ctx, mwbool LBavail
     }
     else
     {
-        fprintf(f, "# ignore \t id %22s %22s %22s %22s %22s %22s %22s\n",
+        fprintf(f, "# type \t id %22s %22s %22s %22s %22s %22s %22s\n",
                 "x",
                 "y",
                 "z",
@@ -152,7 +152,7 @@ int nbOutputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBo
 
     for (p = outputTab; p < endp; p++)
     {
-        fprintf(f, "%8d, %8d,", ignoreBody(p), idBody(p));  /* Print if model it belongs to is ignored */
+        fprintf(f, "%8d, %8d,", Type(p), idBody(p));  /* Print the body's type directly (negative = dark matter, positive = light matter) */
         
         if (!ctx->SimpleOutput)
         {

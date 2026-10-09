@@ -21,7 +21,9 @@ function makeContext()
    return NBodyCtx.create{
       timestep   = calculateTimestep(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
-      eps2       = calculateEps2(nbody, dwarfRadius),
+      eps2       = {(calculateEps2(nbody, dwarfRadius))},
+      eps2_index = {1},
+      eps2_size  = 1,
       criterion  = "IDontExist",
       useQuad    = true,
       theta      = 1.0,

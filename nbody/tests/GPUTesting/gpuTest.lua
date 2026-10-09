@@ -171,11 +171,18 @@ end
 
 function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
+   -- ModelComponents == 2 (the default here) generates bodies with
+   -- predefinedModels.mixeddwarf{}, which always produces both type 1
+   -- (light) and type -1 (dark) bodies, so eps2_index must cover both --
+   -- reusing the same single computed value for all four matrix entries.
+   local eps2_val = calculateEps2(totalBodies, soften_length)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, soften_length),
+      eps2       = {eps2_val, eps2_val, eps2_val, eps2_val},
+      eps2_index = {1, -1},
+      eps2_size  = 2,
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,

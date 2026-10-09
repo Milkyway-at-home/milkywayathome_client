@@ -122,9 +122,15 @@ typedef struct MW_ALIGN_TYPE
 {
     NBodyNode bodynode;         /* data common to all nodes */
     mwvector vel;               /* velocity of body */
+    int eps2Index;              /* row/column in ctx->eps2[] for this body's
+                                 * type. Cached once, after bodies are generated/
+                                 * read in and before the simulation starts, by
+                                 * nbCacheEps2Indices() (nbody_grav.c) -- so
+                                 * nbGravity()/nbGravity_Exact() never need to
+                                 * search ctx->eps2_index per force-calculation. */
 } Body;
 
-#define EMPTY_BODY { EMPTY_NODE, ZERO_VECTOR }
+#define EMPTY_BODY { EMPTY_NODE, ZERO_VECTOR, -1 }
 
 #define BODY_TYPE "Body"
 
@@ -456,7 +462,15 @@ typedef struct MW_ALIGN_TYPE
  */
 typedef struct MW_ALIGN_TYPE
 {
-    real eps2[3];                /* (potential softening parameter)^2 */
+    real* eps2;                /* (potential softening parameters)^2 */
+    int* eps2_index;
+    size_t eps2_size;
+    real eps2_min;             /* smallest value in eps2[]; cached once at setup
+                                * (nbCacheEps2Indices() in nbody_lua.c) instead of
+                                * being recomputed on every nbGravity() call. Tree
+                                * cells aren't real particles and have no eps2[]
+                                * entry of their own, so nbGravity() uses this
+                                * value directly for any interaction involving one. */
     real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
@@ -535,7 +549,7 @@ typedef struct MW_ALIGN_TYPE
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
-#define EMPTY_NBODYCTX { {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0, 0.0, 0.0,                                                      \
+#define EMPTY_NBODYCTX { NULL, NULL, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                        \
                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                                                   \
                          0.0, 0.0, 0.0, 0.0, 0.0,                                                             \
                          InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,                                        \
