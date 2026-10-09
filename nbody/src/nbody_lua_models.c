@@ -197,16 +197,16 @@ real* nbCalculateEps2_NEW(const Dwarf* light_comp, const Dwarf* dark_comp, unsig
 {
 
     int dm_nbody = nbody - lm_nbody;
-    if (dm_nbody == 0 || lm_nbody ==0)
+    if (dm_nbody == 0 || lm_nbody ==0 || dark_comp->mass ==0 || light_comp->mass ==0)
         {
         Dwarf* comp = NULL;
         int bodies = 0;
-        if (dm_nbody == 0) 
+        if (dm_nbody == 0 || dark_comp->mass ==0) 
         {
             comp = light_comp;
             bodies = lm_nbody;
         }
-        if (lm_nbody == 0) 
+        if (lm_nbody == 0 || light_comp->mass ==0) 
         {
             comp = dark_comp;
             bodies = dm_nbody;
