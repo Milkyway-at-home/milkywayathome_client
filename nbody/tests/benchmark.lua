@@ -28,7 +28,7 @@ assert(radius, "radius not set")
 
 
 
-dt = calculateTimestep(mass, radius)
+dt = calculateTimestepPlummerTest(mass, radius)
 
 
 function makeHistogram()

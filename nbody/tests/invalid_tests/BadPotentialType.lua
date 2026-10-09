@@ -17,7 +17,7 @@ end
 
 function makeContext()
    return NBodyCtx.create{
-      timestep   = calculateTimestep(dwarfMass, dwarfRadius),
+      timestep   = calculateTimestepPlummerTest(dwarfMass, dwarfRadius),
       timeEvolve = evolveTime,
       eps2       = calculateEps2(nbody, dwarfRadius),
       criterion  = "sw93",
