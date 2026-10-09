@@ -1,20 +1,12 @@
-/* This test checks that the softening length (eps2) machinery works
- * correctly with more than two particle types. It does not run a
- * simulation -- it only exercises three pieces of production code against
- * a manual bodies file containing four particle types (two light, two
- * dark):
+/* This test checks that the softening length machinery works
+ * correctly with more than two particle types. 
+ *   1. First it reads in a manual bodies file in the new "#type" format.
+ *   2. Then it runs nbCacheEps2Indices() to check that each body 
+ *      has its own softening length.
+ *   3. Finally it writes an output file to compare to an example file
+ *      so it can check the new output format.
  *
- *   1. nbGenerateManualBodies()/readModels() -- reading a manual bodies
- *      file in the new "#type" format into a flat Body array.
- *   2. nbCacheEps2Indices() -- matching each body's type to its row/column
- *      in ctx->eps2[], which is the function that would fail if the
- *      eps2/eps2_index machinery didn't generalize past two types.
- *   3. nbWriteBodies() -- writing the resulting bodies back out, so the
- *      output path is also exercised for a >2-type system.
- *
- * The values in the eps2[] array itself are irrelevant here (they are
- * never used by a real force calculation in this test) -- only the
- * eps2_index[] -> body type matching matters.
+ * The values in the eps2[] array are junk numbers so the check works.
  */
 
 #include <lua.h>
@@ -41,10 +33,7 @@ static const body_t expectedType[MULTITYPE_NBODY] =
 static const real expectedMass[MULTITYPE_NBODY] =
     { 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7 };
 
-/* Read the manual bodies file through the same Lua-facing entry point
- * (generatemanualbodies) and Lua->C body marshalling (readModels()) that
- * a real run uses -- just invoked directly instead of from a workunit
- * script, since no simulation is being run. */
+/* Read the manual bodies file. */
 static Body* readManualBodiesFile(const char* filename, int* nbodyOut)
 {
     lua_State* luaSt;
@@ -58,9 +47,6 @@ static Body* readManualBodiesFile(const char* filename, int* nbodyOut)
         return NULL;
     }
 
-    /* Build the { body_file = filename } named-argument table that
-     * nbGenerateManualBodies() (registered as the Lua global
-     * generatemanualbodies()) expects as its one argument. */
     lua_newtable(luaSt);
     lua_pushstring(luaSt, filename);
     lua_setfield(luaSt, -2, "body_file");
@@ -118,11 +104,7 @@ int main(void)
         }
     }
 
-    /* 2. Build a minimal ctx/st and run the function under test:
-     * nbCacheEps2Indices() matches each body's type to its eps2_index[]
-     * row/column. The eps2[] values themselves are never read by a force
-     * calculation in this test, so their exact values don't matter -- only
-     * eps2_index[] (the set of types with an entry) matters. */
+    /* 2. Build a minimal ctx/st and run the nbCacheEps2Indices() function. */
     for (i = 0; i < MULTITYPE_NTYPES * MULTITYPE_NTYPES; ++i)
     {
         eps2[i] = (real) (i + 1);
@@ -190,8 +172,8 @@ int main(void)
                    MULTITYPE_NTYPES);
     }
 
-    /* 3. Write the bodies back out. No simulation is run -- this just
-     * checks that an output file can be written for a >2-type system. */
+    /* 3. Write the bodies back out to check that the output file
+     * can be written for a >2-type system. */
     memset(&nbf, 0, sizeof(nbf));
     nbf.outFileName = outFile;
     /* Deliberately nonexistent: this test never runs a real workunit
@@ -211,16 +193,13 @@ int main(void)
     {
         mw_printf("Wrote output bodies to '%s'\n", outFile);
 
-        /* If a golden output file has been checked in alongside this test,
-         * compare against it byte-for-byte. Until then, there's nothing to
-         * compare against -- see the project doc for how to generate one. */
+        /* Compare against the expected output file.*/
         FILE* ef = fopen(expectedFile, "r");
         if (!ef)
         {
-            mw_printf("No golden output fixture at '%s' yet -- skipping byte-for-byte "
-                       "comparison. After checking that '%s' looks correct, copy it to "
-                       "'%s' to enable the comparison on future runs.\n",
-                       expectedFile, outFile, expectedFile);
+            mw_printf("Expected output file '%s' not found -- cannot verify '%s'\n",
+                       expectedFile, outFile);
+            failed = 1;
         }
         else
         {
@@ -251,13 +230,13 @@ int main(void)
 
             if (mismatch)
             {
-                mw_printf("Output file '%s' does not match golden fixture '%s'\n",
+                mw_printf("Output file '%s' does not match expected file '%s'\n",
                            outFile, expectedFile);
                 failed = 1;
             }
             else
             {
-                mw_printf("Output file matches golden fixture '%s'\n", expectedFile);
+                mw_printf("Output file matches expected file '%s'\n", expectedFile);
             }
         }
     }
