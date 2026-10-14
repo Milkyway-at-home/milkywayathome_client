@@ -171,10 +171,7 @@ end
 
 function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
-   -- ModelComponents == 2 (the default here) generates bodies with
-   -- predefinedModels.mixeddwarf{}, which always produces both type 1
-   -- (light) and type -1 (dark) bodies, so eps2_index must cover both --
-   -- reusing the same single computed value for all four matrix entries.
+   -- Two component dwarf with single softening length value (from old system).
    local eps2_val = calculateEps2(totalBodies, soften_length)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,

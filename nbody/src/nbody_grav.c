@@ -49,16 +49,8 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
 
     const real* eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
-    const real eps2_min = ctx->eps2_min;         /* minimum softening length among
-                                                   * real particle types; cached once
-                                                   * at setup by nbCacheEps2Indices().
-                                                   * Tree cells are built by the tree
-                                                   * code itself, aren't real particles,
-                                                   * and have no eps2[] entry of their
-                                                   * own, so this is used for them
-                                                   * directly instead. */
-    const int p_index = p->eps2Index;            /* cached once at setup; p is
-                                                   * always a real body, never a cell */
+    const real eps2_min = ctx->eps2_min;         /* minimum softening for tree cells */
+    const int p_index = p->eps2Index;            /* cached once at setup */
 
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
@@ -73,10 +65,7 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
             {
                 real drab, phii, mor3;
 
-                /* Compute gravity. A cell (isCell(q)) isn't a real particle
-                 * and has no eps2[] entry of its own, so it always uses the
-                 * cached minimum softening length; a body uses its and p's
-                 * cached row/column in eps2[] directly. */
+                /* Compute gravity */
                 if (isCell(q))
                 {
                     drSq += eps2_min;
@@ -240,9 +229,7 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     const real* eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
 
-    /* p is fixed for the whole call, and there are no tree cells in this
-     * exact (non-tree) gravity path, so both p's and every b's row/column
-     * are just their cached eps2Index -- no per-call search needed. */
+    /* p is fixed for the whole call */
     const int p_index = p->eps2Index;
 
     for (i = 0; i < nbody; ++i)
@@ -251,7 +238,7 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
         int b_index = b->eps2Index;
 
         real eps2_val;
-        eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
+        eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and b yields the same value in eps2 */
 
         mwvector dr = mw_subv(Pos(b), Pos(p));
         real drSq = mw_sqrv(dr) + eps2_val;

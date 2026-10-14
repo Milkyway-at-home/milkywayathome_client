@@ -318,10 +318,7 @@ function make_soft_par()
     sp_output = get_soft_par()
 
     -- eps2_index maps each real dwarf-structure type to its row/column in
-    -- the eps2 matrix below. Tree cells aren't real particles and never
-    -- get an entry here -- nbGravity() uses the minimum softening length
-    -- among these components instead (computed on the C side, cached on
-    -- the context) for any interaction involving a cell.
+    -- the eps2 matrix below. Tree cells are not included (accounted for in C).
     -- To support more than two components, add the new structure's type
     -- number here and a matching row/column below.
     eps2_index = {1, -1}

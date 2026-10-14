@@ -28,10 +28,7 @@ encMass = plummerTimestepIntegral(r0, r02, dwarfMass2, 1e-7)
 
 -- This is also required
 function makeContext()
-   -- secondModel below is generated with ignore=true (particle type -1),
-   -- so eps2_index must cover both types, not just 1 -- reusing the same
-   -- single computed value for all four matrix entries, same as this
-   -- project's gpu_test_checkpoint.lua fix.
+   -- Two component dwarf with single softening length value (from old system).
    local eps2_val = calculateEps2(totalBodies, r0)
    return NBodyCtx.create{
       timeEvolve = 5.945,

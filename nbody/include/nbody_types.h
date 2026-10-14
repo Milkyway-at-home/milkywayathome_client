@@ -122,12 +122,7 @@ typedef struct MW_ALIGN_TYPE
 {
     NBodyNode bodynode;         /* data common to all nodes */
     mwvector vel;               /* velocity of body */
-    int eps2Index;              /* row/column in ctx->eps2[] for this body's
-                                 * type. Cached once, after bodies are generated/
-                                 * read in and before the simulation starts, by
-                                 * nbCacheEps2Indices() (nbody_grav.c) -- so
-                                 * nbGravity()/nbGravity_Exact() never need to
-                                 * search ctx->eps2_index per force-calculation. */
+    int eps2Index;              /* row/column in ctx->eps2[] for this body's type.*/
 } Body;
 
 #define EMPTY_BODY { EMPTY_NODE, ZERO_VECTOR, -1 }
@@ -465,12 +460,7 @@ typedef struct MW_ALIGN_TYPE
     real* eps2;                /* (potential softening parameters)^2 */
     int* eps2_index;
     size_t eps2_size;
-    real eps2_min;             /* smallest value in eps2[]; cached once at setup
-                                * (nbCacheEps2Indices() in nbody_lua.c) instead of
-                                * being recomputed on every nbGravity() call. Tree
-                                * cells aren't real particles and have no eps2[]
-                                * entry of their own, so nbGravity() uses this
-                                * value directly for any interaction involving one. */
+    real eps2_min;             /* smallest value in eps2[], used for tree code */
     real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;

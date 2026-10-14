@@ -79,11 +79,9 @@ void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st)
     const int eps2_size = (int) ctx->eps2_size;
     const int eps2_count = eps2_size * eps2_size;
 
-    /* Tree cells are built by the tree code itself -- they aren't real
-     * particles and never get an entry in eps2_index/eps2[]. Instead,
-     * nbGravity() uses the minimum softening length among the real
-     * particle types for any interaction involving a cell, found here
-     * once and cached directly on ctx. */
+    /* Tree cells are built by the tree code itself and are 
+     * optional in Lua. Instead, nbGravity() uses the minimum 
+     * softening length for any interaction involving a cell. */
     real eps2_min = eps2_array[0];
     for (i = 1; i < eps2_count; ++i)
     {
@@ -654,10 +652,7 @@ static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodySta
     
     setInitialNBodyState(st, ctx, bodies, nbody);
 
-    /* Every body now exists and has its final type -- cache each one's
-     * eps2_index[] row/column (and the tree-cell/minimum values) once,
-     * before the simulation starts, instead of searching for it on every
-     * force-calculation in nbGravity()/nbGravity_Exact(). */
+    /* Every body now exists and has its softening index defined here */
     nbCacheEps2Indices(ctx, st);
 
     return 0;

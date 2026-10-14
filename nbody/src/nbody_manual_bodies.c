@@ -90,11 +90,9 @@ static int nbGenerateManualBodiescore(lua_State* luaSt, const char* body_file)
     fclose(body_inputs);
     body_inputs = mwOpenResolved(body_file, "r");
 
-    /* The column header comment line tells us which convention the file's
-     * first column uses: a "#type" header is the new format, where the
-     * column is the body's signed type directly (negative = dark matter,
-     * positive = light matter). Anything else (like "#ignore") is the legacy
-     * format, where the column is a boolean (0 = baryon, 1 = dark matter). */
+    /* Check for backwards compatibility. If the column header is "#type"
+     * then we use the new format (DM is negative, LM is positive), 
+     * otherwise we still use the old format (LM=0, DM=1).*/
     mwbool newBodyTypeFormat = (strstr(headerLine, "type") != NULL);
    
     real * ty = mwCalloc(fsize, sizeof(real));
