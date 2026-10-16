@@ -48,7 +48,7 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- STANDARD SETTINGS -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-nbodyMinVersion       = "1.96"   -- IGNORE
+nbodyMinVersion       = "1.97"   -- IGNORE
 
 run_null_potential    = false    -- NULL POTENTIAL SWITCH $ button | 0 ^ 1 * 0
 use_tree_code         = true     -- USE TREE CODE (NOT EXACT) $ button | 1 ^ 1 * 0
@@ -255,10 +255,30 @@ function get_soft_par()
     end
     if ((manual_bodies or use_max_soft_par) and (sp_cross > max_soft_par^2)) then --dealing with softening parameter squared
         print("Using maximum softening parameter value of " .. tostring(max_soft_par) .. " kpc")
-        return max_soft_par^2
+        return {max_soft_par^2, max_soft_par^2, max_soft_par^2}
     else
         return {sp_l, sp_cross, sp_d}
     end
+end
+
+function make_soft_par()
+    sp_output = get_soft_par()
+
+    -- eps2_index maps each real dwarf-structure type to its row/column in
+    -- the eps2 matrix below. Tree cells are not included (accounted for in C).
+    -- To support more than two components, add the new structure's type
+    -- number here and a matching row/column below.
+    eps2_index = {1, -1}
+    eps2_size  = #eps2_index
+
+    soft_array =
+    {
+        sp_output[1], sp_output[2],
+        sp_output[2], sp_output[3]
+    }
+    -- Here the softening length array can be manually changed if necessary.
+    -- Just make sure eps2_index/eps2_size (above) still match its shape.
+    return soft_array
 end
 -- A lot of this is hard-coded to the default values.
 -- This is because lite users don't need to optimize histograms, 
@@ -269,7 +289,9 @@ function makeContext()
       timeEvolve    = evolveTime,
       timeBack      = revOrbTime,
       timestep      = get_timestep(),
-      eps2          = get_soft_par(),
+      eps2          = make_soft_par(),
+      eps2_index    = eps2_index,
+      eps2_size     = eps2_size,
       b             = orbit_parameter_b,
       r             = orbit_parameter_r,
       vx            = orbit_parameter_vx,
