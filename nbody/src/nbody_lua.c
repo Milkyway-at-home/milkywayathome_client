@@ -63,6 +63,52 @@ static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
     return 0;
 }
 
+static inline int findIndex(int arr[], int size, int target) {
+    for (int i = 0; i < size; i++) {
+        if (arr[i] == target) {
+            return i; // Return the index of the first match
+        }
+    }
+    return -1; // Return -1 if the value is not in the list
+}
+
+void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st)
+{
+    int i;
+    const real* const eps2_array = ctx->eps2;
+    const int eps2_size = (int) ctx->eps2_size;
+    const int eps2_count = eps2_size * eps2_size;
+
+    /* Tree cells are built by the tree code itself and are 
+     * optional in Lua. Instead, nbGravity() uses the minimum 
+     * softening length for any interaction involving a cell. */
+    real eps2_min = eps2_array[0];
+    for (i = 1; i < eps2_count; ++i)
+    {
+        if (eps2_array[i] < eps2_min)
+        {
+            eps2_min = eps2_array[i];
+        }
+    }
+    ctx->eps2_min = eps2_min;
+
+    for (i = 0; i < st->nbody; ++i)
+    {
+        Body* b = &st->bodytab[i];
+        int idx = findIndex(ctx->eps2_index, eps2_size, b->bodynode.type);
+
+        if (idx < 0)
+        {
+            mw_fail("Body %u has type %d, which has no matching entry in "
+                    "eps2_index; every particle type generated or read in "
+                    "must have a corresponding eps2_index entry.\n",
+                    b->bodynode.id, (int) b->bodynode.type);
+        }
+
+        b->eps2Index = idx;
+    }
+}
+
 #if NBODY_OPENCL
 
 static inline void bindCALTarget(lua_State* luaSt, MWCALtargetEnum target)
@@ -605,6 +651,9 @@ static int nbEvaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodySta
 
     
     setInitialNBodyState(st, ctx, bodies, nbody);
+
+    /* Every body now exists and has its softening index defined here */
+    nbCacheEps2Indices(ctx, st);
 
     return 0;
 }

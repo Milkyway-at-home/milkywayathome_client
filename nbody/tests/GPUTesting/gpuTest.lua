@@ -171,11 +171,15 @@ end
 
 function makeContext()
    soften_length  = (mass_l * rscale_l + mass_d  * rscale_d) / (mass_d + mass_l)
+   -- Two component dwarf with single softening length value (from old system).
+   local eps2_val = calculateEps2(totalBodies, soften_length)
    return NBodyCtx.create{
       timeEvolve  = evolveTime,
       timeBack    = revOrbTime,
       timestep    = get_timestep(),
-      eps2        = calculateEps2(totalBodies, soften_length),
+      eps2       = {eps2_val, eps2_val, eps2_val, eps2_val},
+      eps2_index = {1, -1},
+      eps2_size  = 2,
       b           = orbit_parameter_b,
       r           = orbit_parameter_r,
       vx          = orbit_parameter_vx,

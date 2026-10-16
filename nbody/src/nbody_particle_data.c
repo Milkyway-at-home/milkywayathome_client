@@ -99,8 +99,8 @@ ParticleCollection* read_particle_file(const char *filename) {
         if (start[0] == '\0') {
             /* Empty line - skip (backward compat with blank lines in header) */
         } else if (start[0] == '#') {
-            if (strstr(start, "ignore") && strstr(start, "id")) {
-                in_header = 0;  /* Column header - end of header */
+            if ((strstr(start, "type") || strstr(start, "ignore")) && strstr(start, "id")) {
+                in_header = 0;  /* Column header (old "ignore" or new "type" column name) - end of header */
             }
             /* Other # lines - skip (backward compat) */
         } else if (strstr(start, "simple_output") == start) {

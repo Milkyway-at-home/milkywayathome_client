@@ -39,12 +39,18 @@
  *     mapForceBody(). Measurably better with the inline, but only
  *     slightly.
  */
+
 static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
     mwbool skipSelf = FALSE;
 
     mwvector pos0 = Pos(p);
     mwvector acc0 = ZERO_VECTOR;
+
+    const real* eps2_array = ctx->eps2;
+    const int eps2_size = (int) ctx->eps2_size;
+    const real eps2_min = ctx->eps2_min;         /* minimum softening for tree cells */
+    const int p_index = p->eps2Index;            /* cached once at setup */
 
     const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
 
@@ -60,15 +66,15 @@ static inline mwvector nbGravity(const NBodyCtx* ctx, NBodyState* st, const Body
                 real drab, phii, mor3;
 
                 /* Compute gravity */
-                real eps2_array[3] = {0.0, 0.0, 0.0};
-                eps2_array[0] = ctx->eps2[0];
-                eps2_array[1] = ctx->eps2[1];
-                eps2_array[2] = ctx->eps2[2];
-                int eps2_index = 1;   /* index for the cross softening length */
-                int eps2_val = q->type + p->bodynode.type; /* adds body type of each particle together */
-                if (eps2_val == -2){eps2_index = 2;} /* switches to DM-DM softening if both particles are DM */
-                if (eps2_val == 2){eps2_index = 0;} /* switches to LM-LM softening if both particles are Baryons */
-                drSq += eps2_array[eps2_index];   /* use defined softening */
+                if (isCell(q))
+                {
+                    drSq += eps2_min;
+                }
+                else
+                {
+                    int q_index = ((const Body*) q)->eps2Index;
+                    drSq += eps2_array[q_index * eps2_size + p_index]; /* swapping p and q yields the same value in eps2 */
+                }
                 drab = mw_sqrt(drSq);
                 phii = Mass(q) / drab;
                 mor3 = phii / drSq;
@@ -219,18 +225,23 @@ static mwvector nbGravity_Exact(const NBodyCtx* ctx, NBodyState* st, const Body*
     int i;
     const int nbody = st->nbody;
     mwvector a = ZERO_VECTOR;
-    real eps2_array[3] = {0.0, 0.0, 0.0};
-    eps2_array[0] = ctx->eps2[0];
-    eps2_array[1] = ctx->eps2[1];
-    eps2_array[2] = ctx->eps2[2];
+
+    const real* eps2_array = ctx->eps2;
+    const int eps2_size = (int) ctx->eps2_size;
+
+    /* p is fixed for the whole call */
+    const int p_index = p->eps2Index;
 
     for (i = 0; i < nbody; ++i)
     {
         const Body* b = &st->bodytab[i];
-        int eps2_index = b->bodynode.type + p->bodynode.type; /* finds the particle types of each body */
-        eps2_index = (eps2_index-2)/(-2); /* changes from particle type to index (0 for LM, 1 for cross, 2 for DM) */
+        int b_index = b->eps2Index;
+
+        real eps2_val;
+        eps2_val = eps2_array[b_index * eps2_size + p_index]; /* swapping p and b yields the same value in eps2 */
+
         mwvector dr = mw_subv(Pos(b), Pos(p));
-        real drSq = mw_sqrv(dr) + eps2_array[eps2_index];
+        real drSq = mw_sqrv(dr) + eps2_val;
 
         real drab = mw_sqrt(drSq);
         real phii = Mass(b) / drab;

@@ -56,6 +56,91 @@ static int setCriterionT(lua_State* luaSt, void* v)
     return 0;
 }
 
+/* Wrapper functions for eps2 and eps2_index, which are pointers
+*  to variable length arrays of size (eps2_size)^2 and eps2_size */
+
+static int getEps2(lua_State* luaSt, void* v)
+{
+    NBodyCtx* ctx = (NBodyCtx*) ((char*) v - offsetof(NBodyCtx, eps2));
+    return getRealArray(luaSt, v, ctx->eps2_size * ctx->eps2_size);
+}
+
+static int setEps2(lua_State* luaSt, void* v)
+{
+    NBodyCtx* ctx = (NBodyCtx*) ((char*) v - offsetof(NBodyCtx, eps2));
+    size_t len;
+
+    if (!lua_istable(luaSt, 3))
+    {
+        return luaL_error(luaSt, "Expected table");
+    }
+
+    len = luaL_getn(luaSt, 3);
+    if (len != ctx->eps2_size * ctx->eps2_size)
+    {
+        return luaL_error(luaSt, "eps2 table has %d entries, expected eps2_size^2 = %d",
+                           (int) len, (int) (ctx->eps2_size * ctx->eps2_size));
+    }
+
+    free(*(real**) v);
+    *(real**) v = (real*) mwCalloc(len, sizeof(real));
+    for (size_t i = 0; i < len; ++i)
+    {
+        lua_rawgeti(luaSt, 3, i + 1);
+        (*(real**) v)[i] = (real) lua_tonumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+
+    return 0;
+}
+
+static int getEps2Index(lua_State* luaSt, void* v)
+{
+    NBodyCtx* ctx = (NBodyCtx*) ((char*) v - offsetof(NBodyCtx, eps2_index));
+    return getIntArray(luaSt, v, ctx->eps2_size);
+}
+
+static int setEps2Index(lua_State* luaSt, void* v)
+{
+    NBodyCtx* ctx = (NBodyCtx*) ((char*) v - offsetof(NBodyCtx, eps2_index));
+    size_t len;
+
+    if (!lua_istable(luaSt, 3))
+    {
+        return luaL_error(luaSt, "Expected table");
+    }
+
+    len = luaL_getn(luaSt, 3);
+    if (len != ctx->eps2_size)
+    {
+        return luaL_error(luaSt, "eps2_index table has %d entries, expected eps2_size = %d",
+                           (int) len, (int) ctx->eps2_size);
+    }
+
+    free(*(int**) v);
+    *(int**) v = (int*) mwCalloc(len, sizeof(int));
+    for (size_t i = 0; i < len; ++i)
+    {
+        lua_rawgeti(luaSt, 3, i + 1);
+        (*(int**) v)[i] = (int) lua_tointeger(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+
+    return 0;
+}
+
+/* Length of the table stored under `key` in the named-argument table at
+ * `table`'s stack index, without disturbing anything else on the stack.
+ * Used to make sure that eps2 and eps2_index match the size defined by eps2_size */
+static size_t luaNamedTableFieldLen(lua_State* luaSt, int table, const char* key)
+{
+    size_t len;
+    lua_getfield(luaSt, table, key);
+    len = (size_t) luaL_getn(luaSt, -1);
+    lua_pop(luaSt, 1);
+    return len;
+}
+
 NBodyCtx* checkNBodyCtx(lua_State* luaSt, int idx)
 {
     return (NBodyCtx*) mw_checknamedudata(luaSt, idx, NBODYCTX_TYPE);
@@ -93,7 +178,9 @@ static int createNBodyCtx(lua_State* luaSt)
             { "timeEvolve",      LUA_TNUMBER, NULL,      TRUE,  &ctx.timeEvolve,        1 },
             { "timeBack",        LUA_TNUMBER, NULL,      FALSE, &ctx.timeBack,          1 },
             { "theta",           LUA_TNUMBER, NULL,      FALSE, &ctx.theta,             1 },
-            { "eps2",            LUA_TTABLE,  REAL_TYPE, TRUE,  &ctx.eps2,              3 }, //set as real so the table can read, is there a reason this needs to be null?
+            { "eps2",            LUA_TTABLE,  REAL_TYPE, TRUE,  &ctx.eps2,              MW_ARRAY_LEN_DYNAMIC }, // dynamic length; sized from the actual Lua table (eps2_size^2 entries)
+            { "eps2_index",      LUA_TTABLE,  INT_TYPE,  TRUE,  &ctx.eps2_index,        MW_ARRAY_LEN_DYNAMIC }, // dynamic length; sized from the actual Lua table (eps2_size entries)
+            { "eps2_size",       LUA_TNUMBER, SIZE_TYPE, TRUE,  &ctx.eps2_size,         1 },
             { "treeRSize",       LUA_TNUMBER, NULL,      FALSE, &ctx.treeRSize,         1 },
             { "sunGCDist",       LUA_TNUMBER, NULL,      FALSE, &ctx.sunGCDist,         1 },
             { "sunVelx",         LUA_TNUMBER, NULL,      FALSE, &ctx.sunVelx,           1 },
@@ -155,6 +242,24 @@ static int createNBodyCtx(lua_State* luaSt)
         return luaL_argerror(luaSt, 1, "Expected named argument table");
 
     handleNamedArgumentTable(luaSt, argTable, 1);
+
+    /* eps2 must hold exactly eps2_size^2 entries and eps2_index must
+     * hold exactly eps2_size entries. Here we check that the sizes
+     * match, and error out if they do not. */
+    if (ctx.eps2_size == 0)
+    {
+        return luaL_argerror(luaSt, 1, "eps2_size must be at least 1");
+    }
+
+    if (luaNamedTableFieldLen(luaSt, 1, "eps2") != ctx.eps2_size * ctx.eps2_size)
+    {
+        return luaL_argerror(luaSt, 1, "eps2 table length does not match eps2_size^2");
+    }
+
+    if (luaNamedTableFieldLen(luaSt, 1, "eps2_index") != ctx.eps2_size)
+    {
+        return luaL_argerror(luaSt, 1, "eps2_index table length does not match eps2_size");
+    }
 
     /* FIXME: Hacky handling of enum. Will result in not good error
      * messages as well as not fitting in. */
@@ -270,7 +375,9 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)     },
     { "timeBack",        getNumber,     offsetof(NBodyCtx, timeBack)       },
     { "theta",           getNumber,     offsetof(NBodyCtx, theta)          },
-    { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)           },
+    { "eps2",            getEps2,       offsetof(NBodyCtx, eps2)           },
+    { "eps2_index",      getEps2Index,  offsetof(NBodyCtx, eps2_index)     },
+    { "eps2_size",       getSizeT,      offsetof(NBodyCtx, eps2_size)      },
     { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)      },
     { "sunGCDist",       getNumber,     offsetof(NBodyCtx, sunGCDist)      },
     { "sunVelx",         getNumber,     offsetof(NBodyCtx, sunVelx)        },
@@ -323,7 +430,9 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)     },
     { "timeBack",        setNumber,     offsetof(NBodyCtx, timeBack)       },
     { "theta",           setNumber,     offsetof(NBodyCtx, theta)          },
-    { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)           },
+    { "eps2",            setEps2,       offsetof(NBodyCtx, eps2)           },
+    { "eps2_index",      setEps2Index,  offsetof(NBodyCtx, eps2_index)     },
+    { "eps2_size",       setSizeT,      offsetof(NBodyCtx, eps2_size)      },
     { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)      },
     { "sunGCDist",       setNumber,     offsetof(NBodyCtx, sunGCDist)      },
     { "sunVelx",         setNumber,     offsetof(NBodyCtx, sunVelx)        },

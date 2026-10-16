@@ -69,17 +69,19 @@ int read_bestbodytab_from_checkpoint(const char* checkpointFile, Body** bodytab_
     p += sizeof(size_t);
     p += sizeOfData; // skip extractedSt
 
-    p += nbody * sizeof(Body); // skip normal bodytab
+    p += nbody * 96; // skip normal bodytab, 96 is hardcoded size of body from version the checkpoint was made
 
     // Now p points to best likelihood bodytab
-    Body* bestbodytab = (Body*)malloc(nbody * sizeof(Body));
+    Body* bestbodytab = (Body*)malloc(nbody * sizeof(Body)); //use size of Body from the current version so it fits correctly in the state
     if (!bestbodytab) {
         fprintf(stderr, "Failed to allocate bodytab\n");
         munmap(mptr, sb.st_size);
         close(fd);
         return 1;
     }
-    memcpy(bestbodytab, p, nbody * sizeof(Body));
+    for (uint32_t i = 0; i < nbody; ++i) {
+        memcpy(&bestbodytab[i], p + i * 96, 96); //copy each body from the checkpoint to the new bodytab. Note that any fields added to the body struct after the checkpoint was made will be uninitialized
+    }
 
     *bodytab_out = bestbodytab;
     *nbody_out = nbody;
@@ -140,13 +142,13 @@ int main()
     // L = [1527.6464608614306, 1597.9471123610872, 3393.8635866082823]
     // LErr = [125.73297168744209, 173.28623918527114, 50.229315701648076]
 
-    if (L.x > 1527.6465 || L.x < 1527.6464 || L.y > 1597.9472 || L.y < 1597.9471 || L.z > 3393.8636 || L.z < 3393.8635)
+    if (!(L.x < 1527.6465 && L.x > 1527.6464 && L.y < 1597.9472 && L.y > 1597.9471 && L.z < 3393.8636 && L.z > 3393.8635))
     {
         printf("\tMomentum L calculation failed\n");
         printf("Calculated L = [%.15f, %.15f, %.15f]\n", L.x, L.y, L.z);
         return 1;
     }
-    if (LErr.x > 125.7330 || LErr.x < 125.7329 || LErr.y > 173.2863 || LErr.y < 173.2862 || LErr.z > 50.2294 || LErr.z < 50.2293)
+    if (!(LErr.x < 125.7330 && LErr.x > 125.7329 && LErr.y < 173.2863 && LErr.y > 173.2862 && LErr.z < 50.2294 && LErr.z > 50.2293))
     {
         printf("\tMomentum LErr calculation failed\n");
         printf("Calculated LErr = [%.15f, %.15f, %.15f]\n", LErr.x, LErr.y, LErr.z);

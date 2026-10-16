@@ -38,6 +38,9 @@ lua_State* nbLuaOpen(mwbool debug);
 lua_State* nbOpenLuaStateWithScript(const NBodyFlags* nbf, NBodyState* st);
 int nbSetup(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
+/* required for softening_length_multitype_test */
+void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st);
+
 #ifdef __cplusplus
 }
 #endif

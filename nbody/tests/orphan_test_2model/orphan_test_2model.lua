@@ -28,10 +28,14 @@ encMass = plummerTimestepIntegral(r0, r02, dwarfMass2, 1e-7)
 
 -- This is also required
 function makeContext()
+   -- Two component dwarf with single softening length value (from old system).
+   local eps2_val = calculateEps2(totalBodies, r0)
    return NBodyCtx.create{
       timeEvolve = 5.945,
       timestep   = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass)),
-      eps2       = calculateEps2(totalBodies, r0),
+      eps2       = {eps2_val, eps2_val, eps2_val, eps2_val},
+      eps2_index = {1, -1},
+      eps2_size  = 2,
       criterion  = "TreeCode",
       useQuad    = true,
       theta      = 1.0

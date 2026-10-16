@@ -93,6 +93,8 @@ nbody/tests/.checkpoints
 replace_amd_il
 *.bin
 *.out
+# file needed for testing
+!nbody/tests/softening_length_models/softening_length_multitype_test_expected.out
 *.ps
 *.plist
 *.bak
