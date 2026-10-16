@@ -10,8 +10,8 @@
  */
 
 #include <lua.h>
-#include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "nbody_types.h"
 #include "nbody.h"
@@ -73,9 +73,9 @@ int main(void)
     int i;
     int nbody = 0;
     Body* bodytab;
-    NBodyCtx ctx;
-    NBodyState st;
-    NBodyFlags nbf;
+    NBodyCtx ctx = EMPTY_NBODYCTX;
+    NBodyState st = EMPTY_NBODYSTATE;
+    NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     real eps2[MULTITYPE_NTYPES * MULTITYPE_NTYPES];
     int eps2_index[MULTITYPE_NTYPES] = { -2, -1, 1, 2 };
     real expectedEps2Min;
@@ -110,22 +110,31 @@ int main(void)
         eps2[i] = (real) (i + 1);
     }
 
-    memset(&ctx, 0, sizeof(ctx));
     ctx.eps2 = eps2;
     ctx.eps2_index = eps2_index;
     ctx.eps2_size = MULTITYPE_NTYPES;
     ctx.SimpleOutput = TRUE; /* keep the output file simple/deterministic for this test */
 
-    memset(&st, 0, sizeof(st));
     st.bodytab = bodytab;
     st.nbody = nbody;
 
     nbCacheEps2Indices(&ctx, &st);
 
+    /* eps2[i] < expectedEps2Min is already false whenever eps2[i] is NaN (any
+     * comparison involving NaN is false under IEEE 754), so a NaN entry is
+     * correctly skipped once a valid minimum has been found. The one gap is
+     * the seed value itself: if eps2[0] is NaN, expectedEps2Min starts out
+     * NaN, and then *every* later comparison against it is also false --
+     * including against perfectly valid finite entries -- so it would stay
+     * NaN forever instead of picking up the real minimum. The isnan() check
+     * below covers exactly that case, mirroring the comparison this test is
+     * verifying against (nbCacheEps2Indices() has the same NaN-seed gap, so
+     * this is what "correct" means for both right now, not a stricter
+     * standard invented just for the test). */
     expectedEps2Min = eps2[0];
     for (i = 1; i < MULTITYPE_NTYPES * MULTITYPE_NTYPES; ++i)
     {
-        if (eps2[i] < expectedEps2Min)
+        if (isnan(expectedEps2Min) || eps2[i] < expectedEps2Min)
         {
             expectedEps2Min = eps2[i];
         }
@@ -174,7 +183,6 @@ int main(void)
 
     /* 3. Write the bodies back out to check that the output file
      * can be written for a >2-type system. */
-    memset(&nbf, 0, sizeof(nbf));
     nbf.outFileName = outFile;
     /* Deliberately nonexistent: this test never runs a real workunit
      * script, and nbWriteBodies()'s internal histogram-parameter lookup

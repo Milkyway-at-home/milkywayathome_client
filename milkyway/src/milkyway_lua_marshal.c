@@ -957,7 +957,7 @@ int* popIntArray(lua_State* luaSt, int* outN)
     {
         lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
         luaL_checktype(luaSt, -1, LUA_TNUMBER);
-        arr[i] = lua_tointeger(luaSt, -1);
+        arr[i] = (int) lua_tointeger(luaSt, -1);
         lua_pop(luaSt, 1);
     }
 

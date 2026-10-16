@@ -75,7 +75,7 @@ static inline int findIndex(int arr[], int size, int target) {
 void nbCacheEps2Indices(NBodyCtx* ctx, NBodyState* st)
 {
     int i;
-    const real* eps2_array = ctx->eps2;
+    const real* const eps2_array = ctx->eps2;
     const int eps2_size = (int) ctx->eps2_size;
     const int eps2_count = eps2_size * eps2_size;
 
