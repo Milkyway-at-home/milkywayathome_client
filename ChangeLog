@@ -1,3 +1,22 @@
+-nbody 1.97
+	- Updated to manual bodies input files to include more than a single particle type
+	- Changed cost component to calculate likelihoods for each EMD range separately
+	- Edited EMD likelihood to be properly weighted by the length of the histogram
+	- Added the ability to manually set radial sampling bounds for NFW and Cored profiles
+	- Replaced mw_math functions with CORE-MATH functions to ensure consistent rounding
+	- Added milkyway_math_funcs.c and nbody_math_funcs.c as central locations for all math functions
+	- Added optional manual Monte Carlo radial sampling bounds for all dwarf profiles in mixed-dwarf generation
+	- Improved organization to the calculation flow of model specific parameters
+	- Update timestep calculations to be more accurate for non-Plummer models (using enclosed mass calculations)
+	- Mixed Dwarf code now errors out of body count and mass disagree (two options: both nonzero or both zero)
+	- Updated softening length code to now allow for more than 2 particle types
+	- Updated the manual bodies #ignore column to be #type to allow for this change (it is backwards compatible)
+	- Updated the output file writer to reflect this change
+	- Changed the body struct to include a particle's softening length index, stored after body generation
+	- Changed the context struct to include the new variable-sized softening length array
+	- Added 3 new variables to the context: softening length index, softening length size and minimum softening value
+	- Updated tests for new code (bar tests fail)
+
 -nbody 1.96
 	- Added cutoff NFW and Cored profiles
 	- Added a single component King model
