@@ -397,8 +397,8 @@ function makeBodies(ctx, potential)
   local finalPosition, finalVelocity, LMCfinalPosition, LMCfinalVelocity
     if TooManyTimesteps == 1 then
         -- Setting bodies to 1 ensures worst case likelihood
-        totalBodies = 1
-        totalLightBodies = 1
+        totalBodies = 4
+        totalLightBodies = 2
     end
 
     if(run_null_potential == true and manual_bodies == true) then
